@@ -37,6 +37,21 @@ export const creditStatusEnum = pgEnum("credit_status", [
 
 export const senderEnum = pgEnum("sender", ["agente", "lead"]);
 
+// 1:1 com as 10 cores do componente `Token` da Astryx (design.md — Cor de
+// categoria). Paleta fixa: nenhum hex cru é aceito em nenhuma camada.
+export const categoryColorEnum = pgEnum("category_color", [
+  "red",
+  "orange",
+  "yellow",
+  "green",
+  "teal",
+  "cyan",
+  "blue",
+  "purple",
+  "pink",
+  "gray",
+]);
+
 // Tables
 
 export const tenants = pgTable("tenants", {
@@ -131,6 +146,10 @@ export const documentCategories = pgTable(
       .notNull()
       .references(() => tenants.id),
     name: text("name").notNull(),
+    // Default 'gray' torna a migração não-destrutiva: categorias criadas
+    // antes deste lote passam a ter essa cor sem exigir backfill manual
+    // (spec.md — CAT-01.5).
+    color: categoryColorEnum("color").notNull().default("gray"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
