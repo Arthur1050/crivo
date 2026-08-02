@@ -1,28 +1,22 @@
+import { Heading } from "@astryxdesign/core/Text";
 import { VStack } from "@astryxdesign/core/Stack";
-import { Heading, Text } from "@astryxdesign/core/Text";
-import { EmptyState } from "@astryxdesign/core/EmptyState";
-import { getLeads, getTenant } from "@/src/server/data";
+import { PipelineBoard } from "@/src/components/pipeline/pipeline-board";
+import { getLeads } from "@/src/server/data";
 import { getActiveTenantId } from "@/src/server/tenant";
 
+/**
+ * Kanban de leads do tenant ativo (lote-3 — PIPE-01). RSC carrega `getLeads`
+ * (já ordenado `updatedAt DESC, id` — T3) e entrega ao `PipelineBoard`
+ * client, que agrupa por status.
+ */
 export default async function PipelinePage() {
   const tenantId = await getActiveTenantId();
-  const [tenant, leads] = await Promise.all([
-    getTenant(tenantId),
-    getLeads(tenantId),
-  ]);
+  const leads = await getLeads(tenantId);
 
   return (
-    <VStack gap={4}>
+    <VStack gap={6}>
       <Heading level={1}>Pipeline</Heading>
-      <Text type="body">Imobiliária ativa: {tenant?.name ?? "—"}</Text>
-      {leads.length === 0 ? (
-        <EmptyState
-          title="Nenhum lead ainda"
-          description="Quando houver leads para esta imobiliária, eles aparecerão aqui."
-        />
-      ) : (
-        <Text type="body">{leads.length} leads no pipeline</Text>
-      )}
+      <PipelineBoard leads={leads} />
     </VStack>
   );
 }
