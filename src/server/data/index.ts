@@ -20,6 +20,7 @@ export type Document = typeof documents.$inferSelect;
 export type DocumentCategory = typeof documentCategories.$inferSelect;
 export type LeadStatus = Lead["status"];
 export type Modality = Document["modality"];
+export type CategoryColor = DocumentCategory["color"];
 
 const ALL_MODALITIES: Modality[] = ["novo", "usado", "ambos"];
 
@@ -298,6 +299,25 @@ export async function updateTenantSettings(
   return rows[0] ?? null;
 }
 
+/**
+ * Move um lead entre colunas do Kanban (lote-3 — PIPE-02): `WHERE tenant_id
+ * AND id` (nunca só pelo id), sempre atualiza `updatedAt` para refletir o
+ * momento da transição. Retorna `null` (no-op) quando nenhuma linha
+ * corresponde a `tenantId` + `leadId` (lead inexistente OU de outro tenant).
+ */
+export async function updateLeadStatus(
+  tenantId: string,
+  leadId: string,
+  status: LeadStatus
+): Promise<Lead | null> {
+  const rows = await db
+    .update(leads)
+    .set({ status, updatedAt: new Date() })
+    .where(and(eq(leads.tenantId, tenantId), eq(leads.id, leadId)))
+    .returning();
+  return rows[0] ?? null;
+}
+
 export interface CreateDocumentInput {
   name: string;
   mimeType: string;
@@ -381,16 +401,18 @@ export type CreateDocumentCategoryResult =
 /**
  * Traduz a violação do índice único (nome duplicado, case-insensitive, no
  * mesmo tenant) num erro de domínio — nunca deixa o erro bruto do Postgres
- * vazar para quem chama.
+ * vazar para quem chama. `color` é opcional (lote-3 — CAT-01): quando
+ * omitida, a coluna assume o default `'gray'` do schema.
  */
 export async function createDocumentCategory(
   tenantId: string,
-  name: string
+  name: string,
+  color?: CategoryColor
 ): Promise<CreateDocumentCategoryResult> {
   try {
     const rows = await db
       .insert(documentCategories)
-      .values({ tenantId, name })
+      .values({ tenantId, name, ...(color ? { color } : {}) })
       .returning();
     return { ok: true, category: rows[0] };
   } catch (err) {
@@ -402,6 +424,29 @@ export async function createDocumentCategory(
     }
     throw err;
   }
+}
+
+/**
+ * Atualiza a cor de uma categoria existente (lote-3 — CAT-01: edição pelo
+ * gerenciador). Tenant-scoped como toda escrita desta camada; retorna `null`
+ * (no-op) quando nenhuma linha corresponde a `tenantId` + `categoryId`.
+ */
+export async function updateDocumentCategory(
+  tenantId: string,
+  categoryId: string,
+  updates: { color: CategoryColor }
+): Promise<DocumentCategory | null> {
+  const rows = await db
+    .update(documentCategories)
+    .set({ color: updates.color })
+    .where(
+      and(
+        eq(documentCategories.tenantId, tenantId),
+        eq(documentCategories.id, categoryId)
+      )
+    )
+    .returning();
+  return rows[0] ?? null;
 }
 
 /**

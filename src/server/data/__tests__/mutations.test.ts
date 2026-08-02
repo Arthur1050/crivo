@@ -9,9 +9,13 @@ import {
   deleteDocumentCategory,
   getDocumentCategories,
   getDocuments,
+  getLead,
+  getLeads,
   getTenant,
   getTenants,
   updateDocument,
+  updateDocumentCategory,
+  updateLeadStatus,
   updateTenantSettings,
 } from "../index";
 
@@ -67,6 +71,61 @@ describe("server/data mutations", () => {
         supportedModality: "ambos",
       });
       expect(result).toBeNull();
+    });
+  });
+
+  describe("updateLeadStatus", () => {
+    it("persiste o novo status e avança updatedAt (happy path) — reverte ao final", async () => {
+      const [lead] = await getLeads(tenantAId);
+      expect(lead).toBeDefined();
+
+      const originalStatus = lead.status;
+      const originalUpdatedAt = lead.updatedAt;
+      const nextStatus =
+        originalStatus === "escalado_humano" ? "em_qualificacao" : "escalado_humano";
+
+      // Garante uma diferença de relógio mensurável entre o updatedAt
+      // original (do seed) e o novo, mesmo em execuções muito rápidas.
+      await new Promise((resolve) => setTimeout(resolve, 5));
+
+      const updated = await updateLeadStatus(tenantAId, lead.id, nextStatus);
+      expect(updated).not.toBeNull();
+      expect(updated!.status).toBe(nextStatus);
+      expect(updated!.updatedAt.getTime()).toBeGreaterThan(
+        originalUpdatedAt.getTime()
+      );
+
+      const reread = await getLead(tenantAId, lead.id);
+      expect(reread!.status).toBe(nextStatus);
+
+      // Reverte para não afetar o seed usado por outros testes/batches.
+      const reverted = await updateLeadStatus(tenantAId, lead.id, originalStatus);
+      expect(reverted!.status).toBe(originalStatus);
+    });
+
+    it("retorna null (no-op) para um leadId inexistente", async () => {
+      const result = await updateLeadStatus(
+        tenantAId,
+        NON_EXISTENT_ID,
+        "qualificado_agendado"
+      );
+      expect(result).toBeNull();
+    });
+
+    it("retorna null (no-op) e não altera o lead quando o tenantId não corresponde (isolamento cross-tenant)", async () => {
+      const [leadA] = await getLeads(tenantAId);
+      expect(leadA).toBeDefined();
+      const originalStatus = leadA.status;
+
+      const result = await updateLeadStatus(
+        tenantBId,
+        leadA.id,
+        originalStatus === "escalado_humano" ? "em_qualificacao" : "escalado_humano"
+      );
+      expect(result).toBeNull();
+
+      const unchanged = await getLead(tenantAId, leadA.id);
+      expect(unchanged!.status).toBe(originalStatus);
     });
   });
 
@@ -251,6 +310,26 @@ describe("server/data mutations", () => {
       await deleteDocumentCategory(tenantAId, created.category.id);
     });
 
+    it("categoria criada sem cor persiste com o default 'gray' (lote-3 — CAT-01)", async () => {
+      const name = `Categoria Sem Cor ${randomUUID()}`;
+      const result = await createDocumentCategory(tenantAId, name);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+
+      expect(result.category.color).toBe("gray");
+      await deleteDocumentCategory(tenantAId, result.category.id);
+    });
+
+    it("categoria criada com cor explícita persiste essa cor (lote-3 — CAT-01)", async () => {
+      const name = `Categoria Com Cor ${randomUUID()}`;
+      const result = await createDocumentCategory(tenantAId, name, "blue");
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+
+      expect(result.category.color).toBe("blue");
+      await deleteDocumentCategory(tenantAId, result.category.id);
+    });
+
     it("deletar uma categoria seta category_id para null nos documentos dependentes", async () => {
       const name = `Categoria Com Documentos ${randomUUID()}`;
       const category = await createDocumentCategory(tenantAId, name);
@@ -278,6 +357,59 @@ describe("server/data mutations", () => {
       expect(reread.categoryId).toBeNull();
 
       await deleteDocument(tenantAId, doc.id);
+    });
+  });
+
+  describe("updateDocumentCategory", () => {
+    it("atualiza a cor de uma categoria existente (happy path)", async () => {
+      const created = await createDocumentCategory(
+        tenantAId,
+        `Categoria Cor Update ${randomUUID()}`
+      );
+      expect(created.ok).toBe(true);
+      if (!created.ok) return;
+      expect(created.category.color).toBe("gray");
+
+      const updated = await updateDocumentCategory(tenantAId, created.category.id, {
+        color: "purple",
+      });
+      expect(updated).not.toBeNull();
+      expect(updated!.color).toBe("purple");
+
+      const [reread] = await getDocumentCategories(tenantAId).then((rows) =>
+        rows.filter((c) => c.id === created.category.id)
+      );
+      expect(reread.color).toBe("purple");
+
+      await deleteDocumentCategory(tenantAId, created.category.id);
+    });
+
+    it("retorna null (no-op) para uma categoria inexistente", async () => {
+      const result = await updateDocumentCategory(tenantAId, NON_EXISTENT_ID, {
+        color: "red",
+      });
+      expect(result).toBeNull();
+    });
+
+    it("retorna null (no-op) e não altera a cor quando o tenantId não corresponde (isolamento cross-tenant)", async () => {
+      const created = await createDocumentCategory(
+        tenantAId,
+        `Categoria Cor Isolamento ${randomUUID()}`
+      );
+      expect(created.ok).toBe(true);
+      if (!created.ok) return;
+
+      const result = await updateDocumentCategory(tenantBId, created.category.id, {
+        color: "pink",
+      });
+      expect(result).toBeNull();
+
+      const stillGray = await getDocumentCategories(tenantAId).then((rows) =>
+        rows.find((c) => c.id === created.category.id)
+      );
+      expect(stillGray!.color).toBe("gray");
+
+      await deleteDocumentCategory(tenantAId, created.category.id);
     });
   });
 });
