@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:seed": "tsx src/db/seed.ts",
+    "test": "vitest run"
   },
   "dependencies": {
     "@astryxdesign/core": "^0.2.0",
