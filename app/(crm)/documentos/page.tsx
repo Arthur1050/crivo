@@ -3,6 +3,7 @@ import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { Link } from "@astryxdesign/core/Link";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Heading } from "@astryxdesign/core/Text";
+import { CategoryManagerDialog } from "@/src/components/documents/category-manager-dialog";
 import { DocumentsTable } from "@/src/components/documents/documents-table";
 import { DocumentsToolbar } from "@/src/components/documents/documents-toolbar";
 import { UploadDialog } from "@/src/components/documents/upload-dialog";
@@ -54,7 +55,10 @@ export default async function DocumentosPage({
         <StackItem size="fill">
           <Heading level={1}>Documentos</Heading>
         </StackItem>
-        <UploadDialog categories={categories} />
+        <HStack gap={2}>
+          <CategoryManagerDialog categories={categories} />
+          <UploadDialog categories={categories} />
+        </HStack>
       </HStack>
 
       {hasAnyDocuments && <DocumentsToolbar categories={categories} />}
