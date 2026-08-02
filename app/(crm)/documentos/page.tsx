@@ -1,27 +1,77 @@
-import { VStack } from "@astryxdesign/core/Stack";
-import { Heading, Text } from "@astryxdesign/core/Text";
+import NextLink from "next/link";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
-import { getDocuments, getTenant } from "@/src/server/data";
+import { Link } from "@astryxdesign/core/Link";
+import { VStack } from "@astryxdesign/core/Stack";
+import { Heading } from "@astryxdesign/core/Text";
+import { DocumentsTable } from "@/src/components/documents/documents-table";
+import { DocumentsToolbar } from "@/src/components/documents/documents-toolbar";
+import { getDocumentCategories, getDocuments, type Modality } from "@/src/server/data";
 import { getActiveTenantId } from "@/src/server/tenant";
 
-export default async function DocumentosPage() {
+const VALID_MODALITIES: readonly string[] = ["novo", "usado", "ambos"];
+
+function asModality(value: string | undefined): Modality | undefined {
+  return value && VALID_MODALITIES.includes(value) ? (value as Modality) : undefined;
+}
+
+interface DocumentosPageProps {
+  searchParams: Promise<{
+    modalidade?: string;
+    categoria?: string;
+    q?: string;
+  }>;
+}
+
+/**
+ * Listagem de documentos do tenant ativo (lote-2 — DOC-01): o RSC lê
+ * `searchParams` (modalidade/categoria/q) e consulta o banco já filtrado via
+ * `getActiveTenantId()`. Duas condições de vazio são distintas: tenant sem
+ * nenhum documento vs. filtro/busca sem resultado.
+ */
+export default async function DocumentosPage({
+  searchParams,
+}: DocumentosPageProps) {
+  const params = await searchParams;
   const tenantId = await getActiveTenantId();
-  const [tenant, documents] = await Promise.all([
-    getTenant(tenantId),
+
+  const modality = asModality(params.modalidade);
+  const categoryId = params.categoria || undefined;
+  const search = params.q?.trim() || undefined;
+  const hasActiveFilters = Boolean(modality || categoryId || search);
+
+  const [allDocuments, filteredDocuments, categories] = await Promise.all([
     getDocuments(tenantId),
+    getDocuments(tenantId, { modality, categoryId, search }),
+    getDocumentCategories(tenantId),
   ]);
 
+  const hasAnyDocuments = allDocuments.length > 0;
+
   return (
-    <VStack gap={4}>
+    <VStack gap={6}>
       <Heading level={1}>Documentos</Heading>
-      <Text type="body">Imobiliária ativa: {tenant?.name ?? "—"}</Text>
-      {documents.length === 0 ? (
+
+      {hasAnyDocuments && <DocumentsToolbar categories={categories} />}
+
+      {!hasAnyDocuments ? (
         <EmptyState
           title="Nenhum documento ainda"
           description="Documentos de contexto desta imobiliária aparecerão aqui."
         />
+      ) : filteredDocuments.length === 0 ? (
+        <EmptyState
+          title="Nenhum resultado encontrado"
+          description="Ajuste os filtros ou o termo de busca para ver mais documentos."
+          actions={
+            hasActiveFilters ? (
+              <Link as={NextLink} href="/documentos" isStandalone>
+                Limpar filtros
+              </Link>
+            ) : undefined
+          }
+        />
       ) : (
-        <Text type="body">{documents.length} documentos cadastrados</Text>
+        <DocumentsTable documents={filteredDocuments} categories={categories} />
       )}
     </VStack>
   );
