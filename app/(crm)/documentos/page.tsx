@@ -1,10 +1,11 @@
 import NextLink from "next/link";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { Link } from "@astryxdesign/core/Link";
-import { VStack } from "@astryxdesign/core/Stack";
+import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Heading } from "@astryxdesign/core/Text";
 import { DocumentsTable } from "@/src/components/documents/documents-table";
 import { DocumentsToolbar } from "@/src/components/documents/documents-toolbar";
+import { UploadDialog } from "@/src/components/documents/upload-dialog";
 import { getDocumentCategories, getDocuments, type Modality } from "@/src/server/data";
 import { getActiveTenantId } from "@/src/server/tenant";
 
@@ -49,7 +50,12 @@ export default async function DocumentosPage({
 
   return (
     <VStack gap={6}>
-      <Heading level={1}>Documentos</Heading>
+      <HStack vAlign="center">
+        <StackItem size="fill">
+          <Heading level={1}>Documentos</Heading>
+        </StackItem>
+        <UploadDialog categories={categories} />
+      </HStack>
 
       {hasAnyDocuments && <DocumentsToolbar categories={categories} />}
 
