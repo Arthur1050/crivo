@@ -79,11 +79,12 @@ describe("server actions", () => {
       expect(revalidatePath).toHaveBeenCalledWith("/configuracoes");
 
       // Reverte para não afetar o seed usado por outros testes/batches.
-      await updateTenantSettingsAction({
+      const revertResult = await updateTenantSettingsAction({
         name: original!.name,
         agentName: original!.agentName,
         supportedModality: original!.supportedModality,
       });
+      expect(revertResult.ok).toBe(true);
     });
 
     it("nome vazio (após trim) retorna { ok: false, error } e nada é persistido", async () => {
@@ -125,11 +126,12 @@ describe("server actions", () => {
       expect(activeAfter!.name).toBe("Tentativa Cross-Tenant");
       expect(otherAfter!.name).toBe(otherOriginal!.name);
 
-      await updateTenantSettingsAction({
+      const revertResult = await updateTenantSettingsAction({
         name: activeOriginal!.name,
         agentName: activeOriginal!.agentName,
         supportedModality: activeOriginal!.supportedModality,
       });
+      expect(revertResult.ok).toBe(true);
     });
   });
 

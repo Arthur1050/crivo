@@ -41,6 +41,12 @@ describe("server/data isolation", () => {
     expect(ids).toContain(tenantBId);
   });
 
+  it("getTenants retorna sempre a mesma ordem entre chamadas sucessivas (fallback de 'sem cookie' precisa ser determinístico)", async () => {
+    const first = await getTenants();
+    const second = await getTenants();
+    expect(second.map((t) => t.id)).toEqual(first.map((t) => t.id));
+  });
+
   describe("getTenant", () => {
     it("tenant A e tenant B são registros distintos (AC 2.2)", async () => {
       const tenantA = await getTenant(tenantAId);

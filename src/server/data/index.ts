@@ -1,5 +1,5 @@
 import "server-only";
-import { and, count, desc, eq, ilike } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike } from "drizzle-orm";
 import { db } from "../../db";
 import {
   brokers,
@@ -28,7 +28,7 @@ const ALL_MODALITIES: Modality[] = ["novo", "usado", "ambos"];
  * seletor de tenant (design.md — Camada de acesso a dados).
  */
 export async function getTenants(): Promise<Tenant[]> {
-  return db.select().from(tenants);
+  return db.select().from(tenants).orderBy(asc(tenants.createdAt), asc(tenants.id));
 }
 
 export async function getTenant(tenantId: string): Promise<Tenant | null> {
