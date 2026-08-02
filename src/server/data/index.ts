@@ -56,7 +56,10 @@ export async function getLeads(
         eq(leads.tenantId, tenantId),
         filters?.status ? eq(leads.status, filters.status) : undefined
       )
-    );
+    )
+    // Determinístico (lote-3 — lesson do Verifier L2, mesmo gap de
+    // getTenants): mais recentemente atualizado primeiro, id como desempate.
+    .orderBy(desc(leads.updatedAt), asc(leads.id));
 }
 
 export async function getLead(
@@ -92,7 +95,94 @@ export async function getMessages(
         eq(messages.tenantId, tenantId),
         eq(messages.conversationId, conversationId)
       )
-    );
+    )
+    // Determinístico (lote-3 — thread lida em ordem cronológica): mais antiga
+    // primeiro, id como desempate.
+    .orderBy(asc(messages.sentAt), asc(messages.id));
+}
+
+export interface ConversationSummaryLastMessage {
+  content: string;
+  sentAt: Date;
+  sender: Message["sender"];
+}
+
+export interface ConversationSummary {
+  id: string;
+  leadId: string;
+  leadName: string;
+  lastMessage: ConversationSummaryLastMessage | null;
+}
+
+/**
+ * Lista de conversas do tenant para a tela de Chats (lote-3 — CHAT-01):
+ * junta o nome do lead e a última mensagem de cada conversa. Conversas sem
+ * nenhuma mensagem entram com `lastMessage: null` e ficam por último na
+ * ordenação. Desempate determinístico por `conversations.createdAt DESC, id`
+ * (design.md — Data Models), aplicado tanto entre conversas com mensagem
+ * (sentAt empatado) quanto entre conversas sem mensagem.
+ */
+export async function getConversationSummaries(
+  tenantId: string
+): Promise<ConversationSummary[]> {
+  const [conversationRows, leadRows, messageRows] = await Promise.all([
+    db.select().from(conversations).where(eq(conversations.tenantId, tenantId)),
+    db
+      .select({ id: leads.id, name: leads.name })
+      .from(leads)
+      .where(eq(leads.tenantId, tenantId)),
+    // Ordenada ASC por sentAt/id: a última iteração do loop abaixo sobrescreve
+    // o Map com a mensagem mais recente de cada conversa.
+    db
+      .select()
+      .from(messages)
+      .where(eq(messages.tenantId, tenantId))
+      .orderBy(asc(messages.sentAt), asc(messages.id)),
+  ]);
+
+  const leadNameById = new Map(leadRows.map((lead) => [lead.id, lead.name]));
+
+  const lastMessageByConversation = new Map<string, Message>();
+  for (const message of messageRows) {
+    lastMessageByConversation.set(message.conversationId, message);
+  }
+
+  const entries = conversationRows.map((conversation) => {
+    const lastMessage = lastMessageByConversation.get(conversation.id) ?? null;
+    const summary: ConversationSummary = {
+      id: conversation.id,
+      leadId: conversation.leadId,
+      leadName: leadNameById.get(conversation.leadId) ?? "",
+      lastMessage: lastMessage
+        ? {
+            content: lastMessage.content,
+            sentAt: lastMessage.sentAt,
+            sender: lastMessage.sender,
+          }
+        : null,
+    };
+    return { summary, createdAt: conversation.createdAt };
+  });
+
+  entries.sort((a, b) => {
+    const aHasMessage = a.summary.lastMessage !== null;
+    const bHasMessage = b.summary.lastMessage !== null;
+    if (aHasMessage !== bHasMessage) return aHasMessage ? -1 : 1;
+
+    if (aHasMessage && bHasMessage) {
+      const sentAtDiff =
+        b.summary.lastMessage!.sentAt.getTime() -
+        a.summary.lastMessage!.sentAt.getTime();
+      if (sentAtDiff !== 0) return sentAtDiff;
+    }
+
+    const createdAtDiff = b.createdAt.getTime() - a.createdAt.getTime();
+    if (createdAtDiff !== 0) return createdAtDiff;
+
+    return a.summary.id < b.summary.id ? -1 : a.summary.id > b.summary.id ? 1 : 0;
+  });
+
+  return entries.map((entry) => entry.summary);
 }
 
 export interface DocumentFilters {
