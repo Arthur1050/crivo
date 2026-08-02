@@ -2,7 +2,12 @@ import { Card } from "@astryxdesign/core/Card";
 import { Grid } from "@astryxdesign/core/Grid";
 import { VStack } from "@astryxdesign/core/Stack";
 import { Heading, Text } from "@astryxdesign/core/Text";
-import { formatDurationMinutes, formatPercentInt } from "@/src/lib/format";
+import {
+  formatDurationMinutes,
+  formatPercentInt,
+  formatQualificationDelta,
+  formatResponseTimeDelta,
+} from "@/src/lib/format";
 import type { DashboardKpis } from "@/src/server/data";
 
 export interface KpiTilesBaseline {
@@ -36,7 +41,7 @@ export function KpiTiles({ kpis, baseline }: KpiTilesProps) {
       ? NO_BASELINE
       : kpis.avgFirstResponseMinutes === null
         ? `Baseline: ${formatDurationMinutes(baseline.baselineFirstResponseMinutes)}`
-        : deltaMinutesLine(
+        : formatResponseTimeDelta(
             kpis.avgFirstResponseMinutes,
             baseline.baselineFirstResponseMinutes
           );
@@ -51,7 +56,10 @@ export function KpiTiles({ kpis, baseline }: KpiTilesProps) {
       ? NO_BASELINE
       : kpis.qualificationRate === null
         ? `Baseline: ${baseline.baselineLeadToMeetingPct}%`
-        : deltaPercentLine(kpis.qualificationRate, baseline.baselineLeadToMeetingPct);
+        : formatQualificationDelta(
+            kpis.qualificationRate,
+            baseline.baselineLeadToMeetingPct
+          );
 
   return (
     <Grid columns={{ minWidth: 220, repeat: "fit" }} gap={4}>
@@ -95,26 +103,6 @@ export function KpiTiles({ kpis, baseline }: KpiTilesProps) {
       />
     </Grid>
   );
-}
-
-function deltaMinutesLine(currentMinutes: number, baselineMinutes: number): string {
-  const deltaMinutes = Math.round(currentMinutes) - Math.round(baselineMinutes);
-  const baselineLabel = formatDurationMinutes(baselineMinutes);
-  if (deltaMinutes === 0) {
-    return `No baseline (${baselineLabel})`;
-  }
-  const direction = deltaMinutes < 0 ? "mais rápido" : "mais lento";
-  return `${formatDurationMinutes(Math.abs(deltaMinutes))} ${direction} que o baseline (${baselineLabel})`;
-}
-
-function deltaPercentLine(currentFraction: number, baselinePct: number): string {
-  const currentPct = Math.round(currentFraction * 100);
-  const deltaPct = currentPct - baselinePct;
-  if (deltaPct === 0) {
-    return `No baseline (${baselinePct}%)`;
-  }
-  const direction = deltaPct > 0 ? "acima" : "abaixo";
-  return `${Math.abs(deltaPct)}pp ${direction} do baseline (${baselinePct}%)`;
 }
 
 interface KpiTileProps {

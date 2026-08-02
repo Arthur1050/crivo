@@ -66,3 +66,39 @@ export function formatDurationMinutes(totalMinutes: number): string {
 export function formatPercentInt(fraction: number): string {
   return `${Math.round(fraction * 100)}%`;
 }
+
+/**
+ * Compara a média de 1ª resposta do período com o baseline pré-piloto do
+ * tenant (lote-4 — DASH-05 AC1): delta em minutos e direção (mais rápido
+ * quando o período atual é menor que o baseline).
+ */
+export function formatResponseTimeDelta(
+  currentMinutes: number,
+  baselineMinutes: number
+): string {
+  const deltaMinutes = Math.round(currentMinutes) - Math.round(baselineMinutes);
+  const baselineLabel = formatDurationMinutes(baselineMinutes);
+  if (deltaMinutes === 0) {
+    return `No baseline (${baselineLabel})`;
+  }
+  const direction = deltaMinutes < 0 ? "mais rápido" : "mais lento";
+  return `${formatDurationMinutes(Math.abs(deltaMinutes))} ${direction} que o baseline (${baselineLabel})`;
+}
+
+/**
+ * Compara a taxa de qualificação do período com o baseline lead→reunião do
+ * tenant (lote-4 — DASH-05 AC1, spec.md assumption "Comparação de taxa com
+ * baseline"): delta em pontos percentuais e direção.
+ */
+export function formatQualificationDelta(
+  currentFraction: number,
+  baselinePct: number
+): string {
+  const currentPct = Math.round(currentFraction * 100);
+  const deltaPct = currentPct - baselinePct;
+  if (deltaPct === 0) {
+    return `No baseline (${baselinePct}%)`;
+  }
+  const direction = deltaPct > 0 ? "acima" : "abaixo";
+  return `${Math.abs(deltaPct)}pp ${direction} do baseline (${baselinePct}%)`;
+}

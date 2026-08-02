@@ -3,6 +3,8 @@ import {
   formatCurrencyBRL,
   formatDurationMinutes,
   formatPercentInt,
+  formatQualificationDelta,
+  formatResponseTimeDelta,
 } from "../format";
 
 // Intl.NumberFormat("pt-BR", { style: "currency" }) separa "R$" do valor com
@@ -65,5 +67,51 @@ describe("formatPercentInt", () => {
   it("arredonda para o inteiro mais próximo", () => {
     expect(formatPercentInt(0.665)).toBe("67%");
     expect(formatPercentInt(0.664)).toBe("66%");
+  });
+});
+
+// lote-4 — DASH-05 AC1: delta do tile de 1ª resposta vs. baseline pré-piloto.
+describe("formatResponseTimeDelta", () => {
+  it("mostra 'mais rápido' quando o período atual é menor que o baseline", () => {
+    expect(formatResponseTimeDelta(20, 180)).toBe(
+      "2h 40min mais rápido que o baseline (3h 0min)"
+    );
+  });
+
+  it("mostra 'mais lento' quando o período atual é maior que o baseline", () => {
+    expect(formatResponseTimeDelta(50, 30)).toBe(
+      "20min mais lento que o baseline (30min)"
+    );
+  });
+
+  it("mostra 'No baseline' quando o delta arredondado é zero", () => {
+    expect(formatResponseTimeDelta(30, 30)).toBe("No baseline (30min)");
+  });
+
+  it("arredonda os dois lados antes de calcular o delta", () => {
+    expect(formatResponseTimeDelta(30.4, 29.6)).toBe("No baseline (30min)");
+  });
+});
+
+// lote-4 — DASH-05 AC1: delta do tile de qualificação vs. baseline lead→reunião.
+describe("formatQualificationDelta", () => {
+  it("mostra 'acima' quando a taxa atual supera o baseline", () => {
+    expect(formatQualificationDelta(0.67, 50)).toBe(
+      "17pp acima do baseline (50%)"
+    );
+  });
+
+  it("mostra 'abaixo' quando a taxa atual fica abaixo do baseline", () => {
+    expect(formatQualificationDelta(0.3, 50)).toBe(
+      "20pp abaixo do baseline (50%)"
+    );
+  });
+
+  it("mostra 'No baseline' quando o delta arredondado é zero", () => {
+    expect(formatQualificationDelta(0.5, 50)).toBe("No baseline (50%)");
+  });
+
+  it("arredonda a fração atual para percentual inteiro antes do delta", () => {
+    expect(formatQualificationDelta(0.504, 50)).toBe("No baseline (50%)");
   });
 });
