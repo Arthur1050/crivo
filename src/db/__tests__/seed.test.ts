@@ -227,6 +227,75 @@ describe("db/seed", () => {
     expect(withoutCategory.length).toBeGreaterThan(0);
   });
 
+  it("ambos os tenants têm baseline pré-piloto preenchido, com valores distintos entre si (lote-4 — DASH-05.4)", async () => {
+    const allTenants = await db.select().from(tenants);
+    expect(allTenants).toHaveLength(2);
+
+    for (const tenant of allTenants) {
+      expect(tenant.baselineLeadsPerMonth).not.toBeNull();
+      expect(tenant.baselineFirstResponseMinutes).not.toBeNull();
+      expect(tenant.baselineLeadToMeetingPct).not.toBeNull();
+    }
+
+    const [tenantA, tenantB] = allTenants;
+    const sameOnAllThree =
+      tenantA.baselineLeadsPerMonth === tenantB.baselineLeadsPerMonth &&
+      tenantA.baselineFirstResponseMinutes ===
+        tenantB.baselineFirstResponseMinutes &&
+      tenantA.baselineLeadToMeetingPct === tenantB.baselineLeadToMeetingPct;
+    expect(sameOnAllThree).toBe(false);
+  });
+
+  it("cada tenant tem leads com firstContactAt nas janelas de 7, 30 e 90 dias relativas a agora (lote-4 — datas espalhadas)", async () => {
+    const allTenants = await db.select().from(tenants);
+    expect(allTenants).toHaveLength(2);
+
+    const now = Date.now();
+    const DAY = 86400000;
+
+    for (const tenant of allTenants) {
+      const tenantLeads = await db
+        .select()
+        .from(leads)
+        .where(eq(leads.tenantId, tenant.id));
+      expect(tenantLeads.length).toBeGreaterThan(0);
+
+      const ageDays = tenantLeads.map(
+        (l) => (now - l.firstContactAt.getTime()) / DAY
+      );
+
+      expect(ageDays.some((age) => age >= 0 && age <= 7)).toBe(true);
+      expect(ageDays.some((age) => age > 7 && age <= 30)).toBe(true);
+      expect(ageDays.some((age) => age > 30 && age <= 90)).toBe(true);
+    }
+  });
+
+  it("firstResponseAt nunca é anterior a firstContactAt quando preenchido (lote-4 — coerência temporal)", async () => {
+    const allLeads = await db.select().from(leads);
+    expect(allLeads.length).toBeGreaterThan(0);
+
+    for (const lead of allLeads) {
+      if (lead.firstResponseAt !== null) {
+        expect(lead.firstResponseAt.getTime()).toBeGreaterThanOrEqual(
+          lead.firstContactAt.getTime()
+        );
+      }
+    }
+  });
+
+  it("meetingAt só é preenchido em leads qualificado_agendado (lote-4 — coerência temporal)", async () => {
+    const allLeads = await db.select().from(leads);
+    expect(allLeads.length).toBeGreaterThan(0);
+
+    for (const lead of allLeads) {
+      if (lead.status === "qualificado_agendado") {
+        expect(lead.meetingAt).not.toBeNull();
+      } else {
+        expect(lead.meetingAt).toBeNull();
+      }
+    }
+  });
+
   it("rejeita valor fora do enum lead_status na escrita (AC 1.6)", async () => {
     const [tenant] = await db.select().from(tenants).limit(1);
     expect(tenant).toBeDefined();

@@ -136,6 +136,11 @@ interface TenantDef {
   name: string;
   agentName: string;
   supportedModality: Modality;
+  // Baseline pré-piloto mockado (Lote 4 — DASH-05). Valores distintos e
+  // plausíveis por tenant: atendimento manual antes do agente.
+  baselineLeadsPerMonth: number;
+  baselineFirstResponseMinutes: number;
+  baselineLeadToMeetingPct: number;
   brokers: { key: string; name: string; phone: string; email: string }[];
 }
 
@@ -145,6 +150,9 @@ const TENANT_DEFS: TenantDef[] = [
     name: "Imobiliária Vale do Uberaba",
     agentName: "Bia",
     supportedModality: "ambos",
+    baselineLeadsPerMonth: 16,
+    baselineFirstResponseMinutes: 300,
+    baselineLeadToMeetingPct: 18,
     brokers: [
       {
         key: "b1",
@@ -171,6 +179,9 @@ const TENANT_DEFS: TenantDef[] = [
     name: "Triângulo Imóveis",
     agentName: "Lucas",
     supportedModality: "ambos",
+    baselineLeadsPerMonth: 22,
+    baselineFirstResponseMinutes: 180,
+    baselineLeadToMeetingPct: 27,
     brokers: [
       {
         key: "b1",
@@ -229,6 +240,17 @@ function buildLeadDefs(tenantKey: string): LeadDef[] {
 function hashIndex(...parts: string[]): number {
   const hash = createHash("sha256").update(parts.join(":")).digest();
   return hash.readUInt32BE(0);
+}
+
+// Distância em dias (0..90) de firstContactAt até o momento do seed, para o
+// lead de índice `i` dentre `total` leads do tenant. A fórmula é fixa
+// (mesmo `i` sempre produz o mesmo offset), mas a âncora ("agora") é
+// relativa ao momento em que o seed roda — design.md ("Duas fontes de
+// agora"). Distribuição linear de 0 (hoje) a 90 (há ~90 dias) garante leads
+// nas janelas de 7/30/90 dias em ambos os tenants (mesma sequência de
+// status/índice em cada um).
+function offsetDaysFor(i: number, total: number): number {
+  return Math.round((i * 90) / (total - 1));
 }
 
 function buildQualification(seedIndex: number, modality: Modality) {
@@ -433,6 +455,12 @@ function documentDefsFor(tenantKey: string) {
 }
 
 export async function runSeed(): Promise<void> {
+  // Âncora única de "agora" para todo o seed — todas as datas relativas
+  // (firstContactAt e derivadas) partem deste instante (design.md — "Duas
+  // fontes de agora"; datas espalhadas pelos últimos ~90 dias relativos ao
+  // momento do seed, não a uma data absoluta fixa).
+  const seedNow = new Date();
+
   // Monta todas as linhas em memória primeiro; a transação abaixo faz apenas
   // deletes + inserts em lote (poucos round-trips de rede até o Neon, em vez
   // de uma escrita por linha).
@@ -451,6 +479,9 @@ export async function runSeed(): Promise<void> {
       name: tenantDef.name,
       agentName: tenantDef.agentName,
       supportedModality: tenantDef.supportedModality,
+      baselineLeadsPerMonth: tenantDef.baselineLeadsPerMonth,
+      baselineFirstResponseMinutes: tenantDef.baselineFirstResponseMinutes,
+      baselineLeadToMeetingPct: tenantDef.baselineLeadToMeetingPct,
     });
 
     const categoryIds = new Map<string, string>();
@@ -479,12 +510,14 @@ export async function runSeed(): Promise<void> {
     }
 
     const leadDefs = buildLeadDefs(tenantDef.key);
-    const baseContactDate = Date.UTC(2026, 6, 1); // 2026-07-01
 
     for (const [i, leadDef] of leadDefs.entries()) {
       const leadId = id(`lead:${tenantDef.key}:${i}`);
       const brokerId = brokerIds[i % brokerIds.length];
-      const firstContactAt = new Date(baseContactDate + i * 86400000);
+      const offsetDays = offsetDaysFor(i, leadDefs.length);
+      const firstContactAt = new Date(
+        seedNow.getTime() - offsetDays * 86400000
+      );
       const firstResponseAt = new Date(firstContactAt.getTime() + 15 * 60000);
 
       const isQualified = leadDef.status === "qualificado_agendado";
@@ -500,6 +533,24 @@ export async function runSeed(): Promise<void> {
       const escalationReason = isEscalated
         ? ESCALATION_REASONS[i % ESCALATION_REASONS.length]
         : null;
+      // Só leads qualificado_agendado têm reunião marcada — coerente com o
+      // resumo executivo, que só é preenchido no mesmo caso.
+      const meetingAt = isQualified
+        ? new Date(firstContactAt.getTime() + 3 * 86400000)
+        : null;
+      // Última atualização do registro = evento mais recente conhecido do
+      // lead (reunião marcada, senão a 1ª resposta). Mantém created_at
+      // (nascimento do lead) e updated_at coerentes com firstContactAt em
+      // vez do "agora" fixo do defaultNow() do schema. meetingAt pode cair
+      // no futuro (reunião agendada) — updated_at nunca deve ultrapassar o
+      // momento real do seed, senão registros parecem "modificados no
+      // futuro" (quebra o invariante de outras camadas de que updatedAt
+      // avança a partir de now() em mutações subsequentes).
+      const updatedAtCandidate = meetingAt ?? firstResponseAt;
+      const updatedAt =
+        updatedAtCandidate.getTime() > seedNow.getTime()
+          ? seedNow
+          : updatedAtCandidate;
 
       leadRows.push({
         id: leadId,
@@ -520,12 +571,12 @@ export async function runSeed(): Promise<void> {
           ? buildExecutiveSummary(leadDef.name, leadDef.modality, qualification!)
           : null,
         escalationReason,
-        meetingAt: isQualified
-          ? new Date(firstContactAt.getTime() + 3 * 86400000)
-          : null,
+        meetingAt,
         meetingAttended: null,
         firstContactAt,
         firstResponseAt,
+        createdAt: firstContactAt,
+        updatedAt,
       });
 
       const conversationId = id(`conversation:${tenantDef.key}:${i}`);
