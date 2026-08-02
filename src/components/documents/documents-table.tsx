@@ -9,6 +9,9 @@ import { Table, pixel, proportional } from "@astryxdesign/core/Table";
 import type { TableColumn } from "@astryxdesign/core/Table";
 import { Text } from "@astryxdesign/core/Text";
 import { Timestamp } from "@astryxdesign/core/Timestamp";
+import { Token } from "@astryxdesign/core/Token";
+import { DeleteIcon } from "@/src/components/icons/delete";
+import { SquarePenIcon } from "@/src/components/icons/square-pen";
 import { EditDocumentDialog } from "@/src/components/documents/edit-document-dialog";
 import { formatFileSize } from "@/src/lib/format";
 import { deleteDocumentAction } from "@/src/server/actions/documents";
@@ -32,7 +35,7 @@ interface DocumentRow extends Record<string, unknown> {
   id: string;
   name: string;
   modality: Modality;
-  categoryName: string;
+  category: DocumentCategory | null;
   sizeBytes: bigint;
   uploadedAt: string;
   document: Document;
@@ -56,17 +59,17 @@ export function DocumentsTable({ documents, categories }: DocumentsTableProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const categoryNameById = new Map(
-    categories.map((category) => [category.id, category.name])
+  const categoryById = new Map(
+    categories.map((category) => [category.id, category])
   );
 
   const rows: DocumentRow[] = documents.map((document) => ({
     id: document.id,
     name: document.name,
     modality: document.modality,
-    categoryName: document.categoryId
-      ? categoryNameById.get(document.categoryId) ?? NO_CATEGORY_LABEL
-      : NO_CATEGORY_LABEL,
+    category: document.categoryId
+      ? categoryById.get(document.categoryId) ?? null
+      : null,
     sizeBytes: document.sizeBytes,
     uploadedAt: document.uploadedAt.toISOString(),
     document,
@@ -106,9 +109,17 @@ export function DocumentsTable({ documents, categories }: DocumentsTableProps) {
       ),
     },
     {
-      key: "categoryName",
+      key: "category",
       header: "Categoria",
       width: proportional(1),
+      renderCell: (row) =>
+        row.category ? (
+          <Token label={row.category.name} color={row.category.color} size="sm" />
+        ) : (
+          <Text type="body" color="secondary">
+            {NO_CATEGORY_LABEL}
+          </Text>
+        ),
     },
     {
       key: "sizeBytes",
@@ -125,18 +136,24 @@ export function DocumentsTable({ documents, categories }: DocumentsTableProps) {
     {
       key: "actions",
       header: "",
-      width: pixel(72),
+      // 140px (não os 72px originais) — o botão "Ações" com label + chevron
+      // precisa de ~87px e transbordava a coluna, encostando na borda direita
+      // da área de conteúdo (lote-3 — UI-01); a largura extra também garante
+      // o respiro visível pedido no AC.
+      width: pixel(140),
       renderCell: (row) => (
         <DropdownMenu
           button={{ label: "Ações", variant: "ghost", size: "sm" }}
           items={[
             {
               label: "Editar",
+              icon: <SquarePenIcon size={16} />,
               onClick: () => setEditingDocument(row.document),
             },
             { type: "divider" },
             {
               label: "Excluir",
+              icon: <DeleteIcon size={16} />,
               onClick: () => {
                 setDeleteError(null);
                 setDeletingDocument(row.document);

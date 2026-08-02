@@ -6,9 +6,10 @@ import { Banner } from "@astryxdesign/core/Banner";
 import { Button } from "@astryxdesign/core/Button";
 import { Dialog, DialogHeader } from "@astryxdesign/core/Dialog";
 import { Layout, LayoutContent, LayoutFooter } from "@astryxdesign/core/Layout";
-import { Selector } from "@astryxdesign/core/Selector";
+import { Selector, SelectorOption } from "@astryxdesign/core/Selector";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { TextInput } from "@astryxdesign/core/TextInput";
+import { Token } from "@astryxdesign/core/Token";
 import { updateDocumentAction } from "@/src/server/actions/documents";
 import type { Document, DocumentCategory, Modality } from "@/src/server/data";
 import { validateModality, validateName } from "@/src/server/validation";
@@ -172,6 +173,20 @@ function EditDocumentForm({ document, categories, onClose }: EditDocumentFormPro
                 value: category.id,
                 label: category.name,
               }))}
+              renderOption={(option) => {
+                const category = categories.find((c) => c.id === option.value);
+                return (
+                  <SelectorOption
+                    label={
+                      category ? (
+                        <Token label={category.name} color={category.color} size="sm" />
+                      ) : (
+                        option.label
+                      )
+                    }
+                  />
+                );
+              }}
               isOptional
             />
           </VStack>

@@ -6,16 +6,21 @@ import { Banner } from "@astryxdesign/core/Banner";
 import { Button } from "@astryxdesign/core/Button";
 import { Dialog, DialogHeader } from "@astryxdesign/core/Dialog";
 import { FileInput } from "@astryxdesign/core/FileInput";
+import { Icon } from "@astryxdesign/core/Icon";
 import { Layout, LayoutContent, LayoutFooter } from "@astryxdesign/core/Layout";
-import { Selector } from "@astryxdesign/core/Selector";
+import { Selector, SelectorOption } from "@astryxdesign/core/Selector";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { TextInput } from "@astryxdesign/core/TextInput";
+import { Token } from "@astryxdesign/core/Token";
+import { PlusIcon } from "@/src/components/icons/plus";
+import { UploadIcon } from "@/src/components/icons/upload";
 import {
   createDocumentAction,
   createDocumentCategoryAction,
 } from "@/src/server/actions/documents";
-import type { DocumentCategory, Modality } from "@/src/server/data";
+import type { CategoryColor, DocumentCategory, Modality } from "@/src/server/data";
 import {
+  CATEGORY_COLOR_PALETTE,
   MAX_FILE_SIZE_BYTES,
   validateFileSize,
   validateMimeType,
@@ -78,6 +83,7 @@ export function UploadDialog({ categories }: UploadDialogProps) {
 
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryColor, setNewCategoryColor] = useState<CategoryColor>("gray");
   const [categoryError, setCategoryError] = useState<string | undefined>();
   const [pendingCategoryName, setPendingCategoryName] = useState<string | null>(
     null
@@ -122,6 +128,7 @@ export function UploadDialog({ categories }: UploadDialogProps) {
     setBanner(null);
     setIsCreatingCategory(false);
     setNewCategoryName("");
+    setNewCategoryColor("gray");
     setCategoryError(undefined);
   }
 
@@ -207,6 +214,7 @@ export function UploadDialog({ categories }: UploadDialogProps) {
     setIsCreatingCategoryPending(true);
     const result = await createDocumentCategoryAction({
       name: newCategoryName,
+      color: newCategoryColor,
     });
     setIsCreatingCategoryPending(false);
 
@@ -218,6 +226,7 @@ export function UploadDialog({ categories }: UploadDialogProps) {
     setPendingCategoryName(newCategoryName.trim());
     setIsCreatingCategory(false);
     setNewCategoryName("");
+    setNewCategoryColor("gray");
     router.refresh();
   }
 
@@ -226,6 +235,7 @@ export function UploadDialog({ categories }: UploadDialogProps) {
       <Button
         label="Novo documento"
         variant="primary"
+        icon={<UploadIcon size={16} />}
         onClick={() => setIsOpen(true)}
       />
       <Dialog isOpen={isOpen} onOpenChange={handleOpenChange} purpose="form" width={480}>
@@ -294,43 +304,77 @@ export function UploadDialog({ categories }: UploadDialogProps) {
                       value: category.id,
                       label: category.name,
                     }))}
+                    renderOption={(option) => {
+                      const category = categories.find((c) => c.id === option.value);
+                      return (
+                        <SelectorOption
+                          label={
+                            category ? (
+                              <Token label={category.name} color={category.color} size="sm" />
+                            ) : (
+                              option.label
+                            )
+                          }
+                        />
+                      );
+                    }}
                     isOptional
                   />
 
                   {isCreatingCategory ? (
-                    <HStack gap={2} vAlign="end">
-                      <TextInput
-                        label="Nova categoria"
-                        value={newCategoryName}
-                        onChange={setNewCategoryName}
-                        status={
-                          categoryError
-                            ? { type: "error", message: categoryError }
-                            : undefined
-                        }
-                      />
-                      <Button
-                        label="Criar"
-                        variant="secondary"
-                        isLoading={isCreatingCategoryPending}
-                        clickAction={handleCreateCategory}
-                      />
-                      <Button
-                        label="Cancelar"
-                        variant="ghost"
-                        onClick={() => {
-                          setIsCreatingCategory(false);
-                          setNewCategoryName("");
-                          setCategoryError(undefined);
-                        }}
-                      />
-                    </HStack>
+                    <VStack gap={2}>
+                      <HStack gap={2} vAlign="end">
+                        <TextInput
+                          label="Nova categoria"
+                          value={newCategoryName}
+                          onChange={setNewCategoryName}
+                          status={
+                            categoryError
+                              ? { type: "error", message: categoryError }
+                              : undefined
+                          }
+                        />
+                        <Button
+                          label="Criar"
+                          variant="secondary"
+                          isLoading={isCreatingCategoryPending}
+                          clickAction={handleCreateCategory}
+                        />
+                        <Button
+                          label="Cancelar"
+                          variant="ghost"
+                          onClick={() => {
+                            setIsCreatingCategory(false);
+                            setNewCategoryName("");
+                            setNewCategoryColor("gray");
+                            setCategoryError(undefined);
+                          }}
+                        />
+                      </HStack>
+                      <HStack gap={1} wrap="wrap">
+                        {CATEGORY_COLOR_PALETTE.map((color) => (
+                          <Token
+                            key={color}
+                            label={color}
+                            color={color}
+                            size="sm"
+                            onClick={() => setNewCategoryColor(color)}
+                            endContent={
+                              newCategoryColor === color ? (
+                                <Icon icon="check" size="xsm" />
+                              ) : undefined
+                            }
+                          />
+                        ))}
+                      </HStack>
+                    </VStack>
                   ) : (
                     <HStack>
                       <Button
                         label="Nova categoria"
                         variant="ghost"
                         size="sm"
+                        icon={<PlusIcon size={16} />}
                         onClick={() => setIsCreatingCategory(true)}
                       />
                     </HStack>

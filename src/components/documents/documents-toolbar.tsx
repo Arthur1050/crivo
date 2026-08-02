@@ -2,9 +2,10 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Selector } from "@astryxdesign/core/Selector";
+import { Selector, SelectorOption } from "@astryxdesign/core/Selector";
 import { HStack } from "@astryxdesign/core/Stack";
 import { TextInput } from "@astryxdesign/core/TextInput";
+import { Token } from "@astryxdesign/core/Token";
 import type { DocumentCategory, Modality } from "@/src/server/data";
 
 const MODALITY_OPTIONS: { value: Modality; label: string }[] = [
@@ -89,6 +90,20 @@ export function DocumentsToolbar({ categories }: DocumentsToolbarProps) {
           value: category.id,
           label: category.name,
         }))}
+        renderOption={(option) => {
+          const category = categories.find((c) => c.id === option.value);
+          return (
+            <SelectorOption
+              label={
+                category ? (
+                  <Token label={category.name} color={category.color} size="sm" />
+                ) : (
+                  option.label
+                )
+              }
+            />
+          );
+        }}
         width={200}
       />
     </HStack>
