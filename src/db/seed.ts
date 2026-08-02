@@ -33,6 +33,18 @@ type LeadStatus =
   | "em_qualificacao"
   | "qualificado_agendado"
   | "escalado_humano";
+// 1:1 com o enum `category_color` do schema (paleta fixa Token da Astryx).
+type CategoryColor =
+  | "red"
+  | "orange"
+  | "yellow"
+  | "green"
+  | "teal"
+  | "cyan"
+  | "blue"
+  | "purple"
+  | "pink"
+  | "gray";
 
 const REGIONS = [
   "Abadia",
@@ -372,12 +384,17 @@ function buildMessages(
 interface CategoryDef {
   key: string;
   name: string;
+  color: CategoryColor;
 }
 
+// Cores fixas e determinísticas por categoria — cobre o invariante do lote 3
+// (CAT-01 fixture): ≥2 cores distintas por tenant, com pelo menos uma 'gray'
+// (mesmas 3 categorias são semeadas em ambos os tenants, então o invariante
+// vale para os dois).
 const CATEGORY_DEFS: CategoryDef[] = [
-  { key: "tabelas-precos", name: "Tabelas de Preços" },
-  { key: "contratos", name: "Contratos" },
-  { key: "guias", name: "Guias e Manuais" },
+  { key: "tabelas-precos", name: "Tabelas de Preços", color: "blue" },
+  { key: "contratos", name: "Contratos", color: "green" },
+  { key: "guias", name: "Guias e Manuais", color: "gray" },
 ];
 
 function documentDefsFor(tenantKey: string) {
@@ -444,6 +461,7 @@ export async function runSeed(): Promise<void> {
         id: categoryId,
         tenantId,
         name: c.name,
+        color: c.color,
       });
     }
 

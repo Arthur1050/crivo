@@ -19,6 +19,20 @@ const LEAD_STATUSES = [
   "escalado_humano",
 ] as const;
 
+// 1:1 com o enum `category_color` do schema (paleta fixa Token da Astryx).
+const CATEGORY_COLOR_PALETTE = [
+  "red",
+  "orange",
+  "yellow",
+  "green",
+  "teal",
+  "cyan",
+  "blue",
+  "purple",
+  "pink",
+  "gray",
+] as const;
+
 async function snapshotIds() {
   const [t, b, cat, l, c, m, d] = await Promise.all([
     db.select({ id: tenants.id }).from(tenants),
@@ -160,6 +174,47 @@ describe("db/seed", () => {
     const namesB = categoriesByTenant.get(tenantB.id)!;
     const repeatedNames = namesA.filter((name) => namesB.includes(name));
     expect(repeatedNames.length).toBeGreaterThan(0);
+  });
+
+  it("toda categoria semeada tem uma cor da paleta fixa (lote-3 — CAT-01)", async () => {
+    const allCategories = await db.select().from(documentCategories);
+    expect(allCategories.length).toBeGreaterThan(0);
+
+    for (const category of allCategories) {
+      expect(CATEGORY_COLOR_PALETTE).toContain(category.color);
+    }
+  });
+
+  it("cada tenant tem ≥2 cores distintas entre suas categorias, incluindo pelo menos uma 'gray' (lote-3 — CAT-01 fixture)", async () => {
+    const allTenants = await db.select().from(tenants);
+    expect(allTenants).toHaveLength(2);
+
+    for (const tenant of allTenants) {
+      const rows = await db
+        .select()
+        .from(documentCategories)
+        .where(eq(documentCategories.tenantId, tenant.id));
+      expect(rows.length).toBeGreaterThan(0);
+
+      const distinctColors = new Set(rows.map((r) => r.color));
+      expect(distinctColors.size).toBeGreaterThanOrEqual(2);
+      expect(distinctColors.has("gray")).toBe(true);
+    }
+  });
+
+  it("rodar o seed novamente mantém as mesmas cores de categoria (idempotência de cor)", async () => {
+    const before = await db
+      .select({ id: documentCategories.id, color: documentCategories.color })
+      .from(documentCategories);
+    await runSeed();
+    const after = await db
+      .select({ id: documentCategories.id, color: documentCategories.color })
+      .from(documentCategories);
+
+    const beforeById = new Map(before.map((r) => [r.id, r.color]));
+    for (const row of after) {
+      expect(row.color).toBe(beforeById.get(row.id));
+    }
   });
 
   it("documentos existem tanto com quanto sem categoria atribuída (lote-2 — DOC-04)", async () => {
