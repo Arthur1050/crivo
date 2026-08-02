@@ -7,6 +7,7 @@ import { Button } from "@astryxdesign/core/Button";
 import { Selector } from "@astryxdesign/core/Selector";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { TextInput } from "@astryxdesign/core/TextInput";
+import { CheckIcon } from "@/src/components/icons/check";
 import { updateTenantSettingsAction } from "@/src/server/actions/settings";
 import type { Modality, Tenant } from "@/src/server/data";
 import { validateModality, validateName } from "@/src/server/validation";
@@ -145,7 +146,12 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
       />
 
       <HStack hAlign="end">
-        <Button label="Salvar" variant="primary" clickAction={handleSave} />
+        <Button
+          label="Salvar"
+          variant="primary"
+          icon={<CheckIcon size={16} />}
+          clickAction={handleSave}
+        />
       </HStack>
     </VStack>
   );
