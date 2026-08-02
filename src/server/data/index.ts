@@ -169,3 +169,169 @@ export async function getDocumentSample(
 
   return { recent, countsByModality };
 }
+
+// --- Writes (lote-2 — CONF-01/02, DOC-01/02/04/05/06/07) ---------------
+//
+// Toda escrita abaixo filtra por tenantId no WHERE — nunca só pelo id do
+// registro — para que um id vazado/adivinhado de outro tenant nunca seja
+// afetado por engano.
+
+const POSTGRES_UNIQUE_VIOLATION = "23505";
+
+function pgErrorCode(err: unknown): string | undefined {
+  if (typeof err !== "object" || err === null) return undefined;
+  const record = err as { code?: unknown; cause?: unknown };
+  if (typeof record.code === "string") return record.code;
+  // drizzle-orm envolve o erro do driver `pg` em `DrizzleQueryError`,
+  // preservando o erro original em `.cause` (que tem `.code`).
+  if (record.cause !== undefined) return pgErrorCode(record.cause);
+  return undefined;
+}
+
+function isUniqueViolation(err: unknown): boolean {
+  return pgErrorCode(err) === POSTGRES_UNIQUE_VIOLATION;
+}
+
+export async function updateTenantSettings(
+  tenantId: string,
+  updates: { name: string; agentName: string; supportedModality: Modality }
+): Promise<Tenant | null> {
+  const rows = await db
+    .update(tenants)
+    .set({
+      name: updates.name,
+      agentName: updates.agentName,
+      supportedModality: updates.supportedModality,
+    })
+    .where(eq(tenants.id, tenantId))
+    .returning();
+  return rows[0] ?? null;
+}
+
+export interface CreateDocumentInput {
+  name: string;
+  mimeType: string;
+  sizeBytes: number | bigint;
+  modality: Modality;
+  categoryId?: string | null;
+}
+
+export async function createDocument(
+  tenantId: string,
+  input: CreateDocumentInput
+): Promise<Document> {
+  const rows = await db
+    .insert(documents)
+    .values({
+      tenantId,
+      name: input.name,
+      mimeType: input.mimeType,
+      sizeBytes:
+        typeof input.sizeBytes === "bigint"
+          ? input.sizeBytes
+          : BigInt(Math.trunc(input.sizeBytes)),
+      modality: input.modality,
+      categoryId: input.categoryId ?? null,
+    })
+    .returning();
+  return rows[0];
+}
+
+export interface UpdateDocumentInput {
+  name: string;
+  modality: Modality;
+  categoryId?: string | null;
+}
+
+/**
+ * Retorna `null` quando nenhuma linha corresponde a `tenantId` + `documentId`
+ * (documento inexistente OU pertencente a outro tenant) — sinal explícito de
+ * "não encontrado", nunca confundido com sucesso silencioso.
+ */
+export async function updateDocument(
+  tenantId: string,
+  documentId: string,
+  updates: UpdateDocumentInput
+): Promise<Document | null> {
+  const setValues: Partial<typeof documents.$inferInsert> = {
+    name: updates.name,
+    modality: updates.modality,
+  };
+  if ("categoryId" in updates) {
+    setValues.categoryId = updates.categoryId ?? null;
+  }
+
+  const rows = await db
+    .update(documents)
+    .set(setValues)
+    .where(and(eq(documents.tenantId, tenantId), eq(documents.id, documentId)))
+    .returning();
+  return rows[0] ?? null;
+}
+
+/**
+ * Retorna `false` (no-op) quando nenhuma linha corresponde a `tenantId` +
+ * `documentId` — nunca lança erro para um id inexistente/de outro tenant.
+ */
+export async function deleteDocument(
+  tenantId: string,
+  documentId: string
+): Promise<boolean> {
+  const rows = await db
+    .delete(documents)
+    .where(and(eq(documents.tenantId, tenantId), eq(documents.id, documentId)))
+    .returning({ id: documents.id });
+  return rows.length > 0;
+}
+
+export type CreateDocumentCategoryResult =
+  | { ok: true; category: DocumentCategory }
+  | { ok: false; error: string };
+
+/**
+ * Traduz a violação do índice único (nome duplicado, case-insensitive, no
+ * mesmo tenant) num erro de domínio — nunca deixa o erro bruto do Postgres
+ * vazar para quem chama.
+ */
+export async function createDocumentCategory(
+  tenantId: string,
+  name: string
+): Promise<CreateDocumentCategoryResult> {
+  try {
+    const rows = await db
+      .insert(documentCategories)
+      .values({ tenantId, name })
+      .returning();
+    return { ok: true, category: rows[0] };
+  } catch (err) {
+    if (isUniqueViolation(err)) {
+      return {
+        ok: false,
+        error: "Já existe uma categoria com esse nome para este tenant.",
+      };
+    }
+    throw err;
+  }
+}
+
+/**
+ * Retorna `false` (no-op) quando nenhuma linha corresponde a `tenantId` +
+ * `categoryId`. No happy path, documentos que referenciavam a categoria têm
+ * `category_id` automaticamente ajustado para `null` pela FK
+ * `ON DELETE SET NULL` (schema.ts).
+ */
+export async function deleteDocumentCategory(
+  tenantId: string,
+  categoryId: string
+): Promise<boolean> {
+  const rows = await db
+    .delete(documentCategories)
+    .where(
+      and(
+        eq(documentCategories.tenantId, tenantId),
+        eq(documentCategories.id, categoryId)
+      )
+    )
+    .returning({ id: documentCategories.id });
+  return rows.length > 0;
+}
