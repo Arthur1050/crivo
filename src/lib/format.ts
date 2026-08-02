@@ -42,3 +42,27 @@ export function formatFileSize(sizeBytes: number | bigint): string {
   const precision = unitIndex === 0 ? 0 : 1;
   return `${bytes.toFixed(precision)} ${UNITS[unitIndex]}`;
 }
+
+/**
+ * Formata minutos em um rótulo legível (lote-4 — DASH-01: tile de 1ª
+ * resposta). Menos de 60min exibe só minutos (ex.: "45min"); a partir de
+ * 60min exibe "Xh Ymin" (ex.: 90 → "1h 30min"). Arredonda para o minuto
+ * inteiro mais próximo antes de formatar.
+ */
+export function formatDurationMinutes(totalMinutes: number): string {
+  const minutes = Math.round(totalMinutes);
+  if (minutes < 60) {
+    return `${minutes}min`;
+  }
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  return `${hours}h ${remainingMinutes}min`;
+}
+
+/**
+ * Formata uma fração 0–1 (taxa vinda da DAL) como percentual inteiro
+ * arredondado (lote-4 — DASH-01, spec.md "Formato de percentuais").
+ */
+export function formatPercentInt(fraction: number): string {
+  return `${Math.round(fraction * 100)}%`;
+}
