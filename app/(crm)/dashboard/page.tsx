@@ -1,28 +1,43 @@
 import { VStack } from "@astryxdesign/core/Stack";
-import { Heading, Text } from "@astryxdesign/core/Text";
-import { EmptyState } from "@astryxdesign/core/EmptyState";
-import { getLeads, getTenant } from "@/src/server/data";
+import { Heading } from "@astryxdesign/core/Text";
+import { KpiTiles } from "@/src/components/dashboard/kpi-tiles";
+import { resolveDashboardPeriod } from "@/src/lib/dashboard-period";
+import { getDashboardKpis, getTenant } from "@/src/server/data";
 import { getActiveTenantId } from "@/src/server/tenant";
 
-export default async function DashboardPage() {
+interface DashboardPageProps {
+  searchParams: Promise<{ periodo?: string; de?: string; ate?: string }>;
+}
+
+/**
+ * Dashboard do tenant ativo (lote-4 — DASH-01, DASH-05, DASH-06, DASH-07).
+ * `resolveDashboardPeriod` roda uma única vez por render (design.md —
+ * "Definição única de P"): o mesmo `{from, to}` alimenta os tiles aqui e,
+ * a partir de T9, também os gráficos — nunca dois cálculos de período
+ * divergentes na mesma página. Params inválidos caem no default 30 dias
+ * silenciosamente (DASH-02 AC4), já garantido por `resolveDashboardPeriod`.
+ */
+export default async function DashboardPage({ searchParams }: DashboardPageProps) {
+  const params = await searchParams;
   const tenantId = await getActiveTenantId();
-  const [tenant, leads] = await Promise.all([
+  const period = resolveDashboardPeriod(params);
+
+  const [kpis, tenant] = await Promise.all([
+    getDashboardKpis(tenantId, period),
     getTenant(tenantId),
-    getLeads(tenantId),
   ]);
 
   return (
-    <VStack gap={4}>
+    <VStack gap={6}>
       <Heading level={1}>Dashboard</Heading>
-      <Text type="body">Imobiliária ativa: {tenant?.name ?? "—"}</Text>
-      {leads.length === 0 ? (
-        <EmptyState
-          title="Sem dados ainda"
-          description="Métricas desta imobiliária aparecerão aqui assim que houver leads."
-        />
-      ) : (
-        <Text type="body">{leads.length} leads no total</Text>
-      )}
+      <KpiTiles
+        kpis={kpis}
+        baseline={{
+          baselineLeadsPerMonth: tenant?.baselineLeadsPerMonth ?? null,
+          baselineFirstResponseMinutes: tenant?.baselineFirstResponseMinutes ?? null,
+          baselineLeadToMeetingPct: tenant?.baselineLeadToMeetingPct ?? null,
+        }}
+      />
     </VStack>
   );
 }
