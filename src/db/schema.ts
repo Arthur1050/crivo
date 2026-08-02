@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   bigint,
   boolean,
@@ -5,6 +6,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -121,6 +123,27 @@ export const messages = pgTable("messages", {
   sentAt: timestamp("sent_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const documentCategories = pgTable(
+  "document_categories",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    // Nome único por tenant, ignorando maiúsculas/minúsculas (lote-2 — CONF-01/02)
+    uniqueIndex("document_categories_tenant_id_lower_name_idx").on(
+      table.tenantId,
+      sql`lower(${table.name})`
+    ),
+  ]
+);
+
 export const documents = pgTable("documents", {
   id: uuid("id").primaryKey().defaultRandom(),
   tenantId: uuid("tenant_id")
@@ -130,6 +153,9 @@ export const documents = pgTable("documents", {
   modality: modalityEnum("modality").notNull(),
   mimeType: text("mime_type").notNull(),
   sizeBytes: bigint("size_bytes", { mode: "bigint" }).notNull(),
+  categoryId: uuid("category_id").references(() => documentCategories.id, {
+    onDelete: "set null",
+  }),
   uploadedAt: timestamp("uploaded_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
