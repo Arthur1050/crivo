@@ -346,6 +346,129 @@ export async function getDashboardKpis(
   };
 }
 
+export type DashboardGranularity = "day" | "week";
+
+export interface LeadVolumeBucket {
+  bucketStart: Date;
+  count: number;
+}
+
+function utcDayStart(date: Date): number {
+  return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+}
+
+const DAY_MS = 86400000;
+
+/** Início (segunda-feira 00:00 UTC) da semana ISO que contém `date`. */
+function isoWeekStart(date: Date): number {
+  const day = utcDayStart(date);
+  const dow = new Date(day).getUTCDay(); // 0=domingo .. 6=sábado
+  const daysSinceMonday = dow === 0 ? 6 : dow - 1;
+  return day - daysSinceMonday * DAY_MS;
+}
+
+/**
+ * Série de volume de leads no tempo (lote-4 — DASH-03), buckets contínuos
+ * (incluindo zerados) cobrindo `range` inteiro — nunca só os dias/semanas
+ * com dado. Granularidade é decidida pelo chamador (`resolveDashboardPeriod`
+ * na UI); esta função só constrói os buckets pedidos.
+ */
+export async function getLeadVolumeSeries(
+  tenantId: string,
+  range: DashboardRange,
+  granularity: DashboardGranularity
+): Promise<LeadVolumeBucket[]> {
+  const rows = await db
+    .select({ firstContactAt: leads.firstContactAt })
+    .from(leads)
+    .where(
+      and(
+        eq(leads.tenantId, tenantId),
+        gte(leads.firstContactAt, range.from),
+        lte(leads.firstContactAt, range.to)
+      )
+    );
+
+  const bucketOf = granularity === "day" ? utcDayStart : isoWeekStart;
+  const step = granularity === "day" ? DAY_MS : 7 * DAY_MS;
+
+  const counts = new Map<number, number>();
+  for (const row of rows) {
+    const bucket = bucketOf(row.firstContactAt);
+    counts.set(bucket, (counts.get(bucket) ?? 0) + 1);
+  }
+
+  const startBucket = bucketOf(range.from);
+  const endBucket = bucketOf(range.to);
+  const buckets: LeadVolumeBucket[] = [];
+  for (let bucket = startBucket; bucket <= endBucket; bucket += step) {
+    buckets.push({ bucketStart: new Date(bucket), count: counts.get(bucket) ?? 0 });
+  }
+  return buckets;
+}
+
+export interface LeadDistributionBucket {
+  bucket: string;
+  count: number;
+}
+
+export interface LeadDistributions {
+  modality: LeadDistributionBucket[];
+  motivation: LeadDistributionBucket[];
+}
+
+// Buckets fixos (sempre presentes, mesmo com contagem 0) — "nao_informado"
+// cobre leads com o campo nulo (spec.md — distribuições nunca excluem dado).
+const MODALITY_BUCKETS = ["novo", "usado", "ambos", "nao_informado"] as const;
+const MOTIVATION_BUCKETS = ["investidor", "morador", "nao_informado"] as const;
+
+/**
+ * Distribuições de P por `modality` e `motivation` (lote-4 — DASH-04).
+ * Buckets fixos, cada distribuição somando |P| (todo lead cai em exatamente
+ * um bucket, incluindo "nao_informado" para campo nulo).
+ */
+export async function getLeadDistributions(
+  tenantId: string,
+  range: DashboardRange
+): Promise<LeadDistributions> {
+  const rows = await db
+    .select({ modality: leads.modality, motivation: leads.motivation })
+    .from(leads)
+    .where(
+      and(
+        eq(leads.tenantId, tenantId),
+        gte(leads.firstContactAt, range.from),
+        lte(leads.firstContactAt, range.to)
+      )
+    );
+
+  const modalityCounts = new Map<string, number>();
+  const motivationCounts = new Map<string, number>();
+  for (const row of rows) {
+    const modalityBucket = row.modality ?? "nao_informado";
+    modalityCounts.set(
+      modalityBucket,
+      (modalityCounts.get(modalityBucket) ?? 0) + 1
+    );
+    const motivationBucket = row.motivation ?? "nao_informado";
+    motivationCounts.set(
+      motivationBucket,
+      (motivationCounts.get(motivationBucket) ?? 0) + 1
+    );
+  }
+
+  return {
+    modality: MODALITY_BUCKETS.map((bucket) => ({
+      bucket,
+      count: modalityCounts.get(bucket) ?? 0,
+    })),
+    motivation: MOTIVATION_BUCKETS.map((bucket) => ({
+      bucket,
+      count: motivationCounts.get(bucket) ?? 0,
+    })),
+  };
+}
+
 // --- Writes (lote-2 — CONF-01/02, DOC-01/02/04/05/06/07) ---------------
 //
 // Toda escrita abaixo filtra por tenantId no WHERE — nunca só pelo id do
