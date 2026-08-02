@@ -1,11 +1,10 @@
-import NextLink from "next/link";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
-import { Link } from "@astryxdesign/core/Link";
 import { List, ListItem } from "@astryxdesign/core/List";
 import { Section } from "@astryxdesign/core/Section";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Heading, Text } from "@astryxdesign/core/Text";
 import { Timestamp } from "@astryxdesign/core/Timestamp";
+import { NavLink } from "@/src/components/shared/nav-link";
 import { SettingsForm } from "@/src/components/settings/settings-form";
 import { getDocumentSample, getTenant, type Modality } from "@/src/server/data";
 import { getActiveTenantId } from "@/src/server/tenant";
@@ -59,9 +58,7 @@ export default async function ConfiguracoesPage() {
             <StackItem size="fill">
               <Heading level={3}>Documentos</Heading>
             </StackItem>
-            <Link as={NextLink} href="/documentos">
-              Ver todos
-            </Link>
+            <NavLink href="/documentos">Ver todos</NavLink>
           </HStack>
 
           {sample.recent.length === 0 ? (
@@ -69,9 +66,9 @@ export default async function ConfiguracoesPage() {
               title="Nenhum documento ainda"
               description="Envie documentos de contexto para o agente desta imobiliária."
               actions={
-                <Link as={NextLink} href="/documentos" isStandalone>
+                <NavLink href="/documentos" isStandalone>
                   Ir para Documentos
-                </Link>
+                </NavLink>
               }
             />
           ) : (
