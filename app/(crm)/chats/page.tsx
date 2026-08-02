@@ -1,28 +1,70 @@
-import { VStack } from "@astryxdesign/core/Stack";
-import { Heading, Text } from "@astryxdesign/core/Text";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
-import { getConversations, getTenant } from "@/src/server/data";
+import { Layout, LayoutContent, LayoutPanel } from "@astryxdesign/core/Layout";
+import { VStack } from "@astryxdesign/core/Stack";
+import { Heading } from "@astryxdesign/core/Text";
+import { ConversationList } from "@/src/components/chats/conversation-list";
+import { MessageThread } from "@/src/components/chats/message-thread";
+import { getConversationSummaries, getMessages } from "@/src/server/data";
 import { getActiveTenantId } from "@/src/server/tenant";
 
-export default async function ChatsPage() {
+interface ChatsPageProps {
+  searchParams: Promise<{ conversa?: string }>;
+}
+
+/**
+ * Visualização somente leitura das conversas do tenant ativo (lote-3 —
+ * CHAT-01). A seleção vive na URL (`?conversa=`, RSC-first — design.md):
+ * uma conversa que não existe ou pertence a outro tenant simplesmente não é
+ * encontrada em `summaries` (já tenant-scoped por `getConversationSummaries`)
+ * e cai no mesmo estado neutro de "nenhuma selecionada" — nunca um erro.
+ */
+export default async function ChatsPage({ searchParams }: ChatsPageProps) {
+  const params = await searchParams;
   const tenantId = await getActiveTenantId();
-  const [tenant, conversations] = await Promise.all([
-    getTenant(tenantId),
-    getConversations(tenantId),
-  ]);
+  const summaries = await getConversationSummaries(tenantId);
+
+  const selectedSummary = params.conversa
+    ? summaries.find((summary) => summary.id === params.conversa)
+    : undefined;
+
+  const messages = selectedSummary
+    ? await getMessages(tenantId, selectedSummary.id)
+    : [];
 
   return (
-    <VStack gap={4}>
+    <VStack gap={6}>
       <Heading level={1}>Chats</Heading>
-      <Text type="body">Imobiliária ativa: {tenant?.name ?? "—"}</Text>
-      {conversations.length === 0 ? (
-        <EmptyState
-          title="Nenhuma conversa ainda"
-          description="Conversas com leads desta imobiliária aparecerão aqui."
-        />
-      ) : (
-        <Text type="body">{conversations.length} conversas</Text>
-      )}
+
+      <Layout
+        height="auto"
+        start={
+          <LayoutPanel width={320} hasDivider label="Conversas">
+            <ConversationList
+              summaries={summaries}
+              selectedConversationId={selectedSummary?.id}
+            />
+          </LayoutPanel>
+        }
+        content={
+          <LayoutContent>
+            {!selectedSummary ? (
+              <EmptyState
+                title="Selecione uma conversa"
+                description="Escolha uma conversa na lista ao lado para ver o histórico completo."
+              />
+            ) : (
+              <VStack gap={4}>
+                <Heading level={3}>{selectedSummary.leadName}</Heading>
+                <MessageThread
+                  messages={messages}
+                  emptyTitle="Nenhuma mensagem ainda"
+                  emptyDescription="Esta conversa ainda não tem mensagens registradas."
+                />
+              </VStack>
+            )}
+          </LayoutContent>
+        }
+      />
     </VStack>
   );
 }

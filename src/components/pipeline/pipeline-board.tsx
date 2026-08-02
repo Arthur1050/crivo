@@ -57,6 +57,8 @@ const COLUMNS: ColumnDefinition[] = [
 
 interface PipelineBoardProps {
   leads: Lead[];
+  /** `leadId → conversationId`, para o link "Ver conversa" (lote-3 — PIPE-04). */
+  conversationIdByLeadId?: Record<string, string>;
 }
 
 /**
@@ -65,7 +67,10 @@ interface PipelineBoardProps {
  * ordenação determinística `updatedAt DESC, id` (T3) — o board só agrupa,
  * nunca reordena (spec.md — Out of Scope: sem reordenação manual na coluna).
  */
-export function PipelineBoard({ leads }: PipelineBoardProps) {
+export function PipelineBoard({
+  leads,
+  conversationIdByLeadId = {},
+}: PipelineBoardProps) {
   const router = useRouter();
   // Override otimista aplicado durante o voo do drag (e desfeito em caso de
   // falha da action) — nunca escreve em `leads`, só reagrupa a exibição
@@ -211,6 +216,7 @@ export function PipelineBoard({ leads }: PipelineBoardProps) {
             <LayoutPanel width={380} hasDivider label="Detalhe do lead">
               <LeadDetailPanel
                 lead={selectedLead}
+                conversationId={conversationIdByLeadId[selectedLead.id]}
                 onClose={() => setSelectedLeadId(null)}
               />
             </LayoutPanel>
