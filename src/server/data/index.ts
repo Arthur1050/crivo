@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, count, desc, eq, ilike } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, ilike, lte } from "drizzle-orm";
 import { db } from "../../db";
 import {
   brokers,
@@ -259,6 +259,91 @@ export async function getDocumentSample(
   }
 
   return { recent, countsByModality };
+}
+
+export interface DashboardRange {
+  from: Date;
+  to: Date;
+}
+
+export interface DashboardKpis {
+  avgFirstResponseMinutes: number | null;
+  respondedCount: number;
+  leadCount: number;
+  qualificationRate: number | null;
+  escalationRate: number | null;
+  attendanceRate: number | null;
+  confirmedMeetingCount: number;
+}
+
+/**
+ * KPIs do Dashboard (lote-4 — DASH-01, DASH-07) para o conjunto P: leads do
+ * tenant com `firstContactAt` dentro de `range` (limites inclusivos —
+ * spec.md, assumption "Fuso dos limites de período"). Uma única query busca
+ * P; toda agregação roda em TS (design.md — "volume do piloto é pequeno").
+ * Taxas são frações 0–1 (não percentuais); `null` sempre que o denominador
+ * relevante é 0 — nunca `NaN`/`Infinity` (DASH-07). Formatação para exibição
+ * é responsabilidade da UI.
+ */
+export async function getDashboardKpis(
+  tenantId: string,
+  range: DashboardRange
+): Promise<DashboardKpis> {
+  const periodLeads = await db
+    .select()
+    .from(leads)
+    .where(
+      and(
+        eq(leads.tenantId, tenantId),
+        gte(leads.firstContactAt, range.from),
+        lte(leads.firstContactAt, range.to)
+      )
+    );
+
+  const leadCount = periodLeads.length;
+
+  const responded = periodLeads.filter((lead) => lead.firstResponseAt !== null);
+  const respondedCount = responded.length;
+  const avgFirstResponseMinutes =
+    respondedCount === 0
+      ? null
+      : responded.reduce(
+          (sum, lead) =>
+            sum +
+            (lead.firstResponseAt!.getTime() - lead.firstContactAt.getTime()) /
+              60000,
+          0
+        ) / respondedCount;
+
+  const qualifiedCount = periodLeads.filter(
+    (lead) => lead.status === "qualificado_agendado"
+  ).length;
+  const qualificationRate = leadCount === 0 ? null : qualifiedCount / leadCount;
+
+  const escalatedCount = periodLeads.filter(
+    (lead) => lead.status === "escalado_humano"
+  ).length;
+  const escalationRate = leadCount === 0 ? null : escalatedCount / leadCount;
+
+  const confirmedMeetings = periodLeads.filter(
+    (lead) => lead.meetingAttended !== null
+  );
+  const confirmedMeetingCount = confirmedMeetings.length;
+  const attendedCount = confirmedMeetings.filter(
+    (lead) => lead.meetingAttended === true
+  ).length;
+  const attendanceRate =
+    confirmedMeetingCount === 0 ? null : attendedCount / confirmedMeetingCount;
+
+  return {
+    avgFirstResponseMinutes,
+    respondedCount,
+    leadCount,
+    qualificationRate,
+    escalationRate,
+    attendanceRate,
+    confirmedMeetingCount,
+  };
 }
 
 // --- Writes (lote-2 — CONF-01/02, DOC-01/02/04/05/06/07) ---------------
