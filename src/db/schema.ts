@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   bigint,
   boolean,
+  integer,
   pgEnum,
   pgTable,
   text,
@@ -59,6 +60,11 @@ export const tenants = pgTable("tenants", {
   name: text("name").notNull(),
   agentName: text("agent_name").notNull(),
   supportedModality: modalityEnum("supported_modality").notNull(),
+  // Baseline pré-piloto (Lote 4 — DASH-05). Snapshot único por tenant,
+  // nullable até ser preenchido (mockado no seed por ora; real na Fase 10).
+  baselineLeadsPerMonth: integer("baseline_leads_per_month"),
+  baselineFirstResponseMinutes: integer("baseline_first_response_minutes"),
+  baselineLeadToMeetingPct: integer("baseline_lead_to_meeting_pct"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
