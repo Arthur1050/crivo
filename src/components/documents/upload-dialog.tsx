@@ -99,6 +99,18 @@ export function UploadDialog({ categories }: UploadDialogProps) {
         )?.id ?? null
       : null);
 
+  // Enquanto `pendingCategoryName` aponta para uma categoria recém-criada que
+  // ainda não apareceu em `categories` (o `router.refresh()` acima roda em
+  // paralelo, sem await), `resolvedCategoryId` fica `null` mesmo que o
+  // usuário tenha acabado de escolher aquela categoria. Sem essa guarda,
+  // "Enviar" ficaria clicável nessa janela e o documento seria criado com
+  // `categoryId: null` ("Sem categoria") silenciosamente.
+  const isPendingCategoryUnresolved =
+    pendingCategoryName !== null &&
+    !categories.some(
+      (category) => category.name.toLowerCase() === pendingCategoryName.toLowerCase()
+    );
+
   function resetForm() {
     setFile(null);
     setName("");
@@ -339,6 +351,12 @@ export function UploadDialog({ categories }: UploadDialogProps) {
                   label="Enviar"
                   variant="primary"
                   isLoading={isSubmitting}
+                  isDisabled={isPendingCategoryUnresolved}
+                  tooltip={
+                    isPendingCategoryUnresolved
+                      ? "Aguardando a categoria recém-criada ser confirmada."
+                      : undefined
+                  }
                   clickAction={handleSubmit}
                 />
               </HStack>
