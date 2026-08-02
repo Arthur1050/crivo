@@ -51,5 +51,7 @@ export async function setActiveTenant(tenantId: string): Promise<void> {
   }
 
   const cookieStore = await cookies();
-  cookieStore.set(TENANT_COOKIE_NAME, tenantId);
+  cookieStore.set(TENANT_COOKIE_NAME, tenantId, {
+    maxAge: 60 * 60 * 24 * 30, // 30 dias
+  });
 }
