@@ -5,6 +5,7 @@ import { db } from "../index";
 import {
   brokers,
   conversations,
+  documentCategories,
   documents,
   leads,
   messages,
@@ -19,9 +20,10 @@ const LEAD_STATUSES = [
 ] as const;
 
 async function snapshotIds() {
-  const [t, b, l, c, m, d] = await Promise.all([
+  const [t, b, cat, l, c, m, d] = await Promise.all([
     db.select({ id: tenants.id }).from(tenants),
     db.select({ id: brokers.id }).from(brokers),
+    db.select({ id: documentCategories.id }).from(documentCategories),
     db.select({ id: leads.id }).from(leads),
     db.select({ id: conversations.id }).from(conversations),
     db.select({ id: messages.id }).from(messages),
@@ -31,6 +33,7 @@ async function snapshotIds() {
   return {
     tenants: sortIds(t),
     brokers: sortIds(b),
+    documentCategories: sortIds(cat),
     leads: sortIds(l),
     conversations: sortIds(c),
     messages: sortIds(m),
@@ -132,6 +135,41 @@ describe("db/seed", () => {
     await runSeed();
     const after = await snapshotIds();
     expect(after).toEqual(before);
+  });
+
+  it("popula 2-3 categorias de documentos por tenant, incluindo um nome repetido entre tenants (lote-2 — CONF-01/02)", async () => {
+    const allTenants = await db.select().from(tenants);
+    expect(allTenants).toHaveLength(2);
+
+    const categoriesByTenant = new Map<string, string[]>();
+    for (const tenant of allTenants) {
+      const rows = await db
+        .select()
+        .from(documentCategories)
+        .where(eq(documentCategories.tenantId, tenant.id));
+      expect(rows.length).toBeGreaterThanOrEqual(2);
+      expect(rows.length).toBeLessThanOrEqual(3);
+      categoriesByTenant.set(
+        tenant.id,
+        rows.map((r) => r.name)
+      );
+    }
+
+    const [tenantA, tenantB] = allTenants;
+    const namesA = categoriesByTenant.get(tenantA.id)!;
+    const namesB = categoriesByTenant.get(tenantB.id)!;
+    const repeatedNames = namesA.filter((name) => namesB.includes(name));
+    expect(repeatedNames.length).toBeGreaterThan(0);
+  });
+
+  it("documentos existem tanto com quanto sem categoria atribuída (lote-2 — DOC-04)", async () => {
+    const allDocuments = await db.select().from(documents);
+    expect(allDocuments.length).toBeGreaterThan(0);
+
+    const withCategory = allDocuments.filter((d) => d.categoryId !== null);
+    const withoutCategory = allDocuments.filter((d) => d.categoryId === null);
+    expect(withCategory.length).toBeGreaterThan(0);
+    expect(withoutCategory.length).toBeGreaterThan(0);
   });
 
   it("rejeita valor fora do enum lead_status na escrita (AC 1.6)", async () => {

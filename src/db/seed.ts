@@ -5,6 +5,7 @@ import { db } from "./index";
 import {
   brokers,
   conversations,
+  documentCategories,
   documents,
   leads,
   messages,
@@ -365,6 +366,20 @@ function buildMessages(
   return msgs;
 }
 
+// Mesmos 3 nomes de categoria são semeados em AMBOS os tenants de propósito:
+// prova que a unicidade de nome é escopada por tenant (lower(name), tenant_id),
+// não global (lote-2 — CONF-01/02).
+interface CategoryDef {
+  key: string;
+  name: string;
+}
+
+const CATEGORY_DEFS: CategoryDef[] = [
+  { key: "tabelas-precos", name: "Tabelas de Preços" },
+  { key: "contratos", name: "Contratos" },
+  { key: "guias", name: "Guias e Manuais" },
+];
+
 function documentDefsFor(tenantKey: string) {
   return [
     {
@@ -374,6 +389,7 @@ function documentDefsFor(tenantKey: string) {
       mimeType: "application/pdf",
       sizeBytes: BigInt(482311),
       expiresAt: null as Date | null,
+      categoryKey: "tabelas-precos" as string | null,
     },
     {
       key: "guia-avaliacao-usado",
@@ -382,6 +398,9 @@ function documentDefsFor(tenantKey: string) {
       mimeType: "application/pdf",
       sizeBytes: BigInt(210004),
       expiresAt: null as Date | null,
+      // Sem categoria de propósito — prova que documentos podem existir sem
+      // categoria atribuída (lote-2 — DOC-04).
+      categoryKey: null as string | null,
     },
     {
       key: "contrato-padrao",
@@ -391,6 +410,7 @@ function documentDefsFor(tenantKey: string) {
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       sizeBytes: BigInt(88452),
       expiresAt: new Date(Date.UTC(2027, 0, 1)),
+      categoryKey: "contratos" as string | null,
     },
   ].map((d) => ({ ...d, key: `${tenantKey}:${d.key}` }));
 }
@@ -401,6 +421,7 @@ export async function runSeed(): Promise<void> {
   // de uma escrita por linha).
   const tenantRows: (typeof tenants.$inferInsert)[] = [];
   const brokerRows: (typeof brokers.$inferInsert)[] = [];
+  const categoryRows: (typeof documentCategories.$inferInsert)[] = [];
   const leadRows: (typeof leads.$inferInsert)[] = [];
   const conversationRows: (typeof conversations.$inferInsert)[] = [];
   const messageRows: (typeof messages.$inferInsert)[] = [];
@@ -414,6 +435,17 @@ export async function runSeed(): Promise<void> {
       agentName: tenantDef.agentName,
       supportedModality: tenantDef.supportedModality,
     });
+
+    const categoryIds = new Map<string, string>();
+    for (const c of CATEGORY_DEFS) {
+      const categoryId = id(`category:${tenantDef.key}:${c.key}`);
+      categoryIds.set(c.key, categoryId);
+      categoryRows.push({
+        id: categoryId,
+        tenantId,
+        name: c.name,
+      });
+    }
 
     const brokerIds: string[] = [];
     for (const b of tenantDef.brokers) {
@@ -517,23 +549,30 @@ export async function runSeed(): Promise<void> {
         modality: d.modality,
         mimeType: d.mimeType,
         sizeBytes: d.sizeBytes,
+        categoryId: d.categoryKey ? (categoryIds.get(d.categoryKey) ?? null) : null,
         expiresAt: d.expiresAt,
       });
     }
   }
 
   await db.transaction(async (tx) => {
-    // Ordem de delete respeita as FKs (filhos antes dos pais).
+    // Ordem de delete respeita as FKs (filhos antes dos pais). `documents`
+    // referencia `document_categories` (category_id), então precisa ser
+    // apagada antes das categorias.
     await tx.delete(messages);
     await tx.delete(conversations);
     await tx.delete(documents);
     await tx.delete(leads);
     await tx.delete(brokers);
+    await tx.delete(documentCategories);
     await tx.delete(tenants);
 
     // Ordem de insert respeita as FKs (pais antes dos filhos).
+    // `document_categories` precisa existir antes de `documents`, que
+    // referencia `category_id`.
     await tx.insert(tenants).values(tenantRows);
     await tx.insert(brokers).values(brokerRows);
+    await tx.insert(documentCategories).values(categoryRows);
     await tx.insert(leads).values(leadRows);
     await tx.insert(conversations).values(conversationRows);
     await tx.insert(messages).values(messageRows);
