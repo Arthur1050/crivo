@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   ACCEPTED_MIME_TYPES,
+  CATEGORY_COLOR_PALETTE,
+  LEAD_STATUSES,
   MAX_FILE_SIZE_BYTES,
   MAX_NAME_LENGTH,
+  validateCategoryColor,
   validateFileSize,
+  validateLeadStatus,
   validateMimeType,
   validateModality,
   validateName,
@@ -111,5 +115,46 @@ describe("validateModality", () => {
 
   it("aceita 'ambos'", () => {
     expect(validateModality("ambos")).toEqual({ ok: true });
+  });
+});
+
+describe("validateCategoryColor", () => {
+  for (const color of CATEGORY_COLOR_PALETTE) {
+    it(`aceita '${color}' (paleta fixa)`, () => {
+      expect(validateCategoryColor(color)).toEqual({ ok: true });
+    });
+  }
+
+  it("rejeita uma cor fora da paleta", () => {
+    const result = validateCategoryColor("magenta");
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejeita string vazia", () => {
+    const result = validateCategoryColor("");
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejeita a mesma cor com casing diferente ('Gray' !== 'gray')", () => {
+    const result = validateCategoryColor("Gray");
+    expect(result.ok).toBe(false);
+  });
+});
+
+describe("validateLeadStatus", () => {
+  for (const status of LEAD_STATUSES) {
+    it(`aceita '${status}' (enum lead_status)`, () => {
+      expect(validateLeadStatus(status)).toEqual({ ok: true });
+    });
+  }
+
+  it("rejeita um status fora do enum", () => {
+    const result = validateLeadStatus("arquivado");
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejeita string vazia", () => {
+    const result = validateLeadStatus("");
+    expect(result.ok).toBe(false);
   });
 });

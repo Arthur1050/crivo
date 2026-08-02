@@ -8,9 +8,12 @@ import {
   deleteDocument,
   deleteDocumentCategory,
   updateDocument,
+  updateDocumentCategory,
+  type CategoryColor,
   type Modality,
 } from "../data";
 import {
+  validateCategoryColor,
   validateFileSize,
   validateMimeType,
   validateModality,
@@ -111,6 +114,7 @@ export async function deleteDocumentAction(
 
 export interface CreateDocumentCategoryInput {
   name: string;
+  color?: string;
 }
 
 export async function createDocumentCategoryAction(
@@ -119,11 +123,49 @@ export async function createDocumentCategoryAction(
   const nameCheck = validateName(input.name, "Nome da categoria");
   if (!nameCheck.ok) return nameCheck;
 
+  if (input.color !== undefined) {
+    const colorCheck = validateCategoryColor(input.color);
+    if (!colorCheck.ok) return colorCheck;
+  }
+
   const tenantId = await getActiveTenantId();
-  const result = await createDocumentCategory(tenantId, input.name.trim());
+  const result = await createDocumentCategory(
+    tenantId,
+    input.name.trim(),
+    input.color as CategoryColor | undefined
+  );
 
   if (!result.ok) {
     return { ok: false, error: result.error };
+  }
+
+  revalidatePath("/documentos");
+  return { ok: true };
+}
+
+export interface UpdateDocumentCategoryInput {
+  categoryId: string;
+  color: string;
+}
+
+/**
+ * Atualiza a cor de uma categoria existente pelo gerenciador (lote-3 —
+ * CAT-01.4). `validateCategoryColor` é a autoridade de validação (o enum do
+ * banco é a segunda barreira, design.md — Error Handling Strategy).
+ */
+export async function updateDocumentCategoryAction(
+  input: UpdateDocumentCategoryInput
+): Promise<ActionResult> {
+  const colorCheck = validateCategoryColor(input.color);
+  if (!colorCheck.ok) return colorCheck;
+
+  const tenantId = await getActiveTenantId();
+  const updated = await updateDocumentCategory(tenantId, input.categoryId, {
+    color: input.color as CategoryColor,
+  });
+
+  if (!updated) {
+    return { ok: false, error: "Categoria não encontrada." };
   }
 
   revalidatePath("/documentos");

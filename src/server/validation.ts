@@ -80,3 +80,58 @@ export function validateModality(
 
   return { ok: true };
 }
+
+// 1:1 com o enum `category_color` do schema (paleta fixa Token da Astryx —
+// lote-3 CAT-01). Fonte da verdade da paleta para o picker de cor na UI.
+export const CATEGORY_COLOR_PALETTE = [
+  "red",
+  "orange",
+  "yellow",
+  "green",
+  "teal",
+  "cyan",
+  "blue",
+  "purple",
+  "pink",
+  "gray",
+] as const;
+
+export type CategoryColorPaletteValue = (typeof CATEGORY_COLOR_PALETTE)[number];
+
+/**
+ * Única barreira de validação de cor antes da escrita (o enum do banco é a
+ * segunda barreira — design.md — Error Handling Strategy). Não há color
+ * picker livre: qualquer valor fora da paleta fixa (incluindo string vazia
+ * ou casing diferente) é rejeitado.
+ */
+export function validateCategoryColor(color: string): ValidationResult {
+  if (!CATEGORY_COLOR_PALETTE.includes(color as CategoryColorPaletteValue)) {
+    return {
+      ok: false,
+      error: `Cor de categoria inválida: "${color}". Escolha uma cor da paleta.`,
+    };
+  }
+
+  return { ok: true };
+}
+
+// 1:1 com o enum `lead_status` do schema — usado para validar o destino do
+// drag-and-drop no Kanban (lote-3 — PIPE-02) antes de chamar a DAL.
+export const LEAD_STATUSES = [
+  "em_qualificacao",
+  "qualificado_agendado",
+  "escalado_humano",
+] as const;
+
+export type LeadStatusValue = (typeof LEAD_STATUSES)[number];
+
+export function validateLeadStatus(status: string): ValidationResult {
+  if (!LEAD_STATUSES.includes(status as LeadStatusValue)) {
+    return {
+      ok: false,
+      error: `Status de lead inválido: "${status}".`,
+    };
+  }
+
+  return { ok: true };
+}

@@ -2,7 +2,14 @@ import "dotenv/config";
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { db } from "../../db";
-import { getDocumentCategories, getDocuments, getTenant, getTenants } from "../data";
+import {
+  getDocumentCategories,
+  getDocuments,
+  getLead,
+  getLeads,
+  getTenant,
+  getTenants,
+} from "../data";
 
 // `getActiveTenantId()` (chamada internamente por toda action) lê o cookie
 // `crivo_tenant` via `next/headers`'s `cookies()` — API só utilizável dentro
@@ -34,8 +41,13 @@ import {
   deleteDocumentAction,
   deleteDocumentCategoryAction,
   updateDocumentAction,
+  updateDocumentCategoryAction,
   type CreateDocumentInput,
 } from "../actions/documents";
+import {
+  updateLeadStatusAction,
+  type UpdateLeadStatusInput,
+} from "../actions/pipeline";
 import {
   updateTenantSettingsAction,
   type UpdateTenantSettingsInput,
@@ -132,6 +144,95 @@ describe("server actions", () => {
         supportedModality: activeOriginal!.supportedModality,
       });
       expect(revertResult.ok).toBe(true);
+    });
+  });
+
+  describe("updateLeadStatusAction", () => {
+    it("persiste o novo status no tenant ativo (happy path) e chama revalidatePath('/pipeline') — reverte ao final", async () => {
+      const [lead] = await getLeads(activeTenantId);
+      expect(lead).toBeDefined();
+      const originalStatus = lead.status;
+      const nextStatus =
+        originalStatus === "escalado_humano" ? "em_qualificacao" : "escalado_humano";
+
+      const result = await updateLeadStatusAction({
+        leadId: lead.id,
+        status: nextStatus,
+      });
+      expect(result).toEqual({ ok: true });
+      expect(revalidatePath).toHaveBeenCalledWith("/pipeline");
+
+      const persisted = await getLead(activeTenantId, lead.id);
+      expect(persisted!.status).toBe(nextStatus);
+
+      const revertResult = await updateLeadStatusAction({
+        leadId: lead.id,
+        status: originalStatus,
+      });
+      expect(revertResult.ok).toBe(true);
+    });
+
+    it("status fora do enum retorna { ok: false, error } e nada é persistido", async () => {
+      const [lead] = await getLeads(activeTenantId);
+      expect(lead).toBeDefined();
+      const originalStatus = lead.status;
+
+      const result = await updateLeadStatusAction({
+        leadId: lead.id,
+        status: "status_inventado",
+      });
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.error).toBeTruthy();
+
+      const unchanged = await getLead(activeTenantId, lead.id);
+      expect(unchanged!.status).toBe(originalStatus);
+    });
+
+    it("leadId inexistente retorna { ok: false, error: 'Lead não encontrado.' }", async () => {
+      const result = await updateLeadStatusAction({
+        leadId: NON_EXISTENT_ID,
+        status: "em_qualificacao",
+      });
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.error).toBe("Lead não encontrado.");
+    });
+
+    it("um leadId de outro tenant é tratado como não encontrado — a action nunca escreve fora do tenant ativo", async () => {
+      const [leadOther] = await getLeads(otherTenantId);
+      expect(leadOther).toBeDefined();
+      const originalStatus = leadOther.status;
+
+      const result = await updateLeadStatusAction({
+        leadId: leadOther.id,
+        status:
+          originalStatus === "escalado_humano" ? "em_qualificacao" : "escalado_humano",
+      });
+      expect(result.ok).toBe(false);
+
+      const unchanged = await getLead(otherTenantId, leadOther.id);
+      expect(unchanged!.status).toBe(originalStatus);
+    });
+
+    it("um tenantId injetado no payload é ignorado — a action sempre resolve o tenant ativo pelo cookie", async () => {
+      const [lead] = await getLeads(activeTenantId);
+      expect(lead).toBeDefined();
+      const originalStatus = lead.status;
+      const nextStatus =
+        originalStatus === "escalado_humano" ? "em_qualificacao" : "escalado_humano";
+
+      const payloadWithForeignTenant = {
+        leadId: lead.id,
+        status: nextStatus,
+        tenantId: otherTenantId,
+      } as UpdateLeadStatusInput & { tenantId: string };
+
+      const result = await updateLeadStatusAction(payloadWithForeignTenant);
+      expect(result).toEqual({ ok: true });
+
+      const persisted = await getLead(activeTenantId, lead.id);
+      expect(persisted!.status).toBe(nextStatus);
+
+      await updateLeadStatusAction({ leadId: lead.id, status: originalStatus });
     });
   });
 
@@ -301,6 +402,108 @@ describe("server actions", () => {
     it("deleteDocumentCategoryAction retorna { ok: false } (not-found) para categoria inexistente", async () => {
       const result = await deleteDocumentCategoryAction({
         categoryId: NON_EXISTENT_ID,
+      });
+      expect(result.ok).toBe(false);
+    });
+
+    it("cria uma categoria sem cor com o default 'gray' (lote-3 — CAT-01)", async () => {
+      const name = `Categoria Action Sem Cor ${randomUUID()}`;
+      const result = await createDocumentCategoryAction({ name });
+      expect(result).toEqual({ ok: true });
+
+      const categories = await getDocumentCategories(activeTenantId);
+      const created = categories.find((c) => c.name === name);
+      expect(created).toBeDefined();
+      expect(created!.color).toBe("gray");
+
+      await deleteDocumentCategoryAction({ categoryId: created!.id });
+    });
+
+    it("cria uma categoria com cor explícita e ela persiste (lote-3 — CAT-01)", async () => {
+      const name = `Categoria Action Com Cor ${randomUUID()}`;
+      const result = await createDocumentCategoryAction({ name, color: "teal" });
+      expect(result).toEqual({ ok: true });
+
+      const categories = await getDocumentCategories(activeTenantId);
+      const created = categories.find((c) => c.name === name);
+      expect(created).toBeDefined();
+      expect(created!.color).toBe("teal");
+
+      await deleteDocumentCategoryAction({ categoryId: created!.id });
+    });
+
+    it("cor fora da paleta retorna { ok: false, error } e nenhuma categoria é criada (lote-3 — CAT-01.2)", async () => {
+      const name = `Categoria Action Cor Invalida ${randomUUID()}`;
+      const before = await getDocumentCategories(activeTenantId);
+
+      const result = await createDocumentCategoryAction({
+        name,
+        color: "magenta",
+      });
+      expect(result.ok).toBe(false);
+
+      const after = await getDocumentCategories(activeTenantId);
+      expect(after).toHaveLength(before.length);
+      expect(after.some((c) => c.name === name)).toBe(false);
+    });
+  });
+
+  describe("updateDocumentCategoryAction", () => {
+    it("atualiza a cor de uma categoria existente (happy path) e chama revalidatePath('/documentos')", async () => {
+      const created = await createDocumentCategoryAction({
+        name: `Categoria Update Cor Action ${randomUUID()}`,
+      });
+      expect(created).toEqual({ ok: true });
+      const categories = await getDocumentCategories(activeTenantId);
+      const category = categories.find((c) =>
+        c.name.startsWith("Categoria Update Cor Action")
+      );
+      expect(category).toBeDefined();
+
+      const result = await updateDocumentCategoryAction({
+        categoryId: category!.id,
+        color: "purple",
+      });
+      expect(result).toEqual({ ok: true });
+      expect(revalidatePath).toHaveBeenCalledWith("/documentos");
+
+      const reread = await getDocumentCategories(activeTenantId).then((rows) =>
+        rows.find((c) => c.id === category!.id)
+      );
+      expect(reread!.color).toBe("purple");
+
+      await deleteDocumentCategoryAction({ categoryId: category!.id });
+    });
+
+    it("cor fora da paleta retorna { ok: false, error } e nada é persistido", async () => {
+      const created = await createDocumentCategoryAction({
+        name: `Categoria Update Cor Invalida ${randomUUID()}`,
+      });
+      expect(created).toEqual({ ok: true });
+      const categories = await getDocumentCategories(activeTenantId);
+      const category = categories.find((c) =>
+        c.name.startsWith("Categoria Update Cor Invalida")
+      );
+      expect(category).toBeDefined();
+
+      const result = await updateDocumentCategoryAction({
+        categoryId: category!.id,
+        color: "invalida",
+      });
+      expect(result.ok).toBe(false);
+
+      const reread = await getDocumentCategories(activeTenantId).then((rows) =>
+        rows.find((c) => c.id === category!.id)
+      );
+      expect(reread!.color).toBe("gray");
+
+      await deleteDocumentCategoryAction({ categoryId: category!.id });
+    });
+
+    it("retorna { ok: false } (not-found) para categoria inexistente", async () => {
+      const result = await updateDocumentCategoryAction({
+        categoryId: NON_EXISTENT_ID,
+        color: "blue",
       });
       expect(result.ok).toBe(false);
     });
