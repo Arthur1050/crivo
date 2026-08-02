@@ -6,6 +6,11 @@ export default defineConfig({
     environment: "node",
     testTimeout: 30000,
     hookTimeout: 30000,
+    // Test files hit the real Neon database with shared tenant/lead rows
+    // (delete-and-insert seed, cross-file fixtures). Running files in
+    // parallel workers races those writes against each other. Serializing
+    // file execution removes the flakiness without touching test code.
+    fileParallelism: false,
   },
   resolve: {
     alias: {
