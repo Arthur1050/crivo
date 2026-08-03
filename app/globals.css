@@ -34,3 +34,57 @@ body {
   color: var(--color-text-primary);
   font-family: var(--font-family-body);
 }
+
+/*
+ * Camada de movimento.
+ *
+ * A Astryx declara `transition-property: all` mas com `duration: 0s`, então
+ * todo hover, foco e seleção do app dá um salto seco. Aqui a duração e a
+ * curva vêm dos tokens da própria lib — nada de valor cru — e a lista de
+ * propriedades é explícita de propósito: `all` transicionaria também
+ * propriedades de layout, que causam reflow a cada quadro.
+ */
+@layer components {
+  .astryx-side-nav-item,
+  .astryx-nav-heading-menu-item,
+  .astryx-item,
+  .astryx-button,
+  .astryx-token,
+  .astryx-segmented-control-item,
+  .astryx-table-row {
+    transition-property: background-color, border-color, color, box-shadow, opacity;
+    transition-duration: var(--duration-fast);
+    transition-timing-function: var(--ease-standard);
+  }
+
+  /*
+   * O anel de foco precisa aparecer no instante do foco: animar a sua
+   * entrada atrasa a única pista que um usuário de teclado tem.
+   */
+  .astryx-side-nav-item:focus-visible,
+  .astryx-nav-heading-menu-item:focus-visible,
+  .astryx-item:focus-visible,
+  .astryx-button:focus-visible,
+  .astryx-token:focus-visible,
+  .astryx-segmented-control-item:focus-visible {
+    transition-duration: 0s;
+  }
+}
+
+/*
+ * Movimento reduzido zera a transição em vez de trocá-la por outra — a
+ * mudança de estado continua acontecendo, só que instantânea.
+ */
+@media (prefers-reduced-motion: reduce) {
+  @layer components {
+    .astryx-side-nav-item,
+    .astryx-nav-heading-menu-item,
+    .astryx-item,
+    .astryx-button,
+    .astryx-token,
+    .astryx-segmented-control-item,
+    .astryx-table-row {
+      transition-duration: 0s;
+    }
+  }
+}
