@@ -100,6 +100,7 @@ export function Sidebar({
             icon={<NavIcon icon={<HomeIcon size={16} />} />}
             heading={activeTenant.name}
             subheading={location ?? undefined}
+            className="mx-2 mt-2"
             menu={
               <TenantSwitcherMenu
                 tenants={tenants}
@@ -125,18 +126,18 @@ export function Sidebar({
               label={item.label}
               href={item.href}
               isSelected={pathname === item.href}
-              icon={<item.icon size={20} />}
+              icon={<item.icon size={16} />}
             />
           ))}
         </SideNavSection>
 
         <SideNavSection title="Agente IA">
-          <Card variant="muted" padding={3}>
+          <Card variant="gray" padding={2}>
             <Item
               density="compact"
               align="start"
               startContent={
-                <StatusDot variant="success" label="Agente online" />
+                <StatusDot variant="success" label="Agente online" className="mt-1.5" isPulsing={true} />
               }
               label={`${activeTenant.agentName} — Online`}
               description={AGENT_SUBTITLE}

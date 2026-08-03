@@ -278,15 +278,15 @@ function SettingsSection({
   return (
     <Card>
       <VStack gap={4}>
-        <HStack gap={3} vAlign="start">
-          {icon}
           <VStack gap={1}>
-            <Heading level={3}>{title}</Heading>
+            <HStack gap={2}>
+              {icon}
+              <Heading level={3}>{title}</Heading>
+            </HStack>
             <Text type="supporting" color="secondary">
               {description}
             </Text>
           </VStack>
-        </HStack>
         <Divider />
         {children}
       </VStack>

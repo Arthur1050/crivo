@@ -33,6 +33,7 @@ export default async function CrmLayout({ children }: { children: ReactNode }) {
   return (
     <AppShell
       contentPadding={6}
+      variant="wash"
       sideNav={
         <Sidebar
           tenants={tenants.map((tenant) => ({

@@ -70,8 +70,8 @@ interface ColumnDefinition {
 // Badge não expõe as variantes semânticas com o mesmo nome do StatusDot:
 // mapeia cada status para a cor equivalente da paleta de badges (R1 —
 // "badge de contagem na mesma cor").
-const BADGE_VARIANT: Record<StatusVariant, "warning" | "green" | "red"> = {
-  warning: "warning",
+const BADGE_VARIANT: Record<StatusVariant, "yellow" | "green" | "red"> = {
+  warning: "yellow",
   success: "green",
   error: "red",
 };
@@ -199,7 +199,7 @@ export function PipelineBoard({
               {columns.map((column) => (
                 <Card
                   key={column.status}
-                  variant="muted"
+                  // variant="transparent"
                   padding={0}
                   onDragOver={(event) => event.preventDefault()}
                   onDrop={(event) => {
