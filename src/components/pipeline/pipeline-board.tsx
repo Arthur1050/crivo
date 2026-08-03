@@ -28,8 +28,8 @@ import {
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { StatusDot } from "@astryxdesign/core/StatusDot";
 import { Heading, Text } from "@astryxdesign/core/Text";
-import { Timestamp } from "@astryxdesign/core/Timestamp";
 import { LeadDetailPanel } from "@/src/components/pipeline/lead-detail-panel";
+import { RelativeTime } from "@/src/components/shared/relative-time";
 import { formatCurrencyBRL } from "@/src/lib/format";
 import { updateLeadStatusAction } from "@/src/server/actions/pipeline";
 import type {
@@ -344,12 +344,7 @@ function LeadCardBody({ lead }: { lead: LeadWithBroker }) {
       <HStack hAlign="between" vAlign="center" gap={2}>
         <HStack gap={2} vAlign="center">
           <CalendarDaysIcon size={14} />
-          <Timestamp
-            value={lead.firstContactAt.toISOString()}
-            format="relative"
-            type="supporting"
-            color="secondary"
-          />
+          <RelativeTime value={lead.firstContactAt.toISOString()} />
         </HStack>
         {lead.brokerName && (
           <Avatar name={lead.brokerName} size="xsm" />

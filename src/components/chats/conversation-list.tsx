@@ -5,7 +5,7 @@ import { Avatar } from "@astryxdesign/core/Avatar";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { LinkProvider } from "@astryxdesign/core/Link";
 import { List, ListItem } from "@astryxdesign/core/List";
-import { Timestamp } from "@astryxdesign/core/Timestamp";
+import { RelativeTime } from "@/src/components/shared/relative-time";
 import type { ConversationSummary } from "@/src/server/data";
 
 interface ConversationListProps {
@@ -54,9 +54,8 @@ export function ConversationList({
             }
             endContent={
               summary.lastMessage ? (
-                <Timestamp
+                <RelativeTime
                   value={summary.lastMessage.sentAt.toISOString()}
-                  format="relative"
                 />
               ) : undefined
             }
