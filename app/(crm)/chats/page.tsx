@@ -1,10 +1,17 @@
+import { Avatar } from "@astryxdesign/core/Avatar";
+import { Divider } from "@astryxdesign/core/Divider";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { Layout, LayoutContent, LayoutPanel } from "@astryxdesign/core/Layout";
-import { VStack } from "@astryxdesign/core/Stack";
-import { Heading } from "@astryxdesign/core/Text";
+import { HStack, VStack } from "@astryxdesign/core/Stack";
+import { Heading, Text } from "@astryxdesign/core/Text";
 import { ConversationList } from "@/src/components/chats/conversation-list";
 import { MessageThread } from "@/src/components/chats/message-thread";
-import { getConversationSummaries, getMessages } from "@/src/server/data";
+import {
+  getConversationSummaries,
+  getLead,
+  getMessages,
+  getTenant,
+} from "@/src/server/data";
 import { getActiveTenantId } from "@/src/server/tenant";
 
 interface ChatsPageProps {
@@ -27,9 +34,15 @@ export default async function ChatsPage({ searchParams }: ChatsPageProps) {
     ? summaries.find((summary) => summary.id === params.conversa)
     : undefined;
 
-  const messages = selectedSummary
-    ? await getMessages(tenantId, selectedSummary.id)
-    : [];
+  // `selectedLead` só existe para o cabeçalho da thread (RD-06 AC4 — nome +
+  // telefone): `getConversationSummaries` não carrega o telefone, e
+  // `getLead` já é tenant-scoped, então nenhuma consulta nova precisa nascer
+  // na DAL.
+  const [messages, selectedLead, tenant] = await Promise.all([
+    selectedSummary ? getMessages(tenantId, selectedSummary.id) : [],
+    selectedSummary ? getLead(tenantId, selectedSummary.leadId) : null,
+    getTenant(tenantId),
+  ]);
 
   return (
     <VStack gap={6}>
@@ -54,9 +67,22 @@ export default async function ChatsPage({ searchParams }: ChatsPageProps) {
               />
             ) : (
               <VStack gap={4}>
-                <Heading level={3}>{selectedSummary.leadName}</Heading>
+                {/* Cabeçalho da thread (RD-06 AC4, design.md § R5). */}
+                <HStack gap={3} vAlign="center">
+                  <Avatar name={selectedSummary.leadName || "Lead"} size="md" />
+                  <VStack gap={0.5}>
+                    <Heading level={3}>{selectedSummary.leadName}</Heading>
+                    {selectedLead?.phone && (
+                      <Text type="supporting" color="secondary">
+                        {selectedLead.phone}
+                      </Text>
+                    )}
+                  </VStack>
+                </HStack>
+                <Divider />
                 <MessageThread
                   messages={messages}
+                  agentName={tenant?.agentName ?? "Agente"}
                   emptyTitle="Nenhuma mensagem ainda"
                   emptyDescription="Esta conversa ainda não tem mensagens registradas."
                 />

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Avatar } from "@astryxdesign/core/Avatar";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { LinkProvider } from "@astryxdesign/core/Link";
 import { List, ListItem } from "@astryxdesign/core/List";
@@ -18,6 +19,11 @@ interface ConversationListProps {
  * mensagem DESC). A seleção é só navegação — `LinkProvider` roteia o `href`
  * de cada `ListItem` pelo `next/link` (mesmo padrão do `Sidebar`), então
  * clicar troca `?conversa=` sem recarregar a página inteira.
+ *
+ * Recomposta em redesign-crm-astryx (RD-06 AC1, design.md § R5): cada item
+ * ganha o avatar de iniciais do lead em `startContent`, mantendo nome,
+ * preview da última mensagem e timestamp relativo — a navegação e o destaque
+ * de seleção seguem exatamente os de hoje.
  */
 export function ConversationList({
   summaries,
@@ -43,6 +49,9 @@ export function ConversationList({
             description={summary.lastMessage?.content ?? "Sem mensagens"}
             href={`/chats?conversa=${summary.id}`}
             isSelected={summary.id === selectedConversationId}
+            startContent={
+              <Avatar name={summary.leadName || "Lead"} size="md" />
+            }
             endContent={
               summary.lastMessage ? (
                 <Timestamp
