@@ -70,7 +70,10 @@ export function KpiTiles({ kpis, baseline }: KpiTilesProps) {
           );
 
   return (
-    <Grid columns={{ minWidth: 220, repeat: "fit" }} gap={4}>
+    // `max: 5` mantém os cinco KPIs numa linha só em largura de desktop. Com
+    // o `minWidth: 220` anterior cabiam 4 por linha e o quinto ficava órfão
+    // numa segunda linha, o que lia como layout quebrado em vez de escolha.
+    <Grid columns={{ minWidth: 190, max: 5, repeat: "fit" }} gap={4}>
       <KpiTile
         label="Tempo médio até 1ª resposta"
         icon={ClockIcon}

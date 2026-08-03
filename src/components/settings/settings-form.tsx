@@ -127,8 +127,17 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
     router.refresh();
   }
 
+  /**
+   * Legenda + ação da seção. O asterisco no rótulo marca obrigatoriedade em
+   * pt-BR: o `isRequired`/`isOptional` da Astryx renderiza "Required" /
+   * "Optional" cravados em inglês (`FieldLabel.js:90`), sem prop de locale
+   * nem chave de catálogo, o que vazava inglês num produto todo em português.
+   */
   const saveButton = (
-    <HStack hAlign="end">
+    <HStack hAlign="between" vAlign="center" gap={3}>
+      <Text type="supporting" color="secondary">
+        * Campo obrigatório
+      </Text>
       <Button
         label="Salvar"
         variant="primary"
@@ -157,7 +166,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
         <FormLayout>
           <FormLayout direction="horizontal">
             <TextInput
-              label="Nome da imobiliária"
+              label="Nome da imobiliária *"
               value={name}
               onChange={(value) => {
                 setName(value);
@@ -166,10 +175,9 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
               status={
                 errors.name ? { type: "error", message: errors.name } : undefined
               }
-              isRequired
             />
             <Selector
-              label="Modalidade suportada"
+              label="Modalidade suportada *"
               value={modality}
               onChange={(value) => {
                 setModality(value as Modality);
@@ -181,7 +189,6 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                   ? { type: "error", message: errors.modality }
                   : undefined
               }
-              isRequired
             />
           </FormLayout>
 
@@ -191,14 +198,12 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
               value={city}
               onChange={setCity}
               hasClear
-              isOptional
             />
             <TextInput
               label="Estado (UF)"
               value={state}
               onChange={setState}
               hasClear
-              isOptional
             />
           </FormLayout>
 
@@ -208,14 +213,12 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
               value={agentWhatsapp}
               onChange={setAgentWhatsapp}
               hasClear
-              isOptional
             />
             <TextInput
               label="Website"
               value={website}
               onChange={setWebsite}
               hasClear
-              isOptional
             />
           </FormLayout>
         </FormLayout>
@@ -230,7 +233,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
       >
         <FormLayout>
           <TextInput
-            label="Nome do agente"
+            label="Nome do agente *"
             description={AGENT_NAME_HELPER}
             value={agentName}
             onChange={(value) => {
@@ -242,14 +245,12 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                 ? { type: "error", message: errors.agentName }
                 : undefined
             }
-            isRequired
           />
           <TextArea
             label="Mensagem de apresentação"
             value={presentationMessage}
             onChange={setPresentationMessage}
             rows={4}
-            isOptional
           />
         </FormLayout>
 

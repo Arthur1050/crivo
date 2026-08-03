@@ -61,11 +61,10 @@ export function DocumentsToolbar({ categories }: DocumentsToolbarProps) {
   }
 
   return (
-    <HStack gap={3} wrap="wrap">
+    <HStack gap={3} wrap="wrap" vAlign="end">
       <TextInput
-        label="Buscar por nome"
-        isLabelHidden
-        placeholder="Buscar por nome..."
+        label="Buscar"
+        placeholder="Nome do documento…"
         value={search}
         onChange={handleSearchChange}
         hasClear

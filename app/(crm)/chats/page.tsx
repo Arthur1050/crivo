@@ -46,10 +46,18 @@ export default async function ChatsPage({ searchParams }: ChatsPageProps) {
 
   return (
     <VStack gap={6}>
-      <Heading level={1}>Chats</Heading>
+      <VStack gap={1}>
+        <Heading level={1}>Chats</Heading>
+        <Text type="body" color="secondary">
+          {summaries.length === 1
+            ? `1 conversa conduzida pelo agente ${tenant?.agentName ?? "SDR"} no WhatsApp`
+            : `${summaries.length} conversas conduzidas pelo agente ${tenant?.agentName ?? "SDR"} no WhatsApp`}
+        </Text>
+      </VStack>
 
       <Layout
         height="auto"
+        className="mt-0!"
         start={
           <LayoutPanel width={320} hasDivider label="Conversas">
             <ConversationList
