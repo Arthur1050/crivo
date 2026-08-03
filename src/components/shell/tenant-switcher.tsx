@@ -1,13 +1,22 @@
 "use client";
 
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Selector } from "@astryxdesign/core/Selector";
+import {
+  NavHeadingMenu,
+  NavHeadingMenuItem,
+} from "@astryxdesign/core/NavMenu";
 import { useTenantStore } from "@/src/stores/tenant-store";
-import type { Tenant } from "@/src/server/data";
+import { formatTenantLocation } from "@/src/lib/tenant-identity";
 
-interface TenantSwitcherProps {
-  tenants: Tenant[];
+export interface TenantOption {
+  id: string;
+  name: string;
+  city: string | null;
+  state: string | null;
+}
+
+interface TenantSwitcherMenuProps {
+  tenants: TenantOption[];
   activeTenantId: string;
   // Recebida como prop (não importada de "@/src/server/tenant" aqui): esse
   // módulo também exporta getActiveTenantId, que puxa a DAL/driver `pg` — se
@@ -18,28 +27,23 @@ interface TenantSwitcherProps {
 }
 
 /**
- * Seletor de tenant no header do shell. O cookie `crivo_tenant` (via server
- * action `setActiveTenant`) é a fonte de verdade; esta store Zustand apenas
- * espelha o tenant ativo para a UI (design.md — Tech Decisions).
+ * Seletor de tenant hospedado no header de marca da sidebar
+ * (redesign-crm-astryx — RD-01 AC2): é o conteúdo do popover do
+ * `SideNavHeading`, via `NavHeadingMenu`. A troca em si é a mesma de sempre —
+ * server action `setActiveTenant` gravando o cookie `crivo_tenant`, que
+ * continua sendo a fonte de verdade (AD-007).
  */
-export function TenantSwitcher({
+export function TenantSwitcherMenu({
   tenants,
   activeTenantId,
   onTenantChange,
-}: TenantSwitcherProps) {
+}: TenantSwitcherMenuProps) {
   const router = useRouter();
   const setTenant = useTenantStore((state) => state.setTenant);
-  const activeTenant = tenants.find((tenant) => tenant.id === activeTenantId);
 
-  // Inicializa/atualiza o espelho client sempre que o server informar um
-  // tenant ativo diferente (primeira renderização ou troca vinda de outra aba).
-  useEffect(() => {
-    if (activeTenant) {
-      setTenant(activeTenant.id, activeTenant.name);
-    }
-  }, [activeTenant, setTenant]);
+  async function handleSelect(tenantId: string) {
+    if (tenantId === activeTenantId) return;
 
-  async function handleChange(tenantId: string) {
     await onTenantChange(tenantId);
 
     const tenant = tenants.find((candidate) => candidate.id === tenantId);
@@ -51,16 +55,17 @@ export function TenantSwitcher({
   }
 
   return (
-    <Selector
-      label="Imobiliária ativa"
-      isLabelHidden
-      placeholder="Selecione uma imobiliária"
-      value={activeTenantId}
-      onChange={handleChange}
-      options={tenants.map((tenant) => ({
-        value: tenant.id,
-        label: tenant.name,
-      }))}
-    />
+    <NavHeadingMenu size="lg">
+      {tenants.map((tenant) => (
+        <NavHeadingMenuItem
+          key={tenant.id}
+          label={tenant.name}
+          description={
+            formatTenantLocation(tenant.city, tenant.state) ?? undefined
+          }
+          onClick={() => void handleSelect(tenant.id)}
+        />
+      ))}
+    </NavHeadingMenu>
   );
 }
