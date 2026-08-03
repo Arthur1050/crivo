@@ -29,10 +29,13 @@ export async function updateLeadStatusAction(
   if (!statusCheck.ok) return statusCheck;
 
   const tenantId = await getActiveTenantId();
+  // "humano" explícito (lote-5 — INT-04): o Kanban é a única origem humana
+  // de mudança de status; a trava humana (patchLead) depende deste registro.
   const updated = await updateLeadStatus(
     tenantId,
     input.leadId,
-    input.status as LeadStatus
+    input.status as LeadStatus,
+    "humano"
   );
 
   if (!updated) {

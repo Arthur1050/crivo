@@ -633,20 +633,90 @@ export async function updateTenantSettings(
   return rows[0] ?? null;
 }
 
+export type StatusActor = "humano" | "agente";
+
 /**
  * Move um lead entre colunas do Kanban (lote-3 — PIPE-02): `WHERE tenant_id
  * AND id` (nunca só pelo id), sempre atualiza `updatedAt` para refletir o
  * momento da transição. Retorna `null` (no-op) quando nenhuma linha
  * corresponde a `tenantId` + `leadId` (lead inexistente OU de outro tenant).
+ *
+ * `actor` (lote-5 — INT-04) registra quem mudou o status por último:
+ * default `"humano"` preserva o comportamento de todo call site existente
+ * (o Kanban é a única origem antes deste lote); a API do agente passa
+ * `"agente"` explicitamente via `updateLeadFromAgent`, nunca por aqui.
  */
 export async function updateLeadStatus(
   tenantId: string,
   leadId: string,
-  status: LeadStatus
+  status: LeadStatus,
+  actor: StatusActor = "humano"
 ): Promise<Lead | null> {
   const rows = await db
     .update(leads)
-    .set({ status, updatedAt: new Date() })
+    .set({ status, statusChangedBy: actor, updatedAt: new Date() })
+    .where(and(eq(leads.tenantId, tenantId), eq(leads.id, leadId)))
+    .returning();
+  return rows[0] ?? null;
+}
+
+export interface UpdateLeadFromAgentInput {
+  status?: LeadStatus;
+  modality?: Lead["modality"] | null;
+  region?: string | null;
+  budgetCents?: bigint | null;
+  propertyType?: Lead["propertyType"] | null;
+  purchaseHorizon?: string | null;
+  motivation?: Lead["motivation"] | null;
+  creditStatus?: Lead["creditStatus"] | null;
+  chainedOperation?: boolean | null;
+  executiveSummary?: string | null;
+  escalationReason?: string | null;
+  meetingAt?: Date | null;
+}
+
+/**
+ * Upsert parcial de um lead vindo do agente (lote-5 — INT-03/04): uma única
+ * `UPDATE` grava todos os campos presentes em `input` (chave ausente não
+ * entra no `set` — coluna intocada; `null` explícito limpa), atomicidade por
+ * construção (o chamador — `patchLead`, em `src/server/integration/leads.ts`
+ * — já validou tudo antes de chegar aqui). Quando `status` está presente,
+ * marca `statusChangedBy = 'agente'` na mesma escrita (nunca `updateLeadStatus`,
+ * que é exclusivo do Kanban). Retorna `null` (no-op) quando nenhuma linha
+ * corresponde a `tenantId` + `leadId`.
+ */
+export async function updateLeadFromAgent(
+  tenantId: string,
+  leadId: string,
+  input: UpdateLeadFromAgentInput
+): Promise<Lead | null> {
+  const setValues: Partial<typeof leads.$inferInsert> = { updatedAt: new Date() };
+
+  if (input.status !== undefined) {
+    setValues.status = input.status;
+    setValues.statusChangedBy = "agente";
+  }
+  if ("modality" in input) setValues.modality = input.modality;
+  if ("region" in input) setValues.region = input.region;
+  if ("budgetCents" in input) setValues.budgetCents = input.budgetCents;
+  if ("propertyType" in input) setValues.propertyType = input.propertyType;
+  if ("purchaseHorizon" in input) setValues.purchaseHorizon = input.purchaseHorizon;
+  if ("motivation" in input) setValues.motivation = input.motivation;
+  if ("creditStatus" in input) setValues.creditStatus = input.creditStatus;
+  if ("chainedOperation" in input) {
+    setValues.chainedOperation = input.chainedOperation;
+  }
+  if ("executiveSummary" in input) {
+    setValues.executiveSummary = input.executiveSummary;
+  }
+  if ("escalationReason" in input) {
+    setValues.escalationReason = input.escalationReason;
+  }
+  if ("meetingAt" in input) setValues.meetingAt = input.meetingAt;
+
+  const rows = await db
+    .update(leads)
+    .set(setValues)
     .where(and(eq(leads.tenantId, tenantId), eq(leads.id, leadId)))
     .returning();
   return rows[0] ?? null;

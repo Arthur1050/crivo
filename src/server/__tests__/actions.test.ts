@@ -249,6 +249,27 @@ describe("server actions", () => {
       expect(revertResult.ok).toBe(true);
     });
 
+    // lote-5 — INT-04: a trava humana (patchLead) depende deste registro
+    // existir; sem ele, o agente poderia sobrescrever uma decisão humana.
+    it("grava status_changed_by='humano' ao mover o lead pelo Kanban (INT-04 AC4 — fundação da trava humana)", async () => {
+      const [lead] = await getLeads(activeTenantId);
+      expect(lead).toBeDefined();
+      const originalStatus = lead.status;
+      const nextStatus =
+        originalStatus === "escalado_humano" ? "em_qualificacao" : "escalado_humano";
+
+      const result = await updateLeadStatusAction({
+        leadId: lead.id,
+        status: nextStatus,
+      });
+      expect(result).toEqual({ ok: true });
+
+      const persisted = await getLead(activeTenantId, lead.id);
+      expect(persisted!.statusChangedBy).toBe("humano");
+
+      await updateLeadStatusAction({ leadId: lead.id, status: originalStatus });
+    });
+
     it("status fora do enum retorna { ok: false, error } e nada é persistido", async () => {
       const [lead] = await getLeads(activeTenantId);
       expect(lead).toBeDefined();

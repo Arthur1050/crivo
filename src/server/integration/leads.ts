@@ -1,6 +1,7 @@
 import "server-only";
-import { createAgentLead, type Lead } from "../data";
-import type { LeadCreateDto } from "./parsers";
+import { createAgentLead, getLead, updateLeadFromAgent, type Lead } from "../data";
+import type { LeadCreateDto, LeadPatchDto } from "./parsers";
+import type { ProblemCode } from "./problem";
 
 export interface DeliverLeadResult {
   created: boolean;
@@ -72,4 +73,67 @@ export function serializeLead(lead: Lead): SerializedLead {
     firstContactAt: lead.firstContactAt.toISOString(),
     optedOutAt: lead.optedOutAt ? lead.optedOutAt.toISOString() : null,
   };
+}
+
+type LeadStatusValue = Lead["status"];
+
+/**
+ * Máquina de estados do pipeline pelo contrato do agente (design.md —
+ * "Regras de negócio de leads do agente", INT-04): só avanço, nunca
+ * regressão nem saída de `escalado_humano` (destravar é ação humana no
+ * Kanban — context.md). Exportada para teste par a par e citada no guia de
+ * integração (T10).
+ */
+export const TRANSITIONS: Record<LeadStatusValue, LeadStatusValue[]> = {
+  em_qualificacao: ["qualificado_agendado", "escalado_humano"],
+  qualificado_agendado: [],
+  escalado_humano: [],
+};
+
+export type PatchLeadResult =
+  | { ok: true; lead: Lead }
+  | { ok: false; code: ProblemCode };
+
+/**
+ * Upsert parcial de qualificação + máquina de estados (INT-03/04). Ordem de
+ * validação (design.md — Components): 404 (lead fora do tenant) → transição
+ * (só quando `status` está no patch) → trava humana → motivo de
+ * escalonamento obrigatório → uma única `UPDATE` atômica. Qualquer rejeição
+ * retorna antes de tocar o banco (INT-04.5 — atomicidade: nenhum campo do
+ * payload é gravado se a request inteira for rejeitada).
+ */
+export async function patchLead(
+  tenantId: string,
+  leadId: string,
+  dto: LeadPatchDto
+): Promise<PatchLeadResult> {
+  const lead = await getLead(tenantId, leadId);
+  if (!lead) return { ok: false, code: "recurso-nao-encontrado" };
+
+  if (dto.status !== undefined) {
+    const allowedTargets = TRANSITIONS[lead.status];
+    if (!allowedTargets.includes(dto.status)) {
+      return { ok: false, code: "transicao-invalida" };
+    }
+
+    // Trava humana (INT-04.4): checada DEPOIS da transição ser válida na
+    // tabela — uma transição já inválida por si (ex.: sair de
+    // escalado_humano) reporta 'transicao-invalida', nunca
+    // 'lead-travado-por-humano', mesmo que o lead também esteja travado.
+    if (lead.statusChangedBy === "humano") {
+      return { ok: false, code: "lead-travado-por-humano" };
+    }
+
+    if (dto.status === "escalado_humano" && !dto.escalationReason?.trim()) {
+      return { ok: false, code: "motivo-escalonamento-obrigatorio" };
+    }
+  }
+
+  const updated = await updateLeadFromAgent(tenantId, leadId, dto);
+  if (!updated) {
+    // Corrida rara: o lead foi removido entre o SELECT acima e o UPDATE.
+    return { ok: false, code: "recurso-nao-encontrado" };
+  }
+
+  return { ok: true, lead: updated };
 }
