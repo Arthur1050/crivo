@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { BookmarkIcon, Trash2Icon } from "lucide-react";
 import { Banner } from "@astryxdesign/core/Banner";
 import { Button } from "@astryxdesign/core/Button";
 import { Dialog, DialogHeader } from "@astryxdesign/core/Dialog";
@@ -12,8 +13,6 @@ import { List, ListItem } from "@astryxdesign/core/List";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { Token } from "@astryxdesign/core/Token";
-import { BookmarkIcon } from "@/src/components/icons/bookmark";
-import { DeleteIcon } from "@/src/components/icons/delete";
 import {
   deleteDocumentCategoryAction,
   updateDocumentCategoryAction,
@@ -168,7 +167,7 @@ export function CategoryManagerDialog({ categories }: CategoryManagerDialogProps
                                 label="Excluir"
                                 variant="destructive"
                                 size="sm"
-                                icon={<DeleteIcon size={16} />}
+                                icon={<Trash2Icon size={16} />}
                                 isLoading={isDeletingId === category.id}
                                 onClick={() => handleConfirmDelete(category.id)}
                               />
@@ -194,7 +193,7 @@ export function CategoryManagerDialog({ categories }: CategoryManagerDialogProps
                                 label="Excluir"
                                 variant="ghost"
                                 size="sm"
-                                icon={<DeleteIcon size={16} />}
+                                icon={<Trash2Icon size={16} />}
                                 onClick={() => {
                                   setError(null);
                                   setConfirmingId(category.id);

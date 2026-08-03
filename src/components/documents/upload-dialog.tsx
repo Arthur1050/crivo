@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { PlusIcon, UploadIcon } from "lucide-react";
 import { Banner } from "@astryxdesign/core/Banner";
 import { Button } from "@astryxdesign/core/Button";
 import { Dialog, DialogHeader } from "@astryxdesign/core/Dialog";
@@ -12,8 +13,6 @@ import { Selector, SelectorOption } from "@astryxdesign/core/Selector";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { Token } from "@astryxdesign/core/Token";
-import { PlusIcon } from "@/src/components/icons/plus";
-import { UploadIcon } from "@/src/components/icons/upload";
 import {
   createDocumentAction,
   createDocumentCategoryAction,

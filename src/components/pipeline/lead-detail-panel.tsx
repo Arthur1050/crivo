@@ -1,8 +1,8 @@
+import { XIcon } from "lucide-react";
 import { IconButton } from "@astryxdesign/core/IconButton";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Heading, Text } from "@astryxdesign/core/Text";
 import { Timestamp } from "@astryxdesign/core/Timestamp";
-import { XIcon } from "@/src/components/icons/x";
 import { NavLink } from "@/src/components/shared/nav-link";
 import { formatCurrencyBRL } from "@/src/lib/format";
 import type { Lead, Modality } from "@/src/server/data";

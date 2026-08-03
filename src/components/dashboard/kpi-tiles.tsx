@@ -1,14 +1,16 @@
 import type { ComponentType, ReactNode } from "react";
+import {
+  CalendarDaysIcon,
+  CheckIcon,
+  ClockIcon,
+  TrendingUpIcon,
+  UsersIcon,
+} from "lucide-react";
 import { Card } from "@astryxdesign/core/Card";
 import { Grid } from "@astryxdesign/core/Grid";
 import { NavIcon } from "@astryxdesign/core/NavIcon";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { Heading, Text } from "@astryxdesign/core/Text";
-import { CalendarDaysIcon } from "@/src/components/icons/calendar-days";
-import { CheckIcon } from "@/src/components/icons/check";
-import { ClockIcon } from "@/src/components/icons/clock";
-import { TrendingUpIcon } from "@/src/components/icons/trending-up";
-import { UsersIcon } from "@/src/components/icons/users";
 import {
   formatDurationMinutes,
   formatPercentInt,

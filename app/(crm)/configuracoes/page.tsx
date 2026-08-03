@@ -1,10 +1,10 @@
+import { FileTextIcon } from "lucide-react";
 import { Card } from "@astryxdesign/core/Card";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { List, ListItem } from "@astryxdesign/core/List";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Heading, Text } from "@astryxdesign/core/Text";
 import { Timestamp } from "@astryxdesign/core/Timestamp";
-import { FileTextIcon } from "@/src/components/icons/file-text";
 import { NavLink } from "@/src/components/shared/nav-link";
 import { SettingsForm } from "@/src/components/settings/settings-form";
 import { getDocumentSample, getTenant, type Modality } from "@/src/server/data";

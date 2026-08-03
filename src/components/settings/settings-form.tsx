@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { ReactNode } from "react";
+import { BotIcon, CheckIcon, HomeIcon } from "lucide-react";
 import { Banner } from "@astryxdesign/core/Banner";
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
@@ -13,9 +14,6 @@ import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { TextArea } from "@astryxdesign/core/TextArea";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { Heading, Text } from "@astryxdesign/core/Text";
-import { BotIcon } from "@/src/components/icons/bot";
-import { CheckIcon } from "@/src/components/icons/check";
-import { HomeIcon } from "@/src/components/icons/home";
 import { updateTenantSettingsAction } from "@/src/server/actions/settings";
 import type { Modality, Tenant } from "@/src/server/data";
 import { validateModality, validateName } from "@/src/server/validation";

@@ -3,6 +3,14 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  ChartLineIcon,
+  FileTextIcon,
+  FolderKanbanIcon,
+  HomeIcon,
+  MessageCircleIcon,
+  SettingsIcon,
+} from "lucide-react";
 import { Avatar } from "@astryxdesign/core/Avatar";
 import { Card } from "@astryxdesign/core/Card";
 import { Item } from "@astryxdesign/core/Item";
@@ -15,12 +23,6 @@ import {
   SideNavSection,
 } from "@astryxdesign/core/SideNav";
 import { StatusDot } from "@astryxdesign/core/StatusDot";
-import { ChartLineIcon } from "@/src/components/icons/chart-line";
-import { FileTextIcon } from "@/src/components/icons/file-text";
-import { FolderKanbanIcon } from "@/src/components/icons/folder-kanban";
-import { HomeIcon } from "@/src/components/icons/home";
-import { MessageCircleIcon } from "@/src/components/icons/message-circle";
-import { SettingsIcon } from "@/src/components/icons/settings";
 import {
   TenantSwitcherMenu,
   type TenantOption,

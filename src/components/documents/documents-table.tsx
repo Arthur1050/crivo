@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { FileTextIcon, SquarePenIcon, Trash2Icon } from "lucide-react";
 import { AlertDialog } from "@astryxdesign/core/AlertDialog";
 import { Badge } from "@astryxdesign/core/Badge";
 import { Card } from "@astryxdesign/core/Card";
@@ -12,9 +13,6 @@ import type { TableColumn } from "@astryxdesign/core/Table";
 import { Text } from "@astryxdesign/core/Text";
 import { Timestamp } from "@astryxdesign/core/Timestamp";
 import { Token } from "@astryxdesign/core/Token";
-import { DeleteIcon } from "@/src/components/icons/delete";
-import { FileTextIcon } from "@/src/components/icons/file-text";
-import { SquarePenIcon } from "@/src/components/icons/square-pen";
 import { EditDocumentDialog } from "@/src/components/documents/edit-document-dialog";
 import { formatFileSize } from "@/src/lib/format";
 import { deleteDocumentAction } from "@/src/server/actions/documents";
@@ -191,7 +189,7 @@ export function DocumentsTable({ documents, categories }: DocumentsTableProps) {
             { type: "divider" },
             {
               label: "Excluir",
-              icon: <DeleteIcon size={16} />,
+              icon: <Trash2Icon size={16} />,
               onClick: () => {
                 setDeleteError(null);
                 setDeletingDocument(row.document);

@@ -3,6 +3,14 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { ComponentType } from "react";
+import {
+  CalendarDaysIcon,
+  CheckIcon,
+  MapPinIcon,
+  MessageCircleIcon,
+  PhoneIcon,
+  UsersIcon,
+} from "lucide-react";
 import { Avatar } from "@astryxdesign/core/Avatar";
 import { Badge } from "@astryxdesign/core/Badge";
 import { Banner } from "@astryxdesign/core/Banner";
@@ -21,12 +29,6 @@ import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { StatusDot } from "@astryxdesign/core/StatusDot";
 import { Heading, Text } from "@astryxdesign/core/Text";
 import { Timestamp } from "@astryxdesign/core/Timestamp";
-import { CalendarDaysIcon } from "@/src/components/icons/calendar-days";
-import { CheckIcon } from "@/src/components/icons/check";
-import { MapPinIcon } from "@/src/components/icons/map-pin";
-import { MessageCircleIcon } from "@/src/components/icons/message-circle";
-import { PhoneIcon } from "@/src/components/icons/phone";
-import { UsersIcon } from "@/src/components/icons/users";
 import { LeadDetailPanel } from "@/src/components/pipeline/lead-detail-panel";
 import { formatCurrencyBRL } from "@/src/lib/format";
 import { updateLeadStatusAction } from "@/src/server/actions/pipeline";
@@ -190,6 +192,7 @@ export function PipelineBoard({
 
       <Layout
         height="auto"
+        className="m-0!"
         content={
           <LayoutContent padding={0}>
             <Grid columns={3} gap={4} align="start">
