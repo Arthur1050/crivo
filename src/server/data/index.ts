@@ -8,6 +8,7 @@ import {
   getTableColumns,
   gte,
   ilike,
+  isNull,
   lte,
 } from "drizzle-orm";
 import { db } from "../../db";
@@ -18,6 +19,7 @@ import {
   documents,
   leads,
   messages,
+  tenantApiKeys,
   tenants,
 } from "../../db/schema";
 
@@ -49,6 +51,25 @@ export async function getTenant(tenantId: string): Promise<Tenant | null> {
     .where(eq(tenants.id, tenantId))
     .limit(1);
   return rows[0] ?? null;
+}
+
+/**
+ * Resolve o tenant a partir do hash sha256 de uma API key (lote-5 —
+ * `src/server/integration/auth.ts`, INT-01). Chaves com `revokedAt`
+ * preenchido são ignoradas — a única função da camada de acesso que não
+ * recebe `tenantId` como parâmetro, porque é ela quem o produz.
+ */
+export async function resolveTenantIdByApiKeyHash(
+  keyHash: string
+): Promise<string | null> {
+  const rows = await db
+    .select({ tenantId: tenantApiKeys.tenantId })
+    .from(tenantApiKeys)
+    .where(
+      and(eq(tenantApiKeys.keyHash, keyHash), isNull(tenantApiKeys.revokedAt))
+    )
+    .limit(1);
+  return rows[0]?.tenantId ?? null;
 }
 
 export async function getBrokers(tenantId: string): Promise<Broker[]> {
