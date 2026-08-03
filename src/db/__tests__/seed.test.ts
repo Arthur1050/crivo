@@ -246,6 +246,37 @@ describe("db/seed", () => {
     expect(sameOnAllThree).toBe(false);
   });
 
+  it("ambos os tenants têm as 5 colunas de identidade preenchidas (redesign — RD-01 AC6)", async () => {
+    const allTenants = await db.select().from(tenants);
+    expect(allTenants).toHaveLength(2);
+
+    for (const tenant of allTenants) {
+      expect(tenant.city).toBeTruthy();
+      expect(tenant.state).toBeTruthy();
+      expect(tenant.agentWhatsapp).toBeTruthy();
+      expect(tenant.website).toBeTruthy();
+      expect(tenant.agentPresentationMessage).toBeTruthy();
+    }
+  });
+
+  it("os 2 tenants têm identidade distinta entre si, para que trocar de tenant seja visível no shell (redesign — RD-01 AC6)", async () => {
+    const allTenants = await db.select().from(tenants);
+    expect(allTenants).toHaveLength(2);
+    const [tenantA, tenantB] = allTenants;
+
+    // `state` pode legitimamente repetir (os 2 pilotos são de MG — AD-001):
+    // o par cidade/UF é o que precisa distinguir os tenants no subtítulo do
+    // header da sidebar (design.md — R0).
+    expect(`${tenantA.city}/${tenantA.state}`).not.toBe(
+      `${tenantB.city}/${tenantB.state}`
+    );
+    expect(tenantA.agentWhatsapp).not.toBe(tenantB.agentWhatsapp);
+    expect(tenantA.website).not.toBe(tenantB.website);
+    expect(tenantA.agentPresentationMessage).not.toBe(
+      tenantB.agentPresentationMessage
+    );
+  });
+
   it("cada tenant tem leads com firstContactAt nas janelas de 7, 30 e 90 dias relativas a agora (lote-4 — datas espalhadas)", async () => {
     const allTenants = await db.select().from(tenants);
     expect(allTenants).toHaveLength(2);

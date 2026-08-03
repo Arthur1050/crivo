@@ -65,6 +65,15 @@ export const tenants = pgTable("tenants", {
   baselineLeadsPerMonth: integer("baseline_leads_per_month"),
   baselineFirstResponseMinutes: integer("baseline_first_response_minutes"),
   baselineLeadToMeetingPct: integer("baseline_lead_to_meeting_pct"),
+  // Identidade institucional exibida no shell e editável em Configurações
+  // (redesign-crm-astryx — RD-01/RD-02/RD-07). Todas nullable e aditivas: o
+  // shell degrada graciosamente quando faltam (spec.md — Edge Cases) e a
+  // Fase 9 troca a fonte, não as colunas (AD-004).
+  city: text("city"),
+  state: text("state"), // UF (2 chars por convenção do seed; sem constraint)
+  agentWhatsapp: text("agent_whatsapp"),
+  website: text("website"),
+  agentPresentationMessage: text("agent_presentation_message"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

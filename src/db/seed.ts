@@ -141,6 +141,13 @@ interface TenantDef {
   baselineLeadsPerMonth: number;
   baselineFirstResponseMinutes: number;
   baselineLeadToMeetingPct: number;
+  // Identidade institucional (redesign-crm-astryx — RD-02): valores distintos
+  // entre os 2 tenants, para que a troca de tenant no shell seja visível.
+  city: string;
+  state: string;
+  agentWhatsapp: string;
+  website: string;
+  agentPresentationMessage: string;
   brokers: { key: string; name: string; phone: string; email: string }[];
 }
 
@@ -153,6 +160,12 @@ const TENANT_DEFS: TenantDef[] = [
     baselineLeadsPerMonth: 16,
     baselineFirstResponseMinutes: 300,
     baselineLeadToMeetingPct: 18,
+    city: "Uberaba",
+    state: "MG",
+    agentWhatsapp: "+55 34 99100-0001",
+    website: "https://valeuberaba.com.br",
+    agentPresentationMessage:
+      "Olá! Aqui é a Bia, assistente virtual da Imobiliária Vale do Uberaba. Posso te ajudar a encontrar o imóvel ideal — me conta o que você procura?",
     brokers: [
       {
         key: "b1",
@@ -182,6 +195,12 @@ const TENANT_DEFS: TenantDef[] = [
     baselineLeadsPerMonth: 22,
     baselineFirstResponseMinutes: 180,
     baselineLeadToMeetingPct: 27,
+    city: "Uberlândia",
+    state: "MG",
+    agentWhatsapp: "+55 34 99200-0002",
+    website: "https://trianguloimoveis.com.br",
+    agentPresentationMessage:
+      "Oi! Sou o Lucas, assistente virtual da Triângulo Imóveis. Me conta qual imóvel você procura que eu te ajudo a chegar na melhor opção.",
     brokers: [
       {
         key: "b1",
@@ -482,6 +501,11 @@ export async function runSeed(): Promise<void> {
       baselineLeadsPerMonth: tenantDef.baselineLeadsPerMonth,
       baselineFirstResponseMinutes: tenantDef.baselineFirstResponseMinutes,
       baselineLeadToMeetingPct: tenantDef.baselineLeadToMeetingPct,
+      city: tenantDef.city,
+      state: tenantDef.state,
+      agentWhatsapp: tenantDef.agentWhatsapp,
+      website: tenantDef.website,
+      agentPresentationMessage: tenantDef.agentPresentationMessage,
     });
 
     const categoryIds = new Map<string, string>();
