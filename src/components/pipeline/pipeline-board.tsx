@@ -3,10 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { ComponentType } from "react";
+import { Avatar } from "@astryxdesign/core/Avatar";
 import { Badge } from "@astryxdesign/core/Badge";
 import { Banner } from "@astryxdesign/core/Banner";
 import { Card } from "@astryxdesign/core/Card";
 import { ClickableCard } from "@astryxdesign/core/ClickableCard";
+import { Divider } from "@astryxdesign/core/Divider";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { Grid } from "@astryxdesign/core/Grid";
 import {
@@ -19,12 +21,21 @@ import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { StatusDot } from "@astryxdesign/core/StatusDot";
 import { Heading, Text } from "@astryxdesign/core/Text";
 import { Timestamp } from "@astryxdesign/core/Timestamp";
+import { CalendarDaysIcon } from "@/src/components/icons/calendar-days";
 import { CheckIcon } from "@/src/components/icons/check";
+import { MapPinIcon } from "@/src/components/icons/map-pin";
 import { MessageCircleIcon } from "@/src/components/icons/message-circle";
+import { PhoneIcon } from "@/src/components/icons/phone";
 import { UsersIcon } from "@/src/components/icons/users";
 import { LeadDetailPanel } from "@/src/components/pipeline/lead-detail-panel";
+import { formatCurrencyBRL } from "@/src/lib/format";
 import { updateLeadStatusAction } from "@/src/server/actions/pipeline";
-import type { Lead, LeadStatus, Modality } from "@/src/server/data";
+import type {
+  Lead,
+  LeadStatus,
+  LeadWithBroker,
+  Modality,
+} from "@/src/server/data";
 
 const MODALITY_LABELS: Record<Modality, string> = {
   novo: "Novo",
@@ -36,6 +47,11 @@ const MODALITY_BADGE_VARIANT: Record<Modality, "blue" | "purple" | "teal"> = {
   novo: "blue",
   usado: "purple",
   ambos: "teal",
+};
+
+const PROPERTY_TYPE_LABELS: Record<NonNullable<Lead["propertyType"]>, string> = {
+  casa: "Casa",
+  apartamento: "Apartamento",
 };
 
 type StatusVariant = "warning" | "success" | "error";
@@ -87,7 +103,7 @@ const COLUMNS: ColumnDefinition[] = [
 ];
 
 interface PipelineBoardProps {
-  leads: Lead[];
+  leads: LeadWithBroker[];
   /** `leadId → conversationId`, para o link "Ver conversa" (lote-3 — PIPE-04). */
   conversationIdByLeadId?: Record<string, string>;
 }
@@ -232,27 +248,7 @@ export function PipelineBoard({
                                 }
                                 onClick={() => setSelectedLeadId(lead.id)}
                               >
-                                <VStack gap={1}>
-                                  <Text type="body" weight="medium">
-                                    {lead.name}
-                                  </Text>
-                                  <HStack gap={2} vAlign="center" wrap="wrap">
-                                    {lead.modality && (
-                                      <Badge
-                                        label={MODALITY_LABELS[lead.modality]}
-                                        variant={
-                                          MODALITY_BADGE_VARIANT[lead.modality]
-                                        }
-                                      />
-                                    )}
-                                    <Timestamp
-                                      value={lead.firstContactAt.toISOString()}
-                                      format="relative"
-                                      type="supporting"
-                                      color="secondary"
-                                    />
-                                  </HStack>
-                                </VStack>
+                                <LeadCardBody lead={lead} />
                               </ClickableCard>
                             ))}
                           </VStack>
@@ -277,6 +273,85 @@ export function PipelineBoard({
           ) : undefined
         }
       />
+    </VStack>
+  );
+}
+
+/**
+ * Conteúdo do card de lead (redesign-crm-astryx — RD-03 AC3/AC4,
+ * design.md § R1): nome + badge de modalidade, telefone, região,
+ * orçamento + tipo de imóvel, divider e rodapé com data e corretor.
+ *
+ * Cada linha de qualificação só é renderizada quando o dado existe — leads
+ * ainda em qualificação simplesmente ficam mais curtos, sem placeholder nem
+ * célula vazia (spec.md — Edge Cases).
+ */
+function LeadCardBody({ lead }: { lead: LeadWithBroker }) {
+  const budget = formatCurrencyBRL(lead.budgetCents);
+
+  return (
+    <VStack gap={2}>
+      <HStack hAlign="between" vAlign="center" gap={2}>
+        <Text type="body" weight="medium">
+          {lead.name}
+        </Text>
+        {lead.modality && (
+          <Badge
+            label={MODALITY_LABELS[lead.modality]}
+            variant={MODALITY_BADGE_VARIANT[lead.modality]}
+          />
+        )}
+      </HStack>
+
+      <VStack gap={1}>
+        <HStack gap={2} vAlign="center">
+          <PhoneIcon size={14} />
+          <Text type="supporting" color="secondary">
+            {lead.phone}
+          </Text>
+        </HStack>
+
+        {lead.region && (
+          <HStack gap={2} vAlign="center">
+            <MapPinIcon size={14} />
+            <Text type="supporting" color="secondary">
+              {lead.region}
+            </Text>
+          </HStack>
+        )}
+      </VStack>
+
+      {(budget || lead.propertyType) && (
+        <HStack hAlign="between" vAlign="center" gap={2}>
+          {budget && (
+            <Text type="body" weight="medium">
+              {budget}
+            </Text>
+          )}
+          {lead.propertyType && (
+            <Text type="supporting" color="secondary">
+              {PROPERTY_TYPE_LABELS[lead.propertyType]}
+            </Text>
+          )}
+        </HStack>
+      )}
+
+      <Divider />
+
+      <HStack hAlign="between" vAlign="center" gap={2}>
+        <HStack gap={2} vAlign="center">
+          <CalendarDaysIcon size={14} />
+          <Timestamp
+            value={lead.firstContactAt.toISOString()}
+            format="relative"
+            type="supporting"
+            color="secondary"
+          />
+        </HStack>
+        {lead.brokerName && (
+          <Avatar name={lead.brokerName} size="xsm" />
+        )}
+      </HStack>
     </VStack>
   );
 }
