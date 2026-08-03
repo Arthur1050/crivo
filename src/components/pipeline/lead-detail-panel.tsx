@@ -3,6 +3,7 @@ import { IconButton } from "@astryxdesign/core/IconButton";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Heading, Text } from "@astryxdesign/core/Text";
 import { Timestamp } from "@astryxdesign/core/Timestamp";
+import { Token } from "@astryxdesign/core/Token";
 import { NavLink } from "@/src/components/shared/nav-link";
 import { formatCurrencyBRL } from "@/src/lib/format";
 import type { Lead, Modality } from "@/src/server/data";
@@ -97,6 +98,13 @@ export function LeadDetailPanel({
           onClick={onClose}
         />
       </HStack>
+
+      {lead.optedOutAt && (
+        <HStack gap={2} vAlign="center">
+          <Token label="Opt-out" color="red" size="sm" />
+          <Timestamp value={lead.optedOutAt.toISOString()} format="date_time" />
+        </HStack>
+      )}
 
       <VStack gap={1}>
         <Text type="label" color="secondary">
