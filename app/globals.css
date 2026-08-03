@@ -1,29 +1,36 @@
-@import "tailwindcss";
+/*
+ * Ordem de cascata exigida pela ponte Tailwind da Astryx
+ * (node_modules/@astryxdesign/core/src/tailwind-theme.css § Usage).
+ * `reset`, `astryx-base` e `astryx-theme` são declaradas pelos próprios
+ * arquivos da lib; as utilities entram por último para vencer a base.
+ */
+@layer reset, theme, base, astryx-base, astryx-theme, components, utilities;
+
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
 @import "@astryxdesign/core/reset.css";
 @import "@astryxdesign/core/astryx.css";
 @import "@astryxdesign/theme-neutral/theme.css";
+/*
+ * Ponte token → utility. Sem ela as classes token-backed que o AGENTS.md
+ * manda usar (bg-surface, text-primary, rounded-lg) simplesmente não existem.
+ */
+@import "@astryxdesign/core/tailwind-theme.css";
+@import "tailwindcss/utilities.css" layer(utilities);
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /*
+   * Liga as fontes carregadas por `next/font` (app/layout.tsx) aos três
+   * papéis de fonte da Astryx. Sem isto o `--font-geist-sans` fica
+   * declarado e não consumido, e a lib cai no stack de sistema.
+   */
+  --font-family-body: var(--font-geist-sans), system-ui, sans-serif;
+  --font-family-heading: var(--font-geist-sans), system-ui, sans-serif;
+  --font-family-code: var(--font-geist-mono), ui-monospace, monospace;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-background-body);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-body);
 }
