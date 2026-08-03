@@ -10,6 +10,7 @@ import {
   ilike,
   isNull,
   lte,
+  sql,
 } from "drizzle-orm";
 import { db } from "../../db";
 import {
@@ -649,6 +650,70 @@ export async function updateLeadStatus(
     .where(and(eq(leads.tenantId, tenantId), eq(leads.id, leadId)))
     .returning();
   return rows[0] ?? null;
+}
+
+export interface CreateAgentLeadInput {
+  name: string;
+  phone: string;
+  externalId: string;
+  firstContactAt: Date;
+}
+
+export interface CreateAgentLeadResult {
+  created: boolean;
+  lead: Lead;
+}
+
+/**
+ * Cria um lead vindo do agente (lote-5 — INT-02), sempre com status inicial
+ * `em_qualificacao`. Idempotente por `(tenantId, externalId)`: a unicidade é
+ * garantida no banco pelo índice parcial `leads_tenant_id_external_id_idx`
+ * (schema.ts) — `onConflictDoNothing` absorve reentrega/concorrência (Edge
+ * Cases: "dois requests concorrentes reentregam o mesmo externalId → no
+ * máximo um recurso"); quando o insert é descartado por conflito, a busca
+ * seguinte devolve o lead já existente (`created: false`).
+ */
+export async function createAgentLead(
+  tenantId: string,
+  input: CreateAgentLeadInput
+): Promise<CreateAgentLeadResult> {
+  const inserted = await db
+    .insert(leads)
+    .values({
+      tenantId,
+      name: input.name,
+      phone: input.phone,
+      externalId: input.externalId,
+      firstContactAt: input.firstContactAt,
+      status: "em_qualificacao",
+    })
+    .onConflictDoNothing({
+      target: [leads.tenantId, leads.externalId],
+      where: sql`${leads.externalId} is not null`,
+    })
+    .returning();
+
+  if (inserted.length > 0) {
+    return { created: true, lead: inserted[0] };
+  }
+
+  const existing = await db
+    .select()
+    .from(leads)
+    .where(
+      and(eq(leads.tenantId, tenantId), eq(leads.externalId, input.externalId))
+    )
+    .limit(1);
+
+  if (!existing[0]) {
+    // Inalcançável em teoria: o índice único parcial garante que, se o
+    // insert foi descartado por conflito, existe uma linha correspondente.
+    throw new Error(
+      "createAgentLead: onConflictDoNothing sem linha nova nem existente."
+    );
+  }
+
+  return { created: false, lead: existing[0] };
 }
 
 export interface CreateDocumentInput {
