@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Scaffolds da CLI da Astryx (git-ignored, nunca fazem parte do app).
+    "scratch/**",
   ]),
 ]);
 
