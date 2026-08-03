@@ -2,15 +2,26 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import type { ComponentType } from "react";
 import { Badge } from "@astryxdesign/core/Badge";
 import { Banner } from "@astryxdesign/core/Banner";
+import { Card } from "@astryxdesign/core/Card";
 import { ClickableCard } from "@astryxdesign/core/ClickableCard";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { Grid } from "@astryxdesign/core/Grid";
-import { Layout, LayoutContent, LayoutPanel } from "@astryxdesign/core/Layout";
+import {
+  Layout,
+  LayoutContent,
+  LayoutHeader,
+  LayoutPanel,
+} from "@astryxdesign/core/Layout";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
+import { StatusDot } from "@astryxdesign/core/StatusDot";
 import { Heading, Text } from "@astryxdesign/core/Text";
 import { Timestamp } from "@astryxdesign/core/Timestamp";
+import { CheckIcon } from "@/src/components/icons/check";
+import { MessageCircleIcon } from "@/src/components/icons/message-circle";
+import { UsersIcon } from "@/src/components/icons/users";
 import { LeadDetailPanel } from "@/src/components/pipeline/lead-detail-panel";
 import { updateLeadStatusAction } from "@/src/server/actions/pipeline";
 import type { Lead, LeadStatus, Modality } from "@/src/server/data";
@@ -27,11 +38,25 @@ const MODALITY_BADGE_VARIANT: Record<Modality, "blue" | "purple" | "teal"> = {
   ambos: "teal",
 };
 
+type StatusVariant = "warning" | "success" | "error";
+
 interface ColumnDefinition {
   status: LeadStatus;
   title: string;
   emptyDescription: string;
+  /** Cor semântica do status, compartilhada pelo dot e pelo badge (R1). */
+  variant: StatusVariant;
+  icon: ComponentType<{ size?: number }>;
 }
+
+// Badge não expõe as variantes semânticas com o mesmo nome do StatusDot:
+// mapeia cada status para a cor equivalente da paleta de badges (R1 —
+// "badge de contagem na mesma cor").
+const BADGE_VARIANT: Record<StatusVariant, "warning" | "green" | "red"> = {
+  warning: "warning",
+  success: "green",
+  error: "red",
+};
 
 // As 3 colunas fixas do funil (spec.md — PIPE-01.1); qualquer lead com status
 // fora deste conjunto (dado corrompido) nunca aparece em coluna nenhuma —
@@ -42,16 +67,22 @@ const COLUMNS: ColumnDefinition[] = [
     status: "em_qualificacao",
     title: "Em qualificação",
     emptyDescription: "Leads em atendimento pelo agente aparecerão aqui.",
+    variant: "warning",
+    icon: MessageCircleIcon,
   },
   {
     status: "qualificado_agendado",
     title: "Qualificado e agendado",
     emptyDescription: "Leads qualificados com reunião agendada aparecerão aqui.",
+    variant: "success",
+    icon: CheckIcon,
   },
   {
     status: "escalado_humano",
     title: "Escalado para humano",
     emptyDescription: "Leads que precisam de atenção humana aparecerão aqui.",
+    variant: "error",
+    icon: UsersIcon,
   },
 ];
 
@@ -147,9 +178,10 @@ export function PipelineBoard({
           <LayoutContent padding={0}>
             <Grid columns={3} gap={4} align="start">
               {columns.map((column) => (
-                <VStack
+                <Card
                   key={column.status}
-                  gap={3}
+                  variant="muted"
+                  padding={0}
                   onDragOver={(event) => event.preventDefault()}
                   onDrop={(event) => {
                     event.preventDefault();
@@ -157,56 +189,78 @@ export function PipelineBoard({
                     if (leadId) void handleDrop(column.status, leadId);
                   }}
                 >
-                  <HStack vAlign="center" gap={2}>
-                    <Heading level={3}>{column.title}</Heading>
-                    <Badge
-                      label={String(column.leads.length)}
-                      variant="neutral"
-                    />
-                  </HStack>
-
-                  {column.leads.length === 0 ? (
-                    <EmptyState
-                      isCompact
-                      title="Nenhum lead"
-                      description={column.emptyDescription}
-                    />
-                  ) : (
-                    <VStack gap={2}>
-                      {column.leads.map((lead) => (
-                        <ClickableCard
-                          key={lead.id}
-                          label={`Ver detalhe de ${lead.name}`}
-                          draggable
-                          onDragStart={(event) =>
-                            event.dataTransfer.setData("text/plain", lead.id)
-                          }
-                          onClick={() => setSelectedLeadId(lead.id)}
-                        >
-                          <VStack gap={1}>
-                            <Text type="body" weight="medium">
-                              {lead.name}
-                            </Text>
-                            <HStack gap={2} vAlign="center" wrap="wrap">
-                              {lead.modality && (
-                                <Badge
-                                  label={MODALITY_LABELS[lead.modality]}
-                                  variant={MODALITY_BADGE_VARIANT[lead.modality]}
-                                />
-                              )}
-                              <Timestamp
-                                value={lead.firstContactAt.toISOString()}
-                                format="relative"
-                                type="supporting"
-                                color="secondary"
-                              />
-                            </HStack>
+                  <Layout
+                    height="auto"
+                    header={
+                      <LayoutHeader hasDivider padding={3}>
+                        <HStack hAlign="between" vAlign="center" gap={2}>
+                          <HStack gap={2} vAlign="center">
+                            <StatusDot
+                              variant={column.variant}
+                              label={`Status ${column.title}`}
+                            />
+                            <column.icon size={16} />
+                            <Heading level={3}>{column.title}</Heading>
+                          </HStack>
+                          <Badge
+                            label={String(column.leads.length)}
+                            variant={BADGE_VARIANT[column.variant]}
+                          />
+                        </HStack>
+                      </LayoutHeader>
+                    }
+                    content={
+                      <LayoutContent padding={3}>
+                        {column.leads.length === 0 ? (
+                          <EmptyState
+                            isCompact
+                            title="Nenhum lead"
+                            description={column.emptyDescription}
+                          />
+                        ) : (
+                          <VStack gap={2}>
+                            {column.leads.map((lead) => (
+                              <ClickableCard
+                                key={lead.id}
+                                label={`Ver detalhe de ${lead.name}`}
+                                draggable
+                                onDragStart={(event) =>
+                                  event.dataTransfer.setData(
+                                    "text/plain",
+                                    lead.id
+                                  )
+                                }
+                                onClick={() => setSelectedLeadId(lead.id)}
+                              >
+                                <VStack gap={1}>
+                                  <Text type="body" weight="medium">
+                                    {lead.name}
+                                  </Text>
+                                  <HStack gap={2} vAlign="center" wrap="wrap">
+                                    {lead.modality && (
+                                      <Badge
+                                        label={MODALITY_LABELS[lead.modality]}
+                                        variant={
+                                          MODALITY_BADGE_VARIANT[lead.modality]
+                                        }
+                                      />
+                                    )}
+                                    <Timestamp
+                                      value={lead.firstContactAt.toISOString()}
+                                      format="relative"
+                                      type="supporting"
+                                      color="secondary"
+                                    />
+                                  </HStack>
+                                </VStack>
+                              </ClickableCard>
+                            ))}
                           </VStack>
-                        </ClickableCard>
-                      ))}
-                    </VStack>
-                  )}
-                </VStack>
+                        )}
+                      </LayoutContent>
+                    }
+                  />
+                </Card>
               ))}
             </Grid>
           </LayoutContent>
