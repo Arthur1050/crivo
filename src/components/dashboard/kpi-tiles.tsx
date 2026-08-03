@@ -1,7 +1,14 @@
+import type { ComponentType, ReactNode } from "react";
 import { Card } from "@astryxdesign/core/Card";
 import { Grid } from "@astryxdesign/core/Grid";
-import { VStack } from "@astryxdesign/core/Stack";
+import { NavIcon } from "@astryxdesign/core/NavIcon";
+import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { Heading, Text } from "@astryxdesign/core/Text";
+import { CalendarDaysIcon } from "@/src/components/icons/calendar-days";
+import { CheckIcon } from "@/src/components/icons/check";
+import { ClockIcon } from "@/src/components/icons/clock";
+import { TrendingUpIcon } from "@/src/components/icons/trending-up";
+import { UsersIcon } from "@/src/components/icons/users";
 import {
   formatDurationMinutes,
   formatPercentInt,
@@ -65,6 +72,7 @@ export function KpiTiles({ kpis, baseline }: KpiTilesProps) {
     <Grid columns={{ minWidth: 220, repeat: "fit" }} gap={4}>
       <KpiTile
         label="Tempo médio até 1ª resposta"
+        icon={ClockIcon}
         value={
           kpis.avgFirstResponseMinutes === null
             ? "—"
@@ -75,12 +83,14 @@ export function KpiTiles({ kpis, baseline }: KpiTilesProps) {
       />
       <KpiTile
         label="Volume de leads"
+        icon={TrendingUpIcon}
         value={String(kpis.leadCount)}
         base="no período selecionado"
         baselineLine={volumeBaselineLine}
       />
       <KpiTile
         label="Taxa de qualificação"
+        icon={CheckIcon}
         value={
           kpis.qualificationRate === null ? "—" : formatPercentInt(kpis.qualificationRate)
         }
@@ -89,6 +99,7 @@ export function KpiTiles({ kpis, baseline }: KpiTilesProps) {
       />
       <KpiTile
         label="Taxa de escalonamento"
+        icon={UsersIcon}
         value={
           kpis.escalationRate === null ? "—" : formatPercentInt(kpis.escalationRate)
         }
@@ -96,6 +107,7 @@ export function KpiTiles({ kpis, baseline }: KpiTilesProps) {
       />
       <KpiTile
         label="Taxa de comparecimento"
+        icon={CalendarDaysIcon}
         value={
           kpis.attendanceRate === null ? "—" : formatPercentInt(kpis.attendanceRate)
         }
@@ -110,15 +122,32 @@ interface KpiTileProps {
   value: string;
   base: string;
   baselineLine?: string;
+  /** Ícone temático do KPI, exibido no NavIcon do topo-direita (R2). */
+  icon: ComponentType<{ size?: number }>;
 }
 
-function KpiTile({ label, value, base, baselineLine }: KpiTileProps) {
+/**
+ * Tile de KPI conforme design.md § R2: label pequeno no topo-esquerda,
+ * chip de ícone (NavIcon) no topo-direita, valor em destaque e sublabels
+ * secundários. Apresentação pura — os números e os formatadores são
+ * exatamente os mesmos de antes (spec.md — RD-04 AC2).
+ */
+function KpiTile({
+  label,
+  value,
+  base,
+  baselineLine,
+  icon: Icon,
+}: KpiTileProps): ReactNode {
   return (
     <Card>
       <VStack gap={2}>
-        <Text type="label" color="secondary">
-          {label}
-        </Text>
+        <HStack hAlign="between" vAlign="start" gap={2}>
+          <Text type="label" color="secondary">
+            {label}
+          </Text>
+          <NavIcon icon={<Icon size={16} />} />
+        </HStack>
         <Heading level={2}>{value}</Heading>
         <Text type="supporting" color="secondary">
           {base}

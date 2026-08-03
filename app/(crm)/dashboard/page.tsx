@@ -1,7 +1,7 @@
 import { Divider } from "@astryxdesign/core/Divider";
 import { Grid } from "@astryxdesign/core/Grid";
 import { VStack } from "@astryxdesign/core/Stack";
-import { Heading } from "@astryxdesign/core/Text";
+import { Heading, Text } from "@astryxdesign/core/Text";
 import { DistributionChart } from "@/src/components/dashboard/distribution-chart";
 import { KpiTiles } from "@/src/components/dashboard/kpi-tiles";
 import { PeriodFilter } from "@/src/components/dashboard/period-filter";
@@ -61,7 +61,12 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
   return (
     <VStack gap={6}>
-      <Heading level={1}>Dashboard</Heading>
+      <VStack gap={1}>
+        <Heading level={1}>Dashboard</Heading>
+        <Text type="body" color="secondary">
+          Visão geral do desempenho do agente SDR e do pipeline de leads
+        </Text>
+      </VStack>
       <PeriodFilter period={period} />
       <KpiTiles
         kpis={kpis}
