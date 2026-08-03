@@ -786,6 +786,94 @@ export async function createAgentLead(
   return { created: false, lead: existing[0] };
 }
 
+export interface IngestAgentMessageInput {
+  externalId: string;
+  sender: Message["sender"];
+  content: string;
+  sentAt: Date;
+}
+
+export interface IngestAgentMessageResult {
+  created: boolean;
+  message: Message;
+}
+
+/**
+ * Ingestão idempotente de uma mensagem vinda do agente (lote-5 — INT-05),
+ * dentro de uma única transação: garante que existe uma conversa do lead
+ * (cria na primeira mensagem, reaproveita nas seguintes) e insere a mensagem
+ * com `onConflictDoNothing` por `(tenantId, externalId)` — mesmo padrão de
+ * `createAgentLead` acima; quando o insert é descartado por conflito, a
+ * busca seguinte devolve a mensagem já existente (`created: false`). Retorna
+ * `null` quando o lead não existe no tenant (404 na rota) — checado dentro
+ * da MESMA transação para eliminar corrida entre o SELECT do lead e o
+ * INSERT da mensagem.
+ */
+export async function ingestAgentMessage(
+  tenantId: string,
+  leadId: string,
+  input: IngestAgentMessageInput
+): Promise<IngestAgentMessageResult | null> {
+  return db.transaction(async (tx) => {
+    const leadRows = await tx
+      .select({ id: leads.id })
+      .from(leads)
+      .where(and(eq(leads.tenantId, tenantId), eq(leads.id, leadId)))
+      .limit(1);
+    if (!leadRows[0]) return null;
+
+    const conversationRows = await tx
+      .select()
+      .from(conversations)
+      .where(
+        and(eq(conversations.tenantId, tenantId), eq(conversations.leadId, leadId))
+      )
+      .limit(1);
+
+    const conversation =
+      conversationRows[0] ??
+      (await tx.insert(conversations).values({ tenantId, leadId }).returning())[0];
+
+    const inserted = await tx
+      .insert(messages)
+      .values({
+        tenantId,
+        conversationId: conversation.id,
+        sender: input.sender,
+        content: input.content,
+        sentAt: input.sentAt,
+        externalId: input.externalId,
+      })
+      .onConflictDoNothing({
+        target: [messages.tenantId, messages.externalId],
+        where: sql`${messages.externalId} is not null`,
+      })
+      .returning();
+
+    if (inserted.length > 0) {
+      return { created: true, message: inserted[0] };
+    }
+
+    const existing = await tx
+      .select()
+      .from(messages)
+      .where(
+        and(eq(messages.tenantId, tenantId), eq(messages.externalId, input.externalId))
+      )
+      .limit(1);
+
+    if (!existing[0]) {
+      // Inalcançável em teoria: mesmo raciocínio de createAgentLead — o
+      // índice único parcial garante que existe uma linha correspondente.
+      throw new Error(
+        "ingestAgentMessage: onConflictDoNothing sem linha nova nem existente."
+      );
+    }
+
+    return { created: false, message: existing[0] };
+  });
+}
+
 export interface CreateDocumentInput {
   name: string;
   mimeType: string;
