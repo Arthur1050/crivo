@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { db } from "./index";
 import {
@@ -9,6 +9,7 @@ import {
   documents,
   leads,
   messages,
+  tenantApiKeys,
   tenants,
 } from "./schema";
 
@@ -470,10 +471,49 @@ function documentDefsFor(tenantKey: string) {
       expiresAt: new Date(Date.UTC(2027, 0, 1)),
       categoryKey: "contratos" as string | null,
     },
+    {
+      // Documento expirado (lote-5 — LGPD-02): data absoluta e fixa no
+      // passado, sempre expirada em qualquer momento em que o seed rodar —
+      // torna o TTL demonstrável por tenant sem depender do job já ter
+      // rodado (spec.md, LGPD-02 AC2).
+      key: "tabela-precos-expirada",
+      name: "Tabela de Preços 2019 (Descontinuada).pdf",
+      modality: "ambos" as Modality,
+      mimeType: "application/pdf",
+      sizeBytes: BigInt(153200),
+      expiresAt: new Date(Date.UTC(2020, 0, 1)),
+      categoryKey: "tabelas-precos" as string | null,
+    },
   ].map((d) => ({ ...d, key: `${tenantKey}:${d.key}` }));
 }
 
-export async function runSeed(): Promise<void> {
+/**
+ * Gera uma chave de API opaca (64 chars hex, alta entropia) e seu hash
+ * sha256 — mesmo algoritmo que `src/server/integration/auth.ts` (T2) usa
+ * para resolver o tenant a partir do header `Authorization`. Diferente de
+ * `id()` acima, a chave NÃO é determinística: cada `db:seed` gera (e
+ * imprime) um valor novo, invalidando o anterior — comportamento aceito e
+ * documentado (design.md — Risks: "Reseed rotaciona as chaves").
+ */
+function generateApiKey(): { key: string; hash: string } {
+  const key = randomBytes(32).toString("hex");
+  const hash = createHash("sha256").update(key).digest("hex");
+  return { key, hash };
+}
+
+/** Chave em claro gerada para um tenant — só existe em memória (retorno de
+ * `runSeed`); nunca persistida (design.md — Data Models). */
+export interface SeededApiKey {
+  tenantId: string;
+  tenantName: string;
+  key: string;
+}
+
+export interface SeedResult {
+  apiKeys: SeededApiKey[];
+}
+
+export async function runSeed(): Promise<SeedResult> {
   // Âncora única de "agora" para todo o seed — todas as datas relativas
   // (firstContactAt e derivadas) partem deste instante (design.md — "Duas
   // fontes de agora"; datas espalhadas pelos últimos ~90 dias relativos ao
@@ -490,6 +530,8 @@ export async function runSeed(): Promise<void> {
   const conversationRows: (typeof conversations.$inferInsert)[] = [];
   const messageRows: (typeof messages.$inferInsert)[] = [];
   const documentRows: (typeof documents.$inferInsert)[] = [];
+  const apiKeyRows: (typeof tenantApiKeys.$inferInsert)[] = [];
+  const seededApiKeys: SeededApiKey[] = [];
 
   for (const tenantDef of TENANT_DEFS) {
     const tenantId = id(`tenant:${tenantDef.key}`);
@@ -507,6 +549,17 @@ export async function runSeed(): Promise<void> {
       website: tenantDef.website,
       agentPresentationMessage: tenantDef.agentPresentationMessage,
     });
+
+    // Chave de API do tenant (lote-5 — INT-01): gerada a cada execução do
+    // seed (não determinística como `id()` acima — ver `generateApiKey`),
+    // valor em claro só sobrevive no retorno de `runSeed`, nunca em disco.
+    const { key: apiKey, hash: apiKeyHash } = generateApiKey();
+    apiKeyRows.push({
+      tenantId,
+      label: "Seed — piloto",
+      keyHash: apiKeyHash,
+    });
+    seededApiKeys.push({ tenantId, tenantName: tenantDef.name, key: apiKey });
 
     const categoryIds = new Map<string, string>();
     for (const c of CATEGORY_DEFS) {
@@ -651,13 +704,15 @@ export async function runSeed(): Promise<void> {
   await db.transaction(async (tx) => {
     // Ordem de delete respeita as FKs (filhos antes dos pais). `documents`
     // referencia `document_categories` (category_id), então precisa ser
-    // apagada antes das categorias.
+    // apagada antes das categorias. `tenant_api_keys` referencia `tenants`,
+    // então precisa ser apagada antes dos tenants também.
     await tx.delete(messages);
     await tx.delete(conversations);
     await tx.delete(documents);
     await tx.delete(leads);
     await tx.delete(brokers);
     await tx.delete(documentCategories);
+    await tx.delete(tenantApiKeys);
     await tx.delete(tenants);
 
     // Ordem de insert respeita as FKs (pais antes dos filhos).
@@ -670,7 +725,10 @@ export async function runSeed(): Promise<void> {
     await tx.insert(conversations).values(conversationRows);
     await tx.insert(messages).values(messageRows);
     await tx.insert(documents).values(documentRows);
+    await tx.insert(tenantApiKeys).values(apiKeyRows);
   });
+
+  return { apiKeys: seededApiKeys };
 }
 
 const isMain =
@@ -679,8 +737,18 @@ const isMain =
 
 if (isMain) {
   runSeed()
-    .then(() => {
+    .then(({ apiKeys }) => {
       console.log("Seed concluído.");
+      // Único momento em que a chave em claro existe fora do processo do
+      // agente que a usa — o banco só guarda o hash (design.md — Risks:
+      // "Chaves de API impressas no output do seed"). Reseed gera (e
+      // imprime) chaves novas, invalidando as anteriores.
+      console.log(
+        "\nChaves de API por tenant (mostradas uma única vez — guarde em local seguro):"
+      );
+      for (const { tenantName, key } of apiKeys) {
+        console.log(`  ${tenantName}: ${key}`);
+      }
       process.exit(0);
     })
     .catch((err) => {

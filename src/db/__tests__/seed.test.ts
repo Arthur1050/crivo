@@ -1,6 +1,7 @@
 import "dotenv/config";
+import { createHash } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, lte, sql } from "drizzle-orm";
 import { db } from "../index";
 import {
   brokers,
@@ -9,6 +10,7 @@ import {
   documents,
   leads,
   messages,
+  tenantApiKeys,
   tenants,
 } from "../schema";
 import { runSeed } from "../seed";
@@ -337,5 +339,51 @@ describe("db/seed", () => {
         values (${tenant.id}, 'Teste Enum Invalido', '+55 34 90000-0000', 'status_invalido', now())
       `)
     ).rejects.toThrow();
+  });
+
+  it("gera exatamente 1 chave de API por tenant; o hash gravado no banco corresponde ao valor em claro devolvido, e nunca é igual a ele (lote-5 — T1, INT-01 fundação)", async () => {
+    // Roda o próprio runSeed() aqui (em vez de reusar o `seededApiKeys` do
+    // beforeAll) porque outros testes deste arquivo chamam runSeed()
+    // novamente (idempotência) — e uma chave de API é regenerada a cada
+    // execução (não determinística como os demais IDs do seed). Autocontido:
+    // o par (chave em claro, hash) verificado é sempre o da execução mais
+    // recente, não importa a ordem dos testes.
+    const { apiKeys } = await runSeed();
+    const allTenants = await db.select().from(tenants);
+    expect(allTenants).toHaveLength(2);
+    expect(apiKeys).toHaveLength(2);
+
+    for (const tenant of allTenants) {
+      const seeded = apiKeys.find((k) => k.tenantId === tenant.id);
+      expect(seeded).toBeDefined();
+
+      const rows = await db
+        .select()
+        .from(tenantApiKeys)
+        .where(eq(tenantApiKeys.tenantId, tenant.id));
+      expect(rows).toHaveLength(1);
+
+      const expectedHash = createHash("sha256")
+        .update(seeded!.key)
+        .digest("hex");
+      expect(rows[0].keyHash).toBe(expectedHash);
+      expect(rows[0].keyHash).not.toBe(seeded!.key);
+      expect(rows[0].revokedAt).toBeNull();
+    }
+  });
+
+  it("cada tenant tem pelo menos 1 documento expirado (expiresAt <= agora) após o seed (lote-5 — T1, LGPD-02 fundação)", async () => {
+    const allTenants = await db.select().from(tenants);
+    expect(allTenants).toHaveLength(2);
+
+    for (const tenant of allTenants) {
+      const expired = await db
+        .select()
+        .from(documents)
+        .where(
+          and(eq(documents.tenantId, tenant.id), lte(documents.expiresAt, new Date()))
+        );
+      expect(expired.length).toBeGreaterThanOrEqual(1);
+    }
   });
 });
