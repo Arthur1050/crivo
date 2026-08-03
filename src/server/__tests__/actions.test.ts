@@ -145,6 +145,83 @@ describe("server actions", () => {
       });
       expect(revertResult.ok).toBe(true);
     });
+
+    // redesign-crm-astryx — RD-07 AC2: a action é o único caminho entre o
+    // form de Configurações e `updateTenantSettings`; um campo de identidade
+    // não repassado nunca chegaria ao banco, mesmo com a DAL correta.
+    it("repassa os 5 campos de identidade novos para o banco (RD-07 AC2)", async () => {
+      const original = await getTenant(activeTenantId);
+
+      const result = await updateTenantSettingsAction({
+        name: original!.name,
+        agentName: original!.agentName,
+        supportedModality: original!.supportedModality,
+        city: "Uberaba",
+        state: "MG",
+        agentWhatsapp: "+55 34 90000-0000",
+        website: "https://exemplo.com.br",
+        agentPresentationMessage: "Olá! Sou o agente virtual desta imobiliária.",
+      });
+      expect(result).toEqual({ ok: true });
+
+      const persisted = await getTenant(activeTenantId);
+      expect(persisted!.city).toBe("Uberaba");
+      expect(persisted!.state).toBe("MG");
+      expect(persisted!.agentWhatsapp).toBe("+55 34 90000-0000");
+      expect(persisted!.website).toBe("https://exemplo.com.br");
+      expect(persisted!.agentPresentationMessage).toBe(
+        "Olá! Sou o agente virtual desta imobiliária."
+      );
+
+      const revertResult = await updateTenantSettingsAction({
+        name: original!.name,
+        agentName: original!.agentName,
+        supportedModality: original!.supportedModality,
+        city: original!.city,
+        state: original!.state,
+        agentWhatsapp: original!.agentWhatsapp,
+        website: original!.website,
+        agentPresentationMessage: original!.agentPresentationMessage,
+      });
+      expect(revertResult.ok).toBe(true);
+    });
+
+    // redesign-crm-astryx — RD-07 AC3: limpar um campo opcional no form envia
+    // string vazia; isso precisa apagar a coluna, sem erro de validação.
+    it("persiste null quando um campo opcional chega vazio, sem erro de validação (RD-07 AC3)", async () => {
+      const original = await getTenant(activeTenantId);
+
+      const result = await updateTenantSettingsAction({
+        name: original!.name,
+        agentName: original!.agentName,
+        supportedModality: original!.supportedModality,
+        city: "",
+        state: "   ",
+        agentWhatsapp: "",
+        website: "",
+        agentPresentationMessage: "",
+      });
+      expect(result).toEqual({ ok: true });
+
+      const persisted = await getTenant(activeTenantId);
+      expect(persisted!.city).toBeNull();
+      expect(persisted!.state).toBeNull();
+      expect(persisted!.agentWhatsapp).toBeNull();
+      expect(persisted!.website).toBeNull();
+      expect(persisted!.agentPresentationMessage).toBeNull();
+
+      const revertResult = await updateTenantSettingsAction({
+        name: original!.name,
+        agentName: original!.agentName,
+        supportedModality: original!.supportedModality,
+        city: original!.city,
+        state: original!.state,
+        agentWhatsapp: original!.agentWhatsapp,
+        website: original!.website,
+        agentPresentationMessage: original!.agentPresentationMessage,
+      });
+      expect(revertResult.ok).toBe(true);
+    });
   });
 
   describe("updateLeadStatusAction", () => {
