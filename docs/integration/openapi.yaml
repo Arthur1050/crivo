@@ -1,0 +1,484 @@
+openapi: 3.1.0
+info:
+  title: Crivo — Contrato de Integração CRM ↔ Agente
+  version: "1.0.0"
+  description: >-
+    Contrato REST que o fluxo do agente (n8n + WhatsApp, Fase 8) usa para
+    entregar leads, atualizar qualificação/status, ingerir mensagens de
+    conversa, ler o contexto do tenant e registrar opt-out. Esta especificação
+    é a autoridade do contrato (design.md — Approach): qualquer
+    reimplementação da API (ex.: microserviço em outro runtime) precisa
+    honrá-la, escrevendo no mesmo schema Postgres consumido pelas telas do
+    CRM. Veja `guia-integracao.md` para semântica de auth, idempotência,
+    transições de status e o procedimento de substituição da implementação.
+servers:
+  - url: /api/v1
+    description: Prefixo de versão do contrato (todos os paths abaixo são relativos a este servidor).
+security:
+  - bearerAuth: []
+tags:
+  - name: leads
+    description: Entrega e atualização de leads.
+  - name: messages
+    description: Ingestão de mensagens de conversa.
+  - name: context
+    description: Leitura de contexto do tenant.
+  - name: lgpd
+    description: Opt-out de leads (LGPD-01).
+paths:
+  /leads:
+    post:
+      operationId: createLead
+      tags: [leads]
+      summary: Entrega idempotente de um lead
+      description: >-
+        Cria o lead com status `em_qualificacao` no tenant da chave. Reentrega
+        com o mesmo `externalId` no mesmo tenant devolve o lead existente
+        (200), sem duplicar (INT-02).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeadCreateRequest"
+      responses:
+        "201":
+          description: Lead criado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+        "200":
+          description: Lead já existia para este `externalId` — devolvido sem duplicar.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+        "400":
+          $ref: "#/components/responses/PayloadInvalido"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "413":
+          $ref: "#/components/responses/CorpoGrandeDemais"
+      security:
+        - bearerAuth: []
+  /leads/{id}:
+    patch:
+      operationId: patchLead
+      tags: [leads]
+      summary: Upsert parcial de qualificação + transição de status
+      description: >-
+        Chave presente no corpo grava (inclusive `null` explícito limpa a
+        coluna); chave ausente não toca a coluna (INT-03). Quando `status`
+        está presente, valida a transição contra a máquina de estados e a
+        trava humana antes de gravar qualquer campo (INT-04) — veja a tabela
+        de transições e os códigos 409 no guia de integração.
+      parameters:
+        - $ref: "#/components/parameters/LeadId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeadPatchRequest"
+      responses:
+        "200":
+          description: Lead atualizado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+        "400":
+          $ref: "#/components/responses/PayloadInvalido"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "404":
+          $ref: "#/components/responses/RecursoNaoEncontrado"
+        "409":
+          description: >-
+            Transição inválida, lead travado por ação humana, ou motivo de
+            escalonamento ausente — `code` identifica a regra violada. Nenhum
+            campo do payload é gravado (atomicidade).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "413":
+          $ref: "#/components/responses/CorpoGrandeDemais"
+      security:
+        - bearerAuth: []
+  /leads/{id}/messages:
+    post:
+      operationId: createMessage
+      tags: [messages]
+      summary: Ingestão idempotente de mensagem
+      description: >-
+        Persiste a mensagem na conversa do lead, criando a conversa na
+        primeira mensagem. Reentrega com o mesmo `externalId` no mesmo tenant
+        devolve a mensagem existente (200), sem duplicar (INT-05). Mensagens
+        fora de ordem cronológica são aceitas — a exibição em Chats ordena por
+        `sentAt`.
+      parameters:
+        - $ref: "#/components/parameters/LeadId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageCreateRequest"
+      responses:
+        "201":
+          description: Mensagem criada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+        "200":
+          description: Mensagem já existia para este `externalId` — devolvida sem duplicar.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+        "400":
+          $ref: "#/components/responses/PayloadInvalido"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "404":
+          $ref: "#/components/responses/RecursoNaoEncontrado"
+        "413":
+          $ref: "#/components/responses/CorpoGrandeDemais"
+      security:
+        - bearerAuth: []
+  /leads/{id}/opt-out:
+    post:
+      operationId: optOutLead
+      tags: [lgpd]
+      summary: Registra o opt-out do lead
+      description: >-
+        Idempotente: repetir a chamada preserva o timestamp original de
+        opt-out (LGPD-01). Interromper disparos subsequentes ao lead é dever
+        do consumidor (agente) — veja "Opt-out" no guia de integração.
+      parameters:
+        - $ref: "#/components/parameters/LeadId"
+      responses:
+        "200":
+          description: Opt-out registrado (ou já existente).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "404":
+          $ref: "#/components/responses/RecursoNaoEncontrado"
+      security:
+        - bearerAuth: []
+  /context:
+    get:
+      operationId: getContext
+      tags: [context]
+      summary: Documentos de contexto do tenant, filtrados por modalidade
+      description: >-
+        Retorna documentos cuja modalidade é a pedida ou `ambos`, excluindo
+        expirados mesmo que o job de TTL ainda não tenha rodado (INT-06,
+        LGPD-02). `content` é sempre `null` no v1 — mock-first; a Fase 9 troca
+        a fonte sem mudar este contrato.
+      parameters:
+        - name: modality
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/ContextModality"
+      responses:
+        "200":
+          description: Documentos de contexto do tenant.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ContextDocument"
+        "400":
+          $ref: "#/components/responses/PayloadInvalido"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+      security:
+        - bearerAuth: []
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: >-
+        API key opaca por tenant (`Authorization: Bearer <chave>`). Identifica
+        o tenant — nenhum payload aceita `tenant_id` (INT-01). Chaves
+        revogáveis (`revoked_at`); veja "Autenticação e revogação" no guia.
+  parameters:
+    LeadId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Id do lead no CRM (não o `externalId` do mundo do agente).
+  responses:
+    NaoAutenticado:
+      description: Sem header de autenticação, chave inválida ou revogada.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    RecursoNaoEncontrado:
+      description: >-
+        Recurso inexistente ou pertencente a outro tenant — nunca 403, para
+        não revelar a existência do recurso (INT-01 AC3).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    PayloadInvalido:
+      description: Corpo/parâmetro inválido (JSON malformado, campo obrigatório ausente, enum fora do domínio, data não-ISO).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    CorpoGrandeDemais:
+      description: Corpo da requisição excede o limite de 100 KB.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+  schemas:
+    ProblemCode:
+      type: string
+      description: Código estável da regra violada — citado 1:1 no guia de integração.
+      enum:
+        - nao-autenticado
+        - recurso-nao-encontrado
+        - payload-invalido
+        - transicao-invalida
+        - lead-travado-por-humano
+        - motivo-escalonamento-obrigatorio
+        - corpo-grande-demais
+        - rota-inexistente
+        - metodo-nao-suportado
+    Problem:
+      type: object
+      description: application/problem+json (RFC 9457).
+      required: [type, title, status, code]
+      properties:
+        type:
+          type: string
+          format: uri
+          description: "URN determinístico por código: `urn:crivo:problem:<code>`."
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        code:
+          $ref: "#/components/schemas/ProblemCode"
+    LeadStatus:
+      type: string
+      enum: [em_qualificacao, qualificado_agendado, escalado_humano]
+    Modality:
+      type: string
+      enum: [novo, usado, ambos]
+    ContextModality:
+      type: string
+      description: Modalidades válidas para o filtro de contexto — `ambos` não é um filtro válido aqui (é resolvido automaticamente junto de `novo`/`usado`).
+      enum: [novo, usado]
+    PropertyType:
+      type: string
+      enum: [casa, apartamento]
+    Motivation:
+      type: string
+      enum: [investidor, morador]
+    CreditStatus:
+      type: string
+      enum: [pre_aprovado, recurso_proprio, fgts]
+    Sender:
+      type: string
+      enum: [agente, lead]
+    CategoryColor:
+      type: string
+      enum: [red, orange, yellow, green, teal, cyan, blue, purple, pink, gray]
+    LeadCreateRequest:
+      type: object
+      required: [name, phone, externalId, firstContactAt]
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        externalId:
+          type: string
+          description: "Id do lead no mundo do agente (ex.: wa_id) — chave de idempotência por tenant."
+        firstContactAt:
+          type: string
+          format: date-time
+    LeadPatchRequest:
+      type: object
+      description: >-
+        Todos os campos são opcionais; os nullable aceitam `null` explícito
+        para limpar a coluna. Chave ausente no JSON nunca é enviada — não
+        toca a coluna correspondente.
+      properties:
+        status:
+          $ref: "#/components/schemas/LeadStatus"
+        modality:
+          type: ["string", "null"]
+          enum: [novo, usado, ambos, null]
+        region:
+          type: ["string", "null"]
+        budgetCents:
+          type: ["integer", "string", "null"]
+          description: Centavos, inteiro ≥ 0 (aceito como number ou string numérica).
+        propertyType:
+          type: ["string", "null"]
+          enum: [casa, apartamento, null]
+        purchaseHorizon:
+          type: ["string", "null"]
+        motivation:
+          type: ["string", "null"]
+          enum: [investidor, morador, null]
+        creditStatus:
+          type: ["string", "null"]
+          enum: [pre_aprovado, recurso_proprio, fgts, null]
+        chainedOperation:
+          type: ["boolean", "null"]
+        executiveSummary:
+          type: ["string", "null"]
+        escalationReason:
+          type: ["string", "null"]
+          description: Obrigatório e não-vazio quando `status` está sendo definido como `escalado_humano`.
+        meetingAt:
+          type: ["string", "null"]
+          format: date-time
+    Lead:
+      type: object
+      description: Representação de um lead na API de integração.
+      required:
+        - id
+        - externalId
+        - name
+        - phone
+        - status
+        - modality
+        - region
+        - budgetCents
+        - propertyType
+        - purchaseHorizon
+        - motivation
+        - creditStatus
+        - chainedOperation
+        - executiveSummary
+        - escalationReason
+        - meetingAt
+        - firstContactAt
+        - optedOutAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        externalId:
+          type: ["string", "null"]
+        name:
+          type: string
+        phone:
+          type: string
+        status:
+          $ref: "#/components/schemas/LeadStatus"
+        modality:
+          type: ["string", "null"]
+          enum: [novo, usado, ambos, null]
+        region:
+          type: ["string", "null"]
+        budgetCents:
+          type: ["string", "null"]
+          description: Centavos, serializado como string (bigint não é JSON-safe).
+        propertyType:
+          type: ["string", "null"]
+          enum: [casa, apartamento, null]
+        purchaseHorizon:
+          type: ["string", "null"]
+        motivation:
+          type: ["string", "null"]
+          enum: [investidor, morador, null]
+        creditStatus:
+          type: ["string", "null"]
+          enum: [pre_aprovado, recurso_proprio, fgts, null]
+        chainedOperation:
+          type: ["boolean", "null"]
+        executiveSummary:
+          type: ["string", "null"]
+        escalationReason:
+          type: ["string", "null"]
+        meetingAt:
+          type: ["string", "null"]
+          format: date-time
+        firstContactAt:
+          type: string
+          format: date-time
+        optedOutAt:
+          type: ["string", "null"]
+          format: date-time
+          description: Presente (não-null) quando o lead deu opt-out (LGPD-01 AC3).
+    MessageCreateRequest:
+      type: object
+      required: [externalId, sender, content, sentAt]
+      properties:
+        externalId:
+          type: string
+          description: Id da mensagem no WhatsApp — chave de idempotência por tenant.
+        sender:
+          $ref: "#/components/schemas/Sender"
+        content:
+          type: string
+        sentAt:
+          type: string
+          format: date-time
+    Message:
+      type: object
+      required: [id, externalId, sender, content, sentAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        externalId:
+          type: ["string", "null"]
+        sender:
+          $ref: "#/components/schemas/Sender"
+        content:
+          type: string
+        sentAt:
+          type: string
+          format: date-time
+    ContextDocumentCategory:
+      type: object
+      required: [name, color]
+      properties:
+        name:
+          type: string
+        color:
+          $ref: "#/components/schemas/CategoryColor"
+    ContextDocument:
+      type: object
+      required: [id, name, modality, category, content]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        modality:
+          $ref: "#/components/schemas/Modality"
+        category:
+          oneOf:
+            - $ref: "#/components/schemas/ContextDocumentCategory"
+            - type: "null"
+        content:
+          description: Sempre `null` no v1 (mock-first — AD-004); reservado para a Fase 9.
+          type: "null"
