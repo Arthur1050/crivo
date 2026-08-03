@@ -1,5 +1,15 @@
 import "server-only";
-import { and, asc, count, desc, eq, gte, ilike, lte } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  getTableColumns,
+  gte,
+  ilike,
+  lte,
+} from "drizzle-orm";
 import { db } from "../../db";
 import {
   brokers,
@@ -45,13 +55,23 @@ export async function getBrokers(tenantId: string): Promise<Broker[]> {
   return db.select().from(brokers).where(eq(brokers.tenantId, tenantId));
 }
 
+/**
+ * Lead + nome do corretor responsável (`null` quando `brokerId` é nulo).
+ * Extensão ADITIVA do retorno de `getLeads` (redesign-crm-astryx — RD-03 AC3):
+ * todas as colunas de `leads` continuam presentes e inalteradas.
+ */
+export type LeadWithBroker = Lead & { brokerName: string | null };
+
 export async function getLeads(
   tenantId: string,
   filters?: { status?: LeadStatus }
-): Promise<Lead[]> {
+): Promise<LeadWithBroker[]> {
   return db
-    .select()
+    .select({ ...getTableColumns(leads), brokerName: brokers.name })
     .from(leads)
+    // LEFT (não INNER): leads sem corretor continuam aparecendo no Kanban,
+    // apenas sem avatar (spec.md — Edge Cases).
+    .leftJoin(brokers, eq(leads.brokerId, brokers.id))
     .where(
       and(
         eq(leads.tenantId, tenantId),
@@ -61,6 +81,45 @@ export async function getLeads(
     // Determinístico (lote-3 — lesson do Verifier L2, mesmo gap de
     // getTenants): mais recentemente atualizado primeiro, id como desempate.
     .orderBy(desc(leads.updatedAt), asc(leads.id));
+}
+
+export interface RecentLead {
+  id: string;
+  name: string;
+  budgetCents: bigint | null;
+  modality: Lead["modality"];
+  status: LeadStatus;
+  brokerName: string | null;
+  firstContactAt: Date;
+}
+
+/**
+ * Últimos leads gerados pelo agente, para o card "Leads Recentes" do
+ * dashboard (redesign-crm-astryx — RD-04 AC4/AC5). Ordena por
+ * `firstContactAt` DESC (id como desempate determinístico) e é INDEPENDENTE
+ * do filtro de período da página (spec.md — assumption "Leads Recentes"):
+ * o período filtra KPIs e gráficos, nunca esta lista. Tenants com menos
+ * leads que `limit` retornam apenas os existentes; sem leads, `[]`.
+ */
+export async function getRecentLeads(
+  tenantId: string,
+  limit = 5
+): Promise<RecentLead[]> {
+  return db
+    .select({
+      id: leads.id,
+      name: leads.name,
+      budgetCents: leads.budgetCents,
+      modality: leads.modality,
+      status: leads.status,
+      brokerName: brokers.name,
+      firstContactAt: leads.firstContactAt,
+    })
+    .from(leads)
+    .leftJoin(brokers, eq(leads.brokerId, brokers.id))
+    .where(eq(leads.tenantId, tenantId))
+    .orderBy(desc(leads.firstContactAt), asc(leads.id))
+    .limit(limit);
 }
 
 export async function getLead(
@@ -491,17 +550,62 @@ function isUniqueViolation(err: unknown): boolean {
   return pgErrorCode(err) === POSTGRES_UNIQUE_VIOLATION;
 }
 
+export interface TenantSettingsUpdate {
+  name: string;
+  agentName: string;
+  supportedModality: Modality;
+  // Campos de identidade opcionais (redesign-crm-astryx — RD-07 AC3). Chave
+  // ausente = coluna intocada; string vazia/em branco ou `null` = grava null.
+  city?: string | null;
+  state?: string | null;
+  agentWhatsapp?: string | null;
+  website?: string | null;
+  agentPresentationMessage?: string | null;
+}
+
+/**
+ * Normaliza um campo opcional de identidade: `undefined` (chave ausente no
+ * payload) devolve `undefined` para que a coluna NÃO entre no `set` e fique
+ * intocada; `null` ou string vazia/só espaços viram `null` na coluna
+ * (RD-07 AC3: opcional vazio persiste null, sem erro de validação).
+ */
+function optionalTenantText(
+  value: string | null | undefined
+): string | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  const trimmed = value.trim();
+  return trimmed === "" ? null : trimmed;
+}
+
 export async function updateTenantSettings(
   tenantId: string,
-  updates: { name: string; agentName: string; supportedModality: Modality }
+  updates: TenantSettingsUpdate
 ): Promise<Tenant | null> {
+  const setValues: Partial<typeof tenants.$inferInsert> = {
+    name: updates.name,
+    agentName: updates.agentName,
+    supportedModality: updates.supportedModality,
+  };
+
+  const city = optionalTenantText(updates.city);
+  if (city !== undefined) setValues.city = city;
+  const state = optionalTenantText(updates.state);
+  if (state !== undefined) setValues.state = state;
+  const agentWhatsapp = optionalTenantText(updates.agentWhatsapp);
+  if (agentWhatsapp !== undefined) setValues.agentWhatsapp = agentWhatsapp;
+  const website = optionalTenantText(updates.website);
+  if (website !== undefined) setValues.website = website;
+  const agentPresentationMessage = optionalTenantText(
+    updates.agentPresentationMessage
+  );
+  if (agentPresentationMessage !== undefined) {
+    setValues.agentPresentationMessage = agentPresentationMessage;
+  }
+
   const rows = await db
     .update(tenants)
-    .set({
-      name: updates.name,
-      agentName: updates.agentName,
-      supportedModality: updates.supportedModality,
-    })
+    .set(setValues)
     .where(eq(tenants.id, tenantId))
     .returning();
   return rows[0] ?? null;
