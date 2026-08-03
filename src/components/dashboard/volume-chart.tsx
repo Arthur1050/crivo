@@ -1,6 +1,5 @@
 "use client";
 
-import { useTheme } from "@astryxdesign/core/theme";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import {
   Bar,
@@ -11,6 +10,10 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import {
+  ChartTooltip,
+  useChartTheme,
+} from "@/src/components/dashboard/chart-theme";
 
 export interface VolumeChartPoint {
   /** ISO string (RSC → client — nunca `Date` cru, design.md "Risks"). */
@@ -29,7 +32,7 @@ const DAY_LABEL_FORMATTER = new Intl.DateTimeFormat("pt-BR", {
   timeZone: "UTC",
 });
 
-function bucketLabel(bucketStart: string): string {
+function bucketLabel(bucketStart: string | number): string {
   return DAY_LABEL_FORMATTER.format(new Date(bucketStart));
 }
 
@@ -41,7 +44,7 @@ function bucketLabel(bucketStart: string): string {
  * quebrado (DASH-03.3).
  */
 export function VolumeChart({ data, granularity }: VolumeChartProps) {
-  const { token } = useTheme();
+  const theme = useChartTheme();
   const total = data.reduce((sum, point) => sum + point.count, 0);
 
   if (data.length === 0 || total === 0) {
@@ -53,37 +56,37 @@ export function VolumeChart({ data, granularity }: VolumeChartProps) {
     );
   }
 
-  const gridColor = token("--color-border");
-  const axisColor = token("--color-text-secondary");
-  const barColor = token("--color-accent");
-  const axisFontSize = token("--font-size-sm");
-
   return (
     <ResponsiveContainer width="100%" height={280}>
       <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-        <CartesianGrid horizontal vertical={false} stroke={gridColor} />
+        <CartesianGrid horizontal vertical={false} stroke={theme.grid} />
         <XAxis
           dataKey="bucketStart"
           tickFormatter={bucketLabel}
-          tick={{ fontSize: axisFontSize, fill: axisColor }}
+          tick={{ fontSize: theme.axisFontSize, fill: theme.axis }}
           axisLine={false}
           tickLine={false}
         />
         <YAxis
           allowDecimals={false}
-          tick={{ fontSize: axisFontSize, fill: axisColor }}
+          tick={{ fontSize: theme.axisFontSize, fill: theme.axis }}
           axisLine={false}
           tickLine={false}
           width={32}
         />
         <Tooltip
-          labelFormatter={(value) => bucketLabel(String(value))}
-          formatter={(value) => [
-            value,
-            granularity === "day" ? "Leads no dia" : "Leads na semana",
-          ]}
+          cursor={{ fill: theme.cursorFill }}
+          content={<ChartTooltip formatLabel={bucketLabel} />}
         />
-        <Bar dataKey="count" name="Leads" fill={barColor} radius={[4, 4, 0, 0]} />
+        <Bar
+          dataKey="count"
+          name={granularity === "day" ? "Leads no dia" : "Leads na semana"}
+          fill={theme.accent}
+          radius={[4, 4, 0, 0]}
+          isAnimationActive={theme.isAnimationActive}
+          animationDuration={theme.animationDuration}
+          animationEasing="ease-out"
+        />
       </BarChart>
     </ResponsiveContainer>
   );

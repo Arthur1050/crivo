@@ -122,6 +122,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             data={distributions.modality}
             labels={MODALITY_LABELS}
             emptyDescription="Nenhum lead com primeiro contato dentro do período selecionado."
+            legendPlacement="below"
           />
         </ChartCard>
 
