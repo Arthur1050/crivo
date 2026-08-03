@@ -4,13 +4,16 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AlertDialog } from "@astryxdesign/core/AlertDialog";
 import { Badge } from "@astryxdesign/core/Badge";
+import { Card } from "@astryxdesign/core/Card";
 import { DropdownMenu } from "@astryxdesign/core/DropdownMenu";
+import { HStack } from "@astryxdesign/core/Stack";
 import { Table, pixel, proportional } from "@astryxdesign/core/Table";
 import type { TableColumn } from "@astryxdesign/core/Table";
 import { Text } from "@astryxdesign/core/Text";
 import { Timestamp } from "@astryxdesign/core/Timestamp";
 import { Token } from "@astryxdesign/core/Token";
 import { DeleteIcon } from "@/src/components/icons/delete";
+import { FileTextIcon } from "@/src/components/icons/file-text";
 import { SquarePenIcon } from "@/src/components/icons/square-pen";
 import { EditDocumentDialog } from "@/src/components/documents/edit-document-dialog";
 import { formatFileSize } from "@/src/lib/format";
@@ -30,6 +33,8 @@ const MODALITY_BADGE_VARIANT: Record<Modality, "blue" | "purple" | "teal"> = {
 };
 
 const NO_CATEGORY_LABEL = "Sem categoria";
+/** `expiresAt` é nullable (reserva LGPD do schema) — RD-05 AC2. */
+const NO_EXPIRY_LABEL = "Sem validade";
 
 interface DocumentRow extends Record<string, unknown> {
   id: string;
@@ -38,6 +43,7 @@ interface DocumentRow extends Record<string, unknown> {
   category: DocumentCategory | null;
   sizeBytes: bigint;
   uploadedAt: string;
+  expiresAt: string | null;
   document: Document;
 }
 
@@ -48,9 +54,15 @@ interface DocumentsTableProps {
 
 /**
  * Listagem de documentos do tenant ativo em linhas edge-to-edge (lote-2 —
- * DOC-01/04/05): nunca em cards. O filtro/busca acontece no servidor (RSC lê
- * `searchParams` e consulta o banco já filtrado); esta tabela apresenta o
- * resultado recebido via props e expõe as ações de editar/excluir por linha.
+ * DOC-01/04/05): nunca em cards por linha. O filtro/busca acontece no servidor
+ * (RSC lê `searchParams` e consulta o banco já filtrado); esta tabela
+ * apresenta o resultado recebido via props e expõe as ações de editar/excluir
+ * por linha.
+ *
+ * Recomposta em redesign-crm-astryx (RD-05 AC2, design.md § R3): colunas
+ * Nome (ícone de arquivo + nome), Modalidade, Categoria, Enviado em,
+ * Validade, Tamanho e Ações, em densidade compacta dentro de um card único.
+ * Nenhuma ação muda — só a composição (RD-05 AC3).
  */
 export function DocumentsTable({ documents, categories }: DocumentsTableProps) {
   const router = useRouter();
@@ -72,6 +84,7 @@ export function DocumentsTable({ documents, categories }: DocumentsTableProps) {
       : null,
     sizeBytes: document.sizeBytes,
     uploadedAt: document.uploadedAt.toISOString(),
+    expiresAt: document.expiresAt ? document.expiresAt.toISOString() : null,
     document,
   }));
 
@@ -96,7 +109,19 @@ export function DocumentsTable({ documents, categories }: DocumentsTableProps) {
   }
 
   const columns: TableColumn<DocumentRow>[] = [
-    { key: "name", header: "Nome", width: proportional(2) },
+    {
+      key: "name",
+      header: "Nome",
+      width: proportional(2),
+      renderCell: (row) => (
+        <HStack gap={2} vAlign="center">
+          <FileTextIcon size={16} />
+          <Text type="body" weight="medium">
+            {row.name}
+          </Text>
+        </HStack>
+      ),
+    },
     {
       key: "modality",
       header: "Modalidade",
@@ -122,16 +147,29 @@ export function DocumentsTable({ documents, categories }: DocumentsTableProps) {
         ),
     },
     {
+      key: "uploadedAt",
+      header: "Enviado em",
+      width: pixel(160),
+      renderCell: (row) => <Timestamp value={row.uploadedAt} format="date" />,
+    },
+    {
+      key: "expiresAt",
+      header: "Validade",
+      width: pixel(160),
+      renderCell: (row) =>
+        row.expiresAt ? (
+          <Timestamp value={row.expiresAt} format="date" />
+        ) : (
+          <Text type="supporting" color="secondary">
+            {NO_EXPIRY_LABEL}
+          </Text>
+        ),
+    },
+    {
       key: "sizeBytes",
       header: "Tamanho",
       width: pixel(110),
       renderCell: (row) => <Text type="body">{formatFileSize(row.sizeBytes)}</Text>,
-    },
-    {
-      key: "uploadedAt",
-      header: "Data de upload",
-      width: pixel(160),
-      renderCell: (row) => <Timestamp value={row.uploadedAt} format="date" />,
     },
     {
       key: "actions",
@@ -167,7 +205,21 @@ export function DocumentsTable({ documents, categories }: DocumentsTableProps) {
 
   return (
     <>
-      <Table data={rows} columns={columns} idKey="id" dividers="rows" hasHover />
+      {/*
+        Card único envolvendo a tabela densa edge-to-edge (design.md § R3):
+        `padding={0}` para que as linhas encostem na borda do card — o card é
+        só o contêiner da tabela, nunca um invólucro por linha.
+      */}
+      <Card padding={0}>
+        <Table
+          data={rows}
+          columns={columns}
+          idKey="id"
+          density="compact"
+          dividers="rows"
+          hasHover
+        />
+      </Card>
 
       <EditDocumentDialog
         document={editingDocument}

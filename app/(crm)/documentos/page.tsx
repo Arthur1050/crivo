@@ -1,12 +1,17 @@
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
-import { Heading } from "@astryxdesign/core/Text";
+import { Heading, Text } from "@astryxdesign/core/Text";
 import { CategoryManagerDialog } from "@/src/components/documents/category-manager-dialog";
 import { DocumentsTable } from "@/src/components/documents/documents-table";
 import { DocumentsToolbar } from "@/src/components/documents/documents-toolbar";
 import { UploadDialog } from "@/src/components/documents/upload-dialog";
 import { NavLink } from "@/src/components/shared/nav-link";
-import { getDocumentCategories, getDocuments, type Modality } from "@/src/server/data";
+import {
+  getDocumentCategories,
+  getDocuments,
+  getTenant,
+  type Modality,
+} from "@/src/server/data";
 import { getActiveTenantId } from "@/src/server/tenant";
 
 const VALID_MODALITIES: readonly string[] = ["novo", "usado", "ambos"];
@@ -40,19 +45,26 @@ export default async function DocumentosPage({
   const search = params.q?.trim() || undefined;
   const hasActiveFilters = Boolean(modality || categoryId || search);
 
-  const [allDocuments, filteredDocuments, categories] = await Promise.all([
+  const [allDocuments, filteredDocuments, categories, tenant] = await Promise.all([
     getDocuments(tenantId),
     getDocuments(tenantId, { modality, categoryId, search }),
     getDocumentCategories(tenantId),
+    getTenant(tenantId),
   ]);
 
   const hasAnyDocuments = allDocuments.length > 0;
 
   return (
     <VStack gap={6}>
-      <HStack vAlign="center">
+      <HStack vAlign="start" gap={4} wrap="wrap">
         <StackItem size="fill">
-          <Heading level={1}>Documentos</Heading>
+          <VStack gap={1}>
+            <Heading level={1}>Documentos de Contexto</Heading>
+            <Text type="body" color="secondary">
+              Arquivos usados pelo agente {tenant?.agentName} para responder com
+              precisão nas conversas
+            </Text>
+          </VStack>
         </StackItem>
         <HStack gap={2}>
           <CategoryManagerDialog categories={categories} />
