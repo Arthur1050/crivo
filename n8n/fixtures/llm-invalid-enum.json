@@ -1,0 +1,7 @@
+{
+  "acao": "atualizar_campos",
+  "campos": {
+    "creditStatus": "recurso_proprio_fgts"
+  },
+  "resposta": "Show, anotado o status de crédito."
+}

@@ -1,0 +1,10 @@
+{
+  "acao": "atualizar_campos",
+  "campos": {
+    "modality": "usado",
+    "region": "Abadia, Uberaba",
+    "budgetCents": 45000000,
+    "propertyType": "apartamento"
+  },
+  "resposta": "Legal! Apartamento usado na Abadia até R$ 450 mil. Você já tem crédito pré-aprovado ou pretende usar FGTS/recursos próprios?"
+}
