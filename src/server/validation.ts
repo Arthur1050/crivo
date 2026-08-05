@@ -135,3 +135,60 @@ export function validateLeadStatus(status: string): ValidationResult {
 
   return { ok: true };
 }
+
+export interface BusinessHoursInput {
+  meetingDays: number[] | null;
+  meetingHoursStart: string | null;
+  meetingHoursEnd: string | null;
+}
+
+/**
+ * Valida o horário comercial do tenant (lote-6 — CONF-05, spec.md "Workflow
+ * como código" AC3): início < fim e ao menos 1 dia selecionado quando a
+ * janela (início + fim) está preenchida. Tudo vazio (sem dias, sem janela) é
+ * válido — limpa a configuração e o fluxo do agente cai no fallback
+ * seg-sex 9h-18h (design.md, `resolveBusinessHours`).
+ *
+ * Início/fim só podem ser avaliados como par: a checagem "início < fim" não
+ * é decidível com só um dos dois preenchido, então essa combinação também é
+ * rejeitada (consequência direta das duas regras pedidas, não uma terceira
+ * regra independente).
+ */
+export function validateBusinessHours(
+  input: BusinessHoursInput
+): ValidationResult {
+  const days = input.meetingDays ?? [];
+  const hasStart = input.meetingHoursStart !== null && input.meetingHoursStart !== "";
+  const hasEnd = input.meetingHoursEnd !== null && input.meetingHoursEnd !== "";
+
+  if (hasStart !== hasEnd) {
+    return {
+      ok: false,
+      error:
+        "Horário de atendimento: informe o horário de início e término juntos, ou deixe os dois em branco.",
+    };
+  }
+
+  const windowFilled = hasStart && hasEnd;
+  if (!windowFilled) {
+    return { ok: true };
+  }
+
+  if (days.length === 0) {
+    return {
+      ok: false,
+      error:
+        "Dias de atendimento: selecione ao menos um dia quando o horário de início/término estiver preenchido.",
+    };
+  }
+
+  if (input.meetingHoursStart! >= input.meetingHoursEnd!) {
+    return {
+      ok: false,
+      error:
+        "Horário de atendimento: o horário de início deve ser anterior ao horário de término.",
+    };
+  }
+
+  return { ok: true };
+}

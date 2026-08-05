@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getActiveTenantId } from "../tenant";
 import { updateTenantSettings, type Modality } from "../data";
-import { validateModality, validateName } from "../validation";
+import { validateBusinessHours, validateModality, validateName } from "../validation";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -20,6 +20,12 @@ export interface UpdateTenantSettingsInput {
   agentWhatsapp?: string | null;
   website?: string | null;
   agentPresentationMessage?: string | null;
+  // Horário comercial (lote-6 — CONF-05). Mesma regra de sempre-enviar dos
+  // campos acima: o form manda os 3 sempre, para que limpar a configuração
+  // (voltar ao fallback) também seja possível via a mesma action.
+  meetingDays?: number[] | null;
+  meetingHoursStart?: string | null;
+  meetingHoursEnd?: string | null;
 }
 
 /**
@@ -43,6 +49,13 @@ export async function updateTenantSettingsAction(
   const modalityCheck = validateModality(input.supportedModality);
   if (!modalityCheck.ok) return modalityCheck;
 
+  const businessHoursCheck = validateBusinessHours({
+    meetingDays: input.meetingDays ?? null,
+    meetingHoursStart: input.meetingHoursStart ?? null,
+    meetingHoursEnd: input.meetingHoursEnd ?? null,
+  });
+  if (!businessHoursCheck.ok) return businessHoursCheck;
+
   const tenantId = await getActiveTenantId();
   const updated = await updateTenantSettings(tenantId, {
     name: input.name.trim(),
@@ -53,6 +66,9 @@ export async function updateTenantSettingsAction(
     agentWhatsapp: input.agentWhatsapp,
     website: input.website,
     agentPresentationMessage: input.agentPresentationMessage,
+    meetingDays: input.meetingDays,
+    meetingHoursStart: input.meetingHoursStart,
+    meetingHoursEnd: input.meetingHoursEnd,
   });
 
   if (!updated) {

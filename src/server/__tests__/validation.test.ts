@@ -5,6 +5,7 @@ import {
   LEAD_STATUSES,
   MAX_FILE_SIZE_BYTES,
   MAX_NAME_LENGTH,
+  validateBusinessHours,
   validateCategoryColor,
   validateFileSize,
   validateLeadStatus,
@@ -155,6 +156,98 @@ describe("validateLeadStatus", () => {
 
   it("rejeita string vazia", () => {
     const result = validateLeadStatus("");
+    expect(result.ok).toBe(false);
+  });
+});
+
+describe("validateBusinessHours (CONF-05)", () => {
+  it("aceita os 3 campos vazios (horário comercial não configurado — limpa)", () => {
+    const result = validateBusinessHours({
+      meetingDays: null,
+      meetingHoursStart: null,
+      meetingHoursEnd: null,
+    });
+    expect(result).toEqual({ ok: true });
+  });
+
+  it("aceita meetingDays null e horas em string vazia (equivalente a ausente)", () => {
+    const result = validateBusinessHours({
+      meetingDays: null,
+      meetingHoursStart: "",
+      meetingHoursEnd: "",
+    });
+    expect(result).toEqual({ ok: true });
+  });
+
+  it("aceita dias + janela completos com início < fim", () => {
+    const result = validateBusinessHours({
+      meetingDays: [1, 2, 3, 4, 5],
+      meetingHoursStart: "09:00",
+      meetingHoursEnd: "18:00",
+    });
+    expect(result).toEqual({ ok: true });
+  });
+
+  it("aceita um único dia (sábado) com janela reduzida", () => {
+    const result = validateBusinessHours({
+      meetingDays: [6],
+      meetingHoursStart: "09:00",
+      meetingHoursEnd: "12:00",
+    });
+    expect(result).toEqual({ ok: true });
+  });
+
+  it("rejeita início igual ao fim (início < fim é estrito)", () => {
+    const result = validateBusinessHours({
+      meetingDays: [1],
+      meetingHoursStart: "09:00",
+      meetingHoursEnd: "09:00",
+    });
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejeita início depois do fim", () => {
+    const result = validateBusinessHours({
+      meetingDays: [1],
+      meetingHoursStart: "18:00",
+      meetingHoursEnd: "09:00",
+    });
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejeita 0 dias com janela preenchida", () => {
+    const result = validateBusinessHours({
+      meetingDays: [],
+      meetingHoursStart: "09:00",
+      meetingHoursEnd: "18:00",
+    });
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejeita meetingDays null com janela preenchida (equivalente a 0 dias)", () => {
+    const result = validateBusinessHours({
+      meetingDays: null,
+      meetingHoursStart: "09:00",
+      meetingHoursEnd: "18:00",
+    });
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejeita só o início preenchido, sem o fim", () => {
+    const result = validateBusinessHours({
+      meetingDays: [1, 2, 3],
+      meetingHoursStart: "09:00",
+      meetingHoursEnd: null,
+    });
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejeita só o fim preenchido, sem o início", () => {
+    const result = validateBusinessHours({
+      meetingDays: [1, 2, 3],
+      meetingHoursStart: null,
+      meetingHoursEnd: "18:00",
+    });
     expect(result.ok).toBe(false);
   });
 });

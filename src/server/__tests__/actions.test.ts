@@ -222,6 +222,116 @@ describe("server actions", () => {
       });
       expect(revertResult.ok).toBe(true);
     });
+
+    // lote-6 — CONF-05: horário comercial repassado pela action e validado
+    // (validateBusinessHours) antes de chegar à DAL do T1.
+    it("persiste o horário comercial (dias + janela) e relê após o save (CONF-05)", async () => {
+      const original = await getTenant(activeTenantId);
+
+      const result = await updateTenantSettingsAction({
+        name: original!.name,
+        agentName: original!.agentName,
+        supportedModality: original!.supportedModality,
+        meetingDays: [1, 3, 5],
+        meetingHoursStart: "09:00",
+        meetingHoursEnd: "17:30",
+      });
+      expect(result).toEqual({ ok: true });
+
+      const persisted = await getTenant(activeTenantId);
+      expect(persisted!.meetingDays).toEqual([1, 3, 5]);
+      expect(persisted!.meetingHoursStart).toBe("09:00");
+      expect(persisted!.meetingHoursEnd).toBe("17:30");
+
+      const revertResult = await updateTenantSettingsAction({
+        name: original!.name,
+        agentName: original!.agentName,
+        supportedModality: original!.supportedModality,
+        meetingDays: original!.meetingDays,
+        meetingHoursStart: original!.meetingHoursStart,
+        meetingHoursEnd: original!.meetingHoursEnd,
+      });
+      expect(revertResult.ok).toBe(true);
+    });
+
+    it("início >= fim no horário comercial retorna { ok: false, error } e nada é persistido (CONF-05 AC3 — validação de bounds)", async () => {
+      const original = await getTenant(activeTenantId);
+
+      const result = await updateTenantSettingsAction({
+        name: original!.name,
+        agentName: original!.agentName,
+        supportedModality: original!.supportedModality,
+        meetingDays: [1, 2],
+        meetingHoursStart: "18:00",
+        meetingHoursEnd: "09:00",
+      });
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.error).toBeTruthy();
+
+      const after = await getTenant(activeTenantId);
+      expect(after!.meetingDays).toEqual(original!.meetingDays);
+      expect(after!.meetingHoursStart).toBe(original!.meetingHoursStart);
+      expect(after!.meetingHoursEnd).toBe(original!.meetingHoursEnd);
+    });
+
+    it("0 dias selecionados com janela preenchida retorna { ok: false, error } e nada é persistido (CONF-05 AC3)", async () => {
+      const original = await getTenant(activeTenantId);
+
+      const result = await updateTenantSettingsAction({
+        name: original!.name,
+        agentName: original!.agentName,
+        supportedModality: original!.supportedModality,
+        meetingDays: [],
+        meetingHoursStart: "09:00",
+        meetingHoursEnd: "18:00",
+      });
+      expect(result.ok).toBe(false);
+
+      const after = await getTenant(activeTenantId);
+      expect(after!.meetingDays).toEqual(original!.meetingDays);
+      expect(after!.meetingHoursStart).toBe(original!.meetingHoursStart);
+      expect(after!.meetingHoursEnd).toBe(original!.meetingHoursEnd);
+    });
+
+    it("null explícito nos 3 campos de horário comercial limpa a configuração via action (CONF-05)", async () => {
+      const original = await getTenant(activeTenantId);
+
+      // Primeiro configura, depois limpa — prova que a action encaminha
+      // `null` (não só valores) até a DAL, igual aos campos de identidade.
+      await updateTenantSettingsAction({
+        name: original!.name,
+        agentName: original!.agentName,
+        supportedModality: original!.supportedModality,
+        meetingDays: [2, 4],
+        meetingHoursStart: "10:00",
+        meetingHoursEnd: "16:00",
+      });
+
+      const cleared = await updateTenantSettingsAction({
+        name: original!.name,
+        agentName: original!.agentName,
+        supportedModality: original!.supportedModality,
+        meetingDays: null,
+        meetingHoursStart: null,
+        meetingHoursEnd: null,
+      });
+      expect(cleared).toEqual({ ok: true });
+
+      const after = await getTenant(activeTenantId);
+      expect(after!.meetingDays).toBeNull();
+      expect(after!.meetingHoursStart).toBeNull();
+      expect(after!.meetingHoursEnd).toBeNull();
+
+      const revertResult = await updateTenantSettingsAction({
+        name: original!.name,
+        agentName: original!.agentName,
+        supportedModality: original!.supportedModality,
+        meetingDays: original!.meetingDays,
+        meetingHoursStart: original!.meetingHoursStart,
+        meetingHoursEnd: original!.meetingHoursEnd,
+      });
+      expect(revertResult.ok).toBe(true);
+    });
   });
 
   describe("updateLeadStatusAction", () => {
