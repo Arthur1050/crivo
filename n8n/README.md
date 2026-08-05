@@ -1,0 +1,187 @@
+# n8n/ — Agente de Qualificação (Fase 8 / Lote 6)
+
+Runbook de setup + referência da camada n8n do Crivo. Cobre **todos os passos humanos** necessários antes/durante o Execute deste lote e os riscos R1–R3/R6 do design (`.specs/features/lote-6-agente-n8n-whatsapp/design.md`).
+
+> **Regra de ouro (AD-014)**: a UI do n8n **nunca** é editada à mão — nem os workflows (`n8n/workflows/*.ts` → `n8n/generated/*.ts` → publicado via MCP), nem as Data Tables (criadas via MCP `create_data_table`/`add_data_table_column`). O único trabalho manual na instância n8n é **credenciais** (Google/Meta exigem OAuth/tokens que só o dono da conta pode gerar) e **templates de mensagem** no painel da Meta (aprovação é um processo da Meta, não do n8n).
+
+---
+
+## 1. Arquitetura deste diretório
+
+```
+n8n/
+├── src/            # Camada de decisão pura (T5-T8) — testada por vitest, zero I/O
+│   ├── normalize-event.mjs   business-hours.mjs   gate.mjs
+│   ├── prompt.mjs             validate-llm.mjs
+│   └── __tests__/*.test.ts
+├── fixtures/       # Payloads reais (Meta, saída LLM) usados pelos testes E pelas execuções de teste via MCP
+├── workflows/      # FONTE dos workflows SDK — o que se edita (marcadores __INLINE(...)__)
+├── generated/      # SAÍDA do inliner — o que é publicado na instância (nunca editar à mão)
+└── README.md       # este arquivo
+```
+
+**Pipeline de publicação**: editar `n8n/workflows/*.ts` → `node scripts/n8n-inline.mjs` (gera `n8n/generated/*.ts`, determinístico — ver docstring do script e `scripts/__tests__/n8n-inline.test.ts`) → publicar o conteúdo de `n8n/generated/<arquivo>.ts` na instância via MCP (`create_workflow_from_code` na primeira vez, `update_workflow`/republicação nas seguintes) → `get_workflow_details` para conferir que o publicado == `generated/`.
+
+**Convenção do marcador** `__INLINE(<arquivo>.mjs)__`: dentro do `jsCode` de um nó Code, escrito como string literal concatenada (`'__INLINE(gate.mjs)__' + '\n' + '<harness>'`) — nunca dentro de um template literal (backtick), porque alguns módulos de `n8n/src/` (ex.: `prompt.mjs`, `business-hours.mjs`) usam backtick internamente e isso quebraria a sintaxe se colado cru dentro de outro backtick. O inliner substitui o marcador por `JSON.stringify(<módulo sem export/import>)` — seguro para qualquer conteúdo. Quando um Code node precisa de mais de um módulo (ex.: `validate-llm.mjs` depende de `business-hours.mjs`), os marcadores do(s) módulo(s) dependido(s) vêm **primeiro** no mesmo `jsCode`, nessa ordem — a resolução de dependência é textual/posicional, não automática.
+
+---
+
+## 2. Credenciais humanas (nenhuma pode ser criada por automação — dependem da conta Meta/Google do usuário)
+
+Estado confirmado nesta sessão (`list_credentials` via MCP, T9): a instância já tem `Google Gemini(PaLM) Api account` (googlePalmApi) e `Gmail account` (gmailOAuth2) — reusadas sem mudança. **Faltam as 3 abaixo** — sem elas, os workflows publicados ficam estruturalmente corretos mas não conseguem executar em produção (a saber: os nós ficam com credencial "pendente", resolvida por nome via `newCredential(...)` no código gerado).
+
+### 2.1 WhatsApp Trigger (App ID + App Secret) — credencial `whatsAppTriggerApi`
+
+1. [developers.facebook.com/apps](https://developers.facebook.com/apps) → abrir o app Meta já criado (modo dev) → **Configurações do app → Básico**.
+2. Copiar **ID do aplicativo** e **Chave secreta do aplicativo** (botão "Mostrar").
+3. No n8n: criar credencial do tipo **WhatsApp Trigger API**, colar os dois valores.
+4. **Não existe "verify token" para preencher manualmente no app da Meta.** O nó `whatsAppTrigger` registra e verifica a assinatura do webhook sozinho na ativação, usando o próprio id do nó. Se o painel da Meta pedir uma "Verify Token" ao configurar a URL de callback, o valor é o id do nó (visível no n8n ao configurar o webhook) — nunca inventar uma string.
+5. Isso só fecha o laço em **T12** (fora do escopo deste worker): ativar `crivo-agente-principal` publicado é o que dispara o registro do webhook na Meta.
+
+### 2.2 WhatsApp send (access token + phone number id) — credencial `whatsAppApi`
+
+**Risco R2 — o mais importante desta seção**: a tela "Configuração da API" do app Meta mostra um **token de acesso temporário (23h)**. Usar esse token na credencial de envio do n8n faz o agente parar de responder em menos de um dia, silenciosamente (a falha só aparece quando `crivo-agente-erros` dispara o e-mail de erro na próxima tentativa de envio). **Nunca usar esse token.**
+
+Passo a passo do token **permanente de System User**:
+
+1. [business.facebook.com/settings](https://business.facebook.com/settings) → **Usuários → Usuários do sistema**.
+2. Criar (ou reusar) um usuário do sistema com papel **Admin**.
+3. **Adicionar ativos** → selecionar o app do WhatsApp do Crivo → conceder controle total.
+4. **Gerar novo token** → selecionar o app → marcar os escopos `whatsapp_business_messaging` e `whatsapp_business_management` → **sem prazo de expiração** (a opção existe só para tokens de System User; é o que resolve R2).
+5. Copiar o token gerado (só aparece uma vez, igual às API keys do CRM — guardar num cofre, nunca em texto versionado).
+6. **Phone number ID**: no app Meta → **WhatsApp → Configuração da API** → "ID do número de telefone" do número de teste (mesmo valor que já está na fixture `n8n/fixtures/meta-message-text.json` → `metadata.phone_number_id`, hoje um valor de exemplo — confirmar contra o real na Execute).
+7. No n8n: credencial do tipo **WhatsApp API**, colar o token permanente + phone number id.
+
+### 2.3 Google Calendar — credencial `googleCalendarOAuth2Api`
+
+Fase 8 usa **uma conta Google só** (do usuário) para os 2 tenants de teste (context.md — decisão registrada; credencial por tenant é productização de piloto real).
+
+1. [console.cloud.google.com](https://console.cloud.google.com) → projeto (novo ou existente) → **APIs e serviços → Biblioteca** → ativar **Google Calendar API**.
+2. **Tela de consentimento OAuth** → tipo Externo (ou Interno se Workspace) → preencher o mínimo (nome do app, e-mail) → escopo `https://www.googleapis.com/auth/calendar`.
+3. **Credenciais → Criar credenciais → ID do cliente OAuth** → tipo "App para computador" (o n8n faz o handshake).
+4. No n8n: credencial do tipo **Google Calendar OAuth2 API**, colar Client ID + Client Secret → **Sign in with Google** → autorizar com a conta que vai hospedar os 2 calendários de teste.
+5. Anotar o **Calendar ID** de cada calendário de teste (Configurações do Google Calendar → "Integrar agenda" → "ID da agenda"; para o calendário principal da conta, geralmente é o próprio e-mail) — vai na coluna `calendarId` da Data Table `tenant_config` (seção 3).
+
+---
+
+## 3. Data Tables e schemas (criadas via MCP, nunca pela UI)
+
+Todas as 3 são criadas com `create_data_table` (colunas com `add_data_table_column` quando necessário) e populadas com `add_data_table_rows` — nunca pelo botão "+ Data Table" da UI (mesma regra da seção anterior). Tipos abaixo usam os 4 tipos suportados pela ferramenta MCP: `string | number | boolean | date`.
+
+### `tenant_config` — mapeamento `phoneNumberId` → tenant
+
+| coluna | tipo | nota |
+| ------ | ---- | ---- |
+| `phoneNumberId` | string | chave de lookup (evento Meta, `metadata.phone_number_id`) |
+| `tenantSlug` | string | identificação humana do tenant |
+| `apiKey` | string | API key do CRM para esse tenant — ver **Risco R1** e seção 4 |
+| `calendarId` | string | id do Google Calendar (seção 2.3) |
+
+Fase 8: 2 linhas para os 2 tenants reais do seed de produção + 1 linha extra com um `phoneNumberId` fictício (apontando para qualquer um dos 2 tenants reais) só para o teste de isolamento via fixture do T10 — nunca um `phoneNumberId` de produção de verdade.
+
+**Risco R1 (aceito para o piloto, documentado)**: `apiKey` fica em texto claro na Data Table — não há tipo "secret" nas Data Tables do n8n. Aceitável com 2 consumidores conhecidos e chaves revogáveis (`revoked_at` na tabela `tenant_api_keys` do CRM). Antes de números reais de imobiliária: migrar para credencial HTTP Header Auth por tenant (1 credencial n8n por tenant, referenciada por nome nos HTTP Request nodes) ou para os secrets nativos do n8n, se disponíveis no plano.
+
+### `conversa_estado` — estado leve da conversa (chave composta `tenantSlug`+`waId`)
+
+| coluna | tipo | nota |
+| ------ | ---- | ---- |
+| `tenantSlug` | string | metade da chave composta |
+| `waId` | string | outra metade — `wa_id` do contato Meta |
+| `leadId` | string | id do lead no CRM (cache; fonte de verdade é o CRM) |
+| `bufferJson` | string | buffer de debounce, JSON de `[{messageId,text,sentAt}]` |
+| `camposJson` | string | cache dos campos de qualificação já coletados |
+| `fase` | string | `qualificando` \| `agendando` \| `encerrada` |
+| `lastInboundAt` | date | última mensagem recebida — base da janela de 24h e do reengajamento |
+| `reengaged` | boolean | true após o único reengajamento (AGT-05 AC2) |
+
+Perder esta tabela **não é perda de dado**: o cold start reconstrói `leadId`/campos a partir da resposta idempotente de `POST /leads` (spec.md — edge case). Não over-engineering de durabilidade aqui, de propósito.
+
+### `agenda_envios` — fila de lembretes de reunião
+
+| coluna | tipo | nota |
+| ------ | ---- | ---- |
+| `leadId` | string | id do lead no CRM |
+| `tenantSlug` | string | tenant dono do lead |
+| `waId` | string | destino do lembrete |
+| `meetingAt` | date | horário da reunião confirmada |
+| `meetLink` | string | link do Google Meet do evento criado |
+| `sentAt` | date | `null` até o scheduler enviar o lembrete; marca o envio |
+
+---
+
+## 4. `tenant_config` com chaves do seed de produção — ordem seed ↔ rotação (Risco R6)
+
+**O problema**: `npm run db:seed` gera **novas** API keys por tenant toda vez que roda (imprime o valor em claro **uma única vez**, no próprio stdout do comando — nunca grava em arquivo, só o hash sha256 fica no banco). Rodar o seed de novo depois que a `tenant_config` já foi populada **invalida** as chaves que estavam lá, sem aviso — o próximo `POST /leads` do agente responde `401` para os dois tenants.
+
+**Ordem obrigatória, uma única vez por ambiente**:
+
+1. Confirmar que ninguém mais vai reseedar o banco de produção nesta janela de trabalho (checar `.specs/STATE.md` / avisar no chat da orquestração se for um lote coordenado).
+2. Rodar `npm run db:seed` **uma vez**.
+3. Copiar as duas chaves impressas no stdout do próprio comando, imediatamente — não existe outra forma de recuperá-las depois.
+4. Chamar `add_data_table_rows` na `tenant_config` com essas chaves, na mesma sessão — nunca escrever a chave em arquivo, log, commit ou relatório.
+5. Registrar (fora do código versionado — ex.: no handoff da sessão) **quando** o seed rodou, para que outra sessão/worker saiba que não precisa (e não deve) reseedar de novo só para popular a mesma tabela.
+
+Se o ambiente for reseedado por qualquer outro motivo depois deste passo, a `tenant_config` precisa ser re-sincronizada (repetir 2-4) — é seguro fazer de novo, só desperdiça um ciclo se evitável.
+
+---
+
+## 5. Templates Meta (envio proativo fora da janela de 24h)
+
+Toda mensagem proativa do produto (lembrete de reunião, reengajamento) acontece, por definição, **fora** da janela de resposta gratuita de 24h da Cloud API — a Meta exige uma **template message** pré-aprovada nesse caso (texto livre é rejeitado). Criar em **WhatsApp Manager → Gerenciador de modelos de mensagem** no painel da Meta, categoria **Utilitário** (não Marketing — evita revisão mais lenta e custo maior):
+
+### `lembrete_reuniao`
+
+- **Categoria**: Utility.
+- **Corpo** (pt-BR), 2 variáveis:
+  > Olá! Passando para confirmar sua reunião hoje às {{1}}. Link do Google Meet: {{2}}
+- **Variáveis**: `{{1}}` = horário formatado (`HH:MM`, `America/Sao_Paulo`), `{{2}}` = `meetLink` do evento (Data Table `agenda_envios`).
+
+### `reengajamento`
+
+- **Categoria**: Utility.
+- **Corpo** (pt-BR), 1 variável:
+  > Oi! Aqui é {{1}}, da imobiliária. Ainda tem interesse em continuar nossa conversa sobre o imóvel? É só responder por aqui.
+- **Variável**: `{{1}}` = `agentName` do tenant (`GET /api/v1/settings`).
+
+**Aprovação é da Meta, não do n8n** — normalmente minutos a poucas horas para categoria Utility com conteúdo direto. Sem aprovação, o scheduler tenta enviar e a chamada `sendTemplate` falha — cai no tratamento de erro do design (marca tentativa, `crivo-agente-erros` notifica, nunca bloqueia o fluxo principal). Confirmar o status de aprovação das 2 templates é passo humano fora do alcance de qualquer ferramenta MCP disponível aqui — reportado como pendência, não assumido como feito.
+
+---
+
+## 6. Cadência do scheduler (Risco R3 — quota de execuções)
+
+`crivo-agente-scheduler` roda como **1 workflow único** com 3 varreduras sequenciais (lembretes, reengajamento, escalonamento por silêncio) exatamente para minimizar o número de execuções contra a quota do plano n8n — 3 workflows separados triplicariam o consumo só de scheduling.
+
+**Matemática do risco**, a 15 min:
+
+```
+24h / 15min = 96 execuções/dia
+96 × 30 dias ≈ 2.880 execuções/mês  (design.md arredonda para "~2,9k")
+```
+
+Isso é **só** o scheduler — soma com toda execução do `crivo-agente-principal` (1 por rajada de mensagem, após debounce) no mesmo plano.
+
+**Antes de publicar em T11**: checar o plano/quota atual da instância (página de uso/billing do n8n Cloud — fora do alcance dos tools MCP disponíveis aqui, é passo humano/painel). Se a quota apertar:
+
+- **30 min** ainda satisfaz "~1h antes" do lembrete (a varredura de lembretes olha `meetingAt ≤ now + 60min`; rodando a cada 30 min, o pior caso é o lembrete sair ~30min mais tarde que o alvo de 1h, ainda dentro de uma folga razoável) — reduz a matemática acima pela metade (~1.440/mês).
+- A cadência é **1 parâmetro** (`minutesInterval` no Schedule Trigger de `n8n/workflows/scheduler.ts`) — mudar exige editar o `.ts`, rodar `node scripts/n8n-inline.mjs` e republicar via MCP, nunca editar o nó na UI (regra do topo deste README).
+
+---
+
+## 7. Checklist de execução (ordem sugerida para quem for rodar T10-T13 do zero)
+
+1. Credenciais da seção 2 criadas no n8n (WhatsApp Trigger, WhatsApp send com token permanente, Google Calendar).
+2. `node scripts/n8n-inline.mjs` rodado, `n8n/generated/*.ts` revisado.
+3. Data Tables criadas via MCP (seção 3); `tenant_config` populada seguindo a ordem da seção 4 (seed → captura → linhas).
+4. Templates da seção 5 submetidas no painel Meta (aprovação acompanhada fora do MCP).
+5. Workflows publicados via MCP a partir de `n8n/generated/`; `crivo-agente-erros` ligado a `crivo-agente-principal` e `crivo-agente-scheduler` via `settings.errorWorkflow`.
+6. Cadência do scheduler (seção 6) confirmada contra a quota real do plano antes de ativar em produção.
+7. `crivo-agente-principal` ativado → Meta verifica o webhook automaticamente (seção 2.1) → smoke real no número de teste (T12/T13, fora do escopo deste worker).
+
+---
+
+## 8. Referências
+
+- `.specs/features/lote-6-agente-n8n-whatsapp/design.md` — arquitetura completa, tabela de riscos R1–R7, estratégia de erro.
+- `docs/integration/guia-integracao.md` — contrato consumido pelo fluxo (auth, idempotência, transições, 409, opt-out).
+- `n8n/src/*.mjs` + `n8n/src/__tests__/*.test.ts` — camada de decisão pura, única fonte de verdade das regras de negócio inlined nos workflows.
+- `scripts/n8n-inline.mjs` — docstring do script tem o detalhe completo do mecanismo de marcador.
