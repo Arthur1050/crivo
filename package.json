@@ -27,6 +27,7 @@
   "devDependencies": {
     "@apidevtools/swagger-parser": "^12.1.0",
     "@astryxdesign/cli": "^0.2.0",
+    "@n8n/workflow-sdk": "^0.26.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/pg": "^8.20.3",
