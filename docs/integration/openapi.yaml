@@ -25,6 +25,8 @@ tags:
     description: Leitura de contexto do tenant.
   - name: lgpd
     description: Opt-out de leads (LGPD-01).
+  - name: settings
+    description: Leitura de persona, modalidade e horário comercial do tenant (INT-09).
 paths:
   /leads:
     post:
@@ -200,6 +202,30 @@ paths:
                   $ref: "#/components/schemas/ContextDocument"
         "400":
           $ref: "#/components/responses/PayloadInvalido"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+      security:
+        - bearerAuth: []
+  /settings:
+    get:
+      operationId: getSettings
+      tags: [settings]
+      summary: Persona, modalidade e horário comercial do tenant
+      description: >-
+        Retorna o nome da imobiliária, a persona do agente (`agentName`,
+        `agentPresentationMessage`), a modalidade suportada e o horário
+        comercial configurado pela imobiliária em Configurações
+        (`meetingDays`, `meetingHoursStart`, `meetingHoursEnd` — CONF-05) do
+        tenant da chave. Os 3 campos de horário comercial são `null` quando o
+        tenant não configurou — veja `guia-integracao.md` para o fallback
+        seg-sex 9h-18h que o consumidor aplica nesse caso.
+      responses:
+        "200":
+          description: Settings do tenant da chave.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SettingsResponse"
         "401":
           $ref: "#/components/responses/NaoAutenticado"
       security:
@@ -482,3 +508,46 @@ components:
         content:
           description: Sempre `null` no v1 (mock-first — AD-004); reservado para a Fase 9.
           type: "null"
+    SettingsResponse:
+      type: object
+      description: >-
+        Persona, modalidade e horário comercial do tenant (INT-09). Os 3
+        campos de horário comercial são `null` quando não configurados na
+        tela de Configurações (CONF-05) — o consumidor aplica o fallback
+        seg-sex 9h-18h nesse caso (guia-integracao.md).
+      required:
+        - realEstateName
+        - agentName
+        - supportedModality
+        - agentPresentationMessage
+        - meetingDays
+        - meetingHoursStart
+        - meetingHoursEnd
+      properties:
+        realEstateName:
+          type: string
+        agentName:
+          type: string
+        supportedModality:
+          $ref: "#/components/schemas/Modality"
+        agentPresentationMessage:
+          type: ["string", "null"]
+        meetingDays:
+          description: >-
+            Dias de atendimento, ISO 1(segunda)–7(domingo). `null` quando o
+            horário comercial não foi configurado.
+          type: ["array", "null"]
+          items:
+            type: integer
+            minimum: 1
+            maximum: 7
+        meetingHoursStart:
+          description: >-
+            Horário de início do atendimento, formato "HH:MM". `null` quando
+            o horário comercial não foi configurado.
+          type: ["string", "null"]
+        meetingHoursEnd:
+          description: >-
+            Horário de término do atendimento, formato "HH:MM". `null`
+            quando o horário comercial não foi configurado.
+          type: ["string", "null"]

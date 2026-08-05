@@ -97,3 +97,24 @@ Passos práticos para o corte:
 5. O job de TTL (`/api/cron/expire-documents`) e o `CRON_SECRET` seguem o mesmo princípio: qualquer runtime que rode a mesma query de expiração contra o mesmo schema cumpre o contrato.
 
 Nenhum desses passos exige alterar `app/(crm)/**` (as telas do CRM) — elas nunca conheceram a implementação desta API, só o banco.
+
+## 8. Settings do tenant e horário comercial (INT-09)
+
+- `GET /api/v1/settings` retorna a persona do agente (`agentName`,
+  `agentPresentationMessage`), o nome da imobiliária (`realEstateName`), a
+  modalidade suportada (`supportedModality`) e o horário comercial
+  configurado pela imobiliária na tela de Configurações do CRM
+  (`meetingDays`, `meetingHoursStart`, `meetingHoursEnd` — CONF-05).
+- **Horário comercial**: `meetingDays` é uma lista de inteiros ISO
+  1(segunda)–7(domingo); `meetingHoursStart`/`meetingHoursEnd` são strings
+  `"HH:MM"`, sem timezone — interprete no fuso `America/Sao_Paulo` (único
+  fuso do produto no piloto).
+- **Fallback do consumidor**: quando a imobiliária não configurou horário
+  comercial, os 3 campos acima vêm `null`. Nesse caso, o consumidor (fluxo do
+  agente) deve aplicar o fallback **segunda a sexta, 9h às 18h** antes de
+  propor qualquer horário de reunião — o CRM nunca inventa um valor default
+  para esses campos; a decisão de fallback é do consumidor, documentada aqui
+  para que toda reimplementação do fluxo aplique o mesmo default.
+- Sujeito às mesmas regras transversais do contrato: `401` sem chave válida
+  ou chave inválida/revogada, isolamento por tenant (a chave nunca revela
+  settings de outro tenant), `application/problem+json` em qualquer erro.
