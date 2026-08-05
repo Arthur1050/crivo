@@ -78,6 +78,15 @@ export const tenants = pgTable("tenants", {
   agentWhatsapp: text("agent_whatsapp"),
   website: text("website"),
   agentPresentationMessage: text("agent_presentation_message"),
+  // Horário comercial configurável pela imobiliária (lote-6 — CONF-05),
+  // consumido pelo agente via GET /api/v1/settings (INT-09). Nullable/
+  // aditivo (AD-004): tenants sem configuração respondem null nesses 3
+  // campos e o fluxo aplica o fallback seg-sex 9h-18h (design.md). Dias em
+  // ISO 1(segunda)-7(domingo); horas em texto "HH:MM" (sem timezone — o
+  // fluxo interpreta em America/Sao_Paulo).
+  meetingDays: integer("meeting_days").array(),
+  meetingHoursStart: text("meeting_hours_start"),
+  meetingHoursEnd: text("meeting_hours_end"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

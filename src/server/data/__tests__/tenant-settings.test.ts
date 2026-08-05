@@ -163,4 +163,78 @@ describe("server/data — updateTenantSettings estendido (RD-07)", () => {
 
     expect(result).toBeNull();
   });
+
+  // lote-6 — CONF-05: horário comercial do tenant (dias + janela), exposto
+  // ao agente via GET /api/v1/settings. Mesmo padrão SPG-1 já pinado acima
+  // para os campos de identidade (chave ausente não toca; null limpa; valor
+  // grava), agora exercitado para os 3 campos novos.
+  describe("horário comercial (CONF-05)", () => {
+    it("persiste os 3 campos de horário comercial", async () => {
+      const updated = await updateTenantSettings(FIXTURE_TENANT_ID, {
+        ...REQUIRED,
+        meetingDays: [1, 2, 3, 4, 5],
+        meetingHoursStart: "09:00",
+        meetingHoursEnd: "18:00",
+      });
+
+      expect(updated).not.toBeNull();
+      expect(updated!.meetingDays).toEqual([1, 2, 3, 4, 5]);
+      expect(updated!.meetingHoursStart).toBe("09:00");
+      expect(updated!.meetingHoursEnd).toBe("18:00");
+    });
+
+    it("relê do banco o horário comercial após o save (reflete após reload)", async () => {
+      await updateTenantSettings(FIXTURE_TENANT_ID, {
+        ...REQUIRED,
+        meetingDays: [6],
+        meetingHoursStart: "10:00",
+        meetingHoursEnd: "14:00",
+      });
+
+      const reread = await getTenant(FIXTURE_TENANT_ID);
+      expect(reread!.meetingDays).toEqual([6]);
+      expect(reread!.meetingHoursStart).toBe("10:00");
+      expect(reread!.meetingHoursEnd).toBe("14:00");
+    });
+
+    it("null explícito nos 3 campos limpa as colunas", async () => {
+      await updateTenantSettings(FIXTURE_TENANT_ID, {
+        ...REQUIRED,
+        meetingDays: [1, 2, 3],
+        meetingHoursStart: "08:00",
+        meetingHoursEnd: "17:00",
+      });
+
+      const cleared = await updateTenantSettings(FIXTURE_TENANT_ID, {
+        ...REQUIRED,
+        meetingDays: null,
+        meetingHoursStart: null,
+        meetingHoursEnd: null,
+      });
+
+      expect(cleared).not.toBeNull();
+      expect(cleared!.meetingDays).toBeNull();
+      expect(cleared!.meetingHoursStart).toBeNull();
+      expect(cleared!.meetingHoursEnd).toBeNull();
+    });
+
+    it("chave ausente dos campos de horário comercial deixa as colunas intocadas", async () => {
+      await updateTenantSettings(FIXTURE_TENANT_ID, {
+        ...REQUIRED,
+        meetingDays: [2, 4],
+        meetingHoursStart: "09:30",
+        meetingHoursEnd: "16:30",
+      });
+
+      // Segundo save SEM as 3 chaves de horário — só os campos obrigatórios.
+      const untouched = await updateTenantSettings(FIXTURE_TENANT_ID, {
+        ...REQUIRED,
+      });
+
+      expect(untouched).not.toBeNull();
+      expect(untouched!.meetingDays).toEqual([2, 4]);
+      expect(untouched!.meetingHoursStart).toBe("09:30");
+      expect(untouched!.meetingHoursEnd).toBe("16:30");
+    });
+  });
 });

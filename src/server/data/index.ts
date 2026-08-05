@@ -583,6 +583,13 @@ export interface TenantSettingsUpdate {
   agentWhatsapp?: string | null;
   website?: string | null;
   agentPresentationMessage?: string | null;
+  // Horário comercial (lote-6 — CONF-05). Mesmo padrão SPG-1 dos campos
+  // acima, sem normalização de texto (dias são inteiros; horas já chegam
+  // validadas pela action — T2): chave ausente = coluna intocada; `null`
+  // explícito = limpa; valor presente = grava como veio.
+  meetingDays?: number[] | null;
+  meetingHoursStart?: string | null;
+  meetingHoursEnd?: string | null;
 }
 
 /**
@@ -623,6 +630,16 @@ export async function updateTenantSettings(
   );
   if (agentPresentationMessage !== undefined) {
     setValues.agentPresentationMessage = agentPresentationMessage;
+  }
+
+  if (updates.meetingDays !== undefined) {
+    setValues.meetingDays = updates.meetingDays;
+  }
+  if (updates.meetingHoursStart !== undefined) {
+    setValues.meetingHoursStart = updates.meetingHoursStart;
+  }
+  if (updates.meetingHoursEnd !== undefined) {
+    setValues.meetingHoursEnd = updates.meetingHoursEnd;
   }
 
   const rows = await db
