@@ -1,0 +1,39 @@
+{
+  "object": "whatsapp_business_account",
+  "entry": [
+    {
+      "id": "102290129340398",
+      "changes": [
+        {
+          "value": {
+            "messaging_product": "whatsapp",
+            "metadata": {
+              "display_phone_number": "15550001111",
+              "phone_number_id": "109876543210001"
+            },
+            "contacts": [
+              {
+                "profile": { "name": "Maria Lead" },
+                "wa_id": "5534999990001"
+              }
+            ],
+            "messages": [
+              {
+                "from": "5534999990001",
+                "id": "wamid.HBgNNTUzNDk5OTk5MDAwMRUCABIYFjNBMjJCRjIzQzE3RjQ5RjQ5RjRC",
+                "timestamp": "1754396100",
+                "type": "image",
+                "image": {
+                  "mime_type": "image/jpeg",
+                  "sha256": "kY0m9v0m0m9v0m0m9v0m0m9v0m0m9v0m0m9v0m0m9v0m0=",
+                  "id": "1123456789012345"
+                }
+              }
+            ]
+          },
+          "field": "messages"
+        }
+      ]
+    }
+  ]
+}

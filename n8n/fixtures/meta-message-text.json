@@ -1,0 +1,37 @@
+{
+  "object": "whatsapp_business_account",
+  "entry": [
+    {
+      "id": "102290129340398",
+      "changes": [
+        {
+          "value": {
+            "messaging_product": "whatsapp",
+            "metadata": {
+              "display_phone_number": "15550001111",
+              "phone_number_id": "109876543210001"
+            },
+            "contacts": [
+              {
+                "profile": { "name": "Maria Lead" },
+                "wa_id": "5534999990001"
+              }
+            ],
+            "messages": [
+              {
+                "from": "5534999990001",
+                "id": "wamid.HBgNNTUzNDk5OTk5MDAwMRUCABIYFjNBMjJCRjIzQzE3RjQ5RjQ5RjQA",
+                "timestamp": "1754395800",
+                "type": "text",
+                "text": {
+                  "body": "Oi, vi o anúncio do apartamento no bairro Abadia"
+                }
+              }
+            ]
+          },
+          "field": "messages"
+        }
+      ]
+    }
+  ]
+}
