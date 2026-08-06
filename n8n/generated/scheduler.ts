@@ -233,7 +233,11 @@ const sendReminderText = node({
       messageType: "text",
       textBody: expr("{{ 'Passando para confirmar sua reunião hoje às ' + $json.meetingAt.substring(11,16) + '. Link do Google Meet: ' + $json.meetLink }}"),
     },
-    credentials: { whatsAppApi: newCredential("WhatsApp Send — Crivo") },
+    // Mesmo achado documentado em n8n/workflows/principal.ts (WhatsApp send):
+    // placeholder "WhatsApp Send — Crivo" nunca resolveu, publish_workflow
+    // rejeitou o workflow com "Missing required credential: whatsAppApi" nos
+    // 3 nós abaixo até este fix — id copiado exatamente de `list_credentials`.
+    credentials: { whatsAppApi: newCredential("WhatsApp account", "HB4RrjlPYBAIkaX8") },
   },
   output: [{ messages: [{ id: "wamid.LEMBRETE_TEXTO" }] }],
 });
@@ -267,7 +271,11 @@ const sendReminderTemplate = node({
         ],
       },
     },
-    credentials: { whatsAppApi: newCredential("WhatsApp Send — Crivo") },
+    // Mesmo achado documentado em n8n/workflows/principal.ts (WhatsApp send):
+    // placeholder "WhatsApp Send — Crivo" nunca resolveu, publish_workflow
+    // rejeitou o workflow com "Missing required credential: whatsAppApi" nos
+    // 3 nós abaixo até este fix — id copiado exatamente de `list_credentials`.
+    credentials: { whatsAppApi: newCredential("WhatsApp account", "HB4RrjlPYBAIkaX8") },
   },
   output: [{ messages: [{ id: "wamid.LEMBRETE_TEMPLATE" }] }],
 });
@@ -444,7 +452,11 @@ const sendReengagementTemplate = node({
         ],
       },
     },
-    credentials: { whatsAppApi: newCredential("WhatsApp Send — Crivo") },
+    // Mesmo achado documentado em n8n/workflows/principal.ts (WhatsApp send):
+    // placeholder "WhatsApp Send — Crivo" nunca resolveu, publish_workflow
+    // rejeitou o workflow com "Missing required credential: whatsAppApi" nos
+    // 3 nós abaixo até este fix — id copiado exatamente de `list_credentials`.
+    credentials: { whatsAppApi: newCredential("WhatsApp account", "HB4RrjlPYBAIkaX8") },
   },
   output: [{ messages: [{ id: "wamid.REENGAJAMENTO" }] }],
 });

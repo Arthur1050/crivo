@@ -81,7 +81,13 @@ const whatsAppInboundTrigger = trigger({
     position: [0, 0],
     parameters: { updates: ["messages"] },
     credentials: {
-      whatsAppTriggerApi: newCredential("WhatsApp Trigger — Crivo"),
+      // Credencial WhatsApp Trigger criada pelo usuário (runbook README §2.1,
+      // human gate) — id copiado exatamente de `list_credentials`, nunca
+      // inventado (mesma regra da credencial Gemini/Gmail). Nome real na
+      // instância é "WhatsApp OAuth account" (o placeholder original
+      // "WhatsApp Trigger — Crivo" nunca resolveu — ficou sem credencial até
+      // este fix, achado ao tentar ativar o workflow em T12/T13 prep).
+      whatsAppTriggerApi: newCredential("WhatsApp OAuth account", "j82xS3mPwtiuhMlc"),
     },
   },
   output: [
@@ -1047,6 +1053,13 @@ const checkAvailability = node({
       // definem duração, mantém-se um valor conservador e fácil de mudar).
       timeMax: expr("{{ DateTime.fromISO($json.campos.meetingAtProposto).plus({ minutes: 30 }).toISO() }}"),
     },
+    // Credencial Google Calendar criada pelo usuário (runbook README §2.3,
+    // human gate) — não existia nenhuma credencial Google Calendar quando
+    // este arquivo foi originalmente escrito no T10 (ver nota de topo do
+    // arquivo), então o nó nasceu sem `credentials` nenhum. Adicionado aqui
+    // ao ativar o workflow em T12/T13 prep — id copiado exatamente de
+    // `list_credentials`.
+    credentials: { googleCalendarOAuth2Api: newCredential("Google Calendar account", "qVDBCmu934sXN39R") },
   },
   output: [{ available: true }],
 });
@@ -1088,6 +1101,9 @@ const createCalendarEvent = node({
         attendees: expr("{{ $('Switch: rota da ação (validado)').first().json.campos.leadEmail ? [$('Switch: rota da ação (validado)').first().json.campos.leadEmail] : [] }}"),
       },
     },
+    // Mesmo achado do nó de availability acima — id copiado exatamente de
+    // `list_credentials`.
+    credentials: { googleCalendarOAuth2Api: newCredential("Google Calendar account", "qVDBCmu934sXN39R") },
   },
   output: [{ id: "evt123", htmlLink: "https://calendar.google.com/event?eid=evt123", start: { dateTime: "2026-08-10T12:00:00.000Z" } }],
 });
@@ -1285,7 +1301,10 @@ const sendReply = node({
       messageType: "text",
       textBody: expr("{{ $json.resposta }}"),
     },
-    credentials: { whatsAppApi: newCredential("WhatsApp Send — Crivo") },
+    // Mesmo achado do WhatsApp Trigger acima: placeholder "WhatsApp Send —
+    // Crivo" nunca resolveu (nome real na instância é "WhatsApp account");
+    // id copiado exatamente de `list_credentials`.
+    credentials: { whatsAppApi: newCredential("WhatsApp account", "HB4RrjlPYBAIkaX8") },
   },
   output: [{ messages: [{ id: "wamid.RESPOSTA" }] }],
 });
