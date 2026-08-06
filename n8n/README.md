@@ -147,6 +147,8 @@ Toda mensagem proativa do produto (lembrete de reunião, reengajamento) acontece
 
 **Aprovação é da Meta, não do n8n** — normalmente minutos a poucas horas para categoria Utility com conteúdo direto. Sem aprovação, o scheduler tenta enviar e a chamada `sendTemplate` falha — cai no tratamento de erro do design (marca tentativa, `crivo-agente-erros` notifica, nunca bloqueia o fluxo principal). Confirmar o status de aprovação das 2 templates é passo humano fora do alcance de qualquer ferramenta MCP disponível aqui — reportado como pendência, não assumido como feito.
 
+**Atualização pós-submissão (relatada pelo usuário, Worker 3)**: a Meta aprovou `reengajamento` na categoria **Marketing**, não Utility como planejado acima — decisão da própria revisão da Meta, não uma escolha de ninguém do time. `lembrete_reuniao` presumivelmente permaneceu Utility (não confirmado por nenhuma ferramenta MCP disponível — status de categoria de template vive só no painel da Meta; conferir lá). Implicação é **só de custo**: a Meta cobra conversas de categoria Marketing mais caro que Utility — nenhuma mudança de código ou parâmetro do `sendTemplate` é necessária, porque a categoria é uma propriedade do template já aprovado, não um parâmetro que o fluxo escolhe por chamada. LGPD-03 AC2 (nunca enviar a lead com `optedOutAt` preenchido) já é reforçado independente da categoria/texto do template, então não há gap de compliance aqui — só o custo por conversa de reengajamento fica mais alto do que o orçado.
+
 ---
 
 ## 6. Cadência do scheduler (Risco R3 — quota de execuções)
