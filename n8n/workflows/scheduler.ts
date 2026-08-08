@@ -107,12 +107,14 @@ const mergeReminderContext = node({
       mode: "runOnceForEachItem",
       language: "javaScript",
       jsCode:
+        '__INLINE(phone.mjs)__' +
+        "\n\n" +
         "const reminder = $('Data Table: lembretes devidos (agenda_envios)').item.json;\n" +
         "const tenant = $json;\n" +
-        "return { json: { leadId: reminder.leadId, tenantSlug: reminder.tenantSlug, waId: reminder.waId, meetingAt: reminder.meetingAt, meetLink: reminder.meetLink, agendaEnvioRowId: reminder.id, apiKey: tenant.apiKey, phoneNumberId: tenant.phoneNumberId } };\n",
+        "return { json: { leadId: reminder.leadId, tenantSlug: reminder.tenantSlug, waId: reminder.waId, recipientMsisdn: toWhatsAppMsisdn(reminder.waId), meetingAt: reminder.meetingAt, meetLink: reminder.meetLink, agendaEnvioRowId: reminder.id, apiKey: tenant.apiKey, phoneNumberId: tenant.phoneNumberId } };\n",
     },
   },
-  output: [{ leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", tenantSlug: "vale-do-uberaba", waId: "5534999990001", meetingAt: "2026-08-05T13:00:00.000Z", meetLink: "https://meet.google.com/abc-defg-hij", agendaEnvioRowId: 1, apiKey: "exemplo", phoneNumberId: "109876543210001" }],
+  output: [{ leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", tenantSlug: "vale-do-uberaba", waId: "553499532444", recipientMsisdn: "5534999532444", meetingAt: "2026-08-05T13:00:00.000Z", meetLink: "https://meet.google.com/abc-defg-hij", agendaEnvioRowId: 1, apiKey: "exemplo", phoneNumberId: "109876543210001" }],
 });
 
 const lookupConversaForReminder = node({
@@ -198,7 +200,7 @@ const decideReminderChannel = node({
         "return [{ json: { ...ctx, leadId: lead.id, route } }];\n",
     },
   },
-  output: [{ leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", tenantSlug: "vale-do-uberaba", waId: "5534999990001", meetingAt: "2026-08-05T13:00:00.000Z", meetLink: "https://meet.google.com/abc-defg-hij", agendaEnvioRowId: 1, apiKey: "exemplo", phoneNumberId: "109876543210001", route: "texto-livre" }],
+  output: [{ leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", tenantSlug: "vale-do-uberaba", waId: "553499532444", recipientMsisdn: "5534999532444", meetingAt: "2026-08-05T13:00:00.000Z", meetLink: "https://meet.google.com/abc-defg-hij", agendaEnvioRowId: 1, apiKey: "exemplo", phoneNumberId: "109876543210001", route: "texto-livre" }],
 });
 
 const reminderRouteSwitch = switchCase({
@@ -229,7 +231,9 @@ const sendReminderText = node({
       resource: "message",
       operation: "send",
       phoneNumberId: expr("{{ $json.phoneNumberId }}"),
-      recipientPhoneNumber: expr("{{ $json.waId }}"),
+      // `recipientMsisdn` (não `waId`): nono dígito brasileiro normalizado em
+      // `Code: combinar lembrete e tenant` — ver n8n/src/phone.mjs.
+      recipientPhoneNumber: expr("{{ $json.recipientMsisdn }}"),
       messageType: "text",
       textBody: expr("{{ 'Passando para confirmar sua reunião hoje às ' + $json.meetingAt.substring(11,16) + '. Link do Google Meet: ' + $json.meetLink }}"),
     },
@@ -255,7 +259,8 @@ const sendReminderTemplate = node({
       resource: "message",
       operation: "sendTemplate",
       phoneNumberId: expr("{{ $json.phoneNumberId }}"),
-      recipientPhoneNumber: expr("{{ $json.waId }}"),
+      // Mesmo motivo do nó de texto livre acima (n8n/src/phone.mjs).
+      recipientPhoneNumber: expr("{{ $json.recipientMsisdn }}"),
       template: "lembrete_reuniao",
       components: {
         component: [
@@ -404,12 +409,14 @@ const mergeReengagementContext = node({
       mode: "runOnceForEachItem",
       language: "javaScript",
       jsCode:
+        '__INLINE(phone.mjs)__' +
+        "\n\n" +
         "const conversa = $('Filter: exclui encerradas (reengajamento)').item.json;\n" +
         "const tenant = $json;\n" +
-        "return { json: { tenantSlug: conversa.tenantSlug, waId: conversa.waId, leadId: conversa.leadId, apiKey: tenant.apiKey, phoneNumberId: tenant.phoneNumberId } };\n",
+        "return { json: { tenantSlug: conversa.tenantSlug, waId: conversa.waId, recipientMsisdn: toWhatsAppMsisdn(conversa.waId), leadId: conversa.leadId, apiKey: tenant.apiKey, phoneNumberId: tenant.phoneNumberId } };\n",
     },
   },
-  output: [{ tenantSlug: "vale-do-uberaba", waId: "5534999990001", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", apiKey: "exemplo", phoneNumberId: "109876543210001" }],
+  output: [{ tenantSlug: "vale-do-uberaba", waId: "553499532444", recipientMsisdn: "5534999532444", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", apiKey: "exemplo", phoneNumberId: "109876543210001" }],
 });
 
 const getSettingsForReengagement = node({
@@ -441,7 +448,9 @@ const sendReengagementTemplate = node({
       resource: "message",
       operation: "sendTemplate",
       phoneNumberId: expr("{{ $('Code: combinar reengajamento e tenant').first().json.phoneNumberId }}"),
-      recipientPhoneNumber: expr("{{ $('Code: combinar reengajamento e tenant').first().json.waId }}"),
+      // Mesmo motivo dos lembretes acima (n8n/src/phone.mjs): o `waId` cru da
+      // Meta vem sem o nono dígito e é rejeitado no envio (erro 131030).
+      recipientPhoneNumber: expr("{{ $('Code: combinar reengajamento e tenant').first().json.recipientMsisdn }}"),
       template: "reengajamento",
       components: {
         component: [

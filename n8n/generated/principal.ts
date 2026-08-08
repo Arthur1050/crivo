@@ -1287,6 +1287,32 @@ const finalizeResponder = node({
 //    mensagem do agente (AGT-01 AC5), limpar buffer.
 // ---------------------------------------------------------------------
 
+// Convergência de TODAS as rotas antes do envio: o `wa_id` que a Meta
+// entrega para celular brasileiro vem no formato legado, sem o nono dígito
+// (`553499532444`), e a Cloud API rejeita esse destinatário com o erro
+// 131030 "Recipient phone number not in allowed list" — falha confirmada na
+// execução 354. O `waId` cru continua sendo a chave das Data Tables e o
+// `externalId` do lead no CRM; só o destinatário do envio é normalizado
+// (n8n/src/phone.mjs).
+const normalizeRecipient = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: destinatário do envio",
+    position: [8840, 300],
+    parameters: {
+      mode: "runOnceForAllItems",
+      language: "javaScript",
+      jsCode:
+        "/**\n * Normalização do destinatário de envio no WhatsApp (nono dígito brasileiro).\n *\n * PROBLEMA REAL (execução 354 de `crivo-agente-principal`, confirmado contra\n * duas fontes): o webhook da Meta entrega o contato em `wa_id` no formato\n * LEGADO, sem o nono dígito — `553499532444` (12 dígitos) — enquanto a Cloud\n * API só aceita como destinatário o número atual, com o 9 — `5534999532444`\n * (13 dígitos, o mesmo valor que o painel da Meta usa no campo `to` do curl\n * de exemplo). Enviar o `wa_id` cru resulta em erro 131030 (\"Recipient phone\n * number not in allowed list\") — ou seja, TODA resposta do agente a um lead\n * brasileiro falha, não só a do número de teste.\n *\n * ESCOPO DELIBERADO: esta função normaliza SÓ o destinatário do envio. O\n * `wa_id` cru continua sendo a chave das Data Tables (`conversa_estado`,\n * `agenda_envios`) e o `externalId` do lead no CRM — mudar essas chaves\n * quebraria o casamento com os eventos recebidos da Meta, que sempre chegam\n * no formato legado.\n *\n * Função pura, sem I/O, sem dependências — roda dentro de um Code node do\n * n8n (sandbox: sem `require`, sem rede).\n */\n\n// Marca do país no formato E.164 sem o \"+\" (é como o `wa_id` chega da Meta).\nconst BRAZIL_COUNTRY_CODE = \"55\";\n\n// Comprimentos brasileiros: 55 + DDD(2) + 8 (formato legado, pré-nono-dígito)\n// e 55 + DDD(2) + 9 (formato atual). Só o primeiro precisa de conserto.\nconst BR_LEGACY_LENGTH = 12;\nconst BR_DDD_END_INDEX = 4; // fim de \"55\" + DDD\n\n// Discriminador celular x fixo (Anatel — Plano de Numeração Brasileiro,\n// cartilha do nono dígito): o 9 foi acrescentado SÓ aos números do Serviço\n// Móvel Pessoal, que no formato legado de 8 dígitos começavam com 6, 7, 8 ou\n// 9; a telefonia fixa também tem 8 dígitos, mas começa com 2, 3, 4 ou 5 e\n// NUNCA recebeu o nono dígito. Sem esse discriminador, um fixo de 8 dígitos\n// gravado como contato viraria um celular inexistente de 9 dígitos.\nconst BR_MOBILE_LOCAL_PREFIX = /^[6-9]/;\n\nconst NON_DIGIT_PATTERN = /\\D/g;\n\n/**\n * Converte um `wa_id` da Meta no MSISDN aceito pela Cloud API como\n * destinatário de envio.\n *\n * Regras (nesta ordem):\n * 1. Entrada não-string ou sem nenhum dígito (null/undefined/\"\"/lixo) → `\"\"`.\n *    Devolver string vazia (em vez do valor cru) evita que o nó de envio\n *    mande literalmente \"undefined\" para a Meta; o envio falha de forma\n *    explícita, que é o comportamento defensivo dos módulos vizinhos\n *    (`normalizeEvent` → null, `detectOptOut` → false).\n * 2. Caracteres não numéricos (`+`, espaço, hífen) são descartados — o\n *    `wa_id` da Meta é sempre só dígitos, mas o valor pode chegar de uma\n *    Data Table preenchida à mão.\n * 3. Número brasileiro (prefixo `55`) no formato legado (12 dígitos) cujo\n *    número local começa com 6-9 (celular) → insere `9` depois do DDD.\n * 4. Qualquer outro caso — brasileiro já com 13 dígitos, fixo brasileiro de\n *    8 dígitos locais, número de outro país, comprimento inesperado — volta\n *    inalterado. Nenhuma regra de outro país é inventada aqui.\n *\n * Idempotente por construção: o resultado da regra 3 tem 13 dígitos e cai na\n * regra 4 numa segunda aplicação.\n *\n * @param {unknown} waId - `wa_id` do contato no evento da Meta\n * @returns {string} MSISDN pronto para `recipientPhoneNumber`\n */\nfunction toWhatsAppMsisdn(waId) {\n  if (typeof waId !== \"string\") return \"\";\n\n  const digits = waId.replace(NON_DIGIT_PATTERN, \"\");\n  if (digits === \"\") return \"\";\n\n  if (!digits.startsWith(BRAZIL_COUNTRY_CODE)) return digits;\n  if (digits.length !== BR_LEGACY_LENGTH) return digits;\n\n  const ddd = digits.slice(0, BR_DDD_END_INDEX);\n  const local = digits.slice(BR_DDD_END_INDEX);\n  if (!BR_MOBILE_LOCAL_PREFIX.test(local)) return digits;\n\n  return `${ddd}9${local}`;\n}" +
+        "\n\n" +
+        "const ctx = $input.first().json;\n" +
+        "return [{ json: { ...ctx, recipientMsisdn: toWhatsAppMsisdn(ctx.waId) } }];\n",
+    },
+  },
+  output: [{ resposta: "resposta do agente", waId: "553499532444", recipientMsisdn: "5534999532444", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", apiKey: "exemplo", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
+});
+
 const sendReply = node({
   type: "n8n-nodes-base.whatsApp",
   version: 1.1,
@@ -1297,7 +1323,7 @@ const sendReply = node({
       resource: "message",
       operation: "send",
       phoneNumberId: expr("{{ $json.phoneNumberId }}"),
-      recipientPhoneNumber: expr("{{ $json.waId }}"),
+      recipientPhoneNumber: expr("{{ $json.recipientMsisdn }}"),
       messageType: "text",
       textBody: expr("{{ $json.resposta }}"),
     },
@@ -1394,7 +1420,8 @@ const clearBufferAndFinalize = node({
 // Montagem do grafo
 //
 // Regra seguida aqui (evita o erro clássico de wiring do SDK): cada
-// nó/condicional com MÚLTIPLOS predecessores (`sendReply`, `actionSwitch`)
+// nó/condicional com MÚLTIPLOS predecessores (`normalizeRecipient`, que é a
+// porta de entrada do envio desde o fix do nono dígito, e `actionSwitch`)
 // tem sua wiring de SAÍDA (`.to(...)`/`.onCase(...)`) definida em UMA única
 // expressão nomeada (`sendReplyWired`, `actionSwitchRouted`) — nunca duas
 // vezes. Todo predecessor referencia essa MESMA variável como alvo (fan-in
@@ -1402,8 +1429,8 @@ const clearBufferAndFinalize = node({
 // `.to(mesmoNo)` de origens diferentes, wiring de saída declarada 1 vez).
 // ---------------------------------------------------------------------
 
-const sendReplyWired = sendReply.to(
-  registerAgentReply.to(prepBufferClearAfterSend.to(clearBufferAndFinalize))
+const sendReplyWired = normalizeRecipient.to(
+  sendReply.to(registerAgentReply.to(prepBufferClearAfterSend.to(clearBufferAndFinalize)))
 );
 
 const optOutBranch = postOptOut.to(finalizeOptOut.to(sendReplyWired));

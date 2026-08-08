@@ -1287,6 +1287,32 @@ const finalizeResponder = node({
 //    mensagem do agente (AGT-01 AC5), limpar buffer.
 // ---------------------------------------------------------------------
 
+// Convergência de TODAS as rotas antes do envio: o `wa_id` que a Meta
+// entrega para celular brasileiro vem no formato legado, sem o nono dígito
+// (`553499532444`), e a Cloud API rejeita esse destinatário com o erro
+// 131030 "Recipient phone number not in allowed list" — falha confirmada na
+// execução 354. O `waId` cru continua sendo a chave das Data Tables e o
+// `externalId` do lead no CRM; só o destinatário do envio é normalizado
+// (n8n/src/phone.mjs).
+const normalizeRecipient = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: destinatário do envio",
+    position: [8840, 300],
+    parameters: {
+      mode: "runOnceForAllItems",
+      language: "javaScript",
+      jsCode:
+        '__INLINE(phone.mjs)__' +
+        "\n\n" +
+        "const ctx = $input.first().json;\n" +
+        "return [{ json: { ...ctx, recipientMsisdn: toWhatsAppMsisdn(ctx.waId) } }];\n",
+    },
+  },
+  output: [{ resposta: "resposta do agente", waId: "553499532444", recipientMsisdn: "5534999532444", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", apiKey: "exemplo", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
+});
+
 const sendReply = node({
   type: "n8n-nodes-base.whatsApp",
   version: 1.1,
@@ -1297,7 +1323,7 @@ const sendReply = node({
       resource: "message",
       operation: "send",
       phoneNumberId: expr("{{ $json.phoneNumberId }}"),
-      recipientPhoneNumber: expr("{{ $json.waId }}"),
+      recipientPhoneNumber: expr("{{ $json.recipientMsisdn }}"),
       messageType: "text",
       textBody: expr("{{ $json.resposta }}"),
     },
@@ -1394,7 +1420,8 @@ const clearBufferAndFinalize = node({
 // Montagem do grafo
 //
 // Regra seguida aqui (evita o erro clássico de wiring do SDK): cada
-// nó/condicional com MÚLTIPLOS predecessores (`sendReply`, `actionSwitch`)
+// nó/condicional com MÚLTIPLOS predecessores (`normalizeRecipient`, que é a
+// porta de entrada do envio desde o fix do nono dígito, e `actionSwitch`)
 // tem sua wiring de SAÍDA (`.to(...)`/`.onCase(...)`) definida em UMA única
 // expressão nomeada (`sendReplyWired`, `actionSwitchRouted`) — nunca duas
 // vezes. Todo predecessor referencia essa MESMA variável como alvo (fan-in
@@ -1402,8 +1429,8 @@ const clearBufferAndFinalize = node({
 // `.to(mesmoNo)` de origens diferentes, wiring de saída declarada 1 vez).
 // ---------------------------------------------------------------------
 
-const sendReplyWired = sendReply.to(
-  registerAgentReply.to(prepBufferClearAfterSend.to(clearBufferAndFinalize))
+const sendReplyWired = normalizeRecipient.to(
+  sendReply.to(registerAgentReply.to(prepBufferClearAfterSend.to(clearBufferAndFinalize)))
 );
 
 const optOutBranch = postOptOut.to(finalizeOptOut.to(sendReplyWired));

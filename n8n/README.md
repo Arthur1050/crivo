@@ -183,7 +183,22 @@ Isso é **só** o scheduler — soma com toda execução do `crivo-agente-princi
 
 ---
 
-## 8. Referências
+## 8. Nono dígito brasileiro — o `wa_id` recebido ≠ o destinatário do envio
+
+**A armadilha**: desde 2016/2017 (Anatel), todo celular brasileiro tem 9 dígitos locais — o "nono dígito", um `9` acrescentado antes do número antigo de 8 dígitos. O `wa_id` que a Meta entrega no webhook, porém, vem no **formato legado, sem esse 9**: o número real +55 34 99953-2444 chega como `553499532444` (12 dígitos), enquanto o painel da Meta (campo `to` do curl de exemplo) usa `5534999532444` (13 dígitos). Mandar o `wa_id` cru como destinatário faz a Cloud API responder **erro 131030 — "Recipient phone number not in allowed list"**, e o envio falha depois de todo o resto ter dado certo (lead criado, LLM respondido). Foi exatamente isso na execução 354 de `crivo-agente-principal`, e **não é específico do número de teste**: em produção, toda resposta a lead brasileiro falharia.
+
+**Como o fluxo trata**: `n8n/src/phone.mjs` (`toWhatsAppMsisdn`) insere o `9` depois do DDD quando o número é brasileiro (prefixo `55`), tem 12 dígitos e o número local começa com 6-9 (faixa de **celular**; fixo começa com 2-5 e nunca recebeu o nono dígito — sem esse discriminador um fixo viraria um celular inexistente). Números já com 13 dígitos e números de outros países voltam inalterados (idempotente). Todo nó de envio passa por ela:
+
+| Workflow | Onde normaliza | Nós de envio |
+| -------- | -------------- | ------------ |
+| `principal.ts` | `Code: destinatário do envio` (convergência de todas as rotas antes do envio) | `WhatsApp: enviar resposta` |
+| `scheduler.ts` | `Code: combinar lembrete e tenant` / `Code: combinar reengajamento e tenant` | lembrete texto livre, lembrete template, reengajamento template |
+
+**O `waId` cru continua sendo a chave de tudo o mais** — Data Tables `conversa_estado`/`agenda_envios` e `externalId` do lead no CRM — porque é nesse formato que a Meta sempre entrega os eventos recebidos. Só o campo `recipientPhoneNumber` usa o valor normalizado (`recipientMsisdn`). Nunca "consertar" o `wa_id` na entrada: isso quebraria o casamento com as mensagens seguintes.
+
+---
+
+## 9. Referências
 
 - `.specs/features/lote-6-agente-n8n-whatsapp/design.md` — arquitetura completa, tabela de riscos R1–R7, estratégia de erro.
 - `docs/integration/guia-integracao.md` — contrato consumido pelo fluxo (auth, idempotência, transições, 409, opt-out).
