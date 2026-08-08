@@ -1412,12 +1412,12 @@ const midiaBranch = finalizeMedia.to(sendReplyWired);
 
 const agendarBranch = checkAvailability.to(
   isAvailable
-    .onTrue(createCalendarEvent.to(patchScheduled.to(insertAgendaEnvio.to(finalizeScheduled.to(sendReplyWired)))))
+    .onTrue!(createCalendarEvent.to(patchScheduled.to(insertAgendaEnvio.to(finalizeScheduled.to(sendReplyWired)))))
     .onFalse(finalizeUnavailable.to(sendReplyWired))
 );
 
 const actionSwitchRouted = actionSwitch
-  .onCase(0, patchFields.to(finalizeFields.to(sendReplyWired)))
+  .onCase!(0, patchFields.to(finalizeFields.to(sendReplyWired)))
   .onCase(1, agendarBranch)
   .onCase(2, patchEscalated.to(finalizeEscalated.to(sendReplyWired)))
   .onCase(3, finalizeResponder.to(sendReplyWired));
@@ -1425,11 +1425,11 @@ const actionSwitchRouted = actionSwitch
 const llmRetryChain = askGeminiAttempt1.to(
   validateLlmAttempt1.to(
     isValidAttempt1
-      .onTrue(actionSwitchRouted)
+      .onTrue!(actionSwitchRouted)
       .onFalse(
         askGeminiAttempt2.to(
           validateLlmAttempt2.to(
-            isValidAttempt2.onTrue(actionSwitchRouted).onFalse(clarifyFallback.to(actionSwitchRouted))
+            isValidAttempt2.onTrue!(actionSwitchRouted).onFalse(clarifyFallback.to(actionSwitchRouted))
           )
         )
       )
@@ -1439,7 +1439,7 @@ const llmRetryChain = askGeminiAttempt1.to(
 const conversaBranch = getSettings.to(getContext.to(buildPromptCode.to(llmRetryChain)));
 
 const routeSwitchRouted = routeSwitch
-  .onCase(0, optOutBranch)
+  .onCase!(0, optOutBranch)
   .onCase(1, somenteRegistrarBranch)
   .onCase(2, midiaBranch)
   .onCase(3, conversaBranch);
@@ -1454,7 +1454,7 @@ const debounceChain = conversaEstadoBeforeBuffer.to(
   appendToBuffer.to(
     conversaEstadoUpsertBuffer.to(
       waitForDebounce.to(
-        conversaEstadoAfterWait.to(checkStillLatest.to(isStillLatest.onTrue(syncCrmAndGate)))
+        conversaEstadoAfterWait.to(checkStillLatest.to(isStillLatest.onTrue!(syncCrmAndGate)))
       )
     )
   )
