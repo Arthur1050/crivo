@@ -203,7 +203,7 @@ O CRM está completo e o contrato de integração está vivo em produção, mas 
 
 | Requirement ID | Story | Phase | Status |
 | -------------- | ----- | ----- | ------ |
-| AGT-01 | P1: Ingestão (webhook→CRM) | T5,T6,T10,T12 | ✅ Verified — unit (`normalize-event.test.ts`, `gate.test.ts`) + MCP (exec 54 unmapped, exec 66 duplicado) + execução real (exec 404, round-trip completo) + AC5 (registro da resposta) corrigido e validado (exec 379) |
+| AGT-01 | P1: Ingestão (webhook→CRM) | T5,T6,T10,T12 | ✅ Verified — unit (`normalize-event.test.ts`, `gate.test.ts`) + MCP (exec 54 unmapped, exec 66 duplicado) + execução real (exec 404, round-trip completo, incl. AC5: registro da resposta do agente confirmado nesta mesma execução) |
 | AGT-02 | P1: Qualificação por modalidade | T8 | ⚠️ Verified (nível unitário) — `prompt.test.ts`/`validate-llm.test.ts` cobrem ACs 2–4 (registro por `PATCH`, upsert parcial, nunca repergunta); persona/primeira pergunta confirmada na exec 404 real. **Sem prova de multi-turno ao vivo** cobrindo os 8 campos — deferido (AD-015) |
 | AGT-03 | P1: Qualificação (memória/cold start) | T5,T10 | ✅ Verified — cold start via `POST /leads` idempotente é o mesmo contrato testado exaustivamente no lote-5 (INT-01); reconstrução de estado exercitada em execuções MCP |
 | AGT-04 | P1: Agendamento Calendar+Meet | T10 | ❌ **Gap — deferido (AD-015)**. Bug de referência quebrada na rota `agendar` corrigido hoje (checkpoint node, commit `006e789`), mas **nenhuma execução real ou simulada da rota completa existe** — sem prova de evento no Calendar com Meet. Fix task natural do lote futuro que assumir o smoke |
