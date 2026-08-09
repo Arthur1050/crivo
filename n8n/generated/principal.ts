@@ -1344,16 +1344,35 @@ const registerAgentReply = node({
     retryOnFail: true,
     maxTries: 3,
     waitBetweenTries: 2000,
+    // Duas referências quebradas corrigidas aqui (execução 364, evidência
+    // direta — não hipótese):
+    //   1. `$('Switch: rota (gate)').first()` lê SEMPRE a saída 0 do Switch
+    //      (rota opt-out). Numa execução de rota `conversa` o item está na
+    //      saída 3 e a saída 0 fica vazia (`main: [[],[],[],[item]]` na
+    //      execução 364) — `id` e `apiKey` resolviam para string vazia, a URL
+    //      virava `/leads//messages` e casava com a rota `/leads/{id}`, que só
+    //      aceita PATCH (405 `metodo-nao-suportado`). Vale para QUALQUER rota
+    //      que não seja a de índice 0.
+    //   2. `$('WhatsApp: enviar resposta').first().json.resposta` não existe:
+    //      a saída do nó WhatsApp é a resposta da Cloud API
+    //      (`messaging_product`/`contacts`/`messages`) — `content` saía
+    //      ausente do corpo, violando AGT-01 AC5 (a thread do CRM precisa
+    //      espelhar a conversa inteira).
+    // `Code: destinatário do envio` é a referência robusta: nó Code de saída
+    // única por onde TODAS as rotas de envio convergem, carregando
+    // `{ resposta, waId, phoneNumberId, tenantSlug, apiKey, leadId, fase,
+    // recipientMsisdn }` (confirmado na execução 364). `$json.messages[0].id`
+    // continua vindo do nó WhatsApp — é o wamid, e ali está correto.
     parameters: {
       method: "POST",
-      url: expr(`${CRM_BASE_URL}/leads/{{ $('Switch: rota (gate)').first().json.id }}/messages`),
+      url: expr(`${CRM_BASE_URL}/leads/{{ $('Code: destinatário do envio').first().json.leadId }}/messages`),
       sendHeaders: true,
-      headerParameters: { parameters: [{ name: "Authorization", value: expr("Bearer {{ $('Switch: rota (gate)').first().json.apiKey }}") }] },
+      headerParameters: { parameters: [{ name: "Authorization", value: expr("Bearer {{ $('Code: destinatário do envio').first().json.apiKey }}") }] },
       sendBody: true,
       contentType: "json",
       specifyBody: "json",
       jsonBody: expr(
-        "{{ { externalId: $json.messages[0].id, sender: 'agente', content: $('WhatsApp: enviar resposta').first().json.resposta, sentAt: $now.toISO() } }}"
+        "{{ { externalId: $json.messages[0].id, sender: 'agente', content: $('Code: destinatário do envio').first().json.resposta, sentAt: $now.toISO() } }}"
       ),
     },
   },
@@ -1369,9 +1388,17 @@ const prepBufferClearAfterSend = node({
     parameters: {
       mode: "runOnceForAllItems",
       language: "javaScript",
+      // Mesmo defeito do nó de registro acima: `WhatsApp: enviar resposta`
+      // devolve a resposta da Cloud API, que não tem `tenantSlug`/`waId`/
+      // `fase` — os três resolviam `undefined` e o `Data Table: limpar buffer`
+      // fazia upsert com chave vazia. Falha silenciosa (o nó "sucede"): o
+      // buffer de debounce nunca era limpo, então as mensagens da rajada
+      // anterior ficavam acumuladas e voltavam a ser reprocessadas no turno
+      // seguinte. `waId` aqui é o CRU (chave das Data Tables), nunca o
+      // `recipientMsisdn` normalizado.
       jsCode:
-        "const sent = $('WhatsApp: enviar resposta').first().json;\n" +
-        "return [{ json: { tenantSlug: sent.tenantSlug, waId: sent.waId, fase: sent.fase } }];\n",
+        "const ctx = $('Code: destinatário do envio').first().json;\n" +
+        "return [{ json: { tenantSlug: ctx.tenantSlug, waId: ctx.waId, fase: ctx.fase } }];\n",
     },
   },
   output: [{ tenantSlug: "imobiliaria-a", waId: "5534999990001", fase: "qualificando" }],
