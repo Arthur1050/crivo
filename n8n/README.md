@@ -204,3 +204,31 @@ Isso é **só** o scheduler — soma com toda execução do `crivo-agente-princi
 - `docs/integration/guia-integracao.md` — contrato consumido pelo fluxo (auth, idempotência, transições, 409, opt-out).
 - `n8n/src/*.mjs` + `n8n/src/__tests__/*.test.ts` — camada de decisão pura, única fonte de verdade das regras de negócio inlined nos workflows.
 - `scripts/n8n-inline.mjs` — docstring do script tem o detalhe completo do mecanismo de marcador.
+
+---
+
+## 10. T12 — Conectividade Meta real: confirmações (2026-08-09)
+
+### 10.1 Payload real vs. fixtures — diff zero
+
+Comparado o payload de entrada do nó `WhatsApp Trigger` da execução real **404** de `crivo-agente-principal` (`2026-08-09T02:50:47Z`, `mode:"webhook"`, ~12.6s de duração — round-trip completo com resposta do Gemini e envio confirmado) contra `n8n/fixtures/meta-message-text.json`. Todos os campos que `normalizeEvent` consome batem em presença e tipo: `messaging_product`, `metadata.phone_number_id`, `contacts[].wa_id`, `messages[].id/timestamp/type/text.body`. **Diff estrutural: zero — fixture não alterada.**
+
+Duas observações honestas, nenhuma bloqueante:
+
+- O payload real trouxe dois campos adicionais que a fixture não tem: `contacts[].user_id` e `messages[].from_user_id` (formato `BR.<dígitos>`, aparentemente um identificador Meta mais novo). São aditivos — `normalizeEvent` lê só os campos nomeados acima e ignora o resto, então não afetam o comportamento nem exigem mudança na fixture.
+- O `wa_id`/`from` real da execução 404 tem 12 dígitos (`553499532444` — formato legado, sem o nono dígito, exatamente o que a seção 8 já documenta), enquanto o valor de exemplo usado nas fixtures (`5534999990001`) tem 13 dígitos (já com o nono dígito incluído). `normalizeEvent` só repassa `waId` como string opaca — não valida nem transforma formato — então isso não é uma divergência estrutural nem afeta nenhum teste hoje; é só uma imprecisão de dado de exemplo nas fixtures em relação ao formato real documentado na seção 8. Registrado aqui em vez de "corrigido" porque mudar o valor exigiria também atualizar as asserções de `n8n/src/__tests__/normalize-event.test.ts` sem nenhum ganho de cobertura — fora do escopo do T12 (que não deve tocar `n8n/src/`).
+
+### 10.2 Token de envio (WhatsApp API, credencial `HB4RrjlPYBAIkaX8`) — permanência (Risco R2)
+
+Confirmado por observação em **Meta Business Settings → Usuários → Usuários do sistema → "Conversions API System User"** (sem gerar/regenerar/revogar nada):
+
+- A credencial pertence de fato a um **usuário do sistema** ("Conversions API System User", `Acesso de Employee`), com o app `crivo` instalado com exatamente os escopos `business_management`, `whatsapp_business_management` e `whatsapp_business_messaging` desde **5 de ago de 2026** — mesma data em que a credencial foi criada nesta feature.
+- O assistente "Gerar token" desse usuário do sistema, para o app `crivo`, oferece as opções **"60 dias (recomendado)"** e **"Nunca"** na etapa "Definir expiração" — confirma que o mecanismo de token permanente que o runbook (seção 2.2) descreve existe e está disponível para esta credencial. O fluxo foi fechado nessa etapa (sem avançar/gerar) para não invalidar o token em uso.
+- Evidência indireta forte de que o token atual **não é** o temporário de 23h do painel "Configuração da API" (a preocupação específica do Risco R2): a execução **404**, de hoje (`2026-08-09`), 4 dias depois da credencial ter sido criada (`2026-08-05`), enviou uma mensagem real com sucesso pelo nó `WhatsApp: enviar resposta` (Graph API respondeu com `wamid` de confirmação). Um token de 23h não sobreviveria 4 dias.
+- **O que não foi possível confirmar**: o Meta não expõe, para um token de usuário do sistema já emitido, se ele foi gerado com "60 dias" ou "Nunca" — essa informação só aparece na tela do próprio assistente de geração, no momento da criação, e não fica visível depois. Não há como ler isso retroativamente sem gerar um token novo (ação que invalidaria o atual e está fora do escopo permitido aqui).
+
+**Conclusão honesta**: confirmado que o token é de usuário do sistema (não o temporário de 23h — a falha específica que o R2 descreve) e que segue funcionando 4 dias depois da criação. Não confirmado com certeza absoluta se a opção escolhida na geração foi "Nunca" (permanente) ou "60 dias". Pendência conhecida, não bloqueante para T12: se o envio parar de funcionar em algum momento (o que `crivo-agente-erros` notificaria por e-mail), gerar um novo token de usuário do sistema escolhendo explicitamente "Nunca" resolve definitivamente.
+
+### 10.3 Resync `tenant_config` (rodado nesta sessão, após `npx vitest run`)
+
+Como o gate deste T12 rodou `npx vitest run` (que rotaciona as API keys via `runSeed()` em `beforeAll`, conforme seção 4), o procedimento da seção 4 foi seguido até o fim: `npm run db:seed` rodado uma única vez, as 2 chaves capturadas do stdout, aplicadas às 2 linhas da Data Table `tenant_config` (`eqp0TUHvN9yQNvdY`) via workflow n8n temporário com nó Data Table em `update` (casado por `phoneNumberId`), workflow arquivado logo em seguida. Validado com `GET /api/v1/settings` disparado de dentro de outro workflow temporário (também arquivado após a checagem): `200`, `realEstateName: "Triângulo Imóveis"`. Nenhuma chave foi escrita em arquivo, log ou commit.
