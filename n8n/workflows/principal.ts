@@ -987,12 +987,40 @@ const actionSwitch = switchCase({
 
 // -- atualizar_campos: PATCH só com as chaves extraídas (AGT-02 AC3) --
 
+// Checkpoint (mesma convenção de "Code: destinatário do envio", ver topo do
+// arquivo): único predecessor (a saída 0 do Switch, sempre presente quando
+// este nó roda, porque só é alcançável por essa saída), então
+// $input.first().json aqui é sempre a saída validada do LLM
+// ({ ok, acao, campos, resposta }) — nunca ambíguo. Existe porque
+// `Code: finalizar atualizar_campos`, adiante, tinha o mesmo defeito de
+// classe já corrigido no envio/registro: lia $input.first().json depois de
+// `HTTP: PATCH /leads/{id} (campos)` já ter sobrescrito $json com a resposta
+// da API (`{id, status}`, sem `resposta`/`acao`) — `validated.resposta`
+// resolvia undefined, e a mensagem enviada ao lead saía vazia. Diferente do
+// bug do Switch por referência nomeada (`.first()` sempre lendo a saída 0):
+// aqui o defeito é ler `$input` depois que um nó HTTP no meio do caminho já
+// substituiu $json — mesma classe, mecanismo ligeiramente diferente.
+const validatedFieldsCheckpoint = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: dados validados (atualizar_campos)",
+    position: [7560, -200],
+    parameters: {
+      mode: "runOnceForAllItems",
+      language: "javaScript",
+      jsCode: "return [{ json: $input.first().json }];\n",
+    },
+  },
+  output: [{ ok: true, acao: "atualizar_campos", campos: { region: "Uberaba" }, resposta: "Legal, região Uberaba anotada!" }],
+});
+
 const patchFields = node({
   type: "n8n-nodes-base.httpRequest",
   version: 4.4,
   config: {
     name: "HTTP: PATCH /leads/{id} (campos)",
-    position: [7560, -200],
+    position: [7820, -200],
     retryOnFail: true,
     maxTries: 3,
     waitBetweenTries: 2000,
@@ -1021,13 +1049,13 @@ const finalizeFields = node({
   version: 2,
   config: {
     name: "Code: finalizar atualizar_campos",
-    position: [7820, -200],
+    position: [8080, -200],
     parameters: {
       mode: "runOnceForAllItems",
       language: "javaScript",
       jsCode:
         "const ctx = $('Code: gate').first().json;\n" +
-        "const validated = $input.first().json;\n" +
+        "const validated = $('Code: dados validados (atualizar_campos)').first().json;\n" +
         "const fase = (validated.acao === 'agendar' ? 'agendando' : 'qualificando');\n" +
         "return [{ json: { resposta: validated.resposta, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, tenantSlug: ctx.tenantSlug, apiKey: ctx.apiKey, leadId: ctx.id, fase } }];\n",
     },
@@ -1037,12 +1065,38 @@ const finalizeFields = node({
 
 // -- agendar: availability -> event.create (Meet) -> PATCH -> agenda_envios (AGT-04) --
 
+// Mesmo checkpoint da branch atualizar_campos acima (ver comentário lá):
+// único predecessor (saída 1 do Switch), sempre a saída validada do LLM
+// quando este nó roda. Substitui as referências quebradas
+// `$('Switch: rota da ação (validado)').first()` (sempre lê a saída 0,
+// confirmado no mecanismo da execução 364 — aqui a saída 0 é
+// atualizar_campos, então em toda execução da rota agendar essa leitura
+// vinha vazia) usadas por `Google Calendar: criar evento (Meet)`,
+// `HTTP: PATCH /leads/{id} (agendado)` e
+// `Data Table: agendar lembrete (agenda_envios)`, e a referência `$input`
+// quebrada (mesmo mecanismo do checkpoint acima) usada por
+// `Code: finalizar agendado`.
+const validatedAgendarCheckpoint = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: dados validados (agendar)",
+    position: [7560, 0],
+    parameters: {
+      mode: "runOnceForAllItems",
+      language: "javaScript",
+      jsCode: "return [{ json: $input.first().json }];\n",
+    },
+  },
+  output: [{ ok: true, acao: "agendar", campos: { meetingAtProposto: "2026-08-10T12:00:00.000Z", leadEmail: null }, resposta: "Perfeito, agendado!" }],
+});
+
 const checkAvailability = node({
   type: "n8n-nodes-base.googleCalendar",
   version: 1.3,
   config: {
     name: "Google Calendar: availability",
-    position: [7560, 0],
+    position: [7820, 0],
     parameters: {
       resource: "calendar",
       operation: "availability",
@@ -1068,7 +1122,7 @@ const isAvailable = ifElse({
   version: 2.3,
   config: {
     name: "Horário disponível?",
-    position: [7820, 0],
+    position: [8080, 0],
     parameters: {
       conditions: {
         combinator: "and",
@@ -1084,13 +1138,13 @@ const createCalendarEvent = node({
   version: 1.3,
   config: {
     name: "Google Calendar: criar evento (Meet)",
-    position: [8080, -80],
+    position: [8340, -80],
     parameters: {
       resource: "event",
       operation: "create",
       calendar: { __rl: true, mode: "id", value: expr("{{ $('Code: gate').first().json.calendarId }}") },
-      start: expr("{{ $('Switch: rota da ação (validado)').first().json.campos.meetingAtProposto }}"),
-      end: expr("{{ DateTime.fromISO($('Switch: rota da ação (validado)').first().json.campos.meetingAtProposto).plus({ minutes: 30 }).toISO() }}"),
+      start: expr("{{ $('Code: dados validados (agendar)').first().json.campos.meetingAtProposto }}"),
+      end: expr("{{ DateTime.fromISO($('Code: dados validados (agendar)').first().json.campos.meetingAtProposto).plus({ minutes: 30 }).toISO() }}"),
       additionalFields: {
         summary: expr("{{ 'Reunião com ' + $('Code: gate').first().json.contactName }}"),
         // conferenceSolution "hangoutsMeet": constante pública da API do
@@ -1098,7 +1152,7 @@ const createCalendarEvent = node({
         // explore_node_resources nesta sessão (sem credencial Google
         // Calendar na instância, ver nota de topo do arquivo).
         conferenceDataUi: { conferenceDataValues: { conferenceSolution: "hangoutsMeet" } },
-        attendees: expr("{{ $('Switch: rota da ação (validado)').first().json.campos.leadEmail ? [$('Switch: rota da ação (validado)').first().json.campos.leadEmail] : [] }}"),
+        attendees: expr("{{ $('Code: dados validados (agendar)').first().json.campos.leadEmail ? [$('Code: dados validados (agendar)').first().json.campos.leadEmail] : [] }}"),
       },
     },
     // Mesmo achado do nó de availability acima — id copiado exatamente de
@@ -1113,7 +1167,7 @@ const patchScheduled = node({
   version: 4.4,
   config: {
     name: "HTTP: PATCH /leads/{id} (agendado)",
-    position: [8340, -80],
+    position: [8600, -80],
     retryOnFail: true,
     maxTries: 3,
     waitBetweenTries: 2000,
@@ -1127,7 +1181,7 @@ const patchScheduled = node({
       contentType: "json",
       specifyBody: "json",
       jsonBody: expr(
-        "{{ { status: 'qualificado_agendado', meetingAt: $('Switch: rota da ação (validado)').first().json.campos.meetingAtProposto, executiveSummary: 'Reunião agendada via WhatsApp: ' + $('Switch: rota da ação (validado)').first().json.resposta } }}"
+        "{{ { status: 'qualificado_agendado', meetingAt: $('Code: dados validados (agendar)').first().json.campos.meetingAtProposto, executiveSummary: 'Reunião agendada via WhatsApp: ' + $('Code: dados validados (agendar)').first().json.resposta } }}"
       ),
     },
   },
@@ -1139,7 +1193,7 @@ const insertAgendaEnvio = node({
   version: 1.1,
   config: {
     name: "Data Table: agendar lembrete (agenda_envios)",
-    position: [8600, -80],
+    position: [8860, -80],
     parameters: {
       resource: "row",
       operation: "insert",
@@ -1150,7 +1204,7 @@ const insertAgendaEnvio = node({
           leadId: expr("{{ $('Code: gate').first().json.id }}"),
           tenantSlug: expr("{{ $('Code: gate').first().json.tenantSlug }}"),
           waId: expr("{{ $('Code: gate').first().json.waId }}"),
-          meetingAt: expr("{{ $('Switch: rota da ação (validado)').first().json.campos.meetingAtProposto }}"),
+          meetingAt: expr("{{ $('Code: dados validados (agendar)').first().json.campos.meetingAtProposto }}"),
           meetLink: expr("{{ $('Google Calendar: criar evento (Meet)').first().json.htmlLink }}"),
         },
         schema: [
@@ -1171,13 +1225,13 @@ const finalizeScheduled = node({
   version: 2,
   config: {
     name: "Code: finalizar agendado",
-    position: [8860, -80],
+    position: [9120, -80],
     parameters: {
       mode: "runOnceForAllItems",
       language: "javaScript",
       jsCode:
         "const ctx = $('Code: gate').first().json;\n" +
-        "const validated = $input.first().json;\n" +
+        "const validated = $('Code: dados validados (agendar)').first().json;\n" +
         "const fase = (validated.acao === 'agendar' ? 'agendando' : 'qualificando');\n" +
         "return [{ json: { resposta: validated.resposta, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, tenantSlug: ctx.tenantSlug, apiKey: ctx.apiKey, leadId: ctx.id, fase } }];\n",
     },
@@ -1196,7 +1250,7 @@ const finalizeUnavailable = node({
   version: 2,
   config: {
     name: "Code: finalizar horário indisponível",
-    position: [8080, 120],
+    position: [8340, 120],
     parameters: {
       mode: "runOnceForAllItems",
       language: "javaScript",
@@ -1211,12 +1265,33 @@ const finalizeUnavailable = node({
 
 // -- escalar: PATCH status=escalado_humano + motivo (AGT-05 AC1) --
 
+// Mesmo checkpoint das branches acima (ver comentário em
+// `validatedFieldsCheckpoint`): único predecessor (saída 2 do Switch).
+// `Code: finalizar escalado` tinha o mesmo defeito de `$input` das outras
+// duas branches — aqui, além disso, referenciar o Switch pelo nome NÃO
+// seria uma correção coincidentemente válida (diferente da rota
+// atualizar_campos, que é a saída 0): a saída 2 nunca é a que `.first()` lê.
+const validatedEscalarCheckpoint = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: dados validados (escalar)",
+    position: [7560, 300],
+    parameters: {
+      mode: "runOnceForAllItems",
+      language: "javaScript",
+      jsCode: "return [{ json: $input.first().json }];\n",
+    },
+  },
+  output: [{ ok: true, acao: "escalar", campos: {}, resposta: "Vou chamar um atendente humano.", motivoEscalonamento: "pedido explícito de humano" }],
+});
+
 const patchEscalated = node({
   type: "n8n-nodes-base.httpRequest",
   version: 4.4,
   config: {
     name: "HTTP: PATCH /leads/{id} (escalar)",
-    position: [7560, 300],
+    position: [7820, 300],
     retryOnFail: true,
     maxTries: 3,
     waitBetweenTries: 2000,
@@ -1247,13 +1322,13 @@ const finalizeEscalated = node({
   version: 2,
   config: {
     name: "Code: finalizar escalado",
-    position: [7820, 300],
+    position: [8080, 300],
     parameters: {
       mode: "runOnceForAllItems",
       language: "javaScript",
       jsCode:
         "const ctx = $('Code: gate').first().json;\n" +
-        "const validated = $input.first().json;\n" +
+        "const validated = $('Code: dados validados (escalar)').first().json;\n" +
         "const fase = 'encerrada';\n" +
         "return [{ json: { resposta: validated.resposta, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, tenantSlug: ctx.tenantSlug, apiKey: ctx.apiKey, leadId: ctx.id, fase } }];\n",
     },
@@ -1464,16 +1539,18 @@ const optOutBranch = postOptOut.to(finalizeOptOut.to(sendReplyWired));
 const somenteRegistrarBranch = finalizeSomenteRegistrar.to(clearBufferAndFinalize);
 const midiaBranch = finalizeMedia.to(sendReplyWired);
 
-const agendarBranch = checkAvailability.to(
-  isAvailable
-    .onTrue!(createCalendarEvent.to(patchScheduled.to(insertAgendaEnvio.to(finalizeScheduled.to(sendReplyWired)))))
-    .onFalse(finalizeUnavailable.to(sendReplyWired))
+const agendarBranch = validatedAgendarCheckpoint.to(
+  checkAvailability.to(
+    isAvailable
+      .onTrue!(createCalendarEvent.to(patchScheduled.to(insertAgendaEnvio.to(finalizeScheduled.to(sendReplyWired)))))
+      .onFalse(finalizeUnavailable.to(sendReplyWired))
+  )
 );
 
 const actionSwitchRouted = actionSwitch
-  .onCase!(0, patchFields.to(finalizeFields.to(sendReplyWired)))
+  .onCase!(0, validatedFieldsCheckpoint.to(patchFields.to(finalizeFields.to(sendReplyWired))))
   .onCase(1, agendarBranch)
-  .onCase(2, patchEscalated.to(finalizeEscalated.to(sendReplyWired)))
+  .onCase(2, validatedEscalarCheckpoint.to(patchEscalated.to(finalizeEscalated.to(sendReplyWired))))
   .onCase(3, finalizeResponder.to(sendReplyWired));
 
 const llmRetryChain = askGeminiAttempt1.to(
