@@ -1420,59 +1420,67 @@ const normalizeRecipient = node({
         "return [{ json: { ...ctx, recipientMsisdn: toWhatsAppMsisdn(ctx.waId) } }];\n",
     },
   },
-  output: [{ resposta: "resposta do agente", waId: "553499532444", recipientMsisdn: "5534999532444", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", apiKey: "exemplo", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
+  output: [{ mensagens: ["resposta do agente"], waId: "553499532444", recipientMsisdn: "5534999532444", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", apiKey: "exemplo", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
 });
 
-const sendReply = node({
+// lote-6b — PER-02 AC2/AC3: cadeia LINEAR de 3 estágios (send -> register ->
+// IF existe próxima?), nunca um loop no grafo (mesma restrição que já forçou
+// duas instâncias físicas do Gemini). Cada nó de envio/registro lê
+// `mensagens[i]` de `Code: destinatário do envio` por REFERÊNCIA NOMEADA —
+// nunca de `$json` encadeado — porque cada `WhatsApp: enviar mensagem N`
+// substitui `$json` pela resposta da Cloud API (mesma classe de bug
+// corrigida em `7041a78`/`006e789`). `mensagens[1]`/`mensagens[2]` só
+// existem quando o modelo devolveu 2/3 mensagens (PER-02 AC1); os nós IF
+// abaixo decidem isso pelo tamanho do array, nunca por acessar um índice
+// ausente.
+
+const sendReply1 = node({
   type: "n8n-nodes-base.whatsApp",
   version: 1.1,
   config: {
-    name: "WhatsApp: enviar resposta",
+    name: "WhatsApp: enviar mensagem 1",
     position: [9100, 300],
     parameters: {
       resource: "message",
       operation: "send",
-      phoneNumberId: expr("{{ $json.phoneNumberId }}"),
-      recipientPhoneNumber: expr("{{ $json.recipientMsisdn }}"),
+      phoneNumberId: expr("{{ $('Code: destinatário do envio').first().json.phoneNumberId }}"),
+      recipientPhoneNumber: expr("{{ $('Code: destinatário do envio').first().json.recipientMsisdn }}"),
       messageType: "text",
-      textBody: expr("{{ $json.resposta }}"),
+      textBody: expr("{{ $('Code: destinatário do envio').first().json.mensagens[0] }}"),
     },
     // Mesmo achado do WhatsApp Trigger acima: placeholder "WhatsApp Send —
     // Crivo" nunca resolveu (nome real na instância é "WhatsApp account");
     // id copiado exatamente de `list_credentials`.
     credentials: { whatsAppApi: newCredential("WhatsApp account", "HB4RrjlPYBAIkaX8") },
   },
-  output: [{ messages: [{ id: "wamid.RESPOSTA" }] }],
+  output: [{ messages: [{ id: "wamid.RESPOSTA1" }] }],
 });
 
-const registerAgentReply = node({
+const registerAgentReply1 = node({
   type: "n8n-nodes-base.httpRequest",
   version: 4.4,
   config: {
-    name: "HTTP: POST /leads/{id}/messages (agente)",
+    name: "HTTP: registrar mensagem 1",
     position: [9360, 300],
     retryOnFail: true,
     maxTries: 3,
     waitBetweenTries: 2000,
-    // Duas referências quebradas corrigidas aqui (execução 364, evidência
-    // direta — não hipótese):
+    // Duas referências quebradas corrigidas aqui originalmente (execução
+    // 364, evidência direta — não hipótese), preservadas na nova cadeia de 3
+    // estágios (lote-6b — T10):
     //   1. `$('Switch: rota (gate)').first()` lê SEMPRE a saída 0 do Switch
     //      (rota opt-out). Numa execução de rota `conversa` o item está na
-    //      saída 3 e a saída 0 fica vazia (`main: [[],[],[],[item]]` na
-    //      execução 364) — `id` e `apiKey` resolviam para string vazia, a URL
-    //      virava `/leads//messages` e casava com a rota `/leads/{id}`, que só
-    //      aceita PATCH (405 `metodo-nao-suportado`). Vale para QUALQUER rota
-    //      que não seja a de índice 0.
-    //   2. `$('WhatsApp: enviar resposta').first().json.resposta` não existe:
-    //      a saída do nó WhatsApp é a resposta da Cloud API
-    //      (`messaging_product`/`contacts`/`messages`) — `content` saía
-    //      ausente do corpo, violando AGT-01 AC5 (a thread do CRM precisa
-    //      espelhar a conversa inteira).
+    //      saída 3 e a saída 0 fica vazia — `id`/`apiKey` resolviam para
+    //      string vazia. Vale para QUALQUER rota que não seja a de índice 0.
+    //   2. Ler `resposta`/`mensagens` do nó WhatsApp não existe: a saída do
+    //      nó WhatsApp é a resposta da Cloud API
+    //      (`messaging_product`/`contacts`/`messages`), sem o texto enviado.
     // `Code: destinatário do envio` é a referência robusta: nó Code de saída
     // única por onde TODAS as rotas de envio convergem, carregando
-    // `{ resposta, waId, phoneNumberId, tenantSlug, apiKey, leadId, fase,
-    // recipientMsisdn }` (confirmado na execução 364). `$json.messages[0].id`
-    // continua vindo do nó WhatsApp — é o wamid, e ali está correto.
+    // `{ mensagens, waId, phoneNumberId, tenantSlug, apiKey, leadId, fase,
+    // recipientMsisdn }`. `$json.messages[0].id` vem do nó WhatsApp que
+    // precede DIRETAMENTE este (sem HTTP no meio) — é o wamid da mensagem 1,
+    // e ali está correto.
     parameters: {
       method: "POST",
       url: expr(`${CRM_BASE_URL}/leads/{{ $('Code: destinatário do envio').first().json.leadId }}/messages`),
@@ -1482,11 +1490,167 @@ const registerAgentReply = node({
       contentType: "json",
       specifyBody: "json",
       jsonBody: expr(
-        "{{ { externalId: $json.messages[0].id, sender: 'agente', content: $('Code: destinatário do envio').first().json.resposta, sentAt: $now.toISO() } }}"
+        "{{ { externalId: $json.messages[0].id, sender: 'agente', content: $('Code: destinatário do envio').first().json.mensagens[0], sentAt: $now.toISO() } }}"
       ),
     },
   },
   output: [{ id: "6fa85f64-5717-4562-b3fc-2c963f66afa9", sender: "agente" }],
+});
+
+// PER-02 AC2: existe mensagem 2? Decide pelo TAMANHO do array (nunca por
+// acessar `mensagens[1]` diretamente, que seria `undefined` quando o modelo
+// devolveu só 1 mensagem).
+const hasMessage2 = ifElse({
+  version: 2.3,
+  config: {
+    name: "IF: existe mensagem 2?",
+    position: [9620, 300],
+    parameters: {
+      conditions: {
+        combinator: "and",
+        options: { caseSensitive: true, leftValue: "", typeValidation: "strict" },
+        conditions: [
+          {
+            leftValue: expr("{{ $('Code: destinatário do envio').first().json.mensagens.length }}"),
+            operator: { type: "number", operation: "gt" },
+            rightValue: 1,
+          },
+        ],
+      },
+    },
+  },
+});
+
+const waitMessage2 = node({
+  type: "n8n-nodes-base.wait",
+  version: 1.1,
+  config: {
+    name: "Aguardar 2s (mensagem 2)",
+    position: [9880, 180],
+    parameters: { resume: "timeInterval", amount: 2, unit: "seconds" },
+  },
+  output: [{}],
+});
+
+const sendReply2 = node({
+  type: "n8n-nodes-base.whatsApp",
+  version: 1.1,
+  config: {
+    name: "WhatsApp: enviar mensagem 2",
+    position: [10140, 180],
+    parameters: {
+      resource: "message",
+      operation: "send",
+      phoneNumberId: expr("{{ $('Code: destinatário do envio').first().json.phoneNumberId }}"),
+      recipientPhoneNumber: expr("{{ $('Code: destinatário do envio').first().json.recipientMsisdn }}"),
+      messageType: "text",
+      textBody: expr("{{ $('Code: destinatário do envio').first().json.mensagens[1] }}"),
+    },
+    credentials: { whatsAppApi: newCredential("WhatsApp account", "HB4RrjlPYBAIkaX8") },
+  },
+  output: [{ messages: [{ id: "wamid.RESPOSTA2" }] }],
+});
+
+const registerAgentReply2 = node({
+  type: "n8n-nodes-base.httpRequest",
+  version: 4.4,
+  config: {
+    name: "HTTP: registrar mensagem 2",
+    position: [10400, 180],
+    retryOnFail: true,
+    maxTries: 3,
+    waitBetweenTries: 2000,
+    parameters: {
+      method: "POST",
+      url: expr(`${CRM_BASE_URL}/leads/{{ $('Code: destinatário do envio').first().json.leadId }}/messages`),
+      sendHeaders: true,
+      headerParameters: { parameters: [{ name: "Authorization", value: expr("Bearer {{ $('Code: destinatário do envio').first().json.apiKey }}") }] },
+      sendBody: true,
+      contentType: "json",
+      specifyBody: "json",
+      jsonBody: expr(
+        "{{ { externalId: $json.messages[0].id, sender: 'agente', content: $('Code: destinatário do envio').first().json.mensagens[1], sentAt: $now.toISO() } }}"
+      ),
+    },
+  },
+  output: [{ id: "7fa85f64-5717-4562-b3fc-2c963f66afaa", sender: "agente" }],
+});
+
+// PER-02 AC2: existe mensagem 3? Mesmo raciocínio de `hasMessage2`.
+const hasMessage3 = ifElse({
+  version: 2.3,
+  config: {
+    name: "IF: existe mensagem 3?",
+    position: [10660, 180],
+    parameters: {
+      conditions: {
+        combinator: "and",
+        options: { caseSensitive: true, leftValue: "", typeValidation: "strict" },
+        conditions: [
+          {
+            leftValue: expr("{{ $('Code: destinatário do envio').first().json.mensagens.length }}"),
+            operator: { type: "number", operation: "gt" },
+            rightValue: 2,
+          },
+        ],
+      },
+    },
+  },
+});
+
+const waitMessage3 = node({
+  type: "n8n-nodes-base.wait",
+  version: 1.1,
+  config: {
+    name: "Aguardar 2s (mensagem 3)",
+    position: [10920, 60],
+    parameters: { resume: "timeInterval", amount: 2, unit: "seconds" },
+  },
+  output: [{}],
+});
+
+const sendReply3 = node({
+  type: "n8n-nodes-base.whatsApp",
+  version: 1.1,
+  config: {
+    name: "WhatsApp: enviar mensagem 3",
+    position: [11180, 60],
+    parameters: {
+      resource: "message",
+      operation: "send",
+      phoneNumberId: expr("{{ $('Code: destinatário do envio').first().json.phoneNumberId }}"),
+      recipientPhoneNumber: expr("{{ $('Code: destinatário do envio').first().json.recipientMsisdn }}"),
+      messageType: "text",
+      textBody: expr("{{ $('Code: destinatário do envio').first().json.mensagens[2] }}"),
+    },
+    credentials: { whatsAppApi: newCredential("WhatsApp account", "HB4RrjlPYBAIkaX8") },
+  },
+  output: [{ messages: [{ id: "wamid.RESPOSTA3" }] }],
+});
+
+const registerAgentReply3 = node({
+  type: "n8n-nodes-base.httpRequest",
+  version: 4.4,
+  config: {
+    name: "HTTP: registrar mensagem 3",
+    position: [11440, 60],
+    retryOnFail: true,
+    maxTries: 3,
+    waitBetweenTries: 2000,
+    parameters: {
+      method: "POST",
+      url: expr(`${CRM_BASE_URL}/leads/{{ $('Code: destinatário do envio').first().json.leadId }}/messages`),
+      sendHeaders: true,
+      headerParameters: { parameters: [{ name: "Authorization", value: expr("Bearer {{ $('Code: destinatário do envio').first().json.apiKey }}") }] },
+      sendBody: true,
+      contentType: "json",
+      specifyBody: "json",
+      jsonBody: expr(
+        "{{ { externalId: $json.messages[0].id, sender: 'agente', content: $('Code: destinatário do envio').first().json.mensagens[2], sentAt: $now.toISO() } }}"
+      ),
+    },
+  },
+  output: [{ id: "8fa85f64-5717-4562-b3fc-2c963f66afab", sender: "agente" }],
 });
 
 const prepBufferClearAfterSend = node({
@@ -1494,12 +1658,12 @@ const prepBufferClearAfterSend = node({
   version: 2,
   config: {
     name: "Code: preparar clear de buffer (pós-envio)",
-    position: [9620, 300],
+    position: [11700, 300],
     parameters: {
       mode: "runOnceForAllItems",
       language: "javaScript",
-      // Mesmo defeito do nó de registro acima: `WhatsApp: enviar resposta`
-      // devolve a resposta da Cloud API, que não tem `tenantSlug`/`waId`/
+      // Mesmo defeito dos nós de registro acima: `WhatsApp: enviar mensagem
+      // N` devolve a resposta da Cloud API, que não tem `tenantSlug`/`waId`/
       // `fase` — os três resolviam `undefined` e o `Data Table: limpar buffer`
       // fazia upsert com chave vazia. Falha silenciosa (o nó "sucede"): o
       // buffer de debounce nunca era limpo, então as mensagens da rajada
@@ -1519,7 +1683,7 @@ const clearBufferAndFinalize = node({
   version: 1.1,
   config: {
     name: "Data Table: limpar buffer",
-    position: [9880, 100],
+    position: [11960, 100],
     parameters: {
       resource: "row",
       operation: "upsert",
@@ -1558,16 +1722,30 @@ const clearBufferAndFinalize = node({
 //
 // Regra seguida aqui (evita o erro clássico de wiring do SDK): cada
 // nó/condicional com MÚLTIPLOS predecessores (`normalizeRecipient`, que é a
-// porta de entrada do envio desde o fix do nono dígito, e `actionSwitch`)
-// tem sua wiring de SAÍDA (`.to(...)`/`.onCase(...)`) definida em UMA única
-// expressão nomeada (`sendReplyWired`, `actionSwitchRouted`) — nunca duas
-// vezes. Todo predecessor referencia essa MESMA variável como alvo (fan-in
-// seguro, mesmo mecanismo do padrão "fan_in" da referência do SDK: vários
+// porta de entrada do envio desde o fix do nono dígito; `actionSwitch`; e
+// agora `prepClearWired`, alvo comum dos 3 desfechos da cadeia de envio
+// sequencial — T10) tem sua wiring de SAÍDA (`.to(...)`/`.onCase(...)`)
+// definida em UMA única expressão nomeada (`sendReplyWired`,
+// `actionSwitchRouted`, `prepClearWired`) — nunca duas vezes. Todo
+// predecessor referencia essa MESMA variável como alvo (fan-in seguro,
+// mesmo mecanismo do padrão "fan_in" da referência do SDK: vários
 // `.to(mesmoNo)` de origens diferentes, wiring de saída declarada 1 vez).
 // ---------------------------------------------------------------------
 
+// `prepClearWired` tem 3 predecessores (PER-02 AC2 — turno de 1, 2 ou 3
+// mensagens termina aqui): a saída "não" de `hasMessage2`, a saída "não" de
+// `hasMessage3`, e o fim da cadeia de envio da mensagem 3. Wiring de saída
+// declarada UMA única vez, como a regra do topo do arquivo exige.
+const prepClearWired = prepBufferClearAfterSend.to(clearBufferAndFinalize);
+
+const stage3Wired = waitMessage3.to(sendReply3.to(registerAgentReply3.to(prepClearWired)));
+const hasMessage3Wired = hasMessage3.onTrue!(stage3Wired).onFalse(prepClearWired);
+
+const stage2Wired = waitMessage2.to(sendReply2.to(registerAgentReply2.to(hasMessage3Wired)));
+const hasMessage2Wired = hasMessage2.onTrue!(stage2Wired).onFalse(prepClearWired);
+
 const sendReplyWired = normalizeRecipient.to(
-  sendReply.to(registerAgentReply.to(prepBufferClearAfterSend.to(clearBufferAndFinalize)))
+  sendReply1.to(registerAgentReply1.to(hasMessage2Wired))
 );
 
 const optOutBranch = postOptOut.to(finalizeOptOut.to(sendReplyWired));
