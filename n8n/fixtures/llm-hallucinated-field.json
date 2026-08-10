@@ -4,5 +4,5 @@
     "region": "Centro, Uberaba",
     "creditScore": 750
   },
-  "resposta": "Anotado o interesse pelo Centro."
+  "mensagens": ["Anotado o interesse pelo Centro."]
 }

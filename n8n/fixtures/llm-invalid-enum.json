@@ -3,5 +3,5 @@
   "campos": {
     "creditStatus": "recurso_proprio_fgts"
   },
-  "resposta": "Show, anotado o status de crédito."
+  "mensagens": ["Show, anotado o status de crédito."]
 }

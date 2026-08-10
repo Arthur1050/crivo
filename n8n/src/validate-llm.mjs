@@ -38,12 +38,40 @@ const CAMPOS_ALLOWED_KEYS = new Set([
   "meetingAtProposto",
 ]);
 
+// lote-6b — PER-02: `mensagens` substitui `resposta` na whitelist de topo.
+// `resposta` não é mais aceita vinda do modelo (campo não whitelisted) —
+// ela volta na saída validada só como campo DERIVADO (`mensagens.join(" ")`),
+// nunca confiado ao texto do LLM.
 const TOP_LEVEL_ALLOWED_KEYS = new Set([
   "acao",
   "campos",
-  "resposta",
+  "mensagens",
   "motivoEscalonamento",
 ]);
+
+const MIN_MENSAGENS = 1;
+const MAX_MENSAGENS = 3;
+
+/**
+ * Valida o campo `mensagens` (design.md — § Saída multi-mensagem; PER-02
+ * AC1): array de 1 a 3 strings não vazias (após `trim`) — qualquer desvio
+ * (não é array, fora da faixa de tamanho, item vazio/não-string) rejeita a
+ * saída INTEIRA, mesma regra de rejeição total já estabelecida neste
+ * arquivo (AD-014). Nunca uma coerção parcial (ex.: descartar só o item
+ * inválido e aceitar o resto).
+ * @param {unknown} value
+ * @returns {{ok: true, value: string[]} | {ok: false}}
+ */
+function validateMensagens(value) {
+  if (!Array.isArray(value)) return { ok: false };
+  if (value.length < MIN_MENSAGENS || value.length > MAX_MENSAGENS) {
+    return { ok: false };
+  }
+  for (const item of value) {
+    if (typeof item !== "string" || item.trim() === "") return { ok: false };
+  }
+  return { ok: true, value };
+}
 
 // Mesmo padrão de src/server/integration/parsers.ts (ISO-8601 completo —
 // data + hora + timezone); duplicado aqui de propósito porque n8n/src/ não
@@ -135,7 +163,7 @@ function validateCamposField(key, value, settings) {
 
 /**
  * @typedef {
- *   {ok: true, acao: "responder"|"atualizar_campos"|"agendar"|"escalar", campos: LlmCampos, resposta: string, motivoEscalonamento?: string}
+ *   {ok: true, acao: "responder"|"atualizar_campos"|"agendar"|"escalar", campos: LlmCampos, mensagens: string[], resposta: string, motivoEscalonamento?: string}
  *   | {ok: false, reason: string}
  * } ValidateLlmOutputResult
  */
@@ -163,9 +191,8 @@ export function validateLlmOutput(raw, settings) {
     return fail("acao-invalida");
   }
 
-  if (typeof raw.resposta !== "string" || raw.resposta.trim() === "") {
-    return fail("resposta-invalida");
-  }
+  const mensagensResult = validateMensagens(raw.mensagens);
+  if (!mensagensResult.ok) return fail("mensagens-invalida");
 
   if (!isPlainObject(raw.campos)) return fail("campos-invalido");
 
@@ -193,7 +220,17 @@ export function validateLlmOutput(raw, settings) {
     return fail("motivo-escalonamento-invalido");
   }
 
-  const result = { ok: true, acao: raw.acao, campos, resposta: raw.resposta };
+  // `resposta` é DERIVADA (mensagens.join(" ")), nunca aceita crua do
+  // modelo — mantida por compatibilidade com `executiveSummary` de
+  // agendamento/escalonamento (design.md — § Saída multi-mensagem; PER-02
+  // AC5), que consome um texto único.
+  const result = {
+    ok: true,
+    acao: raw.acao,
+    campos,
+    mensagens: mensagensResult.value,
+    resposta: mensagensResult.value.join(" "),
+  };
   if (typeof raw.motivoEscalonamento === "string") {
     result.motivoEscalonamento = raw.motivoEscalonamento;
   }

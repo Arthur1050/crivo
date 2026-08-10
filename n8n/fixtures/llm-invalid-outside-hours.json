@@ -3,5 +3,5 @@
   "campos": {
     "meetingAtProposto": "2026-08-16T13:00:00.000Z"
   },
-  "resposta": "Combinado, te confirmo o horário de domingo."
+  "mensagens": ["Combinado, te confirmo o horário de domingo."]
 }

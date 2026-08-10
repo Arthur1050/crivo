@@ -21,7 +21,8 @@ describe("validateLlmOutput — saídas válidas (fixtures)", () => {
       budgetCents: 45000000,
       propertyType: "apartamento",
     });
-    expect(result.resposta).toBe(llmValidAtualizarCampos.resposta);
+    expect(result.mensagens).toEqual(llmValidAtualizarCampos.mensagens);
+    expect(result.resposta).toBe(llmValidAtualizarCampos.mensagens.join(" "));
   });
 
   it("aceita uma saída válida de agendar com meetingAtProposto dentro do horário comercial (fallback)", () => {
@@ -34,13 +35,18 @@ describe("validateLlmOutput — saídas válidas (fixtures)", () => {
 
   it("aceita acao=responder com campos vazio (turno sem extração)", () => {
     const result = validateLlmOutput(
-      { acao: "responder", campos: {}, resposta: "Pode me contar mais sobre o que procura?" },
+      {
+        acao: "responder",
+        campos: {},
+        mensagens: ["Pode me contar mais sobre o que procura?"],
+      },
       FALLBACK_SETTINGS
     );
     expect(result).toEqual({
       ok: true,
       acao: "responder",
       campos: {},
+      mensagens: ["Pode me contar mais sobre o que procura?"],
       resposta: "Pode me contar mais sobre o que procura?",
     });
   });
@@ -50,7 +56,7 @@ describe("validateLlmOutput — saídas válidas (fixtures)", () => {
       {
         acao: "escalar",
         campos: {},
-        resposta: "Vou te transferir para um dos nossos corretores.",
+        mensagens: ["Vou te transferir para um dos nossos corretores."],
         motivoEscalonamento: "Lead hostil, respostas incoerentes reiteradas.",
       },
       FALLBACK_SETTINGS
@@ -72,7 +78,7 @@ describe("validateLlmOutput — rejeita enum fora do contrato (fixture da armadi
   it("os 3 valores REAIS de creditStatus são aceitos individualmente", () => {
     for (const value of ["pre_aprovado", "recurso_proprio", "fgts"]) {
       const result = validateLlmOutput(
-        { acao: "atualizar_campos", campos: { creditStatus: value }, resposta: "ok" },
+        { acao: "atualizar_campos", campos: { creditStatus: value }, mensagens: ["ok"] },
         FALLBACK_SETTINGS
       );
       expect(result.ok).toBe(true);
@@ -81,7 +87,7 @@ describe("validateLlmOutput — rejeita enum fora do contrato (fixture da armadi
 
   it("modality fora do enum é rejeitado", () => {
     const result = validateLlmOutput(
-      { acao: "atualizar_campos", campos: { modality: "novissimo" }, resposta: "ok" },
+      { acao: "atualizar_campos", campos: { modality: "novissimo" }, mensagens: ["ok"] },
       FALLBACK_SETTINGS
     );
     expect(result).toEqual({ ok: false, reason: "campo-invalido:modality" });
@@ -89,7 +95,7 @@ describe("validateLlmOutput — rejeita enum fora do contrato (fixture da armadi
 
   it("propertyType fora do enum é rejeitado", () => {
     const result = validateLlmOutput(
-      { acao: "atualizar_campos", campos: { propertyType: "kitnet" }, resposta: "ok" },
+      { acao: "atualizar_campos", campos: { propertyType: "kitnet" }, mensagens: ["ok"] },
       FALLBACK_SETTINGS
     );
     expect(result).toEqual({ ok: false, reason: "campo-invalido:propertyType" });
@@ -97,7 +103,7 @@ describe("validateLlmOutput — rejeita enum fora do contrato (fixture da armadi
 
   it("motivation fora do enum é rejeitado", () => {
     const result = validateLlmOutput(
-      { acao: "atualizar_campos", campos: { motivation: "curioso" }, resposta: "ok" },
+      { acao: "atualizar_campos", campos: { motivation: "curioso" }, mensagens: ["ok"] },
       FALLBACK_SETTINGS
     );
     expect(result).toEqual({ ok: false, reason: "campo-invalido:motivation" });
@@ -105,7 +111,7 @@ describe("validateLlmOutput — rejeita enum fora do contrato (fixture da armadi
 
   it("acao fora do enum é rejeitado (não é campo de 'campos', é o nível superior)", () => {
     const result = validateLlmOutput(
-      { acao: "deletar_lead", campos: {}, resposta: "ok" },
+      { acao: "deletar_lead", campos: {}, mensagens: ["ok"] },
       FALLBACK_SETTINGS
     );
     expect(result).toEqual({ ok: false, reason: "acao-invalida" });
@@ -123,7 +129,7 @@ describe("validateLlmOutput — rejeita alucinação (campo fora da whitelist)",
       {
         acao: "responder",
         campos: {},
-        resposta: "ok",
+        mensagens: ["ok"],
         confiancaDoModelo: 0.98,
       },
       FALLBACK_SETTINGS
@@ -131,6 +137,26 @@ describe("validateLlmOutput — rejeita alucinação (campo fora da whitelist)",
     expect(result).toEqual({
       ok: false,
       reason: "campo-nao-whitelisted:confiancaDoModelo",
+    });
+  });
+
+  // lote-6b — PER-02: `resposta` deixou de ser whitelisted no nível
+  // superior. Mandar `resposta` junto de `mensagens` (mesmo com um valor
+  // plausível) rejeita a saída inteira — o campo só existe DERIVADO, nunca
+  // aceito cru do modelo.
+  it("'resposta' vinda do modelo é rejeitada por não estar mais na whitelist (PER-02)", () => {
+    const result = validateLlmOutput(
+      {
+        acao: "responder",
+        campos: {},
+        mensagens: ["ok"],
+        resposta: "texto que o modelo tentou mandar direto",
+      },
+      FALLBACK_SETTINGS
+    );
+    expect(result).toEqual({
+      ok: false,
+      reason: "campo-nao-whitelisted:resposta",
     });
   });
 });
@@ -157,7 +183,7 @@ describe("validateLlmOutput — rejeita data não-ISO e slot fora do horário co
       {
         acao: "agendar",
         campos: { meetingAtProposto: "2026-08-15T13:00:00.000Z" },
-        resposta: "ok",
+        mensagens: ["ok"],
       },
       settings
     );
@@ -175,7 +201,7 @@ describe("validateLlmOutput — rejeita data não-ISO e slot fora do horário co
       {
         acao: "agendar",
         campos: { meetingAtProposto: "2026-08-10T13:30:00.000Z" },
-        resposta: "ok",
+        mensagens: ["ok"],
       },
       settings
     );
@@ -205,37 +231,25 @@ describe("validateLlmOutput — estrutura obrigatória (nada 'passa limpo' por c
 
   it("rejeita quando 'acao' está ausente", () => {
     const result = validateLlmOutput(
-      { campos: {}, resposta: "ok" },
+      { campos: {}, mensagens: ["ok"] },
       FALLBACK_SETTINGS
     );
     expect(result).toEqual({ ok: false, reason: "acao-invalida" });
   });
 
-  it("rejeita quando 'resposta' está ausente ou vazia", () => {
-    expect(
-      validateLlmOutput({ acao: "responder", campos: {} }, FALLBACK_SETTINGS)
-    ).toEqual({ ok: false, reason: "resposta-invalida" });
-    expect(
-      validateLlmOutput(
-        { acao: "responder", campos: {}, resposta: "   " },
-        FALLBACK_SETTINGS
-      )
-    ).toEqual({ ok: false, reason: "resposta-invalida" });
-  });
-
   it("rejeita quando 'campos' está ausente ou não é um objeto", () => {
     expect(
-      validateLlmOutput({ acao: "responder", resposta: "ok" }, FALLBACK_SETTINGS)
+      validateLlmOutput({ acao: "responder", mensagens: ["ok"] }, FALLBACK_SETTINGS)
     ).toEqual({ ok: false, reason: "campos-invalido" });
     expect(
       validateLlmOutput(
-        { acao: "responder", campos: "nao-e-objeto", resposta: "ok" },
+        { acao: "responder", campos: "nao-e-objeto", mensagens: ["ok"] },
         FALLBACK_SETTINGS
       )
     ).toEqual({ ok: false, reason: "campos-invalido" });
     expect(
       validateLlmOutput(
-        { acao: "responder", campos: [], resposta: "ok" },
+        { acao: "responder", campos: [], mensagens: ["ok"] },
         FALLBACK_SETTINGS
       )
     ).toEqual({ ok: false, reason: "campos-invalido" });
@@ -243,7 +257,7 @@ describe("validateLlmOutput — estrutura obrigatória (nada 'passa limpo' por c
 
   it("acao=escalar SEM motivoEscalonamento é rejeitado", () => {
     const result = validateLlmOutput(
-      { acao: "escalar", campos: {}, resposta: "Transferindo você." },
+      { acao: "escalar", campos: {}, mensagens: ["Transferindo você."] },
       FALLBACK_SETTINGS
     );
     expect(result).toEqual({ ok: false, reason: "motivo-escalonamento-obrigatorio" });
@@ -254,7 +268,7 @@ describe("validateLlmOutput — estrutura obrigatória (nada 'passa limpo' por c
       {
         acao: "escalar",
         campos: {},
-        resposta: "Transferindo você.",
+        mensagens: ["Transferindo você."],
         motivoEscalonamento: "   ",
       },
       FALLBACK_SETTINGS
@@ -264,7 +278,7 @@ describe("validateLlmOutput — estrutura obrigatória (nada 'passa limpo' por c
 
   it("budgetCents como string (não number) é rejeitado — o contrato do prompt exige number", () => {
     const result = validateLlmOutput(
-      { acao: "atualizar_campos", campos: { budgetCents: "45000000" }, resposta: "ok" },
+      { acao: "atualizar_campos", campos: { budgetCents: "45000000" }, mensagens: ["ok"] },
       FALLBACK_SETTINGS
     );
     expect(result).toEqual({ ok: false, reason: "campo-invalido:budgetCents" });
@@ -272,7 +286,7 @@ describe("validateLlmOutput — estrutura obrigatória (nada 'passa limpo' por c
 
   it("budgetCents negativo é rejeitado", () => {
     const result = validateLlmOutput(
-      { acao: "atualizar_campos", campos: { budgetCents: -100 }, resposta: "ok" },
+      { acao: "atualizar_campos", campos: { budgetCents: -100 }, mensagens: ["ok"] },
       FALLBACK_SETTINGS
     );
     expect(result).toEqual({ ok: false, reason: "campo-invalido:budgetCents" });
@@ -280,7 +294,7 @@ describe("validateLlmOutput — estrutura obrigatória (nada 'passa limpo' por c
 
   it("budgetCents não-inteiro é rejeitado", () => {
     const result = validateLlmOutput(
-      { acao: "atualizar_campos", campos: { budgetCents: 100.5 }, resposta: "ok" },
+      { acao: "atualizar_campos", campos: { budgetCents: 100.5 }, mensagens: ["ok"] },
       FALLBACK_SETTINGS
     );
     expect(result).toEqual({ ok: false, reason: "campo-invalido:budgetCents" });
@@ -288,7 +302,7 @@ describe("validateLlmOutput — estrutura obrigatória (nada 'passa limpo' por c
 
   it("chainedOperation como string 'true' (não boolean) é rejeitado", () => {
     const result = validateLlmOutput(
-      { acao: "atualizar_campos", campos: { chainedOperation: "true" }, resposta: "ok" },
+      { acao: "atualizar_campos", campos: { chainedOperation: "true" }, mensagens: ["ok"] },
       FALLBACK_SETTINGS
     );
     expect(result).toEqual({ ok: false, reason: "campo-invalido:chainedOperation" });
@@ -296,7 +310,7 @@ describe("validateLlmOutput — estrutura obrigatória (nada 'passa limpo' por c
 
   it("chainedOperation=false é aceito (boolean válido, não confundido com ausência)", () => {
     const result = validateLlmOutput(
-      { acao: "atualizar_campos", campos: { chainedOperation: false }, resposta: "ok" },
+      { acao: "atualizar_campos", campos: { chainedOperation: false }, mensagens: ["ok"] },
       FALLBACK_SETTINGS
     );
     expect(result.ok).toBe(true);
@@ -305,7 +319,7 @@ describe("validateLlmOutput — estrutura obrigatória (nada 'passa limpo' por c
 
   it("leadEmail=null é aceito (recusa explícita do convite — nunca vai ao CRM)", () => {
     const result = validateLlmOutput(
-      { acao: "agendar", campos: { leadEmail: null }, resposta: "ok" },
+      { acao: "agendar", campos: { leadEmail: null }, mensagens: ["ok"] },
       FALLBACK_SETTINGS
     );
     expect(result.ok).toBe(true);
@@ -314,9 +328,99 @@ describe("validateLlmOutput — estrutura obrigatória (nada 'passa limpo' por c
 
   it("leadEmail como string vazia é rejeitado (use null para 'recusou', não '')", () => {
     const result = validateLlmOutput(
-      { acao: "agendar", campos: { leadEmail: "" }, resposta: "ok" },
+      { acao: "agendar", campos: { leadEmail: "" }, mensagens: ["ok"] },
       FALLBACK_SETTINGS
     );
     expect(result).toEqual({ ok: false, reason: "campo-invalido:leadEmail" });
+  });
+});
+
+// lote-6b — PER-02: validação do campo `mensagens` em si (1 a 3 strings não
+// vazias) e a derivação de `resposta`.
+describe("validateLlmOutput — mensagens (lote-6b, PER-02)", () => {
+  it("1 mensagem é aceita", () => {
+    const result = validateLlmOutput(
+      { acao: "responder", campos: {}, mensagens: ["Oi, tudo bem?"] },
+      FALLBACK_SETTINGS
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.mensagens).toEqual(["Oi, tudo bem?"]);
+  });
+
+  it("2 mensagens são aceitas", () => {
+    const result = validateLlmOutput(
+      { acao: "responder", campos: {}, mensagens: ["Oi!", "Tudo bem?"] },
+      FALLBACK_SETTINGS
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.mensagens).toEqual(["Oi!", "Tudo bem?"]);
+  });
+
+  it("3 mensagens são aceitas (teto)", () => {
+    const result = validateLlmOutput(
+      { acao: "responder", campos: {}, mensagens: ["Oi!", "Tudo bem?", "Me conta mais."] },
+      FALLBACK_SETTINGS
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.mensagens).toEqual(["Oi!", "Tudo bem?", "Me conta mais."]);
+    }
+  });
+
+  it("array vazio ([]) é rejeitado com reason específico", () => {
+    const result = validateLlmOutput(
+      { acao: "responder", campos: {}, mensagens: [] },
+      FALLBACK_SETTINGS
+    );
+    expect(result).toEqual({ ok: false, reason: "mensagens-invalida" });
+  });
+
+  it("4 itens (acima do teto de 3) é rejeitado com reason específico", () => {
+    const result = validateLlmOutput(
+      { acao: "responder", campos: {}, mensagens: ["1", "2", "3", "4"] },
+      FALLBACK_SETTINGS
+    );
+    expect(result).toEqual({ ok: false, reason: "mensagens-invalida" });
+  });
+
+  it("item vazio (string em branco) rejeita a saída inteira", () => {
+    const result = validateLlmOutput(
+      { acao: "responder", campos: {}, mensagens: ["Oi!", "   "] },
+      FALLBACK_SETTINGS
+    );
+    expect(result).toEqual({ ok: false, reason: "mensagens-invalida" });
+  });
+
+  it("item não-string rejeita a saída inteira", () => {
+    const result = validateLlmOutput(
+      { acao: "responder", campos: {}, mensagens: ["Oi!", 42] },
+      FALLBACK_SETTINGS
+    );
+    expect(result).toEqual({ ok: false, reason: "mensagens-invalida" });
+  });
+
+  it("'mensagens' ausente é rejeitado com reason específico", () => {
+    const result = validateLlmOutput(
+      { acao: "responder", campos: {} },
+      FALLBACK_SETTINGS
+    );
+    expect(result).toEqual({ ok: false, reason: "mensagens-invalida" });
+  });
+
+  it("'mensagens' que não é array (string solta) é rejeitado", () => {
+    const result = validateLlmOutput(
+      { acao: "responder", campos: {}, mensagens: "Oi, tudo bem?" },
+      FALLBACK_SETTINGS
+    );
+    expect(result).toEqual({ ok: false, reason: "mensagens-invalida" });
+  });
+
+  it("'resposta' derivada corretamente = mensagens.join(' ') no resultado ok:true", () => {
+    const result = validateLlmOutput(
+      { acao: "responder", campos: {}, mensagens: ["Oi!", "Tudo bem?", "Me conta mais."] },
+      FALLBACK_SETTINGS
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.resposta).toBe("Oi! Tudo bem? Me conta mais.");
   });
 });
