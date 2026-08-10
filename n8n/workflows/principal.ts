@@ -550,11 +550,13 @@ const finalizeOptOut = node({
       language: "javaScript",
       jsCode:
         "const ctx = $('Code: gate').first().json;\n" +
-        "const resposta = 'Você pediu para não receber mais mensagens automáticas. A partir de agora, não vamos mais te contatar por aqui. Se mudar de ideia, é só nos chamar novamente. Até mais!';\n" +
-        "return [{ json: { resposta, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, tenantSlug: ctx.tenantSlug, apiKey: ctx.apiKey, leadId: ctx.id, fase: 'encerrada' } }];\n",
+        // PER-02 AC4: rota de resposta fixa usa o mesmo caminho de envio das
+        // demais — sempre `mensagens` (array de 1 item aqui).
+        "const mensagens = ['Você pediu para não receber mais mensagens automáticas. A partir de agora, não vamos mais te contatar por aqui. Se mudar de ideia, é só nos chamar novamente. Até mais!'];\n" +
+        "return [{ json: { mensagens, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, tenantSlug: ctx.tenantSlug, apiKey: ctx.apiKey, leadId: ctx.id, fase: 'encerrada' } }];\n",
     },
   },
-  output: [{ resposta: "confirmação de opt-out", waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", apiKey: "exemplo", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "encerrada" }],
+  output: [{ mensagens: ["confirmação de opt-out"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", apiKey: "exemplo", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "encerrada" }],
 });
 
 // ---------------------------------------------------------------------
@@ -595,11 +597,11 @@ const finalizeMedia = node({
       language: "javaScript",
       jsCode:
         "const ctx = $('Code: gate').first().json;\n" +
-        "const resposta = 'Recebi seu arquivo, mas por aqui eu sigo só por mensagens de texto — pode me contar em palavras o que você gostaria de saber?';\n" +
-        "return [{ json: { resposta, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, tenantSlug: ctx.tenantSlug, apiKey: ctx.apiKey, leadId: ctx.id, fase: ctx.fase || 'qualificando' } }];\n",
+        "const mensagens = ['Recebi seu arquivo, mas por aqui eu sigo só por mensagens de texto — pode me contar em palavras o que você gostaria de saber?'];\n" +
+        "return [{ json: { mensagens, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, tenantSlug: ctx.tenantSlug, apiKey: ctx.apiKey, leadId: ctx.id, fase: ctx.fase || 'qualificando' } }];\n",
     },
   },
-  output: [{ resposta: "sigo por texto", waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", apiKey: "exemplo", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
+  output: [{ mensagens: ["sigo por texto"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", apiKey: "exemplo", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
 });
 
 // ---------------------------------------------------------------------
@@ -625,6 +627,35 @@ const getSettings = node({
     },
   },
   output: [{ realEstateName: "Imobiliária A", agentName: "Ana", supportedModality: "ambos", agentPresentationMessage: "Oi! Sou a Ana.", meetingDays: null, meetingHoursStart: null, meetingHoursEnd: null }],
+});
+
+// lote-6b — CTX-01/PER-01: histórico da conversa (`n8n/src/history.mjs`,
+// T5) alimenta o prompt (T6). `onError: continueRegularOutput` +
+// `alwaysOutputData` degradam para histórico vazio quando a chamada falha
+// (CTX-01 AC5) — nunca aborta o turno. `Code: montar prompt`, adiante, lê
+// este nó por referência nomeada e filtra defensivamente qualquer item que
+// não tenha o formato de `SerializedMessage`.
+const getMessagesHistory = node({
+  type: "n8n-nodes-base.httpRequest",
+  version: 4.4,
+  config: {
+    name: "HTTP: GET /leads/{id}/messages",
+    position: [4830, 460],
+    retryOnFail: true,
+    maxTries: 3,
+    waitBetweenTries: 2000,
+    onError: "continueRegularOutput",
+    alwaysOutputData: true,
+    parameters: {
+      method: "GET",
+      url: expr(`${CRM_BASE_URL}/leads/{{ $('Code: gate').first().json.id }}/messages`),
+      sendQuery: true,
+      queryParameters: { parameters: [{ name: "limit", value: "20" }] },
+      sendHeaders: true,
+      headerParameters: { parameters: [{ name: "Authorization", value: expr("Bearer {{ $('Code: gate').first().json.apiKey }}") }] },
+    },
+  },
+  output: [{ id: "4fa85f64-5717-4562-b3fc-2c963f66afa7", externalId: "wamid.EXEMPLO", sender: "lead", content: "Oi, vi o anúncio do apartamento", sentAt: "2026-08-05T12:10:00.000Z" }],
 });
 
 // SPEC_DEVIATION: GET /context exige `modality` em {novo, usado} (não
@@ -669,6 +700,8 @@ const buildPromptCode = node({
       jsCode:
         '__INLINE(business-hours.mjs)__' +
         "\n" +
+        '__INLINE(history.mjs)__' +
+        "\n" +
         '__INLINE(prompt.mjs)__' +
         "\n\n" +
         "const settings = $('HTTP: GET /settings').first().json;\n" +
@@ -682,18 +715,20 @@ const buildPromptCode = node({
         "};\n" +
         "const bufferArray = $('Code: contexto do lead').first().json.bufferArray || [];\n" +
         "const buffer = bufferArray.map((m) => ({ text: m.text }));\n" +
-        "const prompt = buildPrompt({ settings, context: contextDocs, lead, buffer, businessHours });\n" +
-        // Instrução adicional de formato (fora de prompt.mjs, módulo testado
-        // do T5-T8, não tocado): descoberta necessária na execução real do
-        // T10 (execução 55) — sem isto o modelo inventou "acao: qualificacao"
-        // (fora do whitelist) e preencheu TODAS as subchaves de campos mesmo
-        // sem o lead ter revelado nada. O schema estruturado (ver
-        // outputParserAttempt1/2) já força o enum e torna toda subchave de
-        // campos opcional; esta instrução reforça em linguagem natural o
-        // porquê, para o modelo escolher certo em vez de só ser bloqueado
-        // pelo schema.
-        "const formatInstruction = 'Responda usando EXATAMENTE um destes 4 valores para \\'acao\\': \\'responder\\' (perguntar algo, sem novidade a gravar), \\'atualizar_campos\\' (o lead revelou pelo menos um campo de qualificação nesta mensagem), \\'agendar\\' (todos os campos obrigatorios ja foram coletados e o lead confirmou um horario dentro do horario comercial informado acima), \\'escalar\\' (hostilidade, pedido explicito de humano, ou respostas incoerentes reiteradas — preencha motivoEscalonamento). Em \\'campos\\', inclua APENAS as chaves que o lead efetivamente revelou NESTA mensagem ou ja estavam preenchidas — nunca invente ou adivinhe um valor para um campo que o lead nao mencionou.';\n" +
-        "return [{ json: { prompt: prompt + '\\n\\n' + formatInstruction } }];\n",
+        // Degradação defensiva (CTX-01 AC5): `HTTP: GET /leads/{id}/messages`
+        // roda com onError:continueRegularOutput + alwaysOutputData — em
+        // falha, o item resultante não tem o formato de `SerializedMessage`
+        // (sender/content ausentes). Filtrar aqui, em vez de confiar
+        // cegamente no shape, garante histórico vazio no lugar de lixo no
+        // prompt sem nunca abortar o turno.
+        "const rawHistory = $('HTTP: GET /leads/{id}/messages').all()\n" +
+        "  .map((item) => item.json)\n" +
+        "  .filter((m) => m && typeof m.sender === 'string' && typeof m.content === 'string' && typeof m.sentAt === 'string');\n" +
+        "const history = selectHistoryWindow(rawHistory);\n" +
+        "const prompt = buildPrompt({ settings, context: contextDocs, lead, buffer, businessHours, history });\n" +
+        // formatInstruction migrou para prompt.mjs (T6) — buildPrompt já
+        // devolve o prompt completo, incluindo a seção de formato.
+        "return [{ json: { prompt } }];\n",
     },
   },
   output: [{ prompt: "Você é Ana, agente de atendimento via WhatsApp..." }],
@@ -759,10 +794,10 @@ const outputParserAttempt1 = outputParser({
                 },
                 additionalProperties: false,
               },
-              resposta: { type: "string" },
+              mensagens: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 3 },
               motivoEscalonamento: { type: "string" },
             },
-            required: ["acao", "campos", "resposta"],
+            required: ["acao", "campos", "mensagens"],
             additionalProperties: false,
           },
         },
@@ -786,7 +821,7 @@ const askGeminiAttempt1 = node({
     },
     subnodes: { model: geminiModelAttempt1, outputParser: outputParserAttempt1 },
   },
-  output: [{ output: { acao: "atualizar_campos", campos: { region: "Uberaba" }, resposta: "Legal, região Uberaba anotada! E o orçamento, você já tem uma faixa em mente?" } }],
+  output: [{ output: { acao: "atualizar_campos", campos: { region: "Uberaba" }, mensagens: ["Legal, região Uberaba anotada!", "E o orçamento, você já tem uma faixa em mente?"] } }],
 });
 
 const validateLlmAttempt1 = node({
@@ -809,7 +844,7 @@ const validateLlmAttempt1 = node({
         "return [{ json: result }];\n",
     },
   },
-  output: [{ ok: true, acao: "atualizar_campos", campos: { region: "Uberaba" }, resposta: "Legal, região Uberaba anotada!" }],
+  output: [{ ok: true, acao: "atualizar_campos", campos: { region: "Uberaba" }, mensagens: ["Legal, região Uberaba anotada!"], resposta: "Legal, região Uberaba anotada!" }],
 });
 
 const isValidAttempt1 = ifElse({
@@ -876,10 +911,10 @@ const outputParserAttempt2 = outputParser({
                 },
                 additionalProperties: false,
               },
-              resposta: { type: "string" },
+              mensagens: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 3 },
               motivoEscalonamento: { type: "string" },
             },
-            required: ["acao", "campos", "resposta"],
+            required: ["acao", "campos", "mensagens"],
             additionalProperties: false,
           },
         },
@@ -903,7 +938,7 @@ const askGeminiAttempt2 = node({
     },
     subnodes: { model: geminiModelAttempt2, outputParser: outputParserAttempt2 },
   },
-  output: [{ output: { acao: "responder", campos: {}, resposta: "Pode me contar um pouco mais sobre o que você procura?" } }],
+  output: [{ output: { acao: "responder", campos: {}, mensagens: ["Pode me contar um pouco mais sobre o que você procura?"] } }],
 });
 
 const validateLlmAttempt2 = node({
@@ -926,7 +961,7 @@ const validateLlmAttempt2 = node({
         "return [{ json: result }];\n",
     },
   },
-  output: [{ ok: true, acao: "responder", campos: {}, resposta: "Pode me contar um pouco mais?" }],
+  output: [{ ok: true, acao: "responder", campos: {}, mensagens: ["Pode me contar um pouco mais?"], resposta: "Pode me contar um pouco mais?" }],
 });
 
 const isValidAttempt2 = ifElse({
@@ -957,10 +992,10 @@ const clarifyFallback = node({
       mode: "runOnceForAllItems",
       language: "javaScript",
       jsCode:
-        "return [{ json: { ok: true, acao: 'responder', campos: {}, resposta: 'Desculpa, não entendi direito — você pode reformular sua última mensagem?' } }];\n",
+        "return [{ json: { ok: true, acao: 'responder', campos: {}, mensagens: ['Desculpa, não entendi direito — você pode reformular sua última mensagem?'] } }];\n",
     },
   },
-  output: [{ ok: true, acao: "responder", campos: {}, resposta: "Desculpa, não entendi direito — você pode reformular?" }],
+  output: [{ ok: true, acao: "responder", campos: {}, mensagens: ["Desculpa, não entendi direito — você pode reformular?"] }],
 });
 
 const actionSwitch = switchCase({
@@ -1012,7 +1047,7 @@ const validatedFieldsCheckpoint = node({
       jsCode: "return [{ json: $input.first().json }];\n",
     },
   },
-  output: [{ ok: true, acao: "atualizar_campos", campos: { region: "Uberaba" }, resposta: "Legal, região Uberaba anotada!" }],
+  output: [{ ok: true, acao: "atualizar_campos", campos: { region: "Uberaba" }, mensagens: ["Legal, região Uberaba anotada!"], resposta: "Legal, região Uberaba anotada!" }],
 });
 
 const patchFields = node({
@@ -1057,10 +1092,10 @@ const finalizeFields = node({
         "const ctx = $('Code: gate').first().json;\n" +
         "const validated = $('Code: dados validados (atualizar_campos)').first().json;\n" +
         "const fase = (validated.acao === 'agendar' ? 'agendando' : 'qualificando');\n" +
-        "return [{ json: { resposta: validated.resposta, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, tenantSlug: ctx.tenantSlug, apiKey: ctx.apiKey, leadId: ctx.id, fase } }];\n",
+        "return [{ json: { mensagens: validated.mensagens, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, tenantSlug: ctx.tenantSlug, apiKey: ctx.apiKey, leadId: ctx.id, fase } }];\n",
     },
   },
-  output: [{ resposta: "resposta do agente", waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", apiKey: "exemplo", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
+  output: [{ mensagens: ["resposta do agente"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", apiKey: "exemplo", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
 });
 
 // -- agendar: availability -> event.create (Meet) -> PATCH -> agenda_envios (AGT-04) --
@@ -1088,7 +1123,7 @@ const validatedAgendarCheckpoint = node({
       jsCode: "return [{ json: $input.first().json }];\n",
     },
   },
-  output: [{ ok: true, acao: "agendar", campos: { meetingAtProposto: "2026-08-10T12:00:00.000Z", leadEmail: null }, resposta: "Perfeito, agendado!" }],
+  output: [{ ok: true, acao: "agendar", campos: { meetingAtProposto: "2026-08-10T12:00:00.000Z", leadEmail: null }, mensagens: ["Perfeito, agendado!"], resposta: "Perfeito, agendado!" }],
 });
 
 const checkAvailability = node({
@@ -1233,10 +1268,10 @@ const finalizeScheduled = node({
         "const ctx = $('Code: gate').first().json;\n" +
         "const validated = $('Code: dados validados (agendar)').first().json;\n" +
         "const fase = (validated.acao === 'agendar' ? 'agendando' : 'qualificando');\n" +
-        "return [{ json: { resposta: validated.resposta, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, tenantSlug: ctx.tenantSlug, apiKey: ctx.apiKey, leadId: ctx.id, fase } }];\n",
+        "return [{ json: { mensagens: validated.mensagens, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, tenantSlug: ctx.tenantSlug, apiKey: ctx.apiKey, leadId: ctx.id, fase } }];\n",
     },
   },
-  output: [{ resposta: "resposta do agente", waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", apiKey: "exemplo", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "agendando" }],
+  output: [{ mensagens: ["resposta do agente"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", apiKey: "exemplo", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "agendando" }],
 });
 
 // SPEC_DEVIATION: design.md não define o desfecho quando o horário
@@ -1256,11 +1291,11 @@ const finalizeUnavailable = node({
       language: "javaScript",
       jsCode:
         "const ctx = $('Code: gate').first().json;\n" +
-        "const resposta = 'Esse horário acabou de ficar indisponível na minha agenda — podemos combinar outro horário dentro do nosso período de atendimento?';\n" +
-        "return [{ json: { resposta, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, tenantSlug: ctx.tenantSlug, apiKey: ctx.apiKey, leadId: ctx.id, fase: 'agendando' } }];\n",
+        "const mensagens = ['Esse horário acabou de ficar indisponível na minha agenda — podemos combinar outro horário dentro do nosso período de atendimento?'];\n" +
+        "return [{ json: { mensagens, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, tenantSlug: ctx.tenantSlug, apiKey: ctx.apiKey, leadId: ctx.id, fase: 'agendando' } }];\n",
     },
   },
-  output: [{ resposta: "horário indisponível, escolha outro", waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", apiKey: "exemplo", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "agendando" }],
+  output: [{ mensagens: ["horário indisponível, escolha outro"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", apiKey: "exemplo", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "agendando" }],
 });
 
 // -- escalar: PATCH status=escalado_humano + motivo (AGT-05 AC1) --
@@ -1283,7 +1318,7 @@ const validatedEscalarCheckpoint = node({
       jsCode: "return [{ json: $input.first().json }];\n",
     },
   },
-  output: [{ ok: true, acao: "escalar", campos: {}, resposta: "Vou chamar um atendente humano.", motivoEscalonamento: "pedido explícito de humano" }],
+  output: [{ ok: true, acao: "escalar", campos: {}, mensagens: ["Vou chamar um atendente humano."], resposta: "Vou chamar um atendente humano.", motivoEscalonamento: "pedido explícito de humano" }],
 });
 
 const patchEscalated = node({
@@ -1330,10 +1365,10 @@ const finalizeEscalated = node({
         "const ctx = $('Code: gate').first().json;\n" +
         "const validated = $('Code: dados validados (escalar)').first().json;\n" +
         "const fase = 'encerrada';\n" +
-        "return [{ json: { resposta: validated.resposta, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, tenantSlug: ctx.tenantSlug, apiKey: ctx.apiKey, leadId: ctx.id, fase } }];\n",
+        "return [{ json: { mensagens: validated.mensagens, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, tenantSlug: ctx.tenantSlug, apiKey: ctx.apiKey, leadId: ctx.id, fase } }];\n",
     },
   },
-  output: [{ resposta: "resposta do agente", waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", apiKey: "exemplo", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "encerrada" }],
+  output: [{ mensagens: ["resposta do agente"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", apiKey: "exemplo", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "encerrada" }],
 });
 
 // -- responder: sem efeito colateral no CRM (AGT-02 default) --
@@ -1351,10 +1386,10 @@ const finalizeResponder = node({
         "const ctx = $('Code: gate').first().json;\n" +
         "const validated = $input.first().json;\n" +
         "const fase = (validated.acao === 'agendar' ? 'agendando' : 'qualificando');\n" +
-        "return [{ json: { resposta: validated.resposta, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, tenantSlug: ctx.tenantSlug, apiKey: ctx.apiKey, leadId: ctx.id, fase } }];\n",
+        "return [{ json: { mensagens: validated.mensagens, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, tenantSlug: ctx.tenantSlug, apiKey: ctx.apiKey, leadId: ctx.id, fase } }];\n",
     },
   },
-  output: [{ resposta: "resposta do agente", waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", apiKey: "exemplo", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
+  output: [{ mensagens: ["resposta do agente"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", apiKey: "exemplo", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
 });
 
 // ---------------------------------------------------------------------
@@ -1567,7 +1602,9 @@ const llmRetryChain = askGeminiAttempt1.to(
   )
 );
 
-const conversaBranch = getSettings.to(getContext.to(buildPromptCode.to(llmRetryChain)));
+const conversaBranch = getSettings.to(
+  getMessagesHistory.to(getContext.to(buildPromptCode.to(llmRetryChain)))
+);
 
 const routeSwitchRouted = routeSwitch
   .onCase!(0, optOutBranch)
