@@ -34,6 +34,11 @@ const MODALITY_OPTIONS: { value: Modality; label: string }[] = [
 const AGENT_NAME_HELPER =
   "Este nome aparece nas saudações e nas mensagens do agente.";
 
+const AGENT_VOICE_TONE_HELPER =
+  "Descreve o JEITO do agente falar (ex.: informal, bem-humorado, direto) — não é um roteiro nem instruções de processo.";
+
+const AGENT_VOICE_TONE_MAX_LENGTH = 500;
+
 // ISO 1(segunda)–7(domingo) — mesma convenção do schema (design.md).
 const WEEKDAY_OPTIONS: { value: string; label: string }[] = [
   { value: "1", label: "Segunda" },
@@ -52,6 +57,7 @@ interface FieldErrors {
   name?: string;
   agentName?: string;
   modality?: string;
+  agentVoiceTone?: string;
   meetingDays?: string;
   businessHours?: string;
 }
@@ -92,6 +98,9 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
   const [presentationMessage, setPresentationMessage] = useState(
     tenant.agentPresentationMessage ?? ""
   );
+  const [agentVoiceTone, setAgentVoiceTone] = useState(
+    tenant.agentVoiceTone ?? ""
+  );
   const [meetingDays, setMeetingDays] = useState<string[]>(
     (tenant.meetingDays ?? []).map(String)
   );
@@ -110,6 +119,9 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
     if (error.startsWith("Nome do agente")) return { agentName: error };
     if (error.startsWith("Nome do tenant")) return { name: error };
     if (error.startsWith("Modalidade")) return { modality: error };
+    if (error.startsWith("Tom de voz e personalidade")) {
+      return { agentVoiceTone: error };
+    }
     if (error.startsWith("Dias de atendimento")) return { meetingDays: error };
     if (error.startsWith("Horário de atendimento")) return { businessHours: error };
     return null;
@@ -165,6 +177,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
       agentWhatsapp,
       website,
       agentPresentationMessage: presentationMessage,
+      agentVoiceTone,
       ...businessHours,
     });
 
@@ -312,6 +325,22 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
             value={presentationMessage}
             onChange={setPresentationMessage}
             rows={4}
+          />
+          <TextArea
+            label="Tom de voz e personalidade"
+            description={AGENT_VOICE_TONE_HELPER}
+            value={agentVoiceTone}
+            onChange={(value) => {
+              setAgentVoiceTone(value);
+              setErrors((prev) => ({ ...prev, agentVoiceTone: undefined }));
+            }}
+            rows={3}
+            maxLength={AGENT_VOICE_TONE_MAX_LENGTH}
+            status={
+              errors.agentVoiceTone
+                ? { type: "error", message: errors.agentVoiceTone }
+                : undefined
+            }
           />
         </FormLayout>
 
