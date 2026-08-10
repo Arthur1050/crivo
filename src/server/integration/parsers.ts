@@ -292,3 +292,37 @@ export function parseMessageCreate(json: unknown): ParseResult<MessageCreateDto>
 
   return { ok: true, dto: { externalId, sender, content, sentAt } };
 }
+
+// ---- GET /api/v1/leads/{id}/messages ------------------------------------
+
+export const DEFAULT_MESSAGES_LIMIT = 50;
+export const MIN_MESSAGES_LIMIT = 1;
+export const MAX_MESSAGES_LIMIT = 100;
+
+export type ParseMessagesQueryResult =
+  | { ok: true; limit: number }
+  | { ok: false; detail: string };
+
+/**
+ * Parser puro do query param `?limit=` de `GET /leads/{id}/messages`
+ * (design.md — CTX-02). Ausente → default 50; inteiro 1–100 → aceito;
+ * qualquer outro valor (não numérico, decimal, negativo, 0, > 100) → erro
+ * com detalhe — nunca corrigido silenciosamente (CTX-02 AC3).
+ */
+export function parseMessagesQuery(url: URL): ParseMessagesQueryResult {
+  const raw = url.searchParams.get("limit");
+  if (raw === null) return { ok: true, limit: DEFAULT_MESSAGES_LIMIT };
+
+  const detail = `Parâmetro 'limit' deve ser um inteiro entre ${MIN_MESSAGES_LIMIT} e ${MAX_MESSAGES_LIMIT}.`;
+
+  if (!/^\d+$/.test(raw)) {
+    return { ok: false, detail };
+  }
+
+  const value = Number(raw);
+  if (value < MIN_MESSAGES_LIMIT || value > MAX_MESSAGES_LIMIT) {
+    return { ok: false, detail };
+  }
+
+  return { ok: true, limit: value };
+}

@@ -4,7 +4,12 @@ import {
   parseLeadCreate,
   parseLeadPatch,
   parseMessageCreate,
+  parseMessagesQuery,
 } from "../parsers";
+
+function urlWithQuery(query?: string): URL {
+  return new URL(`http://local/api/v1/leads/lead-fixo/messages${query ?? ""}`);
+}
 
 describe("server/integration parsers", () => {
   it("exporta MAX_BODY_BYTES = 100 KB (design.md — Tech Decisions)", () => {
@@ -269,5 +274,35 @@ describe("server/integration parsers", () => {
       const result = parseMessageCreate({ ...validPayload, sentAt: "hoje" });
       expect(result.ok).toBe(false);
     });
+  });
+
+  describe("parseMessagesQuery (lote-6b — CTX-02)", () => {
+    it("sem 'limit' devolve o default 50 (CTX-02 AC2)", () => {
+      const result = parseMessagesQuery(urlWithQuery());
+      expect(result).toEqual({ ok: true, limit: 50 });
+    });
+
+    it.each(["1", "100"])(
+      "'limit=%s' (extremo da faixa) é aceito",
+      (limit) => {
+        const result = parseMessagesQuery(urlWithQuery(`?limit=${limit}`));
+        expect(result).toEqual({ ok: true, limit: Number(limit) });
+      }
+    );
+
+    it("'limit=2' no meio da faixa é aceito", () => {
+      const result = parseMessagesQuery(urlWithQuery("?limit=2"));
+      expect(result).toEqual({ ok: true, limit: 2 });
+    });
+
+    it.each(["0", "101", "abc", "-1"])(
+      "'limit=%s' é rejeitado com detail (CTX-02 AC3)",
+      (limit) => {
+        const result = parseMessagesQuery(urlWithQuery(`?limit=${limit}`));
+        expect(result.ok).toBe(false);
+        if (result.ok) return;
+        expect(result.detail).toBeTruthy();
+      }
+    );
   });
 });

@@ -183,6 +183,41 @@ export async function getMessages(
     .orderBy(asc(messages.sentAt), asc(messages.id));
 }
 
+/**
+ * Histórico de mensagens de um lead (lote-6b — CTX-02), para o novo
+ * `GET /api/v1/leads/{id}/messages`. `null` quando o lead não existe no
+ * tenant (mesma semântica de `getLead`) — distinto de `[]`, que é um lead
+ * existente sem nenhuma mensagem. Filtra `tenantId` em `messages` E em
+ * `conversations` (defesa em profundidade, como as demais queries desta
+ * camada). Busca as `limit` mensagens mais RECENTES (`sentAt DESC, id DESC`)
+ * e reverte em TS para devolver em ordem cronológica crescente — ordenar
+ * ASC + `LIMIT n` devolveria as mais antigas, não as mais recentes.
+ */
+export async function getLeadMessages(
+  tenantId: string,
+  leadId: string,
+  limit: number
+): Promise<Message[] | null> {
+  const lead = await getLead(tenantId, leadId);
+  if (!lead) return null;
+
+  const rows = await db
+    .select(getTableColumns(messages))
+    .from(messages)
+    .innerJoin(conversations, eq(messages.conversationId, conversations.id))
+    .where(
+      and(
+        eq(messages.tenantId, tenantId),
+        eq(conversations.tenantId, tenantId),
+        eq(conversations.leadId, leadId)
+      )
+    )
+    .orderBy(desc(messages.sentAt), desc(messages.id))
+    .limit(limit);
+
+  return rows.reverse();
+}
+
 export interface ConversationSummaryLastMessage {
   content: string;
   sentAt: Date;
