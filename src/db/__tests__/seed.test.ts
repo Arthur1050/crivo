@@ -372,6 +372,42 @@ describe("db/seed", () => {
     }
   });
 
+  // lote-6b — PER-01 AC7: a demonstração do CRM não pode contradizer o
+  // agente real, que agora nunca se anuncia como automatizado por
+  // iniciativa própria (AD-016).
+  it("nenhuma mensagem semeada (apresentação ou conversas) contém 'assistente virtual'/'agente virtual'/'robô' (lote-6b — PER-01 AC7)", async () => {
+    const allTenants = await db.select().from(tenants);
+    expect(allTenants).toHaveLength(2);
+
+    const banned = ["assistente virtual", "agente virtual", "robô"];
+
+    for (const tenant of allTenants) {
+      expect(tenant.agentPresentationMessage).toBeTruthy();
+      for (const term of banned) {
+        expect(tenant.agentPresentationMessage!.toLowerCase()).not.toContain(term);
+      }
+    }
+
+    const allMessages = await db.select().from(messages);
+    expect(allMessages.length).toBeGreaterThan(0);
+    for (const message of allMessages) {
+      for (const term of banned) {
+        expect(message.content.toLowerCase()).not.toContain(term);
+      }
+    }
+  });
+
+  // lote-6b — PER-03: campo de tom de voz por tenant, semeado e distinto.
+  it("ambos os tenants têm agentVoiceTone semeado e distinto entre si (lote-6b — PER-03)", async () => {
+    const allTenants = await db.select().from(tenants);
+    expect(allTenants).toHaveLength(2);
+    const [tenantA, tenantB] = allTenants;
+
+    expect(tenantA.agentVoiceTone).toBeTruthy();
+    expect(tenantB.agentVoiceTone).toBeTruthy();
+    expect(tenantA.agentVoiceTone).not.toBe(tenantB.agentVoiceTone);
+  });
+
   it("cada tenant tem pelo menos 1 documento expirado (expiresAt <= agora) após o seed (lote-5 — T1, LGPD-02 fundação)", async () => {
     const allTenants = await db.select().from(tenants);
     expect(allTenants).toHaveLength(2);

@@ -149,6 +149,9 @@ interface TenantDef {
   agentWhatsapp: string;
   website: string;
   agentPresentationMessage: string;
+  // Tom de voz e personalidade (lote-6b — PER-03): texto livre distinto por
+  // tenant, mesmo padrão de identidade opcional dos demais campos acima.
+  agentVoiceTone: string;
   brokers: { key: string; name: string; phone: string; email: string }[];
 }
 
@@ -165,8 +168,12 @@ const TENANT_DEFS: TenantDef[] = [
     state: "MG",
     agentWhatsapp: "+55 34 99100-0001",
     website: "https://valeuberaba.com.br",
+    // lote-6b — PER-01 AC6: apresenta nome + imobiliária, sem "assistente
+    // virtual"/"agente virtual"/"robô"/"IA"/"automatizado".
     agentPresentationMessage:
-      "Olá! Aqui é a Bia, assistente virtual da Imobiliária Vale do Uberaba. Posso te ajudar a encontrar o imóvel ideal — me conta o que você procura?",
+      "Olá! Aqui é a Bia, da Imobiliária Vale do Uberaba. Posso te ajudar a encontrar o imóvel ideal — me conta o que você procura?",
+    agentVoiceTone:
+      "Tom acolhedor e paciente, como quem já viu de tudo no mercado e gosta de explicar com calma. Usa expressões como \"olha só\" e \"deixa eu te explicar\" de vez em quando — nunca formal demais.",
     brokers: [
       {
         key: "b1",
@@ -200,8 +207,12 @@ const TENANT_DEFS: TenantDef[] = [
     state: "MG",
     agentWhatsapp: "+55 34 99200-0002",
     website: "https://trianguloimoveis.com.br",
+    // lote-6b — PER-01 AC6: apresenta nome + imobiliária, sem "assistente
+    // virtual"/"agente virtual"/"robô"/"IA"/"automatizado".
     agentPresentationMessage:
-      "Oi! Sou o Lucas, assistente virtual da Triângulo Imóveis. Me conta qual imóvel você procura que eu te ajudo a chegar na melhor opção.",
+      "Oi! Sou o Lucas, da Triângulo Imóveis. Me conta qual imóvel você procura que eu te ajudo a chegar na melhor opção.",
+    agentVoiceTone:
+      "Tom direto e descontraído, frases curtas, gosta de confirmar rápido e seguir andando na conversa. Usa \"boa\" e \"show\" pra reagir ao que o lead conta.",
     brokers: [
       {
         key: "b1",
@@ -328,7 +339,7 @@ function buildMessages(
   const msgs: { sender: "agente" | "lead"; content: string }[] = [
     {
       sender: "agente",
-      content: `Olá, ${leadName}! Aqui é ${agentName}, assistente virtual da ${tenantName}. Vi seu interesse em imóveis — posso te ajudar a encontrar a opção ideal?`,
+      content: `Olá, ${leadName}! Aqui é ${agentName}, da ${tenantName}. Vi seu interesse em imóveis — posso te ajudar a encontrar a opção ideal?`,
     },
     {
       sender: "lead",
@@ -548,6 +559,7 @@ export async function runSeed(): Promise<SeedResult> {
       agentWhatsapp: tenantDef.agentWhatsapp,
       website: tenantDef.website,
       agentPresentationMessage: tenantDef.agentPresentationMessage,
+      agentVoiceTone: tenantDef.agentVoiceTone,
     });
 
     // Chave de API do tenant (lote-5 — INT-01): gerada a cada execução do
