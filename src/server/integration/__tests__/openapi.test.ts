@@ -48,6 +48,7 @@ describe("docs/integration/openapi.yaml — SwaggerParser.validate()", () => {
     expect(api.paths["/leads"].post).toBeDefined();
     expect(api.paths["/leads/{id}"].patch).toBeDefined();
     expect(api.paths["/leads/{id}/messages"].post).toBeDefined();
+    expect(api.paths["/leads/{id}/messages"].get).toBeDefined();
     expect(api.paths["/leads/{id}/opt-out"].post).toBeDefined();
     expect(api.paths["/context"].get).toBeDefined();
   });

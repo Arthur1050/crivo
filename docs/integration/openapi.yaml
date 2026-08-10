@@ -110,6 +110,46 @@ paths:
       security:
         - bearerAuth: []
   /leads/{id}/messages:
+    get:
+      operationId: listMessages
+      tags: [messages]
+      summary: Histórico de mensagens do lead
+      description: >-
+        Retorna as mensagens do lead em ordem cronológica crescente
+        (`sentAt` ASC), no mesmo formato de `Message` usado pelo POST
+        (CTX-02). Sem `limit`, devolve as 50 mais recentes; com `limit=N`
+        (1–100), devolve as N mais recentes — sempre em ordem crescente.
+      parameters:
+        - $ref: "#/components/parameters/LeadId"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+          description: >-
+            Quantidade máxima de mensagens mais recentes a devolver. Fora da
+            faixa 1–100 (incluindo valores não numéricos) responde `400`
+            `payload-invalido`.
+      responses:
+        "200":
+          description: Mensagens do lead em ordem cronológica crescente.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Message"
+        "400":
+          $ref: "#/components/responses/PayloadInvalido"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "404":
+          $ref: "#/components/responses/RecursoNaoEncontrado"
+      security:
+        - bearerAuth: []
     post:
       operationId: createMessage
       tags: [messages]

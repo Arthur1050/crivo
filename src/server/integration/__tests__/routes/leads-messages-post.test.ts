@@ -12,7 +12,6 @@ import {
 } from "../../../../db/schema";
 import {
   DELETE,
-  GET,
   PATCH,
   POST,
   PUT,
@@ -215,8 +214,11 @@ describe("routes: POST /api/v1/leads/[id]/messages", () => {
     expect(response.status).toBe(401);
   });
 
-  it("verbo não suportado (GET/PUT/PATCH/DELETE) responde 405 problem+json", async () => {
-    for (const handler of [GET, PUT, PATCH, DELETE]) {
+  // GET passa a ser suportado nesta rota (lote-6b — CTX-02: leitura do
+  // histórico); a cobertura de 405 para GET migrou junto com os testes de
+  // `GET /api/v1/leads/[id]/messages` em leads-messages-get.test.ts.
+  it("verbo não suportado (PUT/PATCH/DELETE) responde 405 problem+json", async () => {
+    for (const handler of [PUT, PATCH, DELETE]) {
       const response = handler();
       expect(response.status).toBe(405);
       expect(response.headers.get("content-type")).toBe("application/problem+json");

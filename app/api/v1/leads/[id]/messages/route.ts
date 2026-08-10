@@ -1,16 +1,46 @@
 import { authenticate } from "../../../../../../src/server/integration/auth";
 import {
   ingestMessage,
+  listMessages,
   serializeMessage,
 } from "../../../../../../src/server/integration/messages";
 import {
   MAX_BODY_BYTES,
   parseMessageCreate,
+  parseMessagesQuery,
 } from "../../../../../../src/server/integration/parsers";
 import {
   methodNotAllowed,
   problem,
 } from "../../../../../../src/server/integration/problem";
+
+/**
+ * `GET /api/v1/leads/{id}/messages` — leitura do histórico de mensagens do
+ * lead (design.md — § Contrato, CTX-02). Handler fino: autentica → valida
+ * `?limit=` → delega ao serviço → serializa a lista (mesmo formato do POST)
+ * ou mapeia o 404 de lead inexistente/de outro tenant.
+ */
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+): Promise<Response> {
+  const auth = await authenticate(request);
+  if (auth instanceof Response) return auth;
+
+  const { id } = await params;
+
+  const parsedQuery = parseMessagesQuery(new URL(request.url));
+  if (!parsedQuery.ok) {
+    return problem(400, "payload-invalido", parsedQuery.detail);
+  }
+
+  const result = await listMessages(auth.tenantId, id, parsedQuery.limit);
+  if (!result.ok) {
+    return problem(404, result.code, "Lead não encontrado.");
+  }
+
+  return Response.json(result.messages.map(serializeMessage));
+}
 
 /**
  * `POST /api/v1/leads/{id}/messages` — ingestão idempotente de mensagens
@@ -56,7 +86,6 @@ export async function POST(
   });
 }
 
-export const GET = methodNotAllowed(["POST"]);
-export const PUT = methodNotAllowed(["POST"]);
-export const PATCH = methodNotAllowed(["POST"]);
-export const DELETE = methodNotAllowed(["POST"]);
+export const PUT = methodNotAllowed(["GET", "POST"]);
+export const PATCH = methodNotAllowed(["GET", "POST"]);
+export const DELETE = methodNotAllowed(["GET", "POST"]);

@@ -118,3 +118,21 @@ Nenhum desses passos exige alterar `app/(crm)/**` (as telas do CRM) — elas nun
 - Sujeito às mesmas regras transversais do contrato: `401` sem chave válida
   ou chave inválida/revogada, isolamento por tenant (a chave nunca revela
   settings de outro tenant), `application/problem+json` em qualquer erro.
+
+## 9. Histórico de mensagens do lead (lote-6b — CTX-02)
+
+- `GET /leads/{id}/messages` retorna a thread do lead em ordem cronológica
+  crescente (`sentAt` ASC), no mesmo formato `Message` já usado pelo
+  `POST /leads/{id}/messages`. É esta rota que o fluxo do agente consulta a
+  cada turno para dar contexto ao modelo — nunca uma cópia paralela do
+  histórico do lado do consumidor.
+- **`limit`** (query, opcional): quantas mensagens mais recentes devolver,
+  sempre em ordem crescente. Sem o parâmetro, o padrão é **50**. Faixa
+  válida: inteiro de 1 a 100 — qualquer outro valor (incluindo `0`, negativo,
+  não numérico ou acima de 100) responde `400` `payload-invalido`, sem
+  corrigir silenciosamente.
+- Lead inexistente ou de outro tenant responde `404`
+  `recurso-nao-encontrado` — mesma regra de isolamento cross-tenant do
+  restante do contrato (nunca `403`).
+- Sujeito às mesmas regras transversais: `401` sem chave válida, isolamento
+  por tenant, `application/problem+json` em qualquer erro.

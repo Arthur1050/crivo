@@ -1,5 +1,5 @@
 import "server-only";
-import { ingestAgentMessage, type Message } from "../data";
+import { getLeadMessages, ingestAgentMessage, type Message } from "../data";
 import type { MessageCreateDto } from "./parsers";
 
 export type IngestMessageResult =
@@ -49,4 +49,24 @@ export function serializeMessage(message: Message): SerializedMessage {
     content: message.content,
     sentAt: message.sentAt.toISOString(),
   };
+}
+
+export type ListMessagesResult =
+  | { ok: true; messages: Message[] }
+  | { ok: false; code: "recurso-nao-encontrado" };
+
+/**
+ * Leitura do histórico de mensagens de um lead (design.md — § Contrato,
+ * CTX-02). Serviço fino sobre a DAL: `getLeadMessages` já devolve `null`
+ * para lead inexistente/de outro tenant (mesma semântica de `getLead`),
+ * este módulo só traduz isso para o código de problema da rota.
+ */
+export async function listMessages(
+  tenantId: string,
+  leadId: string,
+  limit: number
+): Promise<ListMessagesResult> {
+  const result = await getLeadMessages(tenantId, leadId, limit);
+  if (result === null) return { ok: false, code: "recurso-nao-encontrado" };
+  return { ok: true, messages: result };
 }
