@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { FileTextIcon, SquarePenIcon, Trash2Icon } from "lucide-react";
+import { SquarePenIcon, Trash2Icon } from "lucide-react";
 import { AlertDialog } from "@astryxdesign/core/AlertDialog";
 import { Badge } from "@astryxdesign/core/Badge";
 import { Card } from "@astryxdesign/core/Card";
@@ -14,6 +14,7 @@ import { Text } from "@astryxdesign/core/Text";
 import { Timestamp } from "@astryxdesign/core/Timestamp";
 import { Token } from "@astryxdesign/core/Token";
 import { EditDocumentDialog } from "@/src/components/documents/edit-document-dialog";
+import { FileTypeIcon } from "@/src/components/documents/file-type-icon";
 import { formatFileSize } from "@/src/lib/format";
 import { deleteDocumentAction } from "@/src/server/actions/documents";
 import type { Document, DocumentCategory, Modality } from "@/src/server/data";
@@ -113,7 +114,7 @@ export function DocumentsTable({ documents, categories }: DocumentsTableProps) {
       width: proportional(2),
       renderCell: (row) => (
         <HStack gap={2} vAlign="center">
-          <FileTextIcon size={16} />
+          <FileTypeIcon mimeType={row.document.mimeType} />
           <Text type="body" weight="medium">
             {row.name}
           </Text>
