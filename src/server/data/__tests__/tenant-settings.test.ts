@@ -21,6 +21,7 @@ const ORIGINAL = {
   agentWhatsapp: "+55 34 90000-1111",
   website: "https://fixture.test",
   agentPresentationMessage: "Mensagem original de apresentação.",
+  agentVoiceTone: "Tom original: direto e caloroso.",
 };
 
 const REQUIRED = {
@@ -162,6 +163,68 @@ describe("server/data — updateTenantSettings estendido (RD-07)", () => {
     });
 
     expect(result).toBeNull();
+  });
+
+  // lote-6b — PER-03: tom de voz/personalidade do agente, exposto ao agente
+  // via GET /api/v1/settings. Mesmo padrão SPG-1 de `agentPresentationMessage`
+  // (chave ausente não toca; string vazia/só espaços → null; valor grava).
+  describe("agentVoiceTone (PER-03)", () => {
+    it("persiste o valor e relê do banco após o save", async () => {
+      const updated = await updateTenantSettings(FIXTURE_TENANT_ID, {
+        ...REQUIRED,
+        agentVoiceTone: "Informal, bem-humorado, frases curtas.",
+      });
+
+      expect(updated).not.toBeNull();
+      expect(updated!.agentVoiceTone).toBe(
+        "Informal, bem-humorado, frases curtas."
+      );
+
+      const reread = await getTenant(FIXTURE_TENANT_ID);
+      expect(reread!.agentVoiceTone).toBe(
+        "Informal, bem-humorado, frases curtas."
+      );
+    });
+
+    it("string vazia persiste null, sem erro de validação", async () => {
+      const updated = await updateTenantSettings(FIXTURE_TENANT_ID, {
+        ...REQUIRED,
+        agentVoiceTone: "",
+      });
+
+      expect(updated!.agentVoiceTone).toBeNull();
+    });
+
+    it("só espaços em branco também persiste null", async () => {
+      const updated = await updateTenantSettings(FIXTURE_TENANT_ID, {
+        ...REQUIRED,
+        agentVoiceTone: "   \n\t  ",
+      });
+
+      expect(updated!.agentVoiceTone).toBeNull();
+    });
+
+    it("null explícito persiste null", async () => {
+      const updated = await updateTenantSettings(FIXTURE_TENANT_ID, {
+        ...REQUIRED,
+        agentVoiceTone: null,
+      });
+
+      expect(updated!.agentVoiceTone).toBeNull();
+    });
+
+    it("chave ausente deixa a coluna intocada", async () => {
+      await updateTenantSettings(FIXTURE_TENANT_ID, {
+        ...REQUIRED,
+        agentVoiceTone: "Tom configurado antes.",
+      });
+
+      const untouched = await updateTenantSettings(FIXTURE_TENANT_ID, {
+        ...REQUIRED,
+      });
+
+      expect(untouched!.agentVoiceTone).toBe("Tom configurado antes.");
+    });
   });
 
   // lote-6 — CONF-05: horário comercial do tenant (dias + janela), exposto

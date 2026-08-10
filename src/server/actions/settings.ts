@@ -3,7 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { getActiveTenantId } from "../tenant";
 import { updateTenantSettings, type Modality } from "../data";
-import { validateBusinessHours, validateModality, validateName } from "../validation";
+import {
+  validateAgentVoiceTone,
+  validateBusinessHours,
+  validateModality,
+  validateName,
+} from "../validation";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -20,6 +25,10 @@ export interface UpdateTenantSettingsInput {
   agentWhatsapp?: string | null;
   website?: string | null;
   agentPresentationMessage?: string | null;
+  // Tom de voz e personalidade (lote-6b — PER-03). Mesma regra de
+  // sempre-enviar dos campos acima; validado (máx. 500 chars) nesta action
+  // antes de repassar à DAL.
+  agentVoiceTone?: string | null;
   // Horário comercial (lote-6 — CONF-05). Mesma regra de sempre-enviar dos
   // campos acima: o form manda os 3 sempre, para que limpar a configuração
   // (voltar ao fallback) também seja possível via a mesma action.
@@ -49,6 +58,9 @@ export async function updateTenantSettingsAction(
   const modalityCheck = validateModality(input.supportedModality);
   if (!modalityCheck.ok) return modalityCheck;
 
+  const agentVoiceToneCheck = validateAgentVoiceTone(input.agentVoiceTone);
+  if (!agentVoiceToneCheck.ok) return agentVoiceToneCheck;
+
   const businessHoursCheck = validateBusinessHours({
     meetingDays: input.meetingDays ?? null,
     meetingHoursStart: input.meetingHoursStart ?? null,
@@ -66,6 +78,7 @@ export async function updateTenantSettingsAction(
     agentWhatsapp: input.agentWhatsapp,
     website: input.website,
     agentPresentationMessage: input.agentPresentationMessage,
+    agentVoiceTone: input.agentVoiceTone,
     meetingDays: input.meetingDays,
     meetingHoursStart: input.meetingHoursStart,
     meetingHoursEnd: input.meetingHoursEnd,

@@ -24,6 +24,7 @@ describe("server/integration settings — getTenantSettings", () => {
         agentName: "Agente Configurado",
         supportedModality: "ambos",
         agentPresentationMessage: "Oi! Sou o agente virtual.",
+        agentVoiceTone: "Caloroso e direto.",
         meetingDays: [1, 2, 3, 4, 5],
         meetingHoursStart: "09:00",
         meetingHoursEnd: "18:00",
@@ -52,6 +53,7 @@ describe("server/integration settings — getTenantSettings", () => {
       agentName: "Agente Configurado",
       supportedModality: "ambos",
       agentPresentationMessage: "Oi! Sou o agente virtual.",
+      agentVoiceTone: "Caloroso e direto.",
       meetingDays: [1, 2, 3, 4, 5],
       meetingHoursStart: "09:00",
       meetingHoursEnd: "18:00",
@@ -66,6 +68,7 @@ describe("server/integration settings — getTenantSettings", () => {
     expect(result!.meetingHoursStart).toBeNull();
     expect(result!.meetingHoursEnd).toBeNull();
     expect(result!.agentPresentationMessage).toBeNull();
+    expect(result!.agentVoiceTone).toBeNull();
     expect(result!.realEstateName).toBe("Imobiliária Sem Horário Settings");
     expect(result!.supportedModality).toBe("novo");
   });

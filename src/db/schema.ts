@@ -87,6 +87,12 @@ export const tenants = pgTable("tenants", {
   meetingDays: integer("meeting_days").array(),
   meetingHoursStart: text("meeting_hours_start"),
   meetingHoursEnd: text("meeting_hours_end"),
+  // Tom de voz / personalidade do agente (lote-6b — PER-03), texto livre
+  // opcional preenchido pela imobiliária em Configurações. Nullable/aditiva
+  // (mesmo padrão de `agentPresentationMessage`): descreve o JEITO DE FALAR
+  // do agente, consumido pelo prompt (n8n) via GET /api/v1/settings — nunca
+  // instrução de processo.
+  agentVoiceTone: text("agent_voice_tone"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

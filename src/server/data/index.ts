@@ -618,6 +618,11 @@ export interface TenantSettingsUpdate {
   agentWhatsapp?: string | null;
   website?: string | null;
   agentPresentationMessage?: string | null;
+  // Tom de voz / personalidade do agente (lote-6b — PER-03). Mesmo padrão
+  // SPG-1 de `agentPresentationMessage`: chave ausente = coluna intocada;
+  // string vazia/em branco ou `null` = grava null. Validação de tamanho
+  // (500 chars) é responsabilidade da action, não desta camada.
+  agentVoiceTone?: string | null;
   // Horário comercial (lote-6 — CONF-05). Mesmo padrão SPG-1 dos campos
   // acima, sem normalização de texto (dias são inteiros; horas já chegam
   // validadas pela action — T2): chave ausente = coluna intocada; `null`
@@ -665,6 +670,10 @@ export async function updateTenantSettings(
   );
   if (agentPresentationMessage !== undefined) {
     setValues.agentPresentationMessage = agentPresentationMessage;
+  }
+  const agentVoiceTone = optionalTenantText(updates.agentVoiceTone);
+  if (agentVoiceTone !== undefined) {
+    setValues.agentVoiceTone = agentVoiceTone;
   }
 
   if (updates.meetingDays !== undefined) {

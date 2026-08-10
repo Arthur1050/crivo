@@ -28,6 +28,7 @@ describe("routes: GET /api/v1/settings", () => {
         agentName: "Agente A",
         supportedModality: "ambos",
         agentPresentationMessage: "Mensagem de apresentação do tenant A.",
+        agentVoiceTone: "Tom de voz do tenant A.",
         meetingDays: [1, 3, 5],
         meetingHoursStart: "08:00",
         meetingHoursEnd: "12:00",
@@ -81,13 +82,14 @@ describe("routes: GET /api/v1/settings", () => {
       agentName: "Agente A",
       supportedModality: "ambos",
       agentPresentationMessage: "Mensagem de apresentação do tenant A.",
+      agentVoiceTone: "Tom de voz do tenant A.",
       meetingDays: [1, 3, 5],
       meetingHoursStart: "08:00",
       meetingHoursEnd: "12:00",
     });
   });
 
-  it("tenant sem horário comercial configurado responde null nos 3 campos (CONF-05 AC4)", async () => {
+  it("tenant sem horário comercial nem tom de voz configurado responde null nos campos opcionais (CONF-05 AC4, PER-03 AC4)", async () => {
     const response = await GET(makeRequest(apiKeyB));
     expect(response.status).toBe(200);
 
@@ -96,6 +98,7 @@ describe("routes: GET /api/v1/settings", () => {
     expect(body.agentName).toBe("Agente B");
     expect(body.supportedModality).toBe("usado");
     expect(body.agentPresentationMessage).toBeNull();
+    expect(body.agentVoiceTone).toBeNull();
     expect(body.meetingDays).toBeNull();
     expect(body.meetingHoursStart).toBeNull();
     expect(body.meetingHoursEnd).toBeNull();

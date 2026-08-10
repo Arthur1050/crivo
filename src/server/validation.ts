@@ -71,6 +71,32 @@ export function validateFileSize(sizeBytes: number | bigint): ValidationResult {
   return { ok: true };
 }
 
+// lote-6b — PER-03: um tom de voz é uma descrição curta do JEITO de falar,
+// não um prompt paralelo — 500 chars é o teto acordado com o usuário.
+export const MAX_AGENT_VOICE_TONE_LENGTH = 500;
+
+/**
+ * Campo opcional — vazio/`null`/ausente é sempre válido (a coluna limpa via
+ * `optionalTenantText` na DAL). Só rejeita quando o texto (aparado) excede
+ * o limite; a rejeição bloqueia o salvamento inteiro, sem persistir nada
+ * (PER-03 AC5).
+ */
+export function validateAgentVoiceTone(
+  value: string | null | undefined
+): ValidationResult {
+  if (!value) return { ok: true };
+
+  const trimmed = value.trim();
+  if (trimmed.length > MAX_AGENT_VOICE_TONE_LENGTH) {
+    return {
+      ok: false,
+      error: `Tom de voz e personalidade deve ter no máximo ${MAX_AGENT_VOICE_TONE_LENGTH} caracteres.`,
+    };
+  }
+
+  return { ok: true };
+}
+
 export function validateModality(
   modality: string | null | undefined
 ): ValidationResult {

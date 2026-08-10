@@ -12,6 +12,10 @@ export interface TenantSettings {
   agentName: string;
   supportedModality: Modality;
   agentPresentationMessage: string | null;
+  // Tom de voz / personalidade do agente (lote-6b — PER-03), `null` quando o
+  // tenant não configurou. Consumido pelo prompt (n8n) — design.md §
+  // Persona por tenant.
+  agentVoiceTone: string | null;
   meetingDays: number[] | null;
   meetingHoursStart: string | null;
   meetingHoursEnd: string | null;
@@ -35,6 +39,7 @@ export async function getTenantSettings(
     agentName: tenant.agentName,
     supportedModality: tenant.supportedModality,
     agentPresentationMessage: tenant.agentPresentationMessage,
+    agentVoiceTone: tenant.agentVoiceTone,
     meetingDays: tenant.meetingDays,
     meetingHoursStart: tenant.meetingHoursStart,
     meetingHoursEnd: tenant.meetingHoursEnd,

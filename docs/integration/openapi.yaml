@@ -560,6 +560,7 @@ components:
         - agentName
         - supportedModality
         - agentPresentationMessage
+        - agentVoiceTone
         - meetingDays
         - meetingHoursStart
         - meetingHoursEnd
@@ -571,6 +572,12 @@ components:
         supportedModality:
           $ref: "#/components/schemas/Modality"
         agentPresentationMessage:
+          type: ["string", "null"]
+        agentVoiceTone:
+          description: >-
+            Tom de voz e personalidade do agente (lote-6b — PER-03), texto
+            livre opcional configurado em Configurações → Persona do Agente
+            SDR. `null` quando o tenant não configurou.
           type: ["string", "null"]
         meetingDays:
           description: >-

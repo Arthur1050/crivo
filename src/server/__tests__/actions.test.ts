@@ -254,6 +254,97 @@ describe("server actions", () => {
       expect(revertResult.ok).toBe(true);
     });
 
+    // lote-6b — PER-03: tom de voz repassado pela action e validado
+    // (validateAgentVoiceTone, máx. 500 chars) antes de chegar à DAL do T1.
+    it("persiste agentVoiceTone e relê após o save (PER-03 AC2)", async () => {
+      const original = await getTenant(activeTenantId);
+
+      const result = await updateTenantSettingsAction({
+        name: original!.name,
+        agentName: original!.agentName,
+        supportedModality: original!.supportedModality,
+        agentVoiceTone: "Direto, bem-humorado, sem enrolação.",
+      });
+      expect(result).toEqual({ ok: true });
+
+      const persisted = await getTenant(activeTenantId);
+      expect(persisted!.agentVoiceTone).toBe(
+        "Direto, bem-humorado, sem enrolação."
+      );
+
+      const revertResult = await updateTenantSettingsAction({
+        name: original!.name,
+        agentName: original!.agentName,
+        supportedModality: original!.supportedModality,
+        agentVoiceTone: original!.agentVoiceTone,
+      });
+      expect(revertResult.ok).toBe(true);
+    });
+
+    it("agentVoiceTone vazio persiste null (PER-03 AC3)", async () => {
+      const original = await getTenant(activeTenantId);
+
+      const result = await updateTenantSettingsAction({
+        name: original!.name,
+        agentName: original!.agentName,
+        supportedModality: original!.supportedModality,
+        agentVoiceTone: "",
+      });
+      expect(result).toEqual({ ok: true });
+
+      const persisted = await getTenant(activeTenantId);
+      expect(persisted!.agentVoiceTone).toBeNull();
+
+      const revertResult = await updateTenantSettingsAction({
+        name: original!.name,
+        agentName: original!.agentName,
+        supportedModality: original!.supportedModality,
+        agentVoiceTone: original!.agentVoiceTone,
+      });
+      expect(revertResult.ok).toBe(true);
+    });
+
+    it("agentVoiceTone acima de 500 caracteres retorna { ok: false, error } e NADA é persistido (PER-03 AC5)", async () => {
+      const original = await getTenant(activeTenantId);
+      const tooLong = "x".repeat(501);
+
+      const result = await updateTenantSettingsAction({
+        name: original!.name,
+        agentName: original!.agentName,
+        supportedModality: original!.supportedModality,
+        agentVoiceTone: tooLong,
+      });
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.error).toBeTruthy();
+
+      const after = await getTenant(activeTenantId);
+      expect(after!.agentVoiceTone).toBe(original!.agentVoiceTone);
+    });
+
+    it("agentVoiceTone com exatamente 500 caracteres é aceito (limite inclusivo)", async () => {
+      const original = await getTenant(activeTenantId);
+      const exactly500 = "y".repeat(500);
+
+      const result = await updateTenantSettingsAction({
+        name: original!.name,
+        agentName: original!.agentName,
+        supportedModality: original!.supportedModality,
+        agentVoiceTone: exactly500,
+      });
+      expect(result).toEqual({ ok: true });
+
+      const persisted = await getTenant(activeTenantId);
+      expect(persisted!.agentVoiceTone).toBe(exactly500);
+
+      const revertResult = await updateTenantSettingsAction({
+        name: original!.name,
+        agentName: original!.agentName,
+        supportedModality: original!.supportedModality,
+        agentVoiceTone: original!.agentVoiceTone,
+      });
+      expect(revertResult.ok).toBe(true);
+    });
+
     it("início >= fim no horário comercial retorna { ok: false, error } e nada é persistido (CONF-05 AC3 — validação de bounds)", async () => {
       const original = await getTenant(activeTenantId);
 
