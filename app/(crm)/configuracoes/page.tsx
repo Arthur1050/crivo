@@ -1,13 +1,21 @@
 import { FileTextIcon } from "lucide-react";
+import { Badge } from "@astryxdesign/core/Badge";
 import { Card } from "@astryxdesign/core/Card";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { List, ListItem } from "@astryxdesign/core/List";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Heading, Text } from "@astryxdesign/core/Text";
 import { Timestamp } from "@astryxdesign/core/Timestamp";
+import { Token } from "@astryxdesign/core/Token";
+import { FileTypeIcon } from "@/src/components/documents/file-type-icon";
 import { NavLink } from "@/src/components/shared/nav-link";
 import { SettingsForm } from "@/src/components/settings/settings-form";
-import { getDocumentSample, getTenant, type Modality } from "@/src/server/data";
+import {
+  getDocumentCategories,
+  getDocumentSample,
+  getTenant,
+  type Modality,
+} from "@/src/server/data";
 import { getActiveTenantId } from "@/src/server/tenant";
 
 const MODALITY_LABELS: Record<Modality, string> = {
@@ -15,6 +23,16 @@ const MODALITY_LABELS: Record<Modality, string> = {
   usado: "Usado",
   ambos: "Ambos",
 };
+
+// Mesmas cores por modalidade da tabela de Documentos
+// (`src/components/documents/documents-table.tsx`) — UI-02 AC4.
+const MODALITY_BADGE_VARIANT: Record<Modality, "blue" | "purple" | "teal"> = {
+  novo: "blue",
+  usado: "purple",
+  ambos: "teal",
+};
+
+const NO_CATEGORY_LABEL = "Sem categoria";
 
 /**
  * Tela de Configurações do tenant ativo (lote-2 — CONF-01 a CONF-04): edição
@@ -29,10 +47,14 @@ const MODALITY_LABELS: Record<Modality, string> = {
  */
 export default async function ConfiguracoesPage() {
   const tenantId = await getActiveTenantId();
-  const [tenant, sample] = await Promise.all([
+  const [tenant, sample, categories] = await Promise.all([
     getTenant(tenantId),
     getDocumentSample(tenantId),
+    getDocumentCategories(tenantId),
   ]);
+  const categoryById = new Map(
+    categories.map((category) => [category.id, category])
+  );
 
   if (!tenant) {
     return (
@@ -78,28 +100,54 @@ export default async function ConfiguracoesPage() {
             />
           ) : (
             <VStack gap={4}>
-              <HStack gap={6}>
+              <HStack gap={2}>
                 {(Object.keys(MODALITY_LABELS) as Modality[]).map((modality) => (
-                  <Text key={modality} type="supporting" color="secondary">
-                    {MODALITY_LABELS[modality]}: {sample.countsByModality[modality]}
-                  </Text>
+                  <Badge
+                    key={modality}
+                    label={`${MODALITY_LABELS[modality]}: ${sample.countsByModality[modality]}`}
+                    variant={MODALITY_BADGE_VARIANT[modality]}
+                  />
                 ))}
               </HStack>
 
               <List density="balanced">
-                {sample.recent.map((document) => (
-                  <ListItem
-                    key={document.id}
-                    label={document.name}
-                    description={MODALITY_LABELS[document.modality]}
-                    endContent={
-                      <Timestamp
-                        value={document.uploadedAt.toISOString()}
-                        format="date"
-                      />
-                    }
-                  />
-                ))}
+                {sample.recent.map((document) => {
+                  const category = document.categoryId
+                    ? (categoryById.get(document.categoryId) ?? null)
+                    : null;
+
+                  return (
+                    <ListItem
+                      key={document.id}
+                      label={document.name}
+                      startContent={<FileTypeIcon mimeType={document.mimeType} />}
+                      description={
+                        <HStack gap={2} vAlign="center">
+                          {category ? (
+                            <Token
+                              label={category.name}
+                              color={category.color}
+                              size="sm"
+                            />
+                          ) : (
+                            <Text type="supporting" color="secondary">
+                              {NO_CATEGORY_LABEL}
+                            </Text>
+                          )}
+                          <Text type="supporting" color="secondary">
+                            {MODALITY_LABELS[document.modality]}
+                          </Text>
+                        </HStack>
+                      }
+                      endContent={
+                        <Timestamp
+                          value={document.uploadedAt.toISOString()}
+                          format="date"
+                        />
+                      }
+                    />
+                  );
+                })}
               </List>
             </VStack>
           )}
