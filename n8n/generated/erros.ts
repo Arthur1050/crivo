@@ -50,7 +50,7 @@ const notifyByEmail = node({
     credentials: {
       // Credencial Gmail já existente na instância (list_credentials, T9) —
       // id copiado exatamente, nunca inventado (regra do SDK).
-      gmailOAuth2: newCredential("Gmail account", "wFrFqECBxb1peHNu"),
+      gmailOAuth2: newCredential("Gmail account"),
     },
   },
   output: [{ id: "18abc", threadId: "18abc" }],

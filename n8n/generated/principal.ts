@@ -62,12 +62,12 @@ import {
 
 const CRM_BASE_URL = "https://crivo-arthur1050s-projects.vercel.app/api/v1";
 
-// IDs reais das Data Tables — criadas via MCP `create_data_table` no T10
-// (instância pessoal do usuário, projeto R8EhBkOjdyDLT02w). Nunca um valor
-// inventado: cada id abaixo veio direto da resposta do MCP na criação.
-const TENANT_CONFIG_TABLE_ID = "eqp0TUHvN9yQNvdY";
-const CONVERSA_ESTADO_TABLE_ID = "6SLkn98QYKQsinFR";
-const AGENDA_ENVIOS_TABLE_ID = "ARcM27JDL4F6o3oi";
+// IDs reais das Data Tables — criadas via MCP `create_data_table` na
+// instância nova (re-hospedagem, projeto pessoal tTVoFkYzH7IEInaG). Nunca um
+// valor inventado: cada id abaixo veio direto da resposta do MCP na criação.
+const TENANT_CONFIG_TABLE_ID = "xRHckWWd6fxGeNta";
+const CONVERSA_ESTADO_TABLE_ID = "ZsplBxJjXv3kwKZ8";
+const AGENDA_ENVIOS_TABLE_ID = "m83dxX8YZYg1NDYq";
 
 // ---------------------------------------------------------------------
 // 1. Entrada: WhatsApp Trigger -> Filter -> Code normalizeEvent
@@ -87,7 +87,10 @@ const whatsAppInboundTrigger = trigger({
       // instância é "WhatsApp OAuth account" (o placeholder original
       // "WhatsApp Trigger — Crivo" nunca resolveu — ficou sem credencial até
       // este fix, achado ao tentar ativar o workflow em T12/T13 prep).
-      whatsAppTriggerApi: newCredential("WhatsApp OAuth account", "j82xS3mPwtiuhMlc"),
+      // Sem id: credencial ainda não existe na instância nova — regra do SDK
+      // (get_sdk_reference "rules" §1) é nunca sintetizar um id, deixar
+      // `newCredential(nome)` pendente até o usuário criar a credencial real.
+      whatsAppTriggerApi: newCredential("WhatsApp OAuth account"),
     },
   },
   output: [
@@ -744,7 +747,7 @@ const geminiModelAttempt1 = languageModel({
     name: "Gemini Chat Model (tentativa 1)",
     position: [5480, 180],
     parameters: { modelName: "models/gemini-3.1-flash-lite", options: { temperature: 0.4 } },
-    credentials: { googlePalmApi: newCredential("Google Gemini(PaLM) Api account", "QzmtdaZUYah2yKJ5") },
+    credentials: { googlePalmApi: newCredential("Google Gemini(PaLM) Api account") },
   },
 });
 
@@ -873,7 +876,7 @@ const geminiModelAttempt2 = languageModel({
     name: "Gemini Chat Model (tentativa 2)",
     position: [6260, 480],
     parameters: { modelName: "models/gemini-3.1-flash-lite", options: { temperature: 0.4 } },
-    credentials: { googlePalmApi: newCredential("Google Gemini(PaLM) Api account", "QzmtdaZUYah2yKJ5") },
+    credentials: { googlePalmApi: newCredential("Google Gemini(PaLM) Api account") },
   },
 });
 
@@ -1148,7 +1151,7 @@ const checkAvailability = node({
     // arquivo), então o nó nasceu sem `credentials` nenhum. Adicionado aqui
     // ao ativar o workflow em T12/T13 prep — id copiado exatamente de
     // `list_credentials`.
-    credentials: { googleCalendarOAuth2Api: newCredential("Google Calendar account", "qVDBCmu934sXN39R") },
+    credentials: { googleCalendarOAuth2Api: newCredential("Google Calendar account") },
   },
   output: [{ available: true }],
 });
@@ -1192,7 +1195,7 @@ const createCalendarEvent = node({
     },
     // Mesmo achado do nó de availability acima — id copiado exatamente de
     // `list_credentials`.
-    credentials: { googleCalendarOAuth2Api: newCredential("Google Calendar account", "qVDBCmu934sXN39R") },
+    credentials: { googleCalendarOAuth2Api: newCredential("Google Calendar account") },
   },
   output: [{ id: "evt123", htmlLink: "https://calendar.google.com/event?eid=evt123", start: { dateTime: "2026-08-10T12:00:00.000Z" } }],
 });
@@ -1451,7 +1454,7 @@ const sendReply1 = node({
     // Mesmo achado do WhatsApp Trigger acima: placeholder "WhatsApp Send —
     // Crivo" nunca resolveu (nome real na instância é "WhatsApp account");
     // id copiado exatamente de `list_credentials`.
-    credentials: { whatsAppApi: newCredential("WhatsApp account", "HB4RrjlPYBAIkaX8") },
+    credentials: { whatsAppApi: newCredential("WhatsApp account") },
   },
   output: [{ messages: [{ id: "wamid.RESPOSTA1" }] }],
 });
@@ -1546,7 +1549,7 @@ const sendReply2 = node({
       messageType: "text",
       textBody: expr("{{ $('Code: destinatário do envio').first().json.mensagens[1] }}"),
     },
-    credentials: { whatsAppApi: newCredential("WhatsApp account", "HB4RrjlPYBAIkaX8") },
+    credentials: { whatsAppApi: newCredential("WhatsApp account") },
   },
   output: [{ messages: [{ id: "wamid.RESPOSTA2" }] }],
 });
@@ -1623,7 +1626,7 @@ const sendReply3 = node({
       messageType: "text",
       textBody: expr("{{ $('Code: destinatário do envio').first().json.mensagens[2] }}"),
     },
-    credentials: { whatsAppApi: newCredential("WhatsApp account", "HB4RrjlPYBAIkaX8") },
+    credentials: { whatsAppApi: newCredential("WhatsApp account") },
   },
   output: [{ messages: [{ id: "wamid.RESPOSTA3" }] }],
 });
@@ -1739,10 +1742,10 @@ const clearBufferAndFinalize = node({
 const prepClearWired = prepBufferClearAfterSend.to(clearBufferAndFinalize);
 
 const stage3Wired = waitMessage3.to(sendReply3.to(registerAgentReply3.to(prepClearWired)));
-const hasMessage3Wired = hasMessage3.onTrue!(stage3Wired).onFalse(prepClearWired);
+const hasMessage3Wired = hasMessage3.onTrue(stage3Wired).onFalse(prepClearWired);
 
 const stage2Wired = waitMessage2.to(sendReply2.to(registerAgentReply2.to(hasMessage3Wired)));
-const hasMessage2Wired = hasMessage2.onTrue!(stage2Wired).onFalse(prepClearWired);
+const hasMessage2Wired = hasMessage2.onTrue(stage2Wired).onFalse(prepClearWired);
 
 const sendReplyWired = normalizeRecipient.to(
   sendReply1.to(registerAgentReply1.to(hasMessage2Wired))
@@ -1755,13 +1758,13 @@ const midiaBranch = finalizeMedia.to(sendReplyWired);
 const agendarBranch = validatedAgendarCheckpoint.to(
   checkAvailability.to(
     isAvailable
-      .onTrue!(createCalendarEvent.to(patchScheduled.to(insertAgendaEnvio.to(finalizeScheduled.to(sendReplyWired)))))
+      .onTrue(createCalendarEvent.to(patchScheduled.to(insertAgendaEnvio.to(finalizeScheduled.to(sendReplyWired)))))
       .onFalse(finalizeUnavailable.to(sendReplyWired))
   )
 );
 
 const actionSwitchRouted = actionSwitch
-  .onCase!(0, validatedFieldsCheckpoint.to(patchFields.to(finalizeFields.to(sendReplyWired))))
+  .onCase(0, validatedFieldsCheckpoint.to(patchFields.to(finalizeFields.to(sendReplyWired))))
   .onCase(1, agendarBranch)
   .onCase(2, validatedEscalarCheckpoint.to(patchEscalated.to(finalizeEscalated.to(sendReplyWired))))
   .onCase(3, finalizeResponder.to(sendReplyWired));
@@ -1769,11 +1772,11 @@ const actionSwitchRouted = actionSwitch
 const llmRetryChain = askGeminiAttempt1.to(
   validateLlmAttempt1.to(
     isValidAttempt1
-      .onTrue!(actionSwitchRouted)
+      .onTrue(actionSwitchRouted)
       .onFalse(
         askGeminiAttempt2.to(
           validateLlmAttempt2.to(
-            isValidAttempt2.onTrue!(actionSwitchRouted).onFalse(clarifyFallback.to(actionSwitchRouted))
+            isValidAttempt2.onTrue(actionSwitchRouted).onFalse(clarifyFallback.to(actionSwitchRouted))
           )
         )
       )
@@ -1785,7 +1788,7 @@ const conversaBranch = getSettings.to(
 );
 
 const routeSwitchRouted = routeSwitch
-  .onCase!(0, optOutBranch)
+  .onCase(0, optOutBranch)
   .onCase(1, somenteRegistrarBranch)
   .onCase(2, midiaBranch)
   .onCase(3, conversaBranch);
@@ -1800,7 +1803,7 @@ const debounceChain = conversaEstadoBeforeBuffer.to(
   appendToBuffer.to(
     conversaEstadoUpsertBuffer.to(
       waitForDebounce.to(
-        conversaEstadoAfterWait.to(checkStillLatest.to(isStillLatest.onTrue!(syncCrmAndGate)))
+        conversaEstadoAfterWait.to(checkStillLatest.to(isStillLatest.onTrue(syncCrmAndGate)))
       )
     )
   )

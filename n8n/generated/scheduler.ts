@@ -32,9 +32,9 @@
 import { workflow, trigger, node, ifElse, switchCase, newCredential, expr } from "@n8n/workflow-sdk";
 
 const CRM_BASE_URL = "https://crivo-arthur1050s-projects.vercel.app/api/v1";
-const TENANT_CONFIG_TABLE_ID = "eqp0TUHvN9yQNvdY";
-const CONVERSA_ESTADO_TABLE_ID = "6SLkn98QYKQsinFR";
-const AGENDA_ENVIOS_TABLE_ID = "ARcM27JDL4F6o3oi";
+const TENANT_CONFIG_TABLE_ID = "xRHckWWd6fxGeNta";
+const CONVERSA_ESTADO_TABLE_ID = "ZsplBxJjXv3kwKZ8";
+const AGENDA_ENVIOS_TABLE_ID = "m83dxX8YZYg1NDYq";
 
 const scheduleEveryFifteenMinutes = trigger({
   type: "n8n-nodes-base.scheduleTrigger",
@@ -241,7 +241,7 @@ const sendReminderText = node({
     // placeholder "WhatsApp Send — Crivo" nunca resolveu, publish_workflow
     // rejeitou o workflow com "Missing required credential: whatsAppApi" nos
     // 3 nós abaixo até este fix — id copiado exatamente de `list_credentials`.
-    credentials: { whatsAppApi: newCredential("WhatsApp account", "HB4RrjlPYBAIkaX8") },
+    credentials: { whatsAppApi: newCredential("WhatsApp account") },
   },
   output: [{ messages: [{ id: "wamid.LEMBRETE_TEXTO" }] }],
 });
@@ -280,7 +280,7 @@ const sendReminderTemplate = node({
     // placeholder "WhatsApp Send — Crivo" nunca resolveu, publish_workflow
     // rejeitou o workflow com "Missing required credential: whatsAppApi" nos
     // 3 nós abaixo até este fix — id copiado exatamente de `list_credentials`.
-    credentials: { whatsAppApi: newCredential("WhatsApp account", "HB4RrjlPYBAIkaX8") },
+    credentials: { whatsAppApi: newCredential("WhatsApp account") },
   },
   output: [{ messages: [{ id: "wamid.LEMBRETE_TEMPLATE" }] }],
 });
@@ -465,7 +465,7 @@ const sendReengagementTemplate = node({
     // placeholder "WhatsApp Send — Crivo" nunca resolveu, publish_workflow
     // rejeitou o workflow com "Missing required credential: whatsAppApi" nos
     // 3 nós abaixo até este fix — id copiado exatamente de `list_credentials`.
-    credentials: { whatsAppApi: newCredential("WhatsApp account", "HB4RrjlPYBAIkaX8") },
+    credentials: { whatsAppApi: newCredential("WhatsApp account") },
   },
   output: [{ messages: [{ id: "wamid.REENGAJAMENTO" }] }],
 });
@@ -672,7 +672,7 @@ const markSentWired = registerReminderMessage.to(markReminderSent);
 // (só `.onTrue(...)`, sem `.onFalse(...)`) no principal.ts. É o que garante
 // LGPD-03 AC2: lead com opt-out não recebe NENHUM envio proativo.
 const reminderRouteSwitchRouted = reminderRouteSwitch
-  .onCase!(1, sendReminderText.to(markSentWired))
+  .onCase(1, sendReminderText.to(markSentWired))
   .onCase(2, sendReminderTemplate.to(markSentWired));
 
 const lembretesChain = getDueReminders.to(
