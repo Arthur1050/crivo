@@ -674,6 +674,16 @@ const getContext = node({
   config: {
     name: "HTTP: GET /context",
     position: [4960, 300],
+    // Encadeado logo após o histórico de mensagens, que produz 1 item POR
+    // mensagem de propósito ($('HTTP: GET /leads/{id}/messages').all() em
+    // `Code: montar prompt`). Sem executeOnce, este nó busca contexto
+    // independente do item de entrada — rodaria 1x por mensagem do
+    // histórico (até 20x, CTX-01 AC2), duplicando a lista de documentos no
+    // prompt a cada turno (achado real numa execução de produção: 4
+    // mensagens no histórico -> lista de documentos 4x repetida).
+    // get_sdk_reference "rules" §3: contexto compartilhado buscado
+    // independente do item de entrada -> executeOnce: true.
+    executeOnce: true,
     retryOnFail: true,
     maxTries: 3,
     waitBetweenTries: 2000,
@@ -773,38 +783,42 @@ const outputParserAttempt1 = outputParser({
     // revelou).
     parameters: {
       schemaType: "manual",
+      // SPEC_DEVIATION (fix): sem wrapper "output" manual aqui — o próprio
+      // N8nStructuredOutputParser embrulha QUALQUER schema fornecido em
+      // {"output": <schema>} antes de instruir o modelo (confirmado no
+      // texto real da instrução enviada ao Gemini numa execução de
+      // produção). O wrapper "output" manual que existia aqui dobrava esse
+      // embrulho ({"output":{"output":{...}}}) — o modelo, corretamente,
+      // devolvia só o nível simples ({"output":{acao,campos,mensagens}}),
+      // o que o parser do n8n rejeitava com "Model output wrapper is an
+      // empty object" (a saída não batia com o schema duplamente
+      // aninhado). `Code: validar saida llm` já lê `$input.first().json.
+      // output` esperando exatamente UM nível — não precisa mudar.
       inputSchema: JSON.stringify({
         $schema: "http://json-schema.org/draft-07/schema#",
         type: "object",
         properties: {
-          output: {
+          acao: { type: "string", enum: ["responder", "atualizar_campos", "agendar", "escalar"] },
+          campos: {
             type: "object",
             properties: {
-              acao: { type: "string", enum: ["responder", "atualizar_campos", "agendar", "escalar"] },
-              campos: {
-                type: "object",
-                properties: {
-                  modality: { type: "string", enum: ["novo", "usado", "ambos"] },
-                  region: { type: "string" },
-                  budgetCents: { type: "integer" },
-                  propertyType: { type: "string", enum: ["casa", "apartamento"] },
-                  purchaseHorizon: { type: "string" },
-                  motivation: { type: "string", enum: ["investidor", "morador"] },
-                  creditStatus: { type: "string", enum: ["pre_aprovado", "recurso_proprio", "fgts"] },
-                  chainedOperation: { type: "boolean" },
-                  leadEmail: { type: ["string", "null"] },
-                  meetingAtProposto: { type: "string" },
-                },
-                additionalProperties: false,
-              },
-              mensagens: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 3 },
-              motivoEscalonamento: { type: "string" },
+              modality: { type: "string", enum: ["novo", "usado", "ambos"] },
+              region: { type: "string" },
+              budgetCents: { type: "integer" },
+              propertyType: { type: "string", enum: ["casa", "apartamento"] },
+              purchaseHorizon: { type: "string" },
+              motivation: { type: "string", enum: ["investidor", "morador"] },
+              creditStatus: { type: "string", enum: ["pre_aprovado", "recurso_proprio", "fgts"] },
+              chainedOperation: { type: "boolean" },
+              leadEmail: { type: ["string", "null"] },
+              meetingAtProposto: { type: "string" },
             },
-            required: ["acao", "campos", "mensagens"],
             additionalProperties: false,
           },
+          mensagens: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 3 },
+          motivoEscalonamento: { type: "string" },
         },
-        required: ["output"],
+        required: ["acao", "campos", "mensagens"],
         additionalProperties: false,
       }),
     },
@@ -886,42 +900,36 @@ const outputParserAttempt2 = outputParser({
   config: {
     name: "Structured Output Parser (tentativa 2)",
     position: [6260, 720],
-    // Mesmo schema manual da tentativa 1 (ver comentário lá) — corrige o
-    // mesmo problema encontrado na execução real (T10, execução 55).
+    // Mesmo schema manual da tentativa 1 (ver comentário lá) — mesmo fix
+    // (sem wrapper "output" manual duplicado; N8nStructuredOutputParser já
+    // embrulha o schema fornecido automaticamente).
     parameters: {
       schemaType: "manual",
       inputSchema: JSON.stringify({
         $schema: "http://json-schema.org/draft-07/schema#",
         type: "object",
         properties: {
-          output: {
+          acao: { type: "string", enum: ["responder", "atualizar_campos", "agendar", "escalar"] },
+          campos: {
             type: "object",
             properties: {
-              acao: { type: "string", enum: ["responder", "atualizar_campos", "agendar", "escalar"] },
-              campos: {
-                type: "object",
-                properties: {
-                  modality: { type: "string", enum: ["novo", "usado", "ambos"] },
-                  region: { type: "string" },
-                  budgetCents: { type: "integer" },
-                  propertyType: { type: "string", enum: ["casa", "apartamento"] },
-                  purchaseHorizon: { type: "string" },
-                  motivation: { type: "string", enum: ["investidor", "morador"] },
-                  creditStatus: { type: "string", enum: ["pre_aprovado", "recurso_proprio", "fgts"] },
-                  chainedOperation: { type: "boolean" },
-                  leadEmail: { type: ["string", "null"] },
-                  meetingAtProposto: { type: "string" },
-                },
-                additionalProperties: false,
-              },
-              mensagens: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 3 },
-              motivoEscalonamento: { type: "string" },
+              modality: { type: "string", enum: ["novo", "usado", "ambos"] },
+              region: { type: "string" },
+              budgetCents: { type: "integer" },
+              propertyType: { type: "string", enum: ["casa", "apartamento"] },
+              purchaseHorizon: { type: "string" },
+              motivation: { type: "string", enum: ["investidor", "morador"] },
+              creditStatus: { type: "string", enum: ["pre_aprovado", "recurso_proprio", "fgts"] },
+              chainedOperation: { type: "boolean" },
+              leadEmail: { type: ["string", "null"] },
+              meetingAtProposto: { type: "string" },
             },
-            required: ["acao", "campos", "mensagens"],
             additionalProperties: false,
           },
+          mensagens: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 3 },
+          motivoEscalonamento: { type: "string" },
         },
-        required: ["output"],
+        required: ["acao", "campos", "mensagens"],
         additionalProperties: false,
       }),
     },
