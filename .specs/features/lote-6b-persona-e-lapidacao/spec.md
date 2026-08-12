@@ -202,16 +202,18 @@ No CRM, três arestas visuais: as mensagens do agente aparecem à esquerda (inve
 ## Requirement Traceability
 
 > Coluna Tasks corrigida no fechamento (T13) contra o mapeamento real de `tasks.md` — a versão original desta tabela (escrita antes de `tasks.md` fechar a numeração de 13 tasks) tinha referências desatualizadas (ex.: CTX-01 apontava para T4, que é a UI de tom de voz, não histórico).
+>
+> Status re-derivado por Verifier independente (2026-08-10, author ≠ verifier) — ver `validation.md` para a evidência AC-a-AC (`file:line` + assertion), o sensor de discriminação e as 2 capturas reais de UI feitas nesta verificação (não apenas o relato dos autores). Gate: 612/612 testes, lint e build verdes.
 
 | ID | Requirement | Design | Tasks | Status |
 | -- | ----------- | ------ | ----- | ------ |
-| CTX-01 | Agente lembra a conversa | design.md § Histórico no prompt | T5, T6, T9 | ✅ Verified — `selectHistoryWindow`/`buildPrompt` testados por caso e por conteúdo citável (T5/T6); wiring no fluxo (T9) sem execução na instância (fora do escopo deste lote — Runbook pós-hospedagem) |
-| CTX-02 | `GET /api/v1/leads/{id}/messages` | design.md § Contrato | T1, T2 | ✅ Verified — DAL e rota com testes de integração (ordem, limite, 404 cross-tenant, 401, `SwaggerParser.validate()`) |
-| PER-01 | Conversa humanizada | design.md § Camada de persona | T6, T8, T9 | ✅ Verified — regras de estilo/transparência testadas por trecho citável (T6), seed sem "assistente virtual" (T8); wiring no fluxo (T9) sem execução na instância |
-| PER-02 | Várias mensagens por turno | design.md § Saída multi-mensagem | T7, T9, T10 | ✅ Verified — `validateLlmOutput` testado (1–3 aceito, 0/4/inválido rejeitado); schema e envio sequencial no fluxo (T9/T10) sem execução na instância |
-| PER-03 | Tom de voz por imobiliária | design.md § Persona por tenant | T3, T4 | ✅ Verified — schema/DAL/action testados (vazio→null, >500 rejeita); campo confirmado por screenshot real com reload |
-| UI-01 | Chats se comporta como app de mensagens | design.md § R1 | T11 | ✅ Verified — screenshot real (conversa longa rolada, bolhas do agente à direita, cabeçalhos fixos, sem scroll horizontal/de página); `chat-thread.ts` sem alteração |
-| UI-02 | Documentos com cor e ícone | design.md § R2 | T12, T13 | ✅ Verified — `resolveFileKind` testado (PDF/DOCX/XLSX/PPTX/imagem/OpenDocument/desconhecido); screenshot real no card de Configurações e na tabela de Documentos |
+| CTX-01 | Agente lembra a conversa | design.md § Histórico no prompt | T5, T6, T9 | ✅ Verified — `selectHistoryWindow`/`buildPrompt` testados por caso e por conteúdo citável (T5/T6), 4/6 AC com evidência de teste; AC5/AC6 (degradação e continuidade fim-a-fim) verificadas por leitura de código, sem execução — instância fora do ar, gap esperado (Runbook pós-hospedagem) |
+| CTX-02 | `GET /api/v1/leads/{id}/messages` | design.md § Contrato | T1, T2 | ✅ Verified — 6/6 AC com evidência de teste (ordem, limite, 404 cross-tenant, 401, `SwaggerParser.validate()`) |
+| PER-01 | Conversa humanizada | design.md § Camada de persona | T6, T8, T9 | ✅ Verified — 5/7 AC com evidência de teste; AC1/AC2 têm 2 spec-precision gaps menores (proibição de reusar fórmula de abertura e marcadores de fala natural estão no texto do prompt mas sem asserção dedicada — ver `validation.md`, lição L-012); seed sem "assistente virtual" confirmado (T8, varredura completa) |
+| PER-02 | Várias mensagens por turno | design.md § Saída multi-mensagem | T7, T9, T10 | ✅ Verified — `validateLlmOutput` com 2/5 AC com evidência de teste completa (AC1/AC5); AC2/AC3/AC4 (envio sequencial, registro por índice, rota fixa) verificados por leitura de código correto no fluxo, sem execução — instância fora do ar, gap esperado |
+| PER-03 | Tom de voz por imobiliária | design.md § Persona por tenant | T3, T4 | ✅ Verified — 5/5 AC com evidência de teste (vazio→null, >500 rejeita, 500 exato aceita) + campo reconfirmado por screenshot real desta verificação |
+| UI-01 | Chats se comporta como app de mensagens | design.md § R1 | T11 | ✅ Verified — 5/5 AC reconfirmados por captura real e inspeção DOM feitas nesta verificação (bolhas do agente à direita, cabeçalhos fixos com thread rolada até o fim, lista com scroll próprio, sem overflow de página); `chat-thread.ts` sem alteração (confirmado no diff) |
+| UI-02 | Documentos com cor e ícone | design.md § R2 | T12, T13 | ✅ Verified — `resolveFileKind` testado (12 casos); 5/6 AC reconfirmados por captura real desta verificação no card de Configurações e na tabela de Documentos; estado vazio do card (AC6) não exercitado ao vivo (seed sempre popula documentos) — inferido do diff, não observado |
 
 ---
 

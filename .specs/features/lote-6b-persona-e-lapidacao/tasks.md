@@ -9,7 +9,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 ---
 
 **Design**: `.specs/features/lote-6b-persona-e-lapidacao/design.md`
-**Status**: Draft
+**Status**: Done — Verifier PASS (2026-08-10), ver `validation.md`. 13/13 tasks completas, 612/612 testes, lint e build verdes, sensor de discriminação 3/3 mutações mortas. Gaps não-bloqueantes: execução real na instância n8n (fora do ar, gap esperado — Runbook pós-hospedagem) e 2 spec-precision gaps menores em PER-01 (lição L-012).
 
 ---
 
