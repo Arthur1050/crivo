@@ -105,8 +105,12 @@ Fase 8: 2 linhas para os 2 tenants reais do seed de produção + 1 linha extra c
 | `fase` | string | `qualificando` \| `agendando` \| `encerrada` |
 | `lastInboundAt` | date | última mensagem recebida — base da janela de 24h e do reengajamento |
 | `reengaged` | boolean | true após o único reengajamento (AGT-05 AC2) |
+| `perguntadosJson` | string | **NOVO (lote-6c)** — JSON array dos campos obrigatórios já perguntados (`phase.mjs` — `REQUIRED_FIELDS`); "perguntado" é permanente, não depende do lead ter respondido (QLF-02) |
+| `aberturasJson` | string | **NOVO (lote-6c)** — JSON array das aberturas de turno já usadas pelo agente nesta sessão (`voice.mjs` — `checkOpening`), para barrar repetição (VOZ-01 AC2) |
 
 Perder esta tabela **não é perda de dado**: o cold start reconstrói `leadId`/campos a partir da resposta idempotente de `POST /leads` (spec.md — edge case). Não over-engineering de durabilidade aqui, de propósito.
+
+**Purga atômica (lote-6c, design.md — Risks & Concerns)**: quando a sessão expira (gap > 12h, `isSessionExpired` em `session.mjs`) ou o lead faz opt-out, a purga precisa limpar `perguntadosJson` e `aberturasJson` **no mesmo passo** em que a memória (`n8n_chat_histories`, seção 2.4) é apagada — nunca só uma das duas. Purgar a memória sem limpar essas colunas faria uma sessão nova herdar "já perguntei tudo" e pular direto para `agendando` com um lead frio; limpar as colunas sem purgar a memória deixaria o agente reperguntar o que a memória ainda lembra. As duas colunas novas são criadas via `add_data_table_column` (MCP), confirmadas via `search_data_tables` — nunca pela UI (regra de ouro do topo deste README).
 
 ### `agenda_envios` — fila de lembretes de reunião
 
