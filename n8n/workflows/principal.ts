@@ -57,6 +57,9 @@ import {
   ifElse,
   switchCase,
   newCredential,
+  memory,
+  splitInBatches,
+  nextBatch,
   expr,
 } from "@n8n/workflow-sdk";
 
@@ -604,9 +607,10 @@ const finalizeMedia = node({
 });
 
 // ---------------------------------------------------------------------
-// 8. Rota conversa: settings (T9 — o resto do miolo é reescrito por T10
-//    (memória) e T11 (nó AI Agent + tools), ambos anexados após este nó
-//    nas próximas tasks do mesmo lote).
+// 8. Rota conversa: settings -> bloco de memória (T10 — purga condicional
+//    por sessão expirada, load, semeadura em cold start a partir do CRM).
+//    T11 anexa o nó AI Agent depois de `memoryReadyCheckpoint`, na mesma
+//    cadeia (nunca uma reconexão do zero).
 // ---------------------------------------------------------------------
 
 const getSettings = node({
@@ -626,6 +630,302 @@ const getSettings = node({
     },
   },
   output: [{ realEstateName: "Imobiliária A", agentName: "Ana", supportedModality: "ambos", agentPresentationMessage: "Oi! Sou a Ana.", meetingDays: null, meetingHoursStart: null, meetingHoursEnd: null }],
+});
+
+// `sessionKey` composto (tenantSlug:waId) — mesma chave que `conversa_estado`
+// já usa (MEM-01 AC1/AC2). Referenciado por nome ('Code: gate'), nunca por
+// $json cego: memoryPostgresChat é um SUBNODE (de memoryManager e, no T11,
+// do AI Agent) — subnodes não compartilham o contexto do predecessor
+// principal (get_sdk_reference — "When $json is unsafe").
+const conversationMemory = memory({
+  type: "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+  version: 1.4,
+  config: {
+    name: "Postgres Chat Memory",
+    position: [4960, 500],
+    parameters: {
+      sessionIdType: "customKey",
+      sessionKey: expr("{{ $('Code: gate').first().json.tenantSlug }}:{{ $('Code: gate').first().json.waId }}"),
+      contextWindowLength: 50,
+    },
+    credentials: { postgres: newCredential("Postgres n8n local") },
+  },
+});
+
+const checkSessionExpired = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: sessão expirada?",
+    position: [4960, 300],
+    parameters: {
+      mode: "runOnceForAllItems",
+      language: "javaScript",
+      jsCode:
+        '__INLINE(session.mjs)__' +
+        "\n\n" +
+        "const lastInboundAt = $('Data Table: conversa_estado (antes do buffer)').first().json.lastInboundAt || null;\n" +
+        "const now = $('Code: combinar evento e tenant').first().json.sentAt;\n" +
+        "const expired = isSessionExpired(lastInboundAt, now);\n" +
+        "return [{ json: { expired } }];\n",
+    },
+  },
+  output: [{ expired: false }],
+});
+
+const isSessionExpiredIf = ifElse({
+  version: 2.3,
+  config: {
+    name: "Sessão expirada (gap > 12h)?",
+    position: [5220, 300],
+    parameters: {
+      conditions: {
+        combinator: "and",
+        options: { caseSensitive: true, leftValue: "", typeValidation: "strict" },
+        conditions: [{ leftValue: expr("{{ $json.expired }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }],
+      },
+    },
+  },
+});
+
+const purgeMemoryOnExpiry = node({
+  type: "@n8n/n8n-nodes-langchain.memoryManager",
+  version: 1.1,
+  config: {
+    name: "Chat Memory Manager: purgar sessão expirada",
+    position: [5480, 200],
+    parameters: { mode: "delete", deleteMode: "all" },
+    subnodes: { memory: conversationMemory },
+  },
+  output: [{ success: true }],
+});
+
+const purgeConversaEstadoOnExpiry = node({
+  type: "n8n-nodes-base.dataTable",
+  version: 1.1,
+  config: {
+    name: "Data Table: purgar qualificação e persona (sessão expirada)",
+    position: [5740, 200],
+    parameters: {
+      resource: "row",
+      operation: "upsert",
+      dataTableId: { __rl: true, mode: "id", value: CONVERSA_ESTADO_TABLE_ID },
+      matchType: "allConditions",
+      filters: {
+        conditions: [
+          { keyName: "tenantSlug", condition: "eq", keyValue: expr("{{ $('Code: gate').first().json.tenantSlug }}") },
+          { keyName: "waId", condition: "eq", keyValue: expr("{{ $('Code: gate').first().json.waId }}") },
+        ],
+      },
+      columns: {
+        mappingMode: "defineBelow",
+        value: {
+          tenantSlug: expr("{{ $('Code: gate').first().json.tenantSlug }}"),
+          waId: expr("{{ $('Code: gate').first().json.waId }}"),
+          perguntadosJson: "[]",
+          aberturasJson: "[]",
+        },
+        schema: [
+          { id: "tenantSlug", displayName: "tenantSlug", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: true },
+          { id: "waId", displayName: "waId", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: true },
+          { id: "perguntadosJson", displayName: "perguntadosJson", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: true },
+          { id: "aberturasJson", displayName: "aberturasJson", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: true },
+        ],
+      },
+    },
+  },
+  output: [{ id: 1 }],
+});
+
+const loadMemory = node({
+  type: "@n8n/n8n-nodes-langchain.memoryManager",
+  version: 1.1,
+  config: {
+    name: "Chat Memory Manager: carregar sessão",
+    position: [6000, 300],
+    parameters: { mode: "load", simplifyOutput: true, options: { groupMessages: true } },
+    subnodes: { memory: conversationMemory },
+  },
+  // Formato real confirmado via execução MCP nesta sessão (nunca adivinhado
+  // — get_node_types não expõe o shape de saída do memoryManager):
+  // `{ messages: [...], messagesCount: N }` com groupMessages:true.
+  output: [{ messages: [], messagesCount: 0 }],
+});
+
+const isMemoryEmptyIf = ifElse({
+  version: 2.3,
+  config: {
+    name: "Memória da sessão está vazia?",
+    position: [6260, 300],
+    parameters: {
+      conditions: {
+        combinator: "and",
+        options: { caseSensitive: true, leftValue: "", typeValidation: "strict" },
+        conditions: [{ leftValue: expr("{{ $json.messagesCount }}"), operator: { type: "number", operation: "equals" }, rightValue: 0 }],
+      },
+    },
+  },
+});
+
+// MEM-03 AC5/AC6: cold start com histórico no CRM -> semeia; falha ou
+// histórico vazio -> segue com memória vazia (onError: continueRegularOutput
+// + alwaysOutputData), nunca aborta o turno.
+const getMessagesForSeed = node({
+  type: "n8n-nodes-base.httpRequest",
+  version: 4.4,
+  config: {
+    name: "HTTP: GET /leads/{id}/messages (semeadura)",
+    position: [6520, 200],
+    retryOnFail: true,
+    maxTries: 3,
+    waitBetweenTries: 2000,
+    onError: "continueRegularOutput",
+    alwaysOutputData: true,
+    parameters: {
+      method: "GET",
+      url: expr(`${CRM_BASE_URL}/leads/{{ $('Code: gate').first().json.id }}/messages`),
+      sendQuery: true,
+      queryParameters: { parameters: [{ name: "limit", value: "100" }] },
+      sendHeaders: true,
+      headerParameters: { parameters: [{ name: "Authorization", value: expr("Bearer {{ $('Code: gate').first().json.apiKey }}") }] },
+    },
+  },
+  output: [{ id: "4fa85f64-5717-4562-b3fc-2c963f66afa7", externalId: "wamid.EXEMPLO", sender: "lead", content: "Oi, vi o anúncio do apartamento", sentAt: "2026-08-05T12:10:00.000Z" }],
+});
+
+// Devolve UM ITEM POR MENSAGEM de semeadura (não um item com um array) —
+// o nó de insert abaixo não aceita um array dinâmico em
+// `messages.messageValues` (confirmado via `validate_workflow`:
+// `INVALID_PARAMETER`, "expected array, got string" ao tentar um único
+// `expr()` cobrindo o campo inteiro). Refanar em N itens e deixar o loop
+// de `splitInBatches` abaixo inserir um de cada vez é o padrão real do SDK
+// para "quantidade dinâmica de itens" (get_sdk_reference — batch_processing).
+const buildSeedMessages = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: selecionar mensagens de semeadura",
+    position: [6780, 200],
+    parameters: {
+      mode: "runOnceForAllItems",
+      language: "javaScript",
+      jsCode:
+        '__INLINE(session.mjs)__' +
+        "\n\n" +
+        // Degradação defensiva (MEM-03 AC6): `HTTP: GET /leads/{id}/messages
+        // (semeadura)` roda com onError:continueRegularOutput +
+        // alwaysOutputData — em falha, o item resultante não tem o formato
+        // de `SerializedMessage`. Filtrar aqui garante lista vazia no lugar
+        // de lixo, sem nunca abortar o turno.
+        "const rawHistory = $input.all()\n" +
+        "  .map((item) => item.json)\n" +
+        "  .filter((m) => m && typeof m.sender === 'string' && typeof m.content === 'string' && typeof m.sentAt === 'string');\n" +
+        "const now = $('Code: combinar evento e tenant').first().json.sentAt;\n" +
+        "const session = selectSeedMessages(rawHistory, now);\n" +
+        "return session.map((m) => ({ json: { type: m.sender === 'agente' ? 'ai' : 'user', message: m.content } }));\n",
+    },
+  },
+  output: [{ type: "user", message: "Oi, vi o anúncio do apartamento" }],
+});
+
+// Loop 1-a-1 (get_sdk_reference — "Trust empty item lists"): com 0 mensagens
+// de semeadura, o loop simplesmente não itera e `onDone` dispara na hora —
+// é assim, sem IF de guarda, que `memoryReadyCheckpoint` é sempre alcançado
+// (MEM-03 AC6, cold start genuíno inclusive).
+const seedMessageBatches = splitInBatches({
+  version: 3,
+  config: { name: "Loop: mensagens de semeadura", position: [7040, 200], parameters: { batchSize: 1 } },
+});
+
+const insertOneSeedMessage = node({
+  type: "@n8n/n8n-nodes-langchain.memoryManager",
+  version: 1.1,
+  config: {
+    name: "Chat Memory Manager: semear memória",
+    position: [7300, 100],
+    parameters: {
+      mode: "insert",
+      insertMode: "insert",
+      messages: {
+        messageValues: [
+          { type: expr("{{ $json.type }}"), message: expr("{{ $json.message }}"), hideFromUI: false },
+        ],
+      },
+    },
+    subnodes: { memory: conversationMemory },
+  },
+  output: [{ success: true }],
+});
+
+const memoryReadyCheckpoint = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: memória pronta",
+    position: [7300, 300],
+    parameters: {
+      mode: "runOnceForAllItems",
+      language: "javaScript",
+      jsCode: "return [{ json: { memoryReady: true } }];\n",
+    },
+  },
+  output: [{ memoryReady: true }],
+});
+
+// MEM-04: ramo de opt-out também purga a memória e as duas colunas de
+// estado (mesma unidade atômica da purga por sessão expirada, T10) — um
+// lead que optou por sair nunca mais gera um novo turno (gate roteia para
+// somente-registrar a partir da 2ª mensagem), então isso é inócuo em
+// termos de comportamento futuro, mas fecha o mesmo invariante de
+// "memória + conversa_estado sempre purgadas juntas" descrito no design.md
+// (Risks & Concerns).
+const purgeMemoryOnOptOut = node({
+  type: "@n8n/n8n-nodes-langchain.memoryManager",
+  version: 1.1,
+  config: {
+    name: "Chat Memory Manager: purgar memória (opt-out)",
+    position: [4960, -500],
+    parameters: { mode: "delete", deleteMode: "all" },
+    subnodes: { memory: conversationMemory },
+  },
+  output: [{ success: true }],
+});
+
+const purgeConversaEstadoOnOptOut = node({
+  type: "n8n-nodes-base.dataTable",
+  version: 1.1,
+  config: {
+    name: "Data Table: purgar qualificação e persona (opt-out)",
+    position: [5220, -500],
+    parameters: {
+      resource: "row",
+      operation: "upsert",
+      dataTableId: { __rl: true, mode: "id", value: CONVERSA_ESTADO_TABLE_ID },
+      matchType: "allConditions",
+      filters: {
+        conditions: [
+          { keyName: "tenantSlug", condition: "eq", keyValue: expr("{{ $('Code: gate').first().json.tenantSlug }}") },
+          { keyName: "waId", condition: "eq", keyValue: expr("{{ $('Code: gate').first().json.waId }}") },
+        ],
+      },
+      columns: {
+        mappingMode: "defineBelow",
+        value: {
+          tenantSlug: expr("{{ $('Code: gate').first().json.tenantSlug }}"),
+          waId: expr("{{ $('Code: gate').first().json.waId }}"),
+          perguntadosJson: "[]",
+          aberturasJson: "[]",
+        },
+        schema: [
+          { id: "tenantSlug", displayName: "tenantSlug", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: true },
+          { id: "waId", displayName: "waId", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: true },
+          { id: "perguntadosJson", displayName: "perguntadosJson", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: true },
+          { id: "aberturasJson", displayName: "aberturasJson", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: true },
+        ],
+      },
+    },
+  },
+  output: [{ id: 1 }],
 });
 
 // ---------------------------------------------------------------------
@@ -783,15 +1083,41 @@ const fixedReplyWired = normalizeFixedReplyRecipient.to(
   sendFixedReply.to(registerFixedReply.to(prepBufferClearAfterSend.to(clearBufferAndFinalize)))
 );
 
-const optOutBranch = postOptOut.to(finalizeOptOut.to(fixedReplyWired));
+const optOutBranch = postOptOut.to(
+  finalizeOptOut.to(purgeMemoryOnOptOut.to(purgeConversaEstadoOnOptOut.to(fixedReplyWired)))
+);
 const somenteRegistrarBranch = finalizeSomenteRegistrar.to(clearBufferAndFinalize);
 const midiaBranch = finalizeMedia.to(fixedReplyWired);
 
-// T9: a rota `conversa` termina em `getSettings` por enquanto — T10 anexa o
-// bloco de memória logo em seguida, e T11 anexa o nó AI Agent depois disso,
-// ambos na mesma cadeia (nunca uma reconexão de `getSettings`, só extensão
-// via `.to(...)` a partir daqui).
-const conversaBranch = getSettings;
+// T10: a rota `conversa` agora atravessa o bloco de memória inteiro (purga
+// condicional -> load -> semeadura em cold start) e termina em
+// `memoryReadyCheckpoint`. T11 anexa o nó AI Agent a partir dali, na mesma
+// cadeia (nunca uma reconexão do zero). Wiring de fan-in em duas camadas
+// (mesma regra do topo do arquivo): `afterLoadMemory` é o alvo único de
+// `loadMemory` (ele mesmo bifurcando e reconvergindo em
+// `memoryReadyCheckpoint`), e é esse builder — não os nós soltos — que as
+// duas branches de `isSessionExpiredIf` apontam.
+const afterLoadMemory = loadMemory.to(
+  isMemoryEmptyIf
+    .onTrue(
+      getMessagesForSeed.to(
+        buildSeedMessages.to(
+          seedMessageBatches
+            .onDone(memoryReadyCheckpoint)
+            .onEachBatch(insertOneSeedMessage.to(nextBatch(seedMessageBatches)))
+        )
+      )
+    )
+    .onFalse(memoryReadyCheckpoint)
+);
+
+const conversaBranch = getSettings.to(
+  checkSessionExpired.to(
+    isSessionExpiredIf
+      .onTrue(purgeMemoryOnExpiry.to(purgeConversaEstadoOnExpiry.to(afterLoadMemory)))
+      .onFalse(afterLoadMemory)
+  )
+);
 
 const routeSwitchRouted = routeSwitch
   .onCase(0, optOutBranch)
