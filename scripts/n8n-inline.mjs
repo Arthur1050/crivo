@@ -60,10 +60,11 @@ export const DEFAULT_GENERATED_DIR = join(REPO_ROOT, "n8n", "generated");
 // arquivo restrito a caracteres seguros (letras/números/ponto/hífen/underscore).
 const MARKER_PATTERN = /'__INLINE\(([a-zA-Z0-9_.-]+)\)__'/g;
 
-// `export function foo(...)` -> `function foo(...)` (só a forma usada em
-// n8n/src/*.mjs hoje — nenhum arquivo usa `export const`/`export default`;
-// ver grep documentado no commit desta task).
-const EXPORT_FUNCTION_PATTERN = /^export function/gm;
+// `export function foo(...)` -> `function foo(...)`, `export const X = ...`
+// -> `const X = ...` (e `export let`/`export class`, por simetria — só
+// `export function`/`export const` existem em n8n/src/*.mjs hoje, mas o
+// padrão vale para as quatro formas de declaração top-level do JS).
+const EXPORT_DECLARATION_PATTERN = /^export (function|const|let|class)\b/gm;
 
 // Remove imports locais entre módulos de n8n/src (`import { x } from
 // "./y.mjs";`) — a resolução da dependência é responsabilidade de quem
@@ -88,7 +89,7 @@ export function readInlinedModule(filename, srcDir = DEFAULT_SRC_DIR) {
   const raw = readFileSync(filePath, "utf8");
   return raw
     .replace(IMPORT_LINE_PATTERN, "")
-    .replace(EXPORT_FUNCTION_PATTERN, "function")
+    .replace(EXPORT_DECLARATION_PATTERN, "$1")
     .trim();
 }
 

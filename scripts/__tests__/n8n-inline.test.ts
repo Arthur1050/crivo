@@ -43,6 +43,20 @@ describe("readInlinedModule (T9 — AGT-09)", () => {
     expect(result).toContain("return a + 1;");
   });
 
+  it("remove o prefixo `export ` de `export const`, preservando o identificador e o valor (phase.mjs/voice.mjs — lote-6c)", () => {
+    const srcDir = makeTempDir("n8n-inline-src-");
+    writeFileSync(
+      join(srcDir, "constants.mjs"),
+      'export const BANNED_OPENINGS = new Set(["show", "boa"]);\n'
+    );
+
+    const result = readInlinedModule("constants.mjs", srcDir);
+
+    expect(result).not.toContain("export const");
+    expect(result).not.toContain("export ");
+    expect(result).toContain('const BANNED_OPENINGS = new Set(["show", "boa"]);');
+  });
+
   it("remove linhas `import { x } from \"./y.mjs\";` locais (dependência já inlined por outro marcador)", () => {
     const srcDir = makeTempDir("n8n-inline-src-");
     writeFileSync(
