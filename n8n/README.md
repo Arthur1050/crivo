@@ -248,3 +248,22 @@ Confirmado por observação em **Meta Business Settings → Usuários → Usuár
 ### 10.3 Resync `tenant_config` (rodado nesta sessão, após `npx vitest run`)
 
 Como o gate deste T12 rodou `npx vitest run` (que rotaciona as API keys via `runSeed()` em `beforeAll`, conforme seção 4), o procedimento da seção 4 foi seguido até o fim: `npm run db:seed` rodado uma única vez, as 2 chaves capturadas do stdout, aplicadas às 2 linhas da Data Table `tenant_config` (`eqp0TUHvN9yQNvdY`) via workflow n8n temporário com nó Data Table em `update` (casado por `phoneNumberId`), workflow arquivado logo em seguida. Validado com `GET /api/v1/settings` disparado de dentro de outro workflow temporário (também arquivado após a checagem): `200`, `realEstateName: "Triângulo Imóveis"`. Nenhuma chave foi escrita em arquivo, log ou commit.
+
+---
+
+## 11. T12 (lote-6c) — publicação do AI Agent: achado real e evidência de execução
+
+### 11.1 Bug real: `workflowInputs` de `toolWorkflow` sem `schema` não mapeia nenhum campo
+
+Achado durante a primeira execução real do `crivo-agente-principal` publicado (não hipótese — 8 execuções reais confirmam): os nós `responder_lead` e `agendar_reuniao` (`@n8n/n8n-nodes-langchain.toolWorkflow`, `n8n/workflows/principal.ts`, T11) definiam `workflowInputs.value` com os campos do sub-workflow (um via `fromAi()`, os demais via `expr()`), mas **sem** a propriedade `workflowInputs.schema` — presente em todo outro nó `resourceMapper` deste arquivo (Data Table). Sem `schema`, o resourceMapper não mapeia campo nenhum: o `Execute Workflow Trigger` do sub-workflow chamado recebia **todos os 6 (ou 10) campos como `null`**, inclusive os 5 estáticos que nunca dependem do modelo. Resultado observado: `crivo-tool-responder-lead` tentava enviar ao WhatsApp com `recipientMsisdn: ""` e `mensagem: ""`, e a Cloud API rejeitava com 400 (execuções 454–461). `validate_workflow` (checagem estática) não pega esse erro — só aparece em execução real.
+
+**Corrigido** em `n8n/workflows/principal.ts`: `schema` adicionado a `workflowInputs` dos dois nós, listando cada campo (`id`, `displayName`, `required`, `type: "string"`, `canBeUsedToMatch: false`). Regenerado via `node scripts/n8n-inline.mjs` e reaplicado na instância. Confirmado corrigido pela execução seguinte (ver §11.2).
+
+**Achado relacionado**: nem `crivo-tool-responder-lead` nem `crivo-tool-agendar-reuniao` tinham `settings.errorWorkflow` linkado a `crivo-agente-erros` (só `crivo-agente-principal` e `crivo-agente-scheduler` tinham, de lotes anteriores) — corrigido via MCP `setWorkflowSettings` nos dois, republicados.
+
+### 11.2 Evidência de execução real (T12 Done-when)
+
+- **Recusa de abertura proibida, sem envio ao lead**: execução `450` de `crivo-tool-responder-lead` (fixture `mensagem: "Show. Qual seu orçamento?"`) — `Code: aplicar barreiras de persona` devolveu `{accepted:false, reason:"abertura-proibida"}`, fluxo terminou em `Code: recusa (devolve motivo ao agente)` sem alcançar `WhatsApp: enviar resposta do agente`.
+- **Caminho feliz até `responder_lead`, com envio real confirmado**: execução `462` de `crivo-agente-principal` (fixture WhatsApp real, tenant `triangulo`, número de teste `553499532444`) — o AI Agent chamou `registrar_qualificacao` (propertyType/region, com uma rejeição de enum inválido corretamente tratada — `motivation: "morar sozinho"` → `400 payload-invalido`, o agente seguiu sem travar) e depois `responder_lead`, que devolveu `{ok:true, leadId:"7fdc4ae6-..."}`. Sub-execução correspondente `463` de `crivo-tool-responder-lead`: `status:"success"` — mensagem realmente enviada via WhatsApp e registrada no CRM.
+- **Reconciliação `n8n/generated/`**: os 52 nós e 61 conexões do `crivo-agente-principal` publicado foram comparados campo a campo contra um workflow-escrutínio criado via `create_workflow_from_code` a partir do `n8n/generated/principal.ts` corrigido — 0 nós/conexões faltando ou sobrando; os 24 nós do "entorno" (trigger, buffer, gate) ficaram intocados por design, com divergências só cosméticas (parâmetros default omitidos vs. explícitos, nunca lógica).
+- Todos os 3 workflows (`crivo-agente-principal`, `crivo-tool-responder-lead`, `crivo-tool-agendar-reuniao`) publicados e ativos; `errorWorkflow` linkado nos 3.

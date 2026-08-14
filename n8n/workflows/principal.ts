@@ -1105,6 +1105,24 @@ const responderLeadTool = tool({
           apiKey: expr("{{ $('Code: gate').first().json.apiKey }}"),
           phoneNumberId: expr("{{ $('Code: gate').first().json.phoneNumberId }}"),
         },
+        // ACHADO REAL (T12 — execução MCP, não hipótese): sem `schema` aqui, o
+        // resourceMapper de `workflowInputs` não mapeia NENHUM campo — nem os
+        // estáticos (expr()) nem o dinâmico (fromAi()). Confirmado via
+        // execução real do sub-workflow (crivo-tool-responder-lead, execução
+        // 454-461): `Execute Workflow Trigger` chegava com TODOS os 6 campos
+        // `null`, inclusive os 5 que nunca dependem do modelo — o envio
+        // falhava na Meta com corpo vazio. `schema` é obrigatório em todo
+        // outro resourceMapper deste arquivo (Data Table); só estes 2 nós
+        // `toolWorkflow` (T11) tinham ficado sem, porque `validate_workflow`
+        // (checagem estática) não pega esse tipo de erro de runtime.
+        schema: [
+          { id: "mensagem", displayName: "mensagem", required: true, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
+          { id: "tenantSlug", displayName: "tenantSlug", required: true, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
+          { id: "waId", displayName: "waId", required: true, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
+          { id: "leadId", displayName: "leadId", required: true, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
+          { id: "apiKey", displayName: "apiKey", required: true, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
+          { id: "phoneNumberId", displayName: "phoneNumberId", required: true, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
+        ],
       },
     },
   },
@@ -1136,6 +1154,20 @@ const agendarReuniaoTool = tool({
           meetingHoursStart: expr("{{ $('HTTP: GET /settings').first().json.meetingHoursStart }}"),
           meetingHoursEnd: expr("{{ $('HTTP: GET /settings').first().json.meetingHoursEnd }}"),
         },
+        // Mesmo achado do `responderLeadTool` acima (T12) — `schema`
+        // obrigatório para o resourceMapper mapear qualquer campo.
+        schema: [
+          { id: "meetingAtProposto", displayName: "meetingAtProposto", required: true, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
+          { id: "tenantSlug", displayName: "tenantSlug", required: true, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
+          { id: "waId", displayName: "waId", required: true, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
+          { id: "leadId", displayName: "leadId", required: true, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
+          { id: "apiKey", displayName: "apiKey", required: true, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
+          { id: "calendarId", displayName: "calendarId", required: true, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
+          { id: "contactName", displayName: "contactName", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
+          { id: "meetingDays", displayName: "meetingDays", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
+          { id: "meetingHoursStart", displayName: "meetingHoursStart", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
+          { id: "meetingHoursEnd", displayName: "meetingHoursEnd", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
+        ],
       },
     },
   },
