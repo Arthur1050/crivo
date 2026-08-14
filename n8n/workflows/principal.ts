@@ -60,8 +60,17 @@ import {
   memory,
   splitInBatches,
   nextBatch,
+  languageModel,
+  tool,
+  fromAi,
   expr,
 } from "@n8n/workflow-sdk";
+
+// IDs reais dos sub-workflows publicados como draft via MCP (T7/T8, mesmo
+// projeto pessoal tTVoFkYzH7IEInaG) — nunca inventados, copiados da resposta
+// do MCP na criação. `crivo-tool-responder-lead` e `crivo-tool-agendar-reuniao`.
+const TOOL_RESPONDER_LEAD_WORKFLOW_ID = "Li2hgCX943zKmDXf";
+const TOOL_AGENDAR_REUNIAO_WORKFLOW_ID = "2qCs6rPzmeOqan65";
 
 const CRM_BASE_URL = "https://crivo-arthur1050s-projects.vercel.app/api/v1";
 
@@ -872,6 +881,330 @@ const memoryReadyCheckpoint = node({
   output: [{ memoryReady: true }],
 });
 
+// ---------------------------------------------------------------------
+// 11. Nó AI Agent (T11) — modelo, memória (T10) e as 5 tools. QLF-02 (não
+//     atribuída a nenhuma task deste lote — gap real do tasks.md, ver nota
+//     do Handoff) é fechada aqui, no único ponto do fluxo onde "qual campo
+//     será perguntado neste turno" é conhecido: `nextFieldToAsk` é
+//     calculado ANTES do agente rodar, e o campo já é gravado em
+//     `perguntadosJson` nesse instante — QLF-02 AC2 exige registrar o
+//     campo como perguntado "independentemente de o lead responder ou
+//     não", e não há mecanismo determinístico de inspecionar a fala do
+//     agente depois do fato para confirmar que ele obedeceu a instrução
+//     do system message.
+// ---------------------------------------------------------------------
+
+const buildAgentSystemMessage = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: montar system message e marcar campo perguntado",
+    position: [7560, 300],
+    parameters: {
+      mode: "runOnceForAllItems",
+      language: "javaScript",
+      jsCode:
+        '__INLINE(business-hours.mjs)__' +
+        "\n" +
+        '__INLINE(phase.mjs)__' +
+        "\n" +
+        '__INLINE(system-message.mjs)__' +
+        "\n\n" +
+        "const settings = $('HTTP: GET /settings').first().json;\n" +
+        "const wasExpired = $('Code: sessão expirada?').first().json.expired;\n" +
+        "let perguntados = [];\n" +
+        "try { perguntados = wasExpired ? [] : JSON.parse($('Data Table: conversa_estado (antes do buffer)').first().json.perguntadosJson || '[]'); } catch (e) { perguntados = []; }\n" +
+        "if (!Array.isArray(perguntados)) perguntados = [];\n" +
+        "const phaseBefore = resolveConversationPhase(perguntados);\n" +
+        "const nextField = nextFieldToAsk(perguntados);\n" +
+        "const updatedPerguntados = (phaseBefore === 'qualificando' && nextField) ? [...perguntados, nextField] : perguntados;\n" +
+        "const phase = resolveConversationPhase(updatedPerguntados);\n" +
+        "const businessHours = resolveBusinessHours(settings);\n" +
+        "const systemMessage = buildSystemMessage({ settings, phase, perguntados: updatedPerguntados, businessHours });\n" +
+        "const buffer = $('Code: contexto do lead').first().json.bufferArray || [];\n" +
+        "const userMessage = buffer.map((m) => m.text).join('\\n');\n" +
+        "return [{ json: { systemMessage, userMessage, phase, perguntadosJson: JSON.stringify(updatedPerguntados) } }];\n",
+    },
+  },
+  output: [{ systemMessage: "Você é Ana, agente de atendimento...", userMessage: "Oi, vi o anúncio do apartamento", phase: "qualificando", perguntadosJson: "[\"modality\"]" }],
+});
+
+const persistPerguntados = node({
+  type: "n8n-nodes-base.dataTable",
+  version: 1.1,
+  config: {
+    name: "Data Table: marcar campo perguntado",
+    position: [7820, 300],
+    parameters: {
+      resource: "row",
+      operation: "upsert",
+      dataTableId: { __rl: true, mode: "id", value: CONVERSA_ESTADO_TABLE_ID },
+      matchType: "allConditions",
+      filters: {
+        conditions: [
+          { keyName: "tenantSlug", condition: "eq", keyValue: expr("{{ $('Code: gate').first().json.tenantSlug }}") },
+          { keyName: "waId", condition: "eq", keyValue: expr("{{ $('Code: gate').first().json.waId }}") },
+        ],
+      },
+      columns: {
+        mappingMode: "defineBelow",
+        value: {
+          tenantSlug: expr("{{ $('Code: gate').first().json.tenantSlug }}"),
+          waId: expr("{{ $('Code: gate').first().json.waId }}"),
+          perguntadosJson: expr("{{ $('Code: montar system message e marcar campo perguntado').first().json.perguntadosJson }}"),
+        },
+        schema: [
+          { id: "tenantSlug", displayName: "tenantSlug", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: true },
+          { id: "waId", displayName: "waId", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: true },
+          { id: "perguntadosJson", displayName: "perguntadosJson", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: true },
+        ],
+      },
+    },
+  },
+  output: [{ id: 1 }],
+});
+
+// Tools nativas (design.md — "Por que 3 tools nativas e 2 sub-workflows"):
+// a barreira já é server-side no CRM. `leadId` das 3 SEMPRE vem de
+// expressão do fluxo ('Code: gate'), NUNCA de $fromAI (design.md — Risks &
+// Concerns: leadId vindo do modelo permitiria escrita cross-lead).
+//
+// `registrar_qualificacao` — padrão {campo, valor} de UM campo por chamada,
+// não um objeto com os 8 campos como parâmetros fromAI independentes.
+// Achado real (não hipótese — execução MCP nesta sessão, workflow scratch
+// `Q22aiVuQNj1FGU3r`, arquivado): com os 8 campos expostos como parâmetros
+// fromAI separados na MESMA chamada, o Gemini populou `modality` e
+// `chainedOperation` com valores fabricados mesmo quando o prompt dizia
+// explicitamente "registre APENAS a região, não registre mais nada" — o
+// modelo "ajuda" preenchendo campos vizinhos disponíveis no schema da tool.
+// Com {campo, valor} como par único, o corpo enviado ficou estruturalmente
+// limitado a UMA chave (confirmado na 2ª execução: `{"region":"Uberaba"}`,
+// nada mais) — o mesmo princípio de "estruturalmente incapaz" que
+// `phase.mjs` já usa. A coerção de tipo (chainedOperation vira boolean,
+// budgetCents vira number) é feita por código determinístico dentro da
+// expressão, nunca pelo modelo.
+const registrarQualificacaoTool = tool({
+  type: "n8n-nodes-base.httpRequestTool",
+  version: 4.5,
+  config: {
+    name: "registrar_qualificacao",
+    position: [7560, 500],
+    parameters: {
+      toolDescription:
+        "Registra UM campo de qualificação que o lead revelou espontaneamente (modality, region, budgetCents, propertyType, purchaseHorizon, motivation, creditStatus ou chainedOperation). Uma chamada por campo — nunca invente valor para campo que o lead não mencionou.",
+      method: "PATCH",
+      url: expr(`${CRM_BASE_URL}/leads/{{ $('Code: gate').first().json.id }}`),
+      sendHeaders: true,
+      headerParameters: {
+        parameters: [{ name: "Authorization", value: expr("Bearer {{ $('Code: gate').first().json.apiKey }}") }],
+      },
+      sendBody: true,
+      contentType: "json",
+      specifyBody: "json",
+      jsonBody: expr(
+        "{{ (() => {\n" +
+          "  const campo = $fromAI('campo', 'Nome do campo de qualificacao a registrar: modality, region, budgetCents, propertyType, purchaseHorizon, motivation, creditStatus ou chainedOperation. Um campo por chamada.', 'string');\n" +
+          "  const valorBruto = $fromAI('valor', 'Valor a gravar nesse campo, como texto. Para chainedOperation use literalmente \"true\" ou \"false\".', 'string');\n" +
+          "  let valor = valorBruto;\n" +
+          "  if (campo === 'chainedOperation') valor = valorBruto === 'true';\n" +
+          "  if (campo === 'budgetCents') valor = Number(valorBruto);\n" +
+          "  return { [campo]: valor };\n" +
+          "})() }}"
+      ),
+      options: { response: { response: { neverError: true } } },
+    },
+  },
+  output: [{}],
+});
+
+// `escalar_para_humano` — `status` é constante (nunca vem do modelo); só
+// `motivo` (single string field, sem risco de campo cruzado) é fromAI.
+// `neverError:true` garante que um 409 (transicao-invalida /
+// lead-travado-por-humano, AD-013) chegue ao agente com o `code` intacto
+// no corpo — sem isso, `httpRequestTool` lançaria um erro genérico do n8n
+// ("Authorization failed"-like summary) que perde o `code`, o canal de
+// correção que a Done-when desta task exige.
+const escalarParaHumanoTool = tool({
+  type: "n8n-nodes-base.httpRequestTool",
+  version: 4.5,
+  config: {
+    name: "escalar_para_humano",
+    position: [7560, 700],
+    parameters: {
+      toolDescription:
+        "Transfere a conversa para um atendente humano. Use quando o lead pedir explicitamente por um humano, ou quando o pedido dele for algo que só um humano resolve. Sempre informe o motivo.",
+      method: "PATCH",
+      url: expr(`${CRM_BASE_URL}/leads/{{ $('Code: gate').first().json.id }}`),
+      sendHeaders: true,
+      headerParameters: {
+        parameters: [{ name: "Authorization", value: expr("Bearer {{ $('Code: gate').first().json.apiKey }}") }],
+      },
+      sendBody: true,
+      contentType: "json",
+      specifyBody: "json",
+      jsonBody: expr(
+        "{{ { status: 'escalado_humano', escalationReason: $fromAI('motivo', 'Motivo pelo qual a conversa esta sendo escalada para um humano', 'string') } }}"
+      ),
+      options: { response: { response: { neverError: true } } },
+    },
+  },
+  output: [{}],
+});
+
+// `consultar_documentos` — sem nenhum parâmetro fromAI: `modality` vem do
+// lead já conhecido pelo fluxo (mesmo fallback usado pelo antigo
+// `getContext` de `principal.ts`: sem modalidade revelada ainda, assume
+// 'novo'). O agente só decide QUANDO chamar, nunca inventa argumento.
+const consultarDocumentosTool = tool({
+  type: "n8n-nodes-base.httpRequestTool",
+  version: 4.5,
+  config: {
+    name: "consultar_documentos",
+    position: [7560, 900],
+    parameters: {
+      toolDescription: "Consulta a lista de documentos e materiais de apoio do tenant. Use somente quando precisar dessa informação para responder ao lead — não chame em todo turno.",
+      method: "GET",
+      url: `${CRM_BASE_URL}/context`,
+      sendQuery: true,
+      queryParameters: {
+        parameters: [{ name: "modality", value: expr("{{ $('Code: gate').first().json.modality === 'usado' ? 'usado' : 'novo' }}") }],
+      },
+      sendHeaders: true,
+      headerParameters: {
+        parameters: [{ name: "Authorization", value: expr("Bearer {{ $('Code: gate').first().json.apiKey }}") }],
+      },
+      retryOnFail: true,
+      maxTries: 2,
+      options: { response: { response: { neverError: true } } },
+    },
+  },
+  output: [{}],
+});
+
+// Sub-workflows (T7/T8) — compõem múltiplos efeitos, expostos como tool via
+// `toolWorkflow`. `leadId` sempre de expressão do fluxo aqui também, pela
+// mesma razão das tools nativas.
+const responderLeadTool = tool({
+  type: "@n8n/n8n-nodes-langchain.toolWorkflow",
+  version: 2.2,
+  config: {
+    name: "responder_lead",
+    position: [7560, 1100],
+    parameters: {
+      description:
+        "ÚNICA forma de enviar mensagem ao lead. Toda resposta sua passa por aqui, mesmo que seja só uma reação — no máximo 3 vezes por turno.",
+      source: "database",
+      workflowId: { __rl: true, mode: "id", value: TOOL_RESPONDER_LEAD_WORKFLOW_ID },
+      workflowInputs: {
+        mappingMode: "defineBelow",
+        value: {
+          mensagem: fromAi("mensagem", "A mensagem a enviar ao lead agora, em pt-BR, sem emoji, sem abrir com interjeição de aprovação isolada"),
+          tenantSlug: expr("{{ $('Code: gate').first().json.tenantSlug }}"),
+          waId: expr("{{ $('Code: gate').first().json.waId }}"),
+          leadId: expr("{{ $('Code: gate').first().json.id }}"),
+          apiKey: expr("{{ $('Code: gate').first().json.apiKey }}"),
+          phoneNumberId: expr("{{ $('Code: gate').first().json.phoneNumberId }}"),
+        },
+      },
+    },
+  },
+  output: [{}],
+});
+
+const agendarReuniaoTool = tool({
+  type: "@n8n/n8n-nodes-langchain.toolWorkflow",
+  version: 2.2,
+  config: {
+    name: "agendar_reuniao",
+    position: [7560, 1300],
+    parameters: {
+      description:
+        "Confirma um horário de reunião com o corretor. Só chame na fase de agendamento, com um horário específico (proposto pelo lead ou por você, dentro do horário comercial informado no system message).",
+      source: "database",
+      workflowId: { __rl: true, mode: "id", value: TOOL_AGENDAR_REUNIAO_WORKFLOW_ID },
+      workflowInputs: {
+        mappingMode: "defineBelow",
+        value: {
+          meetingAtProposto: fromAi("meetingAtProposto", "Horário da reunião proposto, ISO-8601 com timezone, ex: 2026-08-17T13:00:00-03:00"),
+          tenantSlug: expr("{{ $('Code: gate').first().json.tenantSlug }}"),
+          waId: expr("{{ $('Code: gate').first().json.waId }}"),
+          leadId: expr("{{ $('Code: gate').first().json.id }}"),
+          apiKey: expr("{{ $('Code: gate').first().json.apiKey }}"),
+          calendarId: expr("{{ $('Code: gate').first().json.calendarId }}"),
+          contactName: expr("{{ $('Code: contexto do lead').first().json.contactName }}"),
+          meetingDays: expr("{{ $('HTTP: GET /settings').first().json.meetingDays }}"),
+          meetingHoursStart: expr("{{ $('HTTP: GET /settings').first().json.meetingHoursStart }}"),
+          meetingHoursEnd: expr("{{ $('HTTP: GET /settings').first().json.meetingHoursEnd }}"),
+        },
+      },
+    },
+  },
+  output: [{}],
+});
+
+// Trocar de modelo é trocar este 1 nó (T16 eleva para flash — isolado,
+// deliberadamente ainda flash-lite aqui, ver tasks.md T16).
+const agentModel = languageModel({
+  type: "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+  version: 1.1,
+  config: {
+    name: "Gemini Chat Model",
+    position: [7560, 1500],
+    parameters: { modelName: "models/gemini-3.1-flash-lite", options: { temperature: 0.4 } },
+    credentials: { googlePalmApi: newCredential("Google Gemini(PaLM) Api account") },
+  },
+});
+
+const aiAgent = node({
+  type: "@n8n/n8n-nodes-langchain.agent",
+  version: 3.1,
+  config: {
+    name: "AI Agent",
+    position: [7820, 500],
+    parameters: {
+      promptType: "define",
+      text: expr("{{ $('Code: montar system message e marcar campo perguntado').first().json.userMessage }}"),
+      hasOutputParser: false,
+      options: {
+        systemMessage: expr("{{ $('Code: montar system message e marcar campo perguntado').first().json.systemMessage }}"),
+        maxIterations: 8,
+        returnIntermediateSteps: true,
+      },
+    },
+    subnodes: {
+      model: agentModel,
+      memory: conversationMemory,
+      tools: [registrarQualificacaoTool, escalarParaHumanoTool, consultarDocumentosTool, responderLeadTool, agendarReuniaoTool],
+    },
+  },
+  output: [{ output: "Beleza, e qual a região que você procura?" }],
+});
+
+// OBS-01: turno sem nenhuma chamada de `responder_lead` (maxIterations
+// estourado, ou o modelo simplesmente não chamou a tool) é registrado nos
+// dados da execução (`turnoSemResposta`) e o turno encerra normalmente —
+// nunca em erro de execução (Done-when).
+const finalizeAgentTurn = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: finalizar turno do agente",
+    position: [8080, 500],
+    parameters: {
+      mode: "runOnceForAllItems",
+      language: "javaScript",
+      jsCode:
+        "const ctx = $('Code: gate').first().json;\n" +
+        "const agentOutput = $json;\n" +
+        "const steps = Array.isArray(agentOutput.intermediateSteps) ? agentOutput.intermediateSteps : [];\n" +
+        "const calledResponder = steps.some((s) => s && s.action && s.action.tool === 'responder_lead');\n" +
+        "const fase = $('Code: montar system message e marcar campo perguntado').first().json.phase;\n" +
+        "return [{ json: { tenantSlug: ctx.tenantSlug, waId: ctx.waId, fase, turnoSemResposta: !calledResponder } }];\n",
+    },
+  },
+  output: [{ tenantSlug: "imobiliaria-a", waId: "5534999990001", fase: "qualificando", turnoSemResposta: false }],
+});
+
 // MEM-04: ramo de opt-out também purga a memória e as duas colunas de
 // estado (mesma unidade atômica da purga por sessão expirada, T10) — um
 // lead que optou por sair nunca mais gera um novo turno (gate roteia para
@@ -1109,6 +1442,15 @@ const afterLoadMemory = loadMemory.to(
       )
     )
     .onFalse(memoryReadyCheckpoint)
+);
+
+// T11: `memoryReadyCheckpoint` (T10's dangling tail) agora se estende até o
+// nó AI Agent e a convergência final — única extensão feita aqui, nunca
+// uma reconexão do zero (mesma disciplina de T9/T10).
+memoryReadyCheckpoint.to(
+  buildAgentSystemMessage.to(
+    persistPerguntados.to(aiAgent.to(finalizeAgentTurn.to(clearBufferAndFinalize)))
+  )
 );
 
 const conversaBranch = getSettings.to(
