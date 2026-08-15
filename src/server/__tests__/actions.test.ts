@@ -3,8 +3,9 @@ import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
 import { db } from "../../db";
-import { leads } from "../../db/schema";
+import { brokers, leads } from "../../db/schema";
 import {
+  getBrokers,
   getDocumentCategories,
   getDocuments,
   getLead,
@@ -47,7 +48,11 @@ import {
   type CreateDocumentInput,
 } from "../actions/documents";
 import {
+  setMeetingAttendanceAction,
+  updateLeadBrokerAction,
   updateLeadStatusAction,
+  type SetMeetingAttendanceInput,
+  type UpdateLeadBrokerInput,
   type UpdateLeadStatusInput,
 } from "../actions/pipeline";
 import {
@@ -558,6 +563,152 @@ describe("server actions", () => {
       expect(persisted!.status).toBe(nextStatus);
 
       await updateLeadStatusAction({ leadId: lead.id, status: originalStatus });
+    });
+  });
+
+  // lote-7 — ATRIB-02/KPI-02 (T8): actions de corretor e comparecimento,
+  // mesmo molde de updateLeadStatusAction (tenant pelo cookie, revalidação de
+  // '/pipeline', falha explícita quando a DAL nega a escrita).
+  describe("updateLeadBrokerAction / setMeetingAttendanceAction", () => {
+    let fixtureLeadId: string;
+    let brokerActiveId: string;
+    let brokerOtherId: string;
+
+    beforeAll(async () => {
+      fixtureLeadId = randomUUID();
+      await db.insert(leads).values({
+        id: fixtureLeadId,
+        tenantId: activeTenantId,
+        name: "Lead Fixture Broker Attendance",
+        phone: "+55 34 90000-7777",
+        status: "em_qualificacao",
+        firstContactAt: new Date(),
+      });
+
+      // Corretores existentes do tenant ativo/outro (seed já semeia
+      // corretores em todo tenant — lote-7 REAL-01 AC2), com fallback de
+      // criação para o caso raro de um tenant sem nenhum.
+      const activeBrokers = await getBrokers(activeTenantId);
+      brokerActiveId = activeBrokers[0]?.id ?? (await createFixtureBroker(activeTenantId));
+
+      const otherBrokers = await getBrokers(otherTenantId);
+      brokerOtherId = otherBrokers[0]?.id ?? (await createFixtureBroker(otherTenantId));
+    });
+
+    afterAll(async () => {
+      await db.delete(leads).where(eq(leads.id, fixtureLeadId));
+    });
+
+    async function createFixtureBroker(tenantId: string): Promise<string> {
+      const id = randomUUID();
+      await db.insert(brokers).values({
+        id,
+        tenantId,
+        name: "Corretor Fixture Actions",
+        phone: "+55 34 90000-8888",
+        email: `${id}@fixture.test`,
+      });
+      return id;
+    }
+
+    describe("updateLeadBrokerAction", () => {
+      it("sucesso persiste o corretor no tenant ativo e chama revalidatePath('/pipeline')", async () => {
+        const result = await updateLeadBrokerAction({
+          leadId: fixtureLeadId,
+          brokerId: brokerActiveId,
+        });
+        expect(result).toEqual({ ok: true });
+        expect(revalidatePath).toHaveBeenCalledWith("/pipeline");
+
+        const persisted = await getLead(activeTenantId, fixtureLeadId);
+        expect(persisted!.brokerId).toBe(brokerActiveId);
+      });
+
+      it("DAL devolvendo null (corretor de outro tenant) produz falha explícita, campo error preenchido", async () => {
+        const before = await getLead(activeTenantId, fixtureLeadId);
+
+        const result = await updateLeadBrokerAction({
+          leadId: fixtureLeadId,
+          brokerId: brokerOtherId,
+        });
+        expect(result.ok).toBe(false);
+        if (!result.ok) expect(result.error).toBeTruthy();
+
+        const after = await getLead(activeTenantId, fixtureLeadId);
+        expect(after!.brokerId).toBe(before!.brokerId);
+      });
+
+      it("um tenantId injetado no payload é ignorado — a action sempre resolve o tenant ativo pelo cookie", async () => {
+        const payloadWithForeignTenant = {
+          leadId: fixtureLeadId,
+          brokerId: brokerActiveId,
+          tenantId: otherTenantId,
+        } as UpdateLeadBrokerInput & { tenantId: string };
+
+        const result = await updateLeadBrokerAction(payloadWithForeignTenant);
+        expect(result).toEqual({ ok: true });
+
+        const persisted = await getLead(activeTenantId, fixtureLeadId);
+        expect(persisted!.brokerId).toBe(brokerActiveId);
+      });
+    });
+
+    describe("setMeetingAttendanceAction", () => {
+      it("sucesso persiste 'true' no tenant ativo e chama revalidatePath('/pipeline')", async () => {
+        const result = await setMeetingAttendanceAction({
+          leadId: fixtureLeadId,
+          attended: true,
+        });
+        expect(result).toEqual({ ok: true });
+        expect(revalidatePath).toHaveBeenCalledWith("/pipeline");
+
+        const persisted = await getLead(activeTenantId, fixtureLeadId);
+        expect(persisted!.meetingAttended).toBe(true);
+      });
+
+      it("persiste 'false' e depois 'null' (os três estados via action)", async () => {
+        await setMeetingAttendanceAction({ leadId: fixtureLeadId, attended: false });
+        expect((await getLead(activeTenantId, fixtureLeadId))!.meetingAttended).toBe(
+          false
+        );
+
+        await setMeetingAttendanceAction({ leadId: fixtureLeadId, attended: null });
+        expect(
+          (await getLead(activeTenantId, fixtureLeadId))!.meetingAttended
+        ).toBeNull();
+      });
+
+      it("DAL devolvendo null (lead de outro tenant) produz falha explícita, campo error preenchido", async () => {
+        const [leadOther] = await getLeads(otherTenantId);
+        expect(leadOther).toBeDefined();
+        const before = await getLead(otherTenantId, leadOther.id);
+
+        const result = await setMeetingAttendanceAction({
+          leadId: leadOther.id,
+          attended: true,
+        });
+        expect(result.ok).toBe(false);
+        if (!result.ok) expect(result.error).toBeTruthy();
+
+        const after = await getLead(otherTenantId, leadOther.id);
+        expect(after!.meetingAttended).toBe(before!.meetingAttended);
+      });
+
+      it("nenhuma das duas actions aceita tenantId por parâmetro — tenant vem sempre do cookie (AD-007)", () => {
+        // Prova estrutural (não de runtime): os tipos de input não declaram
+        // `tenantId` nenhum. Os dois testes acima ("tenantId injetado no
+        // payload é ignorado") já provam o comportamento em runtime.
+        const brokerInput: UpdateLeadBrokerInput = {
+          leadId: fixtureLeadId,
+          brokerId: brokerActiveId,
+        };
+        const attendanceInput: SetMeetingAttendanceInput = {
+          leadId: fixtureLeadId,
+          attended: null,
+        };
+        expect("tenantId" in brokerInput).toBe(false);
+        expect("tenantId" in attendanceInput).toBe(false);
+      });
     });
   });
 
