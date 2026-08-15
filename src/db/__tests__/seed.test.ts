@@ -10,6 +10,7 @@ import {
   documents,
   leads,
   messages,
+  serviceApiKeys,
   tenantApiKeys,
   tenants,
 } from "../schema";
@@ -454,6 +455,41 @@ describe("db/seed", () => {
       expect(tone).toBeTruthy();
     }
     expect(new Set(tones).size).toBe(allTenants.length);
+  });
+
+  it("runSeed() cria exatamente 1 chave de serviço, com o hash gravado correspondendo ao valor em claro devolvido (lote-7 — SEC-01)", async () => {
+    const { serviceApiKey } = await runSeed();
+
+    const rows = await db.select().from(serviceApiKeys);
+    expect(rows).toHaveLength(1);
+
+    const expectedHash = createHash("sha256").update(serviceApiKey).digest("hex");
+    expect(rows[0].keyHash).toBe(expectedHash);
+    expect(rows[0].revokedAt).toBeNull();
+  });
+
+  it("o valor em claro da chave de serviço nunca é persistido — só o hash sha256 (lote-7 — SEC-01)", async () => {
+    const { serviceApiKey } = await runSeed();
+
+    const rows = await db.select().from(serviceApiKeys);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].keyHash).not.toBe(serviceApiKey);
+    expect(rows[0].label).not.toBe(serviceApiKey);
+  });
+
+  it("reseed rotaciona a chave de serviço, mantendo exatamente 1 linha (lote-7 — SEC-01)", async () => {
+    const first = await runSeed();
+    const second = await runSeed();
+
+    expect(first.serviceApiKey).not.toBe(second.serviceApiKey);
+
+    const rows = await db.select().from(serviceApiKeys);
+    expect(rows).toHaveLength(1);
+
+    const expectedHash = createHash("sha256")
+      .update(second.serviceApiKey)
+      .digest("hex");
+    expect(rows[0].keyHash).toBe(expectedHash);
   });
 
   it("cada tenant tem pelo menos 1 documento expirado (expiresAt <= agora) após o seed (lote-5 — T1, LGPD-02 fundação)", async () => {

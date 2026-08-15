@@ -9,6 +9,7 @@ import {
   documents,
   leads,
   messages,
+  serviceApiKeys,
   tenantApiKeys,
   tenants,
 } from "./schema";
@@ -582,6 +583,12 @@ export interface SeededApiKey {
 
 export interface SeedResult {
   apiKeys: SeededApiKey[];
+  // Chave de serviço do agente (lote-7 — SEC-01): única, cross-tenant, mesmo
+  // tratamento das chaves por tenant acima — só existe em claro aqui, o
+  // banco guarda só o hash (service_api_keys). Reseed gera (e imprime) uma
+  // chave nova, invalidando a anterior — mesmo comportamento documentado das
+  // chaves por tenant.
+  serviceApiKey: string;
 }
 
 export async function runSeed(): Promise<SeedResult> {
@@ -603,6 +610,12 @@ export async function runSeed(): Promise<SeedResult> {
   const documentRows: (typeof documents.$inferInsert)[] = [];
   const apiKeyRows: (typeof tenantApiKeys.$inferInsert)[] = [];
   const seededApiKeys: SeededApiKey[] = [];
+
+  // Chave de serviço do agente (lote-7 — SEC-01): gerada UMA vez, fora do
+  // loop de tenants — é deliberadamente cross-tenant (schema.ts), então não
+  // faz sentido uma por tenant. Mesmo gerador não-determinístico das chaves
+  // por tenant (generateApiKey) — reseed rotaciona.
+  const { key: serviceApiKey, hash: serviceApiKeyHash } = generateApiKey();
 
   for (const tenantDef of TENANT_DEFS) {
     const tenantId = id(`tenant:${tenantDef.key}`);
@@ -791,6 +804,9 @@ export async function runSeed(): Promise<SeedResult> {
     await tx.delete(brokers);
     await tx.delete(documentCategories);
     await tx.delete(tenantApiKeys);
+    // service_api_keys não referencia tenants (sem FK — schema.ts), mas
+    // segue o mesmo tratamento de delete-and-insert das demais chaves.
+    await tx.delete(serviceApiKeys);
     await tx.delete(tenants);
 
     // Ordem de insert respeita as FKs (pais antes dos filhos).
@@ -804,9 +820,13 @@ export async function runSeed(): Promise<SeedResult> {
     await tx.insert(messages).values(messageRows);
     await tx.insert(documents).values(documentRows);
     await tx.insert(tenantApiKeys).values(apiKeyRows);
+    await tx.insert(serviceApiKeys).values({
+      label: "Seed — agente n8n",
+      keyHash: serviceApiKeyHash,
+    });
   });
 
-  return { apiKeys: seededApiKeys };
+  return { apiKeys: seededApiKeys, serviceApiKey };
 }
 
 const isMain =
@@ -815,7 +835,7 @@ const isMain =
 
 if (isMain) {
   runSeed()
-    .then(({ apiKeys }) => {
+    .then(({ apiKeys, serviceApiKey }) => {
       console.log("Seed concluído.");
       // Único momento em que a chave em claro existe fora do processo do
       // agente que a usa — o banco só guarda o hash (design.md — Risks:
@@ -827,6 +847,11 @@ if (isMain) {
       for (const { tenantName, key } of apiKeys) {
         console.log(`  ${tenantName}: ${key}`);
       }
+      // Chave de serviço do agente (lote-7 — SEC-01): mesmo tratamento
+      // acima, mostrada uma única vez.
+      console.log(
+        `\nChave de serviço do agente (mostrada uma única vez — guarde em local seguro):\n  ${serviceApiKey}`
+      );
       process.exit(0);
     })
     .catch((err) => {
