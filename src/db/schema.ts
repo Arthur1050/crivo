@@ -59,44 +59,59 @@ export const categoryColorEnum = pgEnum("category_color", [
 
 // Tables
 
-export const tenants = pgTable("tenants", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  name: text("name").notNull(),
-  agentName: text("agent_name").notNull(),
-  supportedModality: modalityEnum("supported_modality").notNull(),
-  // Baseline pré-piloto (Lote 4 — DASH-05). Snapshot único por tenant,
-  // nullable até ser preenchido (mockado no seed por ora; real na Fase 10).
-  baselineLeadsPerMonth: integer("baseline_leads_per_month"),
-  baselineFirstResponseMinutes: integer("baseline_first_response_minutes"),
-  baselineLeadToMeetingPct: integer("baseline_lead_to_meeting_pct"),
-  // Identidade institucional exibida no shell e editável em Configurações
-  // (redesign-crm-astryx — RD-01/RD-02/RD-07). Todas nullable e aditivas: o
-  // shell degrada graciosamente quando faltam (spec.md — Edge Cases) e a
-  // Fase 9 troca a fonte, não as colunas (AD-004).
-  city: text("city"),
-  state: text("state"), // UF (2 chars por convenção do seed; sem constraint)
-  agentWhatsapp: text("agent_whatsapp"),
-  website: text("website"),
-  agentPresentationMessage: text("agent_presentation_message"),
-  // Horário comercial configurável pela imobiliária (lote-6 — CONF-05),
-  // consumido pelo agente via GET /api/v1/settings (INT-09). Nullable/
-  // aditivo (AD-004): tenants sem configuração respondem null nesses 3
-  // campos e o fluxo aplica o fallback seg-sex 9h-18h (design.md). Dias em
-  // ISO 1(segunda)-7(domingo); horas em texto "HH:MM" (sem timezone — o
-  // fluxo interpreta em America/Sao_Paulo).
-  meetingDays: integer("meeting_days").array(),
-  meetingHoursStart: text("meeting_hours_start"),
-  meetingHoursEnd: text("meeting_hours_end"),
-  // Tom de voz / personalidade do agente (lote-6b — PER-03), texto livre
-  // opcional preenchido pela imobiliária em Configurações. Nullable/aditiva
-  // (mesmo padrão de `agentPresentationMessage`): descreve o JEITO DE FALAR
-  // do agente, consumido pelo prompt (n8n) via GET /api/v1/settings — nunca
-  // instrução de processo.
-  agentVoiceTone: text("agent_voice_tone"),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+export const tenants = pgTable(
+  "tenants",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    agentName: text("agent_name").notNull(),
+    supportedModality: modalityEnum("supported_modality").notNull(),
+    // Baseline pré-piloto (Lote 4 — DASH-05). Snapshot único por tenant,
+    // nullable até ser preenchido (mockado no seed por ora; real na Fase 10).
+    baselineLeadsPerMonth: integer("baseline_leads_per_month"),
+    baselineFirstResponseMinutes: integer("baseline_first_response_minutes"),
+    baselineLeadToMeetingPct: integer("baseline_lead_to_meeting_pct"),
+    // Identidade institucional exibida no shell e editável em Configurações
+    // (redesign-crm-astryx — RD-01/RD-02/RD-07). Todas nullable e aditivas: o
+    // shell degrada graciosamente quando faltam (spec.md — Edge Cases) e a
+    // Fase 9 troca a fonte, não as colunas (AD-004).
+    city: text("city"),
+    state: text("state"), // UF (2 chars por convenção do seed; sem constraint)
+    agentWhatsapp: text("agent_whatsapp"),
+    website: text("website"),
+    agentPresentationMessage: text("agent_presentation_message"),
+    // Horário comercial configurável pela imobiliária (lote-6 — CONF-05),
+    // consumido pelo agente via GET /api/v1/settings (INT-09). Nullable/
+    // aditivo (AD-004): tenants sem configuração respondem null nesses 3
+    // campos e o fluxo aplica o fallback seg-sex 9h-18h (design.md). Dias em
+    // ISO 1(segunda)-7(domingo); horas em texto "HH:MM" (sem timezone — o
+    // fluxo interpreta em America/Sao_Paulo).
+    meetingDays: integer("meeting_days").array(),
+    meetingHoursStart: text("meeting_hours_start"),
+    meetingHoursEnd: text("meeting_hours_end"),
+    // Tom de voz / personalidade do agente (lote-6b — PER-03), texto livre
+    // opcional preenchido pela imobiliária em Configurações. Nullable/aditiva
+    // (mesmo padrão de `agentPresentationMessage`): descreve o JEITO DE FALAR
+    // do agente, consumido pelo prompt (n8n) via GET /api/v1/settings — nunca
+    // instrução de processo.
+    agentVoiceTone: text("agent_voice_tone"),
+    // Identificador legível único do tenant (lote-7 — SEC-01), usado pelo
+    // header `X-Crivo-Tenant` do modo de autenticação de serviço do agente
+    // e já espelhado no n8n como `tenantSlug` na Data Table `tenant_config`.
+    // Nullable + índice único parcial (WHERE NOT NULL): mesmo padrão de
+    // `leads.external_id` — um push de coluna NOT NULL sem default falha
+    // contra uma tabela que já tem linhas (os tenants existentes).
+    slug: text("slug"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("tenants_slug_idx")
+      .on(table.slug)
+      .where(sql`${table.slug} is not null`),
+  ]
+);
 
 export const brokers = pgTable("brokers", {
   id: uuid("id").primaryKey().defaultRandom(),
