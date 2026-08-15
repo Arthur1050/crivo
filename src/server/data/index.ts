@@ -8,6 +8,7 @@ import {
   getTableColumns,
   gte,
   ilike,
+  inArray,
   isNull,
   lte,
   sql,
@@ -23,6 +24,7 @@ import {
   tenantApiKeys,
   tenants,
 } from "../../db/schema";
+import { assignBroker, type BrokerLoad } from "../../lib/broker-assignment";
 
 export type Tenant = typeof tenants.$inferSelect;
 export type Broker = typeof brokers.$inferSelect;
@@ -783,6 +785,44 @@ export async function updateLeadFromAgent(
   return rows[0] ?? null;
 }
 
+// Únicos status que contam como "carga ativa" de um corretor (lote-7 —
+// ATRIB-01): um lead já agendado ou perdido não ocupa mais a atenção dele.
+const ACTIVE_LEAD_STATUSES: LeadStatus[] = ["em_qualificacao", "escalado_humano"];
+
+/**
+ * Carga ativa de cada corretor do tenant (lote-7 — ATRIB-01), para
+ * `assignBroker` (função pura em `src/lib/broker-assignment.ts`) escolher
+ * quem recebe um lead novo. Uma única query agregada (LEFT JOIN, nunca
+ * INNER): corretor sem nenhum lead ativo aparece com `activeLeads: 0` em vez
+ * de sumir do resultado — o join já filtra pelos status ativos, então
+ * `count(leads.id)` conta só as linhas que casaram.
+ */
+export async function getBrokerLoads(tenantId: string): Promise<BrokerLoad[]> {
+  const rows = await db
+    .select({
+      id: brokers.id,
+      createdAt: brokers.createdAt,
+      activeLeads: count(leads.id),
+    })
+    .from(brokers)
+    .leftJoin(
+      leads,
+      and(
+        eq(leads.brokerId, brokers.id),
+        eq(leads.tenantId, brokers.tenantId),
+        inArray(leads.status, ACTIVE_LEAD_STATUSES)
+      )
+    )
+    .where(eq(brokers.tenantId, tenantId))
+    .groupBy(brokers.id, brokers.createdAt);
+
+  return rows.map((row) => ({
+    id: row.id,
+    createdAt: row.createdAt,
+    activeLeads: Number(row.activeLeads),
+  }));
+}
+
 export interface CreateAgentLeadInput {
   name: string;
   phone: string;
@@ -802,12 +842,21 @@ export interface CreateAgentLeadResult {
  * (schema.ts) — `onConflictDoNothing` absorve reentrega/concorrência (Edge
  * Cases: "dois requests concorrentes reentregam o mesmo externalId → no
  * máximo um recurso"); quando o insert é descartado por conflito, a busca
- * seguinte devolve o lead já existente (`created: false`).
+ * seguinte devolve o lead já existente (`created: false`), com o corretor já
+ * atribuído na primeira entrega preservado (nunca reatribuído).
+ *
+ * Atribuição de corretor (lote-7 — ATRIB-01): lida a carga ativa do tenant
+ * ANTES do insert e delega a escolha à função pura `assignBroker`. Tenant
+ * sem corretor cadastrado devolve `null` (lista vazia) — o lead nasce assim
+ * mesmo, com `brokerId` nulo, nunca bloqueado por essa atribuição.
  */
 export async function createAgentLead(
   tenantId: string,
   input: CreateAgentLeadInput
 ): Promise<CreateAgentLeadResult> {
+  const brokerLoads = await getBrokerLoads(tenantId);
+  const brokerId = assignBroker(brokerLoads);
+
   const inserted = await db
     .insert(leads)
     .values({
@@ -817,6 +866,7 @@ export async function createAgentLead(
       externalId: input.externalId,
       firstContactAt: input.firstContactAt,
       status: "em_qualificacao",
+      brokerId,
     })
     .onConflictDoNothing({
       target: [leads.tenantId, leads.externalId],
