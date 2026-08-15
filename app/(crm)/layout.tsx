@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { AppShell } from "@astryxdesign/core/AppShell";
-import { getTenants } from "@/src/server/data";
+import { getLastAgentMessageAt, getTenants } from "@/src/server/data";
 import { getActiveTenantId, setActiveTenant } from "@/src/server/tenant";
 import { Sidebar } from "@/src/components/shell/sidebar";
 import { getMockManager } from "@/src/lib/mock-manager";
@@ -30,6 +30,12 @@ export default async function CrmLayout({ children }: { children: ReactNode }) {
     );
   }
 
+  // lote-7 — SHELL-01: instante da última mensagem do agente do tenant
+  // ativo, resolvido só a partir do próprio CRM (INT-08 — nenhuma chamada à
+  // instância n8n). Serializado como ISO string na fronteira RSC → client
+  // (AD-007).
+  const lastAgentMessageAt = await getLastAgentMessageAt(activeTenantId);
+
   return (
     <AppShell
       contentPadding={6}
@@ -51,6 +57,7 @@ export default async function CrmLayout({ children }: { children: ReactNode }) {
           }}
           manager={getMockManager({ id: active.id, name: active.name })}
           onTenantChange={setActiveTenant}
+          lastAgentMessageAt={lastAgentMessageAt ? lastAgentMessageAt.toISOString() : null}
         />
       }
     >

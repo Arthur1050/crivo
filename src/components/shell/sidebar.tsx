@@ -27,6 +27,7 @@ import {
   TenantSwitcherMenu,
   type TenantOption,
 } from "@/src/components/shell/tenant-switcher";
+import { formatAgentActivitySubtitle } from "@/src/lib/agent-activity";
 import { formatTenantLocation } from "@/src/lib/tenant-identity";
 import { useTenantStore } from "@/src/stores/tenant-store";
 
@@ -41,12 +42,6 @@ const NAV_ITEMS = [
   { label: "Documentos", href: "/documentos", icon: FileTextIcon },
   { label: "Configurações", href: "/configuracoes", icon: SettingsIcon },
 ] as const;
-
-/**
- * Linha secundária fixa do card do agente (redesign-crm-astryx — RD-01 AC3).
- * O status do agente é literal mockado: o agente real é a Fase 9 (AD-004).
- */
-const AGENT_SUBTITLE = "Qualificando leads via WhatsApp";
 
 export interface SidebarActiveTenant {
   id: string;
@@ -66,6 +61,13 @@ interface SidebarProps {
   activeTenant: SidebarActiveTenant;
   manager: SidebarManager;
   onTenantChange: (tenantId: string) => Promise<void>;
+  /**
+   * Instante da última mensagem `sender = 'agente'` do tenant ativo (lote-7
+   * — SHELL-01), já resolvido pela DAL (`getLastAgentMessageAt`) e
+   * serializado como ISO string na fronteira RSC → client (AD-007). `null`
+   * quando o tenant nunca recebeu mensagem do agente.
+   */
+  lastAgentMessageAt: string | null;
 }
 
 /**
@@ -80,10 +82,15 @@ export function Sidebar({
   activeTenant,
   manager,
   onTenantChange,
+  lastAgentMessageAt,
 }: SidebarProps) {
   const pathname = usePathname();
   const setTenant = useTenantStore((state) => state.setTenant);
   const location = formatTenantLocation(activeTenant.city, activeTenant.state);
+  // `new Date()` só é lido aqui, na borda de apresentação — a decisão do
+  // texto (relativo × ocioso) é a função pura testada isoladamente em
+  // src/lib/__tests__/agent-activity.test.ts.
+  const agentSubtitle = formatAgentActivitySubtitle(lastAgentMessageAt, new Date());
 
   // Espelho client-side do tenant ativo (AD-007). Fica aqui, e não no menu:
   // o conteúdo do popover só monta quando aberto, mas a sidebar está sempre
@@ -140,7 +147,7 @@ export function Sidebar({
                 <StatusDot variant="success" label="Agente online" className="mt-1.5" isPulsing={true} />
               }
               label={`${activeTenant.agentName} — Online`}
-              description={AGENT_SUBTITLE}
+              description={agentSubtitle}
             />
           </Card>
         </SideNavSection>
