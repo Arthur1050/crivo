@@ -19,14 +19,44 @@ import {
 describe("server/data reads — lote 3 (ordenação e conversation summaries)", () => {
   let tenantAId: string;
   let tenantBId: string;
+  let fixtureLeadBId: string;
 
   beforeAll(async () => {
-    const tenants = await getTenants();
-    expect(tenants.length).toBeGreaterThanOrEqual(2);
-    [tenantAId, tenantBId] = tenants.map((t) => t.id);
+    // lote-7 — REAL-01: só `crivo-demo` recebe lead/conversa/mensagem
+    // fictícios no seed a partir daqui; os pilotos nascem com 0 de cada.
+    // Tenant A precisa de leads/conversas/mensagens reais para os testes de
+    // ordenação abaixo, então é resolvido pelo slug em vez de "os dois
+    // primeiros tenants" (ordem antes arbitrária, agora garantidamente vazia
+    // para 2 dos 3 tenants). O teste de disjunção de
+    // `getConversationSummaries` também precisa que B tenha ao menos 1
+    // conversa — inserida como fixture mínima abaixo (limpa no afterAll).
+    const allTenants = await getTenants();
+    expect(allTenants.length).toBeGreaterThanOrEqual(2);
+    const demo = allTenants.find((t) => t.slug === "crivo-demo");
+    const other = allTenants.find((t) => t.id !== demo?.id);
+    expect(demo, "tenant Crivo Demo deveria existir (seed lote-7)").toBeDefined();
+    expect(other).toBeDefined();
+    tenantAId = demo!.id;
+    tenantBId = other!.id;
+
+    fixtureLeadBId = randomUUID();
+    await db.insert(leads).values({
+      id: fixtureLeadBId,
+      tenantId: tenantBId,
+      name: "Lead Fixture Reads B",
+      phone: "+55 34 90000-7777",
+      status: "em_qualificacao",
+      firstContactAt: new Date(),
+    });
+    await db.insert(conversations).values({
+      tenantId: tenantBId,
+      leadId: fixtureLeadBId,
+    });
   });
 
   afterAll(async () => {
+    await db.delete(conversations).where(eq(conversations.leadId, fixtureLeadBId));
+    await db.delete(leads).where(eq(leads.id, fixtureLeadBId));
     await db.$client.end();
   });
 

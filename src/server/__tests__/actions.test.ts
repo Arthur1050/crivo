@@ -1,7 +1,9 @@
 import "dotenv/config";
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { eq } from "drizzle-orm";
 import { db } from "../../db";
+import { leads } from "../../db/schema";
 import {
   getDocumentCategories,
   getDocuments,
@@ -426,6 +428,30 @@ describe("server actions", () => {
   });
 
   describe("updateLeadStatusAction", () => {
+    let fixtureLeadId: string;
+
+    beforeAll(async () => {
+      // lote-7 — REAL-01: só `crivo-demo` recebe lead fictício no seed a
+      // partir daqui; `activeTenantId` (tenants[0], resolvido pelo fallback
+      // real de `getActiveTenantId()` sem cookie) pode ser um tenant-piloto
+      // sem nenhum lead. Este describe insere sua própria fixture mínima no
+      // tenant ativo (limpa no afterAll) para continuar exercitando o
+      // fallback real sem depender do seed ter lead ali.
+      fixtureLeadId = randomUUID();
+      await db.insert(leads).values({
+        id: fixtureLeadId,
+        tenantId: activeTenantId,
+        name: "Lead Fixture Actions",
+        phone: "+55 34 90000-6666",
+        status: "em_qualificacao",
+        firstContactAt: new Date(),
+      });
+    });
+
+    afterAll(async () => {
+      await db.delete(leads).where(eq(leads.id, fixtureLeadId));
+    });
+
     it("persiste o novo status no tenant ativo (happy path) e chama revalidatePath('/pipeline') — reverte ao final", async () => {
       const [lead] = await getLeads(activeTenantId);
       expect(lead).toBeDefined();

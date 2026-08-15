@@ -29,9 +29,19 @@ describe("server/data mutations", () => {
   let tenantBId: string;
 
   beforeAll(async () => {
-    const tenants = await getTenants();
-    expect(tenants.length).toBeGreaterThanOrEqual(2);
-    [tenantAId, tenantBId] = tenants.map((t) => t.id);
+    // lote-7 — REAL-01: só o tenant `crivo-demo` recebe lead fictício no
+    // seed a partir daqui; os dois pilotos nascem sem nenhum. `updateLeadStatus`
+    // precisa de um lead existente no tenant A, então A é resolvido pelo slug
+    // em vez de "os dois primeiros tenants" (ordem antes arbitrária, agora
+    // garantidamente errada para 2 dos 3 tenants).
+    const allTenants = await getTenants();
+    expect(allTenants.length).toBeGreaterThanOrEqual(2);
+    const demo = allTenants.find((t) => t.slug === "crivo-demo");
+    const other = allTenants.find((t) => t.id !== demo?.id);
+    expect(demo, "tenant Crivo Demo deveria existir (seed lote-7)").toBeDefined();
+    expect(other).toBeDefined();
+    tenantAId = demo!.id;
+    tenantBId = other!.id;
   });
 
   afterAll(async () => {

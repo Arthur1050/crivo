@@ -134,16 +134,23 @@ const LAST_NAMES = [
 
 interface TenantDef {
   key: string;
+  // Identificador legível único do tenant (lote-7 — SEC-01/REAL-01),
+  // persistido em `tenants.slug`. Igual a `key` por convenção — os dois já
+  // nomeiam o mesmo tenant no seed, e `key` já era usado como semente de
+  // `id()`, então reaproveitar evita um segundo identificador redundante.
+  slug: string;
   name: string;
   agentName: string;
   supportedModality: Modality;
-  // Baseline pré-piloto mockado (Lote 4 — DASH-05). Valores distintos e
-  // plausíveis por tenant: atendimento manual antes do agente.
-  baselineLeadsPerMonth: number;
-  baselineFirstResponseMinutes: number;
-  baselineLeadToMeetingPct: number;
+  // Baseline pré-piloto mockado (Lote 4 — DASH-05). Nullable a partir do
+  // lote-7 (REAL-01 AC3): os tenants-piloto operam com dado real e ficam
+  // sem baseline até a Fase 10 (instrumentação de métricas); só o tenant de
+  // demonstração mantém o valor mockado.
+  baselineLeadsPerMonth: number | null;
+  baselineFirstResponseMinutes: number | null;
+  baselineLeadToMeetingPct: number | null;
   // Identidade institucional (redesign-crm-astryx — RD-02): valores distintos
-  // entre os 2 tenants, para que a troca de tenant no shell seja visível.
+  // entre os tenants, para que a troca de tenant no shell seja visível.
   city: string;
   state: string;
   agentWhatsapp: string;
@@ -153,17 +160,24 @@ interface TenantDef {
   // tenant, mesmo padrão de identidade opcional dos demais campos acima.
   agentVoiceTone: string;
   brokers: { key: string; name: string; phone: string; email: string }[];
+  // lote-7 — REAL-01: só o tenant de demonstração recebe leads, conversas e
+  // mensagens fictícios. Os tenants-piloto mantêm toda a configuração
+  // (corretores, categorias, documentos, chave de API) mas nascem sem
+  // nenhum lead — o dado real vem só do agente, pelo contrato.
+  seedLeadData: boolean;
 }
 
 const TENANT_DEFS: TenantDef[] = [
   {
     key: "vale-uberaba",
+    slug: "vale-uberaba",
     name: "Imobiliária Vale do Uberaba",
     agentName: "Bia",
     supportedModality: "ambos",
-    baselineLeadsPerMonth: 16,
-    baselineFirstResponseMinutes: 300,
-    baselineLeadToMeetingPct: 18,
+    baselineLeadsPerMonth: null,
+    baselineFirstResponseMinutes: null,
+    baselineLeadToMeetingPct: null,
+    seedLeadData: false,
     city: "Uberaba",
     state: "MG",
     agentWhatsapp: "+55 34 99100-0001",
@@ -197,12 +211,14 @@ const TENANT_DEFS: TenantDef[] = [
   },
   {
     key: "triangulo",
+    slug: "triangulo",
     name: "Triângulo Imóveis",
     agentName: "Lucas",
     supportedModality: "ambos",
-    baselineLeadsPerMonth: 22,
-    baselineFirstResponseMinutes: 180,
-    baselineLeadToMeetingPct: 27,
+    baselineLeadsPerMonth: null,
+    baselineFirstResponseMinutes: null,
+    baselineLeadToMeetingPct: null,
+    seedLeadData: false,
     city: "Uberlândia",
     state: "MG",
     agentWhatsapp: "+55 34 99200-0002",
@@ -231,6 +247,50 @@ const TENANT_DEFS: TenantDef[] = [
         name: "Juliana Pereira Dias",
         phone: "+55 34 99203-7788",
         email: "juliana.dias@trianguloimoveis.com.br",
+      },
+    ],
+  },
+  // lote-7 — REAL-01: tenant só de demonstração comercial. É o único que
+  // recebe o dataset fictício rico (leads/conversas/mensagens/baseline) —
+  // os dois tenants-piloto acima operam só com dado real a partir daqui.
+  {
+    key: "crivo-demo",
+    slug: "crivo-demo",
+    name: "Crivo Demo",
+    agentName: "Sofia",
+    supportedModality: "ambos",
+    baselineLeadsPerMonth: 19,
+    baselineFirstResponseMinutes: 240,
+    baselineLeadToMeetingPct: 22,
+    seedLeadData: true,
+    city: "Belo Horizonte",
+    state: "MG",
+    agentWhatsapp: "+55 31 99300-0003",
+    website: "https://crivo.com.br",
+    // lote-6b — PER-01 AC6: apresenta nome + imobiliária, sem "assistente
+    // virtual"/"agente virtual"/"robô"/"IA"/"automatizado".
+    agentPresentationMessage:
+      "Oi! Aqui é a Sofia, da Crivo Demo. Me conta o que você procura que eu já vejo o que temos disponível pra você.",
+    agentVoiceTone:
+      "Tom entusiasmado e prestativo, sempre disposto a detalhar as opções. Usa \"legal\" e \"perfeito\" para confirmar o que o lead conta.",
+    brokers: [
+      {
+        key: "b1",
+        name: "Larissa Andrade Nunes",
+        phone: "+55 31 99301-8899",
+        email: "larissa.nunes@crivo.com.br",
+      },
+      {
+        key: "b2",
+        name: "Gustavo Ribeiro Cardoso",
+        phone: "+55 31 99302-9900",
+        email: "gustavo.cardoso@crivo.com.br",
+      },
+      {
+        key: "b3",
+        name: "Beatriz Moraes Correia",
+        phone: "+55 31 99303-0011",
+        email: "beatriz.correia@crivo.com.br",
       },
     ],
   },
@@ -560,6 +620,7 @@ export async function runSeed(): Promise<SeedResult> {
       website: tenantDef.website,
       agentPresentationMessage: tenantDef.agentPresentationMessage,
       agentVoiceTone: tenantDef.agentVoiceTone,
+      slug: tenantDef.slug,
     });
 
     // Chave de API do tenant (lote-5 — INT-01): gerada a cada execução do
@@ -598,103 +659,108 @@ export async function runSeed(): Promise<SeedResult> {
       });
     }
 
-    const leadDefs = buildLeadDefs(tenantDef.key);
+    // lote-7 — REAL-01: só o tenant de demonstração recebe lead/conversa/
+    // mensagem fictícios. Os tenants-piloto nascem com toda a configuração
+    // acima (corretores/categorias/chave), mas zero linhas aqui.
+    if (tenantDef.seedLeadData) {
+      const leadDefs = buildLeadDefs(tenantDef.key);
 
-    for (const [i, leadDef] of leadDefs.entries()) {
-      const leadId = id(`lead:${tenantDef.key}:${i}`);
-      const brokerId = brokerIds[i % brokerIds.length];
-      const offsetDays = offsetDaysFor(i, leadDefs.length);
-      const firstContactAt = new Date(
-        seedNow.getTime() - offsetDays * 86400000
-      );
-      const firstResponseAt = new Date(firstContactAt.getTime() + 15 * 60000);
+      for (const [i, leadDef] of leadDefs.entries()) {
+        const leadId = id(`lead:${tenantDef.key}:${i}`);
+        const brokerId = brokerIds[i % brokerIds.length];
+        const offsetDays = offsetDaysFor(i, leadDefs.length);
+        const firstContactAt = new Date(
+          seedNow.getTime() - offsetDays * 86400000
+        );
+        const firstResponseAt = new Date(firstContactAt.getTime() + 15 * 60000);
 
-      const isQualified = leadDef.status === "qualificado_agendado";
-      const isEscalated = leadDef.status === "escalado_humano";
-      // Calculada para qualquer lead além de em_qualificacao (usada no
-      // conteúdo da conversa mesmo quando não é persistida nas colunas de
-      // qualificação — essas só são preenchidas quando isQualified).
-      const messageQualification =
-        leadDef.status === "em_qualificacao"
-          ? null
-          : buildQualification(i, leadDef.modality);
-      const qualification = isQualified ? messageQualification : null;
-      const escalationReason = isEscalated
-        ? ESCALATION_REASONS[i % ESCALATION_REASONS.length]
-        : null;
-      // Só leads qualificado_agendado têm reunião marcada — coerente com o
-      // resumo executivo, que só é preenchido no mesmo caso.
-      const meetingAt = isQualified
-        ? new Date(firstContactAt.getTime() + 3 * 86400000)
-        : null;
-      // Última atualização do registro = evento mais recente conhecido do
-      // lead (reunião marcada, senão a 1ª resposta). Mantém created_at
-      // (nascimento do lead) e updated_at coerentes com firstContactAt em
-      // vez do "agora" fixo do defaultNow() do schema. meetingAt pode cair
-      // no futuro (reunião agendada) — updated_at nunca deve ultrapassar o
-      // momento real do seed, senão registros parecem "modificados no
-      // futuro" (quebra o invariante de outras camadas de que updatedAt
-      // avança a partir de now() em mutações subsequentes).
-      const updatedAtCandidate = meetingAt ?? firstResponseAt;
-      const updatedAt =
-        updatedAtCandidate.getTime() > seedNow.getTime()
-          ? seedNow
-          : updatedAtCandidate;
+        const isQualified = leadDef.status === "qualificado_agendado";
+        const isEscalated = leadDef.status === "escalado_humano";
+        // Calculada para qualquer lead além de em_qualificacao (usada no
+        // conteúdo da conversa mesmo quando não é persistida nas colunas de
+        // qualificação — essas só são preenchidas quando isQualified).
+        const messageQualification =
+          leadDef.status === "em_qualificacao"
+            ? null
+            : buildQualification(i, leadDef.modality);
+        const qualification = isQualified ? messageQualification : null;
+        const escalationReason = isEscalated
+          ? ESCALATION_REASONS[i % ESCALATION_REASONS.length]
+          : null;
+        // Só leads qualificado_agendado têm reunião marcada — coerente com o
+        // resumo executivo, que só é preenchido no mesmo caso.
+        const meetingAt = isQualified
+          ? new Date(firstContactAt.getTime() + 3 * 86400000)
+          : null;
+        // Última atualização do registro = evento mais recente conhecido do
+        // lead (reunião marcada, senão a 1ª resposta). Mantém created_at
+        // (nascimento do lead) e updated_at coerentes com firstContactAt em
+        // vez do "agora" fixo do defaultNow() do schema. meetingAt pode cair
+        // no futuro (reunião agendada) — updated_at nunca deve ultrapassar o
+        // momento real do seed, senão registros parecem "modificados no
+        // futuro" (quebra o invariante de outras camadas de que updatedAt
+        // avança a partir de now() em mutações subsequentes).
+        const updatedAtCandidate = meetingAt ?? firstResponseAt;
+        const updatedAt =
+          updatedAtCandidate.getTime() > seedNow.getTime()
+            ? seedNow
+            : updatedAtCandidate;
 
-      leadRows.push({
-        id: leadId,
-        tenantId,
-        brokerId,
-        name: leadDef.name,
-        phone: leadDef.phone,
-        status: leadDef.status,
-        modality: isQualified ? leadDef.modality : null,
-        region: qualification?.region ?? null,
-        budgetCents: qualification?.budgetCents ?? null,
-        propertyType: qualification?.propertyType ?? null,
-        purchaseHorizon: qualification?.purchaseHorizon ?? null,
-        motivation: qualification?.motivation ?? null,
-        creditStatus: qualification?.creditStatus ?? null,
-        chainedOperation: qualification?.chainedOperation ?? null,
-        executiveSummary: isQualified
-          ? buildExecutiveSummary(leadDef.name, leadDef.modality, qualification!)
-          : null,
-        escalationReason,
-        meetingAt,
-        meetingAttended: null,
-        firstContactAt,
-        firstResponseAt,
-        createdAt: firstContactAt,
-        updatedAt,
-      });
-
-      const conversationId = id(`conversation:${tenantDef.key}:${i}`);
-      conversationRows.push({
-        id: conversationId,
-        tenantId,
-        leadId,
-        createdAt: firstContactAt,
-      });
-
-      const msgs = buildMessages(
-        leadDef.name,
-        tenantDef.agentName,
-        tenantDef.name,
-        leadDef.modality,
-        leadDef.status,
-        messageQualification,
-        escalationReason
-      );
-      for (const [mi, m] of msgs.entries()) {
-        const messageId = id(`message:${tenantDef.key}:${i}:${mi}`);
-        messageRows.push({
-          id: messageId,
+        leadRows.push({
+          id: leadId,
           tenantId,
-          conversationId,
-          sender: m.sender,
-          content: m.content,
-          sentAt: new Date(firstContactAt.getTime() + mi * 60000),
+          brokerId,
+          name: leadDef.name,
+          phone: leadDef.phone,
+          status: leadDef.status,
+          modality: isQualified ? leadDef.modality : null,
+          region: qualification?.region ?? null,
+          budgetCents: qualification?.budgetCents ?? null,
+          propertyType: qualification?.propertyType ?? null,
+          purchaseHorizon: qualification?.purchaseHorizon ?? null,
+          motivation: qualification?.motivation ?? null,
+          creditStatus: qualification?.creditStatus ?? null,
+          chainedOperation: qualification?.chainedOperation ?? null,
+          executiveSummary: isQualified
+            ? buildExecutiveSummary(leadDef.name, leadDef.modality, qualification!)
+            : null,
+          escalationReason,
+          meetingAt,
+          meetingAttended: null,
+          firstContactAt,
+          firstResponseAt,
+          createdAt: firstContactAt,
+          updatedAt,
         });
+
+        const conversationId = id(`conversation:${tenantDef.key}:${i}`);
+        conversationRows.push({
+          id: conversationId,
+          tenantId,
+          leadId,
+          createdAt: firstContactAt,
+        });
+
+        const msgs = buildMessages(
+          leadDef.name,
+          tenantDef.agentName,
+          tenantDef.name,
+          leadDef.modality,
+          leadDef.status,
+          messageQualification,
+          escalationReason
+        );
+        for (const [mi, m] of msgs.entries()) {
+          const messageId = id(`message:${tenantDef.key}:${i}:${mi}`);
+          messageRows.push({
+            id: messageId,
+            tenantId,
+            conversationId,
+            sender: m.sender,
+            content: m.content,
+            sentAt: new Date(firstContactAt.getTime() + mi * 60000),
+          });
+        }
       }
     }
 

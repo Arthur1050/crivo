@@ -1,6 +1,9 @@
 import "dotenv/config";
+import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { eq } from "drizzle-orm";
 import { db } from "../../../db";
+import { conversations, leads } from "../../../db/schema";
 import {
   getBrokers,
   getConversations,
@@ -23,14 +26,44 @@ const NON_EXISTENT_LEAD_ID = "00000000-0000-4000-8000-000000000001";
 describe("server/data isolation", () => {
   let tenantAId: string;
   let tenantBId: string;
+  let fixtureLeadBId: string;
 
   beforeAll(async () => {
-    const tenants = await getTenants();
-    expect(tenants.length).toBeGreaterThanOrEqual(2);
-    [tenantAId, tenantBId] = tenants.map((t) => t.id);
+    // lote-7 — REAL-01: só `crivo-demo` recebe lead/conversa fictícios no
+    // seed a partir daqui; os pilotos nascem com 0 de cada. Tenant A precisa
+    // ter lead/conversa reais para os testes de "totalmente disjuntos"
+    // abaixo, então é resolvido pelo slug em vez de "os dois primeiros
+    // tenants" (ordem antes arbitrária, agora garantidamente vazia para 2
+    // dos 3 tenants). Tenant B fica com um dos pilotos, que continua com
+    // corretores/categorias/documentos — só falta lead/conversa própria,
+    // inserida como fixture mínima abaixo (limpa no afterAll).
+    const allTenants = await getTenants();
+    expect(allTenants.length).toBeGreaterThanOrEqual(2);
+    const demo = allTenants.find((t) => t.slug === "crivo-demo");
+    const other = allTenants.find((t) => t.id !== demo?.id);
+    expect(demo, "tenant Crivo Demo deveria existir (seed lote-7)").toBeDefined();
+    expect(other).toBeDefined();
+    tenantAId = demo!.id;
+    tenantBId = other!.id;
+
+    fixtureLeadBId = randomUUID();
+    await db.insert(leads).values({
+      id: fixtureLeadBId,
+      tenantId: tenantBId,
+      name: "Lead Fixture Isolamento B",
+      phone: "+55 34 90000-8888",
+      status: "em_qualificacao",
+      firstContactAt: new Date(),
+    });
+    await db.insert(conversations).values({
+      tenantId: tenantBId,
+      leadId: fixtureLeadBId,
+    });
   });
 
   afterAll(async () => {
+    await db.delete(conversations).where(eq(conversations.leadId, fixtureLeadBId));
+    await db.delete(leads).where(eq(leads.id, fixtureLeadBId));
     await db.$client.end();
   });
 
