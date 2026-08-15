@@ -15,7 +15,10 @@ export type ProblemCode =
   | "motivo-escalonamento-obrigatorio"
   | "corpo-grande-demais"
   | "rota-inexistente"
-  | "metodo-nao-suportado";
+  | "metodo-nao-suportado"
+  // lote-7 — SEC-01: chave de serviço válida sem `X-Crivo-Tenant`, ou com
+  // slug desconhecido — nunca cai em nenhum tenant default (auth.ts).
+  | "tenant-nao-identificado";
 
 const TITLES: Record<ProblemCode, string> = {
   "nao-autenticado": "Não autenticado",
@@ -27,6 +30,7 @@ const TITLES: Record<ProblemCode, string> = {
   "corpo-grande-demais": "Corpo da requisição excede o tamanho máximo",
   "rota-inexistente": "Rota inexistente",
   "metodo-nao-suportado": "Método não suportado",
+  "tenant-nao-identificado": "Tenant não identificado",
 };
 
 export const PROBLEM_CONTENT_TYPE = "application/problem+json";

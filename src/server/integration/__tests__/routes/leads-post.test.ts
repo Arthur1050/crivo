@@ -3,7 +3,12 @@ import { createHash, randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
 import { db } from "../../../../db";
-import { leads, tenantApiKeys, tenants } from "../../../../db/schema";
+import {
+  leads,
+  serviceApiKeys,
+  tenantApiKeys,
+  tenants,
+} from "../../../../db/schema";
 import { getLead, getLeads } from "../../../data";
 import { DELETE, GET, PATCH, POST, PUT } from "../../../../../app/api/v1/leads/route";
 import { GET as unmatchedGet } from "../../../../../app/api/v1/[...unmatched]/route";
@@ -39,7 +44,9 @@ describe("routes: POST /api/v1/leads", () => {
     await db.delete(leads).where(eq(leads.tenantId, tenantId));
     await db.delete(tenantApiKeys).where(eq(tenantApiKeys.tenantId, tenantId));
     await db.delete(tenants).where(eq(tenants.id, tenantId));
-    await db.$client.end();
+    // `db.$client.end()` movido para o afterAll do último describe deste
+    // arquivo (modo de serviço, lote-7) — encerrar o pool aqui quebraria o
+    // describe seguinte, que reusa a mesma conexão `db`.
   });
 
   function makeRequest(body: unknown, withAuth = true): Request {
@@ -178,5 +185,94 @@ describe("routes: POST /api/v1/leads", () => {
     expect(response.headers.get("content-type")).toBe("application/problem+json");
     const body = await response.json();
     expect(body.code).toBe("rota-inexistente");
+  });
+});
+
+// lote-7 — SEC-01: POST /api/v1/leads testada ponta a ponta no modo de
+// serviço (chave cross-tenant + X-Crivo-Tenant), além do modo por chave de
+// tenant já coberto acima — os dois modos precisam produzir o mesmo
+// resultado observável do contrato (design.md — "sem alteração no
+// comportamento observável").
+describe("routes: POST /api/v1/leads — modo de autenticação de serviço (lote-7 — SEC-01)", () => {
+  let tenantId: string;
+  let tenantSlug: string;
+  let serviceKey: string;
+
+  beforeAll(async () => {
+    tenantId = randomUUID();
+    tenantSlug = `tenant-servico-${tenantId}`;
+    await db.insert(tenants).values({
+      id: tenantId,
+      name: `Tenant Teste leads-post servico ${tenantId}`,
+      agentName: "Agente Teste",
+      supportedModality: "ambos",
+      slug: tenantSlug,
+    });
+
+    serviceKey = `test-service-key-${randomUUID()}`;
+    const keyHash = createHash("sha256").update(serviceKey).digest("hex");
+    await db.insert(serviceApiKeys).values({
+      label: "leads-post.test.ts — servico",
+      keyHash,
+    });
+  });
+
+  afterAll(async () => {
+    await db.delete(leads).where(eq(leads.tenantId, tenantId));
+    await db.delete(serviceApiKeys).where(eq(serviceApiKeys.keyHash, createHash("sha256").update(serviceKey).digest("hex")));
+    await db.delete(tenants).where(eq(tenants.id, tenantId));
+    await db.$client.end();
+  });
+
+  function makeServiceRequest(
+    body: unknown,
+    opts?: { withTenantHeader?: boolean }
+  ): Request {
+    const withTenantHeader = opts?.withTenantHeader ?? true;
+    return new Request("http://local/api/v1/leads", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${serviceKey}`,
+        ...(withTenantHeader ? { "X-Crivo-Tenant": tenantSlug } : {}),
+      },
+      body: JSON.stringify(body),
+    });
+  }
+
+  function validPayload(externalId: string) {
+    return {
+      name: "Lead Teste Servico",
+      phone: "+55 34 90000-5678",
+      externalId,
+      firstContactAt: "2026-08-01T10:00:00Z",
+    };
+  }
+
+  it("cria o lead no tenant correto via chave de serviço + X-Crivo-Tenant (SEC-01 AC2)", async () => {
+    const externalId = randomUUID();
+    const response = await POST(makeServiceRequest(validPayload(externalId)));
+
+    expect(response.status).toBe(201);
+    const body = await response.json();
+    expect(body.externalId).toBe(externalId);
+
+    const persisted = await getLead(tenantId, body.id);
+    expect(persisted).not.toBeNull();
+    expect(persisted!.externalId).toBe(externalId);
+  });
+
+  it("chave de serviço sem X-Crivo-Tenant responde 401 tenant-nao-identificado, sem gravar nada", async () => {
+    const externalId = randomUUID();
+    const response = await POST(
+      makeServiceRequest(validPayload(externalId), { withTenantHeader: false })
+    );
+
+    expect(response.status).toBe(401);
+    const body = await response.json();
+    expect(body.code).toBe("tenant-nao-identificado");
+
+    const rows = await db.select().from(leads).where(eq(leads.externalId, externalId));
+    expect(rows).toHaveLength(0);
   });
 });
