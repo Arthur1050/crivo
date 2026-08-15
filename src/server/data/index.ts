@@ -919,6 +919,13 @@ export interface IngestAgentMessageResult {
  * `null` quando o lead não existe no tenant (404 na rota) — checado dentro
  * da MESMA transação para eliminar corrida entre o SELECT do lead e o
  * INSERT da mensagem.
+ *
+ * `first_response_at` (lote-7 — KPI-01): quando a mensagem é de fato
+ * inserida (`created === true`, nunca numa reentrega descartada por
+ * idempotência), é do agente, e o lead ainda não tem `first_response_at`,
+ * grava o `sentAt` dela na MESMA transação — uma escrita a mais no insert
+ * que já existe, sem round-trip extra. Gravado uma única vez: mensagens
+ * seguintes do agente nunca sobrescrevem o valor.
  */
 export async function ingestAgentMessage(
   tenantId: string,
@@ -927,7 +934,7 @@ export async function ingestAgentMessage(
 ): Promise<IngestAgentMessageResult | null> {
   return db.transaction(async (tx) => {
     const leadRows = await tx
-      .select({ id: leads.id })
+      .select({ id: leads.id, firstResponseAt: leads.firstResponseAt })
       .from(leads)
       .where(and(eq(leads.tenantId, tenantId), eq(leads.id, leadId)))
       .limit(1);
@@ -962,6 +969,12 @@ export async function ingestAgentMessage(
       .returning();
 
     if (inserted.length > 0) {
+      if (input.sender === "agente" && leadRows[0].firstResponseAt === null) {
+        await tx
+          .update(leads)
+          .set({ firstResponseAt: input.sentAt })
+          .where(and(eq(leads.tenantId, tenantId), eq(leads.id, leadId)));
+      }
       return { created: true, message: inserted[0] };
     }
 
