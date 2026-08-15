@@ -280,3 +280,24 @@ export const tenantApiKeys = pgTable("tenant_api_keys", {
     .defaultNow(),
   revokedAt: timestamp("revoked_at", { withTimezone: true }),
 });
+
+// Chave de serviço do agente (lote-7 — SEC-01): uma credencial única usada
+// pelo fluxo n8n para autenticar no contrato, no lugar de uma chave por
+// tenant embutida em texto claro numa Data Table. Mesmo formato de
+// `tenant_api_keys` (hash sha256 persistido, valor em claro só existe uma
+// vez no output do seed). Deliberadamente SEM `tenantId`/FK: o tenant da
+// chamada vem do header `X-Crivo-Tenant`, nunca da chave — a chave só prova
+// que quem chama é o agente, não qual tenant ele está atendendo
+// (design.md — Auth de serviço).
+export const serviceApiKeys = pgTable("service_api_keys", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  label: text("label").notNull(),
+  keyHash: text("key_hash").notNull().unique(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  // `null` = chave ativa. Preenchido = chave revogada (mesma semântica de
+  // `tenant_api_keys.revokedAt`) — nunca apagamos a linha, só marcamos
+  // quando parou de valer, preservando o histórico de rotação.
+  revokedAt: timestamp("revoked_at", { withTimezone: true }),
+});
