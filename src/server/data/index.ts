@@ -23,6 +23,7 @@ import {
   documents,
   leads,
   messages,
+  serviceApiKeys,
   tenantApiKeys,
   tenants,
 } from "../../db/schema";
@@ -75,6 +76,46 @@ export async function resolveTenantIdByApiKeyHash(
     )
     .limit(1);
   return rows[0]?.tenantId ?? null;
+}
+
+/**
+ * Resolve se um hash sha256 corresponde a uma chave de SERVIÇO ativa
+ * (lote-7 — SEC-01), devolvendo o id da chave quando sim. Molde de
+ * `resolveTenantIdByApiKeyHash` acima: chaves com `revokedAt` preenchido
+ * são ignoradas. Deliberadamente NÃO devolve tenant nenhum — a chave de
+ * serviço é cross-tenant por construção (schema.ts); quem chama resolve o
+ * tenant à parte, pelo header `X-Crivo-Tenant` (`resolveTenantIdBySlug`
+ * abaixo), nunca pela chave.
+ */
+export async function resolveServiceApiKeyHash(
+  keyHash: string
+): Promise<string | null> {
+  const rows = await db
+    .select({ id: serviceApiKeys.id })
+    .from(serviceApiKeys)
+    .where(
+      and(eq(serviceApiKeys.keyHash, keyHash), isNull(serviceApiKeys.revokedAt))
+    )
+    .limit(1);
+  return rows[0]?.id ?? null;
+}
+
+/**
+ * Resolve o `tenantId` a partir do `slug` legível (lote-7 — SEC-01), usado
+ * pelo modo de autenticação de serviço (header `X-Crivo-Tenant`). `null`
+ * para slug desconhecido ou string vazia — nunca cai em nenhum tenant
+ * default (design.md — Error Handling Strategy: `401 tenant-nao-identificado`
+ * é responsabilidade de quem chama, não desta função).
+ */
+export async function resolveTenantIdBySlug(
+  slug: string
+): Promise<string | null> {
+  const rows = await db
+    .select({ id: tenants.id })
+    .from(tenants)
+    .where(eq(tenants.slug, slug))
+    .limit(1);
+  return rows[0]?.id ?? null;
 }
 
 export async function getBrokers(tenantId: string): Promise<Broker[]> {
