@@ -5,12 +5,14 @@ import {
   count,
   desc,
   eq,
+  exists,
   getTableColumns,
   gte,
   ilike,
   inArray,
   isNull,
   lte,
+  max,
   sql,
 } from "drizzle-orm";
 import { db } from "../../db";
@@ -721,6 +723,72 @@ export async function updateLeadStatus(
     .where(and(eq(leads.tenantId, tenantId), eq(leads.id, leadId)))
     .returning();
   return rows[0] ?? null;
+}
+
+/**
+ * Troca o corretor responsável por um lead a partir do painel de detalhe
+ * (lote-7 — ATRIB-02): `WHERE tenant_id AND id` (mesmo padrão de
+ * `updateLeadStatus`), com o corretor validado contra o tenant NA MESMA
+ * query — um `brokerId` de outro tenant nunca é aceito, mesmo que o
+ * `leadId` seja válido. Retorna `null` (no-op) tanto para lead inexistente/
+ * de outro tenant quanto para corretor inexistente/de outro tenant.
+ */
+export async function updateLeadBroker(
+  tenantId: string,
+  leadId: string,
+  brokerId: string
+): Promise<Lead | null> {
+  const rows = await db
+    .update(leads)
+    .set({ brokerId, updatedAt: new Date() })
+    .where(
+      and(
+        eq(leads.tenantId, tenantId),
+        eq(leads.id, leadId),
+        exists(
+          db
+            .select({ id: brokers.id })
+            .from(brokers)
+            .where(and(eq(brokers.id, brokerId), eq(brokers.tenantId, tenantId)))
+        )
+      )
+    )
+    .returning();
+  return rows[0] ?? null;
+}
+
+/**
+ * Persiste o comparecimento à reunião de um lead (lote-7 — KPI-02): três
+ * estados possíveis (`null` pendente, `true` compareceu, `false` não
+ * compareceu), escopado ao tenant ativo pelo mesmo padrão de
+ * `updateLeadStatus`. Retorna `null` (no-op) para lead inexistente ou de
+ * outro tenant, sem escrever nada.
+ */
+export async function setMeetingAttendance(
+  tenantId: string,
+  leadId: string,
+  value: boolean | null
+): Promise<Lead | null> {
+  const rows = await db
+    .update(leads)
+    .set({ meetingAttended: value, updatedAt: new Date() })
+    .where(and(eq(leads.tenantId, tenantId), eq(leads.id, leadId)))
+    .returning();
+  return rows[0] ?? null;
+}
+
+/**
+ * Instante da última mensagem `sender = 'agente'` do tenant (lote-7 —
+ * SHELL-01): alimenta o subtítulo real da sidebar, sem nenhuma chamada à
+ * instância n8n (INT-08) — o dado vem só do próprio CRM. `null` quando o
+ * tenant nunca recebeu mensagem do agente.
+ */
+export async function getLastAgentMessageAt(tenantId: string): Promise<Date | null> {
+  const rows = await db
+    .select({ lastSentAt: max(messages.sentAt) })
+    .from(messages)
+    .where(and(eq(messages.tenantId, tenantId), eq(messages.sender, "agente")));
+  return rows[0]?.lastSentAt ?? null;
 }
 
 export interface UpdateLeadFromAgentInput {
