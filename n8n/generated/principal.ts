@@ -1182,7 +1182,13 @@ const agentModel = languageModel({
   config: {
     name: "Gemini Chat Model",
     position: [7560, 1500],
-    parameters: { modelName: "models/gemini-3.1-flash-lite", options: { temperature: 0.4 } },
+    // T16: "models/gemini-3.1-flash" nao existe na API real (confirmado via
+    // ListModels ao vivo — a familia 3.1 so publicou a variante flash-lite
+    // para generateContent de texto). "models/gemini-3.5-flash" e a
+    // proxima liberacao estavel nao-lite da linha flash, na MESMA janela de
+    // lancamento (05-2026) da flash-lite atual — versao fixa e reproduzivel,
+    // nao o alias flutuante "gemini-flash-latest".
+    parameters: { modelName: "models/gemini-3.5-flash", options: { temperature: 0.4 } },
     credentials: { googlePalmApi: newCredential("Google Gemini(PaLM) Api account") },
   },
 });
