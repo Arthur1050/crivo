@@ -855,7 +855,18 @@ const buildSeedMessages = node({
         "  .map((item) => item.json)\n" +
         "  .filter((m) => m && typeof m.sender === 'string' && typeof m.content === 'string' && typeof m.sentAt === 'string');\n" +
         "const now = $('Code: combinar evento e tenant').first().json.sentAt;\n" +
-        "const session = selectSeedMessages(rawHistory, now);\n" +
+        // ACHADO REAL (Phase 4 do lote-7): as mensagens do turno ATUAL já
+        // foram gravadas no CRM (passo 4 do pipeline) ANTES do agente rodar,
+        // então elas voltam nesta semeadura e são gravadas de novo pelo
+        // salvamento do turno — o histórico nascia com a 1ª mensagem do lead
+        // duplicada. Corta tudo a partir do início da rajada atual: o turno
+        // corrente é responsabilidade do salvamento, nunca da semeadura.
+        "const currentBuffer = $('Code: contexto do lead').first().json.bufferArray || [];\n" +
+        "const cutoff = currentBuffer.length > 0 ? new Date(currentBuffer[0].sentAt).getTime() : null;\n" +
+        "const priorHistory = (cutoff === null || Number.isNaN(cutoff))\n" +
+        "  ? rawHistory\n" +
+        "  : rawHistory.filter((m) => new Date(m.sentAt).getTime() < cutoff);\n" +
+        "const session = selectSeedMessages(priorHistory, now);\n" +
         "return session.map((m) => ({ json: { type: m.sender === 'agente' ? 'ai' : 'user', message: m.content } }));\n",
     },
   },
@@ -946,7 +957,12 @@ const buildAgentSystemMessage = node({
         "const phase = resolveConversationPhase(updatedPerguntados);\n" +
         "const businessHours = resolveBusinessHours(settings);\n" +
         "const now = new Date().toISOString();\n" +
-        "const systemMessage = buildSystemMessage({ settings, phase, perguntados: updatedPerguntados, businessHours, now });\n" +
+        // Reunião já confirmada (achado real da Phase 4): sem isso a
+        // instrução de `agendando` mandava reagendar em todo turno seguinte.
+        // `Code: gate` carrega a resposta do POST /leads, que já traz
+        // `meetingAt` do turno anterior.
+        "const meetingAt = $('Code: gate').first().json.meetingAt || null;\n" +
+        "const systemMessage = buildSystemMessage({ settings, phase, perguntados: updatedPerguntados, businessHours, now, meetingAt });\n" +
         "const buffer = $('Code: contexto do lead').first().json.bufferArray || [];\n" +
         "const userMessage = buffer.map((m) => m.text).join('\\n');\n" +
         "return [{ json: { systemMessage, userMessage, phase, perguntadosJson: JSON.stringify(updatedPerguntados) } }];\n",
@@ -1268,10 +1284,32 @@ const finalizeAgentTurn = node({
         "const steps = Array.isArray(agentOutput.intermediateSteps) ? agentOutput.intermediateSteps : [];\n" +
         "const calledResponder = steps.some((s) => s && s.action && s.action.tool === 'responder_lead');\n" +
         "const fase = $('Code: montar system message e marcar campo perguntado').first().json.phase;\n" +
-        "return [{ json: { tenantSlug: ctx.tenantSlug, waId: ctx.waId, fase, turnoSemResposta: !calledResponder } }];\n",
+        // `autoSaved`: quando o AI Agent encerra com uma resposta final em
+        // TEXTO (em vez de terminar puro em tool call), o n8n/LangChain já
+        // grava o turno inteiro na memória sozinho. Salvar de novo pelo
+        // caminho explícito duplicaria o turno — achado real da Phase 4
+        // (turno 1 de uma conversa real ficou com 3 cópias da mensagem do
+        // lead: semeadura + salvamento automático + salvamento explícito).
+        "const autoSaved = typeof agentOutput.output === 'string' && agentOutput.output.trim().length > 0;\n" +
+        "return [{ json: { tenantSlug: ctx.tenantSlug, waId: ctx.waId, fase, turnoSemResposta: !calledResponder, autoSaved } }];\n",
     },
   },
-  output: [{ tenantSlug: "imobiliaria-a", waId: "5534999990001", fase: "qualificando", turnoSemResposta: false }],
+  output: [{ tenantSlug: "imobiliaria-a", waId: "5534999990001", fase: "qualificando", turnoSemResposta: false, autoSaved: false }],
+});
+
+const wasTurnAutoSavedIf = ifElse({
+  version: 2.3,
+  config: {
+    name: "Memória do turno já foi salva automaticamente?",
+    position: [8340, 400],
+    parameters: {
+      conditions: {
+        combinator: "and",
+        options: { caseSensitive: true, leftValue: "", typeValidation: "strict" },
+        conditions: [{ leftValue: expr("{{ $json.autoSaved }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }],
+      },
+    },
+  },
 });
 
 // ACHADO REAL (Phase 4 do lote-7, 2026-08-16, execuções reais — não
@@ -1592,6 +1630,8 @@ const fixedReplyWired = normalizeFixedReplyRecipient.to(
   sendFixedReply.to(registerFixedReply.to(prepBufferClearAfterSend.to(clearBufferAndFinalize)))
 );
 
+const clearAfterAgentTurnWired = prepClearAfterAgentTurn.to(clearBufferAndFinalize);
+
 const optOutBranch = postOptOut.to(
   finalizeOptOut.to(purgeMemoryOnOptOut.to(purgeConversaEstadoOnOptOut.to(fixedReplyWired)))
 );
@@ -1627,12 +1667,19 @@ memoryReadyCheckpoint.to(
   buildAgentSystemMessage.to(
     persistPerguntados.to(
       aiAgent.to(
+        // `clearAfterAgentTurnWired` é o alvo ÚNICO das duas saídas do IF
+        // (mesma regra de fan-in do topo desta seção: wiring de saída
+        // definida uma vez só, nunca duplicada por branch).
         finalizeAgentTurn.to(
-          prepareTurnForMemory.to(
-            turnMessageBatches
-              .onDone(prepClearAfterAgentTurn.to(clearBufferAndFinalize))
-              .onEachBatch(insertOneTurnMessage.to(nextBatch(turnMessageBatches)))
-          )
+          wasTurnAutoSavedIf
+            .onTrue(clearAfterAgentTurnWired)
+            .onFalse(
+              prepareTurnForMemory.to(
+                turnMessageBatches
+                  .onDone(clearAfterAgentTurnWired)
+                  .onEachBatch(insertOneTurnMessage.to(nextBatch(turnMessageBatches)))
+              )
+            )
         )
       )
     )

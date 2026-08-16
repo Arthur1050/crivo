@@ -116,16 +116,49 @@ function buildBusinessHoursSection(businessHours) {
 }
 
 /**
+ * Rótulo pt-BR de um instante de reunião já confirmada.
+ * @param {string} meetingAt - ISO-8601
+ * @returns {string | null}
+ */
+function formatMeetingLabel(meetingAt) {
+  const date = new Date(meetingAt);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+/**
  * Instrução por fase (spec.md — QLF-01 AC8, QLF-03): na fase `agendando`,
  * nenhum campo de qualificação pendente é mencionado — só a instrução de
  * propor horário; na fase `qualificando`, no máximo UM campo (o próximo da
  * ordem de `REQUIRED_FIELDS`), nunca os 3.
+ *
+ * ACHADO REAL (Phase 4 do lote-7, 2026-08-16, conversa real): com a reunião
+ * JÁ confirmada, a instrução de `agendando` continuava mandando "proponha um
+ * horário e use agendar_reuniao para confirmar" em TODO turno seguinte — o
+ * lead mandou só "Ok obrigado" e o agente reagendou o mesmo horário, bateu
+ * no slot que ele mesmo tinha acabado de ocupar (`horario-ocupado`) e
+ * respondeu "esse horário acabou de preencher, que tal às dezesseis?", como
+ * se falasse com outra pessoa. Não é alucinação do modelo: o prompt mandava
+ * agendar de novo. Com `meetingAt` preenchido, a instrução vira o oposto.
+ *
  * @param {"qualificando" | "agendando"} phase
  * @param {string[] | null | undefined} perguntados
+ * @param {string | null | undefined} meetingAt - ISO-8601 da reunião já confirmada
  * @returns {string}
  */
-function buildPhaseInstruction(phase, perguntados) {
+function buildPhaseInstruction(phase, perguntados, meetingAt) {
   if (phase === "agendando") {
+    const meetingLabel = meetingAt ? formatMeetingLabel(meetingAt) : null;
+    if (meetingLabel) {
+      return `Fase atual: REUNIÃO JÁ CONFIRMADA para ${meetingLabel} (horário de Brasília). NÃO proponha nenhum horário e NÃO chame a tool agendar_reuniao — a reunião já está marcada e chamar de novo derrubaria o agendamento que já existe. Converse normalmente: se o lead agradecer ou se despedir, responda com naturalidade e encerre. Só use agendar_reuniao se o lead pedir EXPLICITAMENTE para remarcar, e nesse caso para o NOVO horário que ele pedir.`;
+    }
     return "Fase atual: AGENDAMENTO. Todos os campos obrigatórios já foram perguntados. NÃO pergunte mais nada sobre qualificação — proponha um horário de reunião com o corretor, dentro do horário comercial informado, e use a tool agendar_reuniao para confirmar.";
   }
 
@@ -154,10 +187,11 @@ function buildPhaseInstruction(phase, perguntados) {
  *   perguntados?: string[] | null,
  *   businessHours?: SystemMessageBusinessHours | null,
  *   now?: string | null,
+ *   meetingAt?: string | null,
  * }} input
  * @returns {string}
  */
-export function buildSystemMessage({ settings, phase, perguntados, businessHours, now } = {}) {
+export function buildSystemMessage({ settings, phase, perguntados, businessHours, now, meetingAt } = {}) {
   const persona = settings ?? {};
 
   const sections = [
@@ -172,7 +206,7 @@ export function buildSystemMessage({ settings, phase, perguntados, businessHours
     CAPABILITY_BOUNDARY_INSTRUCTION,
     AI_TRANSPARENCY_INSTRUCTION,
     buildTodayAnchor(now),
-    buildPhaseInstruction(phase, perguntados),
+    buildPhaseInstruction(phase, perguntados, meetingAt),
     buildBusinessHoursSection(businessHours),
     TOOLS_CATALOG_INSTRUCTION,
     TOOL_FAILURE_INSTRUCTION,

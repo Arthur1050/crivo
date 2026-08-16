@@ -203,6 +203,61 @@ describe("buildSystemMessage — âncora de data (achado real, Phase 4 lote-7)",
   });
 });
 
+describe("buildSystemMessage — reunião já confirmada (achado real, Phase 4 lote-7)", () => {
+  const AGENDADO = {
+    settings: BASE_SETTINGS,
+    phase: "agendando" as const,
+    perguntados: ["modality", "region", "propertyType"],
+    now: "2026-08-16T12:00:00Z",
+  };
+
+  it("com meetingAt preenchido: proíbe chamar agendar_reuniao de novo", () => {
+    const message = buildSystemMessage({ ...AGENDADO, meetingAt: "2026-08-17T18:00:00Z" });
+    expect(message).toMatch(/NÃO chame a tool agendar_reuniao/i);
+  });
+
+  it("com meetingAt preenchido: NÃO instrui a propor horário", () => {
+    const message = buildSystemMessage({ ...AGENDADO, meetingAt: "2026-08-17T18:00:00Z" });
+    expect(message).not.toMatch(/proponha um horário de reunião/i);
+  });
+
+  it("com meetingAt preenchido: informa o horário já confirmado ao agente", () => {
+    const message = buildSystemMessage({ ...AGENDADO, meetingAt: "2026-08-17T18:00:00Z" });
+    // 2026-08-17T18:00Z == 15:00 em America/Sao_Paulo (UTC-3), segunda-feira.
+    expect(message).toContain("REUNIÃO JÁ CONFIRMADA");
+    expect(message).toContain("15:00");
+    expect(message).toContain("segunda-feira");
+  });
+
+  it("com meetingAt preenchido: permite remarcar só a pedido explícito do lead", () => {
+    const message = buildSystemMessage({ ...AGENDADO, meetingAt: "2026-08-17T18:00:00Z" });
+    expect(message).toMatch(/pedir EXPLICITAMENTE para remarcar/i);
+  });
+
+  it("sem meetingAt: mantém a instrução original de propor e agendar", () => {
+    const message = buildSystemMessage({ ...AGENDADO, meetingAt: null });
+    expect(message).toMatch(/proponha um horário de reunião/i);
+    expect(message).not.toContain("REUNIÃO JÁ CONFIRMADA");
+  });
+
+  it("com meetingAt inválido: degrada para a instrução original, sem quebrar", () => {
+    const message = buildSystemMessage({ ...AGENDADO, meetingAt: "not-a-date" });
+    expect(message).toMatch(/proponha um horário de reunião/i);
+    expect(message).not.toContain("REUNIÃO JÁ CONFIRMADA");
+  });
+
+  it("meetingAt na fase de qualificação não muda a instrução de campo", () => {
+    const message = buildSystemMessage({
+      settings: BASE_SETTINGS,
+      phase: "qualificando",
+      perguntados: [],
+      meetingAt: "2026-08-17T18:00:00Z",
+    });
+    expect(message).toContain(FIELD_LABELS.modality);
+    expect(message).not.toContain("REUNIÃO JÁ CONFIRMADA");
+  });
+});
+
 describe("buildSystemMessage — reação a falha de tool (achado real, Phase 4 lote-7)", () => {
   it("instrui a nunca confirmar ao lead quando uma tool devolve falha", () => {
     const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
