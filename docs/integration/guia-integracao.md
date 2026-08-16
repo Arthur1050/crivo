@@ -9,13 +9,19 @@ Todos os endpoints abaixo vivem sob o prefixo `/api/v1`, exceto o job de TTL (`/
 ## 1. Autenticação e revogação
 
 - Toda rota `/api/v1/*` exige o header `Authorization: Bearer <chave>`.
-- A chave identifica o **tenant** — nenhum payload de nenhum endpoint aceita `tenant_id`. O isolamento entre imobiliárias é estrutural: a chave é a única fonte de tenant que o servidor conhece.
-- Sem header, chave malformada, chave inexistente ou chave revogada → `401` `nao-autenticado`, sem tocar o banco.
+- Existem **dois modos** de autenticação (lote-7 — SEC-01), testados nesta ordem exata pelo servidor a cada chamada:
+
+  1. **Chave de serviço** (`serviceAuth`) — uma credencial única, cross-tenant, usada pelo fluxo do agente n8n. Se o hash da chave enviada corresponde a uma linha ativa de `service_api_keys`, este modo é usado. Exige o header adicional `X-Crivo-Tenant` com o **slug** do tenant (ex.: `triangulo`, `vale-uberaba`). Header ausente, ou com slug que não corresponde a nenhum tenant, responde `401` `tenant-nao-identificado` — o servidor **nunca** cai em nenhum tenant default nesse caso.
+  2. **Chave por tenant** (`bearerAuth`) — o modo original (lote-5), inalterado: a chave identifica o tenant diretamente. Só é tentado quando a chave **não** corresponde a nenhuma chave de serviço ativa. `X-Crivo-Tenant`, se enviado junto de uma chave de tenant, é **ignorado** — mesmo que aponte para um tenant diferente do dono da chave.
+
+  A regra de precedência é simples: **chave de serviço primeiro, chave de tenant como fallback.** Os dois modos nunca se combinam numa mesma chamada.
+- A chave (em qualquer modo) identifica o **tenant** da chamada — nenhum payload de nenhum endpoint aceita `tenant_id`. O isolamento entre imobiliárias é estrutural: a chave (mais o header, no modo de serviço) é a única fonte de tenant que o servidor conhece; o corpo da requisição nunca é lido para isso.
+- Sem header `Authorization`, chave malformada, chave de tenant inexistente ou revogada → `401` `nao-autenticado`, sem tocar o banco. Chave de serviço válida com `X-Crivo-Tenant` ausente/desconhecido → `401` `tenant-nao-identificado` (veja acima).
 - Um recurso (lead, mensagem) que existe mas pertence a **outro** tenant responde `404` `recurso-nao-encontrado` — nunca `403`. O contrato nunca revela a existência de dado de outro tenant.
-- **Formato da chave**: string opaca de alta entropia (64 hex chars no gerador atual). O servidor nunca persiste o valor em claro — só o hash sha256, numa tabela própria (`tenant_api_keys`).
-- **Provisionamento**: o seed do ambiente (`npm run db:seed`) gera 1 chave por tenant e imprime o valor em claro **uma única vez** no output do comando. Guarde-o imediatamente — não há como recuperá-lo depois (o banco só tem o hash).
-- **Rotação/revogação**: revogar uma chave é preencher `revoked_at` na linha correspondente de `tenant_api_keys` (operação de banco/admin, sem endpoint dedicado no v1 — piloto com 2 consumidores conhecidos). Uma chave revogada passa a responder `401` em qualquer rota, imediatamente.
-- **Atenção**: rodar `npm run db:seed` novamente gera chaves **novas** para os 2 tenants e invalida as anteriores (o seed é idempotente para os dados de negócio, mas não para as chaves). Não reseedar um ambiente com um consumidor real conectado sem coordenar a rotação.
+- **Formato da chave**: string opaca de alta entropia (64 hex chars no gerador atual), nos dois modos. O servidor nunca persiste o valor em claro de nenhuma das duas — só o hash sha256, em tabelas próprias (`tenant_api_keys` e `service_api_keys`, respectivamente).
+- **Provisionamento**: o seed do ambiente (`npm run db:seed`) gera 1 chave por tenant **e** 1 chave de serviço, imprimindo os valores em claro **uma única vez** no output do comando. Guarde-os imediatamente — não há como recuperá-los depois (o banco só tem o hash).
+- **Rotação/revogação**: revogar uma chave é preencher `revoked_at` na linha correspondente de `tenant_api_keys` ou `service_api_keys` (operação de banco/admin, sem endpoint dedicado no v1). Uma chave revogada passa a responder `401` em qualquer rota, imediatamente. O procedimento humano de rotação da chave de serviço usada pelo fluxo n8n está documentado em `n8n/README.md`.
+- **Atenção**: rodar `npm run db:seed` novamente gera chaves **novas** — para os tenants e para a chave de serviço — e invalida as anteriores (o seed é idempotente para os dados de negócio, mas não para as chaves). Não reseedar um ambiente com um consumidor real conectado sem coordenar a rotação.
 
 ## 2. Idempotência
 

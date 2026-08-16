@@ -37,6 +37,8 @@ paths:
         Cria o lead com status `em_qualificacao` no tenant da chave. Reentrega
         com o mesmo `externalId` no mesmo tenant devolve o lead existente
         (200), sem duplicar (INT-02).
+      parameters:
+        - $ref: "#/components/parameters/XCrivoTenant"
       requestBody:
         required: true
         content:
@@ -64,6 +66,7 @@ paths:
           $ref: "#/components/responses/CorpoGrandeDemais"
       security:
         - bearerAuth: []
+        - serviceAuth: []
   /leads/{id}:
     patch:
       operationId: patchLead
@@ -77,6 +80,7 @@ paths:
         de transições e os códigos 409 no guia de integração.
       parameters:
         - $ref: "#/components/parameters/LeadId"
+        - $ref: "#/components/parameters/XCrivoTenant"
       requestBody:
         required: true
         content:
@@ -109,6 +113,7 @@ paths:
           $ref: "#/components/responses/CorpoGrandeDemais"
       security:
         - bearerAuth: []
+        - serviceAuth: []
   /leads/{id}/messages:
     get:
       operationId: listMessages
@@ -133,6 +138,7 @@ paths:
             Quantidade máxima de mensagens mais recentes a devolver. Fora da
             faixa 1–100 (incluindo valores não numéricos) responde `400`
             `payload-invalido`.
+        - $ref: "#/components/parameters/XCrivoTenant"
       responses:
         "200":
           description: Mensagens do lead em ordem cronológica crescente.
@@ -150,6 +156,7 @@ paths:
           $ref: "#/components/responses/RecursoNaoEncontrado"
       security:
         - bearerAuth: []
+        - serviceAuth: []
     post:
       operationId: createMessage
       tags: [messages]
@@ -162,6 +169,7 @@ paths:
         `sentAt`.
       parameters:
         - $ref: "#/components/parameters/LeadId"
+        - $ref: "#/components/parameters/XCrivoTenant"
       requestBody:
         required: true
         content:
@@ -191,6 +199,7 @@ paths:
           $ref: "#/components/responses/CorpoGrandeDemais"
       security:
         - bearerAuth: []
+        - serviceAuth: []
   /leads/{id}/opt-out:
     post:
       operationId: optOutLead
@@ -202,6 +211,7 @@ paths:
         do consumidor (agente) — veja "Opt-out" no guia de integração.
       parameters:
         - $ref: "#/components/parameters/LeadId"
+        - $ref: "#/components/parameters/XCrivoTenant"
       responses:
         "200":
           description: Opt-out registrado (ou já existente).
@@ -215,6 +225,7 @@ paths:
           $ref: "#/components/responses/RecursoNaoEncontrado"
       security:
         - bearerAuth: []
+        - serviceAuth: []
   /context:
     get:
       operationId: getContext
@@ -231,6 +242,7 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/ContextModality"
+        - $ref: "#/components/parameters/XCrivoTenant"
       responses:
         "200":
           description: Documentos de contexto do tenant.
@@ -246,6 +258,7 @@ paths:
           $ref: "#/components/responses/NaoAutenticado"
       security:
         - bearerAuth: []
+        - serviceAuth: []
   /settings:
     get:
       operationId: getSettings
@@ -259,6 +272,8 @@ paths:
         tenant da chave. Os 3 campos de horário comercial são `null` quando o
         tenant não configurou — veja `guia-integracao.md` para o fallback
         seg-sex 9h-18h que o consumidor aplica nesse caso.
+      parameters:
+        - $ref: "#/components/parameters/XCrivoTenant"
       responses:
         "200":
           description: Settings do tenant da chave.
@@ -270,6 +285,7 @@ paths:
           $ref: "#/components/responses/NaoAutenticado"
       security:
         - bearerAuth: []
+        - serviceAuth: []
 components:
   securitySchemes:
     bearerAuth:
@@ -278,7 +294,22 @@ components:
       description: >-
         API key opaca por tenant (`Authorization: Bearer <chave>`). Identifica
         o tenant — nenhum payload aceita `tenant_id` (INT-01). Chaves
-        revogáveis (`revoked_at`); veja "Autenticação e revogação" no guia.
+        revogáveis (`revoked_at`). Testado SÓ quando a chave não corresponde
+        a uma chave de serviço ativa (`serviceAuth`) — veja "Autenticação e
+        revogação" no guia para a regra de precedência entre os dois modos
+        (lote-7 — SEC-01).
+    serviceAuth:
+      type: http
+      scheme: bearer
+      description: >-
+        Credencial de serviço única e cross-tenant (`Authorization: Bearer
+        <chave>`), usada pelo fluxo do agente (lote-7 — SEC-01). Exige o
+        header adicional `X-Crivo-Tenant` com o slug do tenant — ausente ou
+        desconhecido responde `401 tenant-nao-identificado`, nunca cai em
+        nenhum tenant default. Verificado ANTES de `bearerAuth`: quando o
+        hash da chave corresponde a uma chave de serviço ativa, este modo é
+        usado; senão, o servidor cai para `bearerAuth` por tenant. Veja
+        "Autenticação e revogação" no guia de integração.
   parameters:
     LeadId:
       name: id
@@ -288,9 +319,24 @@ components:
         type: string
         format: uuid
       description: Id do lead no CRM (não o `externalId` do mundo do agente).
+    XCrivoTenant:
+      name: X-Crivo-Tenant
+      in: header
+      required: false
+      schema:
+        type: string
+      description: >-
+        Slug do tenant (ex.: `triangulo`, `vale-uberaba`). Obrigatório só no
+        modo de autenticação de serviço (`serviceAuth`); ignorado no modo por
+        chave de tenant (`bearerAuth`), mesmo presente e divergente
+        (lote-7 — SEC-01).
   responses:
     NaoAutenticado:
-      description: Sem header de autenticação, chave inválida ou revogada.
+      description: >-
+        Sem header de autenticação, chave inválida ou revogada
+        (`code: nao-autenticado`); ou, no modo de serviço, `X-Crivo-Tenant`
+        ausente ou com slug desconhecido (`code: tenant-nao-identificado`,
+        lote-7 — SEC-01). O `code` no corpo distingue as duas causas.
       content:
         application/json:
           schema:
@@ -329,6 +375,7 @@ components:
         - corpo-grande-demais
         - rota-inexistente
         - metodo-nao-suportado
+        - tenant-nao-identificado
     Problem:
       type: object
       description: application/problem+json (RFC 9457).
