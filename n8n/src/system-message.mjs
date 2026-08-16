@@ -58,7 +58,7 @@ const CONSULTIVE_PERSONA_INSTRUCTION = [
 // abertamente e usa como ponte para o agendamento, sem escalar por isso
 // (VOZ-02 AC5).
 const CAPABILITY_BOUNDARY_INSTRUCTION =
-  "Fronteira de capacidade: você NÃO busca imóveis, NÃO manda fotos e NÃO informa preços — isso é levado pelo corretor humano na reunião. Se o lead pedir qualquer uma dessas coisas, reconheça abertamente que quem traz isso é o corretor, e use isso como ponte para propor ou confirmar a reunião. NÃO escale para humano só porque o lead pediu opções, fotos ou preços — isso é esperado, não é motivo de escalonamento.";
+  "Fronteira de capacidade: você NÃO busca imóveis, NÃO manda fotos e NÃO informa preços — isso é levado pelo corretor humano na reunião. Você também NÃO tem nenhuma forma de enviar e-mail, link por e-mail, arquivo, ou qualquer coisa fora desta própria conversa de WhatsApp — nunca prometa isso ao lead, mesmo que pareça útil. Se o lead pedir qualquer uma dessas coisas, reconheça abertamente que quem traz isso é o corretor, e use isso como ponte para propor ou confirmar a reunião. NÃO escale para humano só porque o lead pediu opções, fotos ou preços — isso é esperado, não é motivo de escalonamento.";
 
 const TOOLS_CATALOG_INSTRUCTION = [
   "Tools disponíveis (use exatamente estas, nenhuma outra existe):",
@@ -68,6 +68,42 @@ const TOOLS_CATALOG_INSTRUCTION = [
   "- escalar_para_humano: transfere a conversa para um humano.",
   "- consultar_documentos: consulta a lista de documentos do tenant, só quando precisar.",
 ].join("\n");
+
+// ACHADO REAL (Phase 4 do lote-7, 2026-08-16, execuções reais — não
+// hipótese): sem nenhuma âncora de data no prompt, o modelo resolveu
+// "terça-feira" para duas datas DIFERENTES em turnos consecutivos da mesma
+// conversa (17/03/2026 num turno, 10/03/2026 no turno seguinte) — a segunda
+// colidiu com um horário já ocupado (pelo primeiro agendamento) e o agente
+// confirmou ao lead mesmo com a tool devolvendo falha. Isso não é
+// específico de um modelo — qualquer LLM erra data relativa sem âncora.
+const TOOL_FAILURE_INSTRUCTION =
+  "Sempre que uma tool devolver que algo falhou ou está indisponível (ex.: horário já ocupado, erro ao atualizar o sistema), NUNCA confirme ao lead como se tivesse dado certo — siga exatamente a orientação que a tool devolveu (proponha outro horário, avise do problema, o que for indicado).";
+
+// Âncora de data (spec.md — achado real da Phase 4 do lote-7, ver nota em
+// TOOL_FAILURE_INSTRUCTION acima). `now` chega como ISO-8601 pronto — quem
+// lê o relógio de verdade é o Code node que chama esta função (borda de
+// apresentação), nunca esta função pura (mesma regra de `session.mjs`/
+// `phase.mjs`: `new Date()` sem argumento é proibido aqui dentro).
+// `Intl.DateTimeFormat` com `now` fixo é determinístico — não é I/O.
+/**
+ * @param {string | null | undefined} now - instante atual em ISO-8601
+ * @returns {string | null}
+ */
+function buildTodayAnchor(now) {
+  if (!now) return null;
+  const date = new Date(now);
+  if (Number.isNaN(date.getTime())) return null;
+
+  const label = new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(date);
+
+  return `Hoje é ${label} (horário de Brasília, America/Sao_Paulo). Use esta data como âncora para resolver qualquer dia relativo ("amanhã", "terça-feira", "semana que vem"): a data resultante nunca pode ser anterior a hoje, e o mesmo dia relativo tem que resolver para a MESMA data em toda a conversa — nunca proponha ou confirme duas datas diferentes para o que já foi combinado como "terça-feira" (ou qualquer outro dia) na mesma conversa.`;
+}
 
 /**
  * @param {{days?: number[], start?: string, end?: string} | null | undefined} businessHours
@@ -109,18 +145,19 @@ function buildPhaseInstruction(phase, perguntados) {
  * Monta o system message do turno (design.md — Components:
  * `buildSystemMessage`). Ordem das seções: identidade → tom do tenant
  * (delimitado + reafirmação) → persona consultiva → fronteira de capacidade
- * → transparência (AD-016) → instrução por fase → horário comercial →
- * catálogo de tools.
+ * → transparência (AD-016) → âncora de data → instrução por fase → horário
+ * comercial → catálogo de tools → instrução de falha de tool.
  *
  * @param {{
  *   settings?: SystemMessageSettings | null,
  *   phase: "qualificando" | "agendando",
  *   perguntados?: string[] | null,
  *   businessHours?: SystemMessageBusinessHours | null,
+ *   now?: string | null,
  * }} input
  * @returns {string}
  */
-export function buildSystemMessage({ settings, phase, perguntados, businessHours } = {}) {
+export function buildSystemMessage({ settings, phase, perguntados, businessHours, now } = {}) {
   const persona = settings ?? {};
 
   const sections = [
@@ -134,9 +171,11 @@ export function buildSystemMessage({ settings, phase, perguntados, businessHours
     CONSULTIVE_PERSONA_INSTRUCTION,
     CAPABILITY_BOUNDARY_INSTRUCTION,
     AI_TRANSPARENCY_INSTRUCTION,
+    buildTodayAnchor(now),
     buildPhaseInstruction(phase, perguntados),
     buildBusinessHoursSection(businessHours),
     TOOLS_CATALOG_INSTRUCTION,
+    TOOL_FAILURE_INSTRUCTION,
   ];
 
   return sections.filter((section) => section !== null && section !== "").join("\n\n");

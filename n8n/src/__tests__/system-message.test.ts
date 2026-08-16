@@ -66,6 +66,11 @@ describe("buildSystemMessage — fronteira de capacidade (VOZ-02)", () => {
     const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
     expect(message).toMatch(/NÃO escale para humano só porque o lead pediu/i);
   });
+
+  it("proíbe explicitamente prometer envio por e-mail (achado real, Phase 4 lote-7)", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).toMatch(/NÃO tem nenhuma forma de enviar e-mail/i);
+  });
 });
 
 describe("buildSystemMessage — instrução por fase (QLF-01 AC7/AC8, QLF-03)", () => {
@@ -158,6 +163,50 @@ describe("buildSystemMessage — catálogo de tools (AGN-02)", () => {
   it("instrui que responder_lead é a ÚNICA forma de enviar mensagem", () => {
     const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando", perguntados: [] });
     expect(message).toMatch(/responder_lead: ÚNICA forma de enviar mensagem/);
+  });
+});
+
+describe("buildSystemMessage — âncora de data (achado real, Phase 4 lote-7)", () => {
+  it("inclui o dia da semana e a data por extenso quando `now` é informado", () => {
+    const message = buildSystemMessage({
+      settings: BASE_SETTINGS,
+      phase: "agendando",
+      now: "2026-08-16T12:00:00Z",
+    });
+    // Verificado independentemente via Intl.DateTimeFormat antes de escrever
+    // este teste: 2026-08-16T12:00:00Z em America/Sao_Paulo é domingo.
+    expect(message).toContain("Hoje é domingo, 16 de agosto de 2026");
+  });
+
+  it("resolve o dia da semana corretamente para outra data (segunda-feira)", () => {
+    const message = buildSystemMessage({
+      settings: BASE_SETTINGS,
+      phase: "agendando",
+      now: "2026-01-05T12:00:00Z",
+    });
+    expect(message).toContain("Hoje é segunda-feira, 5 de janeiro de 2026");
+  });
+
+  it("instrui a nunca resolver o mesmo dia relativo para datas diferentes na mesma conversa", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "agendando", now: "2026-08-16T12:00:00Z" });
+    expect(message).toMatch(/nunca proponha ou confirme duas datas diferentes/i);
+  });
+
+  it("omite a âncora de data quando `now` não é informado", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).not.toContain("Hoje é");
+  });
+
+  it("omite a âncora de data quando `now` é uma string inválida", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando", now: "not-a-date" });
+    expect(message).not.toContain("Hoje é");
+  });
+});
+
+describe("buildSystemMessage — reação a falha de tool (achado real, Phase 4 lote-7)", () => {
+  it("instrui a nunca confirmar ao lead quando uma tool devolve falha", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).toMatch(/NUNCA confirme ao lead como se tivesse dado certo/i);
   });
 });
 

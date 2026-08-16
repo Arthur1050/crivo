@@ -945,7 +945,8 @@ const buildAgentSystemMessage = node({
         "const updatedPerguntados = (phaseBefore === 'qualificando' && nextField) ? [...perguntados, nextField] : perguntados;\n" +
         "const phase = resolveConversationPhase(updatedPerguntados);\n" +
         "const businessHours = resolveBusinessHours(settings);\n" +
-        "const systemMessage = buildSystemMessage({ settings, phase, perguntados: updatedPerguntados, businessHours });\n" +
+        "const now = new Date().toISOString();\n" +
+        "const systemMessage = buildSystemMessage({ settings, phase, perguntados: updatedPerguntados, businessHours, now });\n" +
         "const buffer = $('Code: contexto do lead').first().json.bufferArray || [];\n" +
         "const userMessage = buffer.map((m) => m.text).join('\\n');\n" +
         "return [{ json: { systemMessage, userMessage, phase, perguntadosJson: JSON.stringify(updatedPerguntados) } }];\n",
