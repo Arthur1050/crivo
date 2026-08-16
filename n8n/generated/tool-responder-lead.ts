@@ -9,7 +9,7 @@
  *
  * Contrato de entrada (`Execute Workflow Trigger`): `mensagem` é o único
  * campo preenchido pelo modelo (fromAi, no wiring do T11); `tenantSlug`,
- * `waId`, `leadId`, `apiKey`, `phoneNumberId` vêm de expressão do fluxo no
+ * `waId`, `leadId`, `phoneNumberId` vêm de expressão do fluxo no
  * nó que chama esta tool — NUNCA de `$fromAI` (mesmo risco de escrita
  * cross-lead do design.md — Risks & Concerns, aqui aplicado por simetria
  * mesmo essa tool não escrevendo campo de qualificação nenhum).
@@ -51,7 +51,6 @@ const respondTrigger = trigger({
           { name: "tenantSlug", type: "string" },
           { name: "waId", type: "string" },
           { name: "leadId", type: "string" },
-          { name: "apiKey", type: "string" },
           { name: "phoneNumberId", type: "string" },
         ],
       },
@@ -63,7 +62,6 @@ const respondTrigger = trigger({
       tenantSlug: "imobiliaria-a",
       waId: "553499532444",
       leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-      apiKey: "exemplo",
       phoneNumberId: "109876543210001",
     },
   ],
@@ -144,13 +142,12 @@ const applyVoiceBarriers = node({
         "  tenantSlug: trigger.tenantSlug,\n" +
         "  waId: trigger.waId,\n" +
         "  leadId: trigger.leadId,\n" +
-        "  apiKey: trigger.apiKey,\n" +
         "  phoneNumberId: trigger.phoneNumberId,\n" +
         "  aberturasJson: JSON.stringify(newAberturas),\n" +
         "} }];\n",
     },
   },
-  output: [{ accepted: true, reason: null, mensagem: "Show, deixa eu te explicar melhor.", tenantSlug: "imobiliaria-a", waId: "553499532444", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", apiKey: "exemplo", phoneNumberId: "109876543210001", aberturasJson: "[{\"opening\":\"show\",\"sentAt\":\"2026-08-14T12:00:05.000Z\"}]" }],
+  output: [{ accepted: true, reason: null, mensagem: "Show, deixa eu te explicar melhor.", tenantSlug: "imobiliaria-a", waId: "553499532444", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", phoneNumberId: "109876543210001", aberturasJson: "[{\"opening\":\"show\",\"sentAt\":\"2026-08-14T12:00:05.000Z\"}]" }],
 });
 
 const isAccepted = ifElse({
@@ -199,7 +196,7 @@ const normalizeRecipientCode = node({
         "return [{ json: { ...ctx, recipientMsisdn: toWhatsAppMsisdn(ctx.waId) } }];\n",
     },
   },
-  output: [{ mensagem: "Show, deixa eu te explicar melhor.", tenantSlug: "imobiliaria-a", waId: "553499532444", recipientMsisdn: "5534999532444", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", apiKey: "exemplo", phoneNumberId: "109876543210001", aberturasJson: "[]" }],
+  output: [{ mensagem: "Show, deixa eu te explicar melhor.", tenantSlug: "imobiliaria-a", waId: "553499532444", recipientMsisdn: "5534999532444", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", phoneNumberId: "109876543210001", aberturasJson: "[]" }],
 });
 
 const sendWhatsAppMessage = node({
@@ -233,9 +230,11 @@ const registerAgentMessage = node({
     parameters: {
       method: "POST",
       url: expr(`${CRM_BASE_URL}/leads/{{ $('Code: normalizar destinatario do envio').first().json.leadId }}/messages`),
+      authentication: "genericCredentialType",
+      genericAuthType: "httpHeaderAuth",
       sendHeaders: true,
       headerParameters: {
-        parameters: [{ name: "Authorization", value: expr("Bearer {{ $('Code: normalizar destinatario do envio').first().json.apiKey }}") }],
+        parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: normalizar destinatario do envio').first().json.tenantSlug }}") }],
       },
       sendBody: true,
       contentType: "json",
@@ -244,6 +243,7 @@ const registerAgentMessage = node({
         "{{ { externalId: $json.messages[0].id, sender: 'agente', content: $('Code: normalizar destinatario do envio').first().json.mensagem, sentAt: $now.toISO() } }}"
       ),
     },
+    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
   },
   output: [{ id: "6fa85f64-5717-4562-b3fc-2c963f66afa9", sender: "agente" }],
 });

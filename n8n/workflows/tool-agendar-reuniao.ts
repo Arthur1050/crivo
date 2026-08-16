@@ -9,7 +9,7 @@
  *
  * Contrato de entrada (`Execute Workflow Trigger`): `meetingAtProposto` é o
  * único campo preenchido pelo modelo (fromAi, no wiring do T11). Todo o
- * resto — `tenantSlug`, `waId`, `leadId`, `apiKey`, `calendarId`,
+ * resto — `tenantSlug`, `waId`, `leadId`, `calendarId`,
  * `contactName`, `meetingDays`, `meetingHoursStart`, `meetingHoursEnd` —
  * vem de expressão do fluxo (o `HTTP: GET /settings` e o contexto do lead
  * já resolvidos em `principal.ts` antes do agente rodar), NUNCA de
@@ -44,7 +44,6 @@ const scheduleTrigger = trigger({
           { name: "tenantSlug", type: "string" },
           { name: "waId", type: "string" },
           { name: "leadId", type: "string" },
-          { name: "apiKey", type: "string" },
           { name: "calendarId", type: "string" },
           { name: "contactName", type: "string" },
           { name: "meetingDays", type: "array" },
@@ -60,7 +59,6 @@ const scheduleTrigger = trigger({
       tenantSlug: "imobiliaria-a",
       waId: "553499532444",
       leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-      apiKey: "exemplo",
       calendarId: "exemplo@group.calendar.google.com",
       contactName: "Lead Exemplo",
       meetingDays: [1, 2, 3, 4, 5],
@@ -95,7 +93,6 @@ const checkBusinessHours = node({
       tenantSlug: "imobiliaria-a",
       waId: "553499532444",
       leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-      apiKey: "exemplo",
       calendarId: "exemplo@group.calendar.google.com",
       contactName: "Lead Exemplo",
       withinBusinessHours: true,
@@ -230,9 +227,11 @@ const patchLeadScheduled = node({
     parameters: {
       method: "PATCH",
       url: expr(`${CRM_BASE_URL}/leads/{{ $('Code: checar horario comercial').first().json.leadId }}`),
+      authentication: "genericCredentialType",
+      genericAuthType: "httpHeaderAuth",
       sendHeaders: true,
       headerParameters: {
-        parameters: [{ name: "Authorization", value: expr("Bearer {{ $('Code: checar horario comercial').first().json.apiKey }}") }],
+        parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: checar horario comercial').first().json.tenantSlug }}") }],
       },
       sendBody: true,
       contentType: "json",
@@ -241,6 +240,7 @@ const patchLeadScheduled = node({
         "{{ { status: 'qualificado_agendado', meetingAt: $('Code: checar horario comercial').first().json.meetingAtProposto, executiveSummary: 'Reunião agendada via WhatsApp (tool agendar_reuniao).' } }}"
       ),
     },
+    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
   },
   output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", status: "qualificado_agendado" }],
 });

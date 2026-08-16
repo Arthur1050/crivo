@@ -28,8 +28,10 @@
  * confiando em passthrough implícito. Dois "checkpoints" canônicos carregam
  * o contexto:
  *   - `Code: combinar evento e tenant` — evento normalizado + tenant_config
- *     (waId, phoneNumberId, tenantSlug, apiKey, calendarId, text, hasMedia,
- *     sentAt, messageId, contactName).
+ *     (waId, phoneNumberId, tenantSlug, calendarId, text, hasMedia,
+ *     sentAt, messageId, contactName). Autenticação no CRM não passa mais por
+ *     aqui (T17, SEC-01): todo nó HTTP/tool usa a credencial `httpHeaderAuth`
+ *     "Crivo - chave de servico" + header `X-Crivo-Tenant` com o `tenantSlug`.
  *   - `Code: contexto do lead` — o checkpoint acima + a resposta do
  *     `POST /leads` (id, status, optedOutAt, campos de qualificação) + o
  *     buffer de mensagens da rajada.
@@ -208,7 +210,7 @@ const tenantConfigLookup = node({
       limit: 1,
     },
   },
-  output: [{ id: 1, phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", apiKey: "exemplo", calendarId: "exemplo@group.calendar.google.com" }],
+  output: [{ id: 1, phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", calendarId: "exemplo@group.calendar.google.com" }],
 });
 
 const combineEventAndTenant = node({
@@ -226,12 +228,12 @@ const combineEventAndTenant = node({
         "return { json: {\n" +
         "  waId: event.waId, phoneNumberId: event.phoneNumberId, messageId: event.messageId,\n" +
         "  text: event.text, sentAt: event.sentAt, hasMedia: event.hasMedia, contactName: event.contactName,\n" +
-        "  tenantSlug: tenant.tenantSlug, apiKey: tenant.apiKey, calendarId: tenant.calendarId,\n" +
+        "  tenantSlug: tenant.tenantSlug, calendarId: tenant.calendarId,\n" +
         "} };\n",
     },
   },
   output: [
-    { waId: "5534999990001", phoneNumberId: "109876543210001", messageId: "wamid.EXEMPLO", text: "Oi", sentAt: "2026-08-05T12:10:00.000Z", hasMedia: false, contactName: "Lead Exemplo", tenantSlug: "imobiliaria-a", apiKey: "exemplo", calendarId: "exemplo@group.calendar.google.com" },
+    { waId: "5534999990001", phoneNumberId: "109876543210001", messageId: "wamid.EXEMPLO", text: "Oi", sentAt: "2026-08-05T12:10:00.000Z", hasMedia: false, contactName: "Lead Exemplo", tenantSlug: "imobiliaria-a", calendarId: "exemplo@group.calendar.google.com" },
   ],
 });
 
@@ -413,9 +415,11 @@ const postLeadIdempotent = node({
     parameters: {
       method: "POST",
       url: `${CRM_BASE_URL}/leads`,
+      authentication: "genericCredentialType",
+      genericAuthType: "httpHeaderAuth",
       sendHeaders: true,
       headerParameters: {
-        parameters: [{ name: "Authorization", value: expr("Bearer {{ $('Code: combinar evento e tenant').item.json.apiKey }}") }],
+        parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: combinar evento e tenant').item.json.tenantSlug }}") }],
       },
       sendBody: true,
       contentType: "json",
@@ -424,6 +428,7 @@ const postLeadIdempotent = node({
         "{{ { name: $('Code: combinar evento e tenant').item.json.contactName, phone: $('Code: combinar evento e tenant').item.json.waId, externalId: $('Code: combinar evento e tenant').item.json.waId, firstContactAt: $('Code: combinar evento e tenant').item.json.sentAt } }}"
       ),
     },
+    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
   },
   output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", status: "em_qualificacao", optedOutAt: null, modality: null, region: null, budgetCents: null, propertyType: null, purchaseHorizon: null, motivation: null, creditStatus: null, chainedOperation: null }],
 });
@@ -441,10 +446,10 @@ const attachTenantToLeadResponse = node({
         "const lead = $input.first().json;\n" +
         "const ctx = $('Code: combinar evento e tenant').first().json;\n" +
         "const buffer = $('Code: acrescentar ao buffer').first().json.bufferArray;\n" +
-        "return [{ json: { ...lead, tenantSlug: ctx.tenantSlug, apiKey: ctx.apiKey, calendarId: ctx.calendarId, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, contactName: ctx.contactName, text: ctx.text, hasMedia: ctx.hasMedia, sentAt: ctx.sentAt, bufferArray: buffer } }];\n",
+        "return [{ json: { ...lead, tenantSlug: ctx.tenantSlug, calendarId: ctx.calendarId, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, contactName: ctx.contactName, text: ctx.text, hasMedia: ctx.hasMedia, sentAt: ctx.sentAt, bufferArray: buffer } }];\n",
     },
   },
-  output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", status: "em_qualificacao", optedOutAt: null, tenantSlug: "imobiliaria-a", apiKey: "exemplo", calendarId: "exemplo@group.calendar.google.com", waId: "5534999990001", phoneNumberId: "109876543210001", contactName: "Lead Exemplo", text: "Oi", hasMedia: false, sentAt: "2026-08-05T12:10:00.000Z", bufferArray: [{ messageId: "wamid.EXEMPLO", text: "Oi", sentAt: "2026-08-05T12:10:00.000Z" }] }],
+  output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", status: "em_qualificacao", optedOutAt: null, tenantSlug: "imobiliaria-a", calendarId: "exemplo@group.calendar.google.com", waId: "5534999990001", phoneNumberId: "109876543210001", contactName: "Lead Exemplo", text: "Oi", hasMedia: false, sentAt: "2026-08-05T12:10:00.000Z", bufferArray: [{ messageId: "wamid.EXEMPLO", text: "Oi", sentAt: "2026-08-05T12:10:00.000Z" }] }],
 });
 
 const splitBufferedMessages = node({
@@ -455,7 +460,7 @@ const splitBufferedMessages = node({
     position: [3640, 0],
     parameters: { fieldToSplitOut: "bufferArray", include: "allOtherFields" },
   },
-  output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", apiKey: "exemplo", bufferArray: { messageId: "wamid.EXEMPLO", text: "Oi", sentAt: "2026-08-05T12:10:00.000Z" } }],
+  output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", tenantSlug: "imobiliaria-a", bufferArray: { messageId: "wamid.EXEMPLO", text: "Oi", sentAt: "2026-08-05T12:10:00.000Z" } }],
 });
 
 const postBufferedMessage = node({
@@ -470,8 +475,10 @@ const postBufferedMessage = node({
     parameters: {
       method: "POST",
       url: expr(`${CRM_BASE_URL}/leads/{{ $json.id }}/messages`),
+      authentication: "genericCredentialType",
+      genericAuthType: "httpHeaderAuth",
       sendHeaders: true,
-      headerParameters: { parameters: [{ name: "Authorization", value: expr("Bearer {{ $json.apiKey }}") }] },
+      headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $json.tenantSlug }}") }] },
       sendBody: true,
       contentType: "json",
       specifyBody: "json",
@@ -479,6 +486,7 @@ const postBufferedMessage = node({
         "{{ { externalId: $json.bufferArray.messageId, sender: 'lead', content: $json.bufferArray.text, sentAt: $json.bufferArray.sentAt } }}"
       ),
     },
+    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
   },
   output: [{ id: "4fa85f64-5717-4562-b3fc-2c963f66afa7", externalId: "wamid.EXEMPLO", sender: "lead", content: "Oi", sentAt: "2026-08-05T12:10:00.000Z" }],
 });
@@ -500,7 +508,7 @@ const decideRoute = node({
         "return [{ json: { ...ctx, route } }];\n",
     },
   },
-  output: [{ route: "conversa", id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", status: "em_qualificacao", optedOutAt: null, tenantSlug: "imobiliaria-a", apiKey: "exemplo", calendarId: "exemplo@group.calendar.google.com", waId: "5534999990001", phoneNumberId: "109876543210001" }],
+  output: [{ route: "conversa", id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", status: "em_qualificacao", optedOutAt: null, tenantSlug: "imobiliaria-a", calendarId: "exemplo@group.calendar.google.com", waId: "5534999990001", phoneNumberId: "109876543210001" }],
 });
 
 const routeSwitch = switchCase({
@@ -543,9 +551,12 @@ const postOptOut = node({
     parameters: {
       method: "POST",
       url: expr(`${CRM_BASE_URL}/leads/{{ $('Code: gate').first().json.id }}/opt-out`),
+      authentication: "genericCredentialType",
+      genericAuthType: "httpHeaderAuth",
       sendHeaders: true,
-      headerParameters: { parameters: [{ name: "Authorization", value: expr("Bearer {{ $('Code: gate').first().json.apiKey }}") }] },
+      headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }] },
     },
+    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
   },
   output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", optedOutAt: "2026-08-05T12:11:00.000Z" }],
 });
@@ -564,10 +575,10 @@ const finalizeOptOut = node({
         // PER-02 AC4: rota de resposta fixa usa o mesmo caminho de envio das
         // demais — sempre `mensagens` (array de 1 item aqui).
         "const mensagens = ['Você pediu para não receber mais mensagens automáticas. A partir de agora, não vamos mais te contatar por aqui. Se mudar de ideia, é só nos chamar novamente. Até mais!'];\n" +
-        "return [{ json: { mensagens, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, tenantSlug: ctx.tenantSlug, apiKey: ctx.apiKey, leadId: ctx.id, fase: 'encerrada' } }];\n",
+        "return [{ json: { mensagens, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, tenantSlug: ctx.tenantSlug, leadId: ctx.id, fase: 'encerrada' } }];\n",
     },
   },
-  output: [{ mensagens: ["confirmação de opt-out"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", apiKey: "exemplo", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "encerrada" }],
+  output: [{ mensagens: ["confirmação de opt-out"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "encerrada" }],
 });
 
 // ---------------------------------------------------------------------
@@ -609,10 +620,10 @@ const finalizeMedia = node({
       jsCode:
         "const ctx = $('Code: gate').first().json;\n" +
         "const mensagens = ['Recebi seu arquivo, mas por aqui eu sigo só por mensagens de texto — pode me contar em palavras o que você gostaria de saber?'];\n" +
-        "return [{ json: { mensagens, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, tenantSlug: ctx.tenantSlug, apiKey: ctx.apiKey, leadId: ctx.id, fase: ctx.fase || 'qualificando' } }];\n",
+        "return [{ json: { mensagens, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, tenantSlug: ctx.tenantSlug, leadId: ctx.id, fase: ctx.fase || 'qualificando' } }];\n",
     },
   },
-  output: [{ mensagens: ["sigo por texto"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", apiKey: "exemplo", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
+  output: [{ mensagens: ["sigo por texto"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
 });
 
 // ---------------------------------------------------------------------
@@ -634,9 +645,12 @@ const getSettings = node({
     parameters: {
       method: "GET",
       url: `${CRM_BASE_URL}/settings`,
+      authentication: "genericCredentialType",
+      genericAuthType: "httpHeaderAuth",
       sendHeaders: true,
-      headerParameters: { parameters: [{ name: "Authorization", value: expr("Bearer {{ $('Code: gate').first().json.apiKey }}") }] },
+      headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }] },
     },
+    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
   },
   output: [{ realEstateName: "Imobiliária A", agentName: "Ana", supportedModality: "ambos", agentPresentationMessage: "Oi! Sou a Ana.", meetingDays: null, meetingHoursStart: null, meetingHoursEnd: null }],
 });
@@ -795,9 +809,12 @@ const getMessagesForSeed = node({
       url: expr(`${CRM_BASE_URL}/leads/{{ $('Code: gate').first().json.id }}/messages`),
       sendQuery: true,
       queryParameters: { parameters: [{ name: "limit", value: "100" }] },
+      authentication: "genericCredentialType",
+      genericAuthType: "httpHeaderAuth",
       sendHeaders: true,
-      headerParameters: { parameters: [{ name: "Authorization", value: expr("Bearer {{ $('Code: gate').first().json.apiKey }}") }] },
+      headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }] },
     },
+    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
   },
   output: [{ id: "4fa85f64-5717-4562-b3fc-2c963f66afa7", externalId: "wamid.EXEMPLO", sender: "lead", content: "Oi, vi o anúncio do apartamento", sentAt: "2026-08-05T12:10:00.000Z" }],
 });
@@ -994,9 +1011,11 @@ const registrarQualificacaoTool = tool({
         "Registra UM campo de qualificação que o lead revelou espontaneamente (modality, region, budgetCents, propertyType, purchaseHorizon, motivation, creditStatus ou chainedOperation). Uma chamada por campo — nunca invente valor para campo que o lead não mencionou.",
       method: "PATCH",
       url: expr(`${CRM_BASE_URL}/leads/{{ $('Code: gate').first().json.id }}`),
+      authentication: "genericCredentialType",
+      genericAuthType: "httpHeaderAuth",
       sendHeaders: true,
       headerParameters: {
-        parameters: [{ name: "Authorization", value: expr("Bearer {{ $('Code: gate').first().json.apiKey }}") }],
+        parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }],
       },
       sendBody: true,
       contentType: "json",
@@ -1013,6 +1032,7 @@ const registrarQualificacaoTool = tool({
       ),
       options: { response: { response: { neverError: true } } },
     },
+    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
   },
   output: [{}],
 });
@@ -1035,9 +1055,11 @@ const escalarParaHumanoTool = tool({
         "Transfere a conversa para um atendente humano. Use quando o lead pedir explicitamente por um humano, ou quando o pedido dele for algo que só um humano resolve. Sempre informe o motivo.",
       method: "PATCH",
       url: expr(`${CRM_BASE_URL}/leads/{{ $('Code: gate').first().json.id }}`),
+      authentication: "genericCredentialType",
+      genericAuthType: "httpHeaderAuth",
       sendHeaders: true,
       headerParameters: {
-        parameters: [{ name: "Authorization", value: expr("Bearer {{ $('Code: gate').first().json.apiKey }}") }],
+        parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }],
       },
       sendBody: true,
       contentType: "json",
@@ -1047,6 +1069,7 @@ const escalarParaHumanoTool = tool({
       ),
       options: { response: { response: { neverError: true } } },
     },
+    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
   },
   output: [{}],
 });
@@ -1069,14 +1092,17 @@ const consultarDocumentosTool = tool({
       queryParameters: {
         parameters: [{ name: "modality", value: expr("{{ $('Code: gate').first().json.modality === 'usado' ? 'usado' : 'novo' }}") }],
       },
+      authentication: "genericCredentialType",
+      genericAuthType: "httpHeaderAuth",
       sendHeaders: true,
       headerParameters: {
-        parameters: [{ name: "Authorization", value: expr("Bearer {{ $('Code: gate').first().json.apiKey }}") }],
+        parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }],
       },
       retryOnFail: true,
       maxTries: 2,
       options: { response: { response: { neverError: true } } },
     },
+    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
   },
   output: [{}],
 });
@@ -1102,7 +1128,6 @@ const responderLeadTool = tool({
           tenantSlug: expr("{{ $('Code: gate').first().json.tenantSlug }}"),
           waId: expr("{{ $('Code: gate').first().json.waId }}"),
           leadId: expr("{{ $('Code: gate').first().json.id }}"),
-          apiKey: expr("{{ $('Code: gate').first().json.apiKey }}"),
           phoneNumberId: expr("{{ $('Code: gate').first().json.phoneNumberId }}"),
         },
         // ACHADO REAL (T12 — execução MCP, não hipótese): sem `schema` aqui, o
@@ -1120,7 +1145,6 @@ const responderLeadTool = tool({
           { id: "tenantSlug", displayName: "tenantSlug", required: true, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
           { id: "waId", displayName: "waId", required: true, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
           { id: "leadId", displayName: "leadId", required: true, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
-          { id: "apiKey", displayName: "apiKey", required: true, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
           { id: "phoneNumberId", displayName: "phoneNumberId", required: true, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
         ],
       },
@@ -1147,7 +1171,6 @@ const agendarReuniaoTool = tool({
           tenantSlug: expr("{{ $('Code: gate').first().json.tenantSlug }}"),
           waId: expr("{{ $('Code: gate').first().json.waId }}"),
           leadId: expr("{{ $('Code: gate').first().json.id }}"),
-          apiKey: expr("{{ $('Code: gate').first().json.apiKey }}"),
           calendarId: expr("{{ $('Code: gate').first().json.calendarId }}"),
           contactName: expr("{{ $('Code: contexto do lead').first().json.contactName }}"),
           meetingDays: expr("{{ $('HTTP: GET /settings').first().json.meetingDays }}"),
@@ -1161,7 +1184,6 @@ const agendarReuniaoTool = tool({
           { id: "tenantSlug", displayName: "tenantSlug", required: true, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
           { id: "waId", displayName: "waId", required: true, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
           { id: "leadId", displayName: "leadId", required: true, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
-          { id: "apiKey", displayName: "apiKey", required: true, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
           { id: "calendarId", displayName: "calendarId", required: true, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
           { id: "contactName", displayName: "contactName", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
           { id: "meetingDays", displayName: "meetingDays", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
@@ -1322,7 +1344,7 @@ const normalizeFixedReplyRecipient = node({
         "return [{ json: { ...ctx, recipientMsisdn: toWhatsAppMsisdn(ctx.waId) } }];\n",
     },
   },
-  output: [{ mensagens: ["resposta fixa"], waId: "553499532444", recipientMsisdn: "5534999532444", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", apiKey: "exemplo", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
+  output: [{ mensagens: ["resposta fixa"], waId: "553499532444", recipientMsisdn: "5534999532444", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
 });
 
 const sendFixedReply = node({
@@ -1356,9 +1378,11 @@ const registerFixedReply = node({
     parameters: {
       method: "POST",
       url: expr(`${CRM_BASE_URL}/leads/{{ $('Code: destinatário do envio fixo').first().json.leadId }}/messages`),
+      authentication: "genericCredentialType",
+      genericAuthType: "httpHeaderAuth",
       sendHeaders: true,
       headerParameters: {
-        parameters: [{ name: "Authorization", value: expr("Bearer {{ $('Code: destinatário do envio fixo').first().json.apiKey }}") }],
+        parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: destinatário do envio fixo').first().json.tenantSlug }}") }],
       },
       sendBody: true,
       contentType: "json",
@@ -1367,6 +1391,7 @@ const registerFixedReply = node({
         "{{ { externalId: $json.messages[0].id, sender: 'agente', content: $('Code: destinatário do envio fixo').first().json.mensagens[0], sentAt: $now.toISO() } }}"
       ),
     },
+    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
   },
   output: [{ id: "6fa85f64-5717-4562-b3fc-2c963f66afa9", sender: "agente" }],
 });
