@@ -1273,6 +1273,110 @@ const finalizeAgentTurn = node({
   output: [{ tenantSlug: "imobiliaria-a", waId: "5534999990001", fase: "qualificando", turnoSemResposta: false }],
 });
 
+// ACHADO REAL (Phase 4 do lote-7, 2026-08-16, execuções reais — não
+// hipótese): o AI Agent NUNCA produz uma resposta final em texto — toda
+// comunicação passa pela tool `responder_lead` (system-message.mjs:
+// "ÚNICA forma de enviar mensagem ao lead"), e o `output` do nó fica
+// sempre vazio (`""`). O salvamento automático de memória do n8n/LangChain
+// só dispara quando o agente produz uma resposta final de texto — nesse
+// desenho, isso nunca acontece, então `ai.agent.memory.saves` fica em 0 em
+// toda execução e a sessão nunca acumula histórico além da semeadura de
+// cold start (confirmado ao vivo: turno 3 de uma conversa real recebeu só
+// a 1ª mensagem do lead como contexto, e o agente reproprôs um horário já
+// recusado por já ter "esquecido" o horário aceito 2 turnos antes). Os dois
+// nós abaixo gravam o turno explicitamente — humano sempre, agente só
+// quando `responder_lead` foi de fato chamado (turno sem resposta não gera
+// bolha de IA vazia na memória).
+// Devolve UM ITEM POR MENSAGEM do turno (não um item com um array) — mesma
+// razão do padrão de semeadura logo acima (`buildSeedMessages`): o nó de
+// insert abaixo não aceita um array dinâmico em `messages.messageValues`
+// (confirmado via `validate_workflow`: `INVALID_PARAMETER`, "expected
+// array, got string" ao tentar um único `expr()` cobrindo o campo inteiro
+// — mesmo achado já documentado em `buildSeedMessages`, replicado aqui
+// porque a 1ª tentativa desta task caiu na mesma armadilha). Sempre ao
+// menos 1 item (mensagem do lead); um 2º item (resposta do agente) só
+// quando `responder_lead` foi de fato chamado neste turno — turno sem
+// resposta não gera bolha de IA vazia na memória.
+const prepareTurnForMemory = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: preparar turno para memória",
+    position: [8080, 650],
+    parameters: {
+      mode: "runOnceForAllItems",
+      language: "javaScript",
+      jsCode:
+        "const humanMessage = $('Code: montar system message e marcar campo perguntado').first().json.userMessage;\n" +
+        "const agentTurn = $('AI Agent').first().json;\n" +
+        "const steps = Array.isArray(agentTurn.intermediateSteps) ? agentTurn.intermediateSteps : [];\n" +
+        "const agentMessages = steps\n" +
+        "  .filter((s) => s && s.action && s.action.tool === 'responder_lead')\n" +
+        "  .map((s) => s.action.toolInput && s.action.toolInput.mensagem)\n" +
+        "  .filter((m) => typeof m === 'string' && m.length > 0);\n" +
+        "const items = [{ json: { type: 'user', message: humanMessage } }];\n" +
+        "if (agentMessages.length > 0) {\n" +
+        "  items.push({ json: { type: 'ai', message: agentMessages.join('\\n') } });\n" +
+        "}\n" +
+        "return items;\n",
+    },
+  },
+  output: [
+    { type: "user", message: "Prefiro casa mesmo" },
+    { type: "ai", message: "casa muda bastante o estilo da busca..." },
+  ],
+});
+
+// Loop 1-a-1, mesmo mecanismo de `insertOneSeedMessage` (get_sdk_reference —
+// "Trust empty item lists" não se aplica aqui: `prepareTurnForMemory` sempre
+// devolve ao menos 1 item, a mensagem do lead).
+const turnMessageBatches = splitInBatches({
+  version: 3,
+  config: { name: "Loop: mensagens do turno", position: [8340, 650], parameters: { batchSize: 1 } },
+});
+
+const insertOneTurnMessage = node({
+  type: "@n8n/n8n-nodes-langchain.memoryManager",
+  version: 1.1,
+  config: {
+    name: "Chat Memory Manager: salvar turno",
+    position: [8600, 550],
+    parameters: {
+      mode: "insert",
+      insertMode: "insert",
+      messages: {
+        messageValues: [
+          { type: expr("{{ $json.type }}"), message: expr("{{ $json.message }}"), hideFromUI: false },
+        ],
+      },
+    },
+    subnodes: { memory: conversationMemory },
+  },
+  output: [{ success: true }],
+});
+
+// Checkpoint (convenção do topo do arquivo): o loop de salvamento substitui
+// `$json` pelo resultado da operação de insert (`{success:true}`) — os 3
+// campos que `Data Table: limpar buffer` precisa são lidos de volta do
+// checkpoint original (`Code: finalizar turno do agente`), nunca de `$json`
+// cego.
+const prepClearAfterAgentTurn = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: preparar clear de buffer (turno do agente)",
+    position: [8860, 650],
+    parameters: {
+      mode: "runOnceForAllItems",
+      language: "javaScript",
+      jsCode:
+        "const ctx = $('Code: finalizar turno do agente').first().json;\n" +
+        "return [{ json: { tenantSlug: ctx.tenantSlug, waId: ctx.waId, fase: ctx.fase } }];\n",
+    },
+  },
+  output: [{ tenantSlug: "imobiliaria-a", waId: "5534999990001", fase: "qualificando" }],
+});
+
 // MEM-04: ramo de opt-out também purga a memória e as duas colunas de
 // estado (mesma unidade atômica da purga por sessão expirada, T10) — um
 // lead que optou por sair nunca mais gera um novo turno (gate roteia para
@@ -1520,7 +1624,17 @@ const afterLoadMemory = loadMemory.to(
 // uma reconexão do zero (mesma disciplina de T9/T10).
 memoryReadyCheckpoint.to(
   buildAgentSystemMessage.to(
-    persistPerguntados.to(aiAgent.to(finalizeAgentTurn.to(clearBufferAndFinalize)))
+    persistPerguntados.to(
+      aiAgent.to(
+        finalizeAgentTurn.to(
+          prepareTurnForMemory.to(
+            turnMessageBatches
+              .onDone(prepClearAfterAgentTurn.to(clearBufferAndFinalize))
+              .onEachBatch(insertOneTurnMessage.to(nextBatch(turnMessageBatches)))
+          )
+        )
+      )
+    )
   )
 );
 
