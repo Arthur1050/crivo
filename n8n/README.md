@@ -85,13 +85,12 @@ Todas as 3 são criadas com `create_data_table` (colunas com `add_data_table_col
 | coluna | tipo | nota |
 | ------ | ---- | ---- |
 | `phoneNumberId` | string | chave de lookup (evento Meta, `metadata.phone_number_id`) |
-| `tenantSlug` | string | identificação humana do tenant |
-| `apiKey` | string | API key do CRM para esse tenant — ver **Risco R1** e seção 4 |
+| `tenantSlug` | string | identificação humana do tenant, também usada como valor do header `X-Crivo-Tenant` (seção 12) |
 | `calendarId` | string | id do Google Calendar (seção 2.3) |
 
 Fase 8: 2 linhas para os 2 tenants reais do seed de produção + 1 linha extra com um `phoneNumberId` fictício (apontando para qualquer um dos 2 tenants reais) só para o teste de isolamento via fixture do T10 — nunca um `phoneNumberId` de produção de verdade.
 
-**Risco R1 (aceito para o piloto, documentado)**: `apiKey` fica em texto claro na Data Table — não há tipo "secret" nas Data Tables do n8n. Aceitável com 2 consumidores conhecidos e chaves revogáveis (`revoked_at` na tabela `tenant_api_keys` do CRM). Antes de números reais de imobiliária: migrar para credencial HTTP Header Auth por tenant (1 credencial n8n por tenant, referenciada por nome nos HTTP Request nodes) ou para os secrets nativos do n8n, se disponíveis no plano.
+**Risco R1 — RESOLVIDO (2026-08-15, lote-7 T17)**: a coluna `apiKey` foi removida desta Data Table. `tenant_config` não guarda mais nenhuma chave — os 8+1 pontos do fluxo que montavam `Authorization` por expressão (o valor aparecia em texto claro na Data Table *e* no log de cada execução, porque expressão é material de parâmetro, não de credencial) passaram a usar a credencial `httpHeaderAuth` do cofre do n8n ("Crivo - chave de serviço") mais o header `X-Crivo-Tenant` com o `tenantSlug`. Detalhe completo do mecanismo e do procedimento de rotação: seção 12.
 
 ### `conversa_estado` — estado leve da conversa (chave composta `tenantSlug`+`waId`)
 
@@ -267,3 +266,45 @@ Achado durante a primeira execução real do `crivo-agente-principal` publicado 
 - **Caminho feliz até `responder_lead`, com envio real confirmado**: execução `462` de `crivo-agente-principal` (fixture WhatsApp real, tenant `triangulo`, número de teste `553499532444`) — o AI Agent chamou `registrar_qualificacao` (propertyType/region, com uma rejeição de enum inválido corretamente tratada — `motivation: "morar sozinho"` → `400 payload-invalido`, o agente seguiu sem travar) e depois `responder_lead`, que devolveu `{ok:true, leadId:"7fdc4ae6-..."}`. Sub-execução correspondente `463` de `crivo-tool-responder-lead`: `status:"success"` — mensagem realmente enviada via WhatsApp e registrada no CRM.
 - **Reconciliação `n8n/generated/`**: os 52 nós e 61 conexões do `crivo-agente-principal` publicado foram comparados campo a campo contra um workflow-escrutínio criado via `create_workflow_from_code` a partir do `n8n/generated/principal.ts` corrigido — 0 nós/conexões faltando ou sobrando; os 24 nós do "entorno" (trigger, buffer, gate) ficaram intocados por design, com divergências só cosméticas (parâmetros default omitidos vs. explícitos, nunca lógica).
 - Todos os 3 workflows (`crivo-agente-principal`, `crivo-tool-responder-lead`, `crivo-tool-agendar-reuniao`) publicados e ativos; `errorWorkflow` linkado nos 3.
+
+---
+
+## 12. T17/T18 (lote-7) — Chave de serviço: wiring, evidência real e rotação
+
+### 12.1 O que mudou (SEC-01)
+
+Os 9 pontos que montavam `Authorization` por expressão em `principal.ts` (8) e nos 2 sub-workflows (1 cada) — a chave do tenant lida de `tenant_config.apiKey` e concatenada em `headerParameters` — foram substituídos por:
+
+- **Autenticação do nó**: `authentication: "genericCredentialType"`, `genericAuthType: "httpHeaderAuth"`, `credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") }` (credencial humana, id `YhGcdfGtdEBBU9YP`, `Authorization: Bearer <chave de serviço>` já embutido no cofre — nunca visível em parâmetro nem em log de execução, diferente do esquema anterior).
+- **Header adicional**: `X-Crivo-Tenant` com o `tenantSlug` que já fluía pelo contexto (`Code: combinar evento e tenant` / `Code: gate`) — nenhuma leitura nova de Data Table foi introduzida.
+
+`apiKey` foi removido de toda a cadeia de contexto: `tenant_config` (Data Table, coluna deletada via `delete_data_table_column`), `Code: combinar evento e tenant`, `Code: contexto do lead`, `Code: finalizar opt-out`, `Code: finalizar mídia`, e o `workflowInputs` dos 2 nós `toolWorkflow` (`responder_lead`, `agendar_reuniao`) e dos 2 `Execute Workflow Trigger` dos sub-workflows. Confirmado por busca nos 3 arquivos-fonte (`n8n/workflows/*.ts`) e nos 3 workflows publicados (`get_workflow_details`): zero ocorrências de `apiKey` ou de um header `Authorization` montado por expressão.
+
+### 12.2 Por que a evidência real desta task é um workflow-escrutínio, não um webhook real
+
+`crivo-agente-principal` dispara por `whatsAppTrigger`; `execute_workflow` (MCP) só aceita `Schedule Trigger, Webhook Trigger, Form Trigger, Chat Trigger, Manual Trigger` — confirmado pelo próprio erro da ferramenta ao tentar. `test_workflow` (pin data) pinaria justamente os nós HTTP Request que este lote mudou, o que provaria a lógica mas não a autenticação real contra produção. Nenhuma das duas ferramentas MCP prova o que SEC-01 pede.
+
+Solução (mesmo padrão já usado no T12, seção 10.3 — workflow temporário, arquivado depois): um workflow-escrutínio (`Manual Trigger` → `HTTP Request`) com a **configuração idêntica** ao nó `HTTP: POST /leads (idempotente)` publicado — mesma credencial `httpHeaderAuth`, mesmo header `X-Crivo-Tenant`, mesma URL — executado duas vezes via `execute_workflow` (`Manual Trigger` está na lista permitida):
+
+- **Caso positivo**, execução `664`: `X-Crivo-Tenant: triangulo` → `status:"success"`, `POST /leads` criou o lead `1ed76ddb-5b89-43fc-a30e-d1e216cd4a67` de verdade em produção — a credencial de serviço autentica e o tenant certo é resolvido, sem nenhuma chave em parâmetro.
+- **Caso negativo**, execução `665`: `X-Crivo-Tenant: tenant-que-nao-existe-t17` → corpo da resposta `{"type":"urn:crivo:problem:tenant-nao-identificado","status":401,"code":"tenant-nao-identificado"}` — confirma que um slug desconhecido nunca cai num tenant default.
+
+Workflow-escrutínio (`3vo8P22DP4EMG9PG`) arquivado (`archive_workflow`) logo depois das duas execuções — nada ficou pendurado na instância.
+
+**Limite honesto**: isto prova a autenticação (o que SEC-01 pede) na configuração exata publicada, não um round-trip completo via `whatsAppTrigger`. O round-trip completo (mensagem real no WhatsApp → agente → CRM) é a Fase 4 deste lote (T19-22), conduzida pelo orquestrador com o usuário presente — não delegável a um worker, como o `design.md` já registrava antes deste achado.
+
+### 12.3 Procedimento de rotação da chave de serviço
+
+**Ordem obrigatória — nunca invertida** (mesma lógica de "credencial primeiro, cutover depois" da ativação original, aplicada ao inverso na rotação: a chave nova só substitui a antiga depois de confirmada funcionando):
+
+1. **Gerar a chave nova**: rodar `npm run db:seed` (gera e imprime em claro, uma única vez, a nova chave de serviço — junto das chaves por tenant, que também rotacionam como efeito colateral, seção 4). Copiar o valor do stdout imediatamente; não fica recuperável depois.
+2. **Atualizar a credencial na instância**: editar a credencial `httpHeaderAuth` "Crivo - chave de serviço" (`YhGcdfGtdEBBU9YP`) na UI do n8n — único campo humano permitido a mudar fora do fluxo de workflow-as-code (mesma exceção de sempre para credenciais) — trocando o valor do header `Authorization` para `Bearer <chave nova>`.
+3. **Confirmar que a chave nova autentica**: repetir a verificação da seção 12.2 (workflow-escrutínio temporário, `X-Crivo-Tenant: triangulo`, espera `status:"success"`) — **antes** do passo 4. Se falhar, a credencial ainda tem o valor antigo ou o valor foi colado errado; não prosseguir.
+4. **Só então revogar a chave antiga** em `service_api_keys`: **não existe hoje um helper de DAL nem uma server action para revogação por label/id** — `src/server/data/index.ts` só tem `resolveServiceApiKeyHash` (T13, leitura). Revogar exige uma atualização direta no banco (`UPDATE service_api_keys SET revoked_at = now() WHERE label = '<label da chave antiga>' AND revoked_at IS NULL`), fora de qualquer ferramenta MCP disponível aqui — dito honestamente em vez de inventado, como o `tasks.md` pediu. Um lote futuro que productize a rotação pode adicionar essa server action.
+5. Arquivar o workflow-escrutínio temporário do passo 3.
+
+Se a ordem for invertida (revogar antes de confirmar a chave nova), toda chamada do agente ao CRM passa a falhar com `401 nao-autenticado` até o próximo ciclo — o mesmo modo de silêncio em produção que a ordem original (credencial → cutover) evitou.
+
+### 12.4 `tenant_config` não guarda mais nenhuma chave
+
+Confirmado por `search_data_tables` após a remoção da coluna: `tenant_config` tem hoje só `phoneNumberId`, `tenantSlug`, `calendarId` — nenhum segredo em texto claro na Data Table, e nenhum valor de autenticação aparece mais no log de execução de nenhum nó (era o gap que o `design.md` — Pesquisa — tinha exposto: a chave por expressão vazava também em log, não só na Data Table).
