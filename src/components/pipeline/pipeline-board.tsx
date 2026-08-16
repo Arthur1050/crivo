@@ -23,7 +23,6 @@ import {
   Layout,
   LayoutContent,
   LayoutHeader,
-  LayoutPanel,
 } from "@astryxdesign/core/Layout";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { StatusDot } from "@astryxdesign/core/StatusDot";
@@ -33,6 +32,7 @@ import { RelativeTime } from "@/src/components/shared/relative-time";
 import { formatCurrencyBRL } from "@/src/lib/format";
 import { updateLeadStatusAction } from "@/src/server/actions/pipeline";
 import type {
+  Broker,
   Lead,
   LeadStatus,
   LeadWithBroker,
@@ -108,6 +108,8 @@ interface PipelineBoardProps {
   leads: LeadWithBroker[];
   /** `leadId → conversationId`, para o link "Ver conversa" (lote-3 — PIPE-04). */
   conversationIdByLeadId?: Record<string, string>;
+  /** Corretores do tenant ativo, repassados ao painel de detalhe (lote-7 — ATRIB-02). */
+  brokers: Pick<Broker, "id" | "name">[];
 }
 
 /**
@@ -119,6 +121,7 @@ interface PipelineBoardProps {
 export function PipelineBoard({
   leads,
   conversationIdByLeadId = {},
+  brokers,
 }: PipelineBoardProps) {
   const router = useRouter();
   // Override otimista aplicado durante o voo do drag (e desfeito em caso de
@@ -190,92 +193,81 @@ export function PipelineBoard({
         />
       )}
 
-      <Layout
-        height="auto"
-        className="m-0!"
-        content={
-          <LayoutContent padding={0}>
-            <Grid columns={3} gap={4} align="start">
-              {columns.map((column) => (
-                <Card
-                  key={column.status}
-                  // variant="transparent"
-                  padding={0}
-                  onDragOver={(event) => event.preventDefault()}
-                  onDrop={(event) => {
-                    event.preventDefault();
-                    const leadId = event.dataTransfer.getData("text/plain");
-                    if (leadId) void handleDrop(column.status, leadId);
-                  }}
-                >
-                  <Layout
-                    height="auto"
-                    header={
-                      <LayoutHeader hasDivider padding={3}>
-                        <HStack hAlign="between" vAlign="center" gap={2}>
-                          <HStack gap={2} vAlign="center">
-                            <StatusDot
-                              variant={column.variant}
-                              label={`Status ${column.title}`}
-                            />
-                            <column.icon size={16} />
-                            <Heading level={3}>{column.title}</Heading>
-                          </HStack>
-                          <Badge
-                            label={String(column.leads.length)}
-                            variant={BADGE_VARIANT[column.variant]}
-                          />
-                        </HStack>
-                      </LayoutHeader>
-                    }
-                    content={
-                      <LayoutContent padding={3}>
-                        {column.leads.length === 0 ? (
-                          <EmptyState
-                            isCompact
-                            title="Nenhum lead"
-                            description={column.emptyDescription}
-                          />
-                        ) : (
-                          <VStack gap={2}>
-                            {column.leads.map((lead) => (
-                              <ClickableCard
-                                key={lead.id}
-                                label={`Ver detalhe de ${lead.name}`}
-                                draggable
-                                onDragStart={(event) =>
-                                  event.dataTransfer.setData(
-                                    "text/plain",
-                                    lead.id
-                                  )
-                                }
-                                onClick={() => setSelectedLeadId(lead.id)}
-                              >
-                                <LeadCardBody lead={lead} />
-                              </ClickableCard>
-                            ))}
-                          </VStack>
-                        )}
-                      </LayoutContent>
-                    }
-                  />
-                </Card>
-              ))}
-            </Grid>
-          </LayoutContent>
-        }
-        end={
-          selectedLead ? (
-            <LayoutPanel width={380} hasDivider label="Detalhe do lead">
-              <LeadDetailPanel
-                lead={selectedLead}
-                conversationId={conversationIdByLeadId[selectedLead.id]}
-                onClose={() => setSelectedLeadId(null)}
-              />
-            </LayoutPanel>
-          ) : undefined
-        }
-      />
+      <Grid columns={3} gap={4} align="start">
+        {columns.map((column) => (
+          <Card
+            key={column.status}
+            padding={0}
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={(event) => {
+              event.preventDefault();
+              const leadId = event.dataTransfer.getData("text/plain");
+              if (leadId) void handleDrop(column.status, leadId);
+            }}
+          >
+            <Layout
+              height="auto"
+              header={
+                <LayoutHeader hasDivider padding={3}>
+                  <HStack hAlign="between" vAlign="center" gap={2}>
+                    <HStack gap={2} vAlign="center">
+                      <StatusDot
+                        variant={column.variant}
+                        label={`Status ${column.title}`}
+                      />
+                      <column.icon size={16} />
+                      <Heading level={3}>{column.title}</Heading>
+                    </HStack>
+                    <Badge
+                      label={String(column.leads.length)}
+                      variant={BADGE_VARIANT[column.variant]}
+                    />
+                  </HStack>
+                </LayoutHeader>
+              }
+              content={
+                <LayoutContent padding={3}>
+                  {column.leads.length === 0 ? (
+                    <EmptyState
+                      isCompact
+                      title="Nenhum lead"
+                      description={column.emptyDescription}
+                    />
+                  ) : (
+                    <VStack gap={2}>
+                      {column.leads.map((lead) => (
+                        <ClickableCard
+                          key={lead.id}
+                          label={`Ver detalhe de ${lead.name}`}
+                          draggable
+                          onDragStart={(event) =>
+                            event.dataTransfer.setData("text/plain", lead.id)
+                          }
+                          onClick={() => setSelectedLeadId(lead.id)}
+                        >
+                          <LeadCardBody lead={lead} />
+                        </ClickableCard>
+                      ))}
+                    </VStack>
+                  )}
+                </LayoutContent>
+              }
+            />
+          </Card>
+        ))}
+      </Grid>
+
+      {/* Fora do fluxo do quadro de propósito: o painel é um `<dialog>` na top
+          layer, então abrir o detalhe não estreita as colunas nem reflowa os
+          cards — o pipeline fica intacto por trás do overlay. */}
+      {selectedLead && (
+        <LeadDetailPanel
+          lead={selectedLead}
+          conversationId={conversationIdByLeadId[selectedLead.id]}
+          brokers={brokers}
+          onClose={() => setSelectedLeadId(null)}
+        />
+      )}
     </VStack>
   );
 }

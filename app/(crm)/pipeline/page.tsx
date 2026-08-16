@@ -3,7 +3,7 @@ import { StatusDot } from "@astryxdesign/core/StatusDot";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { Heading, Text } from "@astryxdesign/core/Text";
 import { PipelineBoard } from "@/src/components/pipeline/pipeline-board";
-import { getConversations, getLeads, getTenant } from "@/src/server/data";
+import { getBrokers, getConversations, getLeads, getTenant } from "@/src/server/data";
 import { getActiveTenantId } from "@/src/server/tenant";
 
 /**
@@ -17,10 +17,11 @@ import { getActiveTenantId } from "@/src/server/tenant";
  */
 export default async function PipelinePage() {
   const tenantId = await getActiveTenantId();
-  const [leads, conversations, tenant] = await Promise.all([
+  const [leads, conversations, tenant, brokers] = await Promise.all([
     getLeads(tenantId),
     getConversations(tenantId),
     getTenant(tenantId),
+    getBrokers(tenantId),
   ]);
 
   const conversationIdByLeadId = Object.fromEntries(
@@ -47,6 +48,7 @@ export default async function PipelinePage() {
       <PipelineBoard
         leads={leads}
         conversationIdByLeadId={conversationIdByLeadId}
+        brokers={brokers}
       />
     </VStack>
   );
