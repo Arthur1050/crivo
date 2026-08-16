@@ -92,7 +92,15 @@ const whatsAppInboundTrigger = trigger({
   config: {
     name: "WhatsApp Trigger",
     position: [0, 0],
-    parameters: { updates: ["messages"] },
+    // messageStatusUpdates: [] evita que cada mudanca de status de entrega
+    // (enviado/entregue/lido) de uma mensagem do agente dispare uma execucao
+    // nova do workflow -- sem isso, 1 mensagem trocada produzia ate 7
+    // execucoes extras que morriam de proposito no filtro de statuses
+    // (achado real em producao, 2026-08-16, execucoes 682-689).
+    parameters: {
+      updates: ["messages"],
+      options: { messageStatusUpdates: [] },
+    },
     credentials: {
       // Credencial WhatsApp Trigger criada pelo usuário (runbook README §2.1,
       // human gate) — id copiado exatamente de `list_credentials`, nunca
