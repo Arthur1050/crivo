@@ -867,10 +867,34 @@ const buildSeedMessages = node({
         "  ? rawHistory\n" +
         "  : rawHistory.filter((m) => new Date(m.sentAt).getTime() < cutoff);\n" +
         "const session = selectSeedMessages(priorHistory, now);\n" +
-        "return session.map((m) => ({ json: { type: m.sender === 'agente' ? 'ai' : 'user', message: m.content } }));\n",
+        "const seedItems = session.map((m) => ({ json: { type: m.sender === 'agente' ? 'ai' : 'user', message: m.content, nadaParaSemear: false } }));\n" +
+        // Zero mensagens ANTERIORES é o caso normal de uma conversa nova,
+        // agora que o turno atual é excluído do corte acima. Devolver []
+        // aqui mataria a cadeia inteira -- o n8n pula todos os nós seguintes
+        // quando um nó devolve 0 itens, então o agente nunca rodava e o lead
+        // ficava sem resposta (execução real 931). O item sentinela mantém o
+        // fluxo vivo; o IF seguinte desvia direto para o checkpoint sem
+        // semear nada. `nadaParaSemear` é explícito nos DOIS formatos (nunca
+        // undefined) para o IF poder comparar boolean em modo strict.
+        "return seedItems.length > 0 ? seedItems : [{ json: { nadaParaSemear: true } }];\n",
     },
   },
-  output: [{ type: "user", message: "Oi, vi o anúncio do apartamento" }],
+  output: [{ type: "user", message: "Oi, vi o anúncio do apartamento", nadaParaSemear: false }],
+});
+
+const hasSeedMessagesIf = ifElse({
+  version: 2.3,
+  config: {
+    name: "Nada para semear?",
+    position: [6900, 400],
+    parameters: {
+      conditions: {
+        combinator: "and",
+        options: { caseSensitive: true, leftValue: "", typeValidation: "strict" },
+        conditions: [{ leftValue: expr("{{ $json.nadaParaSemear }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }],
+      },
+    },
+  },
 });
 
 // Loop 1-a-1 (get_sdk_reference — "Trust empty item lists"): com 0 mensagens
@@ -1651,9 +1675,16 @@ const afterLoadMemory = loadMemory.to(
     .onTrue(
       getMessagesForSeed.to(
         buildSeedMessages.to(
-          seedMessageBatches
-            .onDone(memoryReadyCheckpoint)
-            .onEachBatch(insertOneSeedMessage.to(nextBatch(seedMessageBatches)))
+          hasSeedMessagesIf
+            // Conversa nova, sem histórico anterior: nada a semear, segue
+            // direto para o checkpoint (o turno atual é gravado depois, pelo
+            // salvamento do turno).
+            .onTrue(memoryReadyCheckpoint)
+            .onFalse(
+              seedMessageBatches
+                .onDone(memoryReadyCheckpoint)
+                .onEachBatch(insertOneSeedMessage.to(nextBatch(seedMessageBatches)))
+            )
         )
       )
     )
