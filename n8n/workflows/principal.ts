@@ -1315,10 +1315,59 @@ const finalizeAgentTurn = node({
         // (turno 1 de uma conversa real ficou com 3 cópias da mensagem do
         // lead: semeadura + salvamento automático + salvamento explícito).
         "const autoSaved = typeof agentOutput.output === 'string' && agentOutput.output.trim().length > 0;\n" +
-        "return [{ json: { tenantSlug: ctx.tenantSlug, waId: ctx.waId, fase, turnoSemResposta: !calledResponder, autoSaved } }];\n",
+        // ACHADO REAL (Phase 4 do lote-7, execução 947): o agente escreveu a
+        // resposta como TEXTO FINAL em vez de chamar `responder_lead`
+        // ("casa na região central tem um charme especial / qual é a faixa
+        // de valor..."). Esse texto é descartado pelo fluxo — o lead ficou
+        // sem nenhuma resposta no WhatsApp. OBS-01 previa registrar o turno
+        // sem resposta, mas registrar em silêncio significa ghostear o lead.
+        // `respostaFallback` carrega esse texto para o envio de contingência.
+        "const respostaFallback = typeof agentOutput.output === 'string' ? agentOutput.output.trim() : '';\n" +
+        "const precisaFallback = !calledResponder && respostaFallback.length > 0;\n" +
+        "return [{ json: { tenantSlug: ctx.tenantSlug, waId: ctx.waId, fase, turnoSemResposta: !calledResponder, autoSaved, respostaFallback, precisaFallback } }];\n",
     },
   },
-  output: [{ tenantSlug: "imobiliaria-a", waId: "5534999990001", fase: "qualificando", turnoSemResposta: false, autoSaved: false }],
+  output: [{ tenantSlug: "imobiliaria-a", waId: "5534999990001", fase: "qualificando", turnoSemResposta: false, autoSaved: false, respostaFallback: "", precisaFallback: false }],
+});
+
+const needsFallbackSendIf = ifElse({
+  version: 2.3,
+  config: {
+    name: "Turno sem responder_lead, mas com texto?",
+    position: [8340, 250],
+    parameters: {
+      conditions: {
+        combinator: "and",
+        options: { caseSensitive: true, leftValue: "", typeValidation: "strict" },
+        conditions: [{ leftValue: expr("{{ $json.precisaFallback }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }],
+      },
+    },
+  },
+});
+
+// Reaproveita INTEIRO o caminho de envio fixo (`fixedReplyWired`): mesmo
+// envio pelo WhatsApp, mesmo registro da mensagem no CRM (que é o que
+// alimenta `first_response_at` — KPI-01) e mesmo clear de buffer. Não há
+// envio novo escrito aqui. A memória do turno já foi gravada pelo
+// salvamento automático do n8n (este ramo só existe quando o agente
+// produziu texto final, que é exatamente a condição do auto-save), então
+// este caminho não passa pelo salvamento explícito.
+const buildFallbackReply = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: preparar envio de contingência",
+    position: [8600, 250],
+    parameters: {
+      mode: "runOnceForAllItems",
+      language: "javaScript",
+      jsCode:
+        "const ctx = $('Code: gate').first().json;\n" +
+        "const turno = $('Code: finalizar turno do agente').first().json;\n" +
+        "return [{ json: { mensagens: [turno.respostaFallback], waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, tenantSlug: ctx.tenantSlug, leadId: ctx.id, fase: turno.fase } }];\n",
+    },
+  },
+  output: [{ mensagens: ["resposta do agente que nao passou por responder_lead"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
 });
 
 const wasTurnAutoSavedIf = ifElse({
@@ -1702,14 +1751,21 @@ memoryReadyCheckpoint.to(
         // (mesma regra de fan-in do topo desta seção: wiring de saída
         // definida uma vez só, nunca duplicada por branch).
         finalizeAgentTurn.to(
-          wasTurnAutoSavedIf
-            .onTrue(clearAfterAgentTurnWired)
+          needsFallbackSendIf
+            // Agente escreveu texto mas não chamou `responder_lead`: manda
+            // esse texto pelo caminho de envio fixo em vez de deixar o lead
+            // no vácuo (achado real, execução 947).
+            .onTrue(buildFallbackReply.to(fixedReplyWired))
             .onFalse(
-              prepareTurnForMemory.to(
-                turnMessageBatches
-                  .onDone(clearAfterAgentTurnWired)
-                  .onEachBatch(insertOneTurnMessage.to(nextBatch(turnMessageBatches)))
-              )
+              wasTurnAutoSavedIf
+                .onTrue(clearAfterAgentTurnWired)
+                .onFalse(
+                  prepareTurnForMemory.to(
+                    turnMessageBatches
+                      .onDone(clearAfterAgentTurnWired)
+                      .onEachBatch(insertOneTurnMessage.to(nextBatch(turnMessageBatches)))
+                  )
+                )
             )
         )
       )

@@ -67,6 +67,8 @@ const TOOLS_CATALOG_INSTRUCTION = [
   "- agendar_reuniao: confirma um horário de reunião com o corretor.",
   "- escalar_para_humano: transfere a conversa para um humano.",
   "- consultar_documentos: consulta a lista de documentos do tenant, só quando precisar.",
+  "",
+  "ATENÇÃO CRÍTICA: escrever a resposta como texto final, sem chamar responder_lead, faz o lead NÃO RECEBER NADA — ele fica no vácuo. Nenhum texto seu chega ao lead por outro caminho. Toda e qualquer mensagem passa obrigatoriamente por uma chamada de responder_lead.",
 ].join("\n");
 
 // ACHADO REAL (Phase 4 do lote-7, 2026-08-16, execuções reais — não

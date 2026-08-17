@@ -164,6 +164,11 @@ describe("buildSystemMessage — catálogo de tools (AGN-02)", () => {
     const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando", perguntados: [] });
     expect(message).toMatch(/responder_lead: ÚNICA forma de enviar mensagem/);
   });
+
+  it("avisa que texto final sem responder_lead deixa o lead sem receber nada (achado real, Phase 4 lote-7)", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando", perguntados: [] });
+    expect(message).toMatch(/sem chamar responder_lead, faz o lead NÃO RECEBER NADA/i);
+  });
 });
 
 describe("buildSystemMessage — âncora de data (achado real, Phase 4 lote-7)", () => {
