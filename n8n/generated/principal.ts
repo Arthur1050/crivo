@@ -1552,6 +1552,35 @@ const purgeConversaEstadoOnOptOut = node({
 //    do arquivo: um único `.to(...)` nomeado, nunca declarado 2 vezes).
 // ---------------------------------------------------------------------
 
+// ACHADO REAL (Phase 4 do lote-7, execução 1118): a rota de opt-out nunca
+// tinha sido exercitada ponta a ponta com mensagem real. Entre
+// `Code: finalizar opt-out` e o envio existem DOIS nós de Data Table
+// (purga de memória e purga de conversa_estado), e cada um substitui
+// `$json` pelo próprio resultado — `Code: destinatário do envio fixo` lia
+// `$input.first()` cego e recebia a LINHA da conversa_estado, sem
+// `phoneNumberId` e sem `mensagens`. O envio saía para uma URL malformada
+// e a Meta devolvia 400 ("Object with ID 'messages' does not exist"): o
+// lead era descadastrado corretamente, mas nunca recebia a confirmação
+// única que a LGPD-03 AC1 exige. Este checkpoint restaura o payload do
+// ancestral nomeado — exatamente a CONVENÇÃO DE CONVERGÊNCIA descrita no
+// topo deste arquivo, que a rota de opt-out era a única a não seguir.
+const restoreOptOutPayload = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: restaurar payload do opt-out",
+    position: [5480, -500],
+    parameters: {
+      mode: "runOnceForAllItems",
+      language: "javaScript",
+      jsCode:
+        "const ctx = $('Code: finalizar opt-out').first().json;\n" +
+        "return [{ json: ctx }];\n",
+    },
+  },
+  output: [{ mensagens: ["confirmação de opt-out"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "encerrada" }],
+});
+
 const normalizeFixedReplyRecipient = node({
   type: "n8n-nodes-base.code",
   version: 2,
@@ -1706,7 +1735,11 @@ const fixedReplyWired = normalizeFixedReplyRecipient.to(
 const clearAfterAgentTurnWired = prepClearAfterAgentTurn.to(clearBufferAndFinalize);
 
 const optOutBranch = postOptOut.to(
-  finalizeOptOut.to(purgeMemoryOnOptOut.to(purgeConversaEstadoOnOptOut.to(fixedReplyWired)))
+  finalizeOptOut.to(
+    purgeMemoryOnOptOut.to(
+      purgeConversaEstadoOnOptOut.to(restoreOptOutPayload.to(fixedReplyWired))
+    )
+  )
 );
 const somenteRegistrarBranch = finalizeSomenteRegistrar.to(clearBufferAndFinalize);
 const midiaBranch = finalizeMedia.to(fixedReplyWired);
