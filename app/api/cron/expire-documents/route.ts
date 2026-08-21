@@ -1,3 +1,5 @@
+import { timingSafeEqual } from "node:crypto";
+
 import { expireDocuments } from "../../../../src/server/integration/lgpd";
 import { problem } from "../../../../src/server/integration/problem";
 
@@ -21,7 +23,21 @@ async function handleExpireDocuments(request: Request): Promise<Response> {
   const header = request.headers.get("authorization");
   const provided = /^Bearer\s+(.+)$/i.exec(header ?? "")?.[1]?.trim();
 
-  if (!secret || !provided || provided !== secret) {
+  if (!secret || !provided) {
+    return problem(401, "nao-autenticado", "Secret do cron ausente ou inválido.");
+  }
+
+  const secretBuf = Buffer.from(secret);
+  const providedBuf = Buffer.from(provided);
+
+  let isAuthentic = false;
+  if (secretBuf.length === providedBuf.length) {
+    isAuthentic = timingSafeEqual(secretBuf, providedBuf);
+  } else {
+    timingSafeEqual(secretBuf, secretBuf);
+  }
+
+  if (!isAuthentic) {
     return problem(401, "nao-autenticado", "Secret do cron ausente ou inválido.");
   }
 
