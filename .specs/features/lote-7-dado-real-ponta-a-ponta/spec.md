@@ -227,21 +227,21 @@ Toda ambiguidade está resolvida ou registrada aqui — nada fica silenciosament
 
 | Requirement ID | Story | Phase | Status |
 | -------------- | ----- | ----- | ------ |
-| REAL-01 | P1: Dado de demonstração sai dos tenants-piloto | T2, T6 | Implementing |
-| KPI-01 | P1: Primeira resposta do agente marca o relógio | T5, T19 | Implementing |
-| ATRIB-01 | P1: Lead real nasce com corretor responsável | T3, T4, T19 | Implementing |
-| ATRIB-02 | P1: Gestor troca o corretor pelo CRM | T7, T8, T9, T10 | Implementing |
-| KPI-02 | P1: Comparecimento à reunião é registrado no CRM | T7, T8, T9, T10 | Implementing |
-| SEC-01 | P1: Chave de API do tenant sai do texto claro | T1, T12–T18 | Implementing |
-| PRIV-01 | P1: LGPD verificável com dado real | T21, T22 | Implementing |
-| SMOKE-01 | P1: Os três desfechos provados por conversa real | T19, T20, T21 | Implementing |
-| SHELL-01 | P2: Sidebar mostra atividade real do agente | T7, T11 | Implementing |
+| REAL-01 | P1: Dado de demonstração sai dos tenants-piloto | T2, T6 | ✅ Verified |
+| KPI-01 | P1: Primeira resposta do agente marca o relógio | T5, T19 | ✅ Verified |
+| ATRIB-01 | P1: Lead real nasce com corretor responsável | T3, T4, T19 | ✅ Verified |
+| ATRIB-02 | P1: Gestor troca o corretor pelo CRM | T7, T8, T9, T10 | ✅ Verified |
+| KPI-02 | P1: Comparecimento à reunião é registrado no CRM | T7, T8, T9, T10 | ✅ Verified |
+| SEC-01 | P1: Chave de API do tenant sai do texto claro | T1, T12–T18, Fix 1 (`76e2d6d`) | ✅ Verified |
+| PRIV-01 | P1: LGPD verificável com dado real | T21, T22 | ✅ Verified |
+| SMOKE-01 | P1: Os três desfechos provados por conversa real | T19, T20, T21 | ✅ Verified |
+| SHELL-01 | P2: Sidebar mostra atividade real do agente | T7, T11 | ✅ Verified |
 
 **ID format:** `[CATEGORY]-[NUMBER]`
 
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified
 
-**Coverage:** 9 total, 9 mapeadas a tasks, 0 sem mapeamento. Todas com evidência real registrada em `tasks.md` (Phases 1–4) e nas notas de T17/T19/T20/T21/T22; status sobe para **Verified** só depois do Verifier (author ≠ verifier) escrever `validation.md`.
+**Coverage:** 9 total, 9 mapeadas a tasks, 0 sem mapeamento, 9 verificadas. Todas com evidência real registrada em `tasks.md` (Phases 1–4) e nas notas de T17/T19/T20/T21/T22. O Verifier (author ≠ verifier) rodou em 2 rounds: round 1 achou SEC-01 AC2 com gap real (`crivo-agente-scheduler` sem migrar do T17, 401 confirmado em produção via execução 897); Fix 1 (commit `76e2d6d`) migrou o workflow e foi reverificado de forma independente no round 2 — PASS, `validation.md` (`.specs/features/lote-7-dado-real-ponta-a-ponta/validation.md`), `validate_state.py` exit 0.
 
 ---
 
