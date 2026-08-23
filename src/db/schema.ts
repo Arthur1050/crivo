@@ -107,6 +107,12 @@ export const tenants = pgTable(
     // tabela que já tinha linhas; sem dado real a preservar, o reseed é o
     // caminho de convergência e a ressalva caducou.
     slug: text("slug").notNull(),
+    // Exigidas pelo modelo `organization` do plugin do better-auth, que é
+    // mapeado sobre esta tabela (AD-021). Ambas opcionais e sem consumidor no
+    // CRM hoje — existem para que o plugin possa ler/escrever o modelo dele
+    // sem uma tabela paralela ao lado de `tenants`.
+    logo: text("logo"),
+    metadata: text("metadata"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -353,6 +359,13 @@ export const sessions = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    // Imobiliária ativa da sessão (AD-021, que emenda a AD-007): substitui o
+    // cookie `crivo_tenant` como fonte de verdade. `text` e sem FK porque é
+    // assim que o plugin declara o campo (`type: "string"`) e é o que o CLI
+    // emite — o valor é sempre um `tenants.id`, e a validação contra os
+    // vínculos reais do usuário mora na guarda (`verifySession`, T7), não
+    // numa constraint.
+    activeOrganizationId: text("active_organization_id"),
   },
   (table) => [index("sessions_userId_idx").on(table.userId)]
 );
@@ -413,4 +426,79 @@ export const verifications = pgTable(
       .$onUpdate(() => new Date()),
   },
   (table) => [index("verifications_identifier_idx").on(table.identifier)]
+);
+
+// ---------------------------------------------------------------------------
+// Plugin `organization` do better-auth mapeado sobre `tenants` (lote-8 —
+// TENANT-01; AD-021). `organization` → `tenants` (tabela existente, acima),
+// `member` → `tenant_members`, `invitation` → `tenant_invitations`.
+//
+// Os dois exports abaixo são snake_case, ao contrário do resto do arquivo:
+// o adaptador Drizzle resolve a tabela por `schema[modelName]` (lookup por
+// chave exata do módulo), então o nome do export TEM que ser o `modelName`
+// configurado em `src/server/auth/config.ts`. Renomear um dos dois quebra o
+// adaptador em runtime, não em compilação.
+// ---------------------------------------------------------------------------
+
+export const tenant_members = pgTable(
+  "tenant_members",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    // Papéis do produto (`administrador` | `gestor` | `corretor`),
+    // acumuláveis, separados por vírgula — formato nativo do plugin.
+    role: text("role").notNull().default("member"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    // `additionalFields` do produto. A janela de trabalho é POR VÍNCULO, não
+    // por usuário: a mesma pessoa pode atender em horários diferentes em duas
+    // imobiliárias. Dias ISO 1(segunda)-7(domingo) e horas "HH:MM" em
+    // America/Sao_Paulo — mesma convenção de `tenants.meetingDays`.
+    workDays: integer("work_days").array(),
+    workHoursStart: text("work_hours_start"),
+    workHoursEnd: text("work_hours_end"),
+    // `null` = vínculo ativo. Desativação nunca apaga a linha (USER-02).
+    deactivatedAt: timestamp("deactivated_at", { withTimezone: true }),
+  },
+  (table) => [
+    // Um vínculo por par usuário × imobiliária. O plugin não declara esse
+    // único; sem ele, convidar duas vezes o mesmo e-mail criaria dois
+    // vínculos para a mesma pessoa na mesma imobiliária.
+    uniqueIndex("tenant_members_user_id_organization_id_idx").on(
+      table.userId,
+      table.organizationId
+    ),
+    index("tenant_members_organizationId_idx").on(table.organizationId),
+    index("tenant_members_userId_idx").on(table.userId),
+  ]
+);
+
+export const tenant_invitations = pgTable(
+  "tenant_invitations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    email: text("email").notNull(),
+    role: text("role"),
+    status: text("status").notNull().default("pending"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    inviterId: uuid("inviter_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+  },
+  (table) => [
+    index("tenant_invitations_organizationId_idx").on(table.organizationId),
+    index("tenant_invitations_email_idx").on(table.email),
+  ]
 );

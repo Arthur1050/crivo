@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { organization } from "better-auth/plugins/organization";
 import { db } from "../../db";
 import * as schema from "../../db/schema";
 
@@ -38,4 +39,47 @@ export const auth = betterAuth({
       generateId: "uuid",
     },
   },
+  plugins: [
+    organization({
+      schema: {
+        // O coração da AD-021: a imobiliária continua sendo UMA identidade.
+        // O modelo `organization` do plugin é a tabela `tenants` que já
+        // existe — não uma tabela paralela que precisaria ser mantida em
+        // sincronia com ela.
+        organization: {
+          modelName: "tenants",
+          additionalFields: {
+            // `tenants` não é uma tabela do plugin com colunas de domínio
+            // penduradas: é a tabela de domínio, e ela tem duas colunas
+            // NOT NULL que o plugin precisa conhecer para conseguir escrever
+            // nela. Sem declará-las aqui, qualquer `createOrganization`
+            // falharia com violação de NOT NULL em `agent_name` /
+            // `supported_modality`. Declarar é dizer a verdade sobre a tabela
+            // mapeada; a alternativa seria dar default a coluna de domínio,
+            // que é enfraquecer o schema para acomodar a biblioteca.
+            agentName: { type: "string", required: true },
+            supportedModality: { type: "string", required: true },
+          },
+        },
+        member: {
+          modelName: "tenant_members",
+          additionalFields: {
+            // Janela de trabalho do corretor (AGENDA-01). Mora no VÍNCULO,
+            // não no usuário: a mesma pessoa pode atender de manhã numa
+            // imobiliária e à tarde na outra. Mesmo formato de
+            // `tenants.meetingDays`/`meetingHoursStart` — dias ISO 1
+            // (segunda) a 7 (domingo), horas "HH:MM" em America/Sao_Paulo.
+            workDays: { type: "number[]", required: false },
+            workHoursStart: { type: "string", required: false },
+            workHoursEnd: { type: "string", required: false },
+            // Desativação (USER-02): o vínculo nunca é apagado — perde acesso
+            // e sai das listas de atribuição, mas segue nomeado no histórico
+            // dos leads que atendeu. `null` = vínculo ativo.
+            deactivatedAt: { type: "date", required: false },
+          },
+        },
+        invitation: { modelName: "tenant_invitations" },
+      },
+    }),
+  ],
 });
