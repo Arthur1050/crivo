@@ -1,11 +1,15 @@
 import { create } from "zustand";
 
 /**
- * Espelho client-side do tenant ativo, usado apenas para UI (nome no header,
- * item selecionado no switcher). O cookie `crivo_tenant` é a fonte de
- * verdade (design.md — Tech Decisions); esta store NÃO usa `zustand/persist`
- * / localStorage — ela é inicializada e atualizada a partir de dados vindos
- * do servidor.
+ * Espelho client-side da imobiliária ativa, usado apenas para UI (nome no
+ * header, item selecionado no seletor).
+ *
+ * A fonte de verdade é o `activeOrganizationId` da SESSÃO autenticada
+ * (AD-021, que emenda a AD-007) — não mais o cookie `crivo_tenant`, que deixou
+ * de existir como mecanismo. Esta store continua sendo só espelho: não usa
+ * `zustand/persist` / localStorage, e é inicializada e atualizada
+ * exclusivamente a partir do que o servidor já resolveu e validou contra os
+ * vínculos reais do usuário.
  */
 interface TenantState {
   tenantId: string;

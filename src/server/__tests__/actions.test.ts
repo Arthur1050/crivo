@@ -14,19 +14,41 @@ import {
   getTenants,
 } from "../data";
 
-// `getActiveTenantId()` (chamada internamente por toda action) lê o cookie
-// `crivo_tenant` via `next/headers`'s `cookies()` — API só utilizável dentro
-// de um request scope real do Next.js. Fora dele (como aqui, em Vitest puro),
-// `cookies()` lança "called outside a request scope". Mockamos para sempre
-// devolver um cookie ausente, o que faz `getActiveTenantId()` cair no
-// fallback documentado (design.md — Error Handling Strategy): o primeiro
-// tenant retornado por `getTenants()` — ainda um tenant real, lido do banco
-// seedado, não um mock de dados.
+// `getActiveTenantId()` (chamada internamente por toda action) resolve a
+// imobiliária ativa pela GUARDA DE SESSÃO desde o lote-8 (AD-021) — antes era
+// o cookie `crivo_tenant`. Nenhuma das duas é utilizável fora de um request
+// scope real do Next.js: `cookies()`/`headers()` lançam "called outside a
+// request scope", e `verifySession()` redirecionaria.
+//
+// A guarda é mockada para devolver um contexto de administrador na PRIMEIRA
+// imobiliária de `getTenants()` — exatamente a mesma imobiliária que o mock
+// de cookie ausente produzia antes, então todas as asserções deste arquivo
+// continuam valendo sobre o mesmo tenant real, lido do banco seedado. Papel
+// `administrador` e `assignedUserId: null` preservam o alcance que estas
+// actions sempre tiveram: a imobiliária inteira, sem filtro de carteira.
+vi.mock("../auth/session", () => ({
+  verifySession: async () => {
+    const { getTenants } = await import("../data");
+    const [tenant] = await getTenants();
+    return {
+      user: {
+        id: "00000000-0000-4000-8000-0000000000aa",
+        name: "Administrador de Teste",
+        email: "admin@fixture.test",
+      },
+      tenantId: tenant.id,
+      roles: ["administrador"],
+      leadScope: { tenantId: tenant.id, assignedUserId: null },
+    };
+  },
+}));
+
 vi.mock("next/headers", () => ({
   cookies: async () => ({
     get: () => undefined,
     set: () => {},
   }),
+  headers: async () => new Headers(),
 }));
 
 // `revalidatePath()` também exige um request/render scope do Next.js
@@ -543,7 +565,7 @@ describe("server actions", () => {
       expect(unchanged!.status).toBe(originalStatus);
     });
 
-    it("um tenantId injetado no payload é ignorado — a action sempre resolve o tenant ativo pelo cookie", async () => {
+    it("um tenantId injetado no payload é ignorado — a action sempre resolve o tenant ativo pela sessao autenticada", async () => {
       const [lead] = await getLeads(activeTenantId);
       expect(lead).toBeDefined();
       const originalStatus = lead.status;
@@ -567,7 +589,7 @@ describe("server actions", () => {
   });
 
   // lote-7 — ATRIB-02/KPI-02 (T8): actions de corretor e comparecimento,
-  // mesmo molde de updateLeadStatusAction (tenant pelo cookie, revalidação de
+  // mesmo molde de updateLeadStatusAction (tenant pela sessao autenticada, revalidação de
   // '/pipeline', falha explícita quando a DAL nega a escrita).
   describe("updateLeadBrokerAction / setMeetingAttendanceAction", () => {
     let fixtureLeadId: string;
@@ -638,7 +660,7 @@ describe("server actions", () => {
         expect(after!.brokerId).toBe(before!.brokerId);
       });
 
-      it("um tenantId injetado no payload é ignorado — a action sempre resolve o tenant ativo pelo cookie", async () => {
+      it("um tenantId injetado no payload é ignorado — a action sempre resolve o tenant ativo pela sessao autenticada", async () => {
         const payloadWithForeignTenant = {
           leadId: fixtureLeadId,
           brokerId: brokerActiveId,

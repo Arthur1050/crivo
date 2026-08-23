@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
 import { AppShell } from "@astryxdesign/core/AppShell";
-import { getLastAgentMessageAt, getTenants } from "@/src/server/data";
-import { getActiveTenantId, setActiveTenant } from "@/src/server/tenant";
+import { getLastAgentMessageAt } from "@/src/server/data";
+import { getLinkedTenants, setActiveTenant } from "@/src/server/tenant";
+import { verifySession } from "@/src/server/auth/session";
 import { Sidebar } from "@/src/components/shell/sidebar";
-import { getMockManager } from "@/src/lib/mock-manager";
 
 /**
  * Shell do CRM (redesign-crm-astryx — RD-01, design.md § R0): SideNav-only,
@@ -17,16 +17,21 @@ import { getMockManager } from "@/src/lib/mock-manager";
  * apenas strings, nunca a linha crua do tenant (que carrega `createdAt: Date`).
  */
 export default async function CrmLayout({ children }: { children: ReactNode }) {
-  const [tenants, activeTenantId] = await Promise.all([
-    getTenants(),
-    getActiveTenantId(),
-  ]);
+  // A guarda é a primeira coisa do shell: sem sessão válida ela redireciona
+  // para `/login`, e sem vínculo nenhum para `/sem-acesso` — nenhuma das duas
+  // situações chega a renderizar dado de imobiliária (spec.md — AUTH-01 AC1,
+  // TENANT-01 AC6).
+  const { user, tenantId: activeTenantId } = await verifySession();
 
+  // Apenas as imobiliárias VINCULADAS ao usuário (TENANT-01 AC3) — nunca a
+  // lista completa do banco, que era o que o seletor mostrava antes do login
+  // existir.
+  const tenants = await getLinkedTenants(user.id);
   const active = tenants.find((tenant) => tenant.id === activeTenantId);
 
   if (!active) {
     throw new Error(
-      "Nenhum tenant encontrado no banco. Rode `npm run db:seed` antes de iniciar o app."
+      "Imobiliária ativa não está entre os vínculos do usuário — a guarda deveria ter resolvido isso antes do shell."
     );
   }
 
@@ -55,7 +60,10 @@ export default async function CrmLayout({ children }: { children: ReactNode }) {
             city: active.city,
             state: active.state,
           }}
-          manager={getMockManager({ id: active.id, name: active.name })}
+          // AUTH-01 AC6: nome e e-mail do usuário AUTENTICADO no shell. Antes
+          // do login existir isto era `getMockManager`, um gestor fictício
+          // derivado do nome do tenant — agora há uma pessoa real a exibir.
+          manager={{ name: user.name, email: user.email }}
           onTenantChange={setActiveTenant}
           lastAgentMessageAt={lastAgentMessageAt ? lastAgentMessageAt.toISOString() : null}
         />

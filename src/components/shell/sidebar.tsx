@@ -108,12 +108,18 @@ export function Sidebar({
             heading={activeTenant.name}
             subheading={location ?? undefined}
             className="mx-2 mt-2"
+            // TENANT-01 AC2: com um vínculo só, nenhum seletor é apresentado.
+            // Sem `menu`, o `SideNavHeading` não vira gatilho de popover — o
+            // header de marca fica sendo só identidade, que é o que ele é
+            // quando não há para onde trocar.
             menu={
-              <TenantSwitcherMenu
-                tenants={tenants}
-                activeTenantId={activeTenant.id}
-                onTenantChange={onTenantChange}
-              />
+              tenants.length > 1 ? (
+                <TenantSwitcherMenu
+                  tenants={tenants}
+                  activeTenantId={activeTenant.id}
+                  onTenantChange={onTenantChange}
+                />
+              ) : undefined
             }
           />
         }

@@ -23,15 +23,25 @@ interface TenantSwitcherMenuProps {
   // importado direto num Client Component, o bundler inclui o módulo inteiro
   // no bundle do client. Passar a server action já resolvida pelo Server
   // Component pai (layout) é o padrão suportado pelo Next para esse caso.
+  //
+  // A action é `setActiveTenant`, que valida o vínculo NO SERVIDOR antes de
+  // gravar: a validação nunca depende de a lista exibida aqui estar correta.
   onTenantChange: (tenantId: string) => Promise<void>;
 }
 
 /**
- * Seletor de tenant hospedado no header de marca da sidebar
+ * Seletor de imobiliária hospedado no header de marca da sidebar
  * (redesign-crm-astryx — RD-01 AC2): é o conteúdo do popover do
- * `SideNavHeading`, via `NavHeadingMenu`. A troca em si é a mesma de sempre —
- * server action `setActiveTenant` gravando o cookie `crivo_tenant`, que
- * continua sendo a fonte de verdade (AD-007).
+ * `SideNavHeading`, via `NavHeadingMenu`.
+ *
+ * Recomposto no lote-8 (TENANT-01, AD-021), não reescrito: mesma UI, mesmos
+ * componentes. O que mudou é de onde vem a lista e o que a troca grava — as
+ * imobiliárias são exclusivamente os VÍNCULOS do usuário autenticado, e a
+ * troca grava o `activeOrganizationId` da sessão em vez do cookie
+ * `crivo_tenant`, que deixou de ser fonte de verdade.
+ *
+ * Quem tem um vínculo só não vê seletor nenhum (AC2): o componente pai não
+ * monta este menu, então não há popover a abrir.
  */
 export function TenantSwitcherMenu({
   tenants,
