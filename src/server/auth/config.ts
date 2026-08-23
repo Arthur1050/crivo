@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { organization } from "better-auth/plugins/organization";
+import { nextCookies } from "better-auth/next-js";
 import { db } from "../../db";
 import * as schema from "../../db/schema";
 
@@ -31,8 +32,23 @@ export const auth = betterAuth({
   session: { modelName: "sessions" },
   account: { modelName: "accounts" },
   verification: { modelName: "verifications" },
+  // `BETTER_AUTH_URL` e `BETTER_AUTH_SECRET` são lidas do ambiente pela
+  // própria biblioteca (ver `.env.example`). Sem o secret, o better-auth cai
+  // num valor de desenvolvimento e LANÇA em produção — é ele que assina o
+  // cookie de sessão.
   emailAndPassword: {
     enabled: true,
+  },
+  rateLimit: {
+    // O padrão da biblioteca é ligar o rate limit só em produção. AUTH-01 AC4
+    // é requisito de comportamento, não de ambiente: fica ligado sempre, e é
+    // por isso que existe teste para ele.
+    enabled: true,
+    customRules: {
+      // AUTH-01 AC4: acima de 10 tentativas falhas em 1 minuto, novas
+      // tentativas são recusadas (HTTP 429).
+      "/sign-in/email": { window: 60, max: 10 },
+    },
   },
   advanced: {
     database: {
@@ -81,5 +97,9 @@ export const auth = betterAuth({
         invitation: { modelName: "tenant_invitations" },
       },
     }),
+    // Precisa ser o ÚLTIMO plugin da lista: é ele que aplica os cookies que a
+    // biblioteca emite quando um endpoint é chamado de dentro de uma server
+    // action do Next.
+    nextCookies(),
   ],
 });
