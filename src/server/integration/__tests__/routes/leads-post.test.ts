@@ -29,6 +29,7 @@ describe("routes: POST /api/v1/leads", () => {
       name: `Tenant Teste leads-post ${tenantId}`,
       agentName: "Agente Teste",
       supportedModality: "ambos",
+      slug: `fixture-${tenantId}`,
     });
 
     apiKey = `test-key-${randomUUID()}`;

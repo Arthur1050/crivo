@@ -36,12 +36,14 @@ describe("routes: POST /api/v1/leads/[id]/messages", () => {
         name: `Tenant Teste A leads-messages-post ${tenantAId}`,
         agentName: "Agente A",
         supportedModality: "ambos",
+        slug: `fixture-${tenantAId}`,
       },
       {
         id: tenantBId,
         name: `Tenant Teste B leads-messages-post ${tenantBId}`,
         agentName: "Agente B",
         supportedModality: "ambos",
+        slug: `fixture-${tenantBId}`,
       },
     ]);
 

@@ -22,6 +22,7 @@ async function createTenant(): Promise<string> {
     name: "Tenant Fixture First Response",
     agentName: "Agente Teste",
     supportedModality: "ambos",
+    slug: `fixture-${id}`,
   });
   return id;
 }

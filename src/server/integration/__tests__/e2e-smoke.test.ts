@@ -48,6 +48,7 @@ describe("e2e smoke — criar lead → qualificar → mensagens → escalar (2 t
         name: `Tenant Smoke ${label} ${tenantId}`,
         agentName: `Agente ${label}`,
         supportedModality: "ambos",
+        slug: `fixture-${tenantId}`,
       });
 
       const apiKey = `smoke-key-${label}-${randomUUID()}`;

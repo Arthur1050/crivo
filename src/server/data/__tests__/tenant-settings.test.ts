@@ -16,6 +16,7 @@ const ORIGINAL = {
   name: "Imobiliária Fixture Settings",
   agentName: "Agente Fixture",
   supportedModality: "ambos" as const,
+  slug: `fixture-${FIXTURE_TENANT_ID}`,
   city: "Uberaba",
   state: "MG",
   agentWhatsapp: "+55 34 90000-1111",

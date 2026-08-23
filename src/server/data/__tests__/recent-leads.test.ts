@@ -113,6 +113,7 @@ describe("server/data — getRecentLeads e brokerName em getLeads (RD-03/RD-04)"
         name: `Fixture Tenant ${i + 1}`,
         agentName: `Agente Fixture ${i + 1}`,
         supportedModality: "ambos" as const,
+        slug: `fixture-${id}`,
       }))
     );
     await db.insert(brokers).values([

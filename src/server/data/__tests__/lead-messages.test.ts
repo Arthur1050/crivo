@@ -25,12 +25,14 @@ describe("server/data — getLeadMessages (lote-6b, CTX-02)", () => {
         name: `Tenant Teste A lead-messages ${tenantAId}`,
         agentName: "Agente A",
         supportedModality: "ambos",
+        slug: `fixture-${tenantAId}`,
       },
       {
         id: tenantBId,
         name: `Tenant Teste B lead-messages ${tenantBId}`,
         agentName: "Agente B",
         supportedModality: "ambos",
+        slug: `fixture-${tenantBId}`,
       },
     ]);
 

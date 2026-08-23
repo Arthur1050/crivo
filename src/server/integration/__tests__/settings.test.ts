@@ -23,6 +23,7 @@ describe("server/integration settings — getTenantSettings", () => {
         name: "Imobiliária Configurada Settings",
         agentName: "Agente Configurado",
         supportedModality: "ambos",
+        slug: `fixture-${configuredTenantId}`,
         agentPresentationMessage: "Oi! Sou o agente virtual.",
         agentVoiceTone: "Caloroso e direto.",
         meetingDays: [1, 2, 3, 4, 5],
@@ -34,6 +35,7 @@ describe("server/integration settings — getTenantSettings", () => {
         name: "Imobiliária Sem Horário Settings",
         agentName: "Agente Sem Horário",
         supportedModality: "novo",
+        slug: `fixture-${unconfiguredTenantId}`,
         // agentPresentationMessage e os 3 campos de horário ficam null (default).
       },
     ]);

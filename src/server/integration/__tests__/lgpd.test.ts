@@ -24,12 +24,14 @@ describe("server/integration lgpd — optOutLead + expireDocuments", () => {
         name: `Tenant Teste A lgpd ${tenantAId}`,
         agentName: "Agente A",
         supportedModality: "ambos",
+        slug: `fixture-${tenantAId}`,
       },
       {
         id: tenantBId,
         name: `Tenant Teste B lgpd ${tenantBId}`,
         agentName: "Agente B",
         supportedModality: "ambos",
+        slug: `fixture-${tenantBId}`,
       },
     ]);
   });

@@ -23,6 +23,7 @@ describe("server/integration context — getContext", () => {
       name: `Tenant Teste context ${tenantId}`,
       agentName: "Agente Teste",
       supportedModality: "ambos",
+      slug: `fixture-${tenantId}`,
     });
 
     categoryId = randomUUID();

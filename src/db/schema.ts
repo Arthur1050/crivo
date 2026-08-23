@@ -99,19 +99,19 @@ export const tenants = pgTable(
     // Identificador legível único do tenant (lote-7 — SEC-01), usado pelo
     // header `X-Crivo-Tenant` do modo de autenticação de serviço do agente
     // e já espelhado no n8n como `tenantSlug` na Data Table `tenant_config`.
-    // Nullable + índice único parcial (WHERE NOT NULL): mesmo padrão de
-    // `leads.external_id` — um push de coluna NOT NULL sem default falha
-    // contra uma tabela que já tem linhas (os tenants existentes).
-    slug: text("slug"),
+    //
+    // NOT NULL com índice único TOTAL a partir do lote-8 (T3): o plugin
+    // `organization` do better-auth, mapeado sobre esta tabela (AD-021),
+    // exige `slug` obrigatório. Era nullable com índice único parcial só
+    // porque o lote-7 não podia adicionar uma coluna NOT NULL contra uma
+    // tabela que já tinha linhas; sem dado real a preservar, o reseed é o
+    // caminho de convergência e a ressalva caducou.
+    slug: text("slug").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
-  (table) => [
-    uniqueIndex("tenants_slug_idx")
-      .on(table.slug)
-      .where(sql`${table.slug} is not null`),
-  ]
+  (table) => [uniqueIndex("tenants_slug_idx").on(table.slug)]
 );
 
 export const brokers = pgTable("brokers", {

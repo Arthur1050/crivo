@@ -28,12 +28,14 @@ describe("routes: GET /api/v1/context", () => {
         name: `Tenant Teste A context-get ${tenantAId}`,
         agentName: "Agente A",
         supportedModality: "ambos",
+        slug: `fixture-${tenantAId}`,
       },
       {
         id: tenantBId,
         name: `Tenant Teste B context-get ${tenantBId}`,
         agentName: "Agente B",
         supportedModality: "ambos",
+        slug: `fixture-${tenantBId}`,
       },
     ]);
 

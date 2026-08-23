@@ -26,6 +26,7 @@ describe("routes: /api/cron/expire-documents", () => {
       name: `Tenant Teste cron ${tenantId}`,
       agentName: "Agente Teste",
       supportedModality: "ambos",
+      slug: `fixture-${tenantId}`,
     });
 
     expiredDocId = randomUUID();

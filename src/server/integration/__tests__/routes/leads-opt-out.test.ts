@@ -28,12 +28,14 @@ describe("routes: POST /api/v1/leads/[id]/opt-out", () => {
         name: `Tenant Teste A leads-opt-out ${tenantAId}`,
         agentName: "Agente A",
         supportedModality: "ambos",
+        slug: `fixture-${tenantAId}`,
       },
       {
         id: tenantBId,
         name: `Tenant Teste B leads-opt-out ${tenantBId}`,
         agentName: "Agente B",
         supportedModality: "ambos",
+        slug: `fixture-${tenantBId}`,
       },
     ]);
 
