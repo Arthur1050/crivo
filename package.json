@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "db:seed": "tsx src/db/seed.ts",
+    "db:create-admin": "tsx src/db/create-admin.ts",
     "test": "vitest run"
   },
   "dependencies": {
