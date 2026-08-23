@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   bigint,
   boolean,
+  index,
   integer,
   pgEnum,
   pgTable,
@@ -301,3 +302,115 @@ export const serviceApiKeys = pgTable("service_api_keys", {
   // quando parou de valer, preservando o histórico de rotação.
   revokedAt: timestamp("revoked_at", { withTimezone: true }),
 });
+
+// ---------------------------------------------------------------------------
+// Tabelas core do better-auth (lote-8 — AUTH-01; AD-021).
+//
+// Geradas por `npx auth@latest generate --config src/server/auth/config.ts`
+// (design.md — Integration Points) e transcritas aqui com duas adaptações às
+// convenções do projeto, nenhuma delas semântica: `.defaultRandom()` no lugar
+// de `sql\`pg_catalog.gen_random_uuid()\`` (é o mesmo `gen_random_uuid()`), e
+// `withTimezone: true` em todo timestamp, como em todas as tabelas acima.
+// As `relations()` emitidas pelo CLI ficam de fora: o projeto não usa a API
+// relacional do Drizzle em lugar nenhum.
+//
+// O `id` é `uuid` porque `src/server/auth/config.ts` configura
+// `advanced.database.generateId: "uuid"` — sem isso o better-auth geraria um
+// alfanumérico de 32 caracteres, incompatível com as PKs `uuid` de todo o
+// resto do schema (risco registrado no design.md, provado por teste em T2).
+// ---------------------------------------------------------------------------
+
+export const users = pgTable("users", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  emailVerified: boolean("email_verified").notNull().default(false),
+  image: text("image"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
+export const sessions = pgTable(
+  "sessions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    token: text("token").notNull().unique(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+  },
+  (table) => [index("sessions_userId_idx").on(table.userId)]
+);
+
+export const accounts = pgTable(
+  "accounts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    issuer: text("issuer").notNull(),
+    accountId: text("account_id").notNull(),
+    providerId: text("provider_id").notNull(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    accessToken: text("access_token"),
+    refreshToken: text("refresh_token"),
+    idToken: text("id_token"),
+    accessTokenExpiresAt: timestamp("access_token_expires_at", {
+      withTimezone: true,
+    }),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at", {
+      withTimezone: true,
+    }),
+    scope: text("scope"),
+    // Hash da senha (e-mail + senha). Nunca a senha em claro — o better-auth
+    // grava só o hash, mesma disciplina de `service_api_keys.keyHash`.
+    password: text("password"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    uniqueIndex("accounts_issuer_accountId_uidx").on(
+      table.issuer,
+      table.accountId
+    ),
+    index("accounts_userId_idx").on(table.userId),
+  ]
+);
+
+export const verifications = pgTable(
+  "verifications",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    identifier: text("identifier").notNull(),
+    value: text("value").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [index("verifications_identifier_idx").on(table.identifier)]
+);
