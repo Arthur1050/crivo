@@ -94,7 +94,7 @@ const lookupTenantForReminder = node({
       limit: 1,
     },
   },
-  output: [{ phoneNumberId: "109876543210001", tenantSlug: "vale-do-uberaba", apiKey: "exemplo", calendarId: "exemplo" }],
+  output: [{ phoneNumberId: "109876543210001", tenantSlug: "vale-do-uberaba", calendarId: "exemplo" }],
 });
 
 const mergeReminderContext = node({
@@ -111,10 +111,10 @@ const mergeReminderContext = node({
         "\n\n" +
         "const reminder = $('Data Table: lembretes devidos (agenda_envios)').item.json;\n" +
         "const tenant = $json;\n" +
-        "return { json: { leadId: reminder.leadId, tenantSlug: reminder.tenantSlug, waId: reminder.waId, recipientMsisdn: toWhatsAppMsisdn(reminder.waId), meetingAt: reminder.meetingAt, meetLink: reminder.meetLink, agendaEnvioRowId: reminder.id, apiKey: tenant.apiKey, phoneNumberId: tenant.phoneNumberId } };\n",
+        "return { json: { leadId: reminder.leadId, tenantSlug: reminder.tenantSlug, waId: reminder.waId, recipientMsisdn: toWhatsAppMsisdn(reminder.waId), meetingAt: reminder.meetingAt, meetLink: reminder.meetLink, agendaEnvioRowId: reminder.id, phoneNumberId: tenant.phoneNumberId } };\n",
     },
   },
-  output: [{ leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", tenantSlug: "vale-do-uberaba", waId: "553499532444", recipientMsisdn: "5534999532444", meetingAt: "2026-08-05T13:00:00.000Z", meetLink: "https://meet.google.com/abc-defg-hij", agendaEnvioRowId: 1, apiKey: "exemplo", phoneNumberId: "109876543210001" }],
+  output: [{ leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", tenantSlug: "vale-do-uberaba", waId: "553499532444", recipientMsisdn: "5534999532444", meetingAt: "2026-08-05T13:00:00.000Z", meetLink: "https://meet.google.com/abc-defg-hij", agendaEnvioRowId: 1, phoneNumberId: "109876543210001" }],
 });
 
 const lookupConversaForReminder = node({
@@ -153,9 +153,11 @@ const postLeadForReminder = node({
     parameters: {
       method: "POST",
       url: `${CRM_BASE_URL}/leads`,
+      authentication: "genericCredentialType",
+      genericAuthType: "httpHeaderAuth",
       sendHeaders: true,
       headerParameters: {
-        parameters: [{ name: "Authorization", value: expr("Bearer {{ $('Code: combinar lembrete e tenant').item.json.apiKey }}") }],
+        parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: combinar lembrete e tenant').item.json.tenantSlug }}") }],
       },
       sendBody: true,
       contentType: "json",
@@ -170,6 +172,7 @@ const postLeadForReminder = node({
         "{{ { name: 'Lead', phone: $('Code: combinar lembrete e tenant').item.json.waId, externalId: $('Code: combinar lembrete e tenant').item.json.waId, firstContactAt: $now.toISO() } }}"
       ),
     },
+    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
   },
   output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", status: "qualificado_agendado", optedOutAt: null }],
 });
@@ -200,7 +203,7 @@ const decideReminderChannel = node({
         "return [{ json: { ...ctx, leadId: lead.id, route } }];\n",
     },
   },
-  output: [{ leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", tenantSlug: "vale-do-uberaba", waId: "553499532444", recipientMsisdn: "5534999532444", meetingAt: "2026-08-05T13:00:00.000Z", meetLink: "https://meet.google.com/abc-defg-hij", agendaEnvioRowId: 1, apiKey: "exemplo", phoneNumberId: "109876543210001", route: "texto-livre" }],
+  output: [{ leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", tenantSlug: "vale-do-uberaba", waId: "553499532444", recipientMsisdn: "5534999532444", meetingAt: "2026-08-05T13:00:00.000Z", meetLink: "https://meet.google.com/abc-defg-hij", agendaEnvioRowId: 1, phoneNumberId: "109876543210001", route: "texto-livre" }],
 });
 
 const reminderRouteSwitch = switchCase({
@@ -297,8 +300,10 @@ const registerReminderMessage = node({
     parameters: {
       method: "POST",
       url: expr(`${CRM_BASE_URL}/leads/{{ $('Code: canal do lembrete').first().json.leadId }}/messages`),
+      authentication: "genericCredentialType",
+      genericAuthType: "httpHeaderAuth",
       sendHeaders: true,
-      headerParameters: { parameters: [{ name: "Authorization", value: expr("Bearer {{ $('Code: canal do lembrete').first().json.apiKey }}") }] },
+      headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: canal do lembrete').first().json.tenantSlug }}") }] },
       sendBody: true,
       contentType: "json",
       specifyBody: "json",
@@ -306,6 +311,7 @@ const registerReminderMessage = node({
         "{{ { externalId: 'lembrete-' + $('Code: canal do lembrete').first().json.agendaEnvioRowId, sender: 'agente', content: 'Lembrete de reunião enviado (' + $('Code: canal do lembrete').first().json.route + ')', sentAt: $now.toISO() } }}"
       ),
     },
+    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
   },
   output: [{ id: "7fa85f64-5717-4562-b3fc-2c963f66afaa", sender: "agente" }],
 });
@@ -396,7 +402,7 @@ const lookupTenantForReengagement = node({
       limit: 1,
     },
   },
-  output: [{ phoneNumberId: "109876543210001", tenantSlug: "vale-do-uberaba", apiKey: "exemplo" }],
+  output: [{ phoneNumberId: "109876543210001", tenantSlug: "vale-do-uberaba" }],
 });
 
 const mergeReengagementContext = node({
@@ -413,10 +419,10 @@ const mergeReengagementContext = node({
         "\n\n" +
         "const conversa = $('Filter: exclui encerradas (reengajamento)').item.json;\n" +
         "const tenant = $json;\n" +
-        "return { json: { tenantSlug: conversa.tenantSlug, waId: conversa.waId, recipientMsisdn: toWhatsAppMsisdn(conversa.waId), leadId: conversa.leadId, apiKey: tenant.apiKey, phoneNumberId: tenant.phoneNumberId } };\n",
+        "return { json: { tenantSlug: conversa.tenantSlug, waId: conversa.waId, recipientMsisdn: toWhatsAppMsisdn(conversa.waId), leadId: conversa.leadId, phoneNumberId: tenant.phoneNumberId } };\n",
     },
   },
-  output: [{ tenantSlug: "vale-do-uberaba", waId: "553499532444", recipientMsisdn: "5534999532444", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", apiKey: "exemplo", phoneNumberId: "109876543210001" }],
+  output: [{ tenantSlug: "vale-do-uberaba", waId: "553499532444", recipientMsisdn: "5534999532444", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", phoneNumberId: "109876543210001" }],
 });
 
 const getSettingsForReengagement = node({
@@ -431,9 +437,12 @@ const getSettingsForReengagement = node({
     parameters: {
       method: "GET",
       url: `${CRM_BASE_URL}/settings`,
+      authentication: "genericCredentialType",
+      genericAuthType: "httpHeaderAuth",
       sendHeaders: true,
-      headerParameters: { parameters: [{ name: "Authorization", value: expr("Bearer {{ $json.apiKey }}") }] },
+      headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $json.tenantSlug }}") }] },
     },
+    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
   },
   output: [{ agentName: "Ana" }],
 });
@@ -482,8 +491,10 @@ const registerReengagementMessage = node({
     parameters: {
       method: "POST",
       url: expr(`${CRM_BASE_URL}/leads/{{ $('Code: combinar reengajamento e tenant').first().json.leadId }}/messages`),
+      authentication: "genericCredentialType",
+      genericAuthType: "httpHeaderAuth",
       sendHeaders: true,
-      headerParameters: { parameters: [{ name: "Authorization", value: expr("Bearer {{ $('Code: combinar reengajamento e tenant').first().json.apiKey }}") }] },
+      headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: combinar reengajamento e tenant').first().json.tenantSlug }}") }] },
       sendBody: true,
       contentType: "json",
       specifyBody: "json",
@@ -491,6 +502,7 @@ const registerReengagementMessage = node({
         "{{ { externalId: 'reengajamento-' + $('Code: combinar reengajamento e tenant').first().json.waId + '-' + $now.toFormat('yyyyMMdd'), sender: 'agente', content: 'Mensagem de reengajamento enviada (template)', sentAt: $now.toISO() } }}"
       ),
     },
+    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
   },
   output: [{ id: "8fa85f64-5717-4562-b3fc-2c963f66afab", sender: "agente" }],
 });
@@ -585,7 +597,7 @@ const lookupTenantForEscalation = node({
       limit: 1,
     },
   },
-  output: [{ phoneNumberId: "109876543210001", tenantSlug: "vale-do-uberaba", apiKey: "exemplo" }],
+  output: [{ phoneNumberId: "109876543210001", tenantSlug: "vale-do-uberaba" }],
 });
 
 const mergeEscalationContext = node({
@@ -599,11 +611,10 @@ const mergeEscalationContext = node({
       language: "javaScript",
       jsCode:
         "const conversa = $('Filter: exclui encerradas (escalonamento)').item.json;\n" +
-        "const tenant = $json;\n" +
-        "return { json: { tenantSlug: conversa.tenantSlug, waId: conversa.waId, leadId: conversa.leadId, apiKey: tenant.apiKey } };\n",
+        "return { json: { tenantSlug: conversa.tenantSlug, waId: conversa.waId, leadId: conversa.leadId } };\n",
     },
   },
-  output: [{ tenantSlug: "vale-do-uberaba", waId: "5534999990001", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", apiKey: "exemplo" }],
+  output: [{ tenantSlug: "vale-do-uberaba", waId: "5534999990001", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6" }],
 });
 
 const patchEscalateSilence = node({
@@ -621,8 +632,10 @@ const patchEscalateSilence = node({
     parameters: {
       method: "PATCH",
       url: expr(`${CRM_BASE_URL}/leads/{{ $json.leadId }}`),
+      authentication: "genericCredentialType",
+      genericAuthType: "httpHeaderAuth",
       sendHeaders: true,
-      headerParameters: { parameters: [{ name: "Authorization", value: expr("Bearer {{ $json.apiKey }}") }] },
+      headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $json.tenantSlug }}") }] },
       sendBody: true,
       contentType: "json",
       specifyBody: "json",
@@ -630,6 +643,7 @@ const patchEscalateSilence = node({
         "{{ { status: 'escalado_humano', escalationReason: 'ausência de resposta', executiveSummary: 'Lead silencioso por mais de 48h após reengajamento único.' } }}"
       ),
     },
+    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
   },
   output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", status: "escalado_humano" }],
 });
