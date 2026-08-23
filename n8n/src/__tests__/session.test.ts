@@ -1,9 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { isSessionExpired, selectSeedMessages } from "../session.mjs";
 
+type HistoryMessage = import("../session.mjs").HistoryMessage;
+
 /** Constrói N mensagens alternando lead/agente, com `sentAt` espaçado por
  * `stepMinutes` a partir de `startIso` — mesmo utilitário de `history.test.ts`. */
-function buildMessages(count, { startIso = "2026-08-01T10:00:00.000Z", stepMinutes = 5 } = {}) {
+function buildMessages(
+  count: number,
+  {
+    startIso = "2026-08-01T10:00:00.000Z",
+    stepMinutes = 5,
+  }: { startIso?: string; stepMinutes?: number } = {}
+): HistoryMessage[] {
   const start = new Date(startIso).getTime();
   return Array.from({ length: count }, (_, i) => ({
     sender: i % 2 === 0 ? "lead" : "agente",

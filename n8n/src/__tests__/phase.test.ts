@@ -7,6 +7,11 @@ import {
   resolveConversationPhase,
 } from "../phase.mjs";
 
+/** Chave de `FIELD_LABELS` — `REQUIRED_FIELDS`/`OPPORTUNISTIC_FIELDS` são
+ * `readonly string[]` na fonte, então indexar `FIELD_LABELS` por um item
+ * delas precisa do nome do campo como chave para ser checado. */
+type FieldName = keyof typeof FIELD_LABELS;
+
 describe("REQUIRED_FIELDS / OPPORTUNISTIC_FIELDS (QLF-01 AC1)", () => {
   it("REQUIRED_FIELDS contém exatamente modality, region, propertyType", () => {
     expect(REQUIRED_FIELDS).toEqual(["modality", "region", "propertyType"]);
@@ -28,7 +33,7 @@ describe("REQUIRED_FIELDS / OPPORTUNISTIC_FIELDS (QLF-01 AC1)", () => {
   });
 
   it("FIELD_LABELS tem rótulo pt-BR para todos os 8 campos", () => {
-    const allFields = [...REQUIRED_FIELDS, ...OPPORTUNISTIC_FIELDS];
+    const allFields = [...REQUIRED_FIELDS, ...OPPORTUNISTIC_FIELDS] as FieldName[];
     for (const field of allFields) {
       expect(typeof FIELD_LABELS[field]).toBe("string");
       expect(FIELD_LABELS[field].length).toBeGreaterThan(0);

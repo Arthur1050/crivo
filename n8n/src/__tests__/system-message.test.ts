@@ -2,6 +2,11 @@ import { describe, expect, it } from "vitest";
 import { FIELD_LABELS, OPPORTUNISTIC_FIELDS, REQUIRED_FIELDS } from "../phase.mjs";
 import { buildSystemMessage } from "../system-message.mjs";
 
+/** Chave de `FIELD_LABELS` — `REQUIRED_FIELDS`/`OPPORTUNISTIC_FIELDS` são
+ * `readonly string[]` na fonte, então indexar `FIELD_LABELS` por um item
+ * delas precisa do nome do campo como chave para ser checado. */
+type FieldName = keyof typeof FIELD_LABELS;
+
 const BASE_SETTINGS = {
   realEstateName: "Triângulo Imóveis",
   agentName: "Marina",
@@ -81,7 +86,7 @@ describe("buildSystemMessage — instrução por fase (QLF-01 AC7/AC8, QLF-03)",
       perguntados: ["modality", "region", "propertyType"],
     });
 
-    for (const field of [...REQUIRED_FIELDS, ...OPPORTUNISTIC_FIELDS]) {
+    for (const field of [...REQUIRED_FIELDS, ...OPPORTUNISTIC_FIELDS] as FieldName[]) {
       expect(message).not.toContain(FIELD_LABELS[field]);
     }
   });
@@ -104,7 +109,7 @@ describe("buildSystemMessage — instrução por fase (QLF-01 AC7/AC8, QLF-03)",
 
   it("fase qualificando: nunca menciona campo oportunista", () => {
     const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando", perguntados: [] });
-    for (const field of OPPORTUNISTIC_FIELDS) {
+    for (const field of OPPORTUNISTIC_FIELDS as readonly FieldName[]) {
       expect(message).not.toContain(FIELD_LABELS[field]);
     }
   });
@@ -122,7 +127,7 @@ describe("buildSystemMessage — instrução por fase (QLF-01 AC7/AC8, QLF-03)",
 
   it("instrução por fase menciona no máximo UM campo por vez, nunca lista os 3 juntos", () => {
     const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando", perguntados: [] });
-    const mentionedRequiredLabels = REQUIRED_FIELDS.filter((field) =>
+    const mentionedRequiredLabels = (REQUIRED_FIELDS as readonly FieldName[]).filter((field) =>
       message.includes(FIELD_LABELS[field])
     );
     expect(mentionedRequiredLabels).toHaveLength(1);
