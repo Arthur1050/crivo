@@ -17,20 +17,36 @@ import {
 } from "drizzle-orm";
 import { db } from "../../db";
 import {
-  brokers,
   conversations,
   documentCategories,
   documents,
   leads,
   messages,
   serviceApiKeys,
+  tenant_members,
   tenantApiKeys,
   tenants,
+  users,
 } from "../../db/schema";
 import { assignBroker, type BrokerLoad } from "../../lib/broker-assignment";
 
 export type Tenant = typeof tenants.$inferSelect;
-export type Broker = typeof brokers.$inferSelect;
+
+/**
+ * Corretor de uma imobiliária (lote-8 — AD-021). Deixou de ser uma linha da
+ * tabela `brokers` (removida) e passou a ser a projeção do vínculo
+ * usuário↔imobiliária: `id` é o `users.id` (o mesmo valor que
+ * `leads.assignedUserId` guarda), `tenantId` é a imobiliária do vínculo e
+ * `createdAt` é a data DO VÍNCULO — é ela que sustenta o desempate
+ * determinístico da política de atribuição.
+ */
+export interface Broker {
+  id: string;
+  tenantId: string;
+  name: string;
+  email: string;
+  createdAt: Date;
+}
 export type Lead = typeof leads.$inferSelect;
 export type Conversation = typeof conversations.$inferSelect;
 export type Message = typeof messages.$inferSelect;
@@ -119,11 +135,21 @@ export async function resolveTenantIdBySlug(
 }
 
 export async function getBrokers(tenantId: string): Promise<Broker[]> {
-  return db.select().from(brokers).where(eq(brokers.tenantId, tenantId));
+  return db
+    .select({
+      id: users.id,
+      tenantId: tenant_members.organizationId,
+      name: users.name,
+      email: users.email,
+      createdAt: tenant_members.createdAt,
+    })
+    .from(tenant_members)
+    .innerJoin(users, eq(tenant_members.userId, users.id))
+    .where(eq(tenant_members.organizationId, tenantId));
 }
 
 /**
- * Lead + nome do corretor responsável (`null` quando `brokerId` é nulo).
+ * Lead + nome do corretor responsável (`null` quando `assignedUserId` é nulo).
  * Extensão ADITIVA do retorno de `getLeads` (redesign-crm-astryx — RD-03 AC3):
  * todas as colunas de `leads` continuam presentes e inalteradas.
  */
@@ -134,11 +160,11 @@ export async function getLeads(
   filters?: { status?: LeadStatus }
 ): Promise<LeadWithBroker[]> {
   return db
-    .select({ ...getTableColumns(leads), brokerName: brokers.name })
+    .select({ ...getTableColumns(leads), brokerName: users.name })
     .from(leads)
     // LEFT (não INNER): leads sem corretor continuam aparecendo no Kanban,
     // apenas sem avatar (spec.md — Edge Cases).
-    .leftJoin(brokers, eq(leads.brokerId, brokers.id))
+    .leftJoin(users, eq(leads.assignedUserId, users.id))
     .where(
       and(
         eq(leads.tenantId, tenantId),
@@ -179,11 +205,11 @@ export async function getRecentLeads(
       budgetCents: leads.budgetCents,
       modality: leads.modality,
       status: leads.status,
-      brokerName: brokers.name,
+      brokerName: users.name,
       firstContactAt: leads.firstContactAt,
     })
     .from(leads)
-    .leftJoin(brokers, eq(leads.brokerId, brokers.id))
+    .leftJoin(users, eq(leads.assignedUserId, users.id))
     .where(eq(leads.tenantId, tenantId))
     .orderBy(desc(leads.firstContactAt), asc(leads.id))
     .limit(limit);
@@ -770,9 +796,12 @@ export async function updateLeadStatus(
  * Troca o corretor responsável por um lead a partir do painel de detalhe
  * (lote-7 — ATRIB-02): `WHERE tenant_id AND id` (mesmo padrão de
  * `updateLeadStatus`), com o corretor validado contra o tenant NA MESMA
- * query — um `brokerId` de outro tenant nunca é aceito, mesmo que o
+ * query — um corretor de outro tenant nunca é aceito, mesmo que o
  * `leadId` seja válido. Retorna `null` (no-op) tanto para lead inexistente/
  * de outro tenant quanto para corretor inexistente/de outro tenant.
+ *
+ * lote-8 (AD-021): o corretor é um usuário, e "pertencer ao tenant" passou a
+ * ser ter vínculo em `tenant_members` com aquela imobiliária.
  */
 export async function updateLeadBroker(
   tenantId: string,
@@ -781,16 +810,21 @@ export async function updateLeadBroker(
 ): Promise<Lead | null> {
   const rows = await db
     .update(leads)
-    .set({ brokerId, updatedAt: new Date() })
+    .set({ assignedUserId: brokerId, updatedAt: new Date() })
     .where(
       and(
         eq(leads.tenantId, tenantId),
         eq(leads.id, leadId),
         exists(
           db
-            .select({ id: brokers.id })
-            .from(brokers)
-            .where(and(eq(brokers.id, brokerId), eq(brokers.tenantId, tenantId)))
+            .select({ id: tenant_members.id })
+            .from(tenant_members)
+            .where(
+              and(
+                eq(tenant_members.userId, brokerId),
+                eq(tenant_members.organizationId, tenantId)
+              )
+            )
         )
       )
     )
@@ -909,21 +943,21 @@ const ACTIVE_LEAD_STATUSES: LeadStatus[] = ["em_qualificacao", "escalado_humano"
 export async function getBrokerLoads(tenantId: string): Promise<BrokerLoad[]> {
   const rows = await db
     .select({
-      id: brokers.id,
-      createdAt: brokers.createdAt,
+      id: tenant_members.userId,
+      createdAt: tenant_members.createdAt,
       activeLeads: count(leads.id),
     })
-    .from(brokers)
+    .from(tenant_members)
     .leftJoin(
       leads,
       and(
-        eq(leads.brokerId, brokers.id),
-        eq(leads.tenantId, brokers.tenantId),
+        eq(leads.assignedUserId, tenant_members.userId),
+        eq(leads.tenantId, tenant_members.organizationId),
         inArray(leads.status, ACTIVE_LEAD_STATUSES)
       )
     )
-    .where(eq(brokers.tenantId, tenantId))
-    .groupBy(brokers.id, brokers.createdAt);
+    .where(eq(tenant_members.organizationId, tenantId))
+    .groupBy(tenant_members.userId, tenant_members.createdAt);
 
   return rows.map((row) => ({
     id: row.id,
@@ -957,7 +991,7 @@ export interface CreateAgentLeadResult {
  * Atribuição de corretor (lote-7 — ATRIB-01): lida a carga ativa do tenant
  * ANTES do insert e delega a escolha à função pura `assignBroker`. Tenant
  * sem corretor cadastrado devolve `null` (lista vazia) — o lead nasce assim
- * mesmo, com `brokerId` nulo, nunca bloqueado por essa atribuição.
+ * mesmo, com `assignedUserId` nulo, nunca bloqueado por essa atribuição.
  */
 export async function createAgentLead(
   tenantId: string,
@@ -975,7 +1009,7 @@ export async function createAgentLead(
       externalId: input.externalId,
       firstContactAt: input.firstContactAt,
       status: "em_qualificacao",
-      brokerId,
+      assignedUserId: brokerId,
     })
     .onConflictDoNothing({
       target: [leads.tenantId, leads.externalId],

@@ -3,15 +3,16 @@ import { createHash, randomBytes } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { db } from "./index";
 import {
-  brokers,
   conversations,
   documentCategories,
   documents,
   leads,
   messages,
   serviceApiKeys,
+  tenant_members,
   tenantApiKeys,
   tenants,
+  users,
 } from "./schema";
 
 /**
@@ -602,7 +603,8 @@ export async function runSeed(): Promise<SeedResult> {
   // deletes + inserts em lote (poucos round-trips de rede até o Neon, em vez
   // de uma escrita por linha).
   const tenantRows: (typeof tenants.$inferInsert)[] = [];
-  const brokerRows: (typeof brokers.$inferInsert)[] = [];
+  const userRows: (typeof users.$inferInsert)[] = [];
+  const memberRows: (typeof tenant_members.$inferInsert)[] = [];
   const categoryRows: (typeof documentCategories.$inferInsert)[] = [];
   const leadRows: (typeof leads.$inferInsert)[] = [];
   const conversationRows: (typeof conversations.$inferInsert)[] = [];
@@ -659,16 +661,25 @@ export async function runSeed(): Promise<SeedResult> {
       });
     }
 
+    // lote-8 (AD-021): corretor é sempre um usuário. A tabela `brokers` saiu
+    // do schema — cada corretor do seed vira uma linha em `users` mais um
+    // vínculo em `tenant_members` com papel `corretor`. Nasce SEM linha em
+    // `accounts`, portanto sem senha: é o estado de convite pendente, que já
+    // é elegível a receber lead e reunião (SEED-01 AC4).
     const brokerIds: string[] = [];
     for (const b of tenantDef.brokers) {
-      const brokerId = id(`broker:${tenantDef.key}:${b.key}`);
-      brokerIds.push(brokerId);
-      brokerRows.push({
-        id: brokerId,
-        tenantId,
+      const userId = id(`user:${tenantDef.key}:${b.key}`);
+      brokerIds.push(userId);
+      userRows.push({
+        id: userId,
         name: b.name,
-        phone: b.phone,
         email: b.email,
+      });
+      memberRows.push({
+        id: id(`member:${tenantDef.key}:${b.key}`),
+        organizationId: tenantId,
+        userId,
+        role: "corretor",
       });
     }
 
@@ -680,7 +691,7 @@ export async function runSeed(): Promise<SeedResult> {
 
       for (const [i, leadDef] of leadDefs.entries()) {
         const leadId = id(`lead:${tenantDef.key}:${i}`);
-        const brokerId = brokerIds[i % brokerIds.length];
+        const assignedUserId = brokerIds[i % brokerIds.length];
         const offsetDays = offsetDaysFor(i, leadDefs.length);
         const firstContactAt = new Date(
           seedNow.getTime() - offsetDays * 86400000
@@ -722,7 +733,7 @@ export async function runSeed(): Promise<SeedResult> {
         leadRows.push({
           id: leadId,
           tenantId,
-          brokerId,
+          assignedUserId,
           name: leadDef.name,
           phone: leadDef.phone,
           status: leadDef.status,
@@ -801,19 +812,25 @@ export async function runSeed(): Promise<SeedResult> {
     await tx.delete(conversations);
     await tx.delete(documents);
     await tx.delete(leads);
-    await tx.delete(brokers);
     await tx.delete(documentCategories);
     await tx.delete(tenantApiKeys);
     // service_api_keys não referencia tenants (sem FK — schema.ts), mas
     // segue o mesmo tratamento de delete-and-insert das demais chaves.
     await tx.delete(serviceApiKeys);
+    // `tenant_members` e `tenant_invitations` têm FK em cascata para
+    // `tenants`, mas `users` não: apagar os vínculos e os usuários é
+    // explícito, e vem DEPOIS de `leads` (que referencia `users` por
+    // `assigned_user_id`, sem cascata) e ANTES de `tenants`.
+    await tx.delete(tenant_members);
     await tx.delete(tenants);
+    await tx.delete(users);
 
     // Ordem de insert respeita as FKs (pais antes dos filhos).
     // `document_categories` precisa existir antes de `documents`, que
     // referencia `category_id`.
     await tx.insert(tenants).values(tenantRows);
-    await tx.insert(brokers).values(brokerRows);
+    await tx.insert(users).values(userRows);
+    await tx.insert(tenant_members).values(memberRows);
     await tx.insert(documentCategories).values(categoryRows);
     await tx.insert(leads).values(leadRows);
     await tx.insert(conversations).values(conversationRows);

@@ -3,7 +3,14 @@ import { randomUUID } from "node:crypto";
 import { afterAll, afterEach, describe, expect, it } from "vitest";
 import { inArray } from "drizzle-orm";
 import { db } from "../../../db";
-import { brokers, conversations, leads, messages, tenants } from "../../../db/schema";
+import {
+  conversations,
+  leads,
+  messages,
+  tenant_members,
+  tenants,
+  users,
+} from "../../../db/schema";
 import {
   getLastAgentMessageAt,
   getLead,
@@ -27,27 +34,35 @@ async function createTenant(name: string): Promise<string> {
   return id;
 }
 
+// lote-8 (AD-021): corretor é usuário + vínculo em `tenant_members`; a
+// tabela `brokers` saiu do schema. As asserções abaixo são as mesmas.
+const createdUserIds: string[] = [];
+
 async function createBroker(tenantId: string, name: string): Promise<string> {
   const id = randomUUID();
-  await db.insert(brokers).values({
+  await db.insert(users).values({
     id,
-    tenantId,
     name,
-    phone: "+55 34 90000-0000",
     email: `${id}@fixture.test`,
+  });
+  createdUserIds.push(id);
+  await db.insert(tenant_members).values({
+    organizationId: tenantId,
+    userId: id,
+    role: "corretor",
   });
   return id;
 }
 
 async function createLead(
   tenantId: string,
-  brokerId: string | null = null
+  assignedUserId: string | null = null
 ): Promise<string> {
   const id = randomUUID();
   await db.insert(leads).values({
     id,
     tenantId,
-    brokerId,
+    assignedUserId,
     name: "Lead Fixture",
     phone: "+55 34 90000-1111",
     status: "em_qualificacao",
@@ -92,8 +107,14 @@ describe("server/data — updateLeadBroker / setMeetingAttendance / getLastAgent
       .delete(conversations)
       .where(inArray(conversations.tenantId, createdTenantIds));
     await db.delete(leads).where(inArray(leads.tenantId, createdTenantIds));
-    await db.delete(brokers).where(inArray(brokers.tenantId, createdTenantIds));
+    await db
+      .delete(tenant_members)
+      .where(inArray(tenant_members.organizationId, createdTenantIds));
     await db.delete(tenants).where(inArray(tenants.id, createdTenantIds));
+    if (createdUserIds.length > 0) {
+      await db.delete(users).where(inArray(users.id, createdUserIds));
+      createdUserIds.length = 0;
+    }
     createdTenantIds.length = 0;
   });
 
@@ -111,13 +132,13 @@ describe("server/data — updateLeadBroker / setMeetingAttendance / getLastAgent
 
       const updated = await updateLeadBroker(tenantId, leadId, brokerBId);
       expect(updated).not.toBeNull();
-      expect(updated!.brokerId).toBe(brokerBId);
+      expect(updated!.assignedUserId).toBe(brokerBId);
 
       const reread = await getLead(tenantId, leadId);
-      expect(reread!.brokerId).toBe(brokerBId);
+      expect(reread!.assignedUserId).toBe(brokerBId);
     });
 
-    it("corretor de outro tenant: devolve null e deixa brokerId inalterado (teste negativo)", async () => {
+    it("corretor de outro tenant: devolve null e deixa assignedUserId inalterado (teste negativo)", async () => {
       const tenantAId = await createTenant("Tenant Broker Cross A");
       const tenantBId = await createTenant("Tenant Broker Cross B");
       createdTenantIds.push(tenantAId, tenantBId);
@@ -129,7 +150,7 @@ describe("server/data — updateLeadBroker / setMeetingAttendance / getLastAgent
       expect(result).toBeNull();
 
       const reread = await getLead(tenantAId, leadId);
-      expect(reread!.brokerId).toBe(brokerAId);
+      expect(reread!.assignedUserId).toBe(brokerAId);
     });
 
     it("lead de outro tenant: devolve null", async () => {
@@ -144,7 +165,7 @@ describe("server/data — updateLeadBroker / setMeetingAttendance / getLastAgent
       expect(result).toBeNull();
 
       const reread = await getLead(tenantBId, leadBId);
-      expect(reread!.brokerId).toBe(brokerBId);
+      expect(reread!.assignedUserId).toBe(brokerBId);
     });
   });
 

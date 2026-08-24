@@ -4,13 +4,13 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { and, eq, lte, sql } from "drizzle-orm";
 import { db } from "../index";
 import {
-  brokers,
   conversations,
   documentCategories,
   documents,
   leads,
   messages,
   serviceApiKeys,
+  tenant_members,
   tenantApiKeys,
   tenants,
 } from "../schema";
@@ -44,7 +44,7 @@ const PILOT_SLUGS = ["triangulo", "vale-uberaba"] as const;
 async function snapshotIds() {
   const [t, b, cat, l, c, m, d] = await Promise.all([
     db.select({ id: tenants.id }).from(tenants),
-    db.select({ id: brokers.id }).from(brokers),
+    db.select({ id: tenant_members.id }).from(tenant_members),
     db.select({ id: documentCategories.id }).from(documentCategories),
     db.select({ id: leads.id }).from(leads),
     db.select({ id: conversations.id }).from(conversations),
@@ -54,7 +54,7 @@ async function snapshotIds() {
   const sortIds = (rows: { id: string }[]) => rows.map((r) => r.id).sort();
   return {
     tenants: sortIds(t),
-    brokers: sortIds(b),
+    tenantMembers: sortIds(b),
     documentCategories: sortIds(cat),
     leads: sortIds(l),
     conversations: sortIds(c),
@@ -125,10 +125,12 @@ describe("db/seed", () => {
     for (const slug of PILOT_SLUGS) {
       const pilot = await tenantBySlug(slug);
 
+      // lote-8 (AD-021): corretor é usuário vinculado à imobiliária, não mais
+      // linha de `brokers` (tabela removida). Mesma asserção, nova origem.
       const pilotBrokers = await db
         .select()
-        .from(brokers)
-        .where(eq(brokers.tenantId, pilot.id));
+        .from(tenant_members)
+        .where(eq(tenant_members.organizationId, pilot.id));
       const pilotCategories = await db
         .select()
         .from(documentCategories)

@@ -3,13 +3,17 @@ import { randomUUID } from "node:crypto";
 import { afterAll, afterEach, describe, expect, it } from "vitest";
 import { inArray } from "drizzle-orm";
 import { db } from "../../../db";
-import { brokers, leads, tenants } from "../../../db/schema";
+import { leads, tenant_members, tenants, users } from "../../../db/schema";
 import { createAgentLead, getBrokerLoads } from "../index";
 
 // Tenants + corretores PRÓPRIOS deste arquivo (nunca o snapshot do seed) —
 // mesmo padrão de isolamento dos demais testes de integração da DAL
 // (lote-5/6). Cobre ATRIB-01 (lote-7): atribuição de corretor na criação de
 // lead pelo contrato.
+//
+// lote-8 (AD-021): o corretor deixou de ser linha de `brokers` e passou a ser
+// usuário + vínculo em `tenant_members`. Todas as asserções abaixo são as
+// mesmas do lote-7 — muda só a origem do dado.
 async function createTenant(name: string): Promise<string> {
   const id = randomUUID();
   await db.insert(tenants).values({
@@ -22,18 +26,26 @@ async function createTenant(name: string): Promise<string> {
   return id;
 }
 
+const createdUserIds: string[] = [];
+
 async function createBroker(
   tenantId: string,
   name: string,
   createdAt: Date
 ): Promise<string> {
   const id = randomUUID();
-  await db.insert(brokers).values({
+  await db.insert(users).values({
     id,
-    tenantId,
     name,
-    phone: "+55 34 90000-0000",
     email: `${id}@fixture.test`,
+  });
+  createdUserIds.push(id);
+  // `createdAt` é o do VÍNCULO — é ele que sustenta o desempate
+  // determinístico da política de atribuição.
+  await db.insert(tenant_members).values({
+    organizationId: tenantId,
+    userId: id,
+    role: "corretor",
     createdAt,
   });
   return id;
@@ -41,14 +53,14 @@ async function createBroker(
 
 async function createLead(
   tenantId: string,
-  brokerId: string,
+  assignedUserId: string,
   status: "em_qualificacao" | "qualificado_agendado" | "escalado_humano"
 ): Promise<string> {
   const id = randomUUID();
   await db.insert(leads).values({
     id,
     tenantId,
-    brokerId,
+    assignedUserId,
     name: "Lead Fixture",
     phone: "+55 34 90000-1111",
     status,
@@ -63,8 +75,14 @@ describe("server/data — getBrokerLoads / atribuição de corretor em createAge
   afterEach(async () => {
     if (createdTenantIds.length === 0) return;
     await db.delete(leads).where(inArray(leads.tenantId, createdTenantIds));
-    await db.delete(brokers).where(inArray(brokers.tenantId, createdTenantIds));
+    await db
+      .delete(tenant_members)
+      .where(inArray(tenant_members.organizationId, createdTenantIds));
     await db.delete(tenants).where(inArray(tenants.id, createdTenantIds));
+    if (createdUserIds.length > 0) {
+      await db.delete(users).where(inArray(users.id, createdUserIds));
+      createdUserIds.length = 0;
+    }
     createdTenantIds.length = 0;
   });
 
@@ -142,10 +160,10 @@ describe("server/data — getBrokerLoads / atribuição de corretor em createAge
       });
 
       expect(created).toBe(true);
-      expect(lead.brokerId).toBe(lightOlderId);
+      expect(lead.assignedUserId).toBe(lightOlderId);
     });
 
-    it("tenant sem nenhum corretor cadastrado: lead criado com brokerId nulo, sem erro", async () => {
+    it("tenant sem nenhum corretor cadastrado: lead criado com assignedUserId nulo, sem erro", async () => {
       const tenantId = await createTenant("Tenant Assign Sem Corretor");
       createdTenantIds.push(tenantId);
 
@@ -157,7 +175,7 @@ describe("server/data — getBrokerLoads / atribuição de corretor em createAge
       });
 
       expect(created).toBe(true);
-      expect(lead.brokerId).toBeNull();
+      expect(lead.assignedUserId).toBeNull();
     });
 
     it("reentrega com o mesmo externalId não reatribui, mesmo que a carga tenha mudado entre as duas chamadas", async () => {
@@ -177,7 +195,7 @@ describe("server/data — getBrokerLoads / atribuição de corretor em createAge
         firstContactAt: new Date(),
       });
       expect(first.created).toBe(true);
-      expect(first.lead.brokerId).toBe(brokerAId);
+      expect(first.lead.assignedUserId).toBe(brokerAId);
 
       // Inverte a carga: agora A tem mais leads ativos que B. Se a segunda
       // chamada reatribuísse, o resultado mudaria para brokerBId.
@@ -193,7 +211,7 @@ describe("server/data — getBrokerLoads / atribuição de corretor em createAge
       });
       expect(second.created).toBe(false);
       expect(second.lead.id).toBe(first.lead.id);
-      expect(second.lead.brokerId).toBe(brokerAId);
+      expect(second.lead.assignedUserId).toBe(brokerAId);
     });
   });
 });

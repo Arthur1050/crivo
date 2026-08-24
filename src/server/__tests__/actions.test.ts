@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
 import { db } from "../../db";
-import { brokers, leads } from "../../db/schema";
+import { leads, tenant_members, users } from "../../db/schema";
 import {
   getBrokers,
   getDocumentCategories,
@@ -621,14 +621,18 @@ describe("server actions", () => {
       await db.delete(leads).where(eq(leads.id, fixtureLeadId));
     });
 
+    // lote-8 (AD-021): corretor é usuário + vínculo em `tenant_members`.
     async function createFixtureBroker(tenantId: string): Promise<string> {
       const id = randomUUID();
-      await db.insert(brokers).values({
+      await db.insert(users).values({
         id,
-        tenantId,
         name: "Corretor Fixture Actions",
-        phone: "+55 34 90000-8888",
         email: `${id}@fixture.test`,
+      });
+      await db.insert(tenant_members).values({
+        organizationId: tenantId,
+        userId: id,
+        role: "corretor",
       });
       return id;
     }
@@ -643,7 +647,7 @@ describe("server actions", () => {
         expect(revalidatePath).toHaveBeenCalledWith("/pipeline");
 
         const persisted = await getLead(activeTenantId, fixtureLeadId);
-        expect(persisted!.brokerId).toBe(brokerActiveId);
+        expect(persisted!.assignedUserId).toBe(brokerActiveId);
       });
 
       it("DAL devolvendo null (corretor de outro tenant) produz falha explícita, campo error preenchido", async () => {
@@ -657,7 +661,7 @@ describe("server actions", () => {
         if (!result.ok) expect(result.error).toBeTruthy();
 
         const after = await getLead(activeTenantId, fixtureLeadId);
-        expect(after!.brokerId).toBe(before!.brokerId);
+        expect(after!.assignedUserId).toBe(before!.assignedUserId);
       });
 
       it("um tenantId injetado no payload é ignorado — a action sempre resolve o tenant ativo pela sessao autenticada", async () => {
@@ -671,7 +675,7 @@ describe("server actions", () => {
         expect(result).toEqual({ ok: true });
 
         const persisted = await getLead(activeTenantId, fixtureLeadId);
-        expect(persisted!.brokerId).toBe(brokerActiveId);
+        expect(persisted!.assignedUserId).toBe(brokerActiveId);
       });
     });
 

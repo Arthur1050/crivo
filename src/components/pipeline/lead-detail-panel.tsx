@@ -433,7 +433,7 @@ export function LeadDetailPanel({
                 <LeadControls
                   leadId={lead.id}
                   brokers={brokers}
-                  brokerId={lead.brokerId}
+                  brokerId={lead.assignedUserId}
                   meetingAt={lead.meetingAt ? lead.meetingAt.toISOString() : null}
                   meetingAttended={lead.meetingAttended}
                 />

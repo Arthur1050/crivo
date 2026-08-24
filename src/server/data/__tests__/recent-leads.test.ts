@@ -2,7 +2,7 @@ import "dotenv/config";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { inArray } from "drizzle-orm";
 import { db } from "../../../db";
-import { brokers, leads, tenants } from "../../../db/schema";
+import { leads, tenant_members, tenants, users } from "../../../db/schema";
 import { getLeads, getRecentLeads } from "../index";
 
 // Fixture PRÓPRIA (não depende do seed) com datas ABSOLUTAS: a ordenação de
@@ -31,7 +31,7 @@ const FULL_TENANT_LEADS = [
     id: leadId(1),
     name: "Lead Mais Recente",
     firstContactAt: new Date(Date.UTC(2026, 2, 20, 12, 0, 0)),
-    brokerId: BROKER_FULL,
+    assignedUserId: BROKER_FULL,
     budgetCents: BigInt(52000000),
     modality: "novo" as const,
     status: "qualificado_agendado" as const,
@@ -40,7 +40,7 @@ const FULL_TENANT_LEADS = [
     id: leadId(2),
     name: "Lead Sem Corretor",
     firstContactAt: new Date(Date.UTC(2026, 2, 19, 12, 0, 0)),
-    brokerId: null,
+    assignedUserId: null,
     budgetCents: null,
     modality: null,
     status: "em_qualificacao" as const,
@@ -49,7 +49,7 @@ const FULL_TENANT_LEADS = [
     id: leadId(3),
     name: "Lead Terceiro",
     firstContactAt: new Date(Date.UTC(2026, 2, 18, 12, 0, 0)),
-    brokerId: BROKER_FULL,
+    assignedUserId: BROKER_FULL,
     budgetCents: BigInt(31000000),
     modality: "usado" as const,
     status: "escalado_humano" as const,
@@ -58,7 +58,7 @@ const FULL_TENANT_LEADS = [
     id: leadId(4),
     name: "Lead Quarto",
     firstContactAt: new Date(Date.UTC(2026, 2, 17, 12, 0, 0)),
-    brokerId: BROKER_FULL,
+    assignedUserId: BROKER_FULL,
     budgetCents: BigInt(28000000),
     modality: "ambos" as const,
     status: "em_qualificacao" as const,
@@ -67,7 +67,7 @@ const FULL_TENANT_LEADS = [
     id: leadId(5),
     name: "Lead Quinto",
     firstContactAt: new Date(Date.UTC(2026, 2, 16, 12, 0, 0)),
-    brokerId: BROKER_FULL,
+    assignedUserId: BROKER_FULL,
     budgetCents: BigInt(19000000),
     modality: "novo" as const,
     status: "em_qualificacao" as const,
@@ -76,7 +76,7 @@ const FULL_TENANT_LEADS = [
     id: leadId(6),
     name: "Lead Sexto Fora Do Corte",
     firstContactAt: new Date(Date.UTC(2026, 2, 15, 12, 0, 0)),
-    brokerId: BROKER_FULL,
+    assignedUserId: BROKER_FULL,
     budgetCents: BigInt(15000000),
     modality: "usado" as const,
     status: "em_qualificacao" as const,
@@ -88,7 +88,7 @@ const SPARSE_TENANT_LEADS = [
     id: leadId(11),
     name: "Lead Esparso Recente",
     firstContactAt: new Date(Date.UTC(2026, 2, 21, 12, 0, 0)),
-    brokerId: BROKER_SPARSE,
+    assignedUserId: BROKER_SPARSE,
     budgetCents: BigInt(41000000),
     modality: "novo" as const,
     status: "qualificado_agendado" as const,
@@ -97,7 +97,7 @@ const SPARSE_TENANT_LEADS = [
     id: leadId(12),
     name: "Lead Esparso Antigo",
     firstContactAt: new Date(Date.UTC(2026, 2, 14, 12, 0, 0)),
-    brokerId: null,
+    assignedUserId: null,
     budgetCents: null,
     modality: null,
     status: "em_qualificacao" as const,
@@ -116,20 +116,21 @@ describe("server/data — getRecentLeads e brokerName em getLeads (RD-03/RD-04)"
         slug: `fixture-${id}`,
       }))
     );
-    await db.insert(brokers).values([
-      {
-        id: BROKER_FULL,
-        tenantId: TENANT_FULL,
-        name: BROKER_FULL_NAME,
-        phone: "+55 34 90000-0001",
-        email: "alfa@fixture.test",
-      },
+    // lote-8 (AD-021): corretor é usuário + vínculo em `tenant_members`.
+    await db.insert(users).values([
+      { id: BROKER_FULL, name: BROKER_FULL_NAME, email: "alfa@fixture.test" },
       {
         id: BROKER_SPARSE,
-        tenantId: TENANT_SPARSE,
         name: BROKER_SPARSE_NAME,
-        phone: "+55 34 90000-0002",
         email: "beta@fixture.test",
+      },
+    ]);
+    await db.insert(tenant_members).values([
+      { organizationId: TENANT_FULL, userId: BROKER_FULL, role: "corretor" },
+      {
+        organizationId: TENANT_SPARSE,
+        userId: BROKER_SPARSE,
+        role: "corretor",
       },
     ]);
     await db.insert(leads).values([
@@ -154,9 +155,12 @@ describe("server/data — getRecentLeads e brokerName em getLeads (RD-03/RD-04)"
   async function cleanup() {
     await db.delete(leads).where(inArray(leads.tenantId, FIXTURE_TENANT_IDS));
     await db
-      .delete(brokers)
-      .where(inArray(brokers.tenantId, FIXTURE_TENANT_IDS));
+      .delete(tenant_members)
+      .where(inArray(tenant_members.organizationId, FIXTURE_TENANT_IDS));
     await db.delete(tenants).where(inArray(tenants.id, FIXTURE_TENANT_IDS));
+    await db
+      .delete(users)
+      .where(inArray(users.id, [BROKER_FULL, BROKER_SPARSE]));
   }
 
   describe("getRecentLeads", () => {
@@ -270,7 +274,7 @@ describe("server/data — getRecentLeads e brokerName em getLeads (RD-03/RD-04)"
       // Colunas pré-existentes seguem íntegras no mesmo objeto.
       expect(comCorretor!.name).toBe("Lead Mais Recente");
       expect(comCorretor!.tenantId).toBe(TENANT_FULL);
-      expect(comCorretor!.brokerId).toBe(BROKER_FULL);
+      expect(comCorretor!.assignedUserId).toBe(BROKER_FULL);
       expect(comCorretor!.status).toBe("qualificado_agendado");
       expect(comCorretor!.budgetCents).toBe(BigInt(52000000));
       expect(comCorretor!.firstContactAt).toEqual(
@@ -284,7 +288,7 @@ describe("server/data — getRecentLeads e brokerName em getLeads (RD-03/RD-04)"
       const semCorretor = result.find((lead) => lead.id === leadId(2));
 
       expect(semCorretor).toBeDefined();
-      expect(semCorretor!.brokerId).toBeNull();
+      expect(semCorretor!.assignedUserId).toBeNull();
       expect(semCorretor!.brokerName).toBeNull();
     });
 

@@ -120,19 +120,6 @@ export const tenants = pgTable(
   (table) => [uniqueIndex("tenants_slug_idx").on(table.slug)]
 );
 
-export const brokers = pgTable("brokers", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  tenantId: uuid("tenant_id")
-    .notNull()
-    .references(() => tenants.id),
-  name: text("name").notNull(),
-  phone: text("phone").notNull(),
-  email: text("email").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
-
 export const leads = pgTable(
   "leads",
   {
@@ -140,7 +127,12 @@ export const leads = pgTable(
     tenantId: uuid("tenant_id")
       .notNull()
       .references(() => tenants.id),
-    brokerId: uuid("broker_id").references(() => brokers.id),
+    // Corretor responsável (lote-8 — AD-021): era `broker_id -> brokers.id`.
+    // `brokers` deixou de existir — corretor é sempre um usuário, e o vínculo
+    // com a imobiliária (com papéis e janela de trabalho) mora em
+    // `tenant_members`. Continua nullable: o lead nasce sem responsável e só
+    // ganha um no agendamento ou no escalonamento (AD-022).
+    assignedUserId: uuid("assigned_user_id").references(() => users.id),
     name: text("name").notNull(),
     phone: text("phone").notNull(),
     status: leadStatusEnum("status").notNull(),
