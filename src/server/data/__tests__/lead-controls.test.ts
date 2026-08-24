@@ -38,7 +38,11 @@ async function createTenant(name: string): Promise<string> {
 // tabela `brokers` saiu do schema. As asserções abaixo são as mesmas.
 const createdUserIds: string[] = [];
 
-async function createBroker(tenantId: string, name: string): Promise<string> {
+async function createMember(
+  tenantId: string,
+  name: string,
+  role: string
+): Promise<string> {
   const id = randomUUID();
   await db.insert(users).values({
     id,
@@ -49,9 +53,13 @@ async function createBroker(tenantId: string, name: string): Promise<string> {
   await db.insert(tenant_members).values({
     organizationId: tenantId,
     userId: id,
-    role: "corretor",
+    role,
   });
   return id;
+}
+
+async function createBroker(tenantId: string, name: string): Promise<string> {
+  return createMember(tenantId, name, "corretor");
 }
 
 async function createLead(
@@ -166,6 +174,22 @@ describe("server/data — updateLeadBroker / setMeetingAttendance / getLastAgent
 
       const reread = await getLead(tenantBId, leadBId);
       expect(reread!.assignedUserId).toBe(brokerBId);
+    });
+
+    // lote-8 — ATRIB-02 AC2: só corretor recebe lead. Um gestor da MESMA
+    // imobiliária tem vínculo válido, mas não é candidato a responsável.
+    it("membro da imobiliária sem papel corretor: devolve null e deixa assignedUserId inalterado", async () => {
+      const tenantId = await createTenant("Tenant Broker Papel");
+      createdTenantIds.push(tenantId);
+      const brokerAId = await createBroker(tenantId, "Corretor A");
+      const gestorId = await createMember(tenantId, "Gestor Puro", "gestor");
+      const leadId = await createLead(tenantId, brokerAId);
+
+      const result = await updateLeadBroker(tenantId, leadId, gestorId);
+      expect(result).toBeNull();
+
+      const reread = await getLead(tenantId, leadId);
+      expect(reread!.assignedUserId).toBe(brokerAId);
     });
   });
 

@@ -4,7 +4,7 @@ import { afterAll, afterEach, describe, expect, it } from "vitest";
 import { inArray } from "drizzle-orm";
 import { db } from "../../../db";
 import { leads, tenant_members, tenants, users } from "../../../db/schema";
-import { createAgentLead, getBrokerLoads } from "../index";
+import { createAgentLead, getBrokerLoads, getBrokers } from "../index";
 
 // Tenants + corretores PRÓPRIOS deste arquivo (nunca o snapshot do seed) —
 // mesmo padrão de isolamento dos demais testes de integração da DAL
@@ -28,10 +28,11 @@ async function createTenant(name: string): Promise<string> {
 
 const createdUserIds: string[] = [];
 
-async function createBroker(
+async function createMember(
   tenantId: string,
   name: string,
-  createdAt: Date
+  createdAt: Date,
+  role: string
 ): Promise<string> {
   const id = randomUUID();
   await db.insert(users).values({
@@ -45,10 +46,18 @@ async function createBroker(
   await db.insert(tenant_members).values({
     organizationId: tenantId,
     userId: id,
-    role: "corretor",
+    role,
     createdAt,
   });
   return id;
+}
+
+async function createBroker(
+  tenantId: string,
+  name: string,
+  createdAt: Date
+): Promise<string> {
+  return createMember(tenantId, name, createdAt, "corretor");
 }
 
 async function createLead(
@@ -127,6 +136,64 @@ describe("server/data — getBrokerLoads / atribuição de corretor em createAge
 
       const loadsA = await getBrokerLoads(tenantAId);
       expect(loadsA.map((l) => l.id)).toEqual([brokerAId]);
+    });
+
+    // lote-8 — ATRIB-02 AC2: os candidatos são os CORRETORES da imobiliária,
+    // não todo mundo que tem vínculo com ela. `tenant_members` guarda também
+    // administrador e gestor.
+    it("vínculo sem papel corretor (gestor puro) não entra na lista de candidatos", async () => {
+      const tenantId = await createTenant("Tenant Loads Papel");
+      createdTenantIds.push(tenantId);
+
+      const brokerId = await createBroker(tenantId, "Corretor", new Date());
+      await createMember(tenantId, "Gestor", new Date(), "gestor");
+      await createMember(tenantId, "Administrador", new Date(), "administrador");
+
+      const loads = await getBrokerLoads(tenantId);
+      expect(loads.map((l) => l.id)).toEqual([brokerId]);
+    });
+
+    // PERM-01 AC4 (união de permissões): quem acumula corretor com outro
+    // papel continua sendo corretor — acumular cargo não tira a carteira.
+    it("vínculo com papel acumulado (corretor,administrador) entra na lista de candidatos", async () => {
+      const tenantId = await createTenant("Tenant Loads Papel Acumulado");
+      createdTenantIds.push(tenantId);
+
+      const acumuladoId = await createMember(
+        tenantId,
+        "Corretor e Administrador",
+        new Date(),
+        "corretor,administrador"
+      );
+
+      const loads = await getBrokerLoads(tenantId);
+      expect(loads.map((l) => l.id)).toEqual([acumuladoId]);
+    });
+  });
+
+  describe("getBrokers", () => {
+    it("lista apenas os vínculos com papel corretor, com nome e e-mail do usuário (lote-8 — SEED-01)", async () => {
+      const tenantId = await createTenant("Tenant Brokers Papel");
+      createdTenantIds.push(tenantId);
+
+      const brokerId = await createBroker(tenantId, "Corretor Listado", new Date());
+      const acumuladoId = await createMember(
+        tenantId,
+        "Gestor Que Também Atende",
+        new Date(),
+        "gestor,corretor"
+      );
+      const gestorId = await createMember(tenantId, "Gestor Puro", new Date(), "gestor");
+
+      const rows = await getBrokers(tenantId);
+      const ids = rows.map((b) => b.id).sort();
+      expect(ids).toEqual([brokerId, acumuladoId].sort());
+      expect(ids).not.toContain(gestorId);
+
+      const listado = rows.find((b) => b.id === brokerId);
+      expect(listado!.name).toBe("Corretor Listado");
+      expect(listado!.email).toBe(`${brokerId}@fixture.test`);
+      expect(listado!.tenantId).toBe(tenantId);
     });
   });
 

@@ -134,6 +134,15 @@ export async function resolveTenantIdBySlug(
   return rows[0]?.id ?? null;
 }
 
+/**
+ * Vínculo com papel `corretor` (lote-8 — ATRIB-02). O plugin `organization`
+ * grava papéis acumulados numa string separada por vírgula
+ * (`"corretor,administrador"` — AD-021), então a checagem é de PERTENCIMENTO
+ * ao conjunto, nunca igualdade: quem acumula corretor com outro papel
+ * continua sendo corretor, que é a mesma união de permissões da PERM-01 AC4.
+ */
+const HAS_BROKER_ROLE = sql`'corretor' = any(string_to_array(${tenant_members.role}, ','))`;
+
 export async function getBrokers(tenantId: string): Promise<Broker[]> {
   return db
     .select({
@@ -145,7 +154,7 @@ export async function getBrokers(tenantId: string): Promise<Broker[]> {
     })
     .from(tenant_members)
     .innerJoin(users, eq(tenant_members.userId, users.id))
-    .where(eq(tenant_members.organizationId, tenantId));
+    .where(and(eq(tenant_members.organizationId, tenantId), HAS_BROKER_ROLE));
 }
 
 /**
@@ -822,7 +831,8 @@ export async function updateLeadBroker(
             .where(
               and(
                 eq(tenant_members.userId, brokerId),
-                eq(tenant_members.organizationId, tenantId)
+                eq(tenant_members.organizationId, tenantId),
+                HAS_BROKER_ROLE
               )
             )
         )
@@ -956,7 +966,7 @@ export async function getBrokerLoads(tenantId: string): Promise<BrokerLoad[]> {
         inArray(leads.status, ACTIVE_LEAD_STATUSES)
       )
     )
-    .where(eq(tenant_members.organizationId, tenantId))
+    .where(and(eq(tenant_members.organizationId, tenantId), HAS_BROKER_ROLE))
     .groupBy(tenant_members.userId, tenant_members.createdAt);
 
   return rows.map((row) => ({
