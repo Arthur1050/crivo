@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { createHash } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { and, eq, lte, sql } from "drizzle-orm";
+import { and, eq, inArray, lte, sql } from "drizzle-orm";
 import { db } from "../index";
 import {
   conversations,
@@ -13,6 +13,8 @@ import {
   tenant_members,
   tenantApiKeys,
   tenants,
+  users,
+  accounts,
 } from "../schema";
 import { runSeed } from "../seed";
 
@@ -42,8 +44,9 @@ const DEMO_SLUG = "crivo-demo";
 const PILOT_SLUGS = ["triangulo", "vale-uberaba"] as const;
 
 async function snapshotIds() {
-  const [t, b, cat, l, c, m, d] = await Promise.all([
+  const [t, u, b, cat, l, c, m, d] = await Promise.all([
     db.select({ id: tenants.id }).from(tenants),
+    db.select({ id: users.id }).from(users),
     db.select({ id: tenant_members.id }).from(tenant_members),
     db.select({ id: documentCategories.id }).from(documentCategories),
     db.select({ id: leads.id }).from(leads),
@@ -54,6 +57,7 @@ async function snapshotIds() {
   const sortIds = (rows: { id: string }[]) => rows.map((r) => r.id).sort();
   return {
     tenants: sortIds(t),
+    users: sortIds(u),
     tenantMembers: sortIds(b),
     documentCategories: sortIds(cat),
     leads: sortIds(l),
@@ -61,6 +65,17 @@ async function snapshotIds() {
     messages: sortIds(m),
     documents: sortIds(d),
   };
+}
+
+/** Papéis de um vínculo, no formato nativo do plugin (separados por vírgula). */
+function rolesOf(row: { role: string }): string[] {
+  return row.role.split(",").map((r) => r.trim());
+}
+
+/** Minutos desde a meia-noite de um horário "HH:MM". */
+function minutesOf(hhmm: string): number {
+  const [h, m] = hhmm.split(":").map(Number);
+  return h * 60 + m;
 }
 
 /** Busca um tenant por slug e falha alto se ele não existir — nenhum teste
@@ -149,6 +164,122 @@ describe("db/seed", () => {
       expect(pilotDocuments.length).toBeGreaterThan(0);
       expect(pilotApiKeys).toHaveLength(1);
     }
+  });
+
+  // lote-8 — SEED-01 AC1: o seed é o único caminho por onde corretor passa a
+  // existir depois que `brokers` saiu do schema.
+  it("cada imobiliária ganha ao menos 1 administrador, 1 gestor e 2 corretores (lote-8 — SEED-01 AC1)", async () => {
+    const allTenants = await db.select().from(tenants);
+    expect(allTenants).toHaveLength(3);
+
+    for (const tenant of allTenants) {
+      const members = await db
+        .select()
+        .from(tenant_members)
+        .where(eq(tenant_members.organizationId, tenant.id));
+
+      const administradores = members.filter((m) =>
+        rolesOf(m).includes("administrador")
+      );
+      const gestores = members.filter((m) => rolesOf(m).includes("gestor"));
+      const corretores = members.filter((m) => rolesOf(m).includes("corretor"));
+
+      expect(administradores.length).toBeGreaterThanOrEqual(1);
+      expect(gestores.length).toBeGreaterThanOrEqual(1);
+      expect(corretores.length).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  // lote-8 — SEED-01 AC3/AC4: nascem sem credencial (convite pendente), o que
+  // não os impede de receber lead e reunião.
+  it("todo usuário criado pelo seed nasce em convite pendente — sem linha em accounts (lote-8 — SEED-01 AC3)", async () => {
+    const seededUserIds = (
+      await db.select({ userId: tenant_members.userId }).from(tenant_members)
+    ).map((row) => row.userId);
+    expect(seededUserIds.length).toBeGreaterThanOrEqual(15);
+
+    const credentials = await db
+      .select()
+      .from(accounts)
+      .where(inArray(accounts.userId, seededUserIds));
+    expect(credentials).toHaveLength(0);
+
+    // AC4: o corretor em convite pendente segue recebendo lead normalmente —
+    // os leads agendados do seed estão atribuídos justamente a eles.
+    const assigned = await db
+      .select({ assignedUserId: leads.assignedUserId })
+      .from(leads)
+      .where(inArray(leads.assignedUserId, seededUserIds));
+    expect(assigned.length).toBeGreaterThan(0);
+  });
+
+  // lote-8 — SEED-01 AC2: insumo obrigatório dos testes de atribuição por
+  // agenda. Sem uma faixa coberta por um único corretor, "quem atende às 9h"
+  // não teria resposta única.
+  it("os corretores de cada imobiliária têm janelas distintas, com ao menos um horário coberto por apenas um deles (lote-8 — SEED-01 AC2)", async () => {
+    const allTenants = await db.select().from(tenants);
+    expect(allTenants).toHaveLength(3);
+
+    for (const tenant of allTenants) {
+      const corretores = (
+        await db
+          .select()
+          .from(tenant_members)
+          .where(eq(tenant_members.organizationId, tenant.id))
+      ).filter((m) => rolesOf(m).includes("corretor"));
+      expect(corretores.length).toBeGreaterThanOrEqual(2);
+
+      // Toda janela declarada e válida (fim posterior ao início, ao menos um
+      // dia) — sem isso o corretor seria indisponível sempre (AGENDA-01 AC5).
+      for (const c of corretores) {
+        expect(c.workDays).not.toBeNull();
+        expect(c.workDays!.length).toBeGreaterThanOrEqual(1);
+        expect(c.workHoursStart).toBeTruthy();
+        expect(c.workHoursEnd).toBeTruthy();
+        expect(minutesOf(c.workHoursEnd!)).toBeGreaterThan(
+          minutesOf(c.workHoursStart!)
+        );
+      }
+
+      const janelas = corretores.map(
+        (c) => `${c.workDays!.join("-")}|${c.workHoursStart}|${c.workHoursEnd}`
+      );
+      expect(new Set(janelas).size).toBeGreaterThanOrEqual(2);
+
+      // Existe ao menos um par (dia, minuto) coberto por EXATAMENTE um deles.
+      const coberturaUnica: string[] = [];
+      for (const dia of [1, 2, 3, 4, 5, 6, 7]) {
+        for (let minuto = 0; minuto < 24 * 60; minuto += 30) {
+          const cobrem = corretores.filter(
+            (c) =>
+              c.workDays!.includes(dia) &&
+              minuto >= minutesOf(c.workHoursStart!) &&
+              minuto < minutesOf(c.workHoursEnd!)
+          );
+          if (cobrem.length === 1) coberturaUnica.push(`${dia}:${minuto}`);
+        }
+      }
+      expect(coberturaUnica.length).toBeGreaterThan(0);
+    }
+  });
+
+  // lote-8 — SEED-01 AC7 / AD-022: o lead só ganha dono no agendamento.
+  it("leads do seed nascem sem responsável, exceto os que já têm reunião agendada (lote-8 — SEED-01 AC7)", async () => {
+    const allLeads = await db.select().from(leads);
+    expect(allLeads.length).toBeGreaterThan(0);
+
+    for (const lead of allLeads) {
+      if (lead.meetingAt === null) {
+        expect(lead.assignedUserId).toBeNull();
+      } else {
+        expect(lead.assignedUserId).not.toBeNull();
+      }
+    }
+
+    // Os dois lados existem de fato — sem isso o laço acima passaria com uma
+    // base só de leads sem reunião.
+    expect(allLeads.filter((l) => l.meetingAt === null).length).toBeGreaterThan(0);
+    expect(allLeads.filter((l) => l.meetingAt !== null).length).toBeGreaterThan(0);
   });
 
   it("baseline nulo nos dois pilotos, preenchido no Crivo Demo (lote-7 — REAL-01 AC3)", async () => {

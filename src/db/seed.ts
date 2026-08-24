@@ -161,13 +161,50 @@ interface TenantDef {
   // Tom de voz e personalidade (lote-6b — PER-03): texto livre distinto por
   // tenant, mesmo padrão de identidade opcional dos demais campos acima.
   agentVoiceTone: string;
-  brokers: { key: string; name: string; phone: string; email: string }[];
+  // Equipe da imobiliária (lote-8 — SEED-01): usuários com vínculo em
+  // `tenant_members`. `role` é o formato nativo do plugin (papéis acumulados
+  // separados por vírgula). A janela de trabalho é por vínculo — só corretor
+  // tem, e é ela que a atribuição por agenda consome (`workDays` em ISO
+  // 1(segunda)-7(domingo), horas `HH:MM` em America/Sao_Paulo).
+  members: {
+    key: string;
+    name: string;
+    email: string;
+    role: string;
+    workDays?: number[];
+    workHoursStart?: string;
+    workHoursEnd?: string;
+  }[];
   // lote-7 — REAL-01: só o tenant de demonstração recebe leads, conversas e
   // mensagens fictícios. Os tenants-piloto mantêm toda a configuração
   // (corretores, categorias, documentos, chave de API) mas nascem sem
   // nenhum lead — o dado real vem só do agente, pelo contrato.
   seedLeadData: boolean;
 }
+
+// Janelas de trabalho dos corretores do seed (lote-8 — SEED-01 AC2). São
+// deliberadamente DIFERENTES entre si e deixam faixas cobertas por um único
+// corretor, que é o insumo dos testes de atribuição por agenda:
+//   - seg-sex 08:00-13:00 → só o corretor da manhã
+//   - seg-sex 14:00-19:00 → só o corretor da tarde
+//   - sábado               → só o corretor de fim de semana
+// Dias em ISO 1(segunda)-7(domingo), horas "HH:MM" em America/Sao_Paulo —
+// mesma convenção de `tenants.meetingDays`.
+const MORNING_WINDOW = {
+  workDays: [1, 2, 3, 4, 5],
+  workHoursStart: "08:00",
+  workHoursEnd: "14:00",
+};
+const AFTERNOON_WINDOW = {
+  workDays: [1, 2, 3, 4, 5],
+  workHoursStart: "13:00",
+  workHoursEnd: "19:00",
+};
+const SATURDAY_WINDOW = {
+  workDays: [6],
+  workHoursStart: "09:00",
+  workHoursEnd: "13:00",
+};
 
 const TENANT_DEFS: TenantDef[] = [
   {
@@ -190,24 +227,39 @@ const TENANT_DEFS: TenantDef[] = [
       "Olá! Aqui é a Bia, da Imobiliária Vale do Uberaba. Posso te ajudar a encontrar o imóvel ideal — me conta o que você procura?",
     agentVoiceTone:
       "Tom acolhedor e paciente, como quem já viu de tudo no mercado e gosta de explicar com calma. Usa expressões como \"olha só\" e \"deixa eu te explicar\" de vez em quando — nunca formal demais.",
-    brokers: [
+    members: [
+      {
+        key: "admin",
+        name: "Helena Braga Teixeira",
+        email: "helena.teixeira@valeuberaba.com.br",
+        role: "administrador",
+      },
+      {
+        key: "gestor",
+        name: "Paulo César Miranda",
+        email: "paulo.miranda@valeuberaba.com.br",
+        role: "gestor",
+      },
       {
         key: "b1",
         name: "Marcos Aurélio Silva",
-        phone: "+55 34 99101-2233",
         email: "marcos.silva@valeuberaba.com.br",
+        role: "corretor",
+        ...MORNING_WINDOW,
       },
       {
         key: "b2",
         name: "Camila Fernandes Rocha",
-        phone: "+55 34 99102-3344",
         email: "camila.rocha@valeuberaba.com.br",
+        role: "corretor",
+        ...AFTERNOON_WINDOW,
       },
       {
         key: "b3",
         name: "Rodrigo Almeida Costa",
-        phone: "+55 34 99103-4455",
         email: "rodrigo.costa@valeuberaba.com.br",
+        role: "corretor",
+        ...SATURDAY_WINDOW,
       },
     ],
   },
@@ -231,24 +283,39 @@ const TENANT_DEFS: TenantDef[] = [
       "Oi! Sou o Lucas, da Triângulo Imóveis. Me conta qual imóvel você procura que eu te ajudo a chegar na melhor opção.",
     agentVoiceTone:
       "Tom direto e descontraído, frases curtas, gosta de confirmar rápido e seguir andando na conversa. Usa \"boa\" e \"show\" pra reagir ao que o lead conta.",
-    brokers: [
+    members: [
+      {
+        key: "admin",
+        name: "Renata Alves Bittencourt",
+        email: "renata.bittencourt@trianguloimoveis.com.br",
+        role: "administrador",
+      },
+      {
+        key: "gestor",
+        name: "Sérgio Tavares Pinto",
+        email: "sergio.pinto@trianguloimoveis.com.br",
+        role: "gestor",
+      },
       {
         key: "b1",
         name: "Fernanda Souza Lima",
-        phone: "+55 34 99201-5566",
         email: "fernanda.lima@trianguloimoveis.com.br",
+        role: "corretor",
+        ...MORNING_WINDOW,
       },
       {
         key: "b2",
         name: "André Luiz Martins",
-        phone: "+55 34 99202-6677",
         email: "andre.martins@trianguloimoveis.com.br",
+        role: "corretor",
+        ...AFTERNOON_WINDOW,
       },
       {
         key: "b3",
         name: "Juliana Pereira Dias",
-        phone: "+55 34 99203-7788",
         email: "juliana.dias@trianguloimoveis.com.br",
+        role: "corretor",
+        ...SATURDAY_WINDOW,
       },
     ],
   },
@@ -275,24 +342,39 @@ const TENANT_DEFS: TenantDef[] = [
       "Oi! Aqui é a Sofia, da Crivo Demo. Me conta o que você procura que eu já vejo o que temos disponível pra você.",
     agentVoiceTone:
       "Tom entusiasmado e prestativo, sempre disposto a detalhar as opções. Usa \"legal\" e \"perfeito\" para confirmar o que o lead conta.",
-    brokers: [
+    members: [
+      {
+        key: "admin",
+        name: "Eduardo Mendes Prado",
+        email: "eduardo.prado@crivo.com.br",
+        role: "administrador",
+      },
+      {
+        key: "gestor",
+        name: "Patrícia Nogueira Vasques",
+        email: "patricia.vasques@crivo.com.br",
+        role: "gestor",
+      },
       {
         key: "b1",
         name: "Larissa Andrade Nunes",
-        phone: "+55 31 99301-8899",
         email: "larissa.nunes@crivo.com.br",
+        role: "corretor",
+        ...MORNING_WINDOW,
       },
       {
         key: "b2",
         name: "Gustavo Ribeiro Cardoso",
-        phone: "+55 31 99302-9900",
         email: "gustavo.cardoso@crivo.com.br",
+        role: "corretor",
+        ...AFTERNOON_WINDOW,
       },
       {
         key: "b3",
         name: "Beatriz Moraes Correia",
-        phone: "+55 31 99303-0011",
         email: "beatriz.correia@crivo.com.br",
+        role: "corretor",
+        ...SATURDAY_WINDOW,
       },
     ],
   },
@@ -661,25 +743,30 @@ export async function runSeed(): Promise<SeedResult> {
       });
     }
 
-    // lote-8 (AD-021): corretor é sempre um usuário. A tabela `brokers` saiu
-    // do schema — cada corretor do seed vira uma linha em `users` mais um
-    // vínculo em `tenant_members` com papel `corretor`. Nasce SEM linha em
-    // `accounts`, portanto sem senha: é o estado de convite pendente, que já
-    // é elegível a receber lead e reunião (SEED-01 AC4).
+    // lote-8 (AD-021/SEED-01): corretor é sempre um usuário. A tabela
+    // `brokers` saiu do schema — cada membro da equipe vira uma linha em
+    // `users` mais um vínculo em `tenant_members` com papel e (para corretor)
+    // janela de trabalho. Todos nascem SEM linha em `accounts`, portanto sem
+    // senha: é o estado de convite pendente, que já é elegível a receber lead
+    // e reunião (SEED-01 AC3/AC4). O administrador com credencial vem do
+    // comando de bootstrap (`npm run db:create-admin`), nunca daqui.
     const brokerIds: string[] = [];
-    for (const b of tenantDef.brokers) {
-      const userId = id(`user:${tenantDef.key}:${b.key}`);
-      brokerIds.push(userId);
+    for (const m of tenantDef.members) {
+      const userId = id(`user:${tenantDef.key}:${m.key}`);
+      if (m.role.split(",").includes("corretor")) brokerIds.push(userId);
       userRows.push({
         id: userId,
-        name: b.name,
-        email: b.email,
+        name: m.name,
+        email: m.email,
       });
       memberRows.push({
-        id: id(`member:${tenantDef.key}:${b.key}`),
+        id: id(`member:${tenantDef.key}:${m.key}`),
         organizationId: tenantId,
         userId,
-        role: "corretor",
+        role: m.role,
+        workDays: m.workDays ?? null,
+        workHoursStart: m.workHoursStart ?? null,
+        workHoursEnd: m.workHoursEnd ?? null,
       });
     }
 
@@ -691,7 +778,6 @@ export async function runSeed(): Promise<SeedResult> {
 
       for (const [i, leadDef] of leadDefs.entries()) {
         const leadId = id(`lead:${tenantDef.key}:${i}`);
-        const assignedUserId = brokerIds[i % brokerIds.length];
         const offsetDays = offsetDaysFor(i, leadDefs.length);
         const firstContactAt = new Date(
           seedNow.getTime() - offsetDays * 86400000
@@ -716,6 +802,14 @@ export async function runSeed(): Promise<SeedResult> {
         const meetingAt = isQualified
           ? new Date(firstContactAt.getTime() + 3 * 86400000)
           : null;
+        // lote-8 (AD-022/SEED-01 AC7): o lead só ganha dono no agendamento.
+        // Todo lead do seed nasce sem responsável, exceto os que já nascem
+        // com reunião marcada — esses recebem um corretor, distribuído de
+        // forma determinística entre os corretores da imobiliária.
+        const assignedUserId =
+          meetingAt && brokerIds.length > 0
+            ? brokerIds[i % brokerIds.length]
+            : null;
         // Última atualização do registro = evento mais recente conhecido do
         // lead (reunião marcada, senão a 1ª resposta). Mantém created_at
         // (nascimento do lead) e updated_at coerentes com firstContactAt em
