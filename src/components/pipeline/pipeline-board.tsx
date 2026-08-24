@@ -338,8 +338,17 @@ function LeadCardBody({ lead }: { lead: LeadWithBroker }) {
           <CalendarDaysIcon size={14} />
           <RelativeTime value={lead.firstContactAt.toISOString()} />
         </HStack>
-        {lead.brokerName && (
+        {/* lote-8 (AD-022): o lead nasce SEM responsável e só ganha um no
+            agendamento ou no escalonamento, então "sem corretor" deixou de
+            ser exceção e passou a ser o estado inicial de todo lead. Omitir
+            silenciosamente esconderia justamente o que o gestor precisa ver
+            no funil. */}
+        {lead.brokerName ? (
           <Avatar name={lead.brokerName} size="xsm" />
+        ) : (
+          <Text type="supporting" color="secondary">
+            Sem responsável
+          </Text>
         )}
       </HStack>
     </VStack>
