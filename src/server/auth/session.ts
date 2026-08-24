@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { and, asc, eq, isNull } from "drizzle-orm";
 import { db } from "../../db";
 import { tenant_members } from "../../db/schema";
+import { parseRoles, type Role } from "../../lib/permissions";
 import { auth } from "./config";
 
 /**
@@ -17,9 +18,11 @@ import { auth } from "./config";
  * banco.
  */
 
-export type Role = "administrador" | "gestor" | "corretor";
-
-const KNOWN_ROLES: readonly Role[] = ["administrador", "gestor", "corretor"];
+// Papéis e leitura do formato do plugin moram em `src/lib/permissions.ts`
+// (função pura, testada em vitest, também consumida pela navegação). Este
+// módulo os reexporta porque é a superfície de auth que os consumidores já
+// importam — uma implementação só, nunca duas cópias.
+export { parseRoles, type Role } from "../../lib/permissions";
 
 /**
  * Escopo de leitura de lead. `assignedUserId` preenchido significa "só os
@@ -47,24 +50,6 @@ export type AuthFailure =
   | { ok: false; reason: "sem-vinculo"; user: AuthContext["user"] };
 
 export type AuthResolution = { ok: true; context: AuthContext } | AuthFailure;
-
-/**
- * Lê os papéis no formato nativo do plugin `organization`: string separada por
- * vírgula. Papel desconhecido é descartado em vez de derrubar a requisição —
- * um valor sujo no banco não pode virar erro 500 na tela inteira.
- *
- * NOTA PARA A T15: a matriz de permissões (`can`) nasce em
- * `src/lib/permissions.ts` com o `parseRoles` canônico. Quando isso acontecer,
- * esta função deve ser absorvida por lá e este módulo passa a importá-la —
- * ela vive aqui só porque a guarda precisa dos papéis antes daquela task.
- */
-export function parseRoles(raw: string | null | undefined): Role[] {
-  if (!raw) return [];
-  return raw
-    .split(",")
-    .map((role) => role.trim())
-    .filter((role): role is Role => (KNOWN_ROLES as readonly string[]).includes(role));
-}
 
 /**
  * Corretor "puro" — o vínculo tem o papel corretor e NENHUM outro. É a
