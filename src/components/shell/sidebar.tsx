@@ -10,6 +10,7 @@ import {
   HomeIcon,
   MessageCircleIcon,
   SettingsIcon,
+  UsersIcon,
 } from "lucide-react";
 import { Avatar } from "@astryxdesign/core/Avatar";
 import { Card } from "@astryxdesign/core/Card";
@@ -59,6 +60,10 @@ const NAV_ITEMS: readonly NavItem[] = [
     icon: SettingsIcon,
     resource: "configuracoes",
   },
+  // lote-8 (T22): `usuarios` só é legível pelo administrador na matriz de
+  // permissões, então o filtro abaixo já esconde este item de gestor e
+  // corretor — sem nenhuma condição especial aqui.
+  { label: "Usuários", href: "/usuarios", icon: UsersIcon, resource: "usuarios" },
 ];
 
 export interface SidebarActiveTenant {
