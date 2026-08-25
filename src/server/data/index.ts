@@ -17,12 +17,14 @@ import {
 } from "drizzle-orm";
 import { db } from "../../db";
 import {
+  accounts,
   conversations,
   documentCategories,
   documents,
   leads,
   messages,
   serviceApiKeys,
+  tenant_invitations,
   tenant_members,
   tenantApiKeys,
   tenants,
@@ -30,6 +32,7 @@ import {
 } from "../../db/schema";
 import { assignBroker, type BrokerLoad } from "../../lib/broker-assignment";
 import type { LeadScope } from "../../lib/lead-scope";
+import { parseRoles, type Role } from "../../lib/permissions";
 
 export type { LeadScope };
 
@@ -1410,4 +1413,287 @@ export async function deleteDocumentCategory(
     )
     .returning({ id: documentCategories.id });
   return rows.length > 0;
+}
+
+// ---------------------------------------------------------------------------
+// Gestão de usuários (lote-8 — USER-01/USER-02)
+//
+// A imobiliária ativa nunca vem do cliente: toda função abaixo recebe o
+// `tenantId` já resolvido pela guarda de sessão e escopa a escrita por ele —
+// mesma disciplina das funções de documento.
+// ---------------------------------------------------------------------------
+
+/** Estado do convite de um vínculo (USER-01 AC1). */
+export type MemberInviteState = "pendente" | "ativo";
+
+export interface TenantMember {
+  memberId: string;
+  userId: string;
+  name: string;
+  email: string;
+  roles: Role[];
+  workDays: number[] | null;
+  workHoursStart: string | null;
+  workHoursEnd: string | null;
+  deactivatedAt: Date | null;
+  /**
+   * `pendente` = usuário sem credencial (nenhuma linha de senha em `accounts`),
+   * exatamente o estado em que o convite e o seed o deixam; `ativo` = já
+   * definiu a senha pela tela de aceite.
+   */
+  inviteState: MemberInviteState;
+  createdAt: Date;
+}
+
+/** Existe credencial de senha para este usuário? (define o estado do convite) */
+const HAS_CREDENTIAL = sql<boolean>`exists (
+  select 1 from ${accounts}
+  where ${accounts.userId} = ${tenant_members.userId}
+    and ${accounts.providerId} = 'credential'
+)`;
+
+/**
+ * Membros da imobiliária, ativos e desativados, na mesma ordem determinística
+ * usada pela guarda de sessão (`createdAt`, depois `id` do vínculo).
+ */
+export async function getTenantMembers(
+  tenantId: string
+): Promise<TenantMember[]> {
+  const rows = await db
+    .select({
+      memberId: tenant_members.id,
+      userId: tenant_members.userId,
+      name: users.name,
+      email: users.email,
+      role: tenant_members.role,
+      workDays: tenant_members.workDays,
+      workHoursStart: tenant_members.workHoursStart,
+      workHoursEnd: tenant_members.workHoursEnd,
+      deactivatedAt: tenant_members.deactivatedAt,
+      createdAt: tenant_members.createdAt,
+      hasCredential: HAS_CREDENTIAL,
+    })
+    .from(tenant_members)
+    .innerJoin(users, eq(tenant_members.userId, users.id))
+    .where(eq(tenant_members.organizationId, tenantId))
+    .orderBy(asc(tenant_members.createdAt), asc(tenant_members.id));
+
+  return rows.map((row) => ({
+    memberId: row.memberId,
+    userId: row.userId,
+    name: row.name,
+    email: row.email,
+    roles: parseRoles(row.role),
+    workDays: row.workDays,
+    workHoursStart: row.workHoursStart,
+    workHoursEnd: row.workHoursEnd,
+    deactivatedAt: row.deactivatedAt,
+    inviteState: row.hasCredential ? "ativo" : "pendente",
+    createdAt: row.createdAt,
+  }));
+}
+
+export async function getTenantMemberById(
+  tenantId: string,
+  memberId: string
+): Promise<TenantMember | null> {
+  const members = await getTenantMembers(tenantId);
+  return members.find((member) => member.memberId === memberId) ?? null;
+}
+
+/**
+ * O e-mail é a identidade global do usuário (context.md — Usuários): único no
+ * sistema inteiro, nunca por imobiliária. É esta busca que faz o convite a um
+ * e-mail já conhecido virar vínculo novo em vez de segundo usuário
+ * (USER-01 AC2).
+ */
+export async function findUserByEmail(
+  email: string
+): Promise<{ id: string; name: string; email: string } | null> {
+  const rows = await db
+    .select({ id: users.id, name: users.name, email: users.email })
+    .from(users)
+    .where(eq(users.email, email.toLowerCase()));
+  return rows[0] ?? null;
+}
+
+/**
+ * Usuário em convite pendente: linha em `users` e NENHUMA linha de credencial
+ * em `accounts`. É o mesmo estado que o seed produz (SEED-01 AC3), e por isso
+ * o convidado já é elegível a receber lead e reunião antes de aceitar (AC4).
+ * A senha nasce só na tela de aceite.
+ */
+export async function createPendingUser(input: {
+  name: string;
+  email: string;
+}): Promise<{ id: string; name: string; email: string }> {
+  const rows = await db
+    .insert(users)
+    .values({ name: input.name, email: input.email.toLowerCase() })
+    .returning({ id: users.id, name: users.name, email: users.email });
+  return rows[0];
+}
+
+export async function createMembership(input: {
+  tenantId: string;
+  userId: string;
+  roles: Role[];
+}): Promise<string> {
+  const rows = await db
+    .insert(tenant_members)
+    .values({
+      organizationId: input.tenantId,
+      userId: input.userId,
+      role: input.roles.join(","),
+    })
+    .returning({ id: tenant_members.id });
+  return rows[0].id;
+}
+
+export async function getMembership(
+  tenantId: string,
+  userId: string
+): Promise<{ id: string; roles: Role[]; deactivatedAt: Date | null } | null> {
+  const rows = await db
+    .select()
+    .from(tenant_members)
+    .where(
+      and(
+        eq(tenant_members.userId, userId),
+        eq(tenant_members.organizationId, tenantId)
+      )
+    );
+  const row = rows[0];
+  if (!row) return null;
+  return {
+    id: row.id,
+    roles: parseRoles(row.role),
+    deactivatedAt: row.deactivatedAt,
+  };
+}
+
+/**
+ * Grava os papéis do vínculo. Escopada ao tenant na mesma sentença: um
+ * `memberId` de outra imobiliária nunca é alterado, mesmo sendo um uuid válido
+ * (spec.md — Edge Cases: recurso de outra imobiliária é inexistente).
+ */
+export async function setMemberRoles(
+  tenantId: string,
+  memberId: string,
+  roles: Role[]
+): Promise<boolean> {
+  const rows = await db
+    .update(tenant_members)
+    .set({ role: roles.join(",") })
+    .where(
+      and(
+        eq(tenant_members.id, memberId),
+        eq(tenant_members.organizationId, tenantId)
+      )
+    )
+    .returning({ id: tenant_members.id });
+  return rows.length > 0;
+}
+
+/** Vínculo com o papel administrador e ativo (`deactivatedAt` nulo). */
+const HAS_ADMIN_ROLE = sql`'administrador' = any(string_to_array(${tenant_members.role}, ','))`;
+
+/**
+ * Quantos administradores ATIVOS a imobiliária tem, ignorando opcionalmente um
+ * vínculo (o que está sendo alterado). Sustenta a USER-01 AC9 e o edge case do
+ * último administrador: a contagem é feita antes de escrever, nunca depois.
+ */
+export async function countActiveAdministrators(
+  tenantId: string,
+  excludeMemberId?: string
+): Promise<number> {
+  const rows = await db
+    .select({ id: tenant_members.id })
+    .from(tenant_members)
+    .where(
+      and(
+        eq(tenant_members.organizationId, tenantId),
+        isNull(tenant_members.deactivatedAt),
+        HAS_ADMIN_ROLE
+      )
+    );
+  return rows.filter((row) => row.id !== excludeMemberId).length;
+}
+
+/** Validade do convite: 7 dias, o padrão da biblioteca (context.md). */
+export const INVITATION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+export interface Invitation {
+  id: string;
+  tenantId: string;
+  email: string;
+  roles: Role[];
+  status: string;
+  expiresAt: Date;
+}
+
+function toInvitation(
+  row: typeof tenant_invitations.$inferSelect
+): Invitation {
+  return {
+    id: row.id,
+    tenantId: row.organizationId,
+    email: row.email,
+    roles: parseRoles(row.role),
+    status: row.status,
+    expiresAt: row.expiresAt,
+  };
+}
+
+/**
+ * Emite um convite e **invalida** todo convite pendente anterior daquele
+ * e-mail naquela imobiliária (USER-01 AC5): o token antigo passa a `cancelado`
+ * na mesma transação em que o novo nasce, então um link antigo deixa de servir
+ * assim que o administrador reenvia.
+ */
+export async function createInvitation(input: {
+  tenantId: string;
+  email: string;
+  roles: Role[];
+  inviterId: string;
+  now?: Date;
+}): Promise<Invitation> {
+  const now = input.now ?? new Date();
+  const email = input.email.toLowerCase();
+
+  return db.transaction(async (tx) => {
+    await tx
+      .update(tenant_invitations)
+      .set({ status: "cancelado" })
+      .where(
+        and(
+          eq(tenant_invitations.organizationId, input.tenantId),
+          eq(tenant_invitations.email, email),
+          eq(tenant_invitations.status, "pending")
+        )
+      );
+
+    const rows = await tx
+      .insert(tenant_invitations)
+      .values({
+        organizationId: input.tenantId,
+        email,
+        role: input.roles.join(","),
+        status: "pending",
+        expiresAt: new Date(now.getTime() + INVITATION_TTL_MS),
+        inviterId: input.inviterId,
+      })
+      .returning();
+
+    return toInvitation(rows[0]);
+  });
+}
+
+/** Convite pelo token da URL — que é o próprio id da linha. */
+export async function getInvitation(token: string): Promise<Invitation | null> {
+  const rows = await db
+    .select()
+    .from(tenant_invitations)
+    .where(eq(tenant_invitations.id, token));
+  return rows[0] ? toInvitation(rows[0]) : null;
 }
