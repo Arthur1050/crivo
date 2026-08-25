@@ -1,9 +1,11 @@
 import "dotenv/config";
 import { randomUUID } from "node:crypto";
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
 import { db } from "../../db";
 import { leads, tenant_members, users } from "../../db/schema";
+import type { Action, Resource, Role } from "../../lib/permissions";
+import type { AuthContext } from "../auth/session";
 import {
   getBrokers,
   getDocumentCategories,
@@ -26,22 +28,40 @@ import {
 // continuam valendo sobre o mesmo tenant real, lido do banco seedado. Papel
 // `administrador` e `assignedUserId: null` preservam o alcance que estas
 // actions sempre tiveram: a imobiliária inteira, sem filtro de carteira.
-vi.mock("../auth/session", () => ({
-  verifySession: async () => {
+// lote-8 (T16): a mock deixou de substituir o módulo inteiro e passou a ser
+// PARCIAL. Só a identidade é fabricada (`verifySession`); a decisão de
+// permissão continua sendo a real (`authorizeOrThrow`, com a matriz de
+// `src/lib/permissions.ts` e o log estruturado da AC6). `requirePermission`
+// precisa ser reescrita aqui porque a versão real chama a `verifySession` do
+// próprio módulo — chamada interna, que nenhuma mock de módulo intercepta.
+const SESSION_USER = {
+  id: "00000000-0000-4000-8000-0000000000aa",
+  name: "Administrador de Teste",
+  email: "admin@fixture.test",
+};
+
+/** Papéis do vínculo ativo da sessão fabricada. Trocável por teste. */
+let sessionRoles: Role[] = ["administrador"];
+
+vi.mock("../auth/session", async (importActual) => {
+  const actual = await importActual<typeof import("../auth/session")>();
+  const fakeSession = async (): Promise<AuthContext> => {
     const { getTenants } = await import("../data");
     const [tenant] = await getTenants();
     return {
-      user: {
-        id: "00000000-0000-4000-8000-0000000000aa",
-        name: "Administrador de Teste",
-        email: "admin@fixture.test",
-      },
+      user: SESSION_USER,
       tenantId: tenant.id,
-      roles: ["administrador"],
+      roles: sessionRoles,
       leadScope: { tenantId: tenant.id, assignedUserId: null },
     };
-  },
-}));
+  };
+  return {
+    ...actual,
+    verifySession: fakeSession,
+    requirePermission: async (resource: Resource, action: Action) =>
+      actual.authorizeOrThrow(await fakeSession(), resource, action),
+  };
+});
 
 vi.mock("next/headers", () => ({
   cookies: async () => ({
@@ -1008,6 +1028,141 @@ describe("server actions", () => {
         color: "blue",
       });
       expect(result.ok).toBe(false);
+    });
+  });
+
+  // lote-8 — PERM-01 AC5/AC6 (T16): a recusa por permissão acontece NO
+  // SERVIDOR, com a sessão real do vínculo ativo, mesmo quando o controle não
+  // estava visível na tela. Estes testes chamam a action DIRETAMENTE, que é
+  // exatamente o ataque que a AC5 descreve.
+  describe("recusa server-side por permissão", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    afterEach(() => {
+      sessionRoles = ["administrador"];
+      warn.mockClear();
+    });
+
+    afterAll(() => {
+      warn.mockRestore();
+    });
+
+    /** Última negativa registrada em log estruturado, já parseada. */
+    function lastDenialLog() {
+      const call = warn.mock.calls.at(-1);
+      expect(call, "esperava um log de negativa").toBeDefined();
+      return JSON.parse(String(call![0]));
+    }
+
+    it("corretor chamando updateTenantSettingsAction é recusado e nada é gravado (AC5)", async () => {
+      const before = await getTenant(activeTenantId);
+      sessionRoles = ["corretor"];
+
+      const result = await updateTenantSettingsAction({
+        name: "Nome Que Nao Pode Passar",
+        agentName: "Agente Que Nao Pode Passar",
+        supportedModality: "novo",
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.error).toBe("Sem permissão para escrever configuracoes.");
+
+      const after = await getTenant(activeTenantId);
+      expect(after!.name).toBe(before!.name);
+      expect(after!.agentName).toBe(before!.agentName);
+      expect(after!.supportedModality).toBe(before!.supportedModality);
+    });
+
+    it("corretor chamando createDocumentCategoryAction é recusado e nenhuma categoria é criada (AC3/AC5)", async () => {
+      const before = await getDocumentCategories(activeTenantId);
+      sessionRoles = ["corretor"];
+
+      const result = await createDocumentCategoryAction({
+        name: "Categoria Que Nao Pode Nascer",
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.error).toBe("Sem permissão para escrever documentos.");
+
+      const after = await getDocumentCategories(activeTenantId);
+      expect(after.map((c) => c.name)).toEqual(before.map((c) => c.name));
+    });
+
+    it("a recusa emite log estruturado com usuário, imobiliária ativa e recurso negado (AC6)", async () => {
+      sessionRoles = ["corretor"];
+
+      await updateTenantSettingsAction({
+        name: "Nome Irrelevante",
+        agentName: "Agente Irrelevante",
+        supportedModality: "novo",
+      });
+
+      const log = lastDenialLog();
+      expect(log.event).toBe("permissao-negada");
+      expect(log.userId).toBe(SESSION_USER.id);
+      expect(log.userEmail).toBe(SESSION_USER.email);
+      expect(log.tenantId).toBe(activeTenantId);
+      expect(log.resource).toBe("configuracoes");
+      expect(log.action).toBe("escrever");
+      expect(log.roles).toEqual(["corretor"]);
+    });
+
+    it("operação permitida não emite log de negativa", async () => {
+      const original = await getTenant(activeTenantId);
+
+      const result = await updateTenantSettingsAction({
+        name: original!.name,
+        agentName: original!.agentName,
+        supportedModality: original!.supportedModality,
+      });
+
+      expect(result).toEqual({ ok: true });
+      expect(warn).not.toHaveBeenCalled();
+    });
+
+    it("gestor edita Configurações e Documentos com o mesmo alcance do administrador (AC1)", async () => {
+      const original = await getTenant(activeTenantId);
+      sessionRoles = ["gestor"];
+
+      const settings = await updateTenantSettingsAction({
+        name: "Nome Via Gestor",
+        agentName: original!.agentName,
+        supportedModality: original!.supportedModality,
+      });
+      expect(settings).toEqual({ ok: true });
+      expect((await getTenant(activeTenantId))!.name).toBe("Nome Via Gestor");
+
+      const category = await createDocumentCategoryAction({
+        name: "Categoria Via Gestor",
+      });
+      expect(category).toEqual({ ok: true });
+
+      // Limpeza: devolve o tenant ao nome anterior e remove a categoria.
+      const created = (await getDocumentCategories(activeTenantId)).find(
+        (c) => c.name === "Categoria Via Gestor"
+      );
+      expect(created).toBeDefined();
+      await deleteDocumentCategoryAction({ categoryId: created!.id });
+
+      sessionRoles = ["administrador"];
+      await updateTenantSettingsAction({
+        name: original!.name,
+        agentName: original!.agentName,
+        supportedModality: original!.supportedModality,
+      });
+    });
+
+    it("corretor acumulado com gestor passa a poder editar Configurações (AC4, no servidor)", async () => {
+      const original = await getTenant(activeTenantId);
+      sessionRoles = ["corretor", "gestor"];
+
+      const result = await updateTenantSettingsAction({
+        name: original!.name,
+        agentName: original!.agentName,
+        supportedModality: original!.supportedModality,
+      });
+
+      expect(result).toEqual({ ok: true });
     });
   });
 });

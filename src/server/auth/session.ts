@@ -5,7 +5,13 @@ import { redirect } from "next/navigation";
 import { and, asc, eq, isNull } from "drizzle-orm";
 import { db } from "../../db";
 import { tenant_members } from "../../db/schema";
-import { parseRoles, type Role } from "../../lib/permissions";
+import {
+  can,
+  parseRoles,
+  type Action,
+  type Resource,
+  type Role,
+} from "../../lib/permissions";
 import { auth } from "./config";
 
 /**
@@ -151,3 +157,63 @@ export const getLeadScope = cache(async (): Promise<LeadScope> => {
   const context = await verifySession();
   return context.leadScope;
 });
+
+/**
+ * Recusa por permissão (PERM-01 AC5). Erro próprio, e não `Error` cru, para
+ * que quem chama consiga distinguir "não pode" de "quebrou".
+ */
+export class PermissionDeniedError extends Error {
+  constructor(
+    readonly resource: Resource,
+    readonly action: Action
+  ) {
+    super(`Sem permissão para ${action} ${resource}.`);
+    this.name = "PermissionDeniedError";
+  }
+}
+
+/**
+ * Decisão de permissão sobre um contexto já resolvido: checa a matriz, emite o
+ * log estruturado da negativa (PERM-01 AC6) e lança.
+ *
+ * Separada de `requirePermission` porque é ela que carrega TODO o
+ * comportamento — a outra só resolve a sessão. É o que permite exercitar a
+ * recusa real com uma sessão de corretor controlada, sem precisar de um
+ * request scope do Next.
+ */
+export function authorizeOrThrow(
+  context: AuthContext,
+  resource: Resource,
+  action: Action
+): AuthContext {
+  if (can(context.roles, resource, action)) return context;
+
+  // Única observabilidade nova do lote (context.md — Papéis e permissões).
+  // Linha única em JSON para ser consultável no log da Vercel: usuário,
+  // imobiliária ativa e recurso negado, como a AC6 exige.
+  console.warn(
+    JSON.stringify({
+      event: "permissao-negada",
+      userId: context.user.id,
+      userEmail: context.user.email,
+      tenantId: context.tenantId,
+      roles: context.roles,
+      resource,
+      action,
+    })
+  );
+
+  throw new PermissionDeniedError(resource, action);
+}
+
+/**
+ * Guarda de permissão do vínculo ATIVO (PERM-01 AC5): recusa no servidor
+ * mesmo quando o controle não estava visível na tela, porque não depende de
+ * nada que venha do cliente — papéis e imobiliária saem da sessão.
+ */
+export async function requirePermission(
+  resource: Resource,
+  action: Action
+): Promise<AuthContext> {
+  return authorizeOrThrow(await verifySession(), resource, action);
+}

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getActiveTenantId } from "../tenant";
+import { denyIfForbidden } from "./permission";
 import {
   createDocument,
   createDocumentCategory,
@@ -38,6 +39,9 @@ export interface CreateDocumentInput {
 export async function createDocumentAction(
   input: CreateDocumentInput
 ): Promise<ActionResult> {
+  const denied = await denyIfForbidden("documentos", "escrever");
+  if (denied) return denied;
+
   const nameCheck = validateName(input.name, "Nome do documento");
   if (!nameCheck.ok) return nameCheck;
 
@@ -73,6 +77,9 @@ export interface UpdateDocumentInput {
 export async function updateDocumentAction(
   input: UpdateDocumentInput
 ): Promise<ActionResult> {
+  const denied = await denyIfForbidden("documentos", "escrever");
+  if (denied) return denied;
+
   const nameCheck = validateName(input.name, "Nome do documento");
   if (!nameCheck.ok) return nameCheck;
 
@@ -101,6 +108,9 @@ export interface DeleteDocumentInput {
 export async function deleteDocumentAction(
   input: DeleteDocumentInput
 ): Promise<ActionResult> {
+  const denied = await denyIfForbidden("documentos", "escrever");
+  if (denied) return denied;
+
   const tenantId = await getActiveTenantId();
   const deleted = await deleteDocument(tenantId, input.documentId);
 
@@ -120,6 +130,9 @@ export interface CreateDocumentCategoryInput {
 export async function createDocumentCategoryAction(
   input: CreateDocumentCategoryInput
 ): Promise<ActionResult> {
+  const denied = await denyIfForbidden("documentos", "escrever");
+  if (denied) return denied;
+
   const nameCheck = validateName(input.name, "Nome da categoria");
   if (!nameCheck.ok) return nameCheck;
 
@@ -156,6 +169,9 @@ export interface UpdateDocumentCategoryInput {
 export async function updateDocumentCategoryAction(
   input: UpdateDocumentCategoryInput
 ): Promise<ActionResult> {
+  const denied = await denyIfForbidden("documentos", "escrever");
+  if (denied) return denied;
+
   const colorCheck = validateCategoryColor(input.color);
   if (!colorCheck.ok) return colorCheck;
 
@@ -179,6 +195,9 @@ export interface DeleteDocumentCategoryInput {
 export async function deleteDocumentCategoryAction(
   input: DeleteDocumentCategoryInput
 ): Promise<ActionResult> {
+  const denied = await denyIfForbidden("documentos", "escrever");
+  if (denied) return denied;
+
   const tenantId = await getActiveTenantId();
   const deleted = await deleteDocumentCategory(tenantId, input.categoryId);
 

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getActiveTenantId } from "../tenant";
+import { denyIfForbidden } from "./permission";
 import { updateTenantSettings, type Modality } from "../data";
 import {
   validateAgentVoiceTone,
@@ -49,6 +50,9 @@ export interface UpdateTenantSettingsInput {
 export async function updateTenantSettingsAction(
   input: UpdateTenantSettingsInput
 ): Promise<ActionResult> {
+  const denied = await denyIfForbidden("configuracoes", "escrever");
+  if (denied) return denied;
+
   const nameCheck = validateName(input.name, "Nome do tenant");
   if (!nameCheck.ok) return nameCheck;
 
