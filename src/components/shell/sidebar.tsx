@@ -28,6 +28,7 @@ import {
   type TenantOption,
 } from "@/src/components/shell/tenant-switcher";
 import { formatAgentActivitySubtitle } from "@/src/lib/agent-activity";
+import { can, type Resource, type Role } from "@/src/lib/permissions";
 import { formatTenantLocation } from "@/src/lib/tenant-identity";
 import { useTenantStore } from "@/src/stores/tenant-store";
 
@@ -35,13 +36,30 @@ import { useTenantStore } from "@/src/stores/tenant-store";
 // rota, reaproveitado para os estados selecionado e não-selecionado (a
 // lucide-animated não distingue variante outline/filled — a cor do texto do
 // próprio SideNavItem já diferencia o estado selecionado).
-const NAV_ITEMS = [
-  { label: "Dashboard", href: "/dashboard", icon: ChartLineIcon },
-  { label: "Pipeline", href: "/pipeline", icon: FolderKanbanIcon },
-  { label: "Chats", href: "/chats", icon: MessageCircleIcon },
-  { label: "Documentos", href: "/documentos", icon: FileTextIcon },
-  { label: "Configurações", href: "/configuracoes", icon: SettingsIcon },
-] as const;
+//
+// `resource` liga cada item da navegação à matriz de permissões (lote-8 —
+// PERM-01 AC7): o item só aparece quando o vínculo ativo pode LER aquele
+// recurso. Ocultar é cosmético — a recusa de verdade é server-side (AC5) e
+// não depende deste filtro.
+interface NavItem {
+  label: string;
+  href: string;
+  icon: typeof HomeIcon;
+  resource: Resource;
+}
+
+const NAV_ITEMS: readonly NavItem[] = [
+  { label: "Dashboard", href: "/dashboard", icon: ChartLineIcon, resource: "dashboard" },
+  { label: "Pipeline", href: "/pipeline", icon: FolderKanbanIcon, resource: "pipeline" },
+  { label: "Chats", href: "/chats", icon: MessageCircleIcon, resource: "chats" },
+  { label: "Documentos", href: "/documentos", icon: FileTextIcon, resource: "documentos" },
+  {
+    label: "Configurações",
+    href: "/configuracoes",
+    icon: SettingsIcon,
+    resource: "configuracoes",
+  },
+];
 
 export interface SidebarActiveTenant {
   id: string;
@@ -61,6 +79,11 @@ interface SidebarProps {
   activeTenant: SidebarActiveTenant;
   manager: SidebarManager;
   onTenantChange: (tenantId: string) => Promise<void>;
+  /**
+   * Papéis do vínculo ATIVO (PERM-01 AC7). Decide quais itens da navegação
+   * aparecem; a autorização de verdade continua no servidor (AC5).
+   */
+  roles: Role[];
   /**
    * Instante da última mensagem `sender = 'agente'` do tenant ativo (lote-7
    * — SHELL-01), já resolvido pela DAL (`getLastAgentMessageAt`) e
@@ -82,6 +105,7 @@ export function Sidebar({
   activeTenant,
   manager,
   onTenantChange,
+  roles,
   lastAgentMessageAt,
 }: SidebarProps) {
   const pathname = usePathname();
@@ -91,6 +115,11 @@ export function Sidebar({
   // texto (relativo × ocioso) é a função pura testada isoladamente em
   // src/lib/__tests__/agent-activity.test.ts.
   const agentSubtitle = formatAgentActivitySubtitle(lastAgentMessageAt, new Date());
+
+  // PERM-01 AC7: some da navegação o que o vínculo ativo não pode ler. Quem
+  // só tem papel corretor perde Configurações; administrador e gestor veem
+  // tudo o que existe hoje.
+  const visibleItems = NAV_ITEMS.filter((item) => can(roles, item.resource, "ler"));
 
   // Espelho client-side do tenant ativo (AD-007). Fica aqui, e não no menu:
   // o conteúdo do popover só monta quando aberto, mas a sidebar está sempre
@@ -133,7 +162,7 @@ export function Sidebar({
         }
       >
         <SideNavSection title="Menu">
-          {NAV_ITEMS.map((item) => (
+          {visibleItems.map((item) => (
             <SideNavItem
               key={item.href}
               label={item.label}

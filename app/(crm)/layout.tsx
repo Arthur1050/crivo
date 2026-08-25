@@ -21,7 +21,7 @@ export default async function CrmLayout({ children }: { children: ReactNode }) {
   // para `/login`, e sem vínculo nenhum para `/sem-acesso` — nenhuma das duas
   // situações chega a renderizar dado de imobiliária (spec.md — AUTH-01 AC1,
   // TENANT-01 AC6).
-  const { user, tenantId: activeTenantId } = await verifySession();
+  const { user, tenantId: activeTenantId, roles } = await verifySession();
 
   // Apenas as imobiliárias VINCULADAS ao usuário (TENANT-01 AC3) — nunca a
   // lista completa do banco, que era o que o seletor mostrava antes do login
@@ -64,6 +64,9 @@ export default async function CrmLayout({ children }: { children: ReactNode }) {
           // do login existir isto era `getMockManager`, um gestor fictício
           // derivado do nome do tenant — agora há uma pessoa real a exibir.
           manager={{ name: user.name, email: user.email }}
+          // PERM-01 AC7: a navegação esconde o que o vínculo ativo não
+          // alcança. Cosmético — a recusa server-side vale de qualquer jeito.
+          roles={roles}
           onTenantChange={setActiveTenant}
           lastAgentMessageAt={lastAgentMessageAt ? lastAgentMessageAt.toISOString() : null}
         />
