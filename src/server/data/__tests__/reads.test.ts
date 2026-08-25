@@ -10,6 +10,7 @@ import {
   getLeads,
   getMessages,
   getTenants,
+  serviceScope,
 } from "../index";
 
 // Assume o banco já está seedado (mesmo padrão de isolation.test.ts /
@@ -62,7 +63,7 @@ describe("server/data reads — lote 3 (ordenação e conversation summaries)", 
 
   describe("getLeads — ordenação determinística (updatedAt DESC, id)", () => {
     it("retorna leads em ordem não-crescente de updatedAt, com id como desempate", async () => {
-      const result = await getLeads(tenantAId);
+      const result = await getLeads(serviceScope(tenantAId));
       expect(result.length).toBeGreaterThan(1);
 
       for (let i = 1; i < result.length; i++) {
@@ -77,18 +78,18 @@ describe("server/data reads — lote 3 (ordenação e conversation summaries)", 
     });
 
     it("chamadas sucessivas retornam exatamente a mesma ordem", async () => {
-      const first = await getLeads(tenantAId);
-      const second = await getLeads(tenantAId);
+      const first = await getLeads(serviceScope(tenantAId));
+      const second = await getLeads(serviceScope(tenantAId));
       expect(second.map((l) => l.id)).toEqual(first.map((l) => l.id));
     });
   });
 
   describe("getMessages — ordenação determinística (sentAt ASC, id)", () => {
     it("retorna mensagens de uma conversa em ordem não-decrescente de sentAt, com id como desempate", async () => {
-      const [conversation] = await getConversations(tenantAId);
+      const [conversation] = await getConversations(serviceScope(tenantAId));
       expect(conversation).toBeDefined();
 
-      const result = await getMessages(tenantAId, conversation.id);
+      const result = await getMessages(serviceScope(tenantAId), conversation.id);
       expect(result.length).toBeGreaterThan(1);
 
       for (let i = 1; i < result.length; i++) {
@@ -105,8 +106,8 @@ describe("server/data reads — lote 3 (ordenação e conversation summaries)", 
 
   describe("getConversationSummaries", () => {
     it("shape completo (leadName, lastMessage) e disjunção total entre tenant A e B", async () => {
-      const summariesA = await getConversationSummaries(tenantAId);
-      const summariesB = await getConversationSummaries(tenantBId);
+      const summariesA = await getConversationSummaries(serviceScope(tenantAId));
+      const summariesB = await getConversationSummaries(serviceScope(tenantBId));
 
       expect(summariesA.length).toBeGreaterThan(0);
       expect(summariesB.length).toBeGreaterThan(0);
@@ -129,7 +130,7 @@ describe("server/data reads — lote 3 (ordenação e conversation summaries)", 
     });
 
     it("ordena pela última mensagem DESC (mais recente primeiro)", async () => {
-      const summaries = await getConversationSummaries(tenantAId);
+      const summaries = await getConversationSummaries(serviceScope(tenantAId));
       const withMessage = summaries.filter((s) => s.lastMessage !== null);
       expect(withMessage.length).toBeGreaterThan(1);
 
@@ -159,7 +160,7 @@ describe("server/data reads — lote 3 (ordenação e conversation summaries)", 
       });
 
       try {
-        const summaries = await getConversationSummaries(tenantAId);
+        const summaries = await getConversationSummaries(serviceScope(tenantAId));
         const target = summaries.find((s) => s.id === conversationId);
         expect(target).toBeDefined();
         expect(target!.leadId).toBe(leadId);
@@ -179,7 +180,7 @@ describe("server/data reads — lote 3 (ordenação e conversation summaries)", 
 
     it("retorna [] para um tenant inexistente, nunca um erro", async () => {
       const result = await getConversationSummaries(
-        "00000000-0000-4000-8000-000000000000"
+        serviceScope("00000000-0000-4000-8000-000000000000")
       );
       expect(result).toEqual([]);
     });

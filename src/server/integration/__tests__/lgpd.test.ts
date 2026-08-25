@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
 import { db } from "../../../db";
 import { documents, leads, tenants } from "../../../db/schema";
-import { getLead } from "../../data";
+import { getLead, serviceScope } from "../../data";
 import { expireDocuments, optOutLead } from "../lgpd";
 
 const NON_EXISTENT_LEAD_ID = "00000000-0000-4000-8000-000000000789";
@@ -66,7 +66,7 @@ describe("server/integration lgpd — optOutLead + expireDocuments", () => {
       expect(result).not.toBeNull();
       expect(result!.optedOutAt).toBeInstanceOf(Date);
 
-      const persisted = await getLead(tenantAId, leadId);
+      const persisted = await getLead(serviceScope(tenantAId), leadId);
       expect(persisted!.optedOutAt).toEqual(result!.optedOutAt);
     });
 
@@ -90,7 +90,7 @@ describe("server/integration lgpd — optOutLead + expireDocuments", () => {
       const result = await optOutLead(tenantAId, leadOfB);
       expect(result).toBeNull();
 
-      const untouched = await getLead(tenantBId, leadOfB);
+      const untouched = await getLead(serviceScope(tenantBId), leadOfB);
       expect(untouched!.optedOutAt).toBeNull();
     });
   });

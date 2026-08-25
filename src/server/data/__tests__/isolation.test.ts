@@ -1,18 +1,31 @@
 import "dotenv/config";
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { db } from "../../../db";
-import { conversations, leads } from "../../../db/schema";
+import {
+  conversations,
+  leads,
+  messages,
+  tenant_members,
+  tenants,
+  users,
+} from "../../../db/schema";
 import {
   getBrokers,
   getConversations,
+  getConversationSummaries,
+  getDashboardKpis,
   getDocuments,
   getLead,
+  getLeadDistributions,
   getLeads,
+  getLeadVolumeSeries,
   getMessages,
+  getRecentLeads,
   getTenant,
   getTenants,
+  serviceScope,
 } from "../index";
 
 const NON_EXISTENT_TENANT_ID = "00000000-0000-4000-8000-000000000000";
@@ -122,8 +135,8 @@ describe("server/data isolation", () => {
 
   describe("getLeads", () => {
     it("resultados do tenant A e B são totalmente disjuntos e cada lead pertence ao tenant pedido (AC 2.1, 2.2)", async () => {
-      const leadsA = await getLeads(tenantAId);
-      const leadsB = await getLeads(tenantBId);
+      const leadsA = await getLeads(serviceScope(tenantAId));
+      const leadsB = await getLeads(serviceScope(tenantBId));
 
       expect(leadsA.length).toBeGreaterThan(0);
       expect(leadsB.length).toBeGreaterThan(0);
@@ -138,40 +151,40 @@ describe("server/data isolation", () => {
     });
 
     it("retorna [] para um tenant inexistente, nunca um erro (edge case)", async () => {
-      const result = await getLeads(NON_EXISTENT_TENANT_ID);
+      const result = await getLeads(serviceScope(NON_EXISTENT_TENANT_ID));
       expect(result).toEqual([]);
     });
   });
 
   describe("getLead", () => {
     it("retorna o lead quando consultado com o próprio tenant", async () => {
-      const [leadA] = await getLeads(tenantAId);
+      const [leadA] = await getLeads(serviceScope(tenantAId));
       expect(leadA).toBeDefined();
 
-      const result = await getLead(tenantAId, leadA.id);
+      const result = await getLead(serviceScope(tenantAId), leadA.id);
       expect(result).not.toBeNull();
       expect(result!.id).toBe(leadA.id);
       expect(result!.tenantId).toBe(tenantAId);
     });
 
     it("retorna null ao consultar um lead do tenant A usando o tenant B (isolamento cross-tenant, AC 2.2)", async () => {
-      const [leadA] = await getLeads(tenantAId);
+      const [leadA] = await getLeads(serviceScope(tenantAId));
       expect(leadA).toBeDefined();
 
-      const result = await getLead(tenantBId, leadA.id);
+      const result = await getLead(serviceScope(tenantBId), leadA.id);
       expect(result).toBeNull();
     });
 
     it("retorna null para um lead inexistente (edge case)", async () => {
-      const result = await getLead(tenantAId, NON_EXISTENT_LEAD_ID);
+      const result = await getLead(serviceScope(tenantAId), NON_EXISTENT_LEAD_ID);
       expect(result).toBeNull();
     });
   });
 
   describe("getConversations", () => {
     it("resultados do tenant A e B são totalmente disjuntos e cada conversa pertence ao tenant pedido (AC 2.1, 2.2)", async () => {
-      const conversationsA = await getConversations(tenantAId);
-      const conversationsB = await getConversations(tenantBId);
+      const conversationsA = await getConversations(serviceScope(tenantAId));
+      const conversationsB = await getConversations(serviceScope(tenantBId));
 
       expect(conversationsA.length).toBeGreaterThan(0);
       expect(conversationsB.length).toBeGreaterThan(0);
@@ -188,31 +201,31 @@ describe("server/data isolation", () => {
     });
 
     it("retorna [] para um tenant inexistente, nunca um erro (edge case)", async () => {
-      const result = await getConversations(NON_EXISTENT_TENANT_ID);
+      const result = await getConversations(serviceScope(NON_EXISTENT_TENANT_ID));
       expect(result).toEqual([]);
     });
   });
 
   describe("getMessages", () => {
     it("retorna as mensagens da conversa quando consultada com o próprio tenant, todas com o tenant correto", async () => {
-      const [conversationA] = await getConversations(tenantAId);
+      const [conversationA] = await getConversations(serviceScope(tenantAId));
       expect(conversationA).toBeDefined();
 
-      const result = await getMessages(tenantAId, conversationA.id);
+      const result = await getMessages(serviceScope(tenantAId), conversationA.id);
       expect(result.length).toBeGreaterThan(0);
       for (const message of result) expect(message.tenantId).toBe(tenantAId);
     });
 
     it("retorna [] ao consultar uma conversa do tenant A usando o tenant B (isolamento cross-tenant, AC 2.2)", async () => {
-      const [conversationA] = await getConversations(tenantAId);
+      const [conversationA] = await getConversations(serviceScope(tenantAId));
       expect(conversationA).toBeDefined();
 
-      const result = await getMessages(tenantBId, conversationA.id);
+      const result = await getMessages(serviceScope(tenantBId), conversationA.id);
       expect(result).toEqual([]);
     });
 
     it("retorna [] para um tenant inexistente, nunca um erro (edge case)", async () => {
-      const result = await getMessages(NON_EXISTENT_TENANT_ID, NON_EXISTENT_LEAD_ID);
+      const result = await getMessages(serviceScope(NON_EXISTENT_TENANT_ID), NON_EXISTENT_LEAD_ID);
       expect(result).toEqual([]);
     });
   });
@@ -239,6 +252,175 @@ describe("server/data isolation", () => {
     it("retorna [] para um tenant inexistente, nunca um erro (edge case)", async () => {
       const result = await getDocuments(NON_EXISTENT_TENANT_ID);
       expect(result).toEqual([]);
+    });
+  });
+
+  // lote-8 — SCOPE-01: isolamento entre CORRETORES da MESMA imobiliária. O
+  // isolamento entre imobiliárias acima continua valendo; esta é a dimensão
+  // nova, e é a falha mais grave que este lote pode produzir (design.md —
+  // Risks). Fixture própria: uma imobiliária, dois corretores, quatro leads
+  // (um de cada corretor, um sem responsável, um de outra imobiliária).
+  describe("escopo de carteira entre dois corretores da mesma imobiliária", () => {
+    let tenantId: string;
+    let corretorAId: string;
+    let corretorBId: string;
+    let leadDeAId: string;
+    let leadDeBId: string;
+    let leadSemDonoId: string;
+    let conversaDeAId: string;
+    let conversaDeBId: string;
+
+    /** Escopo de quem só tem papel corretor: enxerga apenas os próprios. */
+    const scopeOf = (userId: string) => ({ tenantId, assignedUserId: userId });
+    /** Escopo de administrador/gestor: a imobiliária inteira. */
+    const scopeAmplo = () => ({ tenantId, assignedUserId: null });
+
+    beforeAll(async () => {
+      tenantId = randomUUID();
+      await db.insert(tenants).values({
+        id: tenantId,
+        name: "Tenant Escopo Carteira",
+        agentName: "Agente Escopo",
+        supportedModality: "ambos",
+        slug: `fixture-${tenantId}`,
+      });
+
+      corretorAId = randomUUID();
+      corretorBId = randomUUID();
+      await db.insert(users).values([
+        { id: corretorAId, name: "Corretor A", email: `${corretorAId}@fixture.test` },
+        { id: corretorBId, name: "Corretor B", email: `${corretorBId}@fixture.test` },
+      ]);
+      await db.insert(tenant_members).values([
+        { organizationId: tenantId, userId: corretorAId, role: "corretor" },
+        { organizationId: tenantId, userId: corretorBId, role: "corretor" },
+      ]);
+
+      leadDeAId = randomUUID();
+      leadDeBId = randomUUID();
+      leadSemDonoId = randomUUID();
+      const base = {
+        tenantId,
+        phone: "+55 34 90000-1234",
+        status: "em_qualificacao" as const,
+        firstContactAt: new Date(),
+      };
+      await db.insert(leads).values([
+        { ...base, id: leadDeAId, name: "Lead do A", assignedUserId: corretorAId },
+        { ...base, id: leadDeBId, name: "Lead do B", assignedUserId: corretorBId },
+        { ...base, id: leadSemDonoId, name: "Lead sem dono", assignedUserId: null },
+      ]);
+
+      conversaDeAId = randomUUID();
+      conversaDeBId = randomUUID();
+      await db.insert(conversations).values([
+        { id: conversaDeAId, tenantId, leadId: leadDeAId },
+        { id: conversaDeBId, tenantId, leadId: leadDeBId },
+      ]);
+      await db.insert(messages).values([
+        {
+          tenantId,
+          conversationId: conversaDeAId,
+          sender: "lead",
+          content: "Mensagem do lead do A",
+        },
+        {
+          tenantId,
+          conversationId: conversaDeBId,
+          sender: "lead",
+          content: "Mensagem do lead do B",
+        },
+      ]);
+    });
+
+    afterAll(async () => {
+      await db.delete(messages).where(eq(messages.tenantId, tenantId));
+      await db.delete(conversations).where(eq(conversations.tenantId, tenantId));
+      await db.delete(leads).where(eq(leads.tenantId, tenantId));
+      await db.delete(tenant_members).where(eq(tenant_members.organizationId, tenantId));
+      await db.delete(tenants).where(eq(tenants.id, tenantId));
+      await db.delete(users).where(inArray(users.id, [corretorAId, corretorBId]));
+    });
+
+    // SCOPE-01 AC1 (Pipeline)
+    it("cada corretor vê no Pipeline apenas os próprios leads", async () => {
+      const doA = await getLeads(scopeOf(corretorAId));
+      const doB = await getLeads(scopeOf(corretorBId));
+
+      expect(doA.map((l) => l.id)).toEqual([leadDeAId]);
+      expect(doB.map((l) => l.id)).toEqual([leadDeBId]);
+      expect(doA.map((l) => l.id)).not.toContain(leadDeBId);
+      expect(doB.map((l) => l.id)).not.toContain(leadDeAId);
+    });
+
+    // SCOPE-01 AC4
+    it("lead de outro corretor pedido pelo identificador responde como inexistente", async () => {
+      // Existe de fato — provado pelo escopo amplo na mesma asserção.
+      expect((await getLead(scopeAmplo(), leadDeBId))!.id).toBe(leadDeBId);
+
+      const pedidoPeloA = await getLead(scopeOf(corretorAId), leadDeBId);
+      expect(pedidoPeloA).toBeNull();
+
+      // Indistinguível de um id que não existe: mesmo `null`, sem sinal algum.
+      const inexistente = await getLead(scopeOf(corretorAId), NON_EXISTENT_LEAD_ID);
+      expect(pedidoPeloA).toEqual(inexistente);
+    });
+
+    // SCOPE-01 AC5
+    it("lead sem responsável é visível para administrador e gestor e invisível para o corretor", async () => {
+      const amplo = await getLeads(scopeAmplo());
+      expect(amplo.map((l) => l.id)).toContain(leadSemDonoId);
+      expect(amplo).toHaveLength(3);
+
+      expect((await getLeads(scopeOf(corretorAId))).map((l) => l.id)).not.toContain(
+        leadSemDonoId
+      );
+      expect(await getLead(scopeOf(corretorAId), leadSemDonoId)).toBeNull();
+      expect((await getLead(scopeAmplo(), leadSemDonoId))!.id).toBe(leadSemDonoId);
+    });
+
+    // SCOPE-01 AC2 (Chats)
+    it("cada corretor vê em Chats apenas as conversas dos próprios leads", async () => {
+      const resumosA = await getConversationSummaries(scopeOf(corretorAId));
+      expect(resumosA.map((c) => c.id)).toEqual([conversaDeAId]);
+      expect(resumosA[0].leadName).toBe("Lead do A");
+
+      const conversasA = await getConversations(scopeOf(corretorAId));
+      expect(conversasA.map((c) => c.id)).toEqual([conversaDeAId]);
+
+      // Pedir a thread do outro pelo id da conversa devolve vazio, e a
+      // própria continua chegando — a query não é cega, é escopada.
+      expect(await getMessages(scopeOf(corretorAId), conversaDeBId)).toEqual([]);
+      expect(
+        (await getMessages(scopeOf(corretorAId), conversaDeAId)).map((m) => m.content)
+      ).toEqual(["Mensagem do lead do A"]);
+    });
+
+    // SCOPE-01 AC3 (Dashboard)
+    it("os indicadores do Dashboard são calculados só sobre a carteira do corretor", async () => {
+      const range = {
+        from: new Date(Date.now() - 86400000),
+        to: new Date(Date.now() + 86400000),
+      };
+
+      expect((await getDashboardKpis(scopeAmplo(), range)).leadCount).toBe(3);
+      expect((await getDashboardKpis(scopeOf(corretorAId), range)).leadCount).toBe(1);
+      expect((await getDashboardKpis(scopeOf(corretorBId), range)).leadCount).toBe(1);
+
+      const volumeAmplo = await getLeadVolumeSeries(scopeAmplo(), range, "day");
+      const volumeDoA = await getLeadVolumeSeries(scopeOf(corretorAId), range, "day");
+      const soma = (bs: { count: number }[]) => bs.reduce((t, b) => t + b.count, 0);
+      expect(soma(volumeAmplo)).toBe(3);
+      expect(soma(volumeDoA)).toBe(1);
+
+      const distAmplo = await getLeadDistributions(scopeAmplo(), range);
+      const distDoA = await getLeadDistributions(scopeOf(corretorAId), range);
+      const total = (bs: { count: number }[]) => bs.reduce((t, b) => t + b.count, 0);
+      expect(total(distAmplo.modality)).toBe(3);
+      expect(total(distDoA.modality)).toBe(1);
+
+      const recentesDoA = await getRecentLeads(scopeOf(corretorAId));
+      expect(recentesDoA.map((l) => l.id)).toEqual([leadDeAId]);
     });
   });
 });

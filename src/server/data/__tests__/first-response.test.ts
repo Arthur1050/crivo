@@ -9,6 +9,7 @@ import {
   getLead,
   ingestAgentMessage,
   type DashboardRange,
+  serviceScope,
 } from "../index";
 
 // Tenant + lead PRÓPRIOS deste arquivo (nunca o snapshot do seed) — mesmo
@@ -74,7 +75,7 @@ describe("server/data — first_response_at em ingestAgentMessage (lote-7, KPI-0
     expect(result).not.toBeNull();
     expect(result!.created).toBe(true);
 
-    const lead = await getLead(tenantId, leadId);
+    const lead = await getLead(serviceScope(tenantId), leadId);
     expect(lead!.firstResponseAt).toEqual(sentAt);
   });
 
@@ -99,7 +100,7 @@ describe("server/data — first_response_at em ingestAgentMessage (lote-7, KPI-0
       sentAt: secondSentAt,
     });
 
-    const lead = await getLead(tenantId, leadId);
+    const lead = await getLead(serviceScope(tenantId), leadId);
     expect(lead!.firstResponseAt).toEqual(firstSentAt);
   });
 
@@ -115,7 +116,7 @@ describe("server/data — first_response_at em ingestAgentMessage (lote-7, KPI-0
       sentAt: new Date("2026-08-01T10:01:00.000Z"),
     });
 
-    const lead = await getLead(tenantId, leadId);
+    const lead = await getLead(serviceScope(tenantId), leadId);
     expect(lead!.firstResponseAt).toBeNull();
   });
 
@@ -143,7 +144,7 @@ describe("server/data — first_response_at em ingestAgentMessage (lote-7, KPI-0
     });
     expect(second!.created).toBe(false);
 
-    const lead = await getLead(tenantId, leadId);
+    const lead = await getLead(serviceScope(tenantId), leadId);
     expect(lead!.firstResponseAt).toEqual(originalSentAt);
   });
 
@@ -165,7 +166,7 @@ describe("server/data — first_response_at em ingestAgentMessage (lote-7, KPI-0
       from: new Date("2026-08-01T00:00:00.000Z"),
       to: new Date("2026-08-01T23:59:59.999Z"),
     };
-    const kpis = await getDashboardKpis(tenantId, range);
+    const kpis = await getDashboardKpis(serviceScope(tenantId), range);
     expect(kpis.avgFirstResponseMinutes).toBe(12);
     expect(kpis.respondedCount).toBe(1);
   });

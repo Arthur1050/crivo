@@ -17,6 +17,7 @@ import {
   updateDocumentCategory,
   updateLeadStatus,
   updateTenantSettings,
+  serviceScope,
 } from "../index";
 
 const NON_EXISTENT_ID = "00000000-0000-4000-8000-000000000099";
@@ -86,7 +87,7 @@ describe("server/data mutations", () => {
 
   describe("updateLeadStatus", () => {
     it("persiste o novo status e avança updatedAt (happy path) — reverte ao final", async () => {
-      const [lead] = await getLeads(tenantAId);
+      const [lead] = await getLeads(serviceScope(tenantAId));
       expect(lead).toBeDefined();
 
       const originalStatus = lead.status;
@@ -105,7 +106,7 @@ describe("server/data mutations", () => {
         originalUpdatedAt.getTime()
       );
 
-      const reread = await getLead(tenantAId, lead.id);
+      const reread = await getLead(serviceScope(tenantAId), lead.id);
       expect(reread!.status).toBe(nextStatus);
 
       // Reverte para não afetar o seed usado por outros testes/batches.
@@ -123,7 +124,7 @@ describe("server/data mutations", () => {
     });
 
     it("retorna null (no-op) e não altera o lead quando o tenantId não corresponde (isolamento cross-tenant)", async () => {
-      const [leadA] = await getLeads(tenantAId);
+      const [leadA] = await getLeads(serviceScope(tenantAId));
       expect(leadA).toBeDefined();
       const originalStatus = leadA.status;
 
@@ -134,7 +135,7 @@ describe("server/data mutations", () => {
       );
       expect(result).toBeNull();
 
-      const unchanged = await getLead(tenantAId, leadA.id);
+      const unchanged = await getLead(serviceScope(tenantAId), leadA.id);
       expect(unchanged!.status).toBe(originalStatus);
     });
   });

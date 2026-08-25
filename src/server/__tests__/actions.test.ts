@@ -14,6 +14,7 @@ import {
   getLeads,
   getTenant,
   getTenants,
+  serviceScope,
 } from "../data";
 
 // `getActiveTenantId()` (chamada internamente por toda action) resolve a
@@ -500,7 +501,7 @@ describe("server actions", () => {
     });
 
     it("persiste o novo status no tenant ativo (happy path) e chama revalidatePath('/pipeline') — reverte ao final", async () => {
-      const [lead] = await getLeads(activeTenantId);
+      const [lead] = await getLeads(serviceScope(activeTenantId));
       expect(lead).toBeDefined();
       const originalStatus = lead.status;
       const nextStatus =
@@ -513,7 +514,7 @@ describe("server actions", () => {
       expect(result).toEqual({ ok: true });
       expect(revalidatePath).toHaveBeenCalledWith("/pipeline");
 
-      const persisted = await getLead(activeTenantId, lead.id);
+      const persisted = await getLead(serviceScope(activeTenantId), lead.id);
       expect(persisted!.status).toBe(nextStatus);
 
       const revertResult = await updateLeadStatusAction({
@@ -526,7 +527,7 @@ describe("server actions", () => {
     // lote-5 — INT-04: a trava humana (patchLead) depende deste registro
     // existir; sem ele, o agente poderia sobrescrever uma decisão humana.
     it("grava status_changed_by='humano' ao mover o lead pelo Kanban (INT-04 AC4 — fundação da trava humana)", async () => {
-      const [lead] = await getLeads(activeTenantId);
+      const [lead] = await getLeads(serviceScope(activeTenantId));
       expect(lead).toBeDefined();
       const originalStatus = lead.status;
       const nextStatus =
@@ -538,14 +539,14 @@ describe("server actions", () => {
       });
       expect(result).toEqual({ ok: true });
 
-      const persisted = await getLead(activeTenantId, lead.id);
+      const persisted = await getLead(serviceScope(activeTenantId), lead.id);
       expect(persisted!.statusChangedBy).toBe("humano");
 
       await updateLeadStatusAction({ leadId: lead.id, status: originalStatus });
     });
 
     it("status fora do enum retorna { ok: false, error } e nada é persistido", async () => {
-      const [lead] = await getLeads(activeTenantId);
+      const [lead] = await getLeads(serviceScope(activeTenantId));
       expect(lead).toBeDefined();
       const originalStatus = lead.status;
 
@@ -556,7 +557,7 @@ describe("server actions", () => {
       expect(result.ok).toBe(false);
       if (!result.ok) expect(result.error).toBeTruthy();
 
-      const unchanged = await getLead(activeTenantId, lead.id);
+      const unchanged = await getLead(serviceScope(activeTenantId), lead.id);
       expect(unchanged!.status).toBe(originalStatus);
     });
 
@@ -570,7 +571,7 @@ describe("server actions", () => {
     });
 
     it("um leadId de outro tenant é tratado como não encontrado — a action nunca escreve fora do tenant ativo", async () => {
-      const [leadOther] = await getLeads(otherTenantId);
+      const [leadOther] = await getLeads(serviceScope(otherTenantId));
       expect(leadOther).toBeDefined();
       const originalStatus = leadOther.status;
 
@@ -581,12 +582,12 @@ describe("server actions", () => {
       });
       expect(result.ok).toBe(false);
 
-      const unchanged = await getLead(otherTenantId, leadOther.id);
+      const unchanged = await getLead(serviceScope(otherTenantId), leadOther.id);
       expect(unchanged!.status).toBe(originalStatus);
     });
 
     it("um tenantId injetado no payload é ignorado — a action sempre resolve o tenant ativo pela sessao autenticada", async () => {
-      const [lead] = await getLeads(activeTenantId);
+      const [lead] = await getLeads(serviceScope(activeTenantId));
       expect(lead).toBeDefined();
       const originalStatus = lead.status;
       const nextStatus =
@@ -601,7 +602,7 @@ describe("server actions", () => {
       const result = await updateLeadStatusAction(payloadWithForeignTenant);
       expect(result).toEqual({ ok: true });
 
-      const persisted = await getLead(activeTenantId, lead.id);
+      const persisted = await getLead(serviceScope(activeTenantId), lead.id);
       expect(persisted!.status).toBe(nextStatus);
 
       await updateLeadStatusAction({ leadId: lead.id, status: originalStatus });
@@ -666,12 +667,12 @@ describe("server actions", () => {
         expect(result).toEqual({ ok: true });
         expect(revalidatePath).toHaveBeenCalledWith("/pipeline");
 
-        const persisted = await getLead(activeTenantId, fixtureLeadId);
+        const persisted = await getLead(serviceScope(activeTenantId), fixtureLeadId);
         expect(persisted!.assignedUserId).toBe(brokerActiveId);
       });
 
       it("DAL devolvendo null (corretor de outro tenant) produz falha explícita, campo error preenchido", async () => {
-        const before = await getLead(activeTenantId, fixtureLeadId);
+        const before = await getLead(serviceScope(activeTenantId), fixtureLeadId);
 
         const result = await updateLeadBrokerAction({
           leadId: fixtureLeadId,
@@ -680,7 +681,7 @@ describe("server actions", () => {
         expect(result.ok).toBe(false);
         if (!result.ok) expect(result.error).toBeTruthy();
 
-        const after = await getLead(activeTenantId, fixtureLeadId);
+        const after = await getLead(serviceScope(activeTenantId), fixtureLeadId);
         expect(after!.assignedUserId).toBe(before!.assignedUserId);
       });
 
@@ -694,7 +695,7 @@ describe("server actions", () => {
         const result = await updateLeadBrokerAction(payloadWithForeignTenant);
         expect(result).toEqual({ ok: true });
 
-        const persisted = await getLead(activeTenantId, fixtureLeadId);
+        const persisted = await getLead(serviceScope(activeTenantId), fixtureLeadId);
         expect(persisted!.assignedUserId).toBe(brokerActiveId);
       });
     });
@@ -708,26 +709,26 @@ describe("server actions", () => {
         expect(result).toEqual({ ok: true });
         expect(revalidatePath).toHaveBeenCalledWith("/pipeline");
 
-        const persisted = await getLead(activeTenantId, fixtureLeadId);
+        const persisted = await getLead(serviceScope(activeTenantId), fixtureLeadId);
         expect(persisted!.meetingAttended).toBe(true);
       });
 
       it("persiste 'false' e depois 'null' (os três estados via action)", async () => {
         await setMeetingAttendanceAction({ leadId: fixtureLeadId, attended: false });
-        expect((await getLead(activeTenantId, fixtureLeadId))!.meetingAttended).toBe(
+        expect((await getLead(serviceScope(activeTenantId), fixtureLeadId))!.meetingAttended).toBe(
           false
         );
 
         await setMeetingAttendanceAction({ leadId: fixtureLeadId, attended: null });
         expect(
-          (await getLead(activeTenantId, fixtureLeadId))!.meetingAttended
+          (await getLead(serviceScope(activeTenantId), fixtureLeadId))!.meetingAttended
         ).toBeNull();
       });
 
       it("DAL devolvendo null (lead de outro tenant) produz falha explícita, campo error preenchido", async () => {
-        const [leadOther] = await getLeads(otherTenantId);
+        const [leadOther] = await getLeads(serviceScope(otherTenantId));
         expect(leadOther).toBeDefined();
-        const before = await getLead(otherTenantId, leadOther.id);
+        const before = await getLead(serviceScope(otherTenantId), leadOther.id);
 
         const result = await setMeetingAttendanceAction({
           leadId: leadOther.id,
@@ -736,7 +737,7 @@ describe("server actions", () => {
         expect(result.ok).toBe(false);
         if (!result.ok) expect(result.error).toBeTruthy();
 
-        const after = await getLead(otherTenantId, leadOther.id);
+        const after = await getLead(serviceScope(otherTenantId), leadOther.id);
         expect(after!.meetingAttended).toBe(before!.meetingAttended);
       });
 

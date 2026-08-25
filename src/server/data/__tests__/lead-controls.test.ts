@@ -16,6 +16,7 @@ import {
   getLead,
   setMeetingAttendance,
   updateLeadBroker,
+  serviceScope,
 } from "../index";
 
 // Tenants + corretores + leads PRÓPRIOS deste arquivo (nunca o snapshot do
@@ -142,7 +143,7 @@ describe("server/data — updateLeadBroker / setMeetingAttendance / getLastAgent
       expect(updated).not.toBeNull();
       expect(updated!.assignedUserId).toBe(brokerBId);
 
-      const reread = await getLead(tenantId, leadId);
+      const reread = await getLead(serviceScope(tenantId), leadId);
       expect(reread!.assignedUserId).toBe(brokerBId);
     });
 
@@ -157,7 +158,7 @@ describe("server/data — updateLeadBroker / setMeetingAttendance / getLastAgent
       const result = await updateLeadBroker(tenantAId, leadId, brokerBId);
       expect(result).toBeNull();
 
-      const reread = await getLead(tenantAId, leadId);
+      const reread = await getLead(serviceScope(tenantAId), leadId);
       expect(reread!.assignedUserId).toBe(brokerAId);
     });
 
@@ -172,7 +173,7 @@ describe("server/data — updateLeadBroker / setMeetingAttendance / getLastAgent
       const result = await updateLeadBroker(tenantAId, leadBId, brokerBId);
       expect(result).toBeNull();
 
-      const reread = await getLead(tenantBId, leadBId);
+      const reread = await getLead(serviceScope(tenantBId), leadBId);
       expect(reread!.assignedUserId).toBe(brokerBId);
     });
 
@@ -188,7 +189,7 @@ describe("server/data — updateLeadBroker / setMeetingAttendance / getLastAgent
       const result = await updateLeadBroker(tenantId, leadId, gestorId);
       expect(result).toBeNull();
 
-      const reread = await getLead(tenantId, leadId);
+      const reread = await getLead(serviceScope(tenantId), leadId);
       expect(reread!.assignedUserId).toBe(brokerAId);
     });
   });
@@ -201,15 +202,15 @@ describe("server/data — updateLeadBroker / setMeetingAttendance / getLastAgent
 
       const toTrue = await setMeetingAttendance(tenantId, leadId, true);
       expect(toTrue!.meetingAttended).toBe(true);
-      expect((await getLead(tenantId, leadId))!.meetingAttended).toBe(true);
+      expect((await getLead(serviceScope(tenantId), leadId))!.meetingAttended).toBe(true);
 
       const toFalse = await setMeetingAttendance(tenantId, leadId, false);
       expect(toFalse!.meetingAttended).toBe(false);
-      expect((await getLead(tenantId, leadId))!.meetingAttended).toBe(false);
+      expect((await getLead(serviceScope(tenantId), leadId))!.meetingAttended).toBe(false);
 
       const toNull = await setMeetingAttendance(tenantId, leadId, null);
       expect(toNull!.meetingAttended).toBeNull();
-      expect((await getLead(tenantId, leadId))!.meetingAttended).toBeNull();
+      expect((await getLead(serviceScope(tenantId), leadId))!.meetingAttended).toBeNull();
     });
 
     it("lead de outro tenant: devolve null sem escrever", async () => {
@@ -221,7 +222,7 @@ describe("server/data — updateLeadBroker / setMeetingAttendance / getLastAgent
       const result = await setMeetingAttendance(tenantAId, leadBId, true);
       expect(result).toBeNull();
 
-      const reread = await getLead(tenantBId, leadBId);
+      const reread = await getLead(serviceScope(tenantBId), leadBId);
       expect(reread!.meetingAttended).toBeNull();
     });
   });

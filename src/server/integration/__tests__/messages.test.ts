@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { and, eq } from "drizzle-orm";
 import { db } from "../../../db";
 import { conversations, leads, messages, tenants } from "../../../db/schema";
-import { getMessages } from "../../data";
+import { getMessages, serviceScope } from "../../data";
 import { ingestMessage } from "../messages";
 
 const NON_EXISTENT_LEAD_ID = "00000000-0000-4000-8000-000000000456";
@@ -158,7 +158,7 @@ describe("server/integration messages — ingestMessage", () => {
     expect(later.ok && earlier.ok).toBe(true);
     if (!later.ok || !earlier.ok) return;
 
-    const thread = await getMessages(tenantAId, later.message.conversationId);
+    const thread = await getMessages(serviceScope(tenantAId), later.message.conversationId);
     expect(thread.map((m) => m.content)).toEqual([
       "Mensagem mais cedo (chega depois).",
       "Mensagem mais tarde (chega primeiro).",
@@ -227,7 +227,7 @@ describe("server/integration messages — ingestMessage", () => {
     expect(dup.created).toBe(false);
     expect(dup.message.id).toBe(msg1.message.id);
 
-    const thread = await getMessages(tenantAId, msg1.message.conversationId);
+    const thread = await getMessages(serviceScope(tenantAId), msg1.message.conversationId);
     expect(thread).toHaveLength(2);
     expect(thread.map((m) => m.content)).toEqual(["msg2", "msg1"]);
   });

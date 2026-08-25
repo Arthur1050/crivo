@@ -9,7 +9,7 @@ import {
   tenantApiKeys,
   tenants,
 } from "../../../../db/schema";
-import { getLead, getLeads } from "../../../data";
+import { getLead, getLeads, serviceScope } from "../../../data";
 import { DELETE, GET, PATCH, POST, PUT } from "../../../../../app/api/v1/leads/route";
 import { GET as unmatchedGet } from "../../../../../app/api/v1/[...unmatched]/route";
 
@@ -80,7 +80,7 @@ describe("routes: POST /api/v1/leads", () => {
     expect(body.externalId).toBe(externalId);
     expect(body.status).toBe("em_qualificacao");
 
-    const persisted = await getLead(tenantId, body.id);
+    const persisted = await getLead(serviceScope(tenantId), body.id);
     expect(persisted).not.toBeNull();
     expect(persisted!.externalId).toBe(externalId);
     expect(persisted!.status).toBe("em_qualificacao");
@@ -91,7 +91,7 @@ describe("routes: POST /api/v1/leads", () => {
     const response = await POST(makeRequest(validPayload(externalId)));
     const body = await response.json();
 
-    const rows = await getLeads(tenantId, { status: "em_qualificacao" });
+    const rows = await getLeads(serviceScope(tenantId), { status: "em_qualificacao" });
     expect(rows.some((lead) => lead.id === body.id)).toBe(true);
   });
 
@@ -258,7 +258,7 @@ describe("routes: POST /api/v1/leads — modo de autenticação de serviço (lot
     const body = await response.json();
     expect(body.externalId).toBe(externalId);
 
-    const persisted = await getLead(tenantId, body.id);
+    const persisted = await getLead(serviceScope(tenantId), body.id);
     expect(persisted).not.toBeNull();
     expect(persisted!.externalId).toBe(externalId);
   });

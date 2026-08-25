@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
 import { db } from "../../../db";
 import { leads, tenants } from "../../../db/schema";
-import { getLead, updateLeadStatus } from "../../data";
+import { getLead, updateLeadStatus, serviceScope } from "../../data";
 import { patchLead, TRANSITIONS } from "../leads";
 import type { LeadPatchDto } from "../parsers";
 
@@ -82,7 +82,7 @@ describe("server/integration leads — TRANSITIONS + patchLead", () => {
               if (result.ok) expect(result.lead.status).toBe(to);
             } else {
               expect(result).toEqual({ ok: false, code: "transicao-invalida" });
-              const unchanged = await getLead(tenantId, leadId);
+              const unchanged = await getLead(serviceScope(tenantId), leadId);
               expect(unchanged!.status).toBe(from);
             }
           });
@@ -98,7 +98,7 @@ describe("server/integration leads — TRANSITIONS + patchLead", () => {
         code: "motivo-escalonamento-obrigatorio",
       });
 
-      const unchanged = await getLead(tenantId, leadId);
+      const unchanged = await getLead(serviceScope(tenantId), leadId);
       expect(unchanged!.status).toBe("em_qualificacao");
     });
 
@@ -137,7 +137,7 @@ describe("server/integration leads — TRANSITIONS + patchLead", () => {
       });
       expect(result).toEqual({ ok: false, code: "lead-travado-por-humano" });
 
-      const unchanged = await getLead(tenantId, leadId);
+      const unchanged = await getLead(serviceScope(tenantId), leadId);
       expect(unchanged!.status).toBe("em_qualificacao");
     });
 
@@ -167,7 +167,7 @@ describe("server/integration leads — TRANSITIONS + patchLead", () => {
 
     it("PATCH misturando campos válidos com transição inválida rejeita a request inteira sem gravar nenhum campo (INT-04 AC5 — atomicidade)", async () => {
       const leadId = await createTestLead("qualificado_agendado");
-      const before = await getLead(tenantId, leadId);
+      const before = await getLead(serviceScope(tenantId), leadId);
 
       const result = await patchLead(tenantId, leadId, {
         status: "em_qualificacao", // inválido a partir de qualificado_agendado
@@ -177,7 +177,7 @@ describe("server/integration leads — TRANSITIONS + patchLead", () => {
 
       expect(result).toEqual({ ok: false, code: "transicao-invalida" });
 
-      const after = await getLead(tenantId, leadId);
+      const after = await getLead(serviceScope(tenantId), leadId);
       expect(after!.status).toBe(before!.status);
       expect(after!.region).toBe(before!.region);
       expect(after!.executiveSummary).toBe(before!.executiveSummary);

@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { inArray } from "drizzle-orm";
 import { db } from "../../../db";
 import { leads, tenant_members, tenants, users } from "../../../db/schema";
-import { getLeads, getRecentLeads } from "../index";
+import { getLeads, getRecentLeads, serviceScope } from "../index";
 
 // Fixture PRÓPRIA (não depende do seed) com datas ABSOLUTAS: a ordenação de
 // `getRecentLeads` por firstContactAt DESC precisa ser verificável sem
@@ -165,7 +165,7 @@ describe("server/data — getRecentLeads e brokerName em getLeads (RD-03/RD-04)"
 
   describe("getRecentLeads", () => {
     it("retorna no máximo 5 leads por padrão, os mais recentes por firstContactAt DESC (RD-04 AC4)", async () => {
-      const result = await getRecentLeads(TENANT_FULL);
+      const result = await getRecentLeads(serviceScope(TENANT_FULL));
 
       expect(result).toHaveLength(5);
       expect(result.map((lead) => lead.name)).toEqual([
@@ -180,7 +180,7 @@ describe("server/data — getRecentLeads e brokerName em getLeads (RD-03/RD-04)"
     });
 
     it("ordena estritamente por firstContactAt decrescente (RD-04 AC4)", async () => {
-      const result = await getRecentLeads(TENANT_FULL);
+      const result = await getRecentLeads(serviceScope(TENANT_FULL));
       expect(result[0].firstContactAt).toEqual(
         new Date(Date.UTC(2026, 2, 20, 12, 0, 0))
       );
@@ -195,7 +195,7 @@ describe("server/data — getRecentLeads e brokerName em getLeads (RD-03/RD-04)"
     });
 
     it("preenche brokerName com o nome do corretor e null quando o lead não tem corretor (RD-04 AC4, Edge Cases)", async () => {
-      const result = await getRecentLeads(TENANT_FULL);
+      const result = await getRecentLeads(serviceScope(TENANT_FULL));
 
       const comCorretor = result.find((lead) => lead.name === "Lead Mais Recente");
       expect(comCorretor!.brokerName).toBe(BROKER_FULL_NAME);
@@ -205,7 +205,7 @@ describe("server/data — getRecentLeads e brokerName em getLeads (RD-03/RD-04)"
     });
 
     it("preserva budgetCents/modality nulos em vez de omitir o lead (Edge Cases)", async () => {
-      const result = await getRecentLeads(TENANT_FULL);
+      const result = await getRecentLeads(serviceScope(TENANT_FULL));
       const semQualificacao = result.find(
         (lead) => lead.name === "Lead Sem Corretor"
       );
@@ -217,14 +217,14 @@ describe("server/data — getRecentLeads e brokerName em getLeads (RD-03/RD-04)"
     });
 
     it("devolve budgetCents como bigint e status/modality do lead qualificado (RD-04 AC4)", async () => {
-      const [maisRecente] = await getRecentLeads(TENANT_FULL);
+      const [maisRecente] = await getRecentLeads(serviceScope(TENANT_FULL));
       expect(maisRecente.budgetCents).toBe(BigInt(52000000));
       expect(maisRecente.modality).toBe("novo");
       expect(maisRecente.status).toBe("qualificado_agendado");
     });
 
     it("respeita um limite explícito menor que o total", async () => {
-      const result = await getRecentLeads(TENANT_FULL, 2);
+      const result = await getRecentLeads(serviceScope(TENANT_FULL), 2);
       expect(result.map((lead) => lead.name)).toEqual([
         "Lead Mais Recente",
         "Lead Sem Corretor",
@@ -232,7 +232,7 @@ describe("server/data — getRecentLeads e brokerName em getLeads (RD-03/RD-04)"
     });
 
     it("tenant com menos leads que o limite retorna apenas os existentes (RD-04 AC5)", async () => {
-      const result = await getRecentLeads(TENANT_SPARSE);
+      const result = await getRecentLeads(serviceScope(TENANT_SPARSE));
       expect(result).toHaveLength(2);
       expect(result.map((lead) => lead.name)).toEqual([
         "Lead Esparso Recente",
@@ -241,13 +241,13 @@ describe("server/data — getRecentLeads e brokerName em getLeads (RD-03/RD-04)"
     });
 
     it("tenant sem nenhum lead retorna [] (RD-04 AC5 — EmptyState)", async () => {
-      const result = await getRecentLeads(TENANT_EMPTY);
+      const result = await getRecentLeads(serviceScope(TENANT_EMPTY));
       expect(result).toEqual([]);
     });
 
     it("isola por tenant: nenhum lead de outro tenant aparece no resultado", async () => {
-      const doTenantFull = await getRecentLeads(TENANT_FULL);
-      const doTenantSparse = await getRecentLeads(TENANT_SPARSE);
+      const doTenantFull = await getRecentLeads(serviceScope(TENANT_FULL));
+      const doTenantSparse = await getRecentLeads(serviceScope(TENANT_SPARSE));
 
       const nomesFull = doTenantFull.map((lead) => lead.name);
       const nomesSparse = doTenantSparse.map((lead) => lead.name);
@@ -259,14 +259,14 @@ describe("server/data — getRecentLeads e brokerName em getLeads (RD-03/RD-04)"
     });
 
     it("retorna [] para um tenant inexistente, nunca um erro", async () => {
-      const result = await getRecentLeads(NON_EXISTENT_TENANT);
+      const result = await getRecentLeads(serviceScope(NON_EXISTENT_TENANT));
       expect(result).toEqual([]);
     });
   });
 
   describe("getLeads — brokerName aditivo (RD-03 AC3)", () => {
     it("inclui brokerName sem perder nenhuma coluna de leads", async () => {
-      const result = await getLeads(TENANT_FULL);
+      const result = await getLeads(serviceScope(TENANT_FULL));
       expect(result).toHaveLength(6);
 
       const comCorretor = result.find((lead) => lead.id === leadId(1));
@@ -284,7 +284,7 @@ describe("server/data — getRecentLeads e brokerName em getLeads (RD-03/RD-04)"
     });
 
     it("lead sem corretor continua na lista com brokerName null (LEFT JOIN, Edge Cases)", async () => {
-      const result = await getLeads(TENANT_FULL);
+      const result = await getLeads(serviceScope(TENANT_FULL));
       const semCorretor = result.find((lead) => lead.id === leadId(2));
 
       expect(semCorretor).toBeDefined();
@@ -293,7 +293,7 @@ describe("server/data — getRecentLeads e brokerName em getLeads (RD-03/RD-04)"
     });
 
     it("o filtro por status continua funcionando com o join", async () => {
-      const result = await getLeads(TENANT_FULL, {
+      const result = await getLeads(serviceScope(TENANT_FULL), {
         status: "em_qualificacao",
       });
       expect(result.map((lead) => lead.id).sort()).toEqual(

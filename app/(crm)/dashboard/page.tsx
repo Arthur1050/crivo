@@ -17,6 +17,7 @@ import {
   getRecentLeads,
   getTenant,
 } from "@/src/server/data";
+import { getLeadScope } from "@/src/server/auth/session";
 import { getActiveTenantId } from "@/src/server/tenant";
 
 /** Últimos N leads listados no card "Leads Recentes" (RD-04 AC4). */
@@ -52,18 +53,21 @@ const MOTIVATION_LABELS: Record<string, string> = {
 export default async function DashboardPage({ searchParams }: DashboardPageProps) {
   const params = await searchParams;
   const tenantId = await getActiveTenantId();
+  // SCOPE-01 AC3: os indicadores são calculados sobre o escopo da guarda —
+  // quem só tem papel corretor vê números só da própria carteira.
+  const scope = await getLeadScope();
   const period = resolveDashboardPeriod(params);
 
   const [kpis, tenant, volumeSeries, distributions, recentLeads] =
     await Promise.all([
-      getDashboardKpis(tenantId, period),
+      getDashboardKpis(scope, period),
       getTenant(tenantId),
-      getLeadVolumeSeries(tenantId, period, period.granularity),
-      getLeadDistributions(tenantId, period),
+      getLeadVolumeSeries(scope, period, period.granularity),
+      getLeadDistributions(scope, period),
       // Independente de `period` de propósito (spec.md — assumption "Leads
       // Recentes"): o filtro de período governa KPIs e gráficos, nunca esta
       // lista dos últimos leads gerados pelo agente.
-      getRecentLeads(tenantId, RECENT_LEADS_LIMIT),
+      getRecentLeads(scope, RECENT_LEADS_LIMIT),
     ]);
 
   const volumeChartData = volumeSeries.map((bucket) => ({

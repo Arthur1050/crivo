@@ -9,6 +9,7 @@ import {
   getLeadDistributions,
   getLeadVolumeSeries,
   type DashboardRange,
+  serviceScope,
 } from "../index";
 
 // Datas absolutas fixas e controladas (2020) — nunca dependem do seed nem de
@@ -159,30 +160,30 @@ describe("server/data getDashboardKpis", () => {
   });
 
   it("AC2/AC3: |P|=6 e média de 1ª resposta = 20min sobre os 3 leads respondidos", async () => {
-    const kpis = await getDashboardKpis(tenantAId, RANGE);
+    const kpis = await getDashboardKpis(serviceScope(tenantAId), RANGE);
     expect(kpis.leadCount).toBe(6);
     expect(kpis.respondedCount).toBe(3);
     expect(kpis.avgFirstResponseMinutes).toBe(20);
   });
 
   it("AC4: taxa de qualificação = 2/6 (leads B e D, qualificado_agendado)", async () => {
-    const kpis = await getDashboardKpis(tenantAId, RANGE);
+    const kpis = await getDashboardKpis(serviceScope(tenantAId), RANGE);
     expect(kpis.qualificationRate).toBeCloseTo(2 / 6, 10);
   });
 
   it("AC5: taxa de escalonamento = 1/6 (lead C, escalado_humano)", async () => {
-    const kpis = await getDashboardKpis(tenantAId, RANGE);
+    const kpis = await getDashboardKpis(serviceScope(tenantAId), RANGE);
     expect(kpis.escalationRate).toBeCloseTo(1 / 6, 10);
   });
 
   it("AC6: taxa de comparecimento = 1/2 sobre 2 reuniões confirmadas (B compareceu, D não)", async () => {
-    const kpis = await getDashboardKpis(tenantAId, RANGE);
+    const kpis = await getDashboardKpis(serviceScope(tenantAId), RANGE);
     expect(kpis.confirmedMeetingCount).toBe(2);
     expect(kpis.attendanceRate).toBe(0.5);
   });
 
   it("limites inclusivos: leads exatamente em `from` e `to` entram em P; 1ms fora do range fica de fora", async () => {
-    const kpis = await getDashboardKpis(tenantAId, RANGE);
+    const kpis = await getDashboardKpis(serviceScope(tenantAId), RANGE);
     // leadCount=6 já prova que E (from) e F (to) entraram e G/H (fora por 1ms) não.
     expect(kpis.leadCount).toBe(6);
   });
@@ -192,7 +193,7 @@ describe("server/data getDashboardKpis", () => {
       from: new Date("2020-01-01T00:00:00.000Z"),
       to: new Date("2020-01-01T23:59:59.999Z"),
     };
-    const kpis = await getDashboardKpis(tenantAId, singleDayRange);
+    const kpis = await getDashboardKpis(serviceScope(tenantAId), singleDayRange);
     expect(kpis.leadCount).toBe(1); // só o lead E
     expect(kpis.respondedCount).toBe(0);
     expect(kpis.avgFirstResponseMinutes).toBeNull();
@@ -203,7 +204,7 @@ describe("server/data getDashboardKpis", () => {
       from: new Date("2020-01-01T00:00:00.000Z"),
       to: new Date("2020-01-09T23:59:59.999Z"),
     };
-    const kpis = await getDashboardKpis(tenantAId, noMeetingsRange);
+    const kpis = await getDashboardKpis(serviceScope(tenantAId), noMeetingsRange);
     expect(kpis.leadCount).toBe(2); // leads A e E
     expect(kpis.confirmedMeetingCount).toBe(0);
     expect(kpis.attendanceRate).toBeNull();
@@ -214,7 +215,7 @@ describe("server/data getDashboardKpis", () => {
       from: new Date("2021-01-01T00:00:00.000Z"),
       to: new Date("2021-01-31T23:59:59.999Z"),
     };
-    const kpis = await getDashboardKpis(tenantAId, emptyRange);
+    const kpis = await getDashboardKpis(serviceScope(tenantAId), emptyRange);
     expect(kpis).toEqual({
       avgFirstResponseMinutes: null,
       respondedCount: 0,
@@ -227,8 +228,8 @@ describe("server/data getDashboardKpis", () => {
   });
 
   it("DASH-06.1: isolamento — números do tenant B não vazam no tenant A e vice-versa", async () => {
-    const kpisA = await getDashboardKpis(tenantAId, RANGE);
-    const kpisB = await getDashboardKpis(tenantBId, RANGE);
+    const kpisA = await getDashboardKpis(serviceScope(tenantAId), RANGE);
+    const kpisB = await getDashboardKpis(serviceScope(tenantBId), RANGE);
 
     expect(kpisA.leadCount).toBe(6);
     expect(kpisB.leadCount).toBe(1);
@@ -356,7 +357,7 @@ describe("server/data getLeadVolumeSeries / getLeadDistributions", () => {
 
   describe("getLeadVolumeSeries", () => {
     it("granularidade diária (≤31d): 1 bucket por dia do range, incluindo zerados, cobrindo exatamente o mês", async () => {
-      const buckets = await getLeadVolumeSeries(tenantId, JANUARY, "day");
+      const buckets = await getLeadVolumeSeries(serviceScope(tenantId), JANUARY, "day");
       expect(buckets).toHaveLength(31);
       expect(buckets[0].bucketStart.toISOString()).toBe(
         "2022-01-01T00:00:00.000Z"
@@ -385,7 +386,7 @@ describe("server/data getLeadVolumeSeries / getLeadDistributions", () => {
         from: new Date("2022-01-05T00:00:00.000Z"),
         to: new Date("2022-01-05T23:59:59.999Z"),
       };
-      const buckets = await getLeadVolumeSeries(tenantId, oneDayRange, "day");
+      const buckets = await getLeadVolumeSeries(serviceScope(tenantId), oneDayRange, "day");
       expect(buckets).toHaveLength(1);
       expect(buckets[0].count).toBe(1); // L3
     });
@@ -395,7 +396,7 @@ describe("server/data getLeadVolumeSeries / getLeadDistributions", () => {
         from: new Date("2022-01-01T00:00:00.000Z"),
         to: new Date("2022-02-28T23:59:59.999Z"), // 59 dias — inclui L1..L5
       };
-      const buckets = await getLeadVolumeSeries(tenantId, wideRange, "week");
+      const buckets = await getLeadVolumeSeries(serviceScope(tenantId), wideRange, "week");
       expect(buckets).toHaveLength(10);
 
       const total = buckets.reduce((sum, b) => sum + b.count, 0);
@@ -423,13 +424,13 @@ describe("server/data getLeadVolumeSeries / getLeadDistributions", () => {
         from: new Date(now.getTime() + 10 * 86400000),
         to: new Date(now.getTime() + 15 * 86400000),
       };
-      const buckets = await getLeadVolumeSeries(tenantId, future, "day");
+      const buckets = await getLeadVolumeSeries(serviceScope(tenantId), future, "day");
       expect(buckets.length).toBeGreaterThan(0);
       for (const bucket of buckets) expect(bucket.count).toBe(0);
     });
 
     it("isolamento: leads de outro tenant não entram na série (DASH-06)", async () => {
-      const buckets = await getLeadVolumeSeries(tenantId, JANUARY, "day");
+      const buckets = await getLeadVolumeSeries(serviceScope(tenantId), JANUARY, "day");
       const total = buckets.reduce((sum, b) => sum + b.count, 0);
       // otherTenantId também tem um lead em 2022-01-01 — se vazasse, o bucket
       // do dia 1 seria 3 em vez de 2 (já afirmado no teste diário acima).
@@ -439,7 +440,7 @@ describe("server/data getLeadVolumeSeries / getLeadDistributions", () => {
 
   describe("getLeadDistributions", () => {
     it("distribuições por modality e motivation somam |P|, com nao_informado para campo nulo (DASH-04)", async () => {
-      const distributions = await getLeadDistributions(tenantId, JANUARY);
+      const distributions = await getLeadDistributions(serviceScope(tenantId), JANUARY);
 
       const modalityByBucket = new Map(
         distributions.modality.map((b) => [b.bucket, b.count])
@@ -472,7 +473,7 @@ describe("server/data getLeadVolumeSeries / getLeadDistributions", () => {
         from: new Date("2019-01-01T00:00:00.000Z"),
         to: new Date("2019-01-31T23:59:59.999Z"),
       };
-      const distributions = await getLeadDistributions(tenantId, emptyRange);
+      const distributions = await getLeadDistributions(serviceScope(tenantId), emptyRange);
       expect(distributions.modality).toEqual([
         { bucket: "novo", count: 0 },
         { bucket: "usado", count: 0 },
@@ -487,7 +488,7 @@ describe("server/data getLeadVolumeSeries / getLeadDistributions", () => {
     });
 
     it("isolamento: leads de outro tenant não entram na distribuição (DASH-06)", async () => {
-      const distributions = await getLeadDistributions(tenantId, JANUARY);
+      const distributions = await getLeadDistributions(serviceScope(tenantId), JANUARY);
       const modalitySum = distributions.modality.reduce(
         (sum, b) => sum + b.count,
         0

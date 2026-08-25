@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { and, asc, eq, isNull } from "drizzle-orm";
 import { db } from "../../db";
 import { tenant_members } from "../../db/schema";
+import type { LeadScope } from "../../lib/lead-scope";
 import {
   can,
   parseRoles,
@@ -30,19 +31,11 @@ import { auth } from "./config";
 // importam — uma implementação só, nunca duas cópias.
 export { parseRoles, type Role } from "../../lib/permissions";
 
-/**
- * Escopo de leitura de lead. `assignedUserId` preenchido significa "só os
- * leads desta pessoa" (SCOPE-01); `null` significa "toda a imobiliária".
- *
- * O tipo existe para virar erro de compilação: a partir da T17 as funções de
- * leitura de lead deixam de aceitar `tenantId: string` e passam a exigir este
- * objeto, de modo que um call site esquecido não compile em vez de vazar lead
- * de outro corretor silenciosamente.
- */
-export interface LeadScope {
-  tenantId: string;
-  assignedUserId: string | null;
-}
+// O escopo de leitura de lead mora em `src/lib/lead-scope.ts`, sem
+// dependências, porque a camada de acesso a dados também precisa dele e não
+// pode importar esta guarda (arrastaria `next/headers` e o better-auth para
+// dentro de toda leitura). Reexportado aqui porque é esta guarda que o produz.
+export type { LeadScope } from "../../lib/lead-scope";
 
 export interface AuthContext {
   user: { id: string; name: string; email: string };

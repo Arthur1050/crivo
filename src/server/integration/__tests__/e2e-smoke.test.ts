@@ -10,7 +10,7 @@ import {
   tenantApiKeys,
   tenants,
 } from "../../../db/schema";
-import { getConversations, getLeads, getMessages } from "../../data";
+import { getConversations, getLeads, getMessages, serviceScope } from "../../data";
 import { POST as createLead } from "../../../../app/api/v1/leads/route";
 import { PATCH as patchLead } from "../../../../app/api/v1/leads/[id]/route";
 import { POST as postMessage } from "../../../../app/api/v1/leads/[id]/messages/route";
@@ -100,7 +100,7 @@ describe("e2e smoke — criar lead → qualificar → mensagens → escalar (2 t
       expect(lead.status).toBe("em_qualificacao");
 
       // Kanban reflete o lead novo, na coluna certa (mesma função que a tela usa).
-      const inQualificacao = await getLeads(tenant.tenantId, {
+      const inQualificacao = await getLeads(serviceScope(tenant.tenantId), {
         status: "em_qualificacao",
       });
       expect(inQualificacao.some((l) => l.id === lead.id)).toBe(true);
@@ -159,10 +159,10 @@ describe("e2e smoke — criar lead → qualificar → mensagens → escalar (2 t
       expect(msg2Res.status).toBe(201);
 
       // Chats reflete a conversa e as 2 mensagens em ordem (mesmas funções da tela).
-      const conversations = await getConversations(tenant.tenantId);
+      const conversations = await getConversations(serviceScope(tenant.tenantId));
       const conversation = conversations.find((c) => c.leadId === lead.id);
       expect(conversation).toBeDefined();
-      const thread = await getMessages(tenant.tenantId, conversation!.id);
+      const thread = await getMessages(serviceScope(tenant.tenantId), conversation!.id);
       expect(thread.map((m) => m.content)).toEqual([
         "Tenho interesse no apartamento do centro.",
         "Perfeito! Vou te conectar com um corretor.",
@@ -185,11 +185,11 @@ describe("e2e smoke — criar lead → qualificar → mensagens → escalar (2 t
       expect(escalated.status).toBe("escalado_humano");
 
       // Kanban reflete a mudança: saiu de em_qualificacao, entrou em escalado_humano.
-      const stillInQualificacao = await getLeads(tenant.tenantId, {
+      const stillInQualificacao = await getLeads(serviceScope(tenant.tenantId), {
         status: "em_qualificacao",
       });
       expect(stillInQualificacao.some((l) => l.id === lead.id)).toBe(false);
-      const inEscalado = await getLeads(tenant.tenantId, {
+      const inEscalado = await getLeads(serviceScope(tenant.tenantId), {
         status: "escalado_humano",
       });
       expect(inEscalado.some((l) => l.id === lead.id)).toBe(true);
@@ -198,8 +198,8 @@ describe("e2e smoke — criar lead → qualificar → mensagens → escalar (2 t
 
   it("os 2 tenants permanecem isolados: nenhum lead do tenant A aparece nas queries do tenant B", async () => {
     const [tenantA, tenantB] = tenantsUnderTest;
-    const leadsOfA = await getLeads(tenantA.tenantId);
-    const leadsOfB = await getLeads(tenantB.tenantId);
+    const leadsOfA = await getLeads(serviceScope(tenantA.tenantId));
+    const leadsOfB = await getLeads(serviceScope(tenantB.tenantId));
     const idsA = new Set(leadsOfA.map((l) => l.id));
     const idsB = new Set(leadsOfB.map((l) => l.id));
     const intersection = [...idsA].filter((id) => idsB.has(id));

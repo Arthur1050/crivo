@@ -1,5 +1,11 @@
 import "server-only";
-import { createAgentLead, getLead, updateLeadFromAgent, type Lead } from "../data";
+import {
+  createAgentLead,
+  getLead,
+  serviceScope,
+  updateLeadFromAgent,
+  type Lead,
+} from "../data";
 import type { LeadCreateDto, LeadPatchDto } from "./parsers";
 import type { ProblemCode } from "./problem";
 
@@ -107,7 +113,9 @@ export async function patchLead(
   leadId: string,
   dto: LeadPatchDto
 ): Promise<PatchLeadResult> {
-  const lead = await getLead(tenantId, leadId);
+  // Caminho do contrato (SEC-01): credencial de serviço, imobiliária
+  // inteira — o agente não é usuário e não tem carteira.
+  const lead = await getLead(serviceScope(tenantId), leadId);
   if (!lead) return { ok: false, code: "recurso-nao-encontrado" };
 
   if (dto.status !== undefined) {

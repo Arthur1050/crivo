@@ -29,6 +29,37 @@ import {
   users,
 } from "../../db/schema";
 import { assignBroker, type BrokerLoad } from "../../lib/broker-assignment";
+import type { LeadScope } from "../../lib/lead-scope";
+
+export type { LeadScope };
+
+/**
+ * Escopo de imobiliária inteira, para o **contrato de integração**
+ * (`/api/v1/**`) e para asserções de teste sobre estado persistido.
+ *
+ * O agente não é um usuário e não tem papel (SEC-01, AD-021): ele autentica
+ * pela credencial de serviço e o tenant vem do header `X-Crivo-Tenant`. Existe
+ * como função nomeada, e não como objeto literal solto, para que todo ponto
+ * que lê lead sem filtro de responsável diga em voz alta por quê.
+ */
+export function serviceScope(tenantId: string): LeadScope {
+  return { tenantId, assignedUserId: null };
+}
+
+/**
+ * Filtro de carteira (SCOPE-01 AC1/AC5): `undefined` quando o escopo alcança a
+ * imobiliária inteira — `and()` do drizzle descarta `undefined`, então o
+ * WHERE fica idêntico ao de antes deste lote.
+ *
+ * Como o filtro é `assigned_user_id = X`, lead **sem responsável** não casa:
+ * ele fica visível para administrador e gestor e invisível para quem só tem
+ * papel corretor, que é exatamente a AC5.
+ */
+function assignedTo(scope: LeadScope) {
+  return scope.assignedUserId === null
+    ? undefined
+    : eq(leads.assignedUserId, scope.assignedUserId);
+}
 
 export type Tenant = typeof tenants.$inferSelect;
 
@@ -165,7 +196,7 @@ export async function getBrokers(tenantId: string): Promise<Broker[]> {
 export type LeadWithBroker = Lead & { brokerName: string | null };
 
 export async function getLeads(
-  tenantId: string,
+  scope: LeadScope,
   filters?: { status?: LeadStatus }
 ): Promise<LeadWithBroker[]> {
   return db
@@ -176,7 +207,8 @@ export async function getLeads(
     .leftJoin(users, eq(leads.assignedUserId, users.id))
     .where(
       and(
-        eq(leads.tenantId, tenantId),
+        eq(leads.tenantId, scope.tenantId),
+        assignedTo(scope),
         filters?.status ? eq(leads.status, filters.status) : undefined
       )
     )
@@ -204,7 +236,7 @@ export interface RecentLead {
  * leads que `limit` retornam apenas os existentes; sem leads, `[]`.
  */
 export async function getRecentLeads(
-  tenantId: string,
+  scope: LeadScope,
   limit = 5
 ): Promise<RecentLead[]> {
   return db
@@ -219,34 +251,63 @@ export async function getRecentLeads(
     })
     .from(leads)
     .leftJoin(users, eq(leads.assignedUserId, users.id))
-    .where(eq(leads.tenantId, tenantId))
+    .where(and(eq(leads.tenantId, scope.tenantId), assignedTo(scope)))
     .orderBy(desc(leads.firstContactAt), asc(leads.id))
     .limit(limit);
 }
 
+/**
+ * Lead por identificador, dentro do escopo (SCOPE-01 AC4): lead de outro
+ * corretor devolve `null` — o mesmo `null` de lead inexistente, sem nenhum
+ * sinal de que o lead existe.
+ */
 export async function getLead(
-  tenantId: string,
+  scope: LeadScope,
   leadId: string
 ): Promise<Lead | null> {
   const rows = await db
     .select()
     .from(leads)
-    .where(and(eq(leads.tenantId, tenantId), eq(leads.id, leadId)))
+    .where(
+      and(
+        eq(leads.tenantId, scope.tenantId),
+        eq(leads.id, leadId),
+        assignedTo(scope)
+      )
+    )
     .limit(1);
   return rows[0] ?? null;
 }
 
+/** Conversa é sempre de um lead, então herda o escopo dele (SCOPE-01 AC2). */
+function conversationInScope(scope: LeadScope) {
+  if (scope.assignedUserId === null) return undefined;
+  return exists(
+    db
+      .select({ id: leads.id })
+      .from(leads)
+      .where(
+        and(
+          eq(leads.id, conversations.leadId),
+          eq(leads.assignedUserId, scope.assignedUserId)
+        )
+      )
+  );
+}
+
 export async function getConversations(
-  tenantId: string
+  scope: LeadScope
 ): Promise<Conversation[]> {
   return db
     .select()
     .from(conversations)
-    .where(eq(conversations.tenantId, tenantId));
+    .where(
+      and(eq(conversations.tenantId, scope.tenantId), conversationInScope(scope))
+    );
 }
 
 export async function getMessages(
-  tenantId: string,
+  scope: LeadScope,
   conversationId: string
 ): Promise<Message[]> {
   return db
@@ -254,8 +315,24 @@ export async function getMessages(
     .from(messages)
     .where(
       and(
-        eq(messages.tenantId, tenantId),
-        eq(messages.conversationId, conversationId)
+        eq(messages.tenantId, scope.tenantId),
+        eq(messages.conversationId, conversationId),
+        // Mensagem herda o escopo da conversa, que herda o do lead: pedir a
+        // thread de outro corretor pelo id da conversa devolve `[]`.
+        scope.assignedUserId === null
+          ? undefined
+          : exists(
+              db
+                .select({ id: conversations.id })
+                .from(conversations)
+                .innerJoin(leads, eq(conversations.leadId, leads.id))
+                .where(
+                  and(
+                    eq(conversations.id, messages.conversationId),
+                    eq(leads.assignedUserId, scope.assignedUserId)
+                  )
+                )
+            )
       )
     )
     // Determinístico (lote-3 — thread lida em ordem cronológica): mais antiga
@@ -278,7 +355,9 @@ export async function getLeadMessages(
   leadId: string,
   limit: number
 ): Promise<Message[] | null> {
-  const lead = await getLead(tenantId, leadId);
+  // Caminho do contrato (SEC-01): o agente não é usuário e enxerga a
+  // imobiliária inteira, por credencial de serviço.
+  const lead = await getLead(serviceScope(tenantId), leadId);
   if (!lead) return null;
 
   const rows = await db
@@ -320,20 +399,46 @@ export interface ConversationSummary {
  * (sentAt empatado) quanto entre conversas sem mensagem.
  */
 export async function getConversationSummaries(
-  tenantId: string
+  scope: LeadScope
 ): Promise<ConversationSummary[]> {
   const [conversationRows, leadRows, messageRows] = await Promise.all([
-    db.select().from(conversations).where(eq(conversations.tenantId, tenantId)),
+    db
+      .select()
+      .from(conversations)
+      .where(
+        and(
+          eq(conversations.tenantId, scope.tenantId),
+          conversationInScope(scope)
+        )
+      ),
     db
       .select({ id: leads.id, name: leads.name })
       .from(leads)
-      .where(eq(leads.tenantId, tenantId)),
+      .where(and(eq(leads.tenantId, scope.tenantId), assignedTo(scope))),
     // Ordenada ASC por sentAt/id: a última iteração do loop abaixo sobrescreve
     // o Map com a mensagem mais recente de cada conversa.
     db
       .select()
       .from(messages)
-      .where(eq(messages.tenantId, tenantId))
+      .where(
+        and(
+          eq(messages.tenantId, scope.tenantId),
+          scope.assignedUserId === null
+            ? undefined
+            : exists(
+                db
+                  .select({ id: conversations.id })
+                  .from(conversations)
+                  .innerJoin(leads, eq(conversations.leadId, leads.id))
+                  .where(
+                    and(
+                      eq(conversations.id, messages.conversationId),
+                      eq(leads.assignedUserId, scope.assignedUserId)
+                    )
+                  )
+              )
+        )
+      )
       .orderBy(asc(messages.sentAt), asc(messages.id)),
   ]);
 
@@ -482,7 +587,7 @@ export interface DashboardKpis {
  * é responsabilidade da UI.
  */
 export async function getDashboardKpis(
-  tenantId: string,
+  scope: LeadScope,
   range: DashboardRange
 ): Promise<DashboardKpis> {
   const periodLeads = await db
@@ -490,7 +595,8 @@ export async function getDashboardKpis(
     .from(leads)
     .where(
       and(
-        eq(leads.tenantId, tenantId),
+        eq(leads.tenantId, scope.tenantId),
+        assignedTo(scope),
         gte(leads.firstContactAt, range.from),
         lte(leads.firstContactAt, range.to)
       )
@@ -570,7 +676,7 @@ function isoWeekStart(date: Date): number {
  * na UI); esta função só constrói os buckets pedidos.
  */
 export async function getLeadVolumeSeries(
-  tenantId: string,
+  scope: LeadScope,
   range: DashboardRange,
   granularity: DashboardGranularity
 ): Promise<LeadVolumeBucket[]> {
@@ -579,7 +685,8 @@ export async function getLeadVolumeSeries(
     .from(leads)
     .where(
       and(
-        eq(leads.tenantId, tenantId),
+        eq(leads.tenantId, scope.tenantId),
+        assignedTo(scope),
         gte(leads.firstContactAt, range.from),
         lte(leads.firstContactAt, range.to)
       )
@@ -624,7 +731,7 @@ const MOTIVATION_BUCKETS = ["investidor", "morador", "nao_informado"] as const;
  * um bucket, incluindo "nao_informado" para campo nulo).
  */
 export async function getLeadDistributions(
-  tenantId: string,
+  scope: LeadScope,
   range: DashboardRange
 ): Promise<LeadDistributions> {
   const rows = await db
@@ -632,7 +739,8 @@ export async function getLeadDistributions(
     .from(leads)
     .where(
       and(
-        eq(leads.tenantId, tenantId),
+        eq(leads.tenantId, scope.tenantId),
+        assignedTo(scope),
         gte(leads.firstContactAt, range.from),
         lte(leads.firstContactAt, range.to)
       )

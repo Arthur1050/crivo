@@ -1,5 +1,5 @@
 import { authenticate } from "../../../../../../src/server/integration/auth";
-import { getLead } from "../../../../../../src/server/data";
+import { getLead, serviceScope } from "../../../../../../src/server/data";
 import { serializeLead } from "../../../../../../src/server/integration/leads";
 import { optOutLead } from "../../../../../../src/server/integration/lgpd";
 import {
@@ -30,7 +30,7 @@ export async function POST(
   // `optOutLead` já confirmou que a linha existe no tenant — a busca abaixo
   // só serve para devolver a representação completa do lead (design.md —
   // `optOutLead` retorna apenas `{ optedOutAt }`, não o lead inteiro).
-  const lead = await getLead(auth.tenantId, id);
+  const lead = await getLead(serviceScope(auth.tenantId), id);
   return Response.json(serializeLead(lead!), { status: 200 });
 }
 

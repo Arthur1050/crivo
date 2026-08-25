@@ -17,6 +17,7 @@ import {
   getMessages,
   getTenant,
 } from "@/src/server/data";
+import { getLeadScope } from "@/src/server/auth/session";
 import { getActiveTenantId } from "@/src/server/tenant";
 
 interface ChatsPageProps {
@@ -40,7 +41,10 @@ interface ChatsPageProps {
 export default async function ChatsPage({ searchParams }: ChatsPageProps) {
   const params = await searchParams;
   const tenantId = await getActiveTenantId();
-  const summaries = await getConversationSummaries(tenantId);
+  // SCOPE-01 AC2: o escopo vem da guarda, nunca um tenantId solto — quem só
+  // tem papel corretor enxerga apenas as conversas dos leads dele.
+  const scope = await getLeadScope();
+  const summaries = await getConversationSummaries(scope);
 
   const selectedSummary = params.conversa
     ? summaries.find((summary) => summary.id === params.conversa)
@@ -51,8 +55,8 @@ export default async function ChatsPage({ searchParams }: ChatsPageProps) {
   // `getLead` já é tenant-scoped, então nenhuma consulta nova precisa nascer
   // na DAL.
   const [messages, selectedLead, tenant] = await Promise.all([
-    selectedSummary ? getMessages(tenantId, selectedSummary.id) : [],
-    selectedSummary ? getLead(tenantId, selectedSummary.leadId) : null,
+    selectedSummary ? getMessages(scope, selectedSummary.id) : [],
+    selectedSummary ? getLead(scope, selectedSummary.leadId) : null,
     getTenant(tenantId),
   ]);
 
