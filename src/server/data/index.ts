@@ -177,6 +177,17 @@ export async function resolveTenantIdBySlug(
  */
 const HAS_BROKER_ROLE = sql`'corretor' = any(string_to_array(${tenant_members.role}, ','))`;
 
+/**
+ * Corretor **elegível a receber lead**: papel corretor e vínculo ativo
+ * (USER-01 AC10 — usuário desativado sai de toda lista de atribuição, mas
+ * continua nomeado nos leads que já atendeu, o que é responsabilidade do join
+ * com `users` em `getLeads`, não desta condição).
+ */
+const IS_ASSIGNABLE_BROKER = and(
+  HAS_BROKER_ROLE,
+  isNull(tenant_members.deactivatedAt)
+);
+
 export async function getBrokers(tenantId: string): Promise<Broker[]> {
   return db
     .select({
@@ -188,7 +199,9 @@ export async function getBrokers(tenantId: string): Promise<Broker[]> {
     })
     .from(tenant_members)
     .innerJoin(users, eq(tenant_members.userId, users.id))
-    .where(and(eq(tenant_members.organizationId, tenantId), HAS_BROKER_ROLE));
+    .where(
+      and(eq(tenant_members.organizationId, tenantId), IS_ASSIGNABLE_BROKER)
+    );
 }
 
 /**
@@ -196,18 +209,40 @@ export async function getBrokers(tenantId: string): Promise<Broker[]> {
  * Extensão ADITIVA do retorno de `getLeads` (redesign-crm-astryx — RD-03 AC3):
  * todas as colunas de `leads` continuam presentes e inalteradas.
  */
-export type LeadWithBroker = Lead & { brokerName: string | null };
+export type LeadWithBroker = Lead & {
+  brokerName: string | null;
+  /**
+   * `null` = responsável ativo (ou lead sem responsável). Preenchido quando o
+   * vínculo do responsável foi desativado e a carteira dele foi MANTIDA
+   * (USER-02 AC4): é o sinal de "responsável inativo" que o Pipeline exibe
+   * para administrador e gestor. Derivado do vínculo, não de coluna nova em
+   * `leads` — a atribuição em si continua intacta.
+   */
+  brokerDeactivatedAt: Date | null;
+};
 
 export async function getLeads(
   scope: LeadScope,
   filters?: { status?: LeadStatus }
 ): Promise<LeadWithBroker[]> {
   return db
-    .select({ ...getTableColumns(leads), brokerName: users.name })
+    .select({
+      ...getTableColumns(leads),
+      brokerName: users.name,
+      brokerDeactivatedAt: tenant_members.deactivatedAt,
+    })
     .from(leads)
     // LEFT (não INNER): leads sem corretor continuam aparecendo no Kanban,
     // apenas sem avatar (spec.md — Edge Cases).
     .leftJoin(users, eq(leads.assignedUserId, users.id))
+    // Único por (userId, organizationId), então nunca duplica a linha do lead.
+    .leftJoin(
+      tenant_members,
+      and(
+        eq(tenant_members.userId, leads.assignedUserId),
+        eq(tenant_members.organizationId, leads.tenantId)
+      )
+    )
     .where(
       and(
         eq(leads.tenantId, scope.tenantId),
@@ -943,7 +978,7 @@ export async function updateLeadBroker(
               and(
                 eq(tenant_members.userId, brokerId),
                 eq(tenant_members.organizationId, tenantId),
-                HAS_BROKER_ROLE
+                IS_ASSIGNABLE_BROKER
               )
             )
         )
@@ -1077,7 +1112,9 @@ export async function getBrokerLoads(tenantId: string): Promise<BrokerLoad[]> {
         inArray(leads.status, ACTIVE_LEAD_STATUSES)
       )
     )
-    .where(and(eq(tenant_members.organizationId, tenantId), HAS_BROKER_ROLE))
+    .where(
+      and(eq(tenant_members.organizationId, tenantId), IS_ASSIGNABLE_BROKER)
+    )
     .groupBy(tenant_members.userId, tenant_members.createdAt);
 
   return rows.map((row) => ({
@@ -1696,4 +1733,164 @@ export async function getInvitation(token: string): Promise<Invitation | null> {
     .from(tenant_invitations)
     .where(eq(tenant_invitations.id, token));
   return rows[0] ? toInvitation(rows[0]) : null;
+}
+
+// ---------------------------------------------------------------------------
+// Desativação e destino da carteira (lote-8 — USER-02)
+// ---------------------------------------------------------------------------
+
+export interface CarteiraLead {
+  id: string;
+  name: string;
+  status: LeadStatus;
+  meetingAt: Date | null;
+}
+
+/**
+ * Leads **ativos** do responsável (`em_qualificacao` e `escalado_humano`) —
+ * exatamente os que a desativação pode mover. Lead já agendado ou histórico
+ * não entra: a USER-02 AC5 exige que ele nunca mude de responsável.
+ *
+ * Ordem determinística: é ela que torna a redistribuição reproduzível.
+ */
+export async function getActiveLeadsOfMember(
+  tenantId: string,
+  userId: string
+): Promise<CarteiraLead[]> {
+  return db
+    .select({
+      id: leads.id,
+      name: leads.name,
+      status: leads.status,
+      meetingAt: leads.meetingAt,
+    })
+    .from(leads)
+    .where(
+      and(
+        eq(leads.tenantId, tenantId),
+        eq(leads.assignedUserId, userId),
+        inArray(leads.status, ACTIVE_LEAD_STATUSES)
+      )
+    )
+    .orderBy(asc(leads.createdAt), asc(leads.id));
+}
+
+/**
+ * Reuniões futuras do corretor (spec.md — Edge Cases: desativar um corretor
+ * com reuniões marcadas mostra essas reuniões junto da escolha de destino).
+ * Independente do status: uma reunião marcada vale mesmo em lead já agendado —
+ * é justamente o caso mais comum.
+ */
+export async function getUpcomingMeetingsOfMember(
+  tenantId: string,
+  userId: string,
+  from: Date = new Date()
+): Promise<{ leadId: string; leadName: string; meetingAt: Date }[]> {
+  const rows = await db
+    .select({
+      leadId: leads.id,
+      leadName: leads.name,
+      meetingAt: leads.meetingAt,
+    })
+    .from(leads)
+    .where(
+      and(
+        eq(leads.tenantId, tenantId),
+        eq(leads.assignedUserId, userId),
+        gte(leads.meetingAt, from)
+      )
+    )
+    .orderBy(asc(leads.meetingAt), asc(leads.id));
+
+  return rows.map((row) => ({
+    leadId: row.leadId,
+    leadName: row.leadName,
+    meetingAt: row.meetingAt as Date,
+  }));
+}
+
+export type TransferResult =
+  | { ok: true; moved: number }
+  | { ok: false; reason: "destino-indisponivel" };
+
+/**
+ * Transfere a carteira ativa e desativa o vínculo **numa transação só**
+ * (USER-02 AC2/AC7).
+ *
+ * A primeira coisa que a transação faz é travar o vínculo do corretor de
+ * destino com `for update`, exigindo que ele esteja ativo e com papel
+ * corretor. Isso é o que sustenta a AC7: uma desativação concorrente do
+ * destino ou espera esta transação terminar, ou já está visível aqui — e, se
+ * já estiver, nada é transferido e o vínculo de origem também não é
+ * desativado. Não existe estado intermediário com metade dos leads movidos.
+ */
+export async function transferCarteiraAndDeactivate(input: {
+  tenantId: string;
+  memberId: string;
+  fromUserId: string;
+  toUserId: string;
+  now?: Date;
+}): Promise<TransferResult> {
+  const now = input.now ?? new Date();
+
+  return db.transaction(async (tx) => {
+    const destino = await tx
+      .select({ id: tenant_members.id })
+      .from(tenant_members)
+      .where(
+        and(
+          eq(tenant_members.userId, input.toUserId),
+          eq(tenant_members.organizationId, input.tenantId),
+          IS_ASSIGNABLE_BROKER
+        )
+      )
+      .for("update");
+
+    if (destino.length === 0) {
+      return { ok: false as const, reason: "destino-indisponivel" as const };
+    }
+
+    const moved = await tx
+      .update(leads)
+      .set({ assignedUserId: input.toUserId, updatedAt: now })
+      .where(
+        and(
+          eq(leads.tenantId, input.tenantId),
+          eq(leads.assignedUserId, input.fromUserId),
+          inArray(leads.status, ACTIVE_LEAD_STATUSES)
+        )
+      )
+      .returning({ id: leads.id });
+
+    await tx
+      .update(tenant_members)
+      .set({ deactivatedAt: now })
+      .where(
+        and(
+          eq(tenant_members.id, input.memberId),
+          eq(tenant_members.organizationId, input.tenantId)
+        )
+      );
+
+    return { ok: true as const, moved: moved.length };
+  });
+}
+
+/** Desativa o vínculo sem tocar em nenhuma atribuição (USER-02 AC4/AC6). */
+export async function deactivateMembership(
+  tenantId: string,
+  memberId: string,
+  now: Date = new Date()
+): Promise<boolean> {
+  const rows = await db
+    .update(tenant_members)
+    .set({ deactivatedAt: now })
+    .where(
+      and(
+        eq(tenant_members.id, memberId),
+        eq(tenant_members.organizationId, tenantId)
+      )
+    )
+    .returning({ id: tenant_members.id });
+  return rows.length > 0;
 }

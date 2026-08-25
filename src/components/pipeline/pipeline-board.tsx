@@ -27,6 +27,7 @@ import {
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { StatusDot } from "@astryxdesign/core/StatusDot";
 import { Heading, Text } from "@astryxdesign/core/Text";
+import { Token } from "@astryxdesign/core/Token";
 import { LeadDetailPanel } from "@/src/components/pipeline/lead-detail-panel";
 import { RelativeTime } from "@/src/components/shared/relative-time";
 import { formatCurrencyBRL } from "@/src/lib/format";
@@ -344,7 +345,19 @@ function LeadCardBody({ lead }: { lead: LeadWithBroker }) {
             silenciosamente esconderia justamente o que o gestor precisa ver
             no funil. */}
         {lead.brokerName ? (
-          <Avatar name={lead.brokerName} size="xsm" />
+          // lote-8 (USER-02 AC4): quando a carteira foi MANTIDA numa
+          // desativação, o lead segue com o mesmo responsável — e precisa
+          // dizer em voz alta que esse responsável está inativo, senão o
+          // gestor lê o avatar como atendimento em curso.
+          lead.brokerDeactivatedAt ? (
+            <Token
+              label={`${lead.brokerName} · inativo`}
+              color="orange"
+              size="sm"
+            />
+          ) : (
+            <Avatar name={lead.brokerName} size="xsm" />
+          )
         ) : (
           <Text type="supporting" color="secondary">
             Sem responsável
