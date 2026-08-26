@@ -1632,6 +1632,34 @@ export async function setMemberRoles(
   return rows.length > 0;
 }
 
+/**
+ * Grava a janela de trabalho do vínculo (AGENDA-01 AC1/AC6). Escopada ao tenant
+ * na mesma sentença, como `setMemberRoles`: um `memberId` de outra imobiliária
+ * nunca é alterado. A janela é por VÍNCULO — a mesma pessoa pode atender em
+ * horários diferentes em duas imobiliárias.
+ */
+export async function setMemberWorkWindow(
+  tenantId: string,
+  memberId: string,
+  window: { days: number[]; start: string; end: string }
+): Promise<boolean> {
+  const rows = await db
+    .update(tenant_members)
+    .set({
+      workDays: window.days,
+      workHoursStart: window.start,
+      workHoursEnd: window.end,
+    })
+    .where(
+      and(
+        eq(tenant_members.id, memberId),
+        eq(tenant_members.organizationId, tenantId)
+      )
+    )
+    .returning({ id: tenant_members.id });
+  return rows.length > 0;
+}
+
 /** Vínculo com o papel administrador e ativo (`deactivatedAt` nulo). */
 const HAS_ADMIN_ROLE = sql`'administrador' = any(string_to_array(${tenant_members.role}, ','))`;
 
