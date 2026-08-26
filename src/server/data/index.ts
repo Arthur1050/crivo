@@ -31,6 +31,11 @@ import {
   users,
 } from "../../db/schema";
 import { assignBroker, type BrokerLoad } from "../../lib/broker-assignment";
+import {
+  selectForEscalation,
+  selectForMeeting,
+  type BrokerCandidate,
+} from "../../lib/broker-availability";
 import type { LeadScope } from "../../lib/lead-scope";
 import { parseRoles, type Role } from "../../lib/permissions";
 
@@ -1035,6 +1040,13 @@ export interface UpdateLeadFromAgentInput {
   executiveSummary?: string | null;
   escalationReason?: string | null;
   meetingAt?: Date | null;
+  /**
+   * Responsável escolhido pela política de atribuição do CRM (lote-8 —
+   * AD-022), nunca pelo payload do agente: `LeadPatchDto` não tem este campo,
+   * então nada que venha da rede o alcança. Existe aqui para que a atribuição
+   * caia na MESMA `UPDATE` do status e do `meetingAt`.
+   */
+  assignedUserId?: string | null;
 }
 
 /**
@@ -1075,6 +1087,7 @@ export async function updateLeadFromAgent(
     setValues.escalationReason = input.escalationReason;
   }
   if ("meetingAt" in input) setValues.meetingAt = input.meetingAt;
+  if ("assignedUserId" in input) setValues.assignedUserId = input.assignedUserId;
 
   const rows = await db
     .update(leads)
@@ -1122,6 +1135,192 @@ export async function getBrokerLoads(tenantId: string): Promise<BrokerLoad[]> {
     createdAt: row.createdAt,
     activeLeads: Number(row.activeLeads),
   }));
+}
+
+/**
+ * Duração do slot de reunião do produto (spec.md — Assumptions: "30 minutos,
+ * alinhado ao início da hora ou à meia hora"). É o que transforma o
+ * `meetingAt` gravado num intervalo, tanto para o filtro de sobreposição
+ * quanto para a checagem de janela.
+ */
+export const MEETING_DURATION_MS = 30 * 60 * 1000;
+
+/**
+ * Reuniões já marcadas de cada corretor, agregadas na própria linha do vínculo
+ * (subconsulta correlacionada). `json_agg` devolve os instantes como string
+ * ISO — convertidos para `Date` no mapeamento.
+ */
+const MEETINGS_JSON = sql<string[] | null>`(
+  select json_agg(agenda.meeting_at)
+  from ${leads} agenda
+  where agenda.assigned_user_id = ${tenant_members.userId}
+    and agenda.tenant_id = ${tenant_members.organizationId}
+    and agenda.meeting_at is not null
+)`;
+
+/**
+ * Candidatos à atribuição por agenda (lote-8 — ATRIB-02, ATRIB-03): carga
+ * ativa, janela de trabalho declarada e reuniões já marcadas de cada corretor
+ * ATIVO da imobiliária, numa query agregada só.
+ *
+ * Estende `getBrokerLoads` sem substituí-lo: mesmo LEFT JOIN (corretor sem
+ * lead ativo continua aparecendo com `activeLeads: 0`) e mesmo filtro
+ * `IS_ASSIGNABLE_BROKER` — papel corretor e vínculo ativo, que é o que faz o
+ * corretor desativado sair dos candidatos mesmo com a janela cobrindo o
+ * horário (spec.md — Edge Cases).
+ *
+ * A janela é `null` quando qualquer uma das três colunas está vazia: janela
+ * pela metade é janela não declarada, e quem não declarou é indisponível
+ * sempre (AGENDA-01 AC5).
+ */
+export async function getBrokerCandidates(
+  tenantId: string
+): Promise<BrokerCandidate[]> {
+  const rows = await db
+    .select({
+      id: tenant_members.userId,
+      createdAt: tenant_members.createdAt,
+      activeLeads: count(leads.id),
+      workDays: tenant_members.workDays,
+      workHoursStart: tenant_members.workHoursStart,
+      workHoursEnd: tenant_members.workHoursEnd,
+      meetings: MEETINGS_JSON,
+    })
+    .from(tenant_members)
+    .leftJoin(
+      leads,
+      and(
+        eq(leads.assignedUserId, tenant_members.userId),
+        eq(leads.tenantId, tenant_members.organizationId),
+        inArray(leads.status, ACTIVE_LEAD_STATUSES)
+      )
+    )
+    .where(
+      and(eq(tenant_members.organizationId, tenantId), IS_ASSIGNABLE_BROKER)
+    )
+    // Pela PK do vínculo: o Postgres deriva as demais colunas de
+    // `tenant_members` (dependência funcional), inclusive as da subconsulta.
+    .groupBy(tenant_members.id);
+
+  return rows.map((row) => ({
+    id: row.id,
+    createdAt: row.createdAt,
+    activeLeads: Number(row.activeLeads),
+    window:
+      row.workDays && row.workDays.length > 0 && row.workHoursStart && row.workHoursEnd
+        ? {
+            days: row.workDays,
+            start: row.workHoursStart,
+            end: row.workHoursEnd,
+          }
+        : null,
+    meetings: (row.meetings ?? []).map((meetingAt) => {
+      const start = new Date(meetingAt);
+      return { start, end: new Date(start.getTime() + MEETING_DURATION_MS) };
+    }),
+  }));
+}
+
+export type AssignFailureReason =
+  | "lead-nao-encontrado"
+  | "sem-corretor-disponivel"
+  | "conflito-de-agenda";
+
+export type AssignResult =
+  | {
+      ok: true;
+      /** `null` só no escalonamento sem nenhum corretor ativo (ATRIB-03 AC4). */
+      brokerId: string | null;
+      lead: Lead;
+    }
+  | { ok: false; reason: AssignFailureReason };
+
+/**
+ * Atribuição no agendamento (ATRIB-02; AD-022). Escolhe entre os corretores
+ * cuja janela cobre INTEIRAMENTE o slot de 30 minutos e que não têm reunião
+ * sobreposta, pelo desempate determinístico de sempre — e grava a escolha
+ * junto com `meetingAt` e o resto do patch numa **única** `UPDATE`.
+ *
+ * Nada é gravado quando ninguém cobre o horário: o chamador recusa o
+ * agendamento com `sem-corretor-disponivel` (AC5). Dois agendamentos
+ * concorrentes sobre o mesmo corretor e o mesmo instante escolhem o mesmo
+ * candidato — quem perde a corrida bate no índice único
+ * `leads_assigned_user_id_meeting_at_idx` e recebe `conflito-de-agenda` (AC7).
+ * A trava é do banco de propósito: nenhuma checagem de aplicação sobrevive à
+ * concorrência.
+ *
+ * A escolha é SEMPRE pela disponibilidade, mesmo que o lead já tivesse
+ * responsável: a reunião precisa cair com quem atende naquele horário
+ * (spec.md — Success Criteria).
+ */
+export async function assignBrokerForMeeting(
+  tenantId: string,
+  leadId: string,
+  meetingAt: Date,
+  patch: UpdateLeadFromAgentInput = {}
+): Promise<AssignResult> {
+  const candidates = await getBrokerCandidates(tenantId);
+  const meetingEnd = new Date(meetingAt.getTime() + MEETING_DURATION_MS);
+  const brokerId = assignBroker(
+    selectForMeeting(candidates, meetingAt, meetingEnd)
+  );
+
+  if (!brokerId) return { ok: false, reason: "sem-corretor-disponivel" };
+
+  try {
+    const updated = await updateLeadFromAgent(tenantId, leadId, {
+      ...patch,
+      meetingAt,
+      assignedUserId: brokerId,
+    });
+    if (!updated) return { ok: false, reason: "lead-nao-encontrado" };
+    return { ok: true, brokerId, lead: updated };
+  } catch (error) {
+    if (isUniqueViolation(error)) {
+      return { ok: false, reason: "conflito-de-agenda" };
+    }
+    throw error;
+  }
+}
+
+/**
+ * Rede de segurança do escalonamento (ATRIB-03; AD-022): o lead que passa a
+ * `escalado_humano` sem responsável recebe um na MESMA `UPDATE` que grava o
+ * status — nunca numa segunda escrita que possa falhar sozinha.
+ *
+ * Escolhe o de menor carga entre quem está em janela no instante do
+ * escalonamento e, se ninguém estiver, entre todos os corretores ativos (AC3).
+ * Imobiliária sem nenhum corretor ativo grava o escalonamento assim mesmo, com
+ * o lead sem responsável (AC4) — o Pipeline já exibe "Sem responsável" para
+ * administrador e gestor, que é o sinal de pendente de atribuição.
+ *
+ * Lead que JÁ tem responsável não é reatribuído (AC5): o patch é gravado e o
+ * responsável atual é devolvido intacto.
+ */
+export async function assignBrokerForEscalation(
+  tenantId: string,
+  leadId: string,
+  at: Date,
+  patch: UpdateLeadFromAgentInput = {}
+): Promise<AssignResult> {
+  const lead = await getLead(serviceScope(tenantId), leadId);
+  if (!lead) return { ok: false, reason: "lead-nao-encontrado" };
+
+  let brokerId = lead.assignedUserId;
+
+  if (!brokerId) {
+    const candidates = await getBrokerCandidates(tenantId);
+    brokerId = assignBroker(selectForEscalation(candidates, at));
+  }
+
+  const updated = await updateLeadFromAgent(tenantId, leadId, {
+    ...patch,
+    // Chave ausente quando não há corretor: a coluna não é tocada.
+    ...(brokerId ? { assignedUserId: brokerId } : {}),
+  });
+
+  if (!updated) return { ok: false, reason: "lead-nao-encontrado" };
+  return { ok: true, brokerId, lead: updated };
 }
 
 export interface CreateAgentLeadInput {

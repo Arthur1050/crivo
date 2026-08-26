@@ -174,6 +174,25 @@ export const leads = pgTable(
     uniqueIndex("leads_tenant_id_external_id_idx")
       .on(table.tenantId, table.externalId)
       .where(sql`${table.externalId} is not null`),
+    // Conflito de agenda (lote-8 — ATRIB-02 AC7; AD-022): o mesmo corretor não
+    // pode ter duas reuniões no mesmo instante na mesma imobiliária. A trava é
+    // do BANCO, não da aplicação — dois agendamentos concorrentes leem a mesma
+    // lista de candidatos e escolhem o mesmo corretor; só o índice garante que
+    // exatamente um confirma e o outro recebe `conflito-de-agenda`.
+    //
+    // O slot do produto é de 30 minutos alinhados (spec.md — Assumptions),
+    // então "mesmo `meeting_at`" é "mesmo intervalo". Sobreposição parcial
+    // (14:00 × 14:15) é responsabilidade do filtro de candidatos
+    // (`selectForMeeting`), que exclui quem já tem reunião sobreposta.
+    //
+    // Parcial, pela mesma disciplina de `leads_tenant_id_external_id_idx`: só
+    // vale para lead COM reunião e COM responsável — lead sem reunião ou sem
+    // dono (a regra do lote: o lead nasce órfão) nunca colide.
+    uniqueIndex("leads_assigned_user_id_meeting_at_idx")
+      .on(table.tenantId, table.assignedUserId, table.meetingAt)
+      .where(
+        sql`${table.meetingAt} is not null and ${table.assignedUserId} is not null`
+      ),
   ]
 );
 
