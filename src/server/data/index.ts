@@ -1667,10 +1667,17 @@ export interface Invitation {
   roles: Role[];
   status: string;
   expiresAt: Date;
+  /**
+   * Pendente e dentro da validade — o único estado em que o convite ainda
+   * ativa alguém (USER-01 AC7). Resolvido aqui, e não em quem renderiza: ler
+   * o relógio durante o render de um componente é chamada impura.
+   */
+  isUsable: boolean;
 }
 
 function toInvitation(
-  row: typeof tenant_invitations.$inferSelect
+  row: typeof tenant_invitations.$inferSelect,
+  now: Date = new Date()
 ): Invitation {
   return {
     id: row.id,
@@ -1679,6 +1686,7 @@ function toInvitation(
     roles: parseRoles(row.role),
     status: row.status,
     expiresAt: row.expiresAt,
+    isUsable: row.status === "pending" && row.expiresAt.getTime() > now.getTime(),
   };
 }
 
