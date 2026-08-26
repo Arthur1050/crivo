@@ -1221,6 +1221,32 @@ export async function getBrokerCandidates(
   }));
 }
 
+/**
+ * Contato do corretor escolhido, para o chamador do contrato (ATRIB-02 AC4) e
+ * para o convite do evento no calendário (AC8, pelo e-mail).
+ *
+ * Consultado DEPOIS da escolha, e nunca junto com os candidatos: a lista de
+ * corretores não pode sair do CRM (AD-018), então quem monta os candidatos não
+ * carrega nome nem e-mail de ninguém.
+ */
+export async function getBrokerContact(
+  tenantId: string,
+  userId: string
+): Promise<{ name: string; email: string } | null> {
+  const rows = await db
+    .select({ name: users.name, email: users.email })
+    .from(tenant_members)
+    .innerJoin(users, eq(tenant_members.userId, users.id))
+    .where(
+      and(
+        eq(tenant_members.organizationId, tenantId),
+        eq(tenant_members.userId, userId)
+      )
+    )
+    .limit(1);
+  return rows[0] ?? null;
+}
+
 export type AssignFailureReason =
   | "lead-nao-encontrado"
   | "sem-corretor-disponivel"
@@ -1343,20 +1369,19 @@ export interface CreateAgentLeadResult {
  * Cases: "dois requests concorrentes reentregam o mesmo externalId → no
  * máximo um recurso"); quando o insert é descartado por conflito, a busca
  * seguinte devolve o lead já existente (`created: false`), com o corretor já
- * atribuído na primeira entrega preservado (nunca reatribuído).
+ * atribuído preservado (nunca reatribuído).
  *
- * Atribuição de corretor (lote-7 — ATRIB-01): lida a carga ativa do tenant
- * ANTES do insert e delega a escolha à função pura `assignBroker`. Tenant
- * sem corretor cadastrado devolve `null` (lista vazia) — o lead nasce assim
- * mesmo, com `assignedUserId` nulo, nunca bloqueado por essa atribuição.
+ * **O lead nasce SEM responsável** (lote-8 — ATRIB-02 AC1; AD-022). A
+ * atribuição por menor carga na criação (ATRIB-01, lote-7) foi removida daqui:
+ * quando o lead é criado ainda não existe informação nenhuma sobre quando ele
+ * pode se reunir — o horário só emerge durante a conversa. O responsável passa
+ * a ser escolhido no agendamento (`assignBrokerForMeeting`) ou, como rede de
+ * segurança, no escalonamento (`assignBrokerForEscalation`).
  */
 export async function createAgentLead(
   tenantId: string,
   input: CreateAgentLeadInput
 ): Promise<CreateAgentLeadResult> {
-  const brokerLoads = await getBrokerLoads(tenantId);
-  const brokerId = assignBroker(brokerLoads);
-
   const inserted = await db
     .insert(leads)
     .values({
@@ -1366,7 +1391,6 @@ export async function createAgentLead(
       externalId: input.externalId,
       firstContactAt: input.firstContactAt,
       status: "em_qualificacao",
-      assignedUserId: brokerId,
     })
     .onConflictDoNothing({
       target: [leads.tenantId, leads.externalId],

@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { randomUUID } from "node:crypto";
 import { afterAll, afterEach, describe, expect, it } from "vitest";
-import { inArray } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { db } from "../../../db";
 import { leads, tenant_members, tenants, users } from "../../../db/schema";
 import { createAgentLead, getBrokerLoads, getBrokers } from "../index";
@@ -197,8 +197,14 @@ describe("server/data — getBrokerLoads / atribuição de corretor em createAge
     });
   });
 
-  describe("createAgentLead — atribuição de corretor", () => {
-    it("atribui o corretor de menor carga ativa (id exato)", async () => {
+  // lote-8 — ATRIB-02 AC1 (AD-022): a atribuição SAIU da criação. O lead nasce
+  // sem responsável e só ganha um no agendamento ou no escalonamento. As
+  // asserções abaixo são as mesmas do lote-7 com o desfecho que a spec nova
+  // define — mesma fixture, mesma pergunta, resposta atualizada. A escolha por
+  // menor carga não morreu: mudou de momento, e é testada em
+  // `assignment.test.ts` (T27).
+  describe("createAgentLead — lead nasce sem responsável", () => {
+    it("não atribui ninguém, mesmo havendo um corretor de menor carga elegível", async () => {
       const tenantId = await createTenant("Tenant Assign Menor Carga");
       createdTenantIds.push(tenantId);
 
@@ -227,7 +233,11 @@ describe("server/data — getBrokerLoads / atribuição de corretor em createAge
       });
 
       expect(created).toBe(true);
-      expect(lead.assignedUserId).toBe(lightOlderId);
+      // Antes do lote-8 este era `toBe(lightOlderId)`. O corretor de menor
+      // carga continua existindo e continua sendo o que a política escolheria
+      // — a criação é que não escolhe mais ninguém.
+      expect(lead.assignedUserId).toBeNull();
+      expect(lead.status).toBe("em_qualificacao");
     });
 
     it("tenant sem nenhum corretor cadastrado: lead criado com assignedUserId nulo, sem erro", async () => {
@@ -245,14 +255,15 @@ describe("server/data — getBrokerLoads / atribuição de corretor em createAge
       expect(lead.assignedUserId).toBeNull();
     });
 
-    it("reentrega com o mesmo externalId não reatribui, mesmo que a carga tenha mudado entre as duas chamadas", async () => {
+    it("reentrega com o mesmo externalId não apaga nem troca o responsável já atribuído", async () => {
       const tenantId = await createTenant("Tenant Assign Reentrega");
       createdTenantIds.push(tenantId);
 
       const brokerAId = await createBroker(tenantId, "Corretor A", new Date("2026-01-01"));
       const brokerBId = await createBroker(tenantId, "Corretor B", new Date("2026-01-02"));
-      // brokerAId começa com a menor carga (0 contra 1 do B).
-      await createLead(tenantId, brokerBId, "em_qualificacao");
+      // brokerBId fica com a menor carga: se a reentrega reatribuísse pela
+      // política, o lead mudaria de dono para ele.
+      await createLead(tenantId, brokerAId, "em_qualificacao");
 
       const externalId = `ext-${randomUUID()}`;
       const first = await createAgentLead(tenantId, {
@@ -262,13 +273,14 @@ describe("server/data — getBrokerLoads / atribuição de corretor em createAge
         firstContactAt: new Date(),
       });
       expect(first.created).toBe(true);
-      expect(first.lead.assignedUserId).toBe(brokerAId);
+      expect(first.lead.assignedUserId).toBeNull();
 
-      // Inverte a carga: agora A tem mais leads ativos que B. Se a segunda
-      // chamada reatribuísse, o resultado mudaria para brokerBId.
-      await createLead(tenantId, brokerAId, "em_qualificacao");
-      await createLead(tenantId, brokerAId, "em_qualificacao");
-      await createLead(tenantId, brokerAId, "em_qualificacao");
+      // O responsável chega depois da criação — é o que o agendamento e o
+      // escalonamento fazem (AD-022). A reentrega não pode desfazer isso.
+      await db
+        .update(leads)
+        .set({ assignedUserId: brokerAId })
+        .where(eq(leads.id, first.lead.id));
 
       const second = await createAgentLead(tenantId, {
         name: "Lead Reentregue",
@@ -279,6 +291,7 @@ describe("server/data — getBrokerLoads / atribuição de corretor em createAge
       expect(second.created).toBe(false);
       expect(second.lead.id).toBe(first.lead.id);
       expect(second.lead.assignedUserId).toBe(brokerAId);
+      expect(second.lead.assignedUserId).not.toBe(brokerBId);
     });
   });
 });

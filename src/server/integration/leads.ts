@@ -1,6 +1,9 @@
 import "server-only";
 import {
+  assignBrokerForEscalation,
+  assignBrokerForMeeting,
   createAgentLead,
+  getBrokerContact,
   getLead,
   serviceScope,
   updateLeadFromAgent,
@@ -96,8 +99,19 @@ export const TRANSITIONS: Record<LeadStatusValue, LeadStatusValue[]> = {
   escalado_humano: [],
 };
 
+/**
+ * Corretor devolvido ao chamador quando a operação atribuiu um responsável
+ * (ATRIB-02 AC4). Só o escolhido, nunca a lista de candidatos — e sem o id
+ * interno: o agente precisa do e-mail para convidar ao evento (AC8), não da
+ * chave primária do usuário.
+ */
+export interface AssignedBroker {
+  name: string;
+  email: string;
+}
+
 export type PatchLeadResult =
-  | { ok: true; lead: Lead }
+  | { ok: true; lead: Lead; assignedBroker?: AssignedBroker | null }
   | { ok: false; code: ProblemCode };
 
 /**
@@ -107,6 +121,12 @@ export type PatchLeadResult =
  * escalonamento obrigatório → uma única `UPDATE` atômica. Qualquer rejeição
  * retorna antes de tocar o banco (INT-04.5 — atomicidade: nenhum campo do
  * payload é gravado se a request inteira for rejeitada).
+ *
+ * lote-8: a validação acima ficou **inalterada** — a trava humana continua
+ * recusando com o mesmo `lead-travado-por-humano`, antes de qualquer
+ * atribuição. Depois dela, e só depois, o patch escolhe o caminho de escrita:
+ * agendamento (atribui por janela de trabalho), escalonamento (rede de
+ * segurança) ou a `UPDATE` simples de sempre.
  */
 export async function patchLead(
   tenantId: string,
@@ -135,6 +155,61 @@ export async function patchLead(
     if (dto.status === "escalado_humano" && !dto.escalationReason?.trim()) {
       return { ok: false, code: "motivo-escalonamento-obrigatorio" };
     }
+  }
+
+  // Agendamento (lote-8 — ATRIB-02; AD-022): registrar a reunião é o momento
+  // em que o lead ganha responsável. A escolha é do CRM, server-side — o
+  // chamador informa o horário e recebe de volta quem ficou.
+  if (dto.meetingAt) {
+    const assigned = await assignBrokerForMeeting(
+      tenantId,
+      leadId,
+      dto.meetingAt,
+      dto
+    );
+
+    if (!assigned.ok) {
+      switch (assigned.reason) {
+        case "sem-corretor-disponivel":
+          // AC5: nada é gravado — nem a reunião, nem o resto do patch.
+          return { ok: false, code: "sem-corretor-disponivel" };
+        case "conflito-de-agenda":
+          return { ok: false, code: "conflito-de-agenda" };
+        default:
+          return { ok: false, code: "recurso-nao-encontrado" };
+      }
+    }
+
+    return {
+      ok: true,
+      lead: assigned.lead,
+      assignedBroker: assigned.brokerId
+        ? await getBrokerContact(tenantId, assigned.brokerId)
+        : null,
+    };
+  }
+
+  // Rede de segurança do escalonamento (lote-8 — ATRIB-03 AC1): o responsável
+  // é gravado na MESMA operação que grava o status. Lead que já tem
+  // responsável não é reatribuído (AC5), e imobiliária sem corretor ativo
+  // registra o escalonamento assim mesmo (AC4).
+  if (dto.status === "escalado_humano") {
+    const assigned = await assignBrokerForEscalation(
+      tenantId,
+      leadId,
+      new Date(),
+      dto
+    );
+
+    if (!assigned.ok) return { ok: false, code: "recurso-nao-encontrado" };
+
+    return {
+      ok: true,
+      lead: assigned.lead,
+      assignedBroker: assigned.brokerId
+        ? await getBrokerContact(tenantId, assigned.brokerId)
+        : null,
+    };
   }
 
   const updated = await updateLeadFromAgent(tenantId, leadId, dto);

@@ -18,7 +18,14 @@ export type ProblemCode =
   | "metodo-nao-suportado"
   // lote-7 — SEC-01: chave de serviço válida sem `X-Crivo-Tenant`, ou com
   // slug desconhecido — nunca cai em nenhum tenant default (auth.ts).
-  | "tenant-nao-identificado";
+  | "tenant-nao-identificado"
+  // lote-8 — ATRIB-02: nenhum corretor ativo tem janela de trabalho cobrindo
+  // o horário pedido (AC5). Código próprio para o agente distinguir "esse
+  // horário não dá" de qualquer outra recusa e oferecer outro ao lead.
+  | "sem-corretor-disponivel"
+  // lote-8 — ATRIB-02 AC7: dois agendamentos disputaram o mesmo corretor no
+  // mesmo intervalo; o índice único do banco confirmou só um.
+  | "conflito-de-agenda";
 
 const TITLES: Record<ProblemCode, string> = {
   "nao-autenticado": "Não autenticado",
@@ -31,6 +38,8 @@ const TITLES: Record<ProblemCode, string> = {
   "rota-inexistente": "Rota inexistente",
   "metodo-nao-suportado": "Método não suportado",
   "tenant-nao-identificado": "Tenant não identificado",
+  "sem-corretor-disponivel": "Nenhum corretor disponível no horário",
+  "conflito-de-agenda": "Conflito de agenda",
 };
 
 export const PROBLEM_CONTENT_TYPE = "application/problem+json";

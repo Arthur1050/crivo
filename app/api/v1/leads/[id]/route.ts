@@ -19,6 +19,10 @@ function statusForCode(code: ProblemCode): number {
     case "transicao-invalida":
     case "lead-travado-por-humano":
     case "motivo-escalonamento-obrigatorio":
+    // lote-8 — ATRIB-02: as duas recusas de agendamento são conflito com o
+    // estado atual da agenda, a mesma família das demais 409 desta rota.
+    case "sem-corretor-disponivel":
+    case "conflito-de-agenda":
       return 409;
     default:
       return 400;
@@ -35,6 +39,10 @@ function detailForCode(code: ProblemCode): string | undefined {
       return "Um humano já alterou o status deste lead pelo Kanban; mudanças de status via API estão bloqueadas.";
     case "motivo-escalonamento-obrigatorio":
       return "Escalar para humano exige o campo 'escalationReason' preenchido e não-vazio.";
+    case "sem-corretor-disponivel":
+      return "Nenhum corretor com janela de trabalho cobrindo o horário solicitado. Ofereça outro horário ao lead.";
+    case "conflito-de-agenda":
+      return "O corretor escolhido acabou de receber outra reunião neste mesmo horário. Ofereça outro horário ao lead.";
     default:
       return undefined;
   }
@@ -81,7 +89,17 @@ export async function PATCH(
     return problem(statusForCode(result.code), result.code, detailForCode(result.code));
   }
 
-  return Response.json(serializeLead(result.lead), { status: 200 });
+  // `assignedBroker` só aparece quando ESTA operação atribuiu um responsável
+  // (lote-8 — ATRIB-02 AC4): o agente recebe quem ficou, para convidar ao
+  // evento pelo e-mail. A lista de candidatos nunca sai do CRM (AD-018), e o
+  // id interno do usuário continua fora do payload.
+  return Response.json(
+    {
+      ...serializeLead(result.lead),
+      ...(result.assignedBroker ? { assignedBroker: result.assignedBroker } : {}),
+    },
+    { status: 200 }
+  );
 }
 
 export const GET = methodNotAllowed(["PATCH"]);
