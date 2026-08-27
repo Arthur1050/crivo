@@ -8,6 +8,7 @@ import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
 import { Center } from "@astryxdesign/core/Center";
 import { FormLayout } from "@astryxdesign/core/FormLayout";
+import { Link } from "@astryxdesign/core/Link";
 import { VStack } from "@astryxdesign/core/Stack";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { Heading, Text } from "@astryxdesign/core/Text";
@@ -99,6 +100,11 @@ export function LoginForm() {
               width="100%"
               clickAction={handleSubmit}
             />
+
+            {/* AUTH-02: a tela de recuperação só é alcançável por aqui. */}
+            <Link href="/recuperar-senha" isStandalone>
+              Esqueci minha senha
+            </Link>
           </VStack>
         </Card>
       </VStack>

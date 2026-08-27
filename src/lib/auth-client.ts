@@ -13,4 +13,15 @@ export const authClient = createAuthClient({
   plugins: [organizationClient()],
 });
 
-export const { signIn, signOut, useSession } = authClient;
+/**
+ * `requestPasswordReset` é o nome do endpoint core no better-auth 1.7
+ * (`POST /request-password-reset`). `forgetPassword` não existe mais no core —
+ * sobrou só como prefixo do plugin email-otp, que este produto não usa.
+ */
+export const {
+  signIn,
+  signOut,
+  useSession,
+  requestPasswordReset,
+  resetPassword,
+} = authClient;

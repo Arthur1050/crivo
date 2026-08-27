@@ -4,6 +4,14 @@ import { organization } from "better-auth/plugins/organization";
 import { nextCookies } from "better-auth/next-js";
 import { db } from "../../db";
 import * as schema from "../../db/schema";
+import { sendResetPasswordEmail } from "./email";
+
+/** URL da tela de redefinição. `BETTER_AUTH_URL` é a base canônica do produto,
+ * a mesma que o convite usa em `src/server/actions/users.ts`. */
+function resetPasswordUrl(token: string): string {
+  const base = process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
+  return `${base.replace(/\/$/, "")}/recuperar-senha?token=${token}`;
+}
 
 /**
  * Instância única do better-auth do produto (design.md — Configuração de
@@ -38,6 +46,34 @@ export const auth = betterAuth({
   // cookie de sessão.
   emailAndPassword: {
     enabled: true,
+    // AUTH-02 AC1: o link vale 1 hora. O default da biblioteca já é 3600s,
+    // mas a AC diz "1 hora" — declarar deixa o requisito no código, em vez de
+    // depender de um default que uma atualização pode mudar sem aviso.
+    resetPasswordTokenExpiresIn: 3600,
+    // AUTH-02 AC3: redefinir a senha encerra as DEMAIS sessões do usuário.
+    // Quem trocou a senha porque suspeita de acesso indevido precisa que o
+    // acesso indevido caia junto; sem isso a sessão do invasor sobreviveria à
+    // troca.
+    revokeSessionsOnPasswordReset: true,
+    /**
+     * AUTH-02 AC1. O link aponta para a NOSSA tela (`/recuperar-senha?token=`),
+     * não para o callback interno do better-auth: o endpoint nativo
+     * `/reset-password/:token` só existe para redirecionar de volta a uma
+     * `callbackURL`, e apontar direto elimina esse salto (e o origin check que
+     * ele carrega). O token vem pronto no argumento.
+     *
+     * Falha de envio NÃO derruba a requisição: `sendResetPasswordEmail` nunca
+     * lança (é o contrato do adaptador da T19), e a resposta ao usuário é a
+     * mesma dos demais casos — quem pediu não descobre nada sobre a conta pela
+     * diferença de comportamento (AC2).
+     */
+    sendResetPassword: async ({ user, token }) => {
+      await sendResetPasswordEmail({
+        to: user.email,
+        name: user.name || user.email,
+        url: resetPasswordUrl(token),
+      });
+    },
   },
   rateLimit: {
     // O padrão da biblioteca é ligar o rate limit só em produção. AUTH-01 AC4
