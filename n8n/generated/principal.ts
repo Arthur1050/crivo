@@ -1259,7 +1259,14 @@ const agentModel = languageModel({
     // proxima liberacao estavel nao-lite da linha flash, na MESMA janela de
     // lancamento (05-2026) da flash-lite atual — versao fixa e reproduzivel,
     // nao o alias flutuante "gemini-flash-latest".
-    parameters: { modelName: "models/gemini-3.5-flash", options: { temperature: 0.4 } },
+    //
+    // lote-8 T30: a fonte dizia "models/gemini-3.5-flash" enquanto a
+    // instancia rodava "models/gemini-3.5-flash-lite" (trocado a mao na UI,
+    // fora do workflow-as-code). A fonte foi alinhada ao que a instancia de
+    // fato roda, para que a proxima publicacao de principal.ts nao reverta o
+    // modelo sem querer. Subir de volta para a variante nao-lite e uma
+    // decisao de produto: mudar aqui e republicar, nunca pela UI.
+    parameters: { modelName: "models/gemini-3.5-flash-lite", options: { temperature: 0.4 } },
     credentials: { googlePalmApi: newCredential("Google Gemini(PaLM) Api account") },
   },
 });
