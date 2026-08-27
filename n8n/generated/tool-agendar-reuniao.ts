@@ -21,6 +21,14 @@
  * nunca cria efeito colateral (evento/PATCH) sem a checagem determinística
  * ter passado.
  *
+ * lote-8 (T29, ATRIB-02): a ordem foi INVERTIDA — o `PATCH` do CRM acontece
+ * ANTES da criação do evento. É o CRM que escolhe o corretor responsável pelo
+ * horário acordado (AD-022) e devolve `assignedBroker`, que entra como
+ * convidado do evento pelo e-mail. Uma recusa do CRM
+ * (`sem-corretor-disponivel`, `conflito-de-agenda`) não cria evento nenhum: o
+ * agente recebe o motivo e oferece outro horário. A decisão de "criar ou
+ * recusar" é determinística e mora em `n8n/src/agendamento.mjs`.
+ *
  * SEM FUNÇÕES CUSTOMIZADAS no nível deste arquivo (mesma regra de
  * `principal.ts`/`tool-responder-lead.ts` — confirmada pelo
  * `validate_workflow` do MCP).
@@ -188,41 +196,20 @@ const unavailableResponse = node({
   output: [{ ok: false, reason: "horario-ocupado" }],
 });
 
-const createEvent = node({
-  type: "n8n-nodes-base.googleCalendar",
-  version: 1.3,
-  config: {
-    name: "Google Calendar: criar evento (Meet)",
-    position: [1300, -400],
-    parameters: {
-      resource: "event",
-      operation: "create",
-      calendar: { __rl: true, mode: "id", value: expr("{{ $('Code: checar horario comercial').first().json.calendarId }}") },
-      start: expr("{{ $('Code: checar horario comercial').first().json.meetingAtProposto }}"),
-      end: expr("{{ DateTime.fromISO($('Code: checar horario comercial').first().json.meetingAtProposto).plus({ minutes: 30 }).toISO() }}"),
-      additionalFields: {
-        summary: expr("{{ 'Reunião com ' + $('Code: checar horario comercial').first().json.contactName }}"),
-        conferenceDataUi: { conferenceDataValues: { conferenceSolution: "hangoutsMeet" } },
-      },
-    },
-    credentials: { googleCalendarOAuth2Api: newCredential("Google Calendar account") },
-  },
-  output: [{ id: "evt123", htmlLink: "https://calendar.google.com/event?eid=evt123", start: { dateTime: "2026-08-17T13:00:00.000Z" } }],
-});
-
 const patchLeadScheduled = node({
   type: "n8n-nodes-base.httpRequest",
   version: 4.4,
   config: {
     name: "HTTP: PATCH /leads/{id} (agendado)",
-    position: [1560, -400],
+    position: [1300, -400],
     retryOnFail: true,
     maxTries: 3,
     waitBetweenTries: 2000,
-    // AD-018: falha aqui NUNCA é silenciada — o Code final abaixo checa o
-    // shape da resposta e reporta ao agente com o meetLink de qualquer
-    // jeito (Done-when: "Falha no PATCH após o evento criado é reportada
-    // ao agente com o meetLink, nunca silenciada").
+    // AD-018: falha aqui NUNCA é silenciada. `neverError` + `fullResponse`
+    // fazem o corpo `problem+json` de uma recusa (409 `sem-corretor-disponivel`
+    // / `conflito-de-agenda`) chegar ao nó seguinte como saída regular, em vez
+    // de virar erro de nó sem corpo legível; `onError` cobre o que sobra
+    // (falha de transporte depois das 3 tentativas).
     onError: "continueRegularOutput",
     parameters: {
       method: "PATCH",
@@ -239,10 +226,114 @@ const patchLeadScheduled = node({
       jsonBody: expr(
         "{{ { status: 'qualificado_agendado', meetingAt: $('Code: checar horario comercial').first().json.meetingAtProposto, executiveSummary: 'Reunião agendada via WhatsApp (tool agendar_reuniao).' } }}"
       ),
+      options: { response: { response: { fullResponse: true, neverError: true } } },
     },
     credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
   },
-  output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", status: "qualificado_agendado" }],
+  output: [
+    {
+      statusCode: 200,
+      body: {
+        id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        status: "qualificado_agendado",
+        assignedBroker: { name: "Corretora Manhã", email: "corretora.manha@imobiliaria-a.com.br" },
+      },
+    },
+  ],
+});
+
+const interpretPatch = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: interpretar resposta do CRM",
+    position: [1560, -400],
+    parameters: {
+      mode: "runOnceForAllItems",
+      language: "javaScript",
+      jsCode:
+        "/**\n * Decisão determinística do agendamento (lote-8 — ATRIB-02, tasks.md T29).\n * Funções puras, sem I/O, sem dependências — rodam dentro de um Code node do\n * `crivo-tool-agendar-reuniao`.\n *\n * A ordem do sub-workflow foi invertida nesta task: o `PATCH /leads/{id}` do\n * CRM acontece ANTES da criação do evento no Google Calendar. Quem escolhe o\n * corretor é o CRM (AD-022: a regra mora em quem a detém), e o agente nunca\n * vê a lista de candidatos — só quem ficou. Este módulo é a camada que lê a\n * resposta do CRM e decide, sem discrição do modelo:\n *\n * - o CRM confirmou o agendamento? só então o evento é criado;\n * - quem entra como convidado do evento (o e-mail do corretor devolvido);\n * - o que é devolvido ao agente quando o CRM recusa (`sem-corretor-disponivel`,\n *   `conflito-de-agenda` ou qualquer outro `code` do contrato — AD-013);\n * - o `aviso` quando CRM e Calendar divergem, para que estado inconsistente\n *   NUNCA seja silencioso (design.md — Risks & Concerns).\n */\n\n/** Recusa reportada quando o CRM não respondeu com um `code` legível\n * (falha de transporte, corpo vazio, 5xx sem problem+json). */\nconst RECUSA_PADRAO = \"falha-ao-atualizar-crm\";\n\n/** Orientação que acompanha cada recusa conhecida do contrato. É o que faz o\n * agente oferecer outro horário em vez de insistir no mesmo. */\nconst ORIENTACOES = {\n  \"sem-corretor-disponivel\":\n    \"Nenhum corretor da imobiliária atende nesse horário. A reunião NÃO foi marcada: ofereça outro horário ao lead.\",\n  \"conflito-de-agenda\":\n    \"O corretor desse horário já tem outra reunião marcada. A reunião NÃO foi marcada: ofereça outro horário ao lead.\",\n};\n\nconst ORIENTACAO_PADRAO =\n  \"Não foi possível registrar a reunião no CRM. NÃO confirme a reunião ao lead e ofereça outro horário.\";\n\nconst AVISO_EVENTO_AUSENTE =\n  \"Reunião registrada no CRM, mas o evento no Google Calendar não foi criado — confirme a reunião ao lead, diga que o link do Meet chega em seguida, e sinalize a falha.\";\n\n/**\n * @typedef {{name: string, email: string}} Corretor\n */\n\n/**\n * Normaliza o `assignedBroker` devolvido pelo contrato (`{name, email}` —\n * nunca o id interno do usuário). Devolve `null` quando não veio nada\n * aproveitável; mantém o corretor quando só um dos dois campos veio, para não\n * apagar da resposta do agente um responsável que o CRM de fato escolheu.\n * @param {unknown} valor\n * @returns {Corretor | null}\n */\nfunction normalizarCorretor(valor) {\n  if (valor === null || typeof valor !== \"object\") return null;\n  const name = typeof valor.name === \"string\" ? valor.name.trim() : \"\";\n  const email = typeof valor.email === \"string\" ? valor.email.trim() : \"\";\n  if (name === \"\" && email === \"\") return null;\n  return { name, email };\n}\n\n/**\n * Lê a resposta do `PATCH /leads/{id}` (nó HTTP Request com\n * `fullResponse` + `neverError`, para que o corpo `problem+json` de um 409\n * chegue aqui em vez de virar erro de nó) e decide se o evento pode ser\n * criado.\n *\n * Confirmação exige as duas metades: `200` E `status: \"qualificado_agendado\"`.\n * Qualquer outra coisa é recusa — inclusive `{error: ...}` de falha de\n * transporte —, e recusa nunca cria evento (ATRIB-02 AC5).\n * @param {unknown} resposta - item de saída do nó HTTP Request\n * @returns {{crmConfirmou: boolean, reason: string | null, corretor: Corretor | null, convidados: string[]}}\n */\nfunction interpretarPatchAgendamento(resposta) {\n  const envelope = resposta !== null && typeof resposta === \"object\" ? resposta : {};\n  const body =\n    envelope.body !== null && typeof envelope.body === \"object\" ? envelope.body : {};\n  const statusCode = typeof envelope.statusCode === \"number\" ? envelope.statusCode : null;\n\n  const confirmado = statusCode === 200 && body.status === \"qualificado_agendado\";\n  if (!confirmado) {\n    const code =\n      typeof body.code === \"string\" && body.code.trim() !== \"\"\n        ? body.code.trim()\n        : RECUSA_PADRAO;\n    return { crmConfirmou: false, reason: code, corretor: null, convidados: [] };\n  }\n\n  const corretor = normalizarCorretor(body.assignedBroker);\n  return {\n    crmConfirmou: true,\n    reason: null,\n    corretor,\n    convidados: corretor !== null && corretor.email !== \"\" ? [corretor.email] : [],\n  };\n}\n\n/**\n * Resposta devolvida ao agente quando o CRM recusou o agendamento. Nomeia o\n * motivo (o `code` estável do contrato) e diz o que fazer — nunca falha em\n * silêncio, nunca deixa o agente confirmar uma reunião que não existe.\n * @param {unknown} reason\n * @returns {{ok: false, reason: string, eventoCriado: false, orientacao: string}}\n */\nfunction montarRecusaAgendamento(reason) {\n  const motivo =\n    typeof reason === \"string\" && reason.trim() !== \"\" ? reason.trim() : RECUSA_PADRAO;\n  const orientacao = Object.prototype.hasOwnProperty.call(ORIENTACOES, motivo)\n    ? ORIENTACOES[motivo]\n    : ORIENTACAO_PADRAO;\n  return { ok: false, reason: motivo, eventoCriado: false, orientacao };\n}\n\n/**\n * Resposta devolvida ao agente quando o CRM já confirmou o agendamento. O\n * evento no Calendar é o passo que pode faltar agora que a ordem foi\n * invertida: sem `htmlLink`, a reunião existe no CRM e não no Calendar, e o\n * `aviso` reporta essa divergência ao agente (mesmo mecanismo que antes\n * cobria a direção oposta).\n * @param {{meetingAt?: unknown, evento?: unknown, corretor?: unknown}} [entrada]\n * @returns {{ok: true, meetingAt: string | null, meetLink: string | null, corretor: Corretor | null, crmAtualizado: true, eventoCriado: boolean, aviso: string | null}}\n */\nfunction montarRespostaAgendamento({ meetingAt, evento, corretor } = {}) {\n  const eventoObj = evento !== null && typeof evento === \"object\" ? evento : {};\n  const link = typeof eventoObj.htmlLink === \"string\" ? eventoObj.htmlLink.trim() : \"\";\n  const eventoCriado = link !== \"\";\n\n  return {\n    ok: true,\n    meetingAt: typeof meetingAt === \"string\" && meetingAt !== \"\" ? meetingAt : null,\n    meetLink: eventoCriado ? link : null,\n    corretor: normalizarCorretor(corretor),\n    crmAtualizado: true,\n    eventoCriado,\n    aviso: eventoCriado ? null : AVISO_EVENTO_AUSENTE,\n  };\n}" +
+        "\n\n" +
+        "return [{ json: interpretarPatchAgendamento($json) }];\n",
+    },
+  },
+  output: [
+    {
+      crmConfirmou: true,
+      reason: null,
+      corretor: { name: "Corretora Manhã", email: "corretora.manha@imobiliaria-a.com.br" },
+      convidados: ["corretora.manha@imobiliaria-a.com.br"],
+    },
+  ],
+});
+
+const didCrmConfirm = ifElse({
+  version: 2.3,
+  config: {
+    name: "CRM confirmou o agendamento?",
+    position: [1820, -400],
+    parameters: {
+      conditions: {
+        combinator: "and",
+        options: { caseSensitive: true, leftValue: "", typeValidation: "strict" },
+        conditions: [{ leftValue: expr("{{ $json.crmConfirmou }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }],
+      },
+    },
+  },
+});
+
+const crmRefusedResponse = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: recusa do CRM (devolve motivo ao agente)",
+    position: [2080, -200],
+    parameters: {
+      mode: "runOnceForAllItems",
+      language: "javaScript",
+      jsCode:
+        "/**\n * Decisão determinística do agendamento (lote-8 — ATRIB-02, tasks.md T29).\n * Funções puras, sem I/O, sem dependências — rodam dentro de um Code node do\n * `crivo-tool-agendar-reuniao`.\n *\n * A ordem do sub-workflow foi invertida nesta task: o `PATCH /leads/{id}` do\n * CRM acontece ANTES da criação do evento no Google Calendar. Quem escolhe o\n * corretor é o CRM (AD-022: a regra mora em quem a detém), e o agente nunca\n * vê a lista de candidatos — só quem ficou. Este módulo é a camada que lê a\n * resposta do CRM e decide, sem discrição do modelo:\n *\n * - o CRM confirmou o agendamento? só então o evento é criado;\n * - quem entra como convidado do evento (o e-mail do corretor devolvido);\n * - o que é devolvido ao agente quando o CRM recusa (`sem-corretor-disponivel`,\n *   `conflito-de-agenda` ou qualquer outro `code` do contrato — AD-013);\n * - o `aviso` quando CRM e Calendar divergem, para que estado inconsistente\n *   NUNCA seja silencioso (design.md — Risks & Concerns).\n */\n\n/** Recusa reportada quando o CRM não respondeu com um `code` legível\n * (falha de transporte, corpo vazio, 5xx sem problem+json). */\nconst RECUSA_PADRAO = \"falha-ao-atualizar-crm\";\n\n/** Orientação que acompanha cada recusa conhecida do contrato. É o que faz o\n * agente oferecer outro horário em vez de insistir no mesmo. */\nconst ORIENTACOES = {\n  \"sem-corretor-disponivel\":\n    \"Nenhum corretor da imobiliária atende nesse horário. A reunião NÃO foi marcada: ofereça outro horário ao lead.\",\n  \"conflito-de-agenda\":\n    \"O corretor desse horário já tem outra reunião marcada. A reunião NÃO foi marcada: ofereça outro horário ao lead.\",\n};\n\nconst ORIENTACAO_PADRAO =\n  \"Não foi possível registrar a reunião no CRM. NÃO confirme a reunião ao lead e ofereça outro horário.\";\n\nconst AVISO_EVENTO_AUSENTE =\n  \"Reunião registrada no CRM, mas o evento no Google Calendar não foi criado — confirme a reunião ao lead, diga que o link do Meet chega em seguida, e sinalize a falha.\";\n\n/**\n * @typedef {{name: string, email: string}} Corretor\n */\n\n/**\n * Normaliza o `assignedBroker` devolvido pelo contrato (`{name, email}` —\n * nunca o id interno do usuário). Devolve `null` quando não veio nada\n * aproveitável; mantém o corretor quando só um dos dois campos veio, para não\n * apagar da resposta do agente um responsável que o CRM de fato escolheu.\n * @param {unknown} valor\n * @returns {Corretor | null}\n */\nfunction normalizarCorretor(valor) {\n  if (valor === null || typeof valor !== \"object\") return null;\n  const name = typeof valor.name === \"string\" ? valor.name.trim() : \"\";\n  const email = typeof valor.email === \"string\" ? valor.email.trim() : \"\";\n  if (name === \"\" && email === \"\") return null;\n  return { name, email };\n}\n\n/**\n * Lê a resposta do `PATCH /leads/{id}` (nó HTTP Request com\n * `fullResponse` + `neverError`, para que o corpo `problem+json` de um 409\n * chegue aqui em vez de virar erro de nó) e decide se o evento pode ser\n * criado.\n *\n * Confirmação exige as duas metades: `200` E `status: \"qualificado_agendado\"`.\n * Qualquer outra coisa é recusa — inclusive `{error: ...}` de falha de\n * transporte —, e recusa nunca cria evento (ATRIB-02 AC5).\n * @param {unknown} resposta - item de saída do nó HTTP Request\n * @returns {{crmConfirmou: boolean, reason: string | null, corretor: Corretor | null, convidados: string[]}}\n */\nfunction interpretarPatchAgendamento(resposta) {\n  const envelope = resposta !== null && typeof resposta === \"object\" ? resposta : {};\n  const body =\n    envelope.body !== null && typeof envelope.body === \"object\" ? envelope.body : {};\n  const statusCode = typeof envelope.statusCode === \"number\" ? envelope.statusCode : null;\n\n  const confirmado = statusCode === 200 && body.status === \"qualificado_agendado\";\n  if (!confirmado) {\n    const code =\n      typeof body.code === \"string\" && body.code.trim() !== \"\"\n        ? body.code.trim()\n        : RECUSA_PADRAO;\n    return { crmConfirmou: false, reason: code, corretor: null, convidados: [] };\n  }\n\n  const corretor = normalizarCorretor(body.assignedBroker);\n  return {\n    crmConfirmou: true,\n    reason: null,\n    corretor,\n    convidados: corretor !== null && corretor.email !== \"\" ? [corretor.email] : [],\n  };\n}\n\n/**\n * Resposta devolvida ao agente quando o CRM recusou o agendamento. Nomeia o\n * motivo (o `code` estável do contrato) e diz o que fazer — nunca falha em\n * silêncio, nunca deixa o agente confirmar uma reunião que não existe.\n * @param {unknown} reason\n * @returns {{ok: false, reason: string, eventoCriado: false, orientacao: string}}\n */\nfunction montarRecusaAgendamento(reason) {\n  const motivo =\n    typeof reason === \"string\" && reason.trim() !== \"\" ? reason.trim() : RECUSA_PADRAO;\n  const orientacao = Object.prototype.hasOwnProperty.call(ORIENTACOES, motivo)\n    ? ORIENTACOES[motivo]\n    : ORIENTACAO_PADRAO;\n  return { ok: false, reason: motivo, eventoCriado: false, orientacao };\n}\n\n/**\n * Resposta devolvida ao agente quando o CRM já confirmou o agendamento. O\n * evento no Calendar é o passo que pode faltar agora que a ordem foi\n * invertida: sem `htmlLink`, a reunião existe no CRM e não no Calendar, e o\n * `aviso` reporta essa divergência ao agente (mesmo mecanismo que antes\n * cobria a direção oposta).\n * @param {{meetingAt?: unknown, evento?: unknown, corretor?: unknown}} [entrada]\n * @returns {{ok: true, meetingAt: string | null, meetLink: string | null, corretor: Corretor | null, crmAtualizado: true, eventoCriado: boolean, aviso: string | null}}\n */\nfunction montarRespostaAgendamento({ meetingAt, evento, corretor } = {}) {\n  const eventoObj = evento !== null && typeof evento === \"object\" ? evento : {};\n  const link = typeof eventoObj.htmlLink === \"string\" ? eventoObj.htmlLink.trim() : \"\";\n  const eventoCriado = link !== \"\";\n\n  return {\n    ok: true,\n    meetingAt: typeof meetingAt === \"string\" && meetingAt !== \"\" ? meetingAt : null,\n    meetLink: eventoCriado ? link : null,\n    corretor: normalizarCorretor(corretor),\n    crmAtualizado: true,\n    eventoCriado,\n    aviso: eventoCriado ? null : AVISO_EVENTO_AUSENTE,\n  };\n}" +
+        "\n\n" +
+        "return [{ json: montarRecusaAgendamento($json.reason) }];\n",
+    },
+  },
+  output: [
+    {
+      ok: false,
+      reason: "sem-corretor-disponivel",
+      eventoCriado: false,
+      orientacao: "Nenhum corretor da imobiliária atende nesse horário. A reunião NÃO foi marcada: ofereça outro horário ao lead.",
+    },
+  ],
+});
+
+const createEvent = node({
+  type: "n8n-nodes-base.googleCalendar",
+  version: 1.3,
+  config: {
+    name: "Google Calendar: criar evento (Meet)",
+    position: [2080, -600],
+    // Ordem invertida (T29): a reunião JÁ está registrada no CRM quando este
+    // nó roda. Falhar aqui não pode derrubar o agendamento — o Code final
+    // reporta a divergência ao agente com `aviso`, nunca em silêncio.
+    onError: "continueRegularOutput",
+    parameters: {
+      resource: "event",
+      operation: "create",
+      calendar: { __rl: true, mode: "id", value: expr("{{ $('Code: checar horario comercial').first().json.calendarId }}") },
+      start: expr("{{ $('Code: checar horario comercial').first().json.meetingAtProposto }}"),
+      end: expr("{{ DateTime.fromISO($('Code: checar horario comercial').first().json.meetingAtProposto).plus({ minutes: 30 }).toISO() }}"),
+      additionalFields: {
+        summary: expr("{{ 'Reunião com ' + $('Code: checar horario comercial').first().json.contactName }}"),
+        // ATRIB-02 AC8: o corretor escolhido pelo CRM entra como convidado,
+        // pelo e-mail. Array vazio quando o CRM não devolveu corretor.
+        attendees: expr("{{ $('Code: interpretar resposta do CRM').first().json.convidados }}"),
+        conferenceDataUi: { conferenceDataValues: { conferenceSolution: "hangoutsMeet" } },
+      },
+    },
+    credentials: { googleCalendarOAuth2Api: newCredential("Google Calendar account") },
+  },
+  output: [{ id: "evt123", htmlLink: "https://calendar.google.com/event?eid=evt123", start: { dateTime: "2026-08-17T13:00:00.000Z" } }],
 });
 
 const insertAgendaEnvio = node({
@@ -250,7 +341,7 @@ const insertAgendaEnvio = node({
   version: 1.1,
   config: {
     name: "Data Table: agendar lembrete (agenda_envios)",
-    position: [1820, -400],
+    position: [2340, -600],
     parameters: {
       resource: "row",
       operation: "insert",
@@ -262,7 +353,9 @@ const insertAgendaEnvio = node({
           tenantSlug: expr("{{ $('Code: checar horario comercial').first().json.tenantSlug }}"),
           waId: expr("{{ $('Code: checar horario comercial').first().json.waId }}"),
           meetingAt: expr("{{ $('Code: checar horario comercial').first().json.meetingAtProposto }}"),
-          meetLink: expr("{{ $('Google Calendar: criar evento (Meet)').first().json.htmlLink }}"),
+          // `|| ''` porque a criação do evento agora pode falhar sem derrubar
+          // o agendamento já gravado no CRM (ordem invertida — T29).
+          meetLink: expr("{{ $('Google Calendar: criar evento (Meet)').first().json.htmlLink || '' }}"),
         },
         schema: [
           { id: "leadId", displayName: "leadId", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: true },
@@ -282,28 +375,41 @@ const scheduledResponse = node({
   version: 2,
   config: {
     name: "Code: montar resposta do agendamento",
-    position: [2080, -400],
+    position: [2600, -600],
     parameters: {
       mode: "runOnceForAllItems",
       language: "javaScript",
       jsCode:
-        "const patch = $('HTTP: PATCH /leads/{id} (agendado)').first().json;\n" +
-        "const meetLink = $('Google Calendar: criar evento (Meet)').first().json.htmlLink;\n" +
-        "const meetingAt = $('Code: checar horario comercial').first().json.meetingAtProposto;\n" +
-        "const crmAtualizado = typeof patch.status === 'string' && patch.status === 'qualificado_agendado';\n" +
-        "return [{ json: {\n" +
-        "  ok: true,\n" +
-        "  meetLink,\n" +
-        "  meetingAt,\n" +
-        "  crmAtualizado,\n" +
-        "  aviso: crmAtualizado ? null : 'Evento criado no Calendar, mas houve falha ao atualizar o status do lead no CRM — informe ao lead que a reunião está confirmada e sinalize a falha.',\n" +
-        "} }];\n",
+        "/**\n * Decisão determinística do agendamento (lote-8 — ATRIB-02, tasks.md T29).\n * Funções puras, sem I/O, sem dependências — rodam dentro de um Code node do\n * `crivo-tool-agendar-reuniao`.\n *\n * A ordem do sub-workflow foi invertida nesta task: o `PATCH /leads/{id}` do\n * CRM acontece ANTES da criação do evento no Google Calendar. Quem escolhe o\n * corretor é o CRM (AD-022: a regra mora em quem a detém), e o agente nunca\n * vê a lista de candidatos — só quem ficou. Este módulo é a camada que lê a\n * resposta do CRM e decide, sem discrição do modelo:\n *\n * - o CRM confirmou o agendamento? só então o evento é criado;\n * - quem entra como convidado do evento (o e-mail do corretor devolvido);\n * - o que é devolvido ao agente quando o CRM recusa (`sem-corretor-disponivel`,\n *   `conflito-de-agenda` ou qualquer outro `code` do contrato — AD-013);\n * - o `aviso` quando CRM e Calendar divergem, para que estado inconsistente\n *   NUNCA seja silencioso (design.md — Risks & Concerns).\n */\n\n/** Recusa reportada quando o CRM não respondeu com um `code` legível\n * (falha de transporte, corpo vazio, 5xx sem problem+json). */\nconst RECUSA_PADRAO = \"falha-ao-atualizar-crm\";\n\n/** Orientação que acompanha cada recusa conhecida do contrato. É o que faz o\n * agente oferecer outro horário em vez de insistir no mesmo. */\nconst ORIENTACOES = {\n  \"sem-corretor-disponivel\":\n    \"Nenhum corretor da imobiliária atende nesse horário. A reunião NÃO foi marcada: ofereça outro horário ao lead.\",\n  \"conflito-de-agenda\":\n    \"O corretor desse horário já tem outra reunião marcada. A reunião NÃO foi marcada: ofereça outro horário ao lead.\",\n};\n\nconst ORIENTACAO_PADRAO =\n  \"Não foi possível registrar a reunião no CRM. NÃO confirme a reunião ao lead e ofereça outro horário.\";\n\nconst AVISO_EVENTO_AUSENTE =\n  \"Reunião registrada no CRM, mas o evento no Google Calendar não foi criado — confirme a reunião ao lead, diga que o link do Meet chega em seguida, e sinalize a falha.\";\n\n/**\n * @typedef {{name: string, email: string}} Corretor\n */\n\n/**\n * Normaliza o `assignedBroker` devolvido pelo contrato (`{name, email}` —\n * nunca o id interno do usuário). Devolve `null` quando não veio nada\n * aproveitável; mantém o corretor quando só um dos dois campos veio, para não\n * apagar da resposta do agente um responsável que o CRM de fato escolheu.\n * @param {unknown} valor\n * @returns {Corretor | null}\n */\nfunction normalizarCorretor(valor) {\n  if (valor === null || typeof valor !== \"object\") return null;\n  const name = typeof valor.name === \"string\" ? valor.name.trim() : \"\";\n  const email = typeof valor.email === \"string\" ? valor.email.trim() : \"\";\n  if (name === \"\" && email === \"\") return null;\n  return { name, email };\n}\n\n/**\n * Lê a resposta do `PATCH /leads/{id}` (nó HTTP Request com\n * `fullResponse` + `neverError`, para que o corpo `problem+json` de um 409\n * chegue aqui em vez de virar erro de nó) e decide se o evento pode ser\n * criado.\n *\n * Confirmação exige as duas metades: `200` E `status: \"qualificado_agendado\"`.\n * Qualquer outra coisa é recusa — inclusive `{error: ...}` de falha de\n * transporte —, e recusa nunca cria evento (ATRIB-02 AC5).\n * @param {unknown} resposta - item de saída do nó HTTP Request\n * @returns {{crmConfirmou: boolean, reason: string | null, corretor: Corretor | null, convidados: string[]}}\n */\nfunction interpretarPatchAgendamento(resposta) {\n  const envelope = resposta !== null && typeof resposta === \"object\" ? resposta : {};\n  const body =\n    envelope.body !== null && typeof envelope.body === \"object\" ? envelope.body : {};\n  const statusCode = typeof envelope.statusCode === \"number\" ? envelope.statusCode : null;\n\n  const confirmado = statusCode === 200 && body.status === \"qualificado_agendado\";\n  if (!confirmado) {\n    const code =\n      typeof body.code === \"string\" && body.code.trim() !== \"\"\n        ? body.code.trim()\n        : RECUSA_PADRAO;\n    return { crmConfirmou: false, reason: code, corretor: null, convidados: [] };\n  }\n\n  const corretor = normalizarCorretor(body.assignedBroker);\n  return {\n    crmConfirmou: true,\n    reason: null,\n    corretor,\n    convidados: corretor !== null && corretor.email !== \"\" ? [corretor.email] : [],\n  };\n}\n\n/**\n * Resposta devolvida ao agente quando o CRM recusou o agendamento. Nomeia o\n * motivo (o `code` estável do contrato) e diz o que fazer — nunca falha em\n * silêncio, nunca deixa o agente confirmar uma reunião que não existe.\n * @param {unknown} reason\n * @returns {{ok: false, reason: string, eventoCriado: false, orientacao: string}}\n */\nfunction montarRecusaAgendamento(reason) {\n  const motivo =\n    typeof reason === \"string\" && reason.trim() !== \"\" ? reason.trim() : RECUSA_PADRAO;\n  const orientacao = Object.prototype.hasOwnProperty.call(ORIENTACOES, motivo)\n    ? ORIENTACOES[motivo]\n    : ORIENTACAO_PADRAO;\n  return { ok: false, reason: motivo, eventoCriado: false, orientacao };\n}\n\n/**\n * Resposta devolvida ao agente quando o CRM já confirmou o agendamento. O\n * evento no Calendar é o passo que pode faltar agora que a ordem foi\n * invertida: sem `htmlLink`, a reunião existe no CRM e não no Calendar, e o\n * `aviso` reporta essa divergência ao agente (mesmo mecanismo que antes\n * cobria a direção oposta).\n * @param {{meetingAt?: unknown, evento?: unknown, corretor?: unknown}} [entrada]\n * @returns {{ok: true, meetingAt: string | null, meetLink: string | null, corretor: Corretor | null, crmAtualizado: true, eventoCriado: boolean, aviso: string | null}}\n */\nfunction montarRespostaAgendamento({ meetingAt, evento, corretor } = {}) {\n  const eventoObj = evento !== null && typeof evento === \"object\" ? evento : {};\n  const link = typeof eventoObj.htmlLink === \"string\" ? eventoObj.htmlLink.trim() : \"\";\n  const eventoCriado = link !== \"\";\n\n  return {\n    ok: true,\n    meetingAt: typeof meetingAt === \"string\" && meetingAt !== \"\" ? meetingAt : null,\n    meetLink: eventoCriado ? link : null,\n    corretor: normalizarCorretor(corretor),\n    crmAtualizado: true,\n    eventoCriado,\n    aviso: eventoCriado ? null : AVISO_EVENTO_AUSENTE,\n  };\n}" +
+        "\n\n" +
+        "const contexto = $('Code: checar horario comercial').first().json;\n" +
+        "const evento = $('Google Calendar: criar evento (Meet)').first().json;\n" +
+        "const crm = $('Code: interpretar resposta do CRM').first().json;\n" +
+        "return [{ json: montarRespostaAgendamento({ meetingAt: contexto.meetingAtProposto, evento, corretor: crm.corretor }) }];\n",
     },
   },
-  output: [{ ok: true, meetLink: "https://calendar.google.com/event?eid=evt123", meetingAt: "2026-08-17T13:00:00.000Z", crmAtualizado: true, aviso: null }],
+  output: [
+    {
+      ok: true,
+      meetingAt: "2026-08-17T13:00:00.000Z",
+      meetLink: "https://calendar.google.com/event?eid=evt123",
+      corretor: { name: "Corretora Manhã", email: "corretora.manha@imobiliaria-a.com.br" },
+      crmAtualizado: true,
+      eventoCriado: true,
+      aviso: null,
+    },
+  ],
 });
 
-const scheduledBranch = createEvent.to(patchLeadScheduled.to(insertAgendaEnvio.to(scheduledResponse)));
+// PATCH no CRM primeiro; só com a confirmação dele o evento é criado, já com
+// o corretor devolvido como convidado (T29 — ATRIB-02 AC5/AC8).
+const scheduledBranch = patchLeadScheduled.to(
+  interpretPatch.to(
+    didCrmConfirm
+      .onTrue(createEvent.to(insertAgendaEnvio.to(scheduledResponse)))
+      .onFalse(crmRefusedResponse)
+  )
+);
 
 export default workflow("crivo-tool-agendar-reuniao", "crivo-tool-agendar-reuniao")
   .add(scheduleTrigger)
