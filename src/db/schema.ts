@@ -513,3 +513,43 @@ export const tenant_invitations = pgTable(
     index("tenant_invitations_email_idx").on(table.email),
   ]
 );
+
+// ---------------------------------------------------------------------------
+// Tentativas de login FALHAS, por e-mail (lote-8 — AUTH-01 AC4).
+//
+// O rate limit nativo do better-auth é chaveado por IP + rota, e a AC pede a
+// garantia pelo E-MAIL. Os dois não se substituem: um ataque distribuído (um
+// IP por tentativa) nunca esbarra no limite por IP, e um escritório inteiro
+// atrás do mesmo NAT é punido pelo erro de um. Esta tabela é o contador do
+// e-mail; o limite por IP continua onde estava, cobrindo a outra classe.
+//
+// Mora no Postgres, e não em memória de processo, porque o produto roda
+// serverless na Vercel: memória de processo não sobrevive entre invocações,
+// então um contador em memória contaria quase sempre do zero — o limite
+// existiria só no papel.
+//
+// A linha vale enquanto a janela dela vale: `recordFailedLogin`
+// (`src/server/auth/login-attempts.ts`) apaga as vencidas a cada gravação. A
+// tabela é um contador, não um histórico de acesso.
+// ---------------------------------------------------------------------------
+
+export const loginAttempts = pgTable(
+  "login_attempts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    // E-mail TENTADO, normalizado em minúsculas. Não é FK para `users`: a
+    // tentativa contra e-mail inexistente também conta. Contar só o que existe
+    // na base faria o comportamento variar com a existência da conta — que é
+    // exatamente a informação que a AC3 esconde na mensagem de falha.
+    email: text("email").notNull(),
+    attemptedAt: timestamp("attempted_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("login_attempts_email_attempted_at_idx").on(
+      table.email,
+      table.attemptedAt
+    ),
+  ]
+);

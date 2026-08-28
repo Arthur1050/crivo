@@ -1,10 +1,26 @@
 import { betterAuth } from "better-auth";
+import { APIError, createAuthMiddleware, isAPIError } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { organization } from "better-auth/plugins/organization";
 import { nextCookies } from "better-auth/next-js";
 import { db } from "../../db";
 import * as schema from "../../db/schema";
 import { sendResetPasswordEmail } from "./email";
+import { isLoginBlocked, recordFailedLogin } from "./login-attempts";
+
+/** Rota de login com e-mail e senha — a única que o limite por e-mail observa. */
+const SIGN_IN_EMAIL_PATH = "/sign-in/email";
+
+/**
+ * O e-mail da tentativa, quando o corpo da requisição tem um. Corpo malformado
+ * devolve `null` e o limite se cala: quem valida o formato é o endpoint, e
+ * inventar uma chave a partir de lixo poluiria o contador de outra pessoa.
+ */
+function attemptedEmail(body: unknown): string | null {
+  if (!body || typeof body !== "object") return null;
+  const email = (body as { email?: unknown }).email;
+  return typeof email === "string" && email.length > 0 ? email : null;
+}
 
 /** URL da tela de redefinição. `BETTER_AUTH_URL` é a base canônica do produto,
  * a mesma que o convite usa em `src/server/actions/users.ts`. */
@@ -81,10 +97,50 @@ export const auth = betterAuth({
     // por isso que existe teste para ele.
     enabled: true,
     customRules: {
-      // AUTH-01 AC4: acima de 10 tentativas falhas em 1 minuto, novas
-      // tentativas são recusadas (HTTP 429).
+      // Enxurrada vinda de UMA origem: acima de 10 tentativas do mesmo IP em 1
+      // minuto, a rota é recusada (HTTP 429). Não é a AC4 — este limite é
+      // chaveado por IP + rota, e a AC pede a garantia por e-mail. Quem
+      // entrega a AC4 são os `hooks` abaixo; este continua aqui porque cobre a
+      // outra classe de ataque, que o limite por e-mail não vê.
       "/sign-in/email": { window: 60, max: 10 },
     },
+  },
+  /**
+   * AUTH-01 AC4, chaveada pelo E-MAIL: acima de 10 tentativas falhas para o
+   * mesmo e-mail em 1 minuto, novas tentativas daquele e-mail são recusadas
+   * (HTTP 429) até o fim da janela — não importa de qual IP venham.
+   *
+   * Os dois ganchos observam SÓ tentativas que chegaram como requisição HTTP
+   * (`ctx.request`), a mesma fronteira do rate limit nativo da biblioteca, que
+   * só existe no caminho da requisição. É uma decisão, não um detalhe: todo
+   * login de cliente (tela ou bot) passa por `POST /api/auth/sign-in/email`,
+   * enquanto uma chamada direta a `auth.api.signInEmail` é código de servidor
+   * confiável — `aceitarConvite` (`src/server/actions/invitations.ts`) cria a
+   * sessão do convidado logo depois de ele definir a própria senha. Contar
+   * aquela chamada deixaria um atacante trancar a aceitação de convite de
+   * qualquer e-mail que ele conheça.
+   */
+  hooks: {
+    before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path !== SIGN_IN_EMAIL_PATH || !ctx.request) return;
+      const email = attemptedEmail(ctx.body);
+      if (!email || !(await isLoginBlocked(email))) return;
+      // Mesma resposta do limite nativo (429 + texto genérico): a tela mostra
+      // "muitas tentativas" para os dois casos, e quem tenta não descobre por
+      // qual dos limites passou.
+      throw new APIError("TOO_MANY_REQUESTS", {
+        message: "Too many requests. Please try again later.",
+      });
+    }),
+    after: createAuthMiddleware(async (ctx) => {
+      if (ctx.path !== SIGN_IN_EMAIL_PATH || !ctx.request) return;
+      // `returned` é o `APIError` que o endpoint lançou quando a credencial não
+      // passou. Login bem-sucedido devolve a sessão e não conta.
+      if (!isAPIError(ctx.context.returned)) return;
+      const email = attemptedEmail(ctx.body);
+      if (!email) return;
+      await recordFailedLogin(email);
+    }),
   },
   advanced: {
     database: {
