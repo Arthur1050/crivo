@@ -308,7 +308,7 @@ Toda ambiguidade está resolvida ou registrada aqui — nada fica silenciosament
 | USER-02 | P1: A desativação de um corretor decide o destino da carteira | T21, T22 | Implementing |
 | PERM-01 | P1: Cada papel enxerga e faz exatamente o que lhe cabe | T15, T16, T18 | Implementing |
 | SCOPE-01 | P1: O corretor enxerga só a própria carteira | T1 (pré-condição), T17, T18 | Implementing |
-| AGENDA-01 | P1: Corretor tem janela de trabalho declarada | T24, T25 | Implementing ⚠️ |
+| AGENDA-01 | P1: Corretor tem janela de trabalho declarada | T24, T25 | Implementing |
 | ATRIB-02 | P1: O lead ganha responsável no agendamento, por agenda e horário acordado | T12, T26, T27, T28, T29, T30 | Implementing |
 | ATRIB-03 | P1: Lead escalado para humano nunca fica órfão | T26, T27, T28 | Implementing |
 | SEED-01 | P1: O seed nasce com usuários, papéis e agenda | T8, T11, T12, T13, T14, T31 | Implementing |
@@ -327,8 +327,8 @@ Toda ambiguidade está resolvida ou registrada aqui — nada fica silenciosament
 
 Registradas aqui para que o Verifier as trate como gap conhecido, não como descoberta:
 
-- **AGENDA-01 ⚠️** — a T25 entregou a server action de edição da janela de trabalho, mas **a UI foi adiada** (ver a nota da própria task). O requisito está satisfeito pelo lado do servidor e do seed; falta a tela por onde um administrador edita a janela sem passar pelo seed.
-- **AUTH-01** — a tela de login da T6 ficou sem verificação visual no Batch 1 (a extensão de navegador não alcançava o dev server na época). **Isso foi fechado agora**: a verificação da T32 abriu `/login` no navegador e o card renderiza corretamente, com o link "Esqueci minha senha". A T6 também carrega um `SPEC_DEVIATION` vivo: o rate limit do AC4 é chaveado por **IP + rota**, não por e-mail, porque é assim que o mecanismo nativo do better-auth funciona.
+- **AGENDA-01** — a T25 entregou a server action e **a UI entrou depois**, como fix do Major #1 do Verifier. Administrador e gestor editam a janela de qualquer corretor pela ação de linha da tabela de Usuários (AC6); o próprio corretor edita a sua pelo rodapé da sidebar (AC1), que é a única superfície do CRM que ele alcança — Configurações e Usuários são vedadas ao papel dele pela matriz de permissões. Um diálogo só serve as duas, sobre a mesma `saveWorkWindowAction`.
+- **AUTH-01** — a tela de login da T6 ficou sem verificação visual no Batch 1 (a extensão de navegador não alcançava o dev server na época). **Isso foi fechado agora**: a verificação da T32 abriu `/login` no navegador e o card renderiza corretamente, com o link "Esqueci minha senha". A T6 carregava um `SPEC_DEVIATION` vivo (rate limit do AC4 chaveado por **IP + rota**, não por e-mail). **Fechado**: o limite por e-mail entrou em `src/server/auth/login-attempts.ts` + `hooks` do better-auth, com contador no Postgres (`login_attempts`), provado por `src/server/auth/__tests__/login-attempts.test.ts` — 10 falhas do mesmo e-mail vindas de 10 IPs diferentes recusam a 11ª. O limite por IP continua ligado; os dois cobrem classes de ataque diferentes.
 - **SEED-01** — o reseed e o bootstrap foram executados **pelo usuário** e conferidos por consulta ao banco (3 imobiliárias, papéis, janelas, 17 leads sem dono e 8 com). Fica aberto o desfecho ponta a ponta da T31: a credencial de serviço do n8n está com o valor **sem o prefixo `Bearer `** e responde 401, então "primeira mensagem no número de teste abre conversa nova" não pôde ser provado.
 - **ATRIB-02** — a resolução do parâmetro `attendees` do nó do Google Calendar (expressão de campo inteiro que devolve array) não é exercitável por `test_workflow`, que fixa nós com credencial. Só uma reunião agendada de verdade fecha essa metade da AC8; as duas execuções da T30 (1721/1722) provam todo o resto da regra no fluxo publicado.
 - **Fora de escopo por decisão registrada** — o smoke conversacional roteirizado segue deferido pela AD-015, e não é dívida deste lote.

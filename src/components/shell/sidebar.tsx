@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  CalendarClockIcon,
   ChartLineIcon,
   FileTextIcon,
   FolderKanbanIcon,
@@ -13,6 +14,7 @@ import {
   UsersIcon,
 } from "lucide-react";
 import { Avatar } from "@astryxdesign/core/Avatar";
+import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
 import { Item } from "@astryxdesign/core/Item";
 import { LinkProvider } from "@astryxdesign/core/Link";
@@ -24,6 +26,10 @@ import {
   SideNavSection,
 } from "@astryxdesign/core/SideNav";
 import { StatusDot } from "@astryxdesign/core/StatusDot";
+import {
+  WorkWindowDialog,
+  type WorkWindowTarget,
+} from "@/src/components/shared/work-window-dialog";
 import {
   TenantSwitcherMenu,
   type TenantOption,
@@ -79,10 +85,28 @@ export interface SidebarManager {
   email: string;
 }
 
+/**
+ * Vínculo ATIVO do usuário autenticado, com a janela de trabalho que ele
+ * declarou nesta imobiliária (AGENDA-01 AC1). Vem do servidor já serializado.
+ */
+export interface SidebarMembership {
+  memberId: string;
+  workDays: number[] | null;
+  workHoursStart: string | null;
+  workHoursEnd: string | null;
+}
+
 interface SidebarProps {
   tenants: TenantOption[];
   activeTenant: SidebarActiveTenant;
   manager: SidebarManager;
+  /**
+   * Vínculo do próprio usuário, para editar a PRÓPRIA janela de trabalho a
+   * partir do rodapé da sidebar (AGENDA-01 AC1). Fica aqui, e não em
+   * Configurações ou Usuários, porque as duas telas são vedadas ao corretor
+   * pela matriz de permissões — ele nunca chegaria lá.
+   */
+  membership: SidebarMembership;
   onTenantChange: (tenantId: string) => Promise<void>;
   /**
    * Papéis do vínculo ATIVO (PERM-01 AC7). Decide quais itens da navegação
@@ -109,11 +133,14 @@ export function Sidebar({
   tenants,
   activeTenant,
   manager,
+  membership,
   onTenantChange,
   roles,
   lastAgentMessageAt,
 }: SidebarProps) {
   const pathname = usePathname();
+  const [workWindowTarget, setWorkWindowTarget] =
+    useState<WorkWindowTarget | null>(null);
   const setTenant = useTenantStore((state) => state.setTenant);
   const location = formatTenantLocation(activeTenant.city, activeTenant.state);
   // `new Date()` só é lido aqui, na borda de apresentação — a decisão do
@@ -163,6 +190,26 @@ export function Sidebar({
             startContent={<Avatar name={manager.name} size="sm" />}
             label={manager.name}
             description={manager.email}
+            endContent={
+              <Button
+                label="Minha janela de trabalho"
+                tooltip="Minha janela de trabalho"
+                variant="ghost"
+                size="sm"
+                isIconOnly
+                icon={<CalendarClockIcon size={16} />}
+                onClick={() =>
+                  setWorkWindowTarget({
+                    memberId: membership.memberId,
+                    name: manager.name,
+                    email: manager.email,
+                    workDays: membership.workDays,
+                    workHoursStart: membership.workHoursStart,
+                    workHoursEnd: membership.workHoursEnd,
+                  })
+                }
+              />
+            }
           />
         }
       >
@@ -192,6 +239,12 @@ export function Sidebar({
           </Card>
         </SideNavSection>
       </SideNav>
+
+      <WorkWindowDialog
+        target={workWindowTarget}
+        title="Minha janela de trabalho"
+        onClose={() => setWorkWindowTarget(null)}
+      />
     </LinkProvider>
   );
 }

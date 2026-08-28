@@ -945,7 +945,7 @@ Evidência em `src/lib/__tests__/work-window.test.ts`:
 
 ---
 
-### T25: Janela de trabalho na tela ✅ (server action; UI adiada — ver nota)
+### T25: Janela de trabalho na tela ✅
 
 **What**: Adicionar a edição da janela de trabalho, pelo próprio corretor e por administrador/gestor para qualquer corretor.
 **Where**: `src/server/actions/work-window.ts`
@@ -968,9 +968,16 @@ Evidência em `src/server/__tests__/work-window-actions.test.ts`:
 
 **Decisão de execução — a guarda desta action NÃO é a matriz de permissões.** AGENDA-01 AC6 dá a edição da janela de terceiros a administrador **e gestor**; `usuarios/escrever` é exclusivo do administrador (PERM-01 AC2). Acrescentar um recurso `agenda` à matriz mudaria a tabela que a T15 transcreveu 1:1 do `context.md` (e o teste que varre as 36 combinações). A regra mora na própria action: `isSelf` OU papel administrador/gestor. A negativa emite a mesma linha estruturada `permissao-negada` das demais (PERM-01 AC6), com `resource: "janela-de-trabalho"`.
 
-**⚠️ Escopo entregue — server action, sem tela.** O título da task diz "na tela", mas os quatro critérios de "Done when" são todos server-side, o `Where` é o arquivo da action, e a instrução do batch é explícita: nenhuma tela nova nesta fase, nenhuma verificação visual. A ação existe, está coberta e recusa corretamente; **o controle na tela de Usuários (e a edição pelo próprio corretor) ainda não existe** — a janela continua sendo exibida em `/usuarios` (T22) e escrita pelo seed (T14). Ligar o diálogo é trabalho visual e exige captura real (regra do usuário), então fica registrado aqui como pendência do lote em vez de entrar sem conferência.
+**Escopo entregue em duas etapas.** O batch original entregou só a server action: os quatro critérios de "Done when" são server-side, o `Where` era o arquivo da action, e a instrução do batch vedava tela nova e verificação visual. A UI ficou pendente e o Verifier a registrou como Major #1 em `validation.md` (`saveWorkWindowAction` com zero consumidores de produção).
 
-**Nota de escopo — a camada de dados entrou junto**, como na T20: `setMemberWorkWindow(tenantId, memberId, window)` em `src/server/data/index.ts`, escopada ao tenant na mesma sentença de `UPDATE` (molde de `setMemberRoles`) — um `memberId` de outra imobiliária nunca é alterado, asseverado em `:279-280`.
+**A tela entrou depois, como fix do gap**, em duas superfícies e sem rota nova:
+
+- **Administrador e gestor (AC6)** — ação "Janela de trabalho" na linha da tabela de Usuários (`src/components/usuarios/users-table.tsx`), irmã de "Alterar papéis". Só aparece em linha com o papel corretor: é a janela dele que decide a atribuição por agenda.
+- **O próprio corretor (AC1)** — botão no rodapé da sidebar (`src/components/shell/sidebar.tsx`), ao lado do nome e e-mail do usuário autenticado. **Não** cabia em Configurações nem em Usuários: a matriz de permissões veda as duas ao corretor, então ele nunca chegaria lá. O rodapé do shell está montado em toda página do CRM, o que resolve com um botão e um diálogo em vez de uma rota inteira.
+
+O diálogo é **um só** para as duas superfícies (`src/components/shared/work-window-dialog.tsx`), porque a regra também é uma só e mora no servidor: `saveWorkWindowAction` decide quem pode salvar (AC7) e aponta o campo inválido (AC3/AC4); a tela só reflete a resposta, como o `MemberRolesDialog` faz com a regra do último administrador. Nenhuma mutação nova entrou, então nenhum teste novo — a action já é coberta ponta a ponta neste mesmo arquivo de teste.
+
+**Nota de escopo — a camada de dados entrou junto**, como na T20: `setMemberWorkWindow(tenantId, memberId, window)` em `src/server/data/index.ts`, escopada ao tenant na mesma sentença de `UPDATE` (molde de `setMemberRoles`) — um `memberId` de outra imobiliária nunca é alterado, asseverado em `:279-280`. Com a tela, `getMembership` passou a devolver também a janela do vínculo: o shell precisa dela para montar o diálogo do próprio usuário, e a linha já era lida inteira.
 
 **Tests**: integration
 **Gate**: full

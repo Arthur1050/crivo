@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { MailIcon, ShieldIcon, UserMinusIcon } from "lucide-react";
+import {
+  CalendarClockIcon,
+  MailIcon,
+  ShieldIcon,
+  UserMinusIcon,
+} from "lucide-react";
 import { Badge } from "@astryxdesign/core/Badge";
 import { Card } from "@astryxdesign/core/Card";
 import { DropdownMenu } from "@astryxdesign/core/DropdownMenu";
@@ -11,6 +16,10 @@ import { Table, pixel, proportional } from "@astryxdesign/core/Table";
 import type { TableColumn } from "@astryxdesign/core/Table";
 import { Text } from "@astryxdesign/core/Text";
 import { Token } from "@astryxdesign/core/Token";
+import {
+  WorkWindowDialog,
+  type WorkWindowTarget,
+} from "@/src/components/shared/work-window-dialog";
 import { DeactivateMemberDialog } from "@/src/components/usuarios/deactivate-member-dialog";
 import { MemberRolesDialog } from "@/src/components/usuarios/member-roles-dialog";
 import { ResendInviteDialog } from "@/src/components/usuarios/resend-invite-dialog";
@@ -79,6 +88,8 @@ export function UsersTable({ members }: UsersTableProps) {
   const [deactivateTarget, setDeactivateTarget] = useState<MemberRow | null>(
     null
   );
+  const [workWindowTarget, setWorkWindowTarget] =
+    useState<WorkWindowTarget | null>(null);
 
   // Só corretor ativo pode receber carteira (USER-01 AC10).
   const activeBrokers = members
@@ -174,6 +185,19 @@ export function UsersTable({ members }: UsersTableProps) {
                 icon: <ShieldIcon size={16} />,
                 onClick: () => setRolesTarget(row),
               },
+              // AGENDA-01 AC6: administrador e gestor editam a janela de quem
+              // atende. Só o corretor tem janela útil — é ela que decide a
+              // atribuição por agenda —, então a ação não aparece para os
+              // demais papéis.
+              ...(row.roles.includes("corretor")
+                ? [
+                    {
+                      label: "Janela de trabalho",
+                      icon: <CalendarClockIcon size={16} />,
+                      onClick: () => setWorkWindowTarget(row),
+                    },
+                  ]
+                : []),
               {
                 label: "Reenviar convite",
                 icon: <MailIcon size={16} />,
@@ -207,6 +231,12 @@ export function UsersTable({ members }: UsersTableProps) {
       <MemberRolesDialog
         member={rolesTarget}
         onClose={() => setRolesTarget(null)}
+      />
+
+      <WorkWindowDialog
+        target={workWindowTarget}
+        title="Janela de trabalho"
+        onClose={() => setWorkWindowTarget(null)}
       />
 
       <ResendInviteDialog

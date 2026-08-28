@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { AppShell } from "@astryxdesign/core/AppShell";
-import { getLastAgentMessageAt } from "@/src/server/data";
+import { getLastAgentMessageAt, getMembership } from "@/src/server/data";
 import { getLinkedTenants, setActiveTenant } from "@/src/server/tenant";
 import { verifySession } from "@/src/server/auth/session";
 import { Sidebar } from "@/src/components/shell/sidebar";
@@ -41,6 +41,17 @@ export default async function CrmLayout({ children }: { children: ReactNode }) {
   // (AD-007).
   const lastAgentMessageAt = await getLastAgentMessageAt(activeTenantId);
 
+  // lote-8 — AGENDA-01 AC1: o vínculo do PRÓPRIO usuário, para ele declarar a
+  // janela de trabalho pelo rodapé da sidebar. É a única superfície que um
+  // corretor alcança: Configurações e Usuários são vedadas ao papel dele.
+  const membership = await getMembership(activeTenantId, user.id);
+
+  if (!membership) {
+    throw new Error(
+      "Vínculo do usuário na imobiliária ativa não encontrado — a guarda deveria tê-lo resolvido antes do shell."
+    );
+  }
+
   return (
     <AppShell
       contentPadding={6}
@@ -64,6 +75,12 @@ export default async function CrmLayout({ children }: { children: ReactNode }) {
           // do login existir isto era `getMockManager`, um gestor fictício
           // derivado do nome do tenant — agora há uma pessoa real a exibir.
           manager={{ name: user.name, email: user.email }}
+          membership={{
+            memberId: membership.id,
+            workDays: membership.workDays,
+            workHoursStart: membership.workHoursStart,
+            workHoursEnd: membership.workHoursEnd,
+          }}
           // PERM-01 AC7: a navegação esconde o que o vínculo ativo não
           // alcança. Cosmético — a recusa server-side vale de qualquer jeito.
           roles={roles}

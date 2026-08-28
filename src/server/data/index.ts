@@ -1813,7 +1813,14 @@ export async function createMembership(input: {
 export async function getMembership(
   tenantId: string,
   userId: string
-): Promise<{ id: string; roles: Role[]; deactivatedAt: Date | null } | null> {
+): Promise<{
+  id: string;
+  roles: Role[];
+  deactivatedAt: Date | null;
+  workDays: number[] | null;
+  workHoursStart: string | null;
+  workHoursEnd: string | null;
+} | null> {
   const rows = await db
     .select()
     .from(tenant_members)
@@ -1829,6 +1836,11 @@ export async function getMembership(
     id: row.id,
     roles: parseRoles(row.role),
     deactivatedAt: row.deactivatedAt,
+    // A janela vem junto porque o shell precisa dela para o próprio usuário
+    // editar a sua (AGENDA-01 AC1) — a linha já estava sendo lida inteira.
+    workDays: row.workDays,
+    workHoursStart: row.workHoursStart,
+    workHoursEnd: row.workHoursEnd,
   };
 }
 
