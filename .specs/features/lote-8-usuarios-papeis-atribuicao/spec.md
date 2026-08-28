@@ -301,25 +301,25 @@ Toda ambiguidade está resolvida ou registrada aqui — nada fica silenciosament
 
 | Requirement ID | Story | Tasks | Status |
 | -------------- | ----- | ----- | ------ |
-| AUTH-01 | P1: O CRM fica atrás de login | T2, T5, T6, T7 | Implementing |
-| AUTH-02 | P2: Usuário recupera a própria senha | T32 | Implementing |
-| TENANT-01 | P1: O usuário pertence a uma ou mais imobiliárias | T3, T4, T7, T9, T10 | Implementing |
-| USER-01 | P1: Administrador gerencia os usuários da imobiliária | T19, T20, T22, T23 | Implementing |
-| USER-02 | P1: A desativação de um corretor decide o destino da carteira | T21, T22 | Implementing |
-| PERM-01 | P1: Cada papel enxerga e faz exatamente o que lhe cabe | T15, T16, T18 | Implementing |
-| SCOPE-01 | P1: O corretor enxerga só a própria carteira | T1 (pré-condição), T17, T18 | Implementing |
-| AGENDA-01 | P1: Corretor tem janela de trabalho declarada | T24, T25 | Implementing |
-| ATRIB-02 | P1: O lead ganha responsável no agendamento, por agenda e horário acordado | T12, T26, T27, T28, T29, T30 | Implementing |
-| ATRIB-03 | P1: Lead escalado para humano nunca fica órfão | T26, T27, T28 | Implementing |
-| SEED-01 | P1: O seed nasce com usuários, papéis e agenda | T8, T11, T12, T13, T14, T31 | Implementing |
+| AUTH-01 | P1: O CRM fica atrás de login | T2, T5, T6, T7 | ✅ Verified |
+| AUTH-02 | P2: Usuário recupera a própria senha | T32 | ✅ Verified |
+| TENANT-01 | P1: O usuário pertence a uma ou mais imobiliárias | T3, T4, T7, T9, T10 | ✅ Verified |
+| USER-01 | P1: Administrador gerencia os usuários da imobiliária | T19, T20, T22, T23 | ✅ Verified (com `SPEC_DEVIATION` na AC10) |
+| USER-02 | P1: A desativação de um corretor decide o destino da carteira | T21, T22 | ✅ Verified |
+| PERM-01 | P1: Cada papel enxerga e faz exatamente o que lhe cabe | T15, T16, T18 | ✅ Verified |
+| SCOPE-01 | P1: O corretor enxerga só a própria carteira | T1 (pré-condição), T17, T18 | ✅ Verified |
+| AGENDA-01 | P1: Corretor tem janela de trabalho declarada | T24, T25 (+ fix pós-Verifier: UI) | ✅ Verified |
+| ATRIB-02 | P1: O lead ganha responsável no agendamento, por agenda e horário acordado | T12, T26, T27, T28, T29, T30 | ✅ Verified (AC8 parcial — depende de reunião real) |
+| ATRIB-03 | P1: Lead escalado para humano nunca fica órfão | T26, T27, T28 | ✅ Verified |
+| SEED-01 | P1: O seed nasce com usuários, papéis e agenda | T8, T11, T12, T13, T14, T31 | ✅ Verified (1 critério de ambiente aberto) |
 
 **ID format:** `[CATEGORY]-[NUMBER]`
 
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified
 
-**Coverage:** 11 total, **11 mapeadas a tasks (100%)**. As 33 tasks estão implementadas com gate verde: **912 testes** em 74 arquivos, `npm run lint` 0 erros, `npm run build` exit 0, `npx tsc --noEmit` 0.
+**Coverage:** 11 total, **11/11 Verified (100%)**. As 33 tasks do lote mais 3 commits pós-Verifier (`33f09d9` fix do CLI de bootstrap; `d1430af` UI da janela de trabalho, gap 1; `1b41ca1` rate limit por e-mail, gap 2) estão com gate verde: **915 testes** em 75 arquivos, `npm run lint` 0 erros, `npm run build` exit 0, `npx tsc --noEmit` 0.
 
-**Nenhum ID está em `Verified`, de propósito.** `Verified` é escrito pelo Verifier, que é um agente independente e ainda não rodou (author ≠ verifier — é essa separação que dá valor ao carimbo). O estado honesto ao fim da execução é `Implementing`: código escrito, gate verde, evidência por task registrada em `tasks.md`.
+O Verifier independente (author ≠ verifier) rodou e retornou **PASS** — evidência completa em `validation.md` (75/75 ACs com citação `file:line`, sensor de discriminação 4/4 mutantes mortos). Dos 2 gaps Major que o Verifier levantou, os dois foram corrigidos depois (ver Ressalvas abaixo); os demais são parciais/de ambiente, não de código, e seguem registrados como tal.
 
 `ATRIB-02` retoma deliberadamente a numeração da categoria `ATRIB` do lote-7: `ATRIB-01` ("lead real nasce com corretor responsável") é **substituída** por `ATRIB-02` deste lote, que move a atribuição da criação para o agendamento.
 
