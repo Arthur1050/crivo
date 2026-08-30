@@ -560,3 +560,39 @@ export const loginAttempts = pgTable(
     ),
   ]
 );
+
+// ---------------------------------------------------------------------------
+// Recusas do contrato de integração `/api/v1` (lote-9 — SAUDE-01; AD-023).
+//
+// Toda resposta >= 400 do contrato é registrada aqui por um wrapper único de
+// rota, com `after()` fora do caminho da resposta. `tenantId` é nullable de
+// propósito: a recusa por credencial inválida acontece antes de existir
+// tenant, e é justamente a que precisa aparecer.
+//
+// NUNCA guarda: corpo da requisição, cabeçalhos, telefone, nome ou qualquer
+// conteúdo de mensagem (SAUDE-01 AC4) — só metadado de transporte.
+// ---------------------------------------------------------------------------
+
+export const integrationRefusals = pgTable(
+  "integration_refusals",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id").references(() => tenants.id),
+    route: text("route").notNull(), // pathname, ex.: "/api/v1/leads/{id}/messages" — nunca query string
+    method: text("method").notNull(), // "POST" | "GET" | ...
+    status: integer("status").notNull(), // 401 | 404 | 405 | 409 | 413 | 422 | 5xx
+    code: text("code"), // ProblemCode do corpo problem+json; null se o corpo não for problem+json
+    occurredAt: timestamp("occurred_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    // Leitura de saúde por imobiliária (SAUDE-02): recusas recentes do tenant.
+    index("integration_refusals_tenant_id_occurred_at_idx").on(
+      table.tenantId,
+      table.occurredAt
+    ),
+    // Purga por retenção de 30 dias (SAUDE-03), atravessando todos os tenants.
+    index("integration_refusals_occurred_at_idx").on(table.occurredAt),
+  ]
+);

@@ -93,6 +93,8 @@ Fases são ordenadas e rodam em sequência; dentro de uma fase, as tasks rodam n
 
 ### T2: Tabela `integration_refusals`
 
+**Status**: ✅ Done
+
 **What**: Criar a tabela de recusas do contrato, com `tenantId` nullable e os dois índices do design.
 **Where**: `src/db/schema.ts`
 **Depends on**: T1
@@ -103,10 +105,10 @@ Fases são ordenadas e rodam em sequência; dentro de uma fase, as tasks rodam n
 
 **Done when**:
 
-- [ ] Tabela com `id`, `tenantId` (FK nullable → `tenants.id`), `route`, `method`, `status`, `code` (nullable), `occurredAt`
-- [ ] Índices `(tenant_id, occurred_at)` e `(occurred_at)` declarados
-- [ ] Comentário registra o que a tabela NUNCA guarda (corpo, headers, dado pessoal — SAUDE-01 AC4)
-- [ ] `npm run build` passa
+- [x] Tabela com `id`, `tenantId` (FK nullable → `tenants.id`), `route`, `method`, `status`, `code` (nullable), `occurredAt`
+- [x] Índices `(tenant_id, occurred_at)` e `(occurred_at)` declarados
+- [x] Comentário registra o que a tabela NUNCA guarda (corpo, headers, dado pessoal — SAUDE-01 AC4)
+- [x] `npm run build` passa
 
 **Tests**: none
 **Gate**: build
