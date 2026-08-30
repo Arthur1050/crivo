@@ -813,6 +813,8 @@ explícita com baseline no payload.
 
 ### T25: Formulário de baseline
 
+**Status**: ✅ Done
+
 **What**: Componente de formulário com os cinco campos de baseline e feedback de erro por campo.
 **Where**: `src/components/settings/baseline-form.tsx`
 **Depends on**: T24
@@ -823,10 +825,24 @@ explícita com baseline no payload.
 
 **Done when**:
 
-- [ ] Cinco campos rotulados com a unidade explícita (leads/mês, minutos, %)
-- [ ] Erro exibido no campo que falhou
-- [ ] Sem `<div>`, sem estilo inline, sem valor cru
-- [ ] `npm run build` e `npm run lint` passam
+- [x] Cinco campos rotulados com a unidade explícita (leads/mês, minutos, %)
+- [x] Erro exibido no campo que falhou
+- [x] Sem `<div>`, sem estilo inline, sem valor cru
+- [x] `npm run build` e `npm run lint` passam
+
+**Achados/desvios**: componente consultado via `npx astryx component
+NumberInput` (`units`/`min`/`max`/`isIntegerOnly`/`hasClear` cobrem a unidade
+explícita e os limites de faixa direto no controle, sem validação
+client-side redundante além da cortesia). Como `name`/`agentName`/
+`supportedModality` são obrigatórios em TODO save de `updateTenantSettingsAction`
+e este formulário não tem estado sobre eles, o save reenvia os valores
+ATUAIS do `tenant` (prop) sem alterá-los — mesmo princípio SPG-1 já usado por
+`settings-form.tsx`, aplicado ao caso de um formulário que edita só um
+subconjunto de campos. `SettingsSection` (o wrapper Card+Heading+Divider de
+`settings-form.tsx`) não foi importado por ser função privada não exportada
+daquele módulo, e T25 lista só `baseline-form.tsx` no `Where` — o mesmo
+padrão visual foi duplicado localmente em vez de exportar de um arquivo fora
+do escopo da task.
 
 **Tests**: none
 **Gate**: build
