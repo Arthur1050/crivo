@@ -677,6 +677,8 @@ como pendência explícita para o orquestrador (ver resumo final).
 
 ### T21: Bloco de reuniões composto no Dashboard
 
+**Status**: ✅ Done
+
 **What**: Buscar as pendências no RSC do Dashboard, serializar a fronteira e posicionar o bloco abaixo dos leads recentes.
 **Where**: `app/(crm)/dashboard/page.tsx`
 **Depends on**: T20
@@ -687,9 +689,17 @@ como pendência explícita para o orquestrador (ver resumo final).
 
 **Done when**:
 
-- [ ] Nenhum `Date` nem `bigint` atravessa cru a fronteira RSC→client (AD-007)
-- [ ] Bloco posicionado depois dos KPIs, gráficos e leads recentes (PRES-01 AC2)
-- [ ] `npm run build` e `npm run lint` passam
+- [x] Nenhum `Date` nem `bigint` atravessa cru a fronteira RSC→client (AD-007)
+- [x] Bloco posicionado depois dos KPIs, gráficos e leads recentes (PRES-01 AC2)
+- [x] `npm run build` e `npm run lint` passam
+
+**Achados/desvios**: `now = new Date()` resolvido uma única vez no início do
+render e reusado tanto na consulta (`getPendingAttendanceMeetings(scope,
+now)`) quanto seria reusado por qualquer outro cálculo dependente de "agora"
+na mesma página — evita que a janela de 14 dias mude entre a consulta e a
+serialização. Verificação visual: mesma pendência do T20 (extensão Chrome
+disponível mas seleção de navegador exige confirmação interativa
+indisponível para este subagente).
 
 **Tests**: none
 **Gate**: build

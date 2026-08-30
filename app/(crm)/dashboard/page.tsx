@@ -5,6 +5,7 @@ import { VStack } from "@astryxdesign/core/Stack";
 import { Heading, Text } from "@astryxdesign/core/Text";
 import { DistributionChart } from "@/src/components/dashboard/distribution-chart";
 import { KpiTiles } from "@/src/components/dashboard/kpi-tiles";
+import { PendingMeetings } from "@/src/components/dashboard/pending-meetings";
 import { PeriodFilter } from "@/src/components/dashboard/period-filter";
 import { RecentLeadsTable } from "@/src/components/dashboard/recent-leads-table";
 import { VolumeChart } from "@/src/components/dashboard/volume-chart";
@@ -14,6 +15,7 @@ import {
   getDashboardKpis,
   getLeadDistributions,
   getLeadVolumeSeries,
+  getPendingAttendanceMeetings,
   getRecentLeads,
   getTenant,
 } from "@/src/server/data";
@@ -58,7 +60,11 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const scope = await getLeadScope();
   const period = resolveDashboardPeriod(params);
 
-  const [kpis, tenant, volumeSeries, distributions, recentLeads] =
+  // Mesmo instante para toda a página (evita que a janela de 14 dias mude
+  // entre a consulta e a serialização, por mais improvável que seja).
+  const now = new Date();
+
+  const [kpis, tenant, volumeSeries, distributions, recentLeads, pendingMeetings] =
     await Promise.all([
       getDashboardKpis(scope, period),
       getTenant(tenantId),
@@ -68,6 +74,10 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       // Recentes"): o filtro de período governa KPIs e gráficos, nunca esta
       // lista dos últimos leads gerados pelo agente.
       getRecentLeads(scope, RECENT_LEADS_LIMIT),
+      // Também independente de `period` (lote-9 — PRES-01/PRES-02): a janela
+      // de cobrança de comparecimento é fixa (14 dias a partir do fim da
+      // reunião), nunca o filtro de período da página.
+      getPendingAttendanceMeetings(scope, now),
     ]);
 
   const volumeChartData = volumeSeries.map((bucket) => ({
@@ -85,6 +95,14 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     status: lead.status,
     brokerName: lead.brokerName,
     firstContactAt: lead.firstContactAt.toISOString(),
+  }));
+
+  // `meetingAt` também é `Date` na origem — mesma serialização acima.
+  const pendingMeetingRows = pendingMeetings.map((meeting) => ({
+    leadId: meeting.leadId,
+    leadName: meeting.leadName,
+    meetingAt: meeting.meetingAt.toISOString(),
+    brokerName: meeting.brokerName,
   }));
 
   return (
@@ -154,6 +172,18 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             </Text>
           </VStack>
           <RecentLeadsTable rows={recentLeadRows} />
+        </VStack>
+      </Card>
+
+      <Card>
+        <VStack gap={4}>
+          <VStack gap={1}>
+            <Heading level={3}>Reuniões a confirmar</Heading>
+            <Text type="supporting" color="secondary">
+              Reuniões encerradas há até 14 dias sem comparecimento registrado.
+            </Text>
+          </VStack>
+          <PendingMeetings rows={pendingMeetingRows} />
         </VStack>
       </Card>
     </VStack>
