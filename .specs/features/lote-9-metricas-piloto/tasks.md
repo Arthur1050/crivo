@@ -246,6 +246,8 @@ Fases são ordenadas e rodam em sequência; dentro de uma fase, as tasks rodam n
 
 ### T8: Wrapper de rota do contrato
 
+**Status**: ✅ Done
+
 **What**: Criar `withIntegrationRoute` — autentica, curto-circuita a recusa de autenticação, delega com o tenant resolvido e agenda o registro de qualquer resposta ≥ 400 com `after()`.
 **Where**: `src/server/integration/route.ts`
 **Depends on**: T5
@@ -256,15 +258,15 @@ Fases são ordenadas e rodam em sequência; dentro de uma fase, as tasks rodam n
 
 **Done when**:
 
-- [ ] Handler devolvido carrega a marca `INSTRUMENTED`
-- [ ] O segundo argumento do Next (`{ params }`) é repassado intacto às rotas dinâmicas
-- [ ] `code` é extraído de `response.clone().json()` só quando o `Content-Type` é `application/problem+json`; qualquer outro corpo grava `code = null`
-- [ ] `route` é o `pathname`, nunca a URL com query string
-- [ ] `after()` chamado dentro de `try/catch`, com fallback para `await` direto da gravação quando não há request scope do Next — sem isso a suíte de rotas inteira quebra na T11 (ver Risks & Concerns do design)
-- [ ] Teste prova que corpo, status e headers da resposta de erro são idênticos aos de antes da instrumentação (SAUDE-01 AC7)
-- [ ] Teste prova que falha na gravação não altera a resposta (SAUDE-01 AC5)
-- [ ] Gate full passa: `npm test`
-- [ ] Contagem de testes registrada
+- [x] Handler devolvido carrega a marca `INSTRUMENTED`
+- [x] O segundo argumento do Next (`{ params }`) é repassado intacto às rotas dinâmicas
+- [x] `code` é extraído de `response.clone().json()` só quando o `Content-Type` é `application/problem+json`; qualquer outro corpo grava `code = null`
+- [x] `route` é o `pathname`, nunca a URL com query string
+- [x] `after()` chamado dentro de `try/catch`, com fallback para `await` direto da gravação quando não há request scope do Next — sem isso a suíte de rotas inteira quebra na T11 (ver Risks & Concerns do design)
+- [x] Teste prova que corpo, status e headers da resposta de erro são idênticos aos de antes da instrumentação (SAUDE-01 AC7)
+- [x] Teste prova que falha na gravação não altera a resposta (SAUDE-01 AC5)
+- [x] Gate full passa: `npm test`
+- [x] Contagem de testes registrada (956 passed, 78 arquivos — subiu de 948/77)
 
 **Tests**: integration
 **Gate**: full
