@@ -169,6 +169,8 @@ Fases são ordenadas e rodam em sequência; dentro de uma fase, as tasks rodam n
 
 ### T5: Gravação de recusa na DAL
 
+**Status**: ✅ Done
+
 **What**: `recordIntegrationRefusal(input)` — insere uma linha em `integration_refusals`.
 **Where**: `src/server/data/index.ts`
 **Depends on**: T2
@@ -179,11 +181,11 @@ Fases são ordenadas e rodam em sequência; dentro de uma fase, as tasks rodam n
 
 **Done when**:
 
-- [ ] Grava com e sem `tenantId`
-- [ ] Nunca grava campo além dos seis definidos no design
-- [ ] Testes cobrem recusa com tenant, recusa sem tenant e duas recusas idênticas gerando duas linhas (SAUDE-01 AC6)
-- [ ] Gate full passa: `npm test`
-- [ ] Contagem de testes registrada
+- [x] Grava com e sem `tenantId`
+- [x] Nunca grava campo além dos seis definidos no design
+- [x] Testes cobrem recusa com tenant, recusa sem tenant e duas recusas idênticas gerando duas linhas (SAUDE-01 AC6)
+- [x] Gate full passa: `npm test`
+- [x] Contagem de testes registrada (940 passed, 77 arquivos — subiu de 915/75)
 
 **Tests**: integration
 **Gate**: full

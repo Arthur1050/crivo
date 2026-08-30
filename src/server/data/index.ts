@@ -21,6 +21,7 @@ import {
   conversations,
   documentCategories,
   documents,
+  integrationRefusals,
   leads,
   messages,
   serviceApiKeys,
@@ -2164,4 +2165,36 @@ export async function deactivateMembership(
     )
     .returning({ id: tenant_members.id });
   return rows.length > 0;
+}
+
+// ---------------------------------------------------------------------------
+// Recusas do contrato de integração (lote-9 — SAUDE-01/02/03; AD-023).
+// ---------------------------------------------------------------------------
+
+export interface IntegrationRefusalInput {
+  tenantId: string | null;
+  route: string;
+  method: string;
+  status: number;
+  code: string | null;
+  occurredAt: Date;
+}
+
+/**
+ * Grava uma recusa do contrato (SAUDE-01). Insere exatamente os seis campos
+ * do design (`design.md` — Data Models, `IntegrationRefusal`) — nunca corpo,
+ * cabeçalhos nem dado de lead. `tenantId` nulo é aceito de propósito: a
+ * recusa por credencial inválida acontece antes de existir tenant.
+ */
+export async function recordIntegrationRefusal(
+  input: IntegrationRefusalInput
+): Promise<void> {
+  await db.insert(integrationRefusals).values({
+    tenantId: input.tenantId,
+    route: input.route,
+    method: input.method,
+    status: input.status,
+    code: input.code,
+    occurredAt: input.occurredAt,
+  });
 }
