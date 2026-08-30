@@ -967,13 +967,15 @@ navegador exige confirmação interativa indisponível para este subagente).
 
 **Done when**:
 
-- [ ] Sem `configuracoes:ler`, o bloco não é renderizado nem consultado (SAUDE-02 AC2)
-- [ ] Bloco posicionado abaixo do bloco de reuniões pendentes (SAUDE-02 AC1)
-- [ ] `npm run build` e `npm run lint` passam
+- [x] Sem `configuracoes:ler`, o bloco não é renderizado nem consultado (SAUDE-02 AC2)
+- [x] Bloco posicionado abaixo do bloco de reuniões pendentes (SAUDE-02 AC1)
+- [x] `npm run build` e `npm run lint` passam
 
 **Tests**: none
 **Gate**: build
 **Commit**: `feat(dashboard): liga a saude da integracao a permissao`
+
+**Status**: ✅ Done — build e lint verdes (0 erros; mesmos 3 warnings pré-existentes). `canReadSettings` guarda as duas queries (`getLastAgentMessageAt`, `getIntegrationRefusalsSince`) FORA do `Promise.all` principal, num bloco condicional próprio — sem `configuracoes:ler` nenhuma das duas roda. Card "Saúde da integração" é o último da página, logo abaixo de "Reuniões a confirmar".
 
 ---
 

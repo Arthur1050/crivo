@@ -4,6 +4,7 @@ import { Grid, GridSpan } from "@astryxdesign/core/Grid";
 import { VStack } from "@astryxdesign/core/Stack";
 import { Heading, Text } from "@astryxdesign/core/Text";
 import { DistributionChart } from "@/src/components/dashboard/distribution-chart";
+import { IntegrationHealth } from "@/src/components/dashboard/integration-health";
 import { KpiTiles } from "@/src/components/dashboard/kpi-tiles";
 import { PendingMeetings } from "@/src/components/dashboard/pending-meetings";
 import { PeriodFilter } from "@/src/components/dashboard/period-filter";
@@ -15,6 +16,8 @@ import { can } from "@/src/lib/permissions";
 import { periodDays } from "@/src/lib/pilot-metrics";
 import {
   getDashboardKpis,
+  getIntegrationRefusalsSince,
+  getLastAgentMessageAt,
   getLeadDistributions,
   getLeadVolumeSeries,
   getPendingAttendanceMeetings,
@@ -26,6 +29,9 @@ import { getActiveTenantId } from "@/src/server/tenant";
 
 /** Últimos N leads listados no card "Leads Recentes" (RD-04 AC4). */
 const RECENT_LEADS_LIMIT = 5;
+
+/** Janela de recusas do bloco de saúde da integração (lote-9 — SAUDE-02 AC3). */
+const HEALTH_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 interface DashboardPageProps {
   searchParams: Promise<{ periodo?: string; de?: string; ate?: string }>;
@@ -65,6 +71,10 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const authContext = await verifySession();
   const scope = authContext.leadScope;
   const canEditSettings = can(authContext.roles, "configuracoes", "escrever");
+  // SAUDE-02 AC2: sem `configuracoes:ler` o bloco de saúde nem é consultado —
+  // não só ocultado depois. É esse booleano que decide se as duas queries de
+  // saúde abaixo rodam.
+  const canReadSettings = can(authContext.roles, "configuracoes", "ler");
   const period = resolveDashboardPeriod(params);
 
   // Mesmo instante para toda a página (evita que a janela de 14 dias mude
@@ -86,6 +96,16 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       // reunião), nunca o filtro de período da página.
       getPendingAttendanceMeetings(scope, now),
     ]);
+
+  // SAUDE-02 AC2/AC3: só busca última atividade e recusas quando o usuário
+  // tem `configuracoes:ler` — fora do `Promise.all` acima de propósito, para
+  // que a condição controle a CHAMADA, não só a renderização do bloco.
+  const integrationHealth = canReadSettings
+    ? await Promise.all([
+        getLastAgentMessageAt(tenantId),
+        getIntegrationRefusalsSince(tenantId, new Date(now.getTime() - HEALTH_WINDOW_MS)),
+      ]).then(([lastSuccessAt, refusals]) => ({ lastSuccessAt, refusals }))
+    : null;
 
   const volumeChartData = volumeSeries.map((bucket) => ({
     bucketStart: bucket.bucketStart.toISOString(),
@@ -197,6 +217,25 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           <PendingMeetings rows={pendingMeetingRows} />
         </VStack>
       </Card>
+
+      {integrationHealth && (
+        <Card>
+          <VStack gap={4}>
+            <VStack gap={1}>
+              <Heading level={3}>Saúde da integração</Heading>
+              <Text type="supporting" color="secondary">
+                Atividade do agente e recusas do contrato de integração nas
+                últimas 24 horas.
+              </Text>
+            </VStack>
+            <IntegrationHealth
+              lastSuccessAt={integrationHealth.lastSuccessAt}
+              refusals={integrationHealth.refusals}
+              now={now}
+            />
+          </VStack>
+        </Card>
+      )}
     </VStack>
   );
 }
