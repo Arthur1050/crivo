@@ -1,20 +1,18 @@
-import { authenticate } from "../../../../src/server/integration/auth";
 import { deliverLead, serializeLead } from "../../../../src/server/integration/leads";
 import {
   MAX_BODY_BYTES,
   parseLeadCreate,
 } from "../../../../src/server/integration/parsers";
 import { methodNotAllowed, problem } from "../../../../src/server/integration/problem";
+import { withIntegrationRoute } from "../../../../src/server/integration/route";
 
 /**
  * `POST /api/v1/leads` — entrega idempotente de leads (design.md — Route
- * handlers). Handler fino: autentica → lê/valida o corpo → delega ao
- * serviço → serializa a resposta. Nenhuma regra de negócio aqui.
+ * handlers). Handler fino: `withIntegrationRoute` já autenticou e já agenda
+ * o registro de qualquer recusa — este corpo só lê/valida o corpo → delega
+ * ao serviço → serializa a resposta. Nenhuma regra de negócio aqui.
  */
-export async function POST(request: Request): Promise<Response> {
-  const auth = await authenticate(request);
-  if (auth instanceof Response) return auth;
-
+export const POST = withIntegrationRoute(async (request, auth) => {
   const bodyText = await request.text();
   if (Buffer.byteLength(bodyText, "utf8") > MAX_BODY_BYTES) {
     return problem(
@@ -36,7 +34,7 @@ export async function POST(request: Request): Promise<Response> {
 
   const { created, lead } = await deliverLead(auth.tenantId, parsed.dto);
   return Response.json(serializeLead(lead), { status: created ? 201 : 200 });
-}
+});
 
 export const GET = methodNotAllowed(["POST"]);
 export const PUT = methodNotAllowed(["POST"]);

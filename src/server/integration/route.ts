@@ -21,7 +21,7 @@ export interface RouteContext<Params extends Record<string, string> = Record<str
   params: Promise<Params>;
 }
 
-export type RouteHandler<Ctx = never> = (request: Request, ctx: Ctx) => Promise<Response>;
+export type RouteHandler<Ctx = unknown> = (request: Request, ctx: Ctx) => Promise<Response>;
 
 /**
  * Extrai `code` do corpo de uma resposta problem+json sem consumir o corpo
@@ -105,7 +105,7 @@ export async function recordRefusalFor(
  * registro com o tenant identificado. O segundo argumento do Next (`ctx`,
  * ex.: `{ params }` nas rotas dinâmicas) é sempre repassado intacto.
  */
-export function withIntegrationRoute<Ctx = never>(
+export function withIntegrationRoute<Ctx = unknown>(
   handler: (request: Request, auth: AuthResult, ctx: Ctx) => Promise<Response>
 ): RouteHandler<Ctx> & { [INSTRUMENTED]: true } {
   const wrapped = async (request: Request, ctx: Ctx): Promise<Response> => {

@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
 import { db } from "../../../../db";
 import {
+  integrationRefusals,
   leads,
   serviceApiKeys,
   tenantApiKeys,
@@ -42,6 +43,9 @@ describe("routes: POST /api/v1/leads", () => {
   });
 
   afterAll(async () => {
+    // integration_refusals precisa sumir ANTES do tenant — FK sem
+    // onDelete, um tenant com recusa pendurada nunca deleta (lote-9 — T11).
+    await db.delete(integrationRefusals).where(eq(integrationRefusals.tenantId, tenantId));
     await db.delete(leads).where(eq(leads.tenantId, tenantId));
     await db.delete(tenantApiKeys).where(eq(tenantApiKeys.tenantId, tenantId));
     await db.delete(tenants).where(eq(tenants.id, tenantId));
@@ -168,6 +172,33 @@ describe("routes: POST /api/v1/leads", () => {
       .from(leads)
       .where(eq(leads.externalId, externalId));
     expect(rows).toHaveLength(0);
+  });
+
+  // lote-9 — SAUDE-01/T11: POST /api/v1/leads sob withIntegrationRoute — uma
+  // recusa da rota grava linha em `integration_refusals` com o tenant
+  // correto (recusa de payload, então o tenant JÁ foi identificado por
+  // authenticate() antes do handler rodar).
+  it("recusa de payload inválido grava linha em integration_refusals com o tenant correto (SAUDE-01 — T11)", async () => {
+    const invalidPayload = {
+      // "name" ausente de propósito — mesma recusa do teste de payload
+      // inválido acima, agora provando o efeito colateral de instrumentação.
+      phone: "+55 34 90000-1234",
+      externalId: randomUUID(),
+      firstContactAt: "2026-08-01T10:00:00Z",
+    };
+
+    const response = await POST(makeRequest(invalidPayload));
+    expect(response.status).toBe(400);
+
+    const rows = await db
+      .select()
+      .from(integrationRefusals)
+      .where(eq(integrationRefusals.tenantId, tenantId));
+    expect(rows.length).toBeGreaterThanOrEqual(1);
+    const row = rows.find((r) => r.code === "payload-invalido" && r.status === 400);
+    expect(row).toBeDefined();
+    expect(row!.route).toBe("/api/v1/leads");
+    expect(row!.method).toBe("POST");
   });
 
   it("verbo não suportado (GET/PUT/PATCH/DELETE) responde 405 problem+json (Edge Case — verbo errado)", async () => {

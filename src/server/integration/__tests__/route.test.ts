@@ -82,7 +82,7 @@ describe("server/integration route — withIntegrationRoute (T8)", () => {
     const route = `${ROUTE_PREFIX}/caminho-feliz`;
 
     const wrapped = withIntegrationRoute(async () => Response.json({ ok: true }, { status: 200 }));
-    const response = await wrapped(makeRequest(route), undefined as never);
+    const response = await wrapped(makeRequest(route), undefined);
 
     expect(response.status).toBe(200);
     expect(await refusalRowsFor(route)).toHaveLength(0);
@@ -95,7 +95,7 @@ describe("server/integration route — withIntegrationRoute (T8)", () => {
     mockedAuthenticate.mockResolvedValueOnce(authResponse);
 
     const wrapped = withIntegrationRoute(async () => Response.json({ nunca: "chamado" }));
-    const response = await wrapped(makeRequest(route), undefined as never);
+    const response = await wrapped(makeRequest(route), undefined);
 
     expect(response.status).toBe(401);
     expect(response.headers.get("content-type")).toBe(authResponse.headers.get("content-type"));
@@ -117,7 +117,7 @@ describe("server/integration route — withIntegrationRoute (T8)", () => {
     const expectedHeaders = new Headers(rawResponse.headers);
 
     const wrapped = withIntegrationRoute(async () => rawResponse);
-    const response = await wrapped(makeRequest(route), undefined as never);
+    const response = await wrapped(makeRequest(route), undefined);
 
     expect(response.status).toBe(409);
     expect(response.headers.get("content-type")).toBe(expectedHeaders.get("content-type"));
@@ -137,7 +137,7 @@ describe("server/integration route — withIntegrationRoute (T8)", () => {
     const wrapped = withIntegrationRoute(async () =>
       Response.json({ code: "isso-nao-deveria-ser-lido" }, { status: 500 })
     );
-    await wrapped(makeRequest(route), undefined as never);
+    await wrapped(makeRequest(route), undefined);
 
     const rows = await refusalRowsFor(route);
     expect(rows).toHaveLength(1);
@@ -149,7 +149,7 @@ describe("server/integration route — withIntegrationRoute (T8)", () => {
     const pathname = `${ROUTE_PREFIX}/com-query`;
 
     const wrapped = withIntegrationRoute(async () => problem(400, "payload-invalido"));
-    await wrapped(makeRequest(`${pathname}?foo=bar&baz=qux`), undefined as never);
+    await wrapped(makeRequest(`${pathname}?foo=bar&baz=qux`), undefined);
 
     const rows = await refusalRowsFor(pathname);
     expect(rows).toHaveLength(1);
@@ -169,7 +169,7 @@ describe("server/integration route — withIntegrationRoute (T8)", () => {
     const expectedBody = await rawResponse.clone().json();
 
     const wrapped = withIntegrationRoute(async () => rawResponse);
-    const response = await wrapped(makeRequest(route), undefined as never);
+    const response = await wrapped(makeRequest(route), undefined);
 
     expect(response.status).toBe(422);
     expect(await response.clone().json()).toEqual(expectedBody);

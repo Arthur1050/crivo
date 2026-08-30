@@ -340,6 +340,8 @@ opcional, permanece síncrono, e `unmatchedGet()` sem argumento
 
 ### T11: `POST /api/v1/leads` sob o wrapper
 
+**Status**: ✅ Done
+
 **What**: Envolver os exports do route file com `withIntegrationRoute`, removendo a autenticação inline.
 **Where**: `app/api/v1/leads/route.ts`
 **Depends on**: T8, T9
@@ -350,10 +352,27 @@ opcional, permanece síncrono, e `unmatchedGet()` sem argumento
 
 **Done when**:
 
-- [ ] `if (auth instanceof Response) return auth;` some do handler
-- [ ] Todos os testes de rota existentes continuam verdes sem alteração de expectativa
-- [ ] Teste novo prova que uma recusa da rota grava linha com o tenant correto
-- [ ] Gate full passa: `npm test`
+- [x] `if (auth instanceof Response) return auth;` some do handler
+- [x] Todos os testes de rota existentes continuam verdes sem alteração de expectativa
+- [x] Teste novo prova que uma recusa da rota grava linha com o tenant correto
+- [x] Gate full passa: `npm test` (962 passed, 79 arquivos — subiu de 961)
+
+**Achados/desvios**:
+- `withIntegrationRoute<Ctx = never>` virou `Ctx = unknown` em `route.ts`
+  (2 linhas, sem mudança de comportamento) — `never` obrigava todo chamador
+  sem contexto dinâmico a um cast (`as never`) só para satisfazer o
+  compilador; `unknown` aceita `undefined` de forma natural. Ajuste feito
+  agora porque é a mesma assinatura genérica que as próximas 5 rotas (T12–T16)
+  vão instanciar; `src/server/integration/__tests__/route.test.ts` (T8)
+  re-executado e continua 8/8 depois do ajuste.
+- `integration_refusals.tenant_id` referencia `tenants.id` sem `onDelete`: o
+  `afterAll` deste arquivo de teste apagava o tenant fixture direto, e agora
+  que a rota grava recusa de verdade, a FK bloqueia essa deleção enquanto a
+  linha de recusa existir. `afterAll` ganhou um `delete(integrationRefusals)`
+  antes do `delete(tenants)` — mesmo problema provavelmente aparece em
+  T12–T16 (qualquer route test file cujo `afterAll` apaga um tenant próprio
+  depois de exercitar uma resposta >= 400 pela rota instrumentada); resolvido
+  arquivo a arquivo conforme aparece.
 
 **Tests**: integration (rota)
 **Gate**: full
