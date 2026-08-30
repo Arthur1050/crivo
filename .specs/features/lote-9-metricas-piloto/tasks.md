@@ -412,6 +412,8 @@ opcional, permanece síncrono, e `unmatchedGet()` sem argumento
 
 ### T13: Mensagens do lead sob o wrapper
 
+**Status**: ✅ Done
+
 **What**: Mesma troca no route file de mensagens.
 **Where**: `app/api/v1/leads/[id]/messages/route.ts`
 **Depends on**: T12
@@ -422,9 +424,13 @@ opcional, permanece síncrono, e `unmatchedGet()` sem argumento
 
 **Done when**:
 
-- [ ] Testes de rota existentes verdes sem alteração de expectativa
-- [ ] Recusa de payload inválido grava linha com `code = "payload-invalido"`
-- [ ] Gate full passa: `npm test`
+- [x] Testes de rota existentes verdes sem alteração de expectativa
+- [x] Recusa de payload inválido grava linha com `code = "payload-invalido"`
+- [x] Gate full passa: `npm test` (962 passed, 79 arquivos — mesmo total; a prova nova é asserção em `it()` existente)
+
+**Mesmo achado do T11/T12**: `afterAll` de `leads-messages-get.test.ts` e
+`leads-messages-post.test.ts` ganharam `delete(integrationRefusals)` antes
+do `delete(tenants)`.
 
 **Tests**: integration (rota)
 **Gate**: full

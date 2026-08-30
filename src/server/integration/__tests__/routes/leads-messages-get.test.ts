@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { db } from "../../../../db";
 import {
   conversations,
+  integrationRefusals,
   leads,
   messages,
   tenantApiKeys,
@@ -101,6 +102,10 @@ describe("routes: GET /api/v1/leads/[id]/messages (lote-6b — CTX-02)", () => {
   });
 
   afterAll(async () => {
+    // integration_refusals precisa sumir ANTES do tenant — FK sem
+    // onDelete, um tenant com recusa pendurada nunca deleta (lote-9 — T13).
+    await db.delete(integrationRefusals).where(eq(integrationRefusals.tenantId, tenantAId));
+    await db.delete(integrationRefusals).where(eq(integrationRefusals.tenantId, tenantBId));
     await db.delete(messages).where(eq(messages.tenantId, tenantAId));
     await db.delete(conversations).where(eq(conversations.tenantId, tenantAId));
     await db.delete(leads).where(eq(leads.tenantId, tenantAId));

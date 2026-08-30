@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { db } from "../../../../db";
 import {
   conversations,
+  integrationRefusals,
   leads,
   messages,
   tenantApiKeys,
@@ -77,6 +78,10 @@ describe("routes: POST /api/v1/leads/[id]/messages", () => {
   });
 
   afterAll(async () => {
+    // integration_refusals precisa sumir ANTES do tenant — FK sem
+    // onDelete, um tenant com recusa pendurada nunca deleta (lote-9 — T13).
+    await db.delete(integrationRefusals).where(eq(integrationRefusals.tenantId, tenantAId));
+    await db.delete(integrationRefusals).where(eq(integrationRefusals.tenantId, tenantBId));
     await db.delete(messages).where(eq(messages.tenantId, tenantAId));
     await db.delete(messages).where(eq(messages.tenantId, tenantBId));
     await db.delete(conversations).where(eq(conversations.tenantId, tenantAId));
@@ -182,6 +187,14 @@ describe("routes: POST /api/v1/leads/[id]/messages", () => {
 
     const rows = await db.select().from(messages).where(eq(messages.externalId, externalId));
     expect(rows).toHaveLength(0);
+
+    // lote-9 — SAUDE-01/T13: a rota instrumentada grava a recusa com
+    // code = payload-invalido e o tenant que autenticou a chamada.
+    const refusals = await db
+      .select()
+      .from(integrationRefusals)
+      .where(eq(integrationRefusals.tenantId, tenantAId));
+    expect(refusals.some((r) => r.code === "payload-invalido" && r.status === 400)).toBe(true);
   });
 
   it("corpo não é JSON válido responde 400 payload-invalido", async () => {
