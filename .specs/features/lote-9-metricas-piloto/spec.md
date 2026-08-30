@@ -232,22 +232,22 @@ Toda ambiguidade está resolvida ou registrada aqui — nada fica silenciosament
 
 | Requirement ID | Story | Phase | Status |
 | -------------- | ----- | ----- | ------ |
-| BASE-01 | P1: A imobiliária registra o próprio baseline pré-piloto | Tasks: T1, T3, T22, T23, T24, T25, T26 | Implementing |
-| BASE-02 | P1: O Dashboard compara o período contra o baseline na mesma unidade | Tasks: T4, T27, T28, T34 | Implementing |
-| PRES-01 | P1: A reunião encerrada cobra a confirmação de comparecimento | Tasks: T4, T19, T20, T21 | Implementing |
-| PRES-02 | P1: A reunião encerrada cobra a confirmação (prescrição em 14 dias) | Tasks: T4, T19 | Implementing |
-| SCOPE-02 | P1: As escritas do Pipeline respeitam a carteira do corretor | Tasks: T18 | Implementing |
-| SAUDE-01 | P1: O contrato de integração deixa rastro de toda recusa | Tasks: T2, T5, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T34 | Implementing |
-| SAUDE-02 | P1: Administrador e gestor enxergam a saúde da integração | Tasks: T4, T6, T29, T30 | Implementing |
-| SAUDE-03 | P2: As recusas registradas têm ciclo de vida | Tasks: T7, T32 | Implementing |
-| REL-01 | P2: O piloto tem um relatório levável à reunião | Tasks: T33 | Implementing |
-| PERF-01 | P3: As consultas de KPI param de carregar o lead inteiro | Tasks: T31 | Implementing |
+| BASE-01 | P1: A imobiliária registra o próprio baseline pré-piloto | Tasks: T1, T3, T22, T23, T24, T25, T26 | ✅ Verified |
+| BASE-02 | P1: O Dashboard compara o período contra o baseline na mesma unidade | Tasks: T4, T27, T28, T34 | ✅ Verified |
+| PRES-01 | P1: A reunião encerrada cobra a confirmação de comparecimento | Tasks: T4, T19, T20, T21 | ✅ Verified |
+| PRES-02 | P1: A reunião encerrada cobra a confirmação (prescrição em 14 dias) | Tasks: T4, T19 | ✅ Verified |
+| SCOPE-02 | P1: As escritas do Pipeline respeitam a carteira do corretor | Tasks: T18 | ✅ Verified |
+| SAUDE-01 | P1: O contrato de integração deixa rastro de toda recusa | Tasks: T2, T5, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T34 | ✅ Verified |
+| SAUDE-02 | P1: Administrador e gestor enxergam a saúde da integração | Tasks: T4, T6, T29, T30 | ✅ Verified |
+| SAUDE-03 | P2: As recusas registradas têm ciclo de vida | Tasks: T7, T32 | ✅ Verified |
+| REL-01 | P2: O piloto tem um relatório levável à reunião | Tasks: T33 | ✅ Verified |
+| PERF-01 | P3: As consultas de KPI param de carregar o lead inteiro | Tasks: T31 | ✅ Verified |
 
 **ID format:** `[CATEGORY]-[NUMBER]`
 
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified
 
-**Coverage:** 10 total, 10 mapeados a tasks (34 tasks), 0 sem mapeamento. Todas as 34 tasks implementadas e commitadas; status sobe para `Verified` após o Verifier retornar PASS (mesmo padrão do lote-8).
+**Coverage:** 10 total, 10 verificados (34 tasks), 0 sem mapeamento. Verifier (sub-agente independente, `.specs/features/lote-9-metricas-piloto/validation.md`): **PASS** — 10/10 requirement IDs com evidência `file:line` + outcome batendo com a spec; gate 1014→1015 passed (re-confirmado pelo orquestrador após 1 fix de cobertura); sensor de discriminação 4 mutações injetadas, 4 mortas (a 4ª, sobre o limite exato de 30 dias da purga, sobreviveu na primeira rodada — comportamento de produção já estava correto, só faltava o teste no limite; fechada em commit `1ca82e1` antes desta subida de status).
 
 ---
 
