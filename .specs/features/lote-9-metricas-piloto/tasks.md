@@ -492,6 +492,8 @@ do `delete(tenants)`.
 
 ### T16: Settings sob o wrapper
 
+**Status**: ✅ Done
+
 **What**: Mesma troca no route file de settings.
 **Where**: `app/api/v1/settings/route.ts`
 **Depends on**: T15
@@ -502,8 +504,13 @@ do `delete(tenants)`.
 
 **Done when**:
 
-- [ ] Testes de rota existentes verdes sem alteração de expectativa
-- [ ] Gate full passa: `npm test`
+- [x] Testes de rota existentes verdes sem alteração de expectativa
+- [x] Gate full passa: `npm test` (962 passed, 79 arquivos — mesmo total do T15)
+
+**Nota**: `settings-get.test.ts` só grava recusa com `tenantId = null` (401
+pré-auth); o `delete(integrationRefusals)` no `afterAll` foi incluído por
+consistência/segurança com os demais arquivos de T11-T15, não porque um
+teste existente estivesse quebrando.
 
 **Tests**: integration (rota)
 **Gate**: full
