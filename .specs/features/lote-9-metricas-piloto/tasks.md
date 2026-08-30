@@ -311,6 +311,8 @@ recusa simplesmente não é registrada (nada para registrar).
 
 ### T10: Catch-all de rota inexistente instrumentado
 
+**Status**: ✅ Done
+
 **What**: Fazer a rota `[...unmatched]` registrar o 404 com a rota efetivamente chamada.
 **Where**: `app/api/v1/[...unmatched]/route.ts`
 **Depends on**: T8
@@ -321,10 +323,14 @@ recusa simplesmente não é registrada (nada para registrar).
 
 **Done when**:
 
-- [ ] 404 grava recusa com `code = "rota-inexistente"` e a rota chamada
-- [ ] Resposta ao chamador inalterada
-- [ ] Gate full passa: `npm test`
-- [ ] Contagem de testes registrada
+- [x] 404 grava recusa com `code = "rota-inexistente"` e a rota chamada
+- [x] Resposta ao chamador inalterada
+- [x] Gate full passa: `npm test`
+- [x] Contagem de testes registrada (961 passed, 79 arquivos — subiu de 958)
+
+**Mesmo desvio justificado do T9**: `notFound()` ganhou `request?: Request`
+opcional, permanece síncrono, e `unmatchedGet()` sem argumento
+(`leads-post.test.ts`) continua funcionando sem gravar nada.
 
 **Tests**: integration (rota)
 **Gate**: full
