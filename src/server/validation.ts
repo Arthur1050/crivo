@@ -162,6 +162,54 @@ export function validateLeadStatus(status: string): ValidationResult {
   return { ok: true };
 }
 
+// lote-9 — BASE-01: os cinco baselines pré-piloto são snapshot opcional
+// (nullable) preenchido pelo usuário — ausência (`null`/`undefined`) nunca é
+// erro, só um valor FORA da faixa é. `Number.isInteger` já reprova `NaN`
+// (entrada não numérica que ainda assim tem o tipo `number` — ex.:
+// `Number("abc")`) e fracionário na mesma checagem, sem precisar de uma
+// terceira regra.
+
+/**
+ * Contagem de baseline (leads/mês, minutos até a primeira resposta): inteiro
+ * maior ou igual a zero. Zero é um valor válido de propósito (a imobiliária
+ * registrou "zero" — não é o mesmo que "não registrei nada").
+ */
+export function validateBaselineCount(
+  value: number | null | undefined,
+  label: string
+): ValidationResult {
+  if (value === null || value === undefined) return { ok: true };
+
+  if (!Number.isInteger(value) || value < 0) {
+    return {
+      ok: false,
+      error: `${label} deve ser um número inteiro maior ou igual a zero.`,
+    };
+  }
+
+  return { ok: true };
+}
+
+/**
+ * Percentual de baseline (escalonamento, comparecimento, lead→reunião):
+ * inteiro entre 0 e 100, inclusive nas duas pontas.
+ */
+export function validateBaselinePercent(
+  value: number | null | undefined,
+  label: string
+): ValidationResult {
+  if (value === null || value === undefined) return { ok: true };
+
+  if (!Number.isInteger(value) || value < 0 || value > 100) {
+    return {
+      ok: false,
+      error: `${label} deve ser um número inteiro entre 0 e 100.`,
+    };
+  }
+
+  return { ok: true };
+}
+
 export interface BusinessHoursInput {
   meetingDays: number[] | null;
   meetingHoursStart: string | null;

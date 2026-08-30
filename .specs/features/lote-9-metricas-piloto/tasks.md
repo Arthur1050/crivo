@@ -709,6 +709,8 @@ indisponível para este subagente).
 
 ### T22: Validação dos campos de baseline
 
+**Status**: ✅ Done
+
 **What**: `validateBaselineCount` (inteiro ≥ 0) e `validateBaselinePercent` (inteiro 0–100), com testes unitários.
 **Where**: `src/server/validation.ts`
 **Depends on**: None
@@ -719,11 +721,20 @@ indisponível para este subagente).
 
 **Done when**:
 
-- [ ] Recusa negativo, fracionário e não numérico; recusa percentual 101 e −1
-- [ ] Aceita zero como valor válido (edge case da spec)
-- [ ] Aceita vazio como ausência de baseline, não como erro (BASE-01 AC5)
-- [ ] Gate quick passa: `npx vitest run src/server/__tests__/validation.test.ts`
-- [ ] Contagem de testes registrada
+- [x] Recusa negativo, fracionário e não numérico; recusa percentual 101 e −1
+- [x] Aceita zero como valor válido (edge case da spec)
+- [x] Aceita vazio como ausência de baseline, não como erro (BASE-01 AC5)
+- [x] Gate quick passa: `npx vitest run src/server/__tests__/validation.test.ts`
+- [x] Contagem de testes registrada
+
+**Achados/desvios**: assinatura `(value: number | null | undefined, label:
+string)` — "não numérico" é exercitado com `Number("abc")` (que resulta em
+`NaN`, ainda tipado `number`): `Number.isInteger(NaN)` já é `false`, então a
+mesma checagem cobre não-numérico, fracionário e fora de faixa sem uma
+terceira regra. `undefined` (chave ausente) e `null` (campo limpo pelo
+usuário) tratados como o mesmo "vazio válido" — ambos `ok: true`.
+**Contagem de testes**: 67 passed, 0 failed em
+`src/server/__tests__/validation.test.ts` (arquivo inteiro).
 
 **Tests**: unit
 **Gate**: quick
