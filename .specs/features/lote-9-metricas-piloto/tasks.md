@@ -195,6 +195,8 @@ Fases são ordenadas e rodam em sequência; dentro de uma fase, as tasks rodam n
 
 ### T6: Leitura das recusas para o painel
 
+**Status**: ✅ Done
+
 **What**: `getIntegrationRefusalsSince(tenantId, since)` — recusas do tenant **mais** as sem tenant, agrupadas por `code` e `route`.
 **Where**: `src/server/data/index.ts`
 **Depends on**: T5
@@ -205,11 +207,11 @@ Fases são ordenadas e rodam em sequência; dentro de uma fase, as tasks rodam n
 
 **Done when**:
 
-- [ ] Recusa de OUTRO tenant nunca aparece no resultado
-- [ ] Recusa sem tenant aparece para qualquer tenant consultado
-- [ ] Recusa mais antiga que `since` fica de fora
-- [ ] Gate full passa: `npm test`
-- [ ] Contagem de testes registrada
+- [x] Recusa de OUTRO tenant nunca aparece no resultado
+- [x] Recusa sem tenant aparece para qualquer tenant consultado
+- [x] Recusa mais antiga que `since` fica de fora
+- [x] Gate full passa: `npm test`
+- [x] Contagem de testes registrada (945 passed, 77 arquivos — subiu de 940)
 
 **Tests**: integration
 **Gate**: full

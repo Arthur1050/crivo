@@ -4,9 +4,13 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { eq, like } from "drizzle-orm";
 import { db } from "../../../db";
 import { integrationRefusals } from "../../../db/schema";
-import { getTenants, recordIntegrationRefusal } from "../index";
+import {
+  getIntegrationRefusalsSince,
+  getTenants,
+  recordIntegrationRefusal,
+} from "../index";
 
-// Marcador único desta suíte (T5), para que a limpeza no afterAll nunca
+// Marcador único desta suíte (T5/T6), para que a limpeza no afterAll nunca
 // apague recusas gravadas por outro arquivo de teste ou pela aplicação.
 const ROUTE_PREFIX = `/api/v1/__test-integration-refusals-t5__/${randomUUID()}`;
 
@@ -23,10 +27,11 @@ describe("server/data integration refusals — recordIntegrationRefusal (T5)", (
   });
 
   afterAll(async () => {
+    // Não fecha o client aqui de propósito — o describe seguinte (T6) neste
+    // mesmo arquivo ainda usa a conexão. Só o último describe fecha.
     await db
       .delete(integrationRefusals)
       .where(like(integrationRefusals.route, `${ROUTE_PREFIX}%`));
-    await db.$client.end();
   });
 
   it("grava uma recusa com tenantId preenchido", async () => {
@@ -141,5 +146,121 @@ describe("server/data integration refusals — recordIntegrationRefusal (T5)", (
     expect(Object.keys(rows[0]).sort()).toEqual(
       ["id", "tenantId", "route", "method", "status", "code", "occurredAt"].sort()
     );
+  });
+});
+
+// Marcador próprio para T6 — isolado do de T5 acima, mesmo raciocínio.
+const T6_ROUTE_PREFIX = `/api/v1/__test-integration-refusals-t6__/${randomUUID()}`;
+
+describe("server/data integration refusals — getIntegrationRefusalsSince (T6)", () => {
+  let tenantAId: string;
+  let tenantBId: string;
+  const since = new Date("2026-08-01T00:00:00.000Z");
+
+  beforeAll(async () => {
+    const allTenants = await getTenants();
+    expect(allTenants.length).toBeGreaterThanOrEqual(2);
+    tenantAId = allTenants[0].id;
+    tenantBId = allTenants[1].id;
+
+    // Recusa do tenant A, dentro da janela.
+    await recordIntegrationRefusal({
+      tenantId: tenantAId,
+      route: `${T6_ROUTE_PREFIX}/a`,
+      method: "POST",
+      status: 422,
+      code: "payload-invalido",
+      occurredAt: new Date(since.getTime() + 60_000),
+    });
+    // Recusa do tenant B (outro tenant), dentro da janela — nunca deve
+    // aparecer na consulta escopada ao tenant A.
+    await recordIntegrationRefusal({
+      tenantId: tenantBId,
+      route: `${T6_ROUTE_PREFIX}/b`,
+      method: "POST",
+      status: 422,
+      code: "payload-invalido",
+      occurredAt: new Date(since.getTime() + 60_000),
+    });
+    // Recusa sem tenant, dentro da janela — deve aparecer para QUALQUER
+    // tenant consultado (design.md — recusa cruza a fronteira de propósito).
+    await recordIntegrationRefusal({
+      tenantId: null,
+      route: `${T6_ROUTE_PREFIX}/sem-tenant`,
+      method: "GET",
+      status: 401,
+      code: "credencial-invalida",
+      occurredAt: new Date(since.getTime() + 60_000),
+    });
+    // Recusa do tenant A, mas ANTES de `since` — deve ficar de fora.
+    await recordIntegrationRefusal({
+      tenantId: tenantAId,
+      route: `${T6_ROUTE_PREFIX}/antiga`,
+      method: "POST",
+      status: 422,
+      code: "payload-invalido",
+      occurredAt: new Date(since.getTime() - 60_000),
+    });
+    // Duas recusas do tenant A com o MESMO (code, route), para provar o
+    // agrupamento por (code, route) com contagem correta.
+    await recordIntegrationRefusal({
+      tenantId: tenantAId,
+      route: `${T6_ROUTE_PREFIX}/agrupada`,
+      method: "POST",
+      status: 409,
+      code: "conflito-de-agenda",
+      occurredAt: new Date(since.getTime() + 120_000),
+    });
+    await recordIntegrationRefusal({
+      tenantId: tenantAId,
+      route: `${T6_ROUTE_PREFIX}/agrupada`,
+      method: "POST",
+      status: 409,
+      code: "conflito-de-agenda",
+      occurredAt: new Date(since.getTime() + 180_000),
+    });
+  });
+
+  afterAll(async () => {
+    await db
+      .delete(integrationRefusals)
+      .where(like(integrationRefusals.route, `${T6_ROUTE_PREFIX}%`));
+    await db.$client.end();
+  });
+
+  it("recusa de OUTRO tenant nunca aparece no resultado", async () => {
+    const summaries = await getIntegrationRefusalsSince(tenantAId, since);
+    const routes = summaries.map((s) => s.route);
+    expect(routes).not.toContain(`${T6_ROUTE_PREFIX}/b`);
+  });
+
+  it("recusa sem tenant aparece para qualquer tenant consultado", async () => {
+    const summariesA = await getIntegrationRefusalsSince(tenantAId, since);
+    const summariesB = await getIntegrationRefusalsSince(tenantBId, since);
+
+    expect(summariesA.map((s) => s.route)).toContain(`${T6_ROUTE_PREFIX}/sem-tenant`);
+    expect(summariesB.map((s) => s.route)).toContain(`${T6_ROUTE_PREFIX}/sem-tenant`);
+  });
+
+  it("recusa mais antiga que `since` fica de fora", async () => {
+    const summaries = await getIntegrationRefusalsSince(tenantAId, since);
+    const routes = summaries.map((s) => s.route);
+    expect(routes).not.toContain(`${T6_ROUTE_PREFIX}/antiga`);
+  });
+
+  it("recusa do próprio tenant dentro da janela aparece no resultado", async () => {
+    const summaries = await getIntegrationRefusalsSince(tenantAId, since);
+    const routes = summaries.map((s) => s.route);
+    expect(routes).toContain(`${T6_ROUTE_PREFIX}/a`);
+  });
+
+  it("agrupa por (code, route): duas recusas idênticas viram 1 grupo com count=2", async () => {
+    const summaries = await getIntegrationRefusalsSince(tenantAId, since);
+    const grouped = summaries.find(
+      (s) => s.route === `${T6_ROUTE_PREFIX}/agrupada` && s.code === "conflito-de-agenda"
+    );
+    expect(grouped).toBeDefined();
+    expect(grouped!.count).toBe(2);
+    expect(grouped!.lastOccurredAt.getTime()).toBe(since.getTime() + 180_000);
   });
 });

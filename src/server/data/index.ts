@@ -13,6 +13,7 @@ import {
   isNull,
   lte,
   max,
+  or,
   sql,
 } from "drizzle-orm";
 import { db } from "../../db";
@@ -2197,4 +2198,51 @@ export async function recordIntegrationRefusal(
     code: input.code,
     occurredAt: input.occurredAt,
   });
+}
+
+export interface RefusalSummary {
+  code: string | null;
+  route: string;
+  count: number;
+  lastOccurredAt: Date;
+}
+
+/**
+ * Recusas recentes para o painel de saúde (SAUDE-02): as do tenant pedido
+ * MAIS as sem tenant (recusa anterior à identificação — cruza a fronteira de
+ * tenant de propósito, design.md — Risks: "Recusa sem tenant aparece para
+ * todas as imobiliárias"), agrupadas por `(code, route)`. Recusa mais antiga
+ * que `since` fica de fora.
+ */
+export async function getIntegrationRefusalsSince(
+  tenantId: string,
+  since: Date
+): Promise<RefusalSummary[]> {
+  const rows = await db
+    .select({
+      code: integrationRefusals.code,
+      route: integrationRefusals.route,
+      count: count(),
+      lastOccurredAt: max(integrationRefusals.occurredAt),
+    })
+    .from(integrationRefusals)
+    .where(
+      and(
+        or(
+          eq(integrationRefusals.tenantId, tenantId),
+          isNull(integrationRefusals.tenantId)
+        ),
+        gte(integrationRefusals.occurredAt, since)
+      )
+    )
+    .groupBy(integrationRefusals.code, integrationRefusals.route);
+
+  return rows.map((row) => ({
+    code: row.code,
+    route: row.route,
+    count: row.count,
+    // NOT NULL na tabela (defaultNow) — todo grupo tem ao menos 1 linha, então
+    // max() nunca devolve null aqui.
+    lastOccurredAt: row.lastOccurredAt!,
+  }));
 }
