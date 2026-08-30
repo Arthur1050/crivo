@@ -626,6 +626,36 @@ export interface DashboardKpis {
 }
 
 /**
+ * Query dos leads de P (lote-9 — PERF-01), separada de `getDashboardKpis`
+ * para o teste conseguir inspecionar o SQL gerado via `.toSQL()` sem
+ * executar contra o banco. Projeção explícita: só as 4 colunas que a
+ * agregação em TS de fato lê (`status`, `firstContactAt`, `firstResponseAt`,
+ * `meetingAttended`) — nunca `executive_summary`, `escalation_reason` nem
+ * qualquer outro campo de texto longo do lead.
+ */
+function periodLeadsQuery(scope: LeadScope, range: DashboardRange) {
+  return db
+    .select({
+      status: leads.status,
+      firstContactAt: leads.firstContactAt,
+      firstResponseAt: leads.firstResponseAt,
+      meetingAttended: leads.meetingAttended,
+    })
+    .from(leads)
+    .where(
+      and(
+        eq(leads.tenantId, scope.tenantId),
+        assignedTo(scope),
+        gte(leads.firstContactAt, range.from),
+        lte(leads.firstContactAt, range.to)
+      )
+    );
+}
+
+/** Exportada só para o teste de projeção (PERF-01) — nunca chamada fora de `getDashboardKpis` em código de produção. */
+export const __testOnly_periodLeadsQuery = periodLeadsQuery;
+
+/**
  * KPIs do Dashboard (lote-4 — DASH-01, DASH-07) para o conjunto P: leads do
  * tenant com `firstContactAt` dentro de `range` (limites inclusivos —
  * spec.md, assumption "Fuso dos limites de período"). Uma única query busca
@@ -638,17 +668,7 @@ export async function getDashboardKpis(
   scope: LeadScope,
   range: DashboardRange
 ): Promise<DashboardKpis> {
-  const periodLeads = await db
-    .select()
-    .from(leads)
-    .where(
-      and(
-        eq(leads.tenantId, scope.tenantId),
-        assignedTo(scope),
-        gte(leads.firstContactAt, range.from),
-        lte(leads.firstContactAt, range.to)
-      )
-    );
+  const periodLeads = await periodLeadsQuery(scope, range);
 
   const leadCount = periodLeads.length;
 

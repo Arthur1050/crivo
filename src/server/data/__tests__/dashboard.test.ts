@@ -5,6 +5,7 @@ import { inArray } from "drizzle-orm";
 import { db } from "../../../db";
 import { leads, tenants } from "../../../db/schema";
 import {
+  __testOnly_periodLeadsQuery,
   getDashboardKpis,
   getLeadDistributions,
   getLeadVolumeSeries,
@@ -239,6 +240,38 @@ describe("server/data getDashboardKpis", () => {
     expect(kpisB.escalationRate).toBe(0);
     expect(kpisB.confirmedMeetingCount).toBe(0);
     expect(kpisB.attendanceRate).toBeNull();
+  });
+
+  it("PERF-01: a query de P projeta só as colunas usadas na agregação, sem texto longo do lead", () => {
+    const { sql } = __testOnly_periodLeadsQuery(serviceScope(tenantAId), RANGE).toSQL();
+
+    // As 4 colunas que a agregação em TS lê (status, firstContactAt,
+    // firstResponseAt, meetingAttended) precisam estar no SELECT.
+    expect(sql).toMatch(/select[\s\S]*"status"/i);
+    expect(sql).toMatch(/select[\s\S]*"first_contact_at"/i);
+    expect(sql).toMatch(/select[\s\S]*"first_response_at"/i);
+    expect(sql).toMatch(/select[\s\S]*"meeting_attended"/i);
+
+    // Nenhuma coluna de texto longo não usada na agregação pode entrar —
+    // era esse o `select()` sem projeção que PERF-01 fecha.
+    expect(sql).not.toMatch(/executive_summary/i);
+    expect(sql).not.toMatch(/escalation_reason/i);
+    expect(sql).not.toMatch(/purchase_horizon/i);
+    expect(sql).not.toMatch(/region/i);
+  });
+
+  it("PERF-01: a projeção não muda nenhum valor de KPI apurado (AC2) — mesma suíte acima, verde sem alteração de expectativa", async () => {
+    // Reafirma AC2/AC3 explicitamente sob o rótulo PERF-01: os valores
+    // apurados pela query projetada são idênticos aos de antes da mudança —
+    // a suíte inteira acima já prova isso sem ter sido alterada.
+    const kpis = await getDashboardKpis(serviceScope(tenantAId), RANGE);
+    expect(kpis.leadCount).toBe(6);
+    expect(kpis.respondedCount).toBe(3);
+    expect(kpis.avgFirstResponseMinutes).toBe(20);
+    expect(kpis.qualificationRate).toBeCloseTo(2 / 6, 10);
+    expect(kpis.escalationRate).toBeCloseTo(1 / 6, 10);
+    expect(kpis.confirmedMeetingCount).toBe(2);
+    expect(kpis.attendanceRate).toBe(0.5);
   });
 });
 

@@ -991,15 +991,17 @@ navegador exige confirmação interativa indisponível para este subagente).
 
 **Done when**:
 
-- [ ] Só as colunas usadas na agregação entram no `select`
-- [ ] Teste inspeciona o SQL gerado e prova a ausência das colunas de texto longo
-- [ ] Todos os valores de KPI apurados continuam idênticos, sem alteração de expectativa em nenhum teste existente
-- [ ] Gate full passa: `npm test`
-- [ ] Contagem de testes registrada
+- [x] Só as colunas usadas na agregação entram no `select`
+- [x] Teste inspeciona o SQL gerado e prova a ausência das colunas de texto longo
+- [x] Todos os valores de KPI apurados continuam idênticos, sem alteração de expectativa em nenhum teste existente
+- [x] Gate full passa: `npm test`
+- [x] Contagem de testes registrada
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `perf(dashboard): projeta so as colunas usadas nos kpis`
+
+**Status**: ✅ Done — `npm test`: **1014 passed, 0 failed, 81 arquivos** (piso 1009 + 2 novos testes desta task + 3 de T32). `periodLeadsQuery` isolada de `getDashboardKpis`, exportada só para teste (`__testOnly_periodLeadsQuery`) inspecionar `.toSQL()` sem bater no banco — prova ausência de `executive_summary`/`escalation_reason`/`purchase_horizon`/`region` e presença das 4 colunas usadas. Nenhuma expectativa de teste existente foi alterada.
 
 ---
 
