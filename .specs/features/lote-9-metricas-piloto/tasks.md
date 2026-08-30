@@ -953,6 +953,8 @@ navegador exige confirmação interativa indisponível para este subagente).
 
 **Status**: ✅ Done — build e lint verdes (0 erros; mesmos 3 warnings pré-existentes). Componente resolve o estado internamente via `resolveIntegrationHealth(lastSuccessAt, refusals.length, now)`, recebendo os ingredientes já buscados pelo chamador (T30). `StatusDot` (variant + `isPulsing`) fica sempre no mesmo lugar do card — só cor/pulso mudam com o estado. Recusas em `List`/`ListItem` com `Token` por código — sem `renderCell` de `Table`, o componente inteiro fica Server Component (nenhuma função cruza a fronteira RSC→client). Ainda não composto no Dashboard (T30).
 
+**Fix pós-verificação visual** (orquestrador, commit `53be6d0`): a primeira implementação usava `Timestamp format="auto"` da Astryx para os dois carimbos de tempo relativo, o que renderizava em inglês ("3 days ago") — inconsistente com o resto do CRM. Verificação visual real via extensão Chrome (regra do EXECUTE-PROMPT) pegou o problema depois do build/lint verdes. Trocado por `RelativeTime` (`src/components/shared/relative-time.tsx`), componente já existente no projeto especificamente para esse caso (comentário do próprio arquivo: "a lib tem essas strings cravadas em inglês e sem ponto de extensão"). Build e lint confirmados verdes de novo após o fix.
+
 ---
 
 ### T30: Bloco de saúde composto no Dashboard
@@ -1072,15 +1074,17 @@ navegador exige confirmação interativa indisponível para este subagente).
 
 **Done when**:
 
-- [ ] AD-023 (instrumentação do contrato) e AD-024 (baseline do piloto) registradas com trade-off explícito
-- [ ] Handoff reflete o estado real do repositório, verificado contra `git log`/`git status`
-- [ ] Tabela de rastreabilidade da spec atualizada para todos os 10 IDs
-- [ ] Dívidas herdadas e não tocadas repetidas no Handoff (opt-out por linguagem natural; linhas inertes em `conversa_estado`; revogação de chave de serviço por label; `tenant_config` do Vale do Uberaba; L4 Fix 2 e L5 Fix 1; migração do modelo do agente; `n8n/README.md §4` obsoleto; `openapi.yaml` sem `assignedBroker` nem os 2 códigos novos)
-- [ ] `npm run build` passa
+- [x] AD-023 (instrumentação do contrato) e AD-024 (baseline do piloto) registradas com trade-off explícito
+- [x] Handoff reflete o estado real do repositório, verificado contra `git log`/`git status`
+- [x] Tabela de rastreabilidade da spec atualizada para todos os 10 IDs
+- [x] Dívidas herdadas e não tocadas repetidas no Handoff (opt-out por linguagem natural; linhas inertes em `conversa_estado`; revogação de chave de serviço por label; `tenant_config` do Vale do Uberaba; L4 Fix 2 e L5 Fix 1; migração do modelo do agente; `n8n/README.md §4` obsoleto; `openapi.yaml` sem `assignedBroker` nem os 2 códigos novos)
+- [x] `npm run build` passa
 
 **Tests**: none
 **Gate**: build
 **Commit**: `docs(lote-9): registra decisoes e fecha rastreabilidade`
+
+**Status**: ✅ Done — `npm run build` verde. Rastreabilidade da spec sobe para `Implementing` em todos os 10 IDs (não `Verified` ainda — isso é o Verifier, próximo passo, mesmo padrão do lote-8: primeiro fecha rastreabilidade em `Implementing`, sobe para `Verified` num commit próprio depois do Verifier retornar PASS). AD-023/AD-024 registradas em `STATE.md` seguindo o formato exato das ADs existentes. Handoff reescrito a partir de estado real (`git log`/`git status`), incluindo a autorização de push de schema aditivo ao banco real de dev/produção concedida pelo usuário durante a execução, e o fix de `RelativeTime` encontrado na verificação visual.
 
 ---
 
