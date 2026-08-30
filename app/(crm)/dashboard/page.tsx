@@ -11,6 +11,8 @@ import { RecentLeadsTable } from "@/src/components/dashboard/recent-leads-table"
 import { VolumeChart } from "@/src/components/dashboard/volume-chart";
 import { resolveDashboardPeriod } from "@/src/lib/dashboard-period";
 import { formatCurrencyBRL } from "@/src/lib/format";
+import { can } from "@/src/lib/permissions";
+import { periodDays } from "@/src/lib/pilot-metrics";
 import {
   getDashboardKpis,
   getLeadDistributions,
@@ -19,7 +21,7 @@ import {
   getRecentLeads,
   getTenant,
 } from "@/src/server/data";
-import { getLeadScope } from "@/src/server/auth/session";
+import { verifySession } from "@/src/server/auth/session";
 import { getActiveTenantId } from "@/src/server/tenant";
 
 /** Últimos N leads listados no card "Leads Recentes" (RD-04 AC4). */
@@ -57,7 +59,12 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const tenantId = await getActiveTenantId();
   // SCOPE-01 AC3: os indicadores são calculados sobre o escopo da guarda —
   // quem só tem papel corretor vê números só da própria carteira.
-  const scope = await getLeadScope();
+  // `verifySession()` é `cache()` (src/server/auth/session.ts) — chamar aqui
+  // não repete a resolução da sessão; só dá acesso aos papéis, que
+  // `getLeadScope()` sozinho não expõe (lote-9 — BASE-02 AC4/AC5).
+  const authContext = await verifySession();
+  const scope = authContext.leadScope;
+  const canEditSettings = can(authContext.roles, "configuracoes", "escrever");
   const period = resolveDashboardPeriod(params);
 
   // Mesmo instante para toda a página (evita que a janela de 14 dias mude
@@ -120,7 +127,11 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           baselineLeadsPerMonth: tenant?.baselineLeadsPerMonth ?? null,
           baselineFirstResponseMinutes: tenant?.baselineFirstResponseMinutes ?? null,
           baselineLeadToMeetingPct: tenant?.baselineLeadToMeetingPct ?? null,
+          baselineEscalationPct: tenant?.baselineEscalationPct ?? null,
+          baselineAttendancePct: tenant?.baselineAttendancePct ?? null,
         }}
+        periodDays={periodDays(period.from, period.to)}
+        canEditSettings={canEditSettings}
       />
 
       <Grid columns={3} gap={4} align="start">

@@ -919,12 +919,14 @@ navegador exige confirmação interativa indisponível para este subagente).
 
 **Done when**:
 
-- [ ] O período usado na normalização é o MESMO objeto que alimenta tiles e gráficos (regra de definição única de P do lote-4)
-- [ ] `npm run build` e `npm run lint` passam
+- [x] O período usado na normalização é o MESMO objeto que alimenta tiles e gráficos (regra de definição única de P do lote-4)
+- [x] `npm run build` e `npm run lint` passam
 
 **Tests**: none
 **Gate**: build
 **Commit**: `feat(dashboard): passa periodo e permissao aos tiles`
+
+**Status**: ✅ Done — build e lint verdes (0 erros; mesmos 3 warnings pré-existentes). `periodDays(period.from, period.to)` usa o mesmo `period` de `resolveDashboardPeriod` que já alimenta `PeriodFilter`, `getLeadVolumeSeries` e `getLeadDistributions` — nenhum recálculo paralelo.
 
 ---
 
