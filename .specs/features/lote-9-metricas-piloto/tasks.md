@@ -1018,15 +1018,17 @@ navegador exige confirmação interativa indisponível para este subagente).
 
 **Done when**:
 
-- [ ] Resultado da rota inclui `refusalsDeleted`
-- [ ] Falha na purga não impede a expiração de documentos e é reportada no resultado (SAUDE-03 AC3)
-- [ ] Execução sem nada vencido devolve zero sem erro
-- [ ] Gate full passa: `npm test`
-- [ ] Contagem de testes registrada
+- [x] Resultado da rota inclui `refusalsDeleted`
+- [x] Falha na purga não impede a expiração de documentos e é reportada no resultado (SAUDE-03 AC3)
+- [x] Execução sem nada vencido devolve zero sem erro
+- [x] Gate full passa: `npm test`
+- [x] Contagem de testes registrada
 
 **Tests**: integration (rota)
 **Gate**: full
 **Commit**: `feat(cron): purga recusas junto da expiracao de documentos`
+
+**Status**: ✅ Done — `npm test`: **1014 passed, 0 failed, 81 arquivos** (piso 1009 + 2 de T31 + 3 desta task). `runDailyMaintenance` (novo, em `lgpd.ts`) roda `expireDocuments` primeiro e só então tenta `purgeIntegrationRefusals` num `try/catch` próprio — falha na purga vira `refusalsPurgeFailed: true` sem afetar o resultado da expiração já concluída. Rota troca `expireDocuments` por `runDailyMaintenance`. Teste de falha mocka só `purgeIntegrationRefusals` do módulo de dados (`vi.mock` com `importOriginal`, mesmo padrão de `route.test.ts`), preservando o resto do módulo real.
 
 ---
 

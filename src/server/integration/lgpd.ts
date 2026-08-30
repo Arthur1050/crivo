@@ -2,6 +2,7 @@ import "server-only";
 import { and, eq, lte, sql } from "drizzle-orm";
 import { db } from "../../db";
 import { documents, leads } from "../../db/schema";
+import { purgeIntegrationRefusals } from "../data";
 
 export interface OptOutResult {
   optedOutAt: Date;
@@ -54,4 +55,33 @@ export async function expireDocuments(now: Date): Promise<ExpireDocumentsResult>
     deletedByTenant[row.tenantId] = (deletedByTenant[row.tenantId] ?? 0) + 1;
   }
   return { deletedByTenant, total: deletedRows.length };
+}
+
+export interface DailyMaintenanceResult extends ExpireDocumentsResult {
+  /** Recusas de integração com mais de 30 dias removidas nesta execução
+   * (lote-9 — SAUDE-03 AC1). Zero quando nenhuma venceu, nunca erro. */
+  refusalsDeleted: number;
+  /** `true` quando a purga de recusas falhou nesta execução (SAUDE-03 AC3):
+   * a falha é só REPORTADA aqui — nunca impede a expiração de documentos,
+   * que já rodou (e é reportada) antes da purga ser tentada. */
+  refusalsPurgeFailed: boolean;
+}
+
+/**
+ * Rotina diária de manutenção (lote-9 — SAUDE-03): a mesma execução agendada
+ * que já expirava documentos (LGPD-02) passa a também purgar recusas de
+ * integração vencidas, sem introduzir um novo agendamento (AC2). A ordem
+ * importa: `expireDocuments` roda primeiro e seu resultado nunca é afetado
+ * pelo que acontece com a purga — uma falha na purga (`catch` abaixo) é só
+ * reportada em `refusalsPurgeFailed`, nunca propagada (AC3).
+ */
+export async function runDailyMaintenance(now: Date): Promise<DailyMaintenanceResult> {
+  const documentsResult = await expireDocuments(now);
+
+  try {
+    const { deleted } = await purgeIntegrationRefusals(now);
+    return { ...documentsResult, refusalsDeleted: deleted, refusalsPurgeFailed: false };
+  } catch {
+    return { ...documentsResult, refusalsDeleted: 0, refusalsPurgeFailed: true };
+  }
 }

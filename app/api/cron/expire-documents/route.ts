@@ -1,11 +1,13 @@
-import { expireDocuments } from "../../../../src/server/integration/lgpd";
+import { runDailyMaintenance } from "../../../../src/server/integration/lgpd";
 import { problem } from "../../../../src/server/integration/problem";
 
 /**
  * `/api/cron/expire-documents` — job de TTL de documentos (design.md —
- * LGPD-02). Fora de `/api/v1`: autenticação própria via `CRON_SECRET`
- * (Bearer), nunca a API key de tenant — não faz parte do contrato do agente
- * com o n8n. Agendado diariamente pelo Vercel Cron (`vercel.json`).
+ * LGPD-02) e, desde o lote-9 (SAUDE-03), também de purga de recusas de
+ * integração vencidas — mesma execução diária, sem novo agendamento (AC2).
+ * Fora de `/api/v1`: autenticação própria via `CRON_SECRET` (Bearer), nunca
+ * a API key de tenant — não faz parte do contrato do agente com o n8n.
+ * Agendado diariamente pelo Vercel Cron (`vercel.json`).
  *
  * SPEC_DEVIATION: design.md/tasks.md descreviam só `POST`. A documentação
  * oficial da Vercel (Managing Cron Jobs, consultada nesta task) confirma que
@@ -25,7 +27,7 @@ async function handleExpireDocuments(request: Request): Promise<Response> {
     return problem(401, "nao-autenticado", "Secret do cron ausente ou inválido.");
   }
 
-  const result = await expireDocuments(new Date());
+  const result = await runDailyMaintenance(new Date());
   return Response.json(result);
 }
 
