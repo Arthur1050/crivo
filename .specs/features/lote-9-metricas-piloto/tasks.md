@@ -893,15 +893,17 @@ navegador exige confirmação interativa indisponível para este subagente).
 
 **Done when**:
 
-- [ ] Os cinco tiles comparam quando há baseline (BASE-02 AC3)
-- [ ] O valor normalizado aparece por extenso no tile (BASE-02 AC2)
-- [ ] KPI indisponível exibe o baseline sem delta (BASE-02 AC6)
-- [ ] Convite para registrar aparece só com permissão de escrita (BASE-02 AC4/AC5)
-- [ ] `npm run build` e `npm run lint` passam
+- [x] Os cinco tiles comparam quando há baseline (BASE-02 AC3)
+- [x] O valor normalizado aparece por extenso no tile (BASE-02 AC2)
+- [x] KPI indisponível exibe o baseline sem delta (BASE-02 AC6)
+- [x] Convite para registrar aparece só com permissão de escrita (BASE-02 AC4/AC5)
+- [x] `npm run build` e `npm run lint` passam
 
 **Tests**: none
 **Gate**: build
 **Commit**: `feat(dashboard): compara os cinco kpis com baseline normalizado`
+
+**Status**: ✅ Done — build e lint verdes (0 erros; 3 warnings pré-existentes sem relação). `periodDays`/`canEditSettings` e os 2 baselines novos entraram como opcionais nesta task para o build permanecer verde antes do Dashboard (T28) passá-los; T28 os wireia.
 
 ---
 
