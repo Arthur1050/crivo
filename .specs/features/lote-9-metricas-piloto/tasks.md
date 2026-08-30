@@ -221,6 +221,8 @@ Fases são ordenadas e rodam em sequência; dentro de uma fase, as tasks rodam n
 
 ### T7: Purga das recusas vencidas
 
+**Status**: ✅ Done
+
 **What**: `purgeIntegrationRefusals(now)` — apaga recusas com mais de 30 dias e devolve a contagem.
 **Where**: `src/server/data/index.ts`
 **Depends on**: T5
@@ -231,10 +233,10 @@ Fases são ordenadas e rodam em sequência; dentro de uma fase, as tasks rodam n
 
 **Done when**:
 
-- [ ] Recusa de 31 dias some; de 29 dias permanece (limite exato testado)
-- [ ] Execução sem nada vencido devolve zero, sem erro
-- [ ] Gate full passa: `npm test`
-- [ ] Contagem de testes registrada
+- [x] Recusa de 31 dias some; de 29 dias permanece (limite exato testado)
+- [x] Execução sem nada vencido devolve zero, sem erro
+- [x] Gate full passa: `npm test`
+- [x] Contagem de testes registrada (948 passed, 77 arquivos — subiu de 945)
 
 **Tests**: integration
 **Gate**: full

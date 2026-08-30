@@ -7,6 +7,7 @@ import { integrationRefusals } from "../../../db/schema";
 import {
   getIntegrationRefusalsSince,
   getTenants,
+  purgeIntegrationRefusals,
   recordIntegrationRefusal,
 } from "../index";
 
@@ -222,10 +223,11 @@ describe("server/data integration refusals — getIntegrationRefusalsSince (T6)"
   });
 
   afterAll(async () => {
+    // Não fecha o client aqui de propósito — o describe seguinte (T7) neste
+    // mesmo arquivo ainda usa a conexão. Só o último describe fecha.
     await db
       .delete(integrationRefusals)
       .where(like(integrationRefusals.route, `${T6_ROUTE_PREFIX}%`));
-    await db.$client.end();
   });
 
   it("recusa de OUTRO tenant nunca aparece no resultado", async () => {
@@ -262,5 +264,79 @@ describe("server/data integration refusals — getIntegrationRefusalsSince (T6)"
     expect(grouped).toBeDefined();
     expect(grouped!.count).toBe(2);
     expect(grouped!.lastOccurredAt.getTime()).toBe(since.getTime() + 180_000);
+  });
+});
+
+const DAY_MS = 86400000;
+
+// Marcador próprio para T7 — isolado dos de T5/T6 acima.
+const T7_ROUTE_PREFIX = `/api/v1/__test-integration-refusals-t7__/${randomUUID()}`;
+
+describe("server/data integration refusals — purgeIntegrationRefusals (T7)", () => {
+  let tenantAId: string;
+
+  beforeAll(async () => {
+    const allTenants = await getTenants();
+    expect(allTenants.length).toBeGreaterThanOrEqual(1);
+    tenantAId = allTenants[0].id;
+  });
+
+  afterAll(async () => {
+    await db
+      .delete(integrationRefusals)
+      .where(like(integrationRefusals.route, `${T7_ROUTE_PREFIX}%`));
+    // Último describe deste arquivo — fecha a conexão aqui.
+    await db.$client.end();
+  });
+
+  it("recusa de 31 dias some", async () => {
+    const now = new Date("2026-09-01T00:00:00.000Z");
+    const route = `${T7_ROUTE_PREFIX}/31-dias`;
+    await recordIntegrationRefusal({
+      tenantId: tenantAId,
+      route,
+      method: "POST",
+      status: 500,
+      code: null,
+      occurredAt: new Date(now.getTime() - 31 * DAY_MS),
+    });
+
+    await purgeIntegrationRefusals(now);
+
+    const rows = await db
+      .select()
+      .from(integrationRefusals)
+      .where(eq(integrationRefusals.route, route));
+    expect(rows).toHaveLength(0);
+  });
+
+  it("recusa de 29 dias permanece (limite exato — ainda não tem 'mais de 30 dias')", async () => {
+    const now = new Date("2026-09-02T00:00:00.000Z");
+    const route = `${T7_ROUTE_PREFIX}/29-dias`;
+    await recordIntegrationRefusal({
+      tenantId: tenantAId,
+      route,
+      method: "POST",
+      status: 500,
+      code: null,
+      occurredAt: new Date(now.getTime() - 29 * DAY_MS),
+    });
+
+    await purgeIntegrationRefusals(now);
+
+    const rows = await db
+      .select()
+      .from(integrationRefusals)
+      .where(eq(integrationRefusals.route, route));
+    expect(rows).toHaveLength(1);
+  });
+
+  it("execução sem nada vencido devolve zero, sem erro", async () => {
+    // `now` ancorado no ano 2000: nenhuma linha real da suíte (toda datada em
+    // 2026) fica mais antiga que o corte — garante `deleted === 0` sem
+    // depender do estado deixado por outros testes deste arquivo.
+    const now = new Date("2000-01-31T00:00:00.000Z");
+    const result = await purgeIntegrationRefusals(now);
+    expect(result).toEqual({ deleted: 0 });
   });
 });

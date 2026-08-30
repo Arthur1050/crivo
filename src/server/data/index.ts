@@ -11,6 +11,7 @@ import {
   ilike,
   inArray,
   isNull,
+  lt,
   lte,
   max,
   or,
@@ -2245,4 +2246,24 @@ export async function getIntegrationRefusalsSince(
     // max() nunca devolve null aqui.
     lastOccurredAt: row.lastOccurredAt!,
   }));
+}
+
+/**
+ * Purga recusas com mais de 30 dias (SAUDE-03), devolvendo a contagem
+ * deletada. Comparação estrita (`<`): uma recusa com exatamente 30 dias de
+ * idade ainda não tem "mais de 30 dias" e permanece; só quem é mais antigo
+ * que o corte vence.
+ */
+export async function purgeIntegrationRefusals(
+  now: Date
+): Promise<{ deleted: number }> {
+  const RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+  const cutoff = new Date(now.getTime() - RETENTION_MS);
+
+  const rows = await db
+    .delete(integrationRefusals)
+    .where(lt(integrationRefusals.occurredAt, cutoff))
+    .returning({ id: integrationRefusals.id });
+
+  return { deleted: rows.length };
 }
