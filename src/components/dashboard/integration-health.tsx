@@ -4,8 +4,8 @@ import { List, ListItem } from "@astryxdesign/core/List";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { StatusDot } from "@astryxdesign/core/StatusDot";
 import { Text } from "@astryxdesign/core/Text";
-import { Timestamp } from "@astryxdesign/core/Timestamp";
 import { Token } from "@astryxdesign/core/Token";
+import { RelativeTime } from "@/src/components/shared/relative-time";
 import { resolveIntegrationHealth } from "@/src/lib/pilot-metrics";
 import type { RefusalSummary } from "@/src/server/data";
 
@@ -72,7 +72,7 @@ export function IntegrationHealth({
             Última atividade bem-sucedida
           </Text>
           {lastSuccessAt ? (
-            <Timestamp value={lastSuccessAt.toISOString()} format="auto" />
+            <RelativeTime value={lastSuccessAt.toISOString()} />
           ) : (
             <Text type="body" color="secondary">
               Nenhuma atividade registrada
@@ -110,7 +110,7 @@ export function IntegrationHealth({
                 </HStack>
               }
               endContent={
-                <Timestamp value={refusal.lastOccurredAt.toISOString()} format="auto" />
+                <RelativeTime value={refusal.lastOccurredAt.toISOString()} />
               }
             />
           ))}
