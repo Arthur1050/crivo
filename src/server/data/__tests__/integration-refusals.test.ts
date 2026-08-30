@@ -331,6 +331,27 @@ describe("server/data integration refusals — purgeIntegrationRefusals (T7)", (
     expect(rows).toHaveLength(1);
   });
 
+  it("recusa de exatamente 30 dias permanece (limite exato do corte — lt, não lte)", async () => {
+    const now = new Date("2026-09-03T00:00:00.000Z");
+    const route = `${T7_ROUTE_PREFIX}/30-dias`;
+    await recordIntegrationRefusal({
+      tenantId: tenantAId,
+      route,
+      method: "POST",
+      status: 500,
+      code: null,
+      occurredAt: new Date(now.getTime() - 30 * DAY_MS),
+    });
+
+    await purgeIntegrationRefusals(now);
+
+    const rows = await db
+      .select()
+      .from(integrationRefusals)
+      .where(eq(integrationRefusals.route, route));
+    expect(rows).toHaveLength(1);
+  });
+
   it("execução sem nada vencido devolve zero, sem erro", async () => {
     // `now` ancorado no ano 2000: nenhuma linha real da suíte (toda datada em
     // 2026) fica mais antiga que o corte — garante `deleted === 0` sem
