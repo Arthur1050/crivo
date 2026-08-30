@@ -443,6 +443,8 @@ do `delete(tenants)`.
 **What**: Mesma troca no route file de opt-out.
 **Where**: `app/api/v1/leads/[id]/opt-out/route.ts`
 **Depends on**: T13
+**Status**: ✅ Done
+
 **Reuses**: `routes/leads-opt-out.test.ts`
 **Requirement**: SAUDE-01
 
@@ -450,8 +452,11 @@ do `delete(tenants)`.
 
 **Done when**:
 
-- [ ] Testes de rota existentes verdes sem alteração de expectativa
-- [ ] Gate full passa: `npm test`
+- [x] Testes de rota existentes verdes sem alteração de expectativa
+- [x] Gate full passa: `npm test` (962 passed, 79 arquivos — mesmo total do T13)
+
+**Mesmo achado do T11-T13**: `afterAll` de `leads-opt-out.test.ts` ganhou
+`delete(integrationRefusals)` antes do `delete(tenants)`.
 
 **Tests**: integration (rota)
 **Gate**: full
