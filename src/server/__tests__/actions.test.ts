@@ -491,6 +491,118 @@ describe("server actions", () => {
       });
       expect(revertResult.ok).toBe(true);
     });
+
+    // lote-9 — BASE-01 (T24): os cinco baselines repassados pela action,
+    // validados (validateBaselineCount/validateBaselinePercent, T22) antes
+    // de chegar à DAL do T23.
+    it("persiste os cinco baselines e relê após o save (BASE-01 AC2)", async () => {
+      const original = await getTenant(activeTenantId);
+
+      const result = await updateTenantSettingsAction({
+        name: original!.name,
+        agentName: original!.agentName,
+        supportedModality: original!.supportedModality,
+        baselineLeadsPerMonth: 100,
+        baselineFirstResponseMinutes: 4,
+        baselineLeadToMeetingPct: 35,
+        baselineEscalationPct: 12,
+        baselineAttendancePct: 68,
+      });
+      expect(result).toEqual({ ok: true });
+
+      const persisted = await getTenant(activeTenantId);
+      expect(persisted!.baselineLeadsPerMonth).toBe(100);
+      expect(persisted!.baselineFirstResponseMinutes).toBe(4);
+      expect(persisted!.baselineLeadToMeetingPct).toBe(35);
+      expect(persisted!.baselineEscalationPct).toBe(12);
+      expect(persisted!.baselineAttendancePct).toBe(68);
+
+      const revertResult = await updateTenantSettingsAction({
+        name: original!.name,
+        agentName: original!.agentName,
+        supportedModality: original!.supportedModality,
+        baselineLeadsPerMonth: original!.baselineLeadsPerMonth,
+        baselineFirstResponseMinutes: original!.baselineFirstResponseMinutes,
+        baselineLeadToMeetingPct: original!.baselineLeadToMeetingPct,
+        baselineEscalationPct: original!.baselineEscalationPct,
+        baselineAttendancePct: original!.baselineAttendancePct,
+      });
+      expect(revertResult.ok).toBe(true);
+    });
+
+    it("um baseline inválido impede a gravação dos CINCO — nada é persistido (BASE-01 AC3/AC4)", async () => {
+      const original = await getTenant(activeTenantId);
+
+      const result = await updateTenantSettingsAction({
+        name: original!.name,
+        agentName: original!.agentName,
+        supportedModality: original!.supportedModality,
+        baselineLeadsPerMonth: 100,
+        baselineFirstResponseMinutes: 4,
+        baselineLeadToMeetingPct: 35,
+        baselineEscalationPct: 12,
+        // Percentual inválido (acima de 100) — deve barrar TODO o save,
+        // inclusive os quatro campos válidos acima.
+        baselineAttendancePct: 150,
+      });
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.error).toBeTruthy();
+
+      const after = await getTenant(activeTenantId);
+      expect(after!.baselineLeadsPerMonth).toBe(original!.baselineLeadsPerMonth);
+      expect(after!.baselineFirstResponseMinutes).toBe(
+        original!.baselineFirstResponseMinutes
+      );
+      expect(after!.baselineLeadToMeetingPct).toBe(original!.baselineLeadToMeetingPct);
+      expect(after!.baselineEscalationPct).toBe(original!.baselineEscalationPct);
+      expect(after!.baselineAttendancePct).toBe(original!.baselineAttendancePct);
+    });
+
+    it("null explícito nos cinco baselines limpa a configuração via action", async () => {
+      const original = await getTenant(activeTenantId);
+
+      await updateTenantSettingsAction({
+        name: original!.name,
+        agentName: original!.agentName,
+        supportedModality: original!.supportedModality,
+        baselineLeadsPerMonth: 60,
+        baselineFirstResponseMinutes: 7,
+        baselineLeadToMeetingPct: 20,
+        baselineEscalationPct: 5,
+        baselineAttendancePct: 40,
+      });
+
+      const cleared = await updateTenantSettingsAction({
+        name: original!.name,
+        agentName: original!.agentName,
+        supportedModality: original!.supportedModality,
+        baselineLeadsPerMonth: null,
+        baselineFirstResponseMinutes: null,
+        baselineLeadToMeetingPct: null,
+        baselineEscalationPct: null,
+        baselineAttendancePct: null,
+      });
+      expect(cleared).toEqual({ ok: true });
+
+      const after = await getTenant(activeTenantId);
+      expect(after!.baselineLeadsPerMonth).toBeNull();
+      expect(after!.baselineFirstResponseMinutes).toBeNull();
+      expect(after!.baselineLeadToMeetingPct).toBeNull();
+      expect(after!.baselineEscalationPct).toBeNull();
+      expect(after!.baselineAttendancePct).toBeNull();
+
+      const revertResult = await updateTenantSettingsAction({
+        name: original!.name,
+        agentName: original!.agentName,
+        supportedModality: original!.supportedModality,
+        baselineLeadsPerMonth: original!.baselineLeadsPerMonth,
+        baselineFirstResponseMinutes: original!.baselineFirstResponseMinutes,
+        baselineLeadToMeetingPct: original!.baselineLeadToMeetingPct,
+        baselineEscalationPct: original!.baselineEscalationPct,
+        baselineAttendancePct: original!.baselineAttendancePct,
+      });
+      expect(revertResult.ok).toBe(true);
+    });
   });
 
   describe("updateLeadStatusAction", () => {
@@ -1272,6 +1384,29 @@ describe("server actions", () => {
       expect(after!.name).toBe(before!.name);
       expect(after!.agentName).toBe(before!.agentName);
       expect(after!.supportedModality).toBe(before!.supportedModality);
+    });
+
+    // lote-9 — BASE-01 AC6: a recusa por permissão acontece ANTES de
+    // qualquer validação de baseline — um corretor chamando a action direto
+    // com baseline no payload é recusado do mesmo jeito, nada é gravado.
+    it("corretor chamando updateTenantSettingsAction com baseline no payload é recusado e nada é gravado (BASE-01 AC6)", async () => {
+      const before = await getTenant(activeTenantId);
+      sessionRoles = ["corretor"];
+
+      const result = await updateTenantSettingsAction({
+        name: before!.name,
+        agentName: before!.agentName,
+        supportedModality: before!.supportedModality,
+        baselineLeadsPerMonth: 999,
+        baselineAttendancePct: 99,
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.error).toBe("Sem permissão para escrever configuracoes.");
+
+      const after = await getTenant(activeTenantId);
+      expect(after!.baselineLeadsPerMonth).toBe(before!.baselineLeadsPerMonth);
+      expect(after!.baselineAttendancePct).toBe(before!.baselineAttendancePct);
     });
 
     it("corretor chamando createDocumentCategoryAction é recusado e nenhuma categoria é criada (AC3/AC5)", async () => {

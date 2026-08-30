@@ -778,6 +778,8 @@ só o guard muda de `optionalTenantText(x) !== undefined` para
 
 ### T24: Action de configurações aceita baseline
 
+**Status**: ✅ Done
+
 **What**: Estender `updateTenantSettingsAction` com os cinco campos, validando antes de qualquer escrita e recusando sem permissão.
 **Where**: `src/server/actions/settings.ts`
 **Depends on**: T22, T23
@@ -788,10 +790,20 @@ só o guard muda de `optionalTenantText(x) !== undefined` para
 
 **Done when**:
 
-- [ ] Um campo inválido impede a gravação dos cinco (BASE-01 AC3/AC4)
-- [ ] Corretor recebe recusa mesmo chamando a action direto (BASE-01 AC6)
-- [ ] Gate full passa: `npm test`
-- [ ] Contagem de testes registrada
+- [x] Um campo inválido impede a gravação dos cinco (BASE-01 AC3/AC4)
+- [x] Corretor recebe recusa mesmo chamando a action direto (BASE-01 AC6)
+- [x] Gate full passa: `npm test`
+- [x] Contagem de testes registrada
+
+**Achados/desvios**: as cinco checagens de validação (uma por campo) rodam
+ANTES de qualquer chamada à DAL, mesmo molde de curto-circuito dos campos
+existentes — um percentual fora de faixa barra a gravação dos cinco, mesmo
+com os outros quatro válidos. A recusa por permissão (`denyIfForbidden`)
+continua sendo a PRIMEIRA checagem da action, então AC6 já valia
+estruturalmente; teste dedicado adicionado mesmo assim para deixar a prova
+explícita com baseline no payload.
+**Contagem de testes**: 62 passed, 0 failed em
+`src/server/__tests__/actions.test.ts` (arquivo inteiro).
 
 **Tests**: integration
 **Gate**: full

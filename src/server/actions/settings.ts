@@ -6,6 +6,8 @@ import { denyIfForbidden } from "./permission";
 import { updateTenantSettings, type Modality } from "../data";
 import {
   validateAgentVoiceTone,
+  validateBaselineCount,
+  validateBaselinePercent,
   validateBusinessHours,
   validateModality,
   validateName,
@@ -36,6 +38,15 @@ export interface UpdateTenantSettingsInput {
   meetingDays?: number[] | null;
   meetingHoursStart?: string | null;
   meetingHoursEnd?: string | null;
+  // Baseline pré-piloto (lote-9 — BASE-01). Mesma regra de sempre-enviar dos
+  // campos acima: o formulário manda os 5 sempre, para que limpar um
+  // baseline (voltar a "não registrado") também passe pela mesma action.
+  // Validados (inteiro dentro da faixa) nesta action antes de repassar à DAL.
+  baselineLeadsPerMonth?: number | null;
+  baselineFirstResponseMinutes?: number | null;
+  baselineLeadToMeetingPct?: number | null;
+  baselineEscalationPct?: number | null;
+  baselineAttendancePct?: number | null;
 }
 
 /**
@@ -72,6 +83,39 @@ export async function updateTenantSettingsAction(
   });
   if (!businessHoursCheck.ok) return businessHoursCheck;
 
+  // BASE-01 AC3/AC4: um baseline inválido impede a gravação dos CINCO —
+  // toda checagem roda antes de qualquer chamada à DAL, mesmo molde de
+  // curto-circuito dos campos acima.
+  const leadsPerMonthCheck = validateBaselineCount(
+    input.baselineLeadsPerMonth,
+    "Leads por mês"
+  );
+  if (!leadsPerMonthCheck.ok) return leadsPerMonthCheck;
+
+  const firstResponseCheck = validateBaselineCount(
+    input.baselineFirstResponseMinutes,
+    "Minutos até a primeira resposta"
+  );
+  if (!firstResponseCheck.ok) return firstResponseCheck;
+
+  const leadToMeetingCheck = validateBaselinePercent(
+    input.baselineLeadToMeetingPct,
+    "Percentual de lead para reunião"
+  );
+  if (!leadToMeetingCheck.ok) return leadToMeetingCheck;
+
+  const escalationCheck = validateBaselinePercent(
+    input.baselineEscalationPct,
+    "Percentual de escalonamento"
+  );
+  if (!escalationCheck.ok) return escalationCheck;
+
+  const attendanceCheck = validateBaselinePercent(
+    input.baselineAttendancePct,
+    "Percentual de comparecimento"
+  );
+  if (!attendanceCheck.ok) return attendanceCheck;
+
   const tenantId = await getActiveTenantId();
   const updated = await updateTenantSettings(tenantId, {
     name: input.name.trim(),
@@ -86,6 +130,11 @@ export async function updateTenantSettingsAction(
     meetingDays: input.meetingDays,
     meetingHoursStart: input.meetingHoursStart,
     meetingHoursEnd: input.meetingHoursEnd,
+    baselineLeadsPerMonth: input.baselineLeadsPerMonth,
+    baselineFirstResponseMinutes: input.baselineFirstResponseMinutes,
+    baselineLeadToMeetingPct: input.baselineLeadToMeetingPct,
+    baselineEscalationPct: input.baselineEscalationPct,
+    baselineAttendancePct: input.baselineAttendancePct,
   });
 
   if (!updated) {
