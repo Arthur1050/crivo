@@ -1045,16 +1045,18 @@ navegador exige confirmação interativa indisponível para este subagente).
 
 **Done when**:
 
-- [ ] Nenhuma dependência nova em `package.json` (REL-01 AC5)
-- [ ] Os cinco números batem com o Dashboard no mesmo período, calculados pelas mesmas funções (REL-01 AC2)
-- [ ] Sem `configuracoes:ler`, a rota recusa (REL-01 AC4)
-- [ ] Período sem lead renderiza sem erro
-- [ ] Imobiliária e intervalo de datas identificados na página
-- [ ] `npm run build` e `npm run lint` passam
+- [x] Nenhuma dependência nova em `package.json` (REL-01 AC5)
+- [x] Os cinco números batem com o Dashboard no mesmo período, calculados pelas mesmas funções (REL-01 AC2)
+- [x] Sem `configuracoes:ler`, a rota recusa (REL-01 AC4)
+- [x] Período sem lead renderiza sem erro
+- [x] Imobiliária e intervalo de datas identificados na página
+- [x] `npm run build` e `npm run lint` passam
 
 **Tests**: none
 **Gate**: build
 **Commit**: `feat(relatorio): adiciona pagina imprimivel do piloto`
+
+**Status**: ✅ Done — build e lint verdes (0 erros; mesmos 3 warnings pré-existentes); `package.json`/`package-lock.json` inalterados. `RelatorioPage` reusa `resolveDashboardPeriod` + `getDashboardKpis` + o mesmíssimo `KpiTiles` do Dashboard (`canEditSettings={false}`, sem link navegável) — nenhum recálculo paralelo. Sem `configuracoes:ler`, `requirePermission` lança `PermissionDeniedError` e a página responde 404 (mesmo padrão de `configuracoes/page.tsx`). Grupo `(relatorio)` nasce sem `AppShell`/`Sidebar` (layout próprio, só `VStack padding`); `proxy.ts` ainda exige cookie de sessão. Período sem lead usa o mesmo caminho `null`-safe que `KpiTiles` já trata desde T27.
 
 ---
 
