@@ -942,14 +942,16 @@ navegador exige confirmação interativa indisponível para este subagente).
 
 **Done when**:
 
-- [ ] Recusas identificadas por código e rota, sem nenhum dado de lead (SAUDE-02 AC7)
-- [ ] Estado de problema tem destaque visual sem mudar de posição (SAUDE-02 AC5)
-- [ ] Ausência total de atividade lê como problema, não como silêncio (edge case da spec)
-- [ ] `npm run build` e `npm run lint` passam
+- [x] Recusas identificadas por código e rota, sem nenhum dado de lead (SAUDE-02 AC7)
+- [x] Estado de problema tem destaque visual sem mudar de posição (SAUDE-02 AC5)
+- [x] Ausência total de atividade lê como problema, não como silêncio (edge case da spec)
+- [x] `npm run build` e `npm run lint` passam
 
 **Tests**: none
 **Gate**: build
 **Commit**: `feat(dashboard): adiciona bloco de saude da integracao`
+
+**Status**: ✅ Done — build e lint verdes (0 erros; mesmos 3 warnings pré-existentes). Componente resolve o estado internamente via `resolveIntegrationHealth(lastSuccessAt, refusals.length, now)`, recebendo os ingredientes já buscados pelo chamador (T30). `StatusDot` (variant + `isPulsing`) fica sempre no mesmo lugar do card — só cor/pulso mudam com o estado. Recusas em `List`/`ListItem` com `Token` por código — sem `renderCell` de `Table`, o componente inteiro fica Server Component (nenhuma função cruza a fronteira RSC→client). Ainda não composto no Dashboard (T30).
 
 ---
 
