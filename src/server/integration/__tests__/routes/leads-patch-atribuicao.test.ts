@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { eq, inArray, sql } from "drizzle-orm";
 import { db } from "../../../../db";
 import {
+  integrationRefusals,
   leads,
   tenant_members,
   tenantApiKeys,
@@ -149,6 +150,9 @@ describe("routes: PATCH /api/v1/leads/[id] — atribuição por agenda", () => {
 
   afterAll(async () => {
     const tenantIds = [tenantId, semCorretorTenantId];
+    // integration_refusals precisa sumir ANTES do tenant — FK sem
+    // onDelete, um tenant com recusa pendurada nunca deleta (lote-9 — T12).
+    await db.delete(integrationRefusals).where(inArray(integrationRefusals.tenantId, tenantIds));
     await db.delete(leads).where(inArray(leads.tenantId, tenantIds));
     await db
       .delete(tenantApiKeys)
@@ -216,6 +220,16 @@ describe("routes: PATCH /api/v1/leads/[id] — atribuição por agenda", () => {
     expect(saved.assignedUserId).toBeNull();
     expect(saved.status).toBe("em_qualificacao");
     expect(saved.executiveSummary).toBeNull();
+
+    // lote-9 — SAUDE-01/T12: a rota instrumentada grava a recusa com o
+    // código correto e o tenant que autenticou a chamada.
+    const refusals = await db
+      .select()
+      .from(integrationRefusals)
+      .where(eq(integrationRefusals.tenantId, tenantId));
+    expect(
+      refusals.some((r) => r.code === "sem-corretor-disponivel" && r.status === 409)
+    ).toBe(true);
   });
 
   // ATRIB-02 AC7 — o código do perdedor da corrida, de forma determinística:
@@ -277,6 +291,16 @@ describe("routes: PATCH /api/v1/leads/[id] — atribuição por agenda", () => {
       );
     expect(comReuniao).toHaveLength(1);
     expect(comReuniao[0].id).toBe(leadReservado);
+
+    // lote-9 — SAUDE-01/T12: a rota instrumentada grava a recusa com o
+    // código correto e o tenant que autenticou a chamada.
+    const refusals = await db
+      .select()
+      .from(integrationRefusals)
+      .where(eq(integrationRefusals.tenantId, tenantId));
+    expect(
+      refusals.some((r) => r.code === "conflito-de-agenda" && r.status === 409)
+    ).toBe(true);
   });
 
   // ATRIB-03 AC1/AC2.

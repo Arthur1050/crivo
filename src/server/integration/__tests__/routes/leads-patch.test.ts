@@ -3,7 +3,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
 import { db } from "../../../../db";
-import { leads, tenantApiKeys, tenants } from "../../../../db/schema";
+import { integrationRefusals, leads, tenantApiKeys, tenants } from "../../../../db/schema";
 import { updateLeadStatus } from "../../../data";
 import {
   DELETE,
@@ -51,6 +51,10 @@ describe("routes: PATCH /api/v1/leads/[id]", () => {
   });
 
   afterAll(async () => {
+    // integration_refusals precisa sumir ANTES do tenant — FK sem
+    // onDelete, um tenant com recusa pendurada nunca deleta (lote-9 — T12).
+    await db.delete(integrationRefusals).where(eq(integrationRefusals.tenantId, tenantAId));
+    await db.delete(integrationRefusals).where(eq(integrationRefusals.tenantId, tenantBId));
     await db.delete(leads).where(eq(leads.tenantId, tenantAId));
     await db.delete(leads).where(eq(leads.tenantId, tenantBId));
     await db.delete(tenantApiKeys).where(eq(tenantApiKeys.tenantId, tenantAId));

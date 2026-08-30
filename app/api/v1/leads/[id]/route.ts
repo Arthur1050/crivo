@@ -1,4 +1,3 @@
-import { authenticate } from "../../../../../src/server/integration/auth";
 import { patchLead, serializeLead } from "../../../../../src/server/integration/leads";
 import {
   MAX_BODY_BYTES,
@@ -9,6 +8,7 @@ import {
   problem,
   type ProblemCode,
 } from "../../../../../src/server/integration/problem";
+import { withIntegrationRoute } from "../../../../../src/server/integration/route";
 
 /** Mapeia os códigos que `patchLead` pode devolver para o status HTTP do
  * contrato (design.md — Error Handling Strategy). */
@@ -50,57 +50,54 @@ function detailForCode(code: ProblemCode): string | undefined {
 
 /**
  * `PATCH /api/v1/leads/{id}` — upsert parcial de qualificação + máquina de
- * estados (design.md — Route handlers). Handler fino: autentica → lê/valida
- * o corpo → delega a `patchLead` → mapeia falha de serviço para problem+json
- * ou serializa o lead atualizado. Um lead de outro tenant nunca chega a
- * existir do ponto de vista de `patchLead` (tenant-scoped na DAL) — vira
- * `recurso-nao-encontrado` → 404, nunca 403 (INT-01 AC3).
+ * estados (design.md — Route handlers). Handler fino: `withIntegrationRoute`
+ * já autenticou e já agenda o registro de qualquer recusa — este corpo só
+ * lê/valida o corpo → delega a `patchLead` → mapeia falha de serviço para
+ * problem+json ou serializa o lead atualizado. Um lead de outro tenant nunca
+ * chega a existir do ponto de vista de `patchLead` (tenant-scoped na DAL) —
+ * vira `recurso-nao-encontrado` → 404, nunca 403 (INT-01 AC3).
  */
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-): Promise<Response> {
-  const auth = await authenticate(request);
-  if (auth instanceof Response) return auth;
+export const PATCH = withIntegrationRoute<{ params: Promise<{ id: string }> }>(
+  async (request, auth, { params }) => {
+    const { id } = await params;
 
-  const { id } = await params;
+    const bodyText = await request.text();
+    if (Buffer.byteLength(bodyText, "utf8") > MAX_BODY_BYTES) {
+      return problem(
+        413,
+        "corpo-grande-demais",
+        `Corpo da requisição excede o limite de ${MAX_BODY_BYTES} bytes.`
+      );
+    }
 
-  const bodyText = await request.text();
-  if (Buffer.byteLength(bodyText, "utf8") > MAX_BODY_BYTES) {
-    return problem(
-      413,
-      "corpo-grande-demais",
-      `Corpo da requisição excede o limite de ${MAX_BODY_BYTES} bytes.`
+    let json: unknown;
+    try {
+      json = bodyText.trim() === "" ? {} : JSON.parse(bodyText);
+    } catch {
+      return problem(400, "payload-invalido", "Corpo da requisição não é JSON válido.");
+    }
+
+    const parsed = parseLeadPatch(json);
+    if (!parsed.ok) return problem(400, "payload-invalido", parsed.detail);
+
+    const result = await patchLead(auth.tenantId, id, parsed.dto);
+    if (!result.ok) {
+      return problem(statusForCode(result.code), result.code, detailForCode(result.code));
+    }
+
+    // `assignedBroker` só aparece quando ESTA operação atribuiu um
+    // responsável (lote-8 — ATRIB-02 AC4): o agente recebe quem ficou, para
+    // convidar ao evento pelo e-mail. A lista de candidatos nunca sai do CRM
+    // (AD-018), e o id interno do usuário continua fora do payload.
+    return Response.json(
+      {
+        ...serializeLead(result.lead),
+        ...(result.assignedBroker ? { assignedBroker: result.assignedBroker } : {}),
+      },
+      { status: 200 }
     );
   }
-
-  let json: unknown;
-  try {
-    json = bodyText.trim() === "" ? {} : JSON.parse(bodyText);
-  } catch {
-    return problem(400, "payload-invalido", "Corpo da requisição não é JSON válido.");
-  }
-
-  const parsed = parseLeadPatch(json);
-  if (!parsed.ok) return problem(400, "payload-invalido", parsed.detail);
-
-  const result = await patchLead(auth.tenantId, id, parsed.dto);
-  if (!result.ok) {
-    return problem(statusForCode(result.code), result.code, detailForCode(result.code));
-  }
-
-  // `assignedBroker` só aparece quando ESTA operação atribuiu um responsável
-  // (lote-8 — ATRIB-02 AC4): o agente recebe quem ficou, para convidar ao
-  // evento pelo e-mail. A lista de candidatos nunca sai do CRM (AD-018), e o
-  // id interno do usuário continua fora do payload.
-  return Response.json(
-    {
-      ...serializeLead(result.lead),
-      ...(result.assignedBroker ? { assignedBroker: result.assignedBroker } : {}),
-    },
-    { status: 200 }
-  );
-}
+);
 
 export const GET = methodNotAllowed(["PATCH"]);
 export const POST = methodNotAllowed(["PATCH"]);

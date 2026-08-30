@@ -382,6 +382,8 @@ opcional, permanece síncrono, e `unmatchedGet()` sem argumento
 
 ### T12: `GET/PATCH /api/v1/leads/{id}` sob o wrapper
 
+**Status**: ✅ Done
+
 **What**: Mesma troca no route file de lead individual.
 **Where**: `app/api/v1/leads/[id]/route.ts`
 **Depends on**: T11
@@ -392,10 +394,15 @@ opcional, permanece síncrono, e `unmatchedGet()` sem argumento
 
 **Done when**:
 
-- [ ] `params` continua chegando ao handler corretamente
-- [ ] Testes de rota existentes verdes sem alteração de expectativa
-- [ ] Recusa `conflito-de-agenda` ou `sem-corretor-disponivel` grava linha com o código correto
-- [ ] Gate full passa: `npm test`
+- [x] `params` continua chegando ao handler corretamente
+- [x] Testes de rota existentes verdes sem alteração de expectativa
+- [x] Recusa `conflito-de-agenda` ou `sem-corretor-disponivel` grava linha com o código correto
+- [x] Gate full passa: `npm test` (962 passed, 79 arquivos — mesmo total do T11; as duas provas novas são asserções adicionadas a `it()`s existentes, não `it()`s novos)
+
+**Mesmo achado do T11**: `afterAll` de `leads-patch.test.ts` e
+`leads-patch-atribuicao.test.ts` apagava os tenants fixture direto; ganharam
+`delete(integrationRefusals)` antes do `delete(tenants)` pela mesma FK sem
+`onDelete`.
 
 **Tests**: integration (rota)
 **Gate**: full
