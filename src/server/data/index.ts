@@ -866,6 +866,16 @@ export interface TenantSettingsUpdate {
   meetingDays?: number[] | null;
   meetingHoursStart?: string | null;
   meetingHoursEnd?: string | null;
+  // Baseline pré-piloto (lote-9 — BASE-01), cinco colunas independentes.
+  // Mesmo padrão SPG-1 dos campos de horário comercial acima (sem
+  // normalização de texto — são `integer`): chave ausente = coluna
+  // intocada; `null` explícito = limpa; valor presente = grava como veio
+  // (a validação de faixa já rodou na action antes de chegar aqui).
+  baselineLeadsPerMonth?: number | null;
+  baselineFirstResponseMinutes?: number | null;
+  baselineLeadToMeetingPct?: number | null;
+  baselineEscalationPct?: number | null;
+  baselineAttendancePct?: number | null;
 }
 
 /**
@@ -920,6 +930,22 @@ export async function updateTenantSettings(
   }
   if (updates.meetingHoursEnd !== undefined) {
     setValues.meetingHoursEnd = updates.meetingHoursEnd;
+  }
+
+  if (updates.baselineLeadsPerMonth !== undefined) {
+    setValues.baselineLeadsPerMonth = updates.baselineLeadsPerMonth;
+  }
+  if (updates.baselineFirstResponseMinutes !== undefined) {
+    setValues.baselineFirstResponseMinutes = updates.baselineFirstResponseMinutes;
+  }
+  if (updates.baselineLeadToMeetingPct !== undefined) {
+    setValues.baselineLeadToMeetingPct = updates.baselineLeadToMeetingPct;
+  }
+  if (updates.baselineEscalationPct !== undefined) {
+    setValues.baselineEscalationPct = updates.baselineEscalationPct;
+  }
+  if (updates.baselineAttendancePct !== undefined) {
+    setValues.baselineAttendancePct = updates.baselineAttendancePct;
   }
 
   const rows = await db

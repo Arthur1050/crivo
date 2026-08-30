@@ -301,4 +301,135 @@ describe("server/data — updateTenantSettings estendido (RD-07)", () => {
       expect(untouched!.meetingHoursEnd).toBe("16:30");
     });
   });
+
+  // lote-9 — BASE-01 (T23): cinco baselines pré-piloto, mesmo padrão SPG-1
+  // (chave ausente não toca; null limpa; valor grava) dos campos acima.
+  describe("baseline do piloto (BASE-01)", () => {
+    it("persiste os cinco baselines juntos", async () => {
+      const updated = await updateTenantSettings(FIXTURE_TENANT_ID, {
+        ...REQUIRED,
+        baselineLeadsPerMonth: 120,
+        baselineFirstResponseMinutes: 5,
+        baselineLeadToMeetingPct: 40,
+        baselineEscalationPct: 15,
+        baselineAttendancePct: 70,
+      });
+
+      expect(updated).not.toBeNull();
+      expect(updated!.baselineLeadsPerMonth).toBe(120);
+      expect(updated!.baselineFirstResponseMinutes).toBe(5);
+      expect(updated!.baselineLeadToMeetingPct).toBe(40);
+      expect(updated!.baselineEscalationPct).toBe(15);
+      expect(updated!.baselineAttendancePct).toBe(70);
+    });
+
+    it("relê do banco os cinco baselines após o save (reflete após reload)", async () => {
+      await updateTenantSettings(FIXTURE_TENANT_ID, {
+        ...REQUIRED,
+        baselineLeadsPerMonth: 80,
+        baselineFirstResponseMinutes: 3,
+        baselineLeadToMeetingPct: 35,
+        baselineEscalationPct: 10,
+        baselineAttendancePct: 65,
+      });
+
+      const reread = await getTenant(FIXTURE_TENANT_ID);
+      expect(reread!.baselineLeadsPerMonth).toBe(80);
+      expect(reread!.baselineFirstResponseMinutes).toBe(3);
+      expect(reread!.baselineLeadToMeetingPct).toBe(35);
+      expect(reread!.baselineEscalationPct).toBe(10);
+      expect(reread!.baselineAttendancePct).toBe(65);
+    });
+
+    it("zero é um valor válido para os cinco baselines (não é tratado como ausência)", async () => {
+      const updated = await updateTenantSettings(FIXTURE_TENANT_ID, {
+        ...REQUIRED,
+        baselineLeadsPerMonth: 0,
+        baselineFirstResponseMinutes: 0,
+        baselineLeadToMeetingPct: 0,
+        baselineEscalationPct: 0,
+        baselineAttendancePct: 0,
+      });
+
+      expect(updated!.baselineLeadsPerMonth).toBe(0);
+      expect(updated!.baselineFirstResponseMinutes).toBe(0);
+      expect(updated!.baselineLeadToMeetingPct).toBe(0);
+      expect(updated!.baselineEscalationPct).toBe(0);
+      expect(updated!.baselineAttendancePct).toBe(0);
+    });
+
+    it("null explícito nos cinco baselines limpa as colunas", async () => {
+      await updateTenantSettings(FIXTURE_TENANT_ID, {
+        ...REQUIRED,
+        baselineLeadsPerMonth: 100,
+        baselineFirstResponseMinutes: 4,
+        baselineLeadToMeetingPct: 30,
+        baselineEscalationPct: 12,
+        baselineAttendancePct: 60,
+      });
+
+      const cleared = await updateTenantSettings(FIXTURE_TENANT_ID, {
+        ...REQUIRED,
+        baselineLeadsPerMonth: null,
+        baselineFirstResponseMinutes: null,
+        baselineLeadToMeetingPct: null,
+        baselineEscalationPct: null,
+        baselineAttendancePct: null,
+      });
+
+      expect(cleared).not.toBeNull();
+      expect(cleared!.baselineLeadsPerMonth).toBeNull();
+      expect(cleared!.baselineFirstResponseMinutes).toBeNull();
+      expect(cleared!.baselineLeadToMeetingPct).toBeNull();
+      expect(cleared!.baselineEscalationPct).toBeNull();
+      expect(cleared!.baselineAttendancePct).toBeNull();
+    });
+
+    it("chave ausente dos cinco baselines deixa as colunas intocadas", async () => {
+      await updateTenantSettings(FIXTURE_TENANT_ID, {
+        ...REQUIRED,
+        baselineLeadsPerMonth: 90,
+        baselineFirstResponseMinutes: 6,
+        baselineLeadToMeetingPct: 45,
+        baselineEscalationPct: 20,
+        baselineAttendancePct: 75,
+      });
+
+      const untouched = await updateTenantSettings(FIXTURE_TENANT_ID, {
+        ...REQUIRED,
+      });
+
+      expect(untouched).not.toBeNull();
+      expect(untouched!.baselineLeadsPerMonth).toBe(90);
+      expect(untouched!.baselineFirstResponseMinutes).toBe(6);
+      expect(untouched!.baselineLeadToMeetingPct).toBe(45);
+      expect(untouched!.baselineEscalationPct).toBe(20);
+      expect(untouched!.baselineAttendancePct).toBe(75);
+    });
+
+    it("salvar UM baseline não altera os outros quatro", async () => {
+      await updateTenantSettings(FIXTURE_TENANT_ID, {
+        ...REQUIRED,
+        baselineLeadsPerMonth: 50,
+        baselineFirstResponseMinutes: 2,
+        baselineLeadToMeetingPct: 25,
+        baselineEscalationPct: 8,
+        baselineAttendancePct: 55,
+      });
+
+      const onlyOne = await updateTenantSettings(FIXTURE_TENANT_ID, {
+        ...REQUIRED,
+        baselineAttendancePct: 90,
+      });
+
+      expect(onlyOne).not.toBeNull();
+      expect(onlyOne!.baselineAttendancePct).toBe(90);
+      // Os outros quatro continuam com o valor do save anterior — a coluna
+      // ficou intocada porque a chave não veio neste payload.
+      expect(onlyOne!.baselineLeadsPerMonth).toBe(50);
+      expect(onlyOne!.baselineFirstResponseMinutes).toBe(2);
+      expect(onlyOne!.baselineLeadToMeetingPct).toBe(25);
+      expect(onlyOne!.baselineEscalationPct).toBe(8);
+    });
+  });
 });

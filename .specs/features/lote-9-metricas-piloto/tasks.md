@@ -744,6 +744,8 @@ usuário) tratados como o mesmo "vazio válido" — ambos `ok: true`.
 
 ### T23: DAL grava os cinco baselines
 
+**Status**: ✅ Done
+
 **What**: Estender `TenantSettingsUpdate` e `updateTenantSettings` com os cinco campos de baseline, no padrão SPG-1.
 **Where**: `src/server/data/index.ts`
 **Depends on**: T1
@@ -754,10 +756,19 @@ usuário) tratados como o mesmo "vazio válido" — ambos `ok: true`.
 
 **Done when**:
 
-- [ ] Chave ausente não toca a coluna; `null` explícito limpa; valor grava
-- [ ] Salvar um baseline não altera os outros quatro
-- [ ] Gate full passa: `npm test`
-- [ ] Contagem de testes registrada
+- [x] Chave ausente não toca a coluna; `null` explícito limpa; valor grava
+- [x] Salvar um baseline não altera os outros quatro
+- [x] Gate full passa: `npm test`
+- [x] Contagem de testes registrada
+
+**Achados/desvios**: os cinco campos são `number | null | undefined` sem
+normalização de texto (mesmo tratamento de `meetingDays` — são `integer`,
+não texto), então não reusam `optionalTenantText` (que só normaliza string);
+o padrão SPG-1 "chave ausente intocada / null limpa / valor grava" é o mesmo,
+só o guard muda de `optionalTenantText(x) !== undefined` para
+`x !== undefined` direto.
+**Contagem de testes**: 23 passed, 0 failed em
+`src/server/data/__tests__/tenant-settings.test.ts` (arquivo inteiro).
 
 **Tests**: integration
 **Gate**: full
