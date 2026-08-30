@@ -466,6 +466,8 @@ do `delete(tenants)`.
 
 ### T15: Contexto sob o wrapper
 
+**Status**: ✅ Done
+
 **What**: Mesma troca no route file de contexto.
 **Where**: `app/api/v1/context/route.ts`
 **Depends on**: T14
@@ -476,8 +478,11 @@ do `delete(tenants)`.
 
 **Done when**:
 
-- [ ] Testes de rota existentes verdes sem alteração de expectativa
-- [ ] Gate full passa: `npm test`
+- [x] Testes de rota existentes verdes sem alteração de expectativa
+- [x] Gate full passa: `npm test` (962 passed, 79 arquivos — mesmo total do T14)
+
+**Mesmo achado do T11-T14**: `afterAll` de `context-get.test.ts` ganhou
+`delete(integrationRefusals)` antes do `delete(tenants)`.
 
 **Tests**: integration (rota)
 **Gate**: full
