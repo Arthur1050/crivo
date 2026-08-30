@@ -72,6 +72,13 @@ export const tenants = pgTable(
     baselineLeadsPerMonth: integer("baseline_leads_per_month"),
     baselineFirstResponseMinutes: integer("baseline_first_response_minutes"),
     baselineLeadToMeetingPct: integer("baseline_lead_to_meeting_pct"),
+    // Baseline pré-piloto (lote-9 — BASE-01), somando-se aos três acima.
+    // Nullable pela mesma razão: são snapshot único preenchido pelo usuário,
+    // não pelo seed (AD-004) — o de escalonamento é o mais discutível de
+    // levantar (a imobiliária não tinha agente antes), mas nasce nulo como
+    // os demais até a imobiliária registrar.
+    baselineEscalationPct: integer("baseline_escalation_pct"),
+    baselineAttendancePct: integer("baseline_attendance_pct"),
     // Identidade institucional exibida no shell e editável em Configurações
     // (redesign-crm-astryx — RD-01/RD-02/RD-07). Todas nullable e aditivas: o
     // shell degrada graciosamente quando faltam (spec.md — Edge Cases) e a
