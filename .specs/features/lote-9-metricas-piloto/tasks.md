@@ -144,6 +144,8 @@ Fases são ordenadas e rodam em sequência; dentro de uma fase, as tasks rodam n
 
 ### T4: Lib pura das regras do lote
 
+**Status**: ✅ Done
+
 **What**: Criar `pilot-metrics.ts` com `periodDays`, `normalizeMonthlyBaseline`, `attendanceWindow`, `isPendingAttendance` e `resolveIntegrationHealth`, com testes unitários.
 **Where**: `src/lib/pilot-metrics.ts`
 **Depends on**: None
@@ -154,10 +156,10 @@ Fases são ordenadas e rodam em sequência; dentro de uma fase, as tasks rodam n
 
 **Done when**:
 
-- [ ] As cinco funções existem, puras, sem nenhuma importação de I/O
-- [ ] Testes cobrem: período < 1 dia sem arredondar para zero; baseline zero tratado como valor; reunião exatamente no instante de encerramento; reunião com 14 dias exatos; saúde com recusa mas com sucesso recente; saúde sem sucesso e sem recusa
-- [ ] Gate quick passa: `npx vitest run src/lib/__tests__/pilot-metrics.test.ts`
-- [ ] Contagem de testes do arquivo registrada
+- [x] As cinco funções existem, puras, sem nenhuma importação de I/O
+- [x] Testes cobrem: período < 1 dia sem arredondar para zero; baseline zero tratado como valor; reunião exatamente no instante de encerramento; reunião com 14 dias exatos; saúde com recusa mas com sucesso recente; saúde sem sucesso e sem recusa
+- [x] Gate quick passa: `npx vitest run src/lib/__tests__/pilot-metrics.test.ts`
+- [x] Contagem de testes do arquivo registrada (20 passed)
 
 **Tests**: unit
 **Gate**: quick
