@@ -852,6 +852,8 @@ do escopo da task.
 
 ### T26: Formulário composto na tela de Configurações
 
+**Status**: ✅ Done
+
 **What**: Posicionar o formulário de baseline na página, carregando os valores atuais do tenant.
 **Where**: `app/(crm)/configuracoes/page.tsx`
 **Depends on**: T25
@@ -862,8 +864,16 @@ do escopo da task.
 
 **Done when**:
 
-- [ ] Valores atuais pré-carregados, inclusive quando nulos
-- [ ] `npm run build` e `npm run lint` passam
+- [x] Valores atuais pré-carregados, inclusive quando nulos
+- [x] `npm run build` e `npm run lint` passam
+
+**Achados/desvios**: `<BaselineForm tenant={tenant} />` posicionado logo após
+`<SettingsForm tenant={tenant} />` e antes do card "Documentos" — o mesmo
+`tenant` já carregado pela página alimenta os dois formulários, nenhuma
+consulta nova. Valores nulos chegam ao componente como `null` (não `undefined`)
+e o `NumberInput` renderiza vazio nesse caso, sem erro. Verificação visual:
+mesma pendência do T20/T21 (extensão Chrome disponível mas seleção de
+navegador exige confirmação interativa indisponível para este subagente).
 
 **Tests**: none
 **Gate**: build

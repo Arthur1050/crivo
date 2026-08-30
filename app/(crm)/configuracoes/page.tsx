@@ -10,6 +10,7 @@ import { Timestamp } from "@astryxdesign/core/Timestamp";
 import { Token } from "@astryxdesign/core/Token";
 import { FileTypeIcon } from "@/src/components/documents/file-type-icon";
 import { NavLink } from "@/src/components/shared/nav-link";
+import { BaselineForm } from "@/src/components/settings/baseline-form";
 import { SettingsForm } from "@/src/components/settings/settings-form";
 import {
   getDocumentCategories,
@@ -92,6 +93,8 @@ export default async function ConfiguracoesPage() {
       </VStack>
 
       <SettingsForm tenant={tenant} />
+
+      <BaselineForm tenant={tenant} />
 
       <Card>
         <VStack gap={4}>
