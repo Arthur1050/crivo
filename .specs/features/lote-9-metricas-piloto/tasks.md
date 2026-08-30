@@ -605,6 +605,8 @@ final deste worker para o orquestrador).
 
 ### T19: Leitura das reuniões pendentes de confirmação
 
+**Status**: ✅ Done
+
 **What**: `getPendingAttendanceMeetings(scope, now)` — reuniões encerradas, sem comparecimento registrado, dentro da janela de 14 dias, escopadas.
 **Where**: `src/server/data/index.ts`
 **Depends on**: T4, T18
@@ -615,13 +617,23 @@ final deste worker para o orquestrador).
 
 **Done when**:
 
-- [ ] Reunião que ainda não terminou não aparece
-- [ ] Reunião encerrada há 13 dias aparece; há 15 dias não aparece
-- [ ] Reunião com comparecimento já registrado não aparece
-- [ ] Corretor vê só as da própria carteira; gestor vê todas do tenant
-- [ ] Lead sem responsável aparece para gestor e administrador (edge case da spec)
-- [ ] Gate full passa: `npm test`
-- [ ] Contagem de testes registrada
+- [x] Reunião que ainda não terminou não aparece
+- [x] Reunião encerrada há 13 dias aparece; há 15 dias não aparece
+- [x] Reunião com comparecimento já registrado não aparece
+- [x] Corretor vê só as da própria carteira; gestor vê todas do tenant
+- [x] Lead sem responsável aparece para gestor e administrador (edge case da spec)
+- [x] Gate full passa: `npm test`
+- [x] Contagem de testes registrada
+
+**Achados/desvios**: implementado com uma query SQL de candidatos (tenant +
+`assignedTo(scope)` + `meeting_at IS NOT NULL` + `meeting_attended IS NULL`)
+seguida de um filtro em JS que chama `isPendingAttendance` diretamente — reusa
+a MESMA função pura do T4 para a janela dos 30min/14 dias em vez de duplicar a
+matemática de datas em SQL. Volume de dados de um piloto não justifica
+pushdown do filtro temporal para o banco. Resultado ordenado por `meetingAt`
+asc (mais urgente primeiro), id como desempate determinístico.
+**Contagem de testes**: 4 passed, 0 failed em
+`src/server/data/__tests__/pending-meetings.test.ts` (arquivo novo).
 
 **Tests**: integration
 **Gate**: full

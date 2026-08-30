@@ -10,6 +10,7 @@ import {
   gte,
   ilike,
   inArray,
+  isNotNull,
   isNull,
   lt,
   lte,
@@ -41,6 +42,7 @@ import {
 } from "../../lib/broker-availability";
 import type { LeadScope } from "../../lib/lead-scope";
 import { parseRoles, type Role } from "../../lib/permissions";
+import { isPendingAttendance } from "../../lib/pilot-metrics";
 
 export type { LeadScope };
 
@@ -1022,6 +1024,65 @@ export async function setMeetingAttendance(
     )
     .returning();
   return rows[0] ?? null;
+}
+
+export interface PendingMeeting {
+  leadId: string;
+  leadName: string;
+  meetingAt: Date;
+  assignedUserId: string | null;
+  brokerName: string | null;
+}
+
+/**
+ * Reuniões que cobram confirmação de comparecimento (lote-9 — PRES-01,
+ * PRES-02): candidatas vêm do banco já reduzidas ao essencial (`meeting_at`
+ * preenchido, `meeting_attended` ainda `null`, escopadas por tenant +
+ * `assignedTo(scope)` — SCOPE-02, mesmo filtro de carteira das escritas), e a
+ * janela temporal exata (`+30min` a `+30min+14d`) é decidida por
+ * `isPendingAttendance` (T4, `src/lib/pilot-metrics.ts`) — a MESMA função
+ * pura testada isoladamente, nunca uma segunda conta de datas duplicada em
+ * SQL. Corretor só carrega em seu própria carteira; administrador/gestor
+ * (`assignedUserId: null` no escopo) veem qualquer lead do tenant, INCLUSIVE
+ * o sem responsável (`assignedTo` devolve `undefined` — sem filtro — quando o
+ * escopo é de imobiliária inteira; lote-8 AD-022, edge case da spec).
+ * Ordenado pela reunião mais antiga primeiro (mais urgente), id como
+ * desempate determinístico.
+ */
+export async function getPendingAttendanceMeetings(
+  scope: LeadScope,
+  now: Date
+): Promise<PendingMeeting[]> {
+  const rows = await db
+    .select({
+      leadId: leads.id,
+      leadName: leads.name,
+      meetingAt: leads.meetingAt,
+      meetingAttended: leads.meetingAttended,
+      assignedUserId: leads.assignedUserId,
+      brokerName: users.name,
+    })
+    .from(leads)
+    .leftJoin(users, eq(leads.assignedUserId, users.id))
+    .where(
+      and(
+        eq(leads.tenantId, scope.tenantId),
+        assignedTo(scope),
+        isNotNull(leads.meetingAt),
+        isNull(leads.meetingAttended)
+      )
+    )
+    .orderBy(asc(leads.meetingAt), asc(leads.id));
+
+  return rows
+    .filter((row) => isPendingAttendance(row.meetingAt!, row.meetingAttended, now))
+    .map((row) => ({
+      leadId: row.leadId,
+      leadName: row.leadName,
+      meetingAt: row.meetingAt!,
+      assignedUserId: row.assignedUserId,
+      brokerName: row.brokerName,
+    }));
 }
 
 /**
