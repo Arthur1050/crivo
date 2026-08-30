@@ -643,6 +643,8 @@ asc (mais urgente primeiro), id como desempate determinístico.
 
 ### T20: Componente de reuniões a confirmar
 
+**Status**: ✅ Done
+
 **What**: Componente que lista as reuniões pendentes e confirma comparecimento ou ausência em um clique.
 **Where**: `src/components/dashboard/pending-meetings.tsx`
 **Depends on**: T19
@@ -653,10 +655,19 @@ asc (mais urgente primeiro), id como desempate determinístico.
 
 **Done when**:
 
-- [ ] Sem `<div>`, sem `style={{}}`, sem valor cru — só componentes Astryx e utilities token-backed (AD-010, AD-012)
-- [ ] Estado vazio explícito quando não há pendência (PRES-01 AC7)
-- [ ] Erro da action é exibido, nunca engolido
-- [ ] `npm run build` e `npm run lint` passam
+- [x] Sem `<div>`, sem `style={{}}`, sem valor cru — só componentes Astryx e utilities token-backed (AD-010, AD-012)
+- [x] Estado vazio explícito quando não há pendência (PRES-01 AC7)
+- [x] Erro da action é exibido, nunca engolido
+- [x] `npm run build` e `npm run lint` passam
+
+**Achados/desvios**: componentes consultados via `npx astryx component` antes
+do uso: `Button` (prop `clickAction` para o handler assíncrono com loading
+automático), `ButtonGroup` (as duas ações de confirmação lado a lado),
+`Table`/`EmptyState` (mesmo molde de `recent-leads-table.tsx`). Verificação
+visual pendente: a extensão Chrome real está disponível na sessão (2
+navegadores conectados), mas a seleção exige confirmação interativa do
+usuário via ferramenta dedicada não disponível para este subagente — deixado
+como pendência explícita para o orquestrador (ver resumo final).
 
 **Tests**: none
 **Gate**: build
