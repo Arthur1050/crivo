@@ -520,6 +520,8 @@ teste existente estivesse quebrando.
 
 ### T17: Varredura que exige instrumentação em todo route file
 
+**Status**: ✅ Done
+
 **What**: Teste que importa todo `route.ts` sob `app/api/v1` e exige a marca `INSTRUMENTED` em cada export de verbo HTTP.
 **Where**: `src/server/integration/__tests__/route-instrumentation.test.ts`
 **Depends on**: T16
@@ -530,10 +532,23 @@ teste existente estivesse quebrando.
 
 **Done when**:
 
-- [ ] O teste descobre os route files por varredura de diretório, nunca por lista fixa
-- [ ] Falha com mensagem clara quando um export não está instrumentado
-- [ ] Gate full passa: `npm test`
-- [ ] Contagem de testes registrada
+- [x] O teste descobre os route files por varredura de diretório, nunca por lista fixa
+- [x] Falha com mensagem clara quando um export não está instrumentado
+- [x] Gate full passa: `npm test` (964 passed, 80 arquivos — subiu de 962/79)
+- [x] Contagem de testes registrada (2 testes no arquivo novo)
+
+**Achado/desvio**: `INSTRUMENTED` originalmente só era aplicado por
+`withIntegrationRoute`. `methodNotAllowed()` (T9) e o catch-all `notFound()`
+(T10) gravam recusa por um caminho mais direto (`recordRefusalFor` sem
+passar pelo wrapper inteiro, porque não há autenticação nem handler de
+negócio a delegar) — sem marcá-los também, a varredura reprovaria 100% dos
+verbos 405/404 de toda rota do lote, o que não é o que SAUDE-01 pede
+("nenhum export sem instrumentação", não "nenhum export fora do wrapper").
+`problem.ts` e `app/api/v1/[...unmatched]/route.ts` ganharam
+`Object.assign(handler, { [INSTRUMENTED]: true })` nos dois handlers que já
+chamavam `recordRefusalFor` — sem mudar nenhum comportamento observável,
+só a marca. `npm run build` rodado como checagem extra (não é o gate desta
+task) — compila limpo, incluindo os 7 route files sob `/api/v1`.
 
 **Tests**: integration
 **Gate**: full

@@ -1,5 +1,5 @@
 import { problem } from "../../../../src/server/integration/problem";
-import { recordRefusalFor } from "../../../../src/server/integration/route";
+import { INSTRUMENTED, recordRefusalFor } from "../../../../src/server/integration/route";
 
 /**
  * Catch-all de `/api/v1/**` (design.md — Route handlers; Edge Cases: "rota
@@ -13,13 +13,16 @@ import { recordRefusalFor } from "../../../../src/server/integration/route";
  * null` (nenhuma autenticação acontece antes de uma rota inexistente).
  * `request` é opcional para não quebrar o teste legado que chama
  * `unmatchedGet()` sem argumento (`leads-post.test.ts`) — sem `Request` não
- * há o que registrar.
+ * há o que registrar. Marcado com `INSTRUMENTED` (T17): a varredura de
+ * instrumentação não exige `withIntegrationRoute` especificamente, só que o
+ * export tenha sido conscientemente instrumentado — este é.
  */
 function notFound(request?: Request): Response {
   const response = problem(404, "rota-inexistente", "Rota não encontrada nesta API.");
   void recordRefusalFor(request, response, null);
   return response;
 }
+Object.assign(notFound, { [INSTRUMENTED]: true as const });
 
 export const GET = notFound;
 export const POST = notFound;
