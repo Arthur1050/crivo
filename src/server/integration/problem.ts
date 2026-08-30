@@ -5,6 +5,11 @@
  * Handling Strategy); `type` é apenas um URN determinístico por código —
  * não aponta para nenhuma página real, o contrato usa `code` como chave.
  */
+import { recordRefusalFor } from "./route";
+// `route.ts` também importa deste arquivo (`PROBLEM_CONTENT_TYPE`) — import
+// circular inofensivo: nenhum dos dois usa o binding do outro no topo do
+// módulo, só dentro de corpo de função (`methodNotAllowed()`/
+// `extractProblemCode()`), quando os dois módulos já terminaram de avaliar.
 
 export type ProblemCode =
   | "nao-autenticado"
@@ -72,15 +77,24 @@ export function problem(
  * (design.md — Route handlers: "Verbos não suportados... exportados via
  * methodNotAllowed([...])"). O header `Allow` lista os verbos aceitos nesse
  * arquivo de rota (boa prática HTTP para 405, além do corpo problem+json).
+ *
+ * Instrumentado (lote-9 — SAUDE-01/T9): toda recusa de 405 é registrada com
+ * `tenantId = null` (o método é recusado antes de qualquer autenticação).
+ * `problem()` continua pura, sem parâmetro novo — só `methodNotAllowed()`
+ * conhece `recordRefusalFor`. `request` é opcional para não quebrar os
+ * testes de rota existentes que chamam o handler devolvido sem argumento
+ * (`handler()`); nesse caso não há `Request` real para registrar, e
+ * `recordRefusalFor` já trata essa ausência como no-op.
  */
-export function methodNotAllowed(allowed: string[]): () => Response {
-  return () => {
+export function methodNotAllowed(allowed: string[]): (request?: Request) => Response {
+  return (request) => {
     const response = problem(
       405,
       "metodo-nao-suportado",
       `Método não suportado nesta rota. Métodos permitidos: ${allowed.join(", ")}.`
     );
     response.headers.set("Allow", allowed.join(", "));
+    void recordRefusalFor(request, response, null);
     return response;
   };
 }

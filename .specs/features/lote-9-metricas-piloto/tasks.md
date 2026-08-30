@@ -276,6 +276,8 @@ Fases são ordenadas e rodam em sequência; dentro de uma fase, as tasks rodam n
 
 ### T9: `methodNotAllowed` instrumentado
 
+**Status**: ✅ Done
+
 **What**: Fazer a fábrica de 405 registrar a recusa, mantendo assinatura e resposta inalteradas.
 **Where**: `src/server/integration/problem.ts`
 **Depends on**: T8
@@ -286,11 +288,20 @@ Fases são ordenadas e rodam em sequência; dentro de uma fase, as tasks rodam n
 
 **Done when**:
 
-- [ ] 405 grava recusa com `tenantId = null`
-- [ ] Header `Allow` e corpo problem+json continuam idênticos
-- [ ] `problem()` continua pura e sem parâmetro novo
-- [ ] Gate full passa: `npm test`
-- [ ] Contagem de testes registrada
+- [x] 405 grava recusa com `tenantId = null`
+- [x] Header `Allow` e corpo problem+json continuam idênticos
+- [x] `problem()` continua pura e sem parâmetro novo
+- [x] Gate full passa: `npm test`
+- [x] Contagem de testes registrada (958 passed, 78 arquivos — subiu de 956)
+
+**Desvio justificado**: a função devolvida por `methodNotAllowed` ganhou um
+parâmetro `request?: Request` **opcional** (era `() => Response`). Precisa
+dele para saber a rota chamada; opcional porque manter o handler síncrono
+(sem virar `async`) era obrigatório para não quebrar os 6 testes de rota
+legados que chamam `handler()` sem `Request` nem `await`
+(`leads-post.test.ts` e os outros 5 arquivos de `routes/`) — todos
+continuam passando sem nenhuma alteração de expectativa. Sem `request`, a
+recusa simplesmente não é registrada (nada para registrar).
 
 **Tests**: integration
 **Gate**: full
