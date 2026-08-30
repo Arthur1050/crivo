@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
 import { db } from "../../../../db";
 import { integrationRefusals, leads, tenantApiKeys, tenants } from "../../../../db/schema";
-import { updateLeadStatus } from "../../../data";
+import { serviceScope, updateLeadStatus } from "../../../data";
 import {
   DELETE,
   GET,
@@ -156,7 +156,7 @@ describe("routes: PATCH /api/v1/leads/[id]", () => {
       // 5. Humano move o lead pelo Kanban de volta para em_qualificacao
       // (fora da API — mesmo mecanismo do PipelineBoard).
       const afterHumanMove = await updateLeadStatus(
-        tenantAId,
+        serviceScope(tenantAId),
         leadId,
         "em_qualificacao",
         "humano"

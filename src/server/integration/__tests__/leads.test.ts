@@ -130,7 +130,7 @@ describe("server/integration leads — TRANSITIONS + patchLead", () => {
       const leadId = await createTestLead("em_qualificacao");
       // Simula "humano mexeu pelo Kanban" sem precisar mudar de coluna —
       // exercita o novo parâmetro `actor` de updateLeadStatus (lote-5).
-      await updateLeadStatus(tenantId, leadId, "em_qualificacao", "humano");
+      await updateLeadStatus(serviceScope(tenantId), leadId, "em_qualificacao", "humano");
 
       const result = await patchLead(tenantId, leadId, {
         status: "qualificado_agendado",
@@ -143,7 +143,7 @@ describe("server/integration leads — TRANSITIONS + patchLead", () => {
 
     it("transição inválida na tabela tem prioridade sobre a trava humana — reporta transicao-invalida (ordem de validação: transição antes de trava)", async () => {
       const leadId = await createTestLead("qualificado_agendado");
-      await updateLeadStatus(tenantId, leadId, "qualificado_agendado", "humano");
+      await updateLeadStatus(serviceScope(tenantId), leadId, "qualificado_agendado", "humano");
 
       // qualificado_agendado → em_qualificacao nunca é permitido (TRANSITIONS
       // vazio), independente da trava — o code esperado é o de transição,
@@ -156,7 +156,7 @@ describe("server/integration leads — TRANSITIONS + patchLead", () => {
 
     it("patch sem campo status é aceito mesmo em lead travado por humano — só a mudança de STATUS é bloqueada (INT-04 AC4)", async () => {
       const leadId = await createTestLead("em_qualificacao");
-      await updateLeadStatus(tenantId, leadId, "em_qualificacao", "humano");
+      await updateLeadStatus(serviceScope(tenantId), leadId, "em_qualificacao", "humano");
 
       const result = await patchLead(tenantId, leadId, { region: "Centro Novo" });
       expect(result.ok).toBe(true);

@@ -558,6 +558,8 @@ task) — compila limpo, incluindo os 7 route files sob `/api/v1`.
 
 ### T18: Escritas do Pipeline passam a exigir `LeadScope`
 
+**Status**: ✅ Done
+
 **What**: `updateLeadStatus`, `updateLeadBroker` e `setMeetingAttendance` trocam `tenantId` por `LeadScope` na assinatura e ganham `assignedTo(scope)` no WHERE; as três actions do Pipeline resolvem o escopo com `getLeadScope()`.
 **Where**: `src/server/data/index.ts`, `src/server/actions/pipeline.ts`
 **Depends on**: None
@@ -569,12 +571,31 @@ task) — compila limpo, incluindo os 7 route files sob `/api/v1`.
 
 **Done when**:
 
-- [ ] As três funções da DAL recusam lead fora do escopo, devolvendo `null`
-- [ ] As três actions devolvem "lead não encontrado" nesse caso, sem alterar dado
-- [ ] Teste prova que administrador e gestor seguem alcançando qualquer lead do tenant (SCOPE-02 AC5)
-- [ ] Nenhum call site remanescente passa `tenantId` cru para as três funções
-- [ ] Gate full passa: `npm test`
-- [ ] Contagem de testes registrada
+- [x] As três funções da DAL recusam lead fora do escopo, devolvendo `null`
+- [x] As três actions devolvem "lead não encontrado" nesse caso, sem alterar dado
+- [x] Teste prova que administrador e gestor seguem alcançando qualquer lead do tenant (SCOPE-02 AC5)
+- [x] Nenhum call site remanescente passa `tenantId` cru para as três funções
+- [x] Gate full passa: `npm test`
+- [x] Contagem de testes registrada
+
+**Achados/desvios**: `updateLeadBroker` também é chamado por `deactivateMemberAction`
+(`src/server/actions/deactivate.ts`) na redistribuição de carteira de um membro
+desativado — call site não listado no design, encontrado por busca no repo antes
+da troca de assinatura (conforme instruído). Recebeu escopo de imobiliária
+inteira (`{ tenantId: session.tenantId, assignedUserId: null }`), nunca o do
+ator: a operação redistribui a carteira INTEIRA de quem está saindo, já
+autorizada por `denyIfForbidden("usuarios", "escrever")`, não a carteira do
+administrador/gestor que a executa. `src/server/__tests__/actions.test.ts` teve
+o mock de `verifySession` estendido com `getLeadScope` explícito — a versão
+sem mock chamaria a `verifySession` REAL do módulo original (binding interno,
+não interceptado pelo spread `...actual`), quebrando qualquer action que
+passasse a usar `getLeadScope()` fora de um request scope do Next.
+**Contagem de testes**: 96 passed, 0 failed nos três arquivos de teste tocados
+(`actions.test.ts`, `mutations.test.ts`, `lead-controls.test.ts`) — mais os
+call sites em `leads.test.ts`, `leads-patch.test.ts`,
+`leads-patch-atribuicao.test.ts`, sem alteração de expectativa. `npm test`
+completo rodado uma vez cobrindo todo o batch T18–T26 (relatado no resumo
+final deste worker para o orquestrador).
 
 **Tests**: integration
 **Gate**: full

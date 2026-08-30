@@ -11,7 +11,7 @@ import {
   tenants,
   users,
 } from "../../../../db/schema";
-import { updateLeadStatus } from "../../../data";
+import { serviceScope, updateLeadStatus } from "../../../data";
 import { PATCH } from "../../../../../app/api/v1/leads/[id]/route";
 
 /**
@@ -350,7 +350,7 @@ describe("routes: PATCH /api/v1/leads/[id] — atribuição por agenda", () => {
   // recusa ANTES de qualquer atribuição.
   it("lead travado por humano continua recusado com lead-travado-por-humano, sem atribuir ninguém", async () => {
     const leadId = await createLead(tenantId);
-    await updateLeadStatus(tenantId, leadId, "em_qualificacao", "humano");
+    await updateLeadStatus(serviceScope(tenantId), leadId, "em_qualificacao", "humano");
 
     const response = await callPatch(leadId, {
       status: "escalado_humano",

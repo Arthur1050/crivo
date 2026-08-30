@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getActiveTenantId } from "../tenant";
+import { getLeadScope } from "../auth/session";
 import {
   setMeetingAttendance,
   updateLeadBroker,
@@ -12,8 +12,11 @@ import { validateLeadStatus } from "../validation";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
-// Mesmo padrão das actions do lote-2: o tenant ativo é sempre resolvido no
-// servidor via `getActiveTenantId()` (nunca a partir de `input`).
+// Mesmo padrão das actions do lote-2: o escopo é sempre resolvido no
+// servidor via `getLeadScope()` (nunca a partir de `input`). Desde o lote-9
+// (SCOPE-02), a escrita usa o MESMO escopo que a leitura desde o lote-8: um
+// corretor só altera lead da própria carteira; administrador/gestor
+// alcançam qualquer lead do tenant.
 
 export interface UpdateLeadStatusInput {
   leadId: string;
@@ -33,11 +36,11 @@ export async function updateLeadStatusAction(
   const statusCheck = validateLeadStatus(input.status);
   if (!statusCheck.ok) return statusCheck;
 
-  const tenantId = await getActiveTenantId();
+  const scope = await getLeadScope();
   // "humano" explícito (lote-5 — INT-04): o Kanban é a única origem humana
   // de mudança de status; a trava humana (patchLead) depende deste registro.
   const updated = await updateLeadStatus(
-    tenantId,
+    scope,
     input.leadId,
     input.status as LeadStatus,
     "humano"
@@ -67,8 +70,8 @@ export interface UpdateLeadBrokerInput {
 export async function updateLeadBrokerAction(
   input: UpdateLeadBrokerInput
 ): Promise<ActionResult> {
-  const tenantId = await getActiveTenantId();
-  const updated = await updateLeadBroker(tenantId, input.leadId, input.brokerId);
+  const scope = await getLeadScope();
+  const updated = await updateLeadBroker(scope, input.leadId, input.brokerId);
 
   if (!updated) {
     return { ok: false, error: "Corretor ou lead não encontrado." };
@@ -92,8 +95,8 @@ export interface SetMeetingAttendanceInput {
 export async function setMeetingAttendanceAction(
   input: SetMeetingAttendanceInput
 ): Promise<ActionResult> {
-  const tenantId = await getActiveTenantId();
-  const updated = await setMeetingAttendance(tenantId, input.leadId, input.attended);
+  const scope = await getLeadScope();
+  const updated = await setMeetingAttendance(scope, input.leadId, input.attended);
 
   if (!updated) {
     return { ok: false, error: "Lead não encontrado." };

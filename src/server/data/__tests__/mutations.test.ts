@@ -1,7 +1,9 @@
 import "dotenv/config";
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { eq } from "drizzle-orm";
 import { db } from "../../../db";
+import { leads, users } from "../../../db/schema";
 import {
   createDocument,
   createDocumentCategory,
@@ -99,7 +101,7 @@ describe("server/data mutations", () => {
       // original (do seed) e o novo, mesmo em execuções muito rápidas.
       await new Promise((resolve) => setTimeout(resolve, 5));
 
-      const updated = await updateLeadStatus(tenantAId, lead.id, nextStatus);
+      const updated = await updateLeadStatus(serviceScope(tenantAId), lead.id, nextStatus);
       expect(updated).not.toBeNull();
       expect(updated!.status).toBe(nextStatus);
       expect(updated!.updatedAt.getTime()).toBeGreaterThan(
@@ -110,13 +112,17 @@ describe("server/data mutations", () => {
       expect(reread!.status).toBe(nextStatus);
 
       // Reverte para não afetar o seed usado por outros testes/batches.
-      const reverted = await updateLeadStatus(tenantAId, lead.id, originalStatus);
+      const reverted = await updateLeadStatus(
+        serviceScope(tenantAId),
+        lead.id,
+        originalStatus
+      );
       expect(reverted!.status).toBe(originalStatus);
     });
 
     it("retorna null (no-op) para um leadId inexistente", async () => {
       const result = await updateLeadStatus(
-        tenantAId,
+        serviceScope(tenantAId),
         NON_EXISTENT_ID,
         "qualificado_agendado"
       );
@@ -129,7 +135,7 @@ describe("server/data mutations", () => {
       const originalStatus = leadA.status;
 
       const result = await updateLeadStatus(
-        tenantBId,
+        serviceScope(tenantBId),
         leadA.id,
         originalStatus === "escalado_humano" ? "em_qualificacao" : "escalado_humano"
       );
@@ -137,6 +143,70 @@ describe("server/data mutations", () => {
 
       const unchanged = await getLead(serviceScope(tenantAId), leadA.id);
       expect(unchanged!.status).toBe(originalStatus);
+    });
+
+    // lote-9 — SCOPE-02 (T18): a escrita passou a exigir o MESMO escopo da
+    // leitura (lote-8) — mesmo filtro que updateLeadBroker/setMeetingAttendance.
+    describe("escopo de carteira (SCOPE-02)", () => {
+      let ownerUserId: string;
+      let fixtureLeadId: string;
+
+      beforeAll(async () => {
+        ownerUserId = randomUUID();
+        await db.insert(users).values({
+          id: ownerUserId,
+          name: "Corretor Dono Fixture",
+          email: `${ownerUserId}@fixture.test`,
+        });
+        fixtureLeadId = randomUUID();
+        await db.insert(leads).values({
+          id: fixtureLeadId,
+          tenantId: tenantAId,
+          assignedUserId: ownerUserId,
+          name: "Lead Escopo Carteira",
+          phone: "+55 34 90000-4444",
+          status: "em_qualificacao",
+          firstContactAt: new Date(),
+        });
+      });
+
+      afterAll(async () => {
+        await db.delete(leads).where(eq(leads.id, fixtureLeadId));
+        await db.delete(users).where(eq(users.id, ownerUserId));
+      });
+
+      it("corretor de OUTRA carteira no mesmo tenant: devolve null e não altera o lead", async () => {
+        const outroCorretorId = randomUUID();
+        const result = await updateLeadStatus(
+          { tenantId: tenantAId, assignedUserId: outroCorretorId },
+          fixtureLeadId,
+          "escalado_humano"
+        );
+        expect(result).toBeNull();
+
+        const unchanged = await getLead(serviceScope(tenantAId), fixtureLeadId);
+        expect(unchanged!.status).toBe("em_qualificacao");
+      });
+
+      it("corretor dono da carteira: atualiza o próprio lead", async () => {
+        const result = await updateLeadStatus(
+          { tenantId: tenantAId, assignedUserId: ownerUserId },
+          fixtureLeadId,
+          "escalado_humano"
+        );
+        expect(result).not.toBeNull();
+        expect(result!.status).toBe("escalado_humano");
+      });
+
+      it("escopo de imobiliária inteira (admin/gestor — assignedUserId null): alcança o lead de qualquer carteira (AC5)", async () => {
+        const result = await updateLeadStatus(
+          serviceScope(tenantAId),
+          fixtureLeadId,
+          "em_qualificacao"
+        );
+        expect(result).not.toBeNull();
+        expect(result!.status).toBe("em_qualificacao");
+      });
     });
   });
 

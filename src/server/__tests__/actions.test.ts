@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { randomUUID } from "node:crypto";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { db } from "../../db";
 import { leads, tenant_members, users } from "../../db/schema";
 import type { Action, Resource, Role } from "../../lib/permissions";
@@ -44,6 +44,14 @@ const SESSION_USER = {
 /** Papéis do vínculo ativo da sessão fabricada. Trocável por teste. */
 let sessionRoles: Role[] = ["administrador"];
 
+// Mesmo critério de `isBrokerOnly` em `../auth/session` (não exportado):
+// corretor "puro" (só o papel corretor, nenhum outro) enxerga só a própria
+// carteira; qualquer outra combinação (gestor, administrador, ou acumulado
+// com corretor) alcança a imobiliária inteira — SCOPE-02 AC5.
+function isBrokerOnly(roles: Role[]): boolean {
+  return roles.length > 0 && roles.every((role) => role === "corretor");
+}
+
 vi.mock("../auth/session", async (importActual) => {
   const actual = await importActual<typeof import("../auth/session")>();
   const fakeSession = async (): Promise<AuthContext> => {
@@ -53,12 +61,22 @@ vi.mock("../auth/session", async (importActual) => {
       user: SESSION_USER,
       tenantId: tenant.id,
       roles: sessionRoles,
-      leadScope: { tenantId: tenant.id, assignedUserId: null },
+      leadScope: {
+        tenantId: tenant.id,
+        assignedUserId: isBrokerOnly(sessionRoles) ? SESSION_USER.id : null,
+      },
     };
   };
   return {
     ...actual,
     verifySession: fakeSession,
+    // lote-9 (T18): `actual.getLeadScope` chamaria a `verifySession` REAL do
+    // módulo original (binding interno, não interceptado pelo spread acima)
+    // — sem este override, qualquer action que passasse a usar
+    // `getLeadScope()` quebraria aqui tentando resolver sessão de verdade
+    // fora de um request scope do Next. `fakeSession` já é a fonte de
+    // verdade do escopo fabricado, então só reexpõe o campo.
+    getLeadScope: async () => (await fakeSession()).leadScope,
     requirePermission: async (resource: Resource, action: Action) =>
       actual.authorizeOrThrow(await fakeSession(), resource, action),
   };
@@ -755,6 +773,188 @@ describe("server actions", () => {
         };
         expect("tenantId" in brokerInput).toBe(false);
         expect("tenantId" in attendanceInput).toBe(false);
+      });
+    });
+  });
+
+  // lote-9 — SCOPE-02 (T18): as três escritas do Pipeline passaram a exigir
+  // `LeadScope`, igual à leitura desde o lote-8. Corretor só alcança lead da
+  // própria carteira; administrador/gestor alcançam qualquer lead do tenant
+  // (AC5) — os dois lados são exercitados aqui para as três actions.
+  describe("SCOPE-02 — escritas do Pipeline escopadas por carteira (T18)", () => {
+    let ownLeadId: string;
+    let foreignLeadId: string;
+    let foreignBrokerId: string;
+
+    beforeAll(async () => {
+      // `SESSION_USER` é uma identidade fabricada (a guarda de sessão está
+      // mockada, então nenhum papel de autenticação real usa este id) — mas
+      // `leads.assigned_user_id` tem FK para `users.id`, então o lead
+      // "próprio" só grava se a linha existir de verdade.
+      await db
+        .insert(users)
+        .values({ id: SESSION_USER.id, name: SESSION_USER.name, email: SESSION_USER.email })
+        .onConflictDoNothing();
+
+      foreignBrokerId = randomUUID();
+      await db.insert(users).values({
+        id: foreignBrokerId,
+        name: "Corretor Carteira Alheia (SCOPE-02)",
+        email: `${foreignBrokerId}@fixture.test`,
+      });
+      await db.insert(tenant_members).values({
+        organizationId: activeTenantId,
+        userId: foreignBrokerId,
+        role: "corretor",
+      });
+
+      ownLeadId = randomUUID();
+      await db.insert(leads).values({
+        id: ownLeadId,
+        tenantId: activeTenantId,
+        assignedUserId: SESSION_USER.id,
+        name: "Lead Carteira Propria (SCOPE-02)",
+        phone: "+55 34 90000-1234",
+        status: "em_qualificacao",
+        firstContactAt: new Date(),
+      });
+
+      foreignLeadId = randomUUID();
+      await db.insert(leads).values({
+        id: foreignLeadId,
+        tenantId: activeTenantId,
+        assignedUserId: foreignBrokerId,
+        name: "Lead Carteira Alheia (SCOPE-02)",
+        phone: "+55 34 90000-4321",
+        status: "em_qualificacao",
+        firstContactAt: new Date(),
+      });
+    });
+
+    afterEach(() => {
+      sessionRoles = ["administrador"];
+    });
+
+    afterAll(async () => {
+      await db.delete(leads).where(inArray(leads.id, [ownLeadId, foreignLeadId]));
+      await db
+        .delete(tenant_members)
+        .where(
+          and(
+            eq(tenant_members.userId, foreignBrokerId),
+            eq(tenant_members.organizationId, activeTenantId)
+          )
+        );
+      await db.delete(users).where(eq(users.id, foreignBrokerId));
+      await db.delete(users).where(eq(users.id, SESSION_USER.id));
+    });
+
+    describe("updateLeadStatusAction", () => {
+      it("corretor atualiza status de lead da própria carteira (happy path escopado)", async () => {
+        sessionRoles = ["corretor"];
+        const result = await updateLeadStatusAction({
+          leadId: ownLeadId,
+          status: "escalado_humano",
+        });
+        expect(result).toEqual({ ok: true });
+
+        const persisted = await getLead(serviceScope(activeTenantId), ownLeadId);
+        expect(persisted!.status).toBe("escalado_humano");
+      });
+
+      it("corretor NÃO atualiza status de lead de outra carteira — 'Lead não encontrado.', nada é gravado", async () => {
+        sessionRoles = ["corretor"];
+        const before = await getLead(serviceScope(activeTenantId), foreignLeadId);
+
+        const result = await updateLeadStatusAction({
+          leadId: foreignLeadId,
+          status: "escalado_humano",
+        });
+        expect(result.ok).toBe(false);
+        if (!result.ok) expect(result.error).toBe("Lead não encontrado.");
+
+        const after = await getLead(serviceScope(activeTenantId), foreignLeadId);
+        expect(after!.status).toBe(before!.status);
+      });
+
+      it("gestor atualiza status de lead fora da própria carteira (AC5 — alcance da imobiliária inteira)", async () => {
+        sessionRoles = ["gestor"];
+        const result = await updateLeadStatusAction({
+          leadId: foreignLeadId,
+          status: "em_qualificacao",
+        });
+        expect(result).toEqual({ ok: true });
+
+        const persisted = await getLead(serviceScope(activeTenantId), foreignLeadId);
+        expect(persisted!.status).toBe("em_qualificacao");
+      });
+    });
+
+    describe("updateLeadBrokerAction", () => {
+      it("corretor NÃO troca o responsável de lead de outra carteira — falha explícita, nada é gravado", async () => {
+        sessionRoles = ["corretor"];
+        const before = await getLead(serviceScope(activeTenantId), foreignLeadId);
+
+        const result = await updateLeadBrokerAction({
+          leadId: foreignLeadId,
+          brokerId: foreignBrokerId,
+        });
+        expect(result.ok).toBe(false);
+
+        const after = await getLead(serviceScope(activeTenantId), foreignLeadId);
+        expect(after!.assignedUserId).toBe(before!.assignedUserId);
+      });
+
+      it("administrador troca o responsável de qualquer lead do tenant (AC5)", async () => {
+        sessionRoles = ["administrador"];
+        const result = await updateLeadBrokerAction({
+          leadId: foreignLeadId,
+          brokerId: foreignBrokerId,
+        });
+        expect(result).toEqual({ ok: true });
+
+        const persisted = await getLead(serviceScope(activeTenantId), foreignLeadId);
+        expect(persisted!.assignedUserId).toBe(foreignBrokerId);
+      });
+    });
+
+    describe("setMeetingAttendanceAction", () => {
+      it("corretor registra comparecimento na própria carteira (happy path escopado)", async () => {
+        sessionRoles = ["corretor"];
+        const result = await setMeetingAttendanceAction({
+          leadId: ownLeadId,
+          attended: true,
+        });
+        expect(result).toEqual({ ok: true });
+
+        const persisted = await getLead(serviceScope(activeTenantId), ownLeadId);
+        expect(persisted!.meetingAttended).toBe(true);
+      });
+
+      it("corretor NÃO registra comparecimento de lead de outra carteira — falha explícita, nada é gravado", async () => {
+        sessionRoles = ["corretor"];
+        const before = await getLead(serviceScope(activeTenantId), foreignLeadId);
+
+        const result = await setMeetingAttendanceAction({
+          leadId: foreignLeadId,
+          attended: true,
+        });
+        expect(result.ok).toBe(false);
+
+        const after = await getLead(serviceScope(activeTenantId), foreignLeadId);
+        expect(after!.meetingAttended).toBe(before!.meetingAttended);
+      });
+
+      it("gestor registra comparecimento em lead fora da própria carteira (AC5)", async () => {
+        sessionRoles = ["gestor"];
+        const result = await setMeetingAttendanceAction({
+          leadId: foreignLeadId,
+          attended: true,
+        });
+        expect(result).toEqual({ ok: true });
+
+        const persisted = await getLead(serviceScope(activeTenantId), foreignLeadId);
+        expect(persisted!.meetingAttended).toBe(true);
       });
     });
   });

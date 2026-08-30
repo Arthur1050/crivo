@@ -932,9 +932,11 @@ export type StatusActor = "humano" | "agente";
 
 /**
  * Move um lead entre colunas do Kanban (lote-3 — PIPE-02): `WHERE tenant_id
- * AND id` (nunca só pelo id), sempre atualiza `updatedAt` para refletir o
- * momento da transição. Retorna `null` (no-op) quando nenhuma linha
- * corresponde a `tenantId` + `leadId` (lead inexistente OU de outro tenant).
+ * AND id AND assignedTo(scope)` (mesmo filtro de carteira que a leitura usa
+ * desde o lote-8), sempre atualiza `updatedAt` para refletir o momento da
+ * transição. Retorna `null` (no-op) quando nenhuma linha corresponde ao
+ * escopo (lead inexistente, de outro tenant, OU fora da carteira do
+ * corretor — lote-9, SCOPE-02).
  *
  * `actor` (lote-5 — INT-04) registra quem mudou o status por último:
  * default `"humano"` preserva o comportamento de todo call site existente
@@ -942,7 +944,7 @@ export type StatusActor = "humano" | "agente";
  * `"agente"` explicitamente via `updateLeadFromAgent`, nunca por aqui.
  */
 export async function updateLeadStatus(
-  tenantId: string,
+  scope: LeadScope,
   leadId: string,
   status: LeadStatus,
   actor: StatusActor = "humano"
@@ -950,24 +952,27 @@ export async function updateLeadStatus(
   const rows = await db
     .update(leads)
     .set({ status, statusChangedBy: actor, updatedAt: new Date() })
-    .where(and(eq(leads.tenantId, tenantId), eq(leads.id, leadId)))
+    .where(
+      and(eq(leads.tenantId, scope.tenantId), eq(leads.id, leadId), assignedTo(scope))
+    )
     .returning();
   return rows[0] ?? null;
 }
 
 /**
  * Troca o corretor responsável por um lead a partir do painel de detalhe
- * (lote-7 — ATRIB-02): `WHERE tenant_id AND id` (mesmo padrão de
- * `updateLeadStatus`), com o corretor validado contra o tenant NA MESMA
- * query — um corretor de outro tenant nunca é aceito, mesmo que o
- * `leadId` seja válido. Retorna `null` (no-op) tanto para lead inexistente/
- * de outro tenant quanto para corretor inexistente/de outro tenant.
+ * (lote-7 — ATRIB-02): `WHERE tenant_id AND id AND assignedTo(scope)` (mesmo
+ * padrão de `updateLeadStatus`, lote-9 — SCOPE-02), com o NOVO corretor
+ * validado contra o tenant NA MESMA query — um corretor de outro tenant
+ * nunca é aceito, mesmo que o `leadId` seja válido. Retorna `null` (no-op)
+ * para lead inexistente/de outro tenant/fora do escopo do ator, ou para
+ * corretor inexistente/de outro tenant.
  *
  * lote-8 (AD-021): o corretor é um usuário, e "pertencer ao tenant" passou a
  * ser ter vínculo em `tenant_members` com aquela imobiliária.
  */
 export async function updateLeadBroker(
-  tenantId: string,
+  scope: LeadScope,
   leadId: string,
   brokerId: string
 ): Promise<Lead | null> {
@@ -976,8 +981,9 @@ export async function updateLeadBroker(
     .set({ assignedUserId: brokerId, updatedAt: new Date() })
     .where(
       and(
-        eq(leads.tenantId, tenantId),
+        eq(leads.tenantId, scope.tenantId),
         eq(leads.id, leadId),
+        assignedTo(scope),
         exists(
           db
             .select({ id: tenant_members.id })
@@ -985,7 +991,7 @@ export async function updateLeadBroker(
             .where(
               and(
                 eq(tenant_members.userId, brokerId),
-                eq(tenant_members.organizationId, tenantId),
+                eq(tenant_members.organizationId, scope.tenantId),
                 IS_ASSIGNABLE_BROKER
               )
             )
@@ -999,19 +1005,21 @@ export async function updateLeadBroker(
 /**
  * Persiste o comparecimento à reunião de um lead (lote-7 — KPI-02): três
  * estados possíveis (`null` pendente, `true` compareceu, `false` não
- * compareceu), escopado ao tenant ativo pelo mesmo padrão de
- * `updateLeadStatus`. Retorna `null` (no-op) para lead inexistente ou de
- * outro tenant, sem escrever nada.
+ * compareceu), escopado pelo mesmo padrão de `updateLeadStatus` (lote-9 —
+ * SCOPE-02). Retorna `null` (no-op) para lead inexistente, de outro tenant,
+ * ou fora da carteira do corretor, sem escrever nada.
  */
 export async function setMeetingAttendance(
-  tenantId: string,
+  scope: LeadScope,
   leadId: string,
   value: boolean | null
 ): Promise<Lead | null> {
   const rows = await db
     .update(leads)
     .set({ meetingAttended: value, updatedAt: new Date() })
-    .where(and(eq(leads.tenantId, tenantId), eq(leads.id, leadId)))
+    .where(
+      and(eq(leads.tenantId, scope.tenantId), eq(leads.id, leadId), assignedTo(scope))
+    )
     .returning();
   return rows[0] ?? null;
 }

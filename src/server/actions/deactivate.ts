@@ -192,8 +192,12 @@ export async function deactivateMemberAction(
       const chosen = assignBroker(candidates);
       if (!chosen) break;
 
+      // Escopo de imobiliária inteira, nunca o do ator (lote-9 — SCOPE-02):
+      // esta redistribuição move a carteira INTEIRA de quem está saindo,
+      // não só os leads do administrador/gestor que está desativando o
+      // membro — a permissão já foi checada acima (`usuarios:escrever`).
       const updated = await updateLeadBroker(
-        session.tenantId,
+        { tenantId: session.tenantId, assignedUserId: null },
         lead.id,
         chosen
       );
