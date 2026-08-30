@@ -282,18 +282,23 @@ describe("db/seed", () => {
     expect(allLeads.filter((l) => l.meetingAt !== null).length).toBeGreaterThan(0);
   });
 
-  it("baseline nulo nos dois pilotos, preenchido no Crivo Demo (lote-7 — REAL-01 AC3)", async () => {
-    for (const slug of PILOT_SLUGS) {
-      const pilot = await tenantBySlug(slug);
-      expect(pilot.baselineLeadsPerMonth).toBeNull();
-      expect(pilot.baselineFirstResponseMinutes).toBeNull();
-      expect(pilot.baselineLeadToMeetingPct).toBeNull();
-    }
+  // lote-9 — BASE-01: o seed não inventa baseline para NENHUM tenant, nem
+  // o de demonstração — preenchê-lo é sempre ato de quem tem
+  // `configuracoes:escrever`, nunca do seed (design.md — Risks: "Seed
+  // escreve baseline mockado num tenant"). Substitui a asserção anterior
+  // (lote-7 — REAL-01 AC3), que esperava o Crivo Demo com baseline
+  // pré-preenchido; esse comportamento foi deliberadamente removido.
+  it("os cinco baselines nascem nulos nos 3 tenants semeados — seed não inventa baseline (lote-9 — BASE-01)", async () => {
+    const allTenants = await db.select().from(tenants);
+    expect(allTenants).toHaveLength(3);
 
-    const demo = await tenantBySlug(DEMO_SLUG);
-    expect(demo.baselineLeadsPerMonth).not.toBeNull();
-    expect(demo.baselineFirstResponseMinutes).not.toBeNull();
-    expect(demo.baselineLeadToMeetingPct).not.toBeNull();
+    for (const tenant of allTenants) {
+      expect(tenant.baselineLeadsPerMonth).toBeNull();
+      expect(tenant.baselineFirstResponseMinutes).toBeNull();
+      expect(tenant.baselineLeadToMeetingPct).toBeNull();
+      expect(tenant.baselineEscalationPct).toBeNull();
+      expect(tenant.baselineAttendancePct).toBeNull();
+    }
   });
 
   it("gera exatamente 1 chave de API por tenant, para os 3 tenants; o hash gravado no banco corresponde ao valor em claro devolvido, e nunca é igual a ele (lote-5 — INT-01; lote-7 — REAL-01 AC2)", async () => {

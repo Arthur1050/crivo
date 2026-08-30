@@ -118,6 +118,8 @@ Fases são ordenadas e rodam em sequência; dentro de uma fase, as tasks rodam n
 
 ### T3: Seed deixa os baselines nulos nos tenants-piloto
 
+**Status**: ✅ Done
+
 **What**: Remover os valores mockados de baseline do seed para que preenchê-los seja ato do usuário, e incluir os dois campos novos no tipo do seed.
 **Where**: `src/db/seed.ts`
 **Depends on**: T1
@@ -128,11 +130,11 @@ Fases são ordenadas e rodam em sequência; dentro de uma fase, as tasks rodam n
 
 **Done when**:
 
-- [ ] Os cinco `baseline_*` saem nulos para todos os tenants semeados
-- [ ] O tipo do seed cobre as cinco colunas
-- [ ] `src/db/__tests__/seed.test.ts` cobre a invariante "seed não inventa baseline"
-- [ ] Gate full passa: `npm test`
-- [ ] Contagem de testes registrada, sem remoção silenciosa
+- [x] Os cinco `baseline_*` saem nulos para todos os tenants semeados
+- [x] O tipo do seed cobre as cinco colunas
+- [x] `src/db/__tests__/seed.test.ts` cobre a invariante "seed não inventa baseline"
+- [x] Gate full passa: `npm test`
+- [x] Contagem de testes registrada, sem remoção silenciosa (915 passed, 75 arquivos — mesmo piso; teste da AC substituído por invariante mais ampla, contagem líquida inalterada)
 
 **Tests**: integration
 **Gate**: full

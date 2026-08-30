@@ -144,13 +144,16 @@ interface TenantDef {
   name: string;
   agentName: string;
   supportedModality: Modality;
-  // Baseline pré-piloto mockado (Lote 4 — DASH-05). Nullable a partir do
-  // lote-7 (REAL-01 AC3): os tenants-piloto operam com dado real e ficam
-  // sem baseline até a Fase 10 (instrumentação de métricas); só o tenant de
-  // demonstração mantém o valor mockado.
+  // Baseline pré-piloto (Lote 4 — DASH-05; lote-9 — BASE-01). Nullable nos
+  // cinco campos, para os três tenants: o baseline é um snapshot único
+  // preenchido por quem tem `configuracoes:escrever`, nunca inventado pelo
+  // seed (design.md — Risks: "Seed escreve baseline mockado num tenant").
+  // Preenchê-lo é sempre ato do usuário, inclusive no tenant de demonstração.
   baselineLeadsPerMonth: number | null;
   baselineFirstResponseMinutes: number | null;
   baselineLeadToMeetingPct: number | null;
+  baselineEscalationPct: number | null;
+  baselineAttendancePct: number | null;
   // Identidade institucional (redesign-crm-astryx — RD-02): valores distintos
   // entre os tenants, para que a troca de tenant no shell seja visível.
   city: string;
@@ -216,6 +219,8 @@ const TENANT_DEFS: TenantDef[] = [
     baselineLeadsPerMonth: null,
     baselineFirstResponseMinutes: null,
     baselineLeadToMeetingPct: null,
+    baselineEscalationPct: null,
+    baselineAttendancePct: null,
     seedLeadData: false,
     city: "Uberaba",
     state: "MG",
@@ -272,6 +277,8 @@ const TENANT_DEFS: TenantDef[] = [
     baselineLeadsPerMonth: null,
     baselineFirstResponseMinutes: null,
     baselineLeadToMeetingPct: null,
+    baselineEscalationPct: null,
+    baselineAttendancePct: null,
     seedLeadData: false,
     city: "Uberlândia",
     state: "MG",
@@ -328,9 +335,11 @@ const TENANT_DEFS: TenantDef[] = [
     name: "Crivo Demo",
     agentName: "Sofia",
     supportedModality: "ambos",
-    baselineLeadsPerMonth: 19,
-    baselineFirstResponseMinutes: 240,
-    baselineLeadToMeetingPct: 22,
+    baselineLeadsPerMonth: null,
+    baselineFirstResponseMinutes: null,
+    baselineLeadToMeetingPct: null,
+    baselineEscalationPct: null,
+    baselineAttendancePct: null,
     seedLeadData: true,
     city: "Belo Horizonte",
     state: "MG",
@@ -711,6 +720,8 @@ export async function runSeed(): Promise<SeedResult> {
       baselineLeadsPerMonth: tenantDef.baselineLeadsPerMonth,
       baselineFirstResponseMinutes: tenantDef.baselineFirstResponseMinutes,
       baselineLeadToMeetingPct: tenantDef.baselineLeadToMeetingPct,
+      baselineEscalationPct: tenantDef.baselineEscalationPct,
+      baselineAttendancePct: tenantDef.baselineAttendancePct,
       city: tenantDef.city,
       state: tenantDef.state,
       agentWhatsapp: tenantDef.agentWhatsapp,
