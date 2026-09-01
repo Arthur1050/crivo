@@ -44,6 +44,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-.specs
+# .specs é versionado: e o registro de decisao do produto (STATE.md/ADs, requisitos EARS,
+# backlog deferido) e nao existe em nenhum outro lugar. Ver .specs/features/INDEX.md.
 .claude
 .agents

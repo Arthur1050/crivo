@@ -1,0 +1,423 @@
+{
+  "schema": 1,
+  "promote_threshold": 2,
+  "window_days": 45,
+  "quarantine_threshold": 2,
+  "next_id": 24,
+  "lessons": [
+    {
+      "id": "L-001",
+      "key": "spec_precision_gap::when a spec criterion asserts an entity is left untouched by an unrelated update add a before after count or field assertion for it not just a structural argument from the code s shape",
+      "text": "When a spec criterion asserts an entity is left untouched by an unrelated update, add a before/after count or field assertion for it, not just a structural argument from the code's shape.",
+      "signal": "spec_precision_gap",
+      "scope": "server/data",
+      "status": "candidate",
+      "features": [
+        "lote-2-configuracoes-documentos"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "CONF-01.5 — spec.md; src/server/data/index.ts:195-209 (updateTenantSettings) (server/data)"
+      ],
+      "created": "2026-08-02T06:03:05Z",
+      "last_seen": "2026-08-02T06:03:05Z"
+    },
+    {
+      "id": "L-002",
+      "key": "spec_precision_gap::for a spec criterion about partial write atomicity on insert failure add a fault injection test mock force the insert to throw rather than relying only on the insert being a single statement",
+      "text": "For a spec criterion about partial-write/atomicity on insert failure, add a fault-injection test (mock/force the insert to throw) rather than relying only on the insert being a single statement.",
+      "signal": "spec_precision_gap",
+      "scope": "server/data",
+      "status": "candidate",
+      "features": [
+        "lote-2-configuracoes-documentos"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "DOC-02.4 — spec.md; src/server/data/index.ts:219-238 (createDocument) (server/data)"
+      ],
+      "created": "2026-08-02T06:03:11Z",
+      "last_seen": "2026-08-02T06:03:11Z"
+    },
+    {
+      "id": "L-003",
+      "key": "ac_gap::computed presentation logic deltas comparisons conditional fallback text in ui components needs its own unit test even when the layer s default policy is build gate only because build gates don t exercise conditional branches or numeric correctness",
+      "text": "Computed presentation logic (deltas, comparisons, conditional fallback text) in UI components needs its own unit test even when the layer's default policy is build-gate-only, because build gates don't exercise conditional branches or numeric correctness.",
+      "signal": "ac_gap",
+      "scope": "dashboard,ui",
+      "status": "candidate",
+      "features": [
+        "lote-4-dashboard"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "src/components/dashboard/kpi-tiles.tsx:100-118 (DASH-05 AC1-3) (dashboard,ui)"
+      ],
+      "created": "2026-08-02T20:53:06Z",
+      "last_seen": "2026-08-02T20:53:06Z"
+    },
+    {
+      "id": "L-004",
+      "key": "spec_precision_gap::structural correctness of independent state sources url period cookie tenant still needs an integration or manual verification artifact logged in validation md since the code can t possibly couple them is not the same as evidence the combination was exercised",
+      "text": "Structural correctness of independent state sources (URL period + cookie tenant) still needs an integration or manual-verification artifact logged in validation.md, since 'the code can't possibly couple them' is not the same as evidence the combination was exercised.",
+      "signal": "spec_precision_gap",
+      "scope": "dashboard,tenant-isolation",
+      "status": "candidate",
+      "features": [
+        "lote-4-dashboard"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "app/(crm)/dashboard/page.tsx:46-48 (DASH-06 AC2) (dashboard,tenant-isolation)"
+      ],
+      "created": "2026-08-02T20:53:10Z",
+      "last_seen": "2026-08-02T20:53:10Z"
+    },
+    {
+      "id": "L-005",
+      "key": "spec_precision_gap::quando um ac define o caso campo vazio defina explicitamente tambem o caso campo ausente no payload payload parcial e payload vazio nao sao o mesmo estado e a implementacao escolhe sozinha se a spec calar",
+      "text": "Quando um AC define o caso 'campo vazio', defina explicitamente tambem o caso 'campo ausente no payload' — payload parcial e payload vazio nao sao o mesmo estado e a implementacao escolhe sozinha se a spec calar.",
+      "signal": "spec_precision_gap",
+      "scope": "spec/acceptance-criteria",
+      "status": "candidate",
+      "features": [
+        "redesign-crm-astryx"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "RD-07 AC3 (spec/acceptance-criteria)"
+      ],
+      "created": "2026-08-03T03:56:01Z",
+      "last_seen": "2026-08-03T03:56:01Z"
+    },
+    {
+      "id": "L-006",
+      "key": "spec_precision_gap::se um ac depende de uma condicao que o seed nunca produz ex conversa cruzando a virada do dia o smoke nao consegue observa lo planeje o dado de seed junto com o ac ou aceite de antemao que a evidencia sera so de teste unitario",
+      "text": "Se um AC depende de uma condicao que o seed nunca produz (ex.: conversa cruzando a virada do dia), o smoke nao consegue observa-lo — planeje o dado de seed junto com o AC ou aceite de antemao que a evidencia sera so de teste unitario.",
+      "signal": "spec_precision_gap",
+      "scope": "db/seed",
+      "status": "candidate",
+      "features": [
+        "redesign-crm-astryx"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "RD-06 AC3 (db/seed)"
+      ],
+      "created": "2026-08-03T03:56:06Z",
+      "last_seen": "2026-08-03T03:56:06Z"
+    },
+    {
+      "id": "L-007",
+      "key": "ac_gap::self check de design que so roda nos arquivos tocados pela feature nunca alcanca o globals css boilerplate de scaffold sobrevive ali e vence o tema inteiro audite a folha de entrada uma vez por projeto nao por feature",
+      "text": "Self-check de design que so roda nos arquivos tocados pela feature nunca alcanca o globals.css — boilerplate de scaffold sobrevive ali e vence o tema inteiro; audite a folha de entrada uma vez por projeto, nao por feature.",
+      "signal": "ac_gap",
+      "scope": "app/globals.css",
+      "status": "candidate",
+      "features": [
+        "polimento-visual-astryx"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "app/globals.css:28 (app/globals.css)"
+      ],
+      "created": "2026-08-03T06:15:03Z",
+      "last_seen": "2026-08-03T06:15:03Z"
+    },
+    {
+      "id": "L-008",
+      "key": "ac_gap::componente de lib de terceiro recharts embutido numa design system nao herda o tema sem props de estilo explicitas ele renderiza no default claro trate cada ponto de integracao como superficie a tematizar nao como caixa preta",
+      "text": "Componente de lib de terceiro (Recharts) embutido numa design system nao herda o tema: sem props de estilo explicitas ele renderiza no default claro. Trate cada ponto de integracao como superficie a tematizar, nao como caixa-preta.",
+      "signal": "ac_gap",
+      "scope": "src/components/dashboard",
+      "status": "candidate",
+      "features": [
+        "polimento-visual-astryx"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "src/components/dashboard/volume-chart.tsx (src/components/dashboard)"
+      ],
+      "created": "2026-08-03T06:15:03Z",
+      "last_seen": "2026-08-03T06:15:03Z"
+    },
+    {
+      "id": "L-009",
+      "key": "ac_gap::inspecao de dom prova token aplicado nao composicao correta so a captura de tela mostrou timestamps em ingles grid de kpi 4 1 orfao e filtros desalinhados em trabalho de ui screenshot e o gate nao o dom",
+      "text": "Inspecao de DOM prova token aplicado, nao composicao correta: so a captura de tela mostrou timestamps em ingles, grid de KPI 4+1 orfao e filtros desalinhados. Em trabalho de UI, screenshot e o gate, nao o DOM.",
+      "signal": "ac_gap",
+      "scope": "ui/verificacao",
+      "status": "candidate",
+      "features": [
+        "passada-visual-screenshots"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "src/components/pipeline/pipeline-board.tsx (ui/verificacao)"
+      ],
+      "created": "2026-08-03T14:35:36Z",
+      "last_seen": "2026-08-03T14:35:36Z"
+    },
+    {
+      "id": "L-010",
+      "key": "ac_gap::design system de terceiro pode ter texto de ui cravado num idioma sem prop de locale nem chave de catalogo antes de adotar um componente da lib num ponto visivel verificar se ele emite string propria",
+      "text": "Design system de terceiro pode ter texto de UI cravado num idioma sem prop de locale nem chave de catalogo; antes de adotar um componente da lib num ponto visivel, verificar se ele EMITE string propria.",
+      "signal": "ac_gap",
+      "scope": "@astryxdesign/core",
+      "status": "candidate",
+      "features": [
+        "passada-visual-screenshots"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "dist/Timestamp/Timestamp.js:117 (@astryxdesign/core)"
+      ],
+      "created": "2026-08-03T14:35:36Z",
+      "last_seen": "2026-08-03T14:35:36Z"
+    },
+    {
+      "id": "L-011",
+      "key": "ac_gap::before citing an mcp execution id as evidence in spec md call get execution to confirm it exists and shows the claimed outcome do not cite from memory of a live debugging session",
+      "text": "Before citing an MCP execution ID as evidence in spec.md, call get_execution to confirm it exists and shows the claimed outcome — do not cite from memory of a live debugging session.",
+      "signal": "ac_gap",
+      "scope": "n8n-evidence",
+      "status": "candidate",
+      "features": [
+        "lote-6-agente-n8n-whatsapp"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "spec.md Requirement Traceability, AGT-01 row — cited 'exec 379' (get_execution confirmed not found in any of the 5 workflows in the instance) (n8n-evidence)"
+      ],
+      "created": "2026-08-09T04:21:49Z",
+      "last_seen": "2026-08-09T04:21:49Z"
+    },
+    {
+      "id": "L-012",
+      "key": "spec_precision_gap::when an acceptance criterion lists multiple prohibited allowed sub clauses in one sentence write a dedicated assertion citing each sub clause s exact text not just the first clause of the sentence",
+      "text": "When an acceptance criterion lists multiple prohibited/allowed sub-clauses in one sentence, write a dedicated assertion citing each sub-clause's exact text, not just the first clause of the sentence.",
+      "signal": "spec_precision_gap",
+      "scope": "n8n/src/prompt.mjs",
+      "status": "candidate",
+      "features": [
+        "lote-6b-persona-e-lapidacao"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "n8n/src/__tests__/prompt.test.ts:115-131 vs PER-01 AC1/AC2 (n8n/src/prompt.mjs)"
+      ],
+      "created": "2026-08-10T23:26:31Z",
+      "last_seen": "2026-08-10T23:26:31Z"
+    },
+    {
+      "id": "L-013",
+      "key": "ac_gap::when a spec promises an active fallback message on exhausted retries iterations verify a real send path exists for it not just a silent registration flag degrade to silence is a common unannounced substitution for degrade to message",
+      "text": "When a spec promises an active fallback message on exhausted retries/iterations, verify a real send path exists for it, not just a silent-registration flag - degrade-to-silence is a common unannounced substitution for degrade-to-message.",
+      "signal": "ac_gap",
+      "scope": "n8n-agent",
+      "status": "candidate",
+      "features": [
+        "lote-6c-agente-ai-agent-memoria-tools"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "VOZ-03 AC4 / spec.md Edge Cases (maxIterations) - validation.md Finding 1 (n8n-agent)"
+      ],
+      "created": "2026-08-15T03:27:16Z",
+      "last_seen": "2026-08-15T03:27:16Z"
+    },
+    {
+      "id": "L-014",
+      "key": "spec_precision_gap::when a design md function signature omits a parameter the spec s word choice implies e g perguntado vs confirmado document explicitly which weaker semantic was implemented and why a stronger one was structurally unreachable",
+      "text": "When a design.md function signature omits a parameter the spec's word choice implies (e.g. 'perguntado' vs 'confirmado'), document explicitly which weaker semantic was implemented and why a stronger one was structurally unreachable.",
+      "signal": "spec_precision_gap",
+      "scope": "n8n-agent",
+      "status": "candidate",
+      "features": [
+        "lote-6c-agente-ai-agent-memoria-tools"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "QLF-02 AC2/3 - validation.md spec-anchored table (n8n-agent)"
+      ],
+      "created": "2026-08-15T03:27:20Z",
+      "last_seen": "2026-08-15T03:27:20Z"
+    },
+    {
+      "id": "L-015",
+      "key": "ac_gap::before removing a shared configuration column or field grep every workflow and module that reads it and migrate them all in the same change",
+      "text": "Before removing a shared configuration column or field, grep every workflow and module that reads it and migrate them all in the same change.",
+      "signal": "ac_gap",
+      "scope": "n8n",
+      "status": "candidate",
+      "features": [
+        "lote-7-dado-real-ponta-a-ponta"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "SEC-01 AC2 - n8n/workflows/scheduler.ts:158 (execucao n8n 897: 401 nao-autenticado apos remocao de tenant_config.apiKey) (n8n)"
+      ],
+      "created": "2026-08-23T01:08:03Z",
+      "last_seen": "2026-08-23T01:08:03Z"
+    },
+    {
+      "id": "L-016",
+      "key": "ac_gap::record the verification run s evidence execution id status and response payload in the report before archiving or deleting the scratch artifact that produced it an archived n8n workflow makes its own executions unreadable so cleanup destroys the only live proof of the fix",
+      "text": "Record the verification run's evidence (execution id, status and response payload) in the report before archiving or deleting the scratch artifact that produced it - an archived n8n workflow makes its own executions unreadable, so cleanup destroys the only live proof of the fix.",
+      "signal": "ac_gap",
+      "scope": "n8n",
+      "status": "candidate",
+      "features": [
+        "lote-7-dado-real-ponta-a-ponta"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "SEC-01 AC2 - execucao n8n 1649 no workflow scratch MuJojnEv7X0emzPT (get_execution e search_executions recusam: workflow arquivado) (n8n)"
+      ],
+      "created": "2026-08-23T02:43:24Z",
+      "last_seen": "2026-08-23T02:43:24Z"
+    },
+    {
+      "id": "L-017",
+      "key": "spec_deviation::confirmar a chave do rate limit nativo da biblioteca antes de escrever a ac better auth conta por ip e rota nunca por identidade",
+      "text": "Confirmar a chave do rate limit nativo da biblioteca antes de escrever a AC: better-auth conta por IP e rota, nunca por identidade.",
+      "signal": "spec_deviation",
+      "scope": "auth",
+      "status": "candidate",
+      "features": [
+        "lote-8-usuarios-papeis-atribuicao"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "src/server/auth/config.ts:86 (auth)"
+      ],
+      "created": "2026-08-28T00:13:19Z",
+      "last_seen": "2026-08-28T00:13:19Z"
+    },
+    {
+      "id": "L-018",
+      "key": "spec_deviation::em conta unica multi tenant escrever desativacao como perda de acesso ao vinculo nunca como recusa de login global",
+      "text": "Em conta unica multi-tenant, escrever desativacao como perda de acesso ao vinculo, nunca como recusa de login global.",
+      "signal": "spec_deviation",
+      "scope": "auth",
+      "status": "candidate",
+      "features": [
+        "lote-8-usuarios-papeis-atribuicao"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "src/server/__tests__/deactivate-actions.test.ts:526 (auth)"
+      ],
+      "created": "2026-08-28T00:13:19Z",
+      "last_seen": "2026-08-28T00:13:19Z"
+    },
+    {
+      "id": "L-019",
+      "key": "spec_deviation::usar como valor de spec o identificador ja gravado no seed nos testes e no contrato publicado nunca um valor suposto no planejamento",
+      "text": "Usar como valor de spec o identificador ja gravado no seed, nos testes e no contrato publicado, nunca um valor suposto no planejamento.",
+      "signal": "spec_deviation",
+      "scope": "spec",
+      "status": "candidate",
+      "features": [
+        "lote-8-usuarios-papeis-atribuicao"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "src/db/seed.ts:211 (spec)"
+      ],
+      "created": "2026-08-28T00:13:19Z",
+      "last_seen": "2026-08-28T00:13:19Z"
+    },
+    {
+      "id": "L-020",
+      "key": "spec_deviation::quando o design manda estender um modulo cujo teste de pureza proibe imports criar modulo irmao em vez de enfraquecer a assercao existente",
+      "text": "Quando o design manda estender um modulo cujo teste de pureza proibe imports, criar modulo irmao em vez de enfraquecer a assercao existente.",
+      "signal": "spec_deviation",
+      "scope": "src/lib",
+      "status": "candidate",
+      "features": [
+        "lote-8-usuarios-papeis-atribuicao"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "src/lib/__tests__/broker-assignment.test.ts:49 (src/lib)"
+      ],
+      "created": "2026-08-28T00:13:20Z",
+      "last_seen": "2026-08-28T00:13:20Z"
+    },
+    {
+      "id": "L-021",
+      "key": "spec_deviation::server action nova sem consumidor de producao nao e feature entregue grepar consumidores antes de marcar a task done",
+      "text": "Server action nova sem consumidor de producao nao e feature entregue: grepar consumidores antes de marcar a task done.",
+      "signal": "spec_deviation",
+      "scope": "server-actions",
+      "status": "candidate",
+      "features": [
+        "lote-8-usuarios-papeis-atribuicao"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "src/server/actions/work-window.ts:38 (server-actions)"
+      ],
+      "created": "2026-08-28T00:13:20Z",
+      "last_seen": "2026-08-28T00:13:20Z"
+    },
+    {
+      "id": "L-022",
+      "key": "ac_gap::edge case da spec com duas metades exige assercao para cada metade nunca so para a mais facil de testar",
+      "text": "Edge case da spec com duas metades exige assercao para cada metade, nunca so para a mais facil de testar.",
+      "signal": "ac_gap",
+      "scope": "tests",
+      "status": "candidate",
+      "features": [
+        "lote-8-usuarios-papeis-atribuicao"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "src/server/data/__tests__/broker-assignment.test.ts:153 (tests)"
+      ],
+      "created": "2026-08-28T00:13:20Z",
+      "last_seen": "2026-08-28T00:13:20Z"
+    },
+    {
+      "id": "L-023",
+      "key": "surviving_mutant::when testing a retention expiry cutoff assert a fixture aged exactly at the boundary itself not only one unit inside and one unit outside a fence post regression that shortens the window can leave both off boundary assertions unchanged",
+      "text": "When testing a retention/expiry cutoff, assert a fixture aged exactly at the boundary itself, not only one unit inside and one unit outside — a fence-post regression that shortens the window can leave both off-boundary assertions unchanged.",
+      "signal": "surviving_mutant",
+      "scope": "testing",
+      "status": "candidate",
+      "features": [
+        "lote-9-metricas-piloto"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "src/server/data/index.ts:2375 purgeIntegrationRefusals RETENTION_MS — validation.md Discrimination Sensor mutation 4 (testing)"
+      ],
+      "created": "2026-08-30T13:31:12Z",
+      "last_seen": "2026-08-30T13:31:12Z"
+    }
+  ]
+}
