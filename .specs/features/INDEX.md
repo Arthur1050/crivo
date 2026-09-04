@@ -8,6 +8,9 @@ descobrir onde está o que você procura.
 Roadmap original (`../Roadmap - Fases Epicas.md`): 10 fases, executadas em 9 lotes + 3
 interstitiais. **100% executado** em 2026-08-30 (`STATE.md` § Handoff).
 
+Trabalho futuro: `../ROADMAP-POS-PILOTO.md` — lotes 10 a 14 propostos a partir do backlog deferido,
+com o que foi descartado e por quê.
+
 ---
 
 ## Como este diretório está organizado
