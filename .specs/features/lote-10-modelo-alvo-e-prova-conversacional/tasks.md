@@ -287,10 +287,10 @@ critério que aprova ou dispara o rollback.
 - Skill: NONE
 
 **Done when**:
-- [ ] `registrar_qualificacao`, `consultar_documentos`, `responder_lead`, `agendar_reuniao` e `escalar_para_humano` com pelo menos uma chamada bem-sucedida cada
-- [ ] Um id de execução por tool registrado — nunca "funcionou", sempre o id
-- [ ] Qualquer tool que não tenha sido chamada é registrada como não chamada, com o que o agente fez no lugar
-- [ ] Nenhum lead do roteiro do smoke tocado
+- [x] `registrar_qualificacao`, `consultar_documentos`, `responder_lead`, `agendar_reuniao` e `escalar_para_humano` com pelo menos uma chamada bem-sucedida cada
+- [x] Um id de execução por tool registrado — nunca "funcionou", sempre o id
+- [x] Qualquer tool que não tenha sido chamada é registrada como não chamada, com o que o agente fez no lugar
+- [x] Nenhum lead do roteiro do smoke tocado
 
 **Tests**: none
 **Gate**: evidência

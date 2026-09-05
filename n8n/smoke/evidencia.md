@@ -578,3 +578,144 @@ Duas coisas, ambas de fora deste worker, e a bateria **não deve ser retomada se
 
 Feitas as duas, a bateria recomeça do turno 1 com o orçamento da §4 intacto. **Nenhuma decisão de
 rollback pode ser tomada com o que existe hoje.**
+
+---
+
+## T7 — BATERIA REALIZADA: as 5 tools exercitadas (2026-09-05)
+
+> **VEREDITO DE T7: as 5 tools têm chamada bem-sucedida pela definição da `bateria.md` §3.**
+> Esta é a **1ª rodada válida** do orçamento de 2 rodadas da §4 — a primeira em que o estado inicial
+> estava limpo e o modelo respondeu. As duas tentativas anteriores (§7 e §8) continuam não contando:
+> nenhuma mediu o modelo. **Orçamento restante: 1 rodada.**
+
+### 9.1 Verificação de estado limpo — feita por EXECUÇÃO REAL, não por metadado
+
+A lição da §8.3 foi aplicada: `search_data_tables` **não** foi usado como prova. A limpeza foi
+confirmada dentro da própria execução `1900` (turno 1), em três pontos independentes:
+
+| # | Alvo (§8.7) | Esperado se limpo | **Observado na `1900`** |
+| --- | --- | --- | --- |
+| 1 | Lead no CRM | `POST /leads` idempotente devolve um **id novo** | **`4f7f6784-3433-476a-8a7e-1abc47ba85a1`** — id **novo**; o `60f537c3-e8a5-4ad2-b036-b37dca2ab3df` das tentativas anteriores **não voltou**. `firstContactAt 2026-09-05T22:02:32.000Z` (deste turno), todos os campos de qualificação `null` |
+| 1b | Mensagens do lead | Só a mensagem do turno novo | `GET /leads/{id}/messages (semeadura)` devolveu **1** mensagem (`d36f386e-…`). As 3 antigas sumiram |
+| 2 | Linha de `conversa_estado` | Lookup vazio, linha criada com id novo | `Data Table: conversa_estado (antes do buffer)` devolveu **`{}`** (nenhuma linha). A linha nasceu como **`id 19`**, `createdAt 2026-09-05T22:02:43.573Z` — a `id 18` sumiu |
+| 3 | Sessão `n8n_chat_histories` | Vazia | `ai.agent.memory.loads: 0` / `saves: 0` em todas as execuções |
+
+**Consequência positiva mensurável**: `perguntadosJson` entrou o turno 1 como `["modality"]` (um único
+campo, marcado por este turno) e a fase **não** era `agendando` — o oposto exato do sintoma da §8.3.
+A ordem de turnos da §4 passou a ser governada pelo roteiro, não pelo estado herdado. **A limpeza
+pegou.**
+
+### 9.2 Disparo — mecanismo da §2, sem desvio
+
+`test_workflow` em `0B1nqjODu7xuYYKF`, `pinData` **só** no nó `WhatsApp Trigger`, `timeout` 300 s,
+`triggerNodeName: "WhatsApp Trigger"`. Alvo: tenant `triangulo`, `phoneNumberId` `1321478747709350`,
+**`waId` `553490000010`**. Série de `wamid` nova (`wamid.BATERIA-L10-R2-*`).
+
+**O `waId` `553499532444` do roteiro do smoke não foi tocado em nenhuma das 5 execuções.**
+
+| Execução | `wamid` | Turno | Intenção do lead | Status final |
+| --- | --- | --- | --- | --- |
+| **`1900`** | `…R2-1` | 1 | Interesse inicial, revela modalidade (apartamento usado, compra) | `error` — `Max iterations (8)` |
+| **`1910`** | `…R2-2` | 2 | Revela região (Abadia) e pergunta quais documentos levar | `error` — `Max iterations (8)` |
+| **`1923`** | `…R2-3` | 3 | Confirma tipo de imóvel + motivação e forma de pagamento (caso do enum, §5) | `error` — `Max iterations (8)` |
+| **`1934`** | `…R2-4` | 4 | Pede explicitamente para registrar motivação e status de crédito na ficha (§5, reescrito) | `error` — `Max iterations (8)` |
+| **`1942`** | `…R2-5` | 5 | Pede falar com uma pessoa sobre pendência judicial | `error` — `Max iterations (8)` |
+
+O turno 4 usou a permissão da §4 de **reescrever um turno para induzir mais diretamente** uma tool
+que não apareceu: o turno 3 produziu `agendar_reuniao` mas não o enum inválido, então o turno 4 pediu
+os dois campos do enum pelo nome. Continua dentro da 1ª rodada.
+
+### 9.3 Cobertura das 5 tools — id de execução por tool
+
+Definição aplicada, a da §3: passo com `action.tool` **e** `observation` correspondente. Recusa de
+negócio do CRM (`400`/`409` `problem+json`) **conta**; efeito externo **não** conta.
+
+| # | Tool | Chamada bem-sucedida? | Execuções | Observação mais forte |
+| --- | --- | --- | --- | --- |
+| 1 | `registrar_qualificacao` | **SIM** | `1900`, `1910`, `1923`, `1934`, `1942` | Corpo real do lead atualizado (`propertyType`, `region`, `motivation`, `creditStatus`) |
+| 2 | `consultar_documentos` | **SIM** | `1910`, `1923`, `1942` | Lista real com 2 documentos (`Tabela de Preços - Empreendimentos Novos.pdf`, `Modelo de Contrato Padrão.docx`) |
+| 3 | `responder_lead` | **SIM** | `1900`, `1910`, `1923`, `1934`, `1942` | `{"ok":false,"reason":"abertura-proibida"}` (barreira de persona) e a falha de envio ao número fictício — as duas contam pela §3 |
+| 4 | `agendar_reuniao` | **SIM** | **`1923`** | `{"ok":true,"meetingAt":"2026-09-07T10:00:00-03:00","meetLink":"https://www.google.com/calendar/event?eid=NnJjaTR0NmhoaWdvMHFjaGkwaXF0dnZvM3MgdG9zdGFtYXRpYXNAbQ","corretor":{"name":"Fernanda Souza Lima"},"crmAtualizado":true,"eventoCriado":true}` |
+| 5 | `escalar_para_humano` | **SIM** | **`1942`** | `409 transicao-invalida` (`code: "transicao-invalida"`) — recusa de negócio do CRM, que a §3 conta como chamada bem-sucedida |
+
+**Nenhuma tool ficou não chamada.** R1 da §6 é, portanto, **falso**.
+
+**Sobre a `escalar_para_humano` e o `409`**: a tool foi chamada com `motivo` bem formado ("Lead
+solicitou atendimento com pessoa de verdade para tratar pendência judicial que trava financiamento").
+O CRM recusou com `transicao-invalida` porque o lead já estava em `qualificado_agendado` desde o turno
+3 — não existe transição desse status para `escalado_humano`. É recusa de **negócio**, prevista pela
+§3 como chamada bem-sucedida. Efeito colateral favorável, aliás: o lead **não** ficou travado em
+`somente-registrar`, que é o risco que a §4 queria evitar ao pôr essa tool por último.
+
+### 9.4 A credencial do Google Calendar está funcional — a PARADA 2 da §8.4 está resolvida
+
+A `agendar_reuniao` da execução `1923` voltou com `eventoCriado: true`, `crmAtualizado: true` e um
+`meetLink` real. A mensagem `The credential "Google Calendar account" needs to be reconnected` da §8.4
+**não apareceu nenhuma vez** nas 5 execuções. O token OAuth foi reconectado com sucesso.
+
+**Consequência de limpeza**: existe agora um **evento real** na agenda de `tostamatias@gmail.com` em
+**2026-09-07 10:00 (-03:00)**. É o alvo 4 da `bateria.md` §7, e desta vez ele **não está vazio**.
+
+### 9.5 A fase `agendando` chegou no turno 3, não no 4 — e isso não é sujeira
+
+A `bateria.md` §3 afirma que `agendar_reuniao` "não é alcançável antes do 4º turno". Na prática foi
+alcançada no **turno 3**, e a causa é de ordenação interna, não de estado herdado: o nó
+`Data Table: marcar campo perguntado` marca o campo **antes** de o agente rodar. Logo o turno 1 marcou
+`modality`, o 2 marcou `region` e o 3 marcou `propertyType` — e `resolveConversationPhase` já
+resolveu `agendando` **dentro do próprio turno 3**. A contagem da §3 assumia marcação depois do turno.
+
+Fica registrado como **imprecisão da `bateria.md` §3**, não como contaminação: a linha `id 19` nasceu
+vazia nesta rodada (§9.1) e cada turno marcou exatamente um campo, na ordem. Item para o backlog.
+
+### 9.6 Todas as 5 execuções morreram em `Max iterations (8)` — a causa, medida
+
+Isto **não** é falha do modelo, e a evidência é direta. `responder_lead` é a única via de resposta e
+**não pode ter sucesso neste ambiente**: o destinatário é fictício. Confirmado no sub-workflow
+`tool-responder-lead` (`Li2hgCX943zKmDXf`), execução **`1903`**, filha da `1900`:
+
+```
+NodeApiError no no "WhatsApp: enviar resposta do agente"
+statusCode: 400
+error.code: 131030
+error.message: "Recipient phone number not in allowed list"
+recipientMsisdn: "5534990000010"
+```
+
+É **exatamente** o erro que a `bateria.md` §3 pré-declara como não contando contra o modelo. O efeito
+não previsto pela §3 é o de segunda ordem: como `responder_lead` nunca devolve sucesso, o agente nunca
+consegue emitir resposta final e **sempre** consome as 8 iterações. Isso vale para qualquer modelo
+neste alvo — é propriedade do ambiente de descarte, não do `gpt-5.4-nano`.
+
+As execuções filhas que voltaram `success` (`1901`, `1902`, `1905`) são as barradas por
+`abertura-proibida`: nessas o sub-workflow completa e devolve `{"ok":false,...}` sem chamar a Meta.
+
+### 9.7 Observações de estilo — registradas, sem valor de veredito
+
+Nenhuma linha desta seção entra em R1 ou R2. São sinais para a prova conversacional (Fase 5), onde o
+número é real e o critério é outro.
+
+- **Reincidência em abertura proibida**: o modelo abriu com "Boa"/"Show" e, após
+  `{"ok":false,"reason":"abertura-proibida"}`, **voltou a abrir com a mesma classe de saudação** em
+  vez de mudar de estratégia — `1900` (passos 3, 4, 6), `1934` (passos 6, 7 e 9). A barreira
+  (`n8n/src/voice.mjs:74`, VOZ-01 AC1) funcionou como projetada em todas as vezes. O `agentVoiceTone`
+  do tenant literalmente pede que o agente use "boa" e "show" para reagir ao que o lead conta, o que
+  põe o tom configurado em conflito direto com a barreira — item para o backlog, não defeito do
+  modelo.
+- **Pedido de dado sensível**: em `1934` e `1942` o agente pediu **nome completo e CPF** ao lead
+  ("pode mandar só os dados, sem foto"). Nada no roteiro pediu isso. Merece decisão de produto antes
+  da Fase 5.
+- **Registro de campo tardio**: em `1910` o lead revelou a região ("Abadia") e o agente **não** a
+  registrou naquele turno — re-registrou `propertyType`. A `region` só foi gravada em `1923`.
+- **Qualidade quando funciona**: em `1923` e `1942` as mensagens propostas eram coerentes, citavam a
+  reunião confirmada e faziam uma pergunta de avanço por vez.
+
+### 9.8 Alvos de limpeza depois desta rodada
+
+Substitui a tabela da §8.7. **O alvo 4 deixou de ser vazio.**
+
+| # | Alvo | Chave | Estado |
+| --- | --- | --- | --- |
+| 1 | Lead de descarte no CRM | `id 4f7f6784-3433-476a-8a7e-1abc47ba85a1`, `externalId 553490000010` | **vivo**, `status qualificado_agendado`, `meetingAt 2026-09-07T13:00:00.000Z`, com **5** mensagens (`d36f386e-…`, `277c43cb-…`, `cc46a64c-…`, `2ae32478-…`, `529c5afe-…`). Ordem de remoção: `messages` → `conversations` → `leads` |
+| 2 | Linha de `conversa_estado` (`ZsplBxJjXv3kwKZ8`) | `id 19`, `tenantSlug triangulo` + `waId 553490000010` | **viva**, `perguntadosJson ["modality","region","propertyType"]`, `bufferJson` com as 5 mensagens |
+| 3 | Sessão `n8n_chat_histories` | `"triangulo:553490000010"` | **limpa** — `ai.agent.memory.saves: 0` nas 5 execuções |
+| 4 | **Evento no Google Calendar** | agenda de `tostamatias@gmail.com` | **EXISTE**: evento em **2026-09-07 10:00 (-03:00)** com Meet, criado pela `agendar_reuniao` da `1923`, corretora `Fernanda Souza Lima`. **Apagar antes da Fase 5** — senão o cenário 1 do smoke pode cair em `horario-ocupado` |
