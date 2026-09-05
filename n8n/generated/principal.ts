@@ -1245,29 +1245,46 @@ const agendarReuniaoTool = tool({
   output: [{}],
 });
 
-// Trocar de modelo é trocar este 1 nó (T16 eleva para flash — isolado,
-// deliberadamente ainda flash-lite aqui, ver tasks.md T16).
+// Trocar de modelo é trocar este 1 nó (lote-10 T3 troca a familia inteira —
+// Gemini -> OpenAI — sem tocar em nenhum outro nó do grafo).
 const agentModel = languageModel({
-  type: "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
-  version: 1.1,
+  type: "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+  version: 1.3,
   config: {
-    name: "Gemini Chat Model",
+    name: "OpenAI Chat Model",
     position: [7560, 1500],
-    // T16: "models/gemini-3.1-flash" nao existe na API real (confirmado via
-    // ListModels ao vivo — a familia 3.1 so publicou a variante flash-lite
-    // para generateContent de texto). "models/gemini-3.5-flash" e a
-    // proxima liberacao estavel nao-lite da linha flash, na MESMA janela de
-    // lancamento (05-2026) da flash-lite atual — versao fixa e reproduzivel,
-    // nao o alias flutuante "gemini-flash-latest".
+    // lote-10 (MOD-01): o modelo do agente sai de
+    // `models/gemini-3.5-flash-lite` para `gpt-5.4-nano-2026-03-17`. O motivo
+    // esta no lote-9: a execucao 462 mostrou o Gemini reagindo mal a recusa
+    // de tool (`400 payload-invalido` por enum invalido) — o modelo alvo e
+    // trocado antes das conversas reais para que a prova conversacional
+    // corra sobre o modelo que vai a producao, nao sobre o antigo.
     //
-    // lote-8 T30: a fonte dizia "models/gemini-3.5-flash" enquanto a
-    // instancia rodava "models/gemini-3.5-flash-lite" (trocado a mao na UI,
-    // fora do workflow-as-code). A fonte foi alinhada ao que a instancia de
-    // fato roda, para que a proxima publicacao de principal.ts nao reverta o
-    // modelo sem querer. Subir de volta para a variante nao-lite e uma
-    // decisao de produto: mudar aqui e republicar, nunca pela UI.
-    parameters: { modelName: "models/gemini-3.5-flash-lite", options: { temperature: 0.4 } },
-    credentials: { googlePalmApi: newCredential("Google Gemini(PaLM) Api account") },
+    // SNAPSHOT DATADO, nao alias flutuante: `gpt-5.4-nano-2026-03-17` fixa a
+    // build exata. `gpt-5.4-nano` (sem data) e um ponteiro que a OpenAI move
+    // quando publica uma build nova, e mover o modelo por baixo de um agente
+    // ja validado invalida silenciosamente a prova conversacional deste
+    // lote. Mesma disciplina que o comentario anterior aplicava ao recusar
+    // "gemini-flash-latest". `cachedResultName` repete o mesmo id de
+    // proposito: e o rotulo que a UI do n8n exibe, e diverge do `value` se
+    // alguem trocar o modelo pela UI — divergencia visivel, nao silenciosa.
+    //
+    // SEM `temperature` (o Gemini tinha 0.4): a familia gpt-5.* e de
+    // raciocinio e nao aceita `temperature` junto com `reasoningEffort` — o
+    // controle equivalente e `reasoningEffort`, aqui em "low" porque este
+    // agente e de tool calling em turno de conversa (latencia importa mais
+    // que profundidade). `timeout: 120000` cobre o pior caso de um turno com
+    // varias chamadas de tool encadeadas, bem acima do default de 60s.
+    parameters: {
+      model: {
+        __rl: true,
+        mode: "list",
+        value: "gpt-5.4-nano-2026-03-17",
+        cachedResultName: "gpt-5.4-nano-2026-03-17",
+      },
+      options: { reasoningEffort: "low", timeout: 120000 },
+    },
+    credentials: { openAiApi: newCredential("OpenAI account") },
   },
 });
 

@@ -212,9 +212,9 @@ fixa o que mudou e o que não pode ter mudado.
 - Skill: NONE
 
 **Done when**:
-- [ ] `node scripts/n8n-inline.mjs` rodado
-- [ ] `git diff n8n/generated/principal.ts` confinado ao bloco do nó de modelo — qualquer linha fora dele é investigada antes de commitar
-- [ ] Gate check passa: `npx vitest run && npm run lint && npm run build`
+- [x] `node scripts/n8n-inline.mjs` rodado
+- [x] `git diff n8n/generated/principal.ts` confinado ao bloco do nó de modelo — qualquer linha fora dele é investigada antes de commitar
+- [x] Gate check passa: `npx vitest run && npm run lint && npm run build`
 
 **Tests**: none
 **Gate**: build
