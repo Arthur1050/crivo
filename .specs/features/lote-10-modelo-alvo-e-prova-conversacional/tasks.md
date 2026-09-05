@@ -159,11 +159,11 @@ publicação nova.
 - Skill: NONE
 
 **Done when**:
-- [ ] `get_workflow_details` do `crivo-agente-principal` obtido e comparado com `n8n/generated/principal.ts`
-- [ ] Contagem de nós e conexões registrada dos dois lados
-- [ ] O nó de modelo publicado é confirmado como `lmChatGoogleGemini` / `models/gemini-3.5-flash-lite` — o ponto de partida da troca
-- [ ] Divergências (se houver) listadas nominalmente, separando cosmético de lógico
-- [ ] Nenhuma publicação feita nesta task
+- [x] `get_workflow_details` do `crivo-agente-principal` obtido e comparado com `n8n/generated/principal.ts`
+- [x] Contagem de nós e conexões registrada dos dois lados (61 nós / 75 conexões dos dois lados)
+- [x] O nó de modelo publicado é confirmado como `lmChatGoogleGemini` / `models/gemini-3.5-flash-lite` — o ponto de partida da troca
+- [x] Divergências (se houver) listadas nominalmente, separando cosmético de lógico — **divergência lógica encontrada** (configurações de execução ausentes em 3 nós, §2.5 da evidência): batch parado, T3-T5 não executados
+- [x] Nenhuma publicação feita nesta task
 
 **Tests**: none
 **Gate**: evidência
