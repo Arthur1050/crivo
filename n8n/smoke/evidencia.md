@@ -831,3 +831,133 @@ As duas frases descrevem a mesma execução e não podem estar as duas certas. I
 T8 — o que T8 mede é o comportamento do modelo novo, e esse está medido acima com passo e id. Fica
 registrado porque a `bateria.md` §5 usa a `462` como referência de comparação, e a referência está
 documentada de duas maneiras contraditórias no repositório. Item para o backlog.
+
+---
+
+## T9 — VEREDITO AMBÍGUO: o critério R2 não decide neste ambiente (2026-09-05)
+
+> **VEREDITO: AMBÍGUO. `bateria.md` §6.2 aplicada — PARADA.**
+> **R1 = falso** (as 5 tools cobertas, §9.3). **R2 não é decidível** pelo texto da §6: uma de suas
+> três cláusulas é satisfeita ao pé da letra, mas por uma causa que a própria `bateria.md` §3 declara
+> que **não conta contra o modelo** — e que seria satisfeita por **qualquer** modelo neste alvo.
+> **Nenhum rollback foi disparado. Nenhuma linha de código foi alterada.** T9 fica **não concluída**;
+> **T10 e T11 não foram iniciadas.** A decisão é do orquestrador/usuário, como a §6.2 manda.
+
+### 11.1 R1 — cobertura das 5 tools: **FALSO**, item a item
+
+`R1 = verdadeiro` se **alguma** das 5 tools tiver **zero** passos `action.tool` em todas as execuções.
+
+| Tool | Passos `action.tool` com `observation` | Execução de referência | R1 para esta tool |
+| --- | --- | --- | --- |
+| `registrar_qualificacao` | muitos | `1934` (passos 1-5) | não zera |
+| `consultar_documentos` | 3 | `1910` (passo 2), `1923` (passo 1), `1942` (passo 5) | não zera |
+| `responder_lead` | muitos | `1923` (passos 4-8) | não zera |
+| `agendar_reuniao` | 1 | **`1923`** (passo 2, `ok:true`, `eventoCriado:true`) | não zera |
+| `escalar_para_humano` | 1 | **`1942`** (passo 3, `409 transicao-invalida`) | não zera |
+
+Nenhuma tool zerou. **R1 = falso.** Isto é inequívoco e não depende de interpretação.
+
+### 11.2 R2 — sobrevivência à recusa: duas cláusulas claramente falsas, uma em conflito consigo mesma
+
+R2 é avaliada **no turno do enum inválido** (§5) — execuções `1934` (caso da §5) e `1942` (repetição),
+mais a recusa espontânea de `1900`.
+
+| Cláusula de R2 | Texto | Observado | Leitura |
+| --- | --- | --- | --- |
+| **(b)** | "o turno termina **sem nenhum** passo `action.tool = "responder_lead"`" | `1934`: 3 passos; `1942`: 4 passos; `1900`: 6 passos | **FALSA**, sem dúvida |
+| **(c)** | "o agente repete a **mesma** chamada com o **mesmo** valor inválido **3 vezes ou mais** no mesmo turno" | Cada valor inválido foi tentado **1 vez** e corrigido na tentativa seguinte (§10.2) | **FALSA**, sem dúvida |
+| **(a)** | "a execução do turno termina com `status: "error"` originado no nó `AI Agent`" | `1934`, `1942` e `1900` terminam `status: error`, `NodeOperationError` **originado no nó `AI Agent`** (`Max iterations (8) reached`) | **É AQUI QUE O CRITÉRIO TRAVA** |
+
+### 11.3 Por que a cláusula (a) não decide — as duas leituras, e por que nenhuma pode ser escolhida aqui
+
+**Leitura literal → R2 = verdadeiro → REPROVADO → rollback.** O texto de (a) não exige que o erro
+tenha sido *causado* pela recusa; exige que o turno do enum termine com erro originado no `AI Agent`.
+Isso aconteceu, nas três execuções.
+
+**Leitura pela finalidade → R2 = falso → APROVADO → o modelo fica.** O erro terminal não tem relação
+com o enum. Sua causa raiz está medida na §9.6: `responder_lead` é a única via de resposta e **não
+pode devolver sucesso neste alvo**, porque a Meta recusa o número fictício com `131030` — o erro que
+a `bateria.md` §3 **pré-declara** como não contando contra o modelo, na letra:
+
+> *"O efeito externo não conta. Meta recusando `5534990000010` (erro 131030, destinatário fora da
+> lista permitida) … são falhas do ambiente de descarte, não do modelo."*
+
+Três fatos, todos medidos, que sustentam a segunda leitura — e que são justamente o que a torna
+impossível de descartar como "interpretação a favor":
+
+1. **A cláusula (a) dispara para qualquer modelo neste alvo.** Sem `responder_lead` bem-sucedida o
+   agente nunca emite resposta final, e `maxIterations: 8` sempre estoura. Todas as **5** execuções
+   desta rodada morreram assim — inclusive `1910`, que **não** é turno de enum. Um critério que é
+   verdadeiro independentemente do modelo mede o ambiente, não o modelo.
+2. **A linha de base da comparação rodou em outro ambiente.** A execução `462` (Gemini), que a §5 usa
+   como referência, correu sobre o **número real** `553499532444`: lá `responder_lead` enviou de
+   verdade e a execução terminou `success` (§10.3). A diferença de status final entre `462` e `1934`
+   é do alvo, não do modelo.
+3. **É a mesma forma do caso já julgado na §7.3.** Ali, `zero passos action.tool` por quota esgotada
+   foi corretamente lido como **indeterminado**, não como `R1 = verdadeiro`, para não reprovar o
+   modelo por uma fatura não paga. Aqui, `status: error` por lista de permitidos da Meta é a mesma
+   espécie de fato: alheio ao modelo, e nomeado pela §6.2 ("credencial, quota, **rede**").
+
+**Por que este worker não escolhe.** A §6.2 é explícita: quando um fato exigido não pode ser
+observado de forma que decida, "quem decide é o orquestrador/usuário — nunca o executor da bateria, e
+nunca 'interpretando a favor'". As duas saídas disponíveis são exatamente os dois erros que a §6.2
+existe para impedir:
+
+- Declarar a cláusula (a) satisfeita **reprovaria o `gpt-5.4-nano` por causa da lista de destinatários
+  permitidos da Meta**, com o modelo tendo passado em tudo que o critério pretendia medir: chamou as 5
+  tools, reconheceu as 5 recusas de enum, corrigiu os valores, nunca repetiu um valor inválido, nunca
+  deixou o lead sem `responder_lead`.
+- Declarar a cláusula (a) inaplicável seria **emendar o critério durante a medição**, em favor do
+  modelo sob teste, por conta própria.
+
+O defeito é do critério, não do modelo nem da execução: a §3 previu que `responder_lead` falharia no
+envio, mas não previu o efeito de segunda ordem disso — que a falha impede o agente de encerrar o
+turno e mata **toda** execução em `Max iterations`. A §6 foi escrita sem esse caso em mente.
+
+### 11.4 O que está decidido, e o que não está
+
+**Decidido pelos dados, sem ambiguidade:**
+
+- R1 = **falso**. As 5 tools foram exercitadas, com id de execução cada (§9.3).
+- O agente **sobrevive à recusa de enum** no sentido que a §5 descreve: segue o turno, corrige o
+  valor, chega a `responder_lead`, não entra em laço no valor inválido (§10.2). As cláusulas (b) e (c)
+  de R2 são **falsas**.
+- A quota da OpenAI (§7) e a credencial do Google Calendar (§8.4) estão **resolvidas** (§9.4).
+- O estado inicial estava **limpo**, confirmado por execução real (§9.1).
+
+**Não decidido:**
+
+- O valor de R2, por causa da cláusula (a) — e portanto o veredito de MOD-02.
+
+### 11.5 Caminhos possíveis — apresentados, não escolhidos
+
+Este worker **não** recomenda nenhum. Os dados de cada um:
+
+1. **Pôr `553490000010` na lista de destinatários permitidos da Meta** e repetir a bateria com a
+   rodada que sobra do orçamento da §4. É o caminho que **remove a ambiguidade em vez de resolvê-la
+   por interpretação**: com `responder_lead` capaz de suceder, a cláusula (a) volta a discriminar
+   modelo de ambiente. Custo: uma configuração na Meta e 5 turnos. Exige limpar antes os alvos da
+   §9.8 — os 4, agora inclusive o evento de calendário.
+2. **Emendar a `bateria.md` §6 R2 (a)** para excluir o erro terminal cuja causa raiz é uma falha
+   externa já declarada fora de escopo pela §3 — e então reavaliar sobre as execuções `1934`/`1942`,
+   que já estão medidas e registradas. Não custa execução nenhuma, mas é mudança de critério e
+   **precisa ser decisão explícita do usuário**, registrada como emenda, nunca silenciosa.
+3. **Declarar REPROVADO pela letra** e executar o rollback da §6.1. Os dados acima dizem que isso
+   reverteria o modelo sem nenhuma evidência de que ele falhou no que o critério pretendia medir.
+4. **Aumentar `maxIterations`** do nó `AI Agent`: **não resolve**. O agente continua sem conseguir uma
+   `responder_lead` bem-sucedida; só levaria mais iterações para morrer do mesmo jeito, e mudaria o
+   grafo publicado fora do escopo do lote.
+
+Usar o **número real do smoke** (`553499532444`) para destravar a bateria está **proibido** pela §1 e
+não entra na lista.
+
+### 11.6 Estado do repositório e da instância nesta parada
+
+- `n8n/workflows/principal.ts` e `n8n/generated/principal.ts` **não foram tocados** por T7, T8 ou T9.
+- O modelo publicado continua **`gpt-5.4-nano-2026-03-17`** (`lmChatOpenAi` v1.3, versão
+  `8f9f8418-35b0-4d63-b8a0-e522f6f4e679`, `active: true`). **Nenhum rollback foi disparado.**
+- T7 e T8 estão concluídas e commitadas. **T9 fica não concluída**; **T10 e T11 não foram iniciadas.**
+- Orçamento da §4: **1 rodada válida gasta, 1 disponível.**
+- Os 4 alvos de limpeza da §9.8 continuam **pendentes** — com destaque para o **evento real de
+  2026-09-07 10:00** na agenda de `tostamatias@gmail.com`, que precisa ser apagado antes da Fase 5
+  independentemente de qual caminho da §11.5 for escolhido.
