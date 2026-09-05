@@ -236,10 +236,10 @@ publicado é o OpenAI, com o workflow ainda ativo.
 - Skill: NONE
 
 **Done when**:
-- [ ] Workflow publicado a partir de `n8n/generated/principal.ts` (nunca editado pela UI — AD-014)
-- [ ] `get_workflow_details` confirma `lmChatOpenAi` com `gpt-5.4-nano-2026-03-17` e nenhum nó Gemini
-- [ ] Workflow continua `active: true` e com `settings.errorWorkflow` apontando para `crivo-agente-erros`
-- [ ] Id da versão publicada registrado em `n8n/smoke/evidencia.md`
+- [x] Workflow publicado a partir de `n8n/generated/principal.ts` (nunca editado pela UI — AD-014)
+- [x] `get_workflow_details` confirma `lmChatOpenAi` com `gpt-5.4-nano-2026-03-17` e nenhum nó Gemini
+- [x] Workflow continua `active: true` e com `settings.errorWorkflow` apontando para `crivo-agente-erros`
+- [x] Id da versão publicada registrado em `n8n/smoke/evidencia.md`
 
 **Tests**: none
 **Gate**: evidência

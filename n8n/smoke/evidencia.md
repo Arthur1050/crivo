@@ -182,3 +182,106 @@ vez de escolhido por conveniência.
   funcional com Gemini.
 - Em qualquer caso, **T3/T4/T5 não foram executados** e o nó de modelo continua Gemini na fonte e na
   instância. Nada foi publicado, alterado ou revertido por este worker.
+
+
+---
+
+## T3-T4 — Troca do modelo na fonte e no gerado (2026-09-05)
+
+Decisão do orquestrador sobre a §2.5: **publicar e seguir** (autorizada pelo usuário). O batch
+retomou em T3 com esse aval — a §2.6 já registrava que a divergência é por ausência no publicado, e
+portanto que publicar restaura em vez de apagar.
+
+- **T3** (`99b8783`): `agentModel` em `n8n/workflows/principal.ts` deixa de ser
+  `@n8n/n8n-nodes-langchain.lmChatGoogleGemini` v1.1 / `models/gemini-3.5-flash-lite` /
+  `temperature: 0.4` e passa a `@n8n/n8n-nodes-langchain.lmChatOpenAi` v1.3, `model` como resource
+  locator (`value` = `cachedResultName` = `gpt-5.4-nano-2026-03-17`),
+  `options: { reasoningEffort: "low", timeout: 120000 }`, credencial `openAiApi` "OpenAI account".
+  Suíte nova `n8n/workflows/__tests__/principal-modelo.test.ts` (7 testes) fixa o nó novo **e** o que
+  não podia mudar (5 tools, memória, 61 nós / 75 conexões da §2.2).
+- **Contagem de testes**: `npx vitest run` = **1022 passed (1022) em 82 arquivos**. Piso de T1 era
+  1015 em 81 arquivos: +7 testes, +1 arquivo, exatamente a suíte nova. Nenhuma deleção silenciosa.
+- **T4** (`dacba56`): `node scripts/n8n-inline.mjs` rodado; `git diff n8n/generated/principal.ts`
+  ficou **inteiramente dentro do bloco `agentModel`** (linhas 1245-1290 do gerado) — nenhuma linha
+  fora dele. Gate `npx vitest run && npm run lint && npm run build` verde (lint com os mesmos 3
+  avisos pré-existentes de `ifElse` não usado e diretiva eslint redundante, 0 erros).
+
+---
+
+## T5 — Publicação do nó de modelo na instância (2026-09-05)
+
+### 5.1 O que foi publicado, e como
+
+Workflow `crivo-agente-principal` (`0B1nqjODu7xuYYKF`), via MCP `update_workflow` + `publish_workflow`
+— **nenhuma edição pela UI** (AD-014). As operações foram a tradução mecânica do que
+`n8n/generated/principal.ts` declara para os nós afetados:
+
+1. `removeNode` `Gemini Chat Model`
+2. `addNode` `OpenAI Chat Model` (`lmChatOpenAi` v1.3, mesmos `parameters` e `position` do gerado,
+   credencial `openAiApi` id `bGnmNn5iFH4sBCoo` "OpenAI account")
+3. `addConnection` `OpenAI Chat Model` → `AI Agent` em `ai_languageModel`
+4. `setNodeSettings` em `HTTP: GET /leads/{id}/messages (semeadura)` e em
+   `HTTP: registrar mensagem fixa` — as configurações da §2.5
+
+**Id da versão publicada: `8f9f8418-35b0-4d63-b8a0-e522f6f4e679`** (a anterior era
+`d3105bb3-8522-449c-aa7c-0569d6a2a547`). `versionId` == `activeVersionId` — o publicado é o ativo, sem
+draft pendente.
+
+### 5.2 Confirmação por `get_workflow_details` depois da publicação
+
+| Item | Resultado |
+| --- | --- |
+| Nó de modelo | `OpenAI Chat Model`, `@n8n/n8n-nodes-langchain.lmChatOpenAi`, `typeVersion 1.3` |
+| `model` | `{ __rl: true, mode: "list", value: "gpt-5.4-nano-2026-03-17", cachedResultName: "gpt-5.4-nano-2026-03-17" }` |
+| `options` | `{ reasoningEffort: "low", timeout: 120000 }` — sem `temperature` |
+| Conexão | `OpenAI Chat Model --ai_languageModel--> AI Agent` |
+| Nós Gemini remanescentes | **nenhum** (busca por tipo e por nome: 0) |
+| Contagens | **61 nós / 75 conexões** — idênticas à §2.2, a troca não mexeu em mais nada |
+| `active` | `true` (`isArchived: false`) |
+| `settings.errorWorkflow` | `73Yx70RMJrpLiYQn` = `crivo-agente-erros`, inalterado |
+
+**Credenciais continuam não observáveis por esta via**: `get_workflow_details` e
+`get_workflow_version` devolvem credencial vazia para **0 de 61** nós — inclusive para nós que
+comprovadamente têm credencial (WhatsApp, Postgres). Não é sinal de que a credencial do nó novo
+faltou; é a mesma limitação de instrumento já registrada na §2.4. A credencial foi passada
+explicitamente no `addNode` e a resposta do MCP veio com `autoAssignedCredentials: []` (nada precisou
+ser inferido). Confirmação real só virá da primeira execução — T7.
+
+### 5.3 Fechamento da §2.5 — 2 de 3 restaurados, e o terceiro é OUTRA coisa
+
+| Nó | Depois da publicação |
+| --- | --- |
+| `HTTP: GET /leads/{id}/messages (semeadura)` | **restaurado**: `retryOnFail: true`, `maxTries: 3`, `waitBetweenTries: 2000`, `onError: "continueRegularOutput"`, `alwaysOutputData: true` |
+| `HTTP: registrar mensagem fixa` | **restaurado**: `retryOnFail: true`, `maxTries: 3`, `waitBetweenTries: 2000` |
+| `consultar_documentos` | **CONTINUA SEM** `retryOnFail`/`maxTries` |
+
+> **ACHADO NOVO — `consultar_documentos` não é lacuna de publicação, é bug da fonte.**
+> Em `n8n/workflows/principal.ts` (linha **1150**), `retryOnFail: true` e `maxTries: 2` estão
+> declarados **dentro de `parameters`**, e não no nível do `config` do nó — repare na indentação: os
+> outros seis `retryOnFail` do arquivo (linhas 420, 480, 556, 650, 810, 1652) estão a 4 espaços,
+> nível de `config`; o da 1150 está a 6, dentro de `parameters`. `toJSON()` os emite por isso como
+> parâmetros do nó, e o n8n os **descarta ao salvar** (não são parâmetros válidos de
+> `httpRequestTool`). Ou seja: `retryOnFail` nesse nó **nunca esteve em vigor**, nem antes nem
+> depois desta publicação, e nenhuma republicação vai corrigi-lo enquanto a fonte estiver assim.
+>
+> Isso **refuta parcialmente a hipótese 1 da §2.6** (buraco no pipeline de publicação): o pipeline
+> restaurou corretamente os dois nós cuja fonte declara as configurações no lugar certo. O terceiro
+> caso era, o tempo todo, uma declaração no lugar errado.
+>
+> **Consequência prática**: `consultar_documentos` não tem retry — uma falha transitória do
+> `GET /context` volta ao agente como erro de tool na primeira tentativa. O `neverError` das
+> `options` continua valendo (a tool devolve a resposta em vez de abortar o turno), então o impacto é
+> "o agente perde a consulta de documentos naquele turno", não "o turno morre".
+>
+> **Não corrigido aqui, de propósito**: consertar a indentação é mudança de fonte + regeneração +
+> republicação, fora do escopo de T5 (que é publicar o que T4 gerou) e sem relação com a troca de
+> modelo. Fica registrado como item para o backlog do lote, com a linha exata.
+
+### 5.4 Avisos de validação na publicação
+
+`update_workflow` devolveu 5 avisos `SUBNODE_NOT_CONNECTED`, todos sobre os nós
+`Chat Memory Manager: *` (`memoryManager`). São **pré-existentes e esperados**: esses nós são usados
+no fluxo principal com a memória pendurada como subnode deles, não como subnodes de um agente — o
+validador do MCP não modela esse arranjo. Nenhum deles é o nó tocado por esta publicação, e as
+contagens 61/75 provam que nada foi desconectado. Registrado para que a próxima publicação não os
+confunda com regressão.
