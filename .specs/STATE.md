@@ -202,6 +202,14 @@
 - **Date**: 2026-08-30
 - **Status**: active
 
+### AD-025
+- **Decision**: A vitrine pública do catálogo (L16) é um **projeto Next separado** do CRM, com `next.config.ts` próprio (`cacheComponents: true`, PPR, ISR) e sem `proxy.ts` de autenticação. É **somente leitura**: nenhum formulário, nenhuma escrita, nenhum PII — o botão de interesse abre `wa.me` do agente com mensagem pré-preenchida citando a referência do imóvel. Lê o mesmo Postgres através de um **usuário de banco distinto, com `GRANT SELECT` restrito à tabela de imóveis e às colunas de identidade visual de `tenants`**. Frescor quase real: `use cache` + `cacheLife('minutes')` + `cacheTag('tenant:<slug>:catalogo')`, com `revalidateTag` disparado pelo CRM ao publicar, despublicar ou marcar vendido. Roteamento por **path** (`/c/<slug>`) nesta etapa; domínio próprio por imobiliária fica para evolução posterior.
+- **Reason**: Três fatos verificados em 2026-09-05 decidiram contra manter no mesmo projeto. (1) `cacheComponents` é flag **global** do `next.config.ts`, não por rota: a vitrine precisa dela e o CRM a tem desligada pela AD-007 — no mesmo projeto seria emendar a AD-007 para o produto inteiro (PPR default + `<Activity>`, obrigando reauditar a renderização de 12 lotes verificados) ou cair no modelo de cache anterior. (2) O `proxy.ts` tem matcher pega-tudo (`/((?!api|_next/static|_next/image|.*\..*).*)`) — todo visitante anônimo atravessaria a máquina de auth, e a exceção necessária na regex é um ponto de falha que, errado para o outro lado, expõe rota do CRM. (3) Um usuário de banco SELECT-only converte o isolamento de *disciplina de código* para *privilégio de banco*: se a app pública tentar ler `leads`, o Postgres recusa, independente do bug.
+- **Trade-off**: Dois deploys, dois envs e conhecimento do schema em dois lugares (mitigável publicando o subset de tipos ou duplicando as duas tabelas, que mudam pouco). Burocracia adiantada, visível e limitada, preferida ao custo difuso e permanente de uma fronteira mantida só por revisão de código. A vitrine não pode reusar a DAL do CRM — o que é o ponto, não um efeito colateral.
+- **Scope**: Toda a superfície pública do produto, a partir do L16. Não altera o CRM nem o contrato `/api/v1`. **Não emenda a AD-010**: `<Theme>` da Astryx é provider React com escopo por subárvore e `defineTheme` gera a paleta a partir de um accent — personalização por tenant em runtime é o caminho já sancionado pelo `CLAUDE.md` (`astryx theme`), não theming custom.
+- **Date**: 2026-09-05
+- **Status**: active
+
 ## Handoff
 
 ### Estado atual (2026-08-30)
