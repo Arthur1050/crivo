@@ -241,3 +241,35 @@ O que anotar, por cenário:
 - **Coerência de data/hora** na confirmação da reunião.
 
 ---
+
+## 8. Checklist de limpeza entre cenários
+
+Três alvos, em dois sistemas. Nenhum deles avisa quando é esquecido — o cenário seguinte roda e
+produz um resultado que parece válido, só que sobre estado velho. A bateria já provou os dois modos
+de falha na prática: `evidencia.md` §8 (buffer reidratado, fase pulou direto para `agendando`) e
+§9.8/§12.7 (lead antigo reaparecendo pelo `POST /leads` idempotente).
+
+**Ordem obrigatória: n8n (alvos 1 e 2) antes do CRM (alvo 3).** Na ordem inversa, uma mensagem que
+chegue no intervalo entre as duas limpezas recria o lead no CRM, e a linha nova de `conversa_estado`
+(ou a sessão de memória) que o n8n cria em seguida aponta para um lead que está prestes a ser
+apagado — o próximo cenário nasceria com metade do estado velho e metade do novo.
+
+| # | Alvo | Onde | Chave / identificação | Se esquecido |
+| --- | --- | --- | --- | --- |
+| 1 | Sessão de memória | `n8n_chat_histories` (Postgres da instância n8n) | `"triangulo:553499532444"` (padrão geral: `"<tenantSlug>:<waId>"`, `principal.ts:679`) | O agente do cenário seguinte "lembra" de uma conversa que, para o CRM, nunca aconteceu — mistura contexto de dois desfechos diferentes na mesma resposta |
+| 2 | Linha de `conversa_estado` | Data Table `ZsplBxJjXv3kwKZ8` | Casada por `tenantSlug = triangulo` + `waId = 553499532444` (o MCP não apaga linha de Data Table — remover pela UI da Data Table) | `perguntadosJson` chega cheio; a fase pode virar `agendando` no 1º turno, pulando a qualificação que o cenário exige (mesma falha observada em `evidencia.md` §8) |
+| 3 | Lead e conversa no CRM | Postgres do CRM, ordem `messages` → `conversations` → `leads` (FKs sem `onDelete`, `src/db/schema.ts:211-229`) | `externalId = 553499532444`, tenant `triangulo` | `POST /leads` idempotente devolve o lead **velho**, com o `status` terminal do cenário anterior ainda gravado — o cenário seguinte nunca começa do zero |
+
+**Confirmação obrigatória antes do próximo cenário**: não confie em metadado de tabela
+(`updatedAt`/`search_data_tables` mostram a tabela, não a linha — armadilha já registrada em
+`evidencia.md` §8.3). Confirme por execução real: dispare o primeiro turno do cenário seguinte e
+confira que o `POST /leads` cria um lead **novo** e que a fase inicial não é `agendando`.
+
+- [ ] Alvo 1 limpo (sessão de memória)
+- [ ] Alvo 2 limpo (linha de `conversa_estado`)
+- [ ] Alvo 3 limpo (lead + conversa no CRM, ordem `messages` → `conversations` → `leads`)
+- [ ] Limpeza confirmada por execução real do turno 1 do cenário seguinte (lead novo, fase não é `agendando`)
+
+Só depois das quatro linhas marcadas o cenário seguinte começa.
+
+---

@@ -390,13 +390,13 @@ cenário e o próximo, com a chave de cada um e a ordem obrigatória.
 - Skill: NONE
 
 **Done when**:
-- [ ] Alvo 1 — sessão em `n8n_chat_histories`, com a chave `"<tenantSlug>:<waId>"` escrita explicitamente
-- [ ] Alvo 2 — linha de `conversa_estado` (`ZsplBxJjXv3kwKZ8`), casada por `tenantSlug` + `waId`
-- [ ] Alvo 3 — lead no CRM, com a ordem `messages` → `conversations` → `leads` e o motivo (FKs sem `onDelete`)
-- [ ] Ordem entre sistemas escrita: n8n antes do CRM, com o motivo (mensagem no intervalo recriaria o lead com estado velho)
-- [ ] O que cada alvo esquecido causa, em uma linha cada — é isso que faz o checklist ser lido
-- [ ] Linha de confirmação para marcar antes do cenário seguinte começar
-- [ ] Gate check passa: `npx vitest run && npm run lint && npm run build`
+- [x] Alvo 1 — sessão em `n8n_chat_histories`, com a chave `"<tenantSlug>:<waId>"` escrita explicitamente
+- [x] Alvo 2 — linha de `conversa_estado` (`ZsplBxJjXv3kwKZ8`), casada por `tenantSlug` + `waId`
+- [x] Alvo 3 — lead no CRM, com a ordem `messages` → `conversations` → `leads` e o motivo (FKs sem `onDelete`)
+- [x] Ordem entre sistemas escrita: n8n antes do CRM, com o motivo (mensagem no intervalo recriaria o lead com estado velho)
+- [x] O que cada alvo esquecido causa, em uma linha cada — é isso que faz o checklist ser lido
+- [x] Linha de confirmação para marcar antes do cenário seguinte começar
+- [x] Gate check passa: `npx vitest run && npm run lint && npm run build`
 
 **Tests**: none
 **Gate**: build
