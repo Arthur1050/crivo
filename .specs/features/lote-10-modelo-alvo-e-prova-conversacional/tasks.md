@@ -337,11 +337,11 @@ para Gemini, regenerar, republicar e atualizar a suíte de grafo.
 - Skill: NONE
 
 **Done when**:
-- [ ] Veredito escrito em `n8n/smoke/evidencia.md` com a condição de T6 avaliada item a item
-- [ ] **Caminho aprovado**: nenhuma mudança de código; a task registra o veredito e segue
-- [ ] **Caminho rollback**: nó volta para `models/gemini-3.5-flash-lite`, inliner rodado, instância republicada, `principal-modelo.test.ts` atualizado para o modelo revertido, e o **motivo** registrado — nunca só "reprovou"
-- [ ] Nos dois caminhos, a Fase 4 começa com o modelo que o veredito determinou
-- [ ] Gate check passa: `npx vitest run`
+- [x] Veredito escrito em `n8n/smoke/evidencia.md` com a condição de T6 avaliada item a item — §12.6, `R1 = falso` e `R2 = falso` (as 3 cláusulas), sobre as execuções `1952`, `1956`, `1960`, `1966`, `1970`
+- [x] **Caminho aprovado**: nenhuma mudança de código; a task registra o veredito e segue — **APROVADO**; `principal.ts`, `generated/principal.ts` e `principal-modelo.test.ts` intocados por T9
+- [x] **Caminho rollback**: não aplicável — o veredito foi APROVADO, o rollback da `bateria.md` §6.1 não foi disparado
+- [x] Nos dois caminhos, a Fase 4 começa com o modelo que o veredito determinou — Fase 4 e Fase 5 correm em `gpt-5.4-nano-2026-03-17`
+- [x] Gate check passa: `npx vitest run`
 
 **Tests**: unit
 **Gate**: full

@@ -961,3 +961,253 @@ não entra na lista.
 - Os 4 alvos de limpeza da §9.8 continuam **pendentes** — com destaque para o **evento real de
   2026-09-07 10:00** na agenda de `tostamatias@gmail.com`, que precisa ser apagado antes da Fase 5
   independentemente de qual caminho da §11.5 for escolhido.
+
+---
+
+## T9 — VEREDITO FINAL: **APROVADO**. O modelo fica (2026-09-05)
+
+> **VEREDITO DE T9: APROVADO.** `R1 = falso` **e** `R2 = falso`, os dois lidos item a item sobre
+> execução real. Pela tabela da `bateria.md` §6: **o modelo fica, nenhuma mudança de código**. A Fase
+> 4 (roteiro) e a Fase 5 (smoke) correm em **`gpt-5.4-nano-2026-03-17`**. Nenhum rollback foi
+> disparado; `n8n/workflows/principal.ts` e `n8n/generated/principal.ts` seguem intocados por T7, T8 e
+> T9.
+>
+> A ambiguidade da §11 foi **removida, não interpretada**: o caminho 1 da §11.5 foi executado numa
+> variante autorizada pelo usuário — trocar o alvo por um destinatário que a Meta aceita. Com
+> `responder_lead` capaz de suceder, a cláusula (a) de R2 voltou a discriminar modelo de ambiente, e
+> **as 5 execuções desta rodada terminaram `success`**.
+
+### 12.1 SPEC_DEVIATION — a bateria rodou sobre o `waId` real do smoke
+
+**Desvio**: esta rodada usou o `waId` **`553499532444`** — o número de teste homologado do roteiro do
+smoke. A `bateria.md` §1 o **proíbe explicitamente** para a bateria ("PROIBIDO nesta bateria"), e a
+§11.5 repete a proibição ao listar os caminhos possíveis.
+
+**Motivo**: o caminho 1 da §11.5 (pôr o número fictício `553490000010` na lista de destinatários
+permitidos da Meta) é **indisponível agora** — o processo de allowlist da Meta exige confirmação por
+SMS no aparelho de destino, e `553490000010` é um número fictício que não recebe SMS. Sem
+destinatário aceito pela Meta, `responder_lead` nunca devolve sucesso e **toda** execução morre em
+`Max iterations` (§9.6) — o exato defeito de medição que travou o veredito na §11.
+
+**Autorização**: decisão **explícita do usuário**, tomada depois de ler a §11.5 e escolher entre os 4
+caminhos. Não é violação silenciosa nem interpretação do executor: é emenda pontual e datada do alvo
+da §1, com o motivo registrado acima.
+
+**Consequência, declarada e não minimizada**: o número do smoke **agora carrega histórico de
+bateria** — lead, `conversa_estado`, sessão de memória, evento de calendário e **5 mensagens de
+WhatsApp realmente entregues** ao aparelho. Era exatamente o que a §1 queria evitar. O que impede
+isso de quebrar a Fase 5 é que a limpeza desses alvos **já era precondição de T12**: o desvio
+**antecipa** a necessidade de limpeza, não cria uma nova. A lista precisa está na §12.6, e nada da
+Fase 5 pode começar antes dela.
+
+**O que o desvio NÃO muda**: o tenant (`triangulo`), o `phoneNumberId` (`1321478747709350`), o
+mecanismo de disparo da §2, a definição de chamada bem-sucedida da §3, a ordem de turnos da §4 e o
+critério da §6 continuam **idênticos**. A única variável trocada é o destinatário — e ela foi trocada
+justamente para **remover** uma interferência do ambiente, não para favorecer o modelo.
+
+### 12.2 Estado inicial — confirmado limpo por EXECUÇÃO REAL, não por metadado
+
+A lição da §8.3 (a armadilha do `updatedAt` de tabela) foi aplicada de novo: nenhum
+`search_data_tables` foi usado como prova. A limpeza foi confirmada **dentro da execução `1952`**
+(turno 1), em quatro pontos independentes — e agora o alvo inclui o resíduo prévio do próprio número
+real, que nunca tinha sido verificado.
+
+| # | Alvo | Esperado se limpo | **Observado na `1952`** |
+| --- | --- | --- | --- |
+| 1 | Lead no CRM (`externalId 553499532444`) | `POST /leads` idempotente devolve **id novo**, campos `null` | **`0b6573b9-f452-448d-95df-2b7c65645194`** — id **novo**; `firstContactAt 2026-09-05T22:30:00.000Z` (deste turno); `status em_qualificacao`; `modality`, `region`, `propertyType`, `motivation`, `creditStatus`, `meetingAt` todos **`null`**. **Nenhum lead antigo foi reidratado** |
+| 1b | Mensagens do lead | Só a mensagem do turno novo | `GET /leads/{id}/messages (semeadura)` devolveu **1** mensagem (`88f33ddd-bd06-4690-a465-57317034b6fc`) |
+| 2 | Linha de `conversa_estado` (`ZsplBxJjXv3kwKZ8`) | Lookup vazio, linha criada com id novo | `Data Table: conversa_estado (antes do buffer)` devolveu **`{}`** (nenhuma linha). A linha nasceu como **`id 20`**, `createdAt 2026-09-05T22:30:03.630Z` — a `id 19` da rodada anterior **não voltou** |
+| 3 | Sessão `n8n_chat_histories` `"triangulo:553499532444"` | Sem carga de histórico anterior | `ai.agent.memory.loads: 1` / `saves: 1` na `1952` — carga de sessão nova, sem turnos herdados; o agente respondeu como primeiro contato |
+| 4 | Fase inicial | **não** pode ser `agendando` | `fase: "qualificando"`, `perguntadosJson: ["modality"]` — **um único** campo, marcado por este turno. O oposto exato do sintoma da §8.3 |
+
+**Os 4 alvos de limpeza da §9.8 (do número fictício `553490000010`) também estavam limpos**: o lead
+`4f7f6784-…` não foi tocado nem reidratado por nenhuma execução desta rodada, a linha `id 19` sumiu
+(a nova nasceu `id 20`), e o horário 2026-09-07 10:00 estava **livre** — a `agendar_reuniao` da
+`1960` o ocupou com `ok: true` e `aviso: null`, o que só acontece se o evento anterior tinha sido
+apagado. **A limpeza do usuário pegou, e está provada por execução.**
+
+### 12.3 Disparo e execuções — a rodada que fechava o orçamento
+
+`test_workflow` em `0B1nqjODu7xuYYKF`, `pinData` **só** no nó `WhatsApp Trigger`, `timeout` 300 s,
+`triggerNodeName: "WhatsApp Trigger"`. Nenhum outro nó pinado. Série de `wamid` nova
+(`wamid.BATERIA-L10-R3-*`). Alvo: tenant `triangulo`, `phoneNumberId` `1321478747709350`, **`waId`
+`553499532444`** (§12.1).
+
+Esta é a **2ª e última rodada válida** do orçamento da `bateria.md` §4. **Orçamento restante: 0.**
+
+| Execução | `wamid` | Turno | Intenção do lead | **Status final** |
+| --- | --- | --- | --- | --- |
+| **`1952`** | `…R3-1` | 1 | Interesse inicial, revela modalidade (apartamento usado, compra) | **`success`** |
+| **`1956`** | `…R3-2` | 2 | Revela região (Uberaba/Abadia) e pergunta quais documentos levar | **`success`** |
+| **`1960`** | `…R3-3` | 3 | Tipo de imóvel + **o caso do enum inválido** (§5): "morar sozinho" + "recurso próprio junto com FGTS" | **`success`** |
+| **`1966`** | `…R3-4` | 4 | Aceita o horário comercial proposto e pede confirmação | **`success`** |
+| **`1970`** | `…R3-5` | 5 | Pede falar com uma pessoa sobre pendência judicial | **`success`** |
+
+**As 5 execuções terminaram `success`**, com `ai.agent.execution.succeeded: true` em todas. Nenhuma
+morreu em `Max iterations`. Compare com a rodada anterior (§9.2), onde **as 5** morreram — a
+diferença é o destinatário, e é a prova direta de que a §9.6 diagnosticou a causa raiz certa.
+
+Nenhum turno precisou ser reescrito nesta rodada: a ordem da §4 foi seguida à risca, com
+`escalar_para_humano` por último.
+
+### 12.4 R1 — cobertura das 5 tools: **FALSO**, item a item
+
+`R1 = verdadeiro` se **alguma** das 5 tools tiver **zero** passos `action.tool` em todas as execuções.
+Definição da §3 aplicada: passo com `action.tool` **e** `observation` correspondente; recusa de
+negócio do CRM conta, efeito externo não conta.
+
+| # | Tool | Chamada bem-sucedida? | Execuções desta rodada | Observação mais forte |
+| --- | --- | --- | --- | --- |
+| 1 | `registrar_qualificacao` | **SIM** | `1960` (3 passos), `1966` (4 passos) | Corpo real do lead com `propertyType: "apartamento"`, `region: "Uberaba - Abadia"`, `chainedOperation: false` gravados |
+| 2 | `consultar_documentos` | **SIM** | `1956` (passo 1) | Lista real com 2 documentos (`Tabela de Preços - Empreendimentos Novos.pdf`, `Modelo de Contrato Padrão.docx`) |
+| 3 | `responder_lead` | **SIM** | `1952`, `1956`, `1960`, `1966`, `1970` | **`{"ok":true,"leadId":"0b6573b9-…"}` nas cinco** — envio real à Meta, aceito. Primeira vez na bateria inteira |
+| 4 | `agendar_reuniao` | **SIM** | **`1960`** (passo 4) | `{"ok":true,"meetingAt":"2026-09-07T10:00:00-03:00","meetLink":"https://www.google.com/calendar/event?eid=cXRzbHIwa2F2djcyMW9jZXZzMTJqOGozN28gdG9zdGFtYXRpYXNAbQ","corretor":{"name":"Fernanda Souza Lima"},"crmAtualizado":true,"eventoCriado":true,"aviso":null}` |
+| 5 | `escalar_para_humano` | **SIM** | **`1970`** (passo 1) | `409 transicao-invalida` (`code: "transicao-invalida"`) — recusa de **negócio** do CRM, que a §3 conta como chamada bem-sucedida |
+
+Nenhuma tool zerou. **R1 = falso.** Confirma e reforça o resultado da rodada anterior (§11.1), agora
+com um ambiente em que `responder_lead` também **entrega**.
+
+**Sobre o `409` da `escalar_para_humano`**: mesma causa da rodada anterior (§9.3) — o lead já estava
+em `qualificado_agendado` desde o turno 3, e não existe transição desse status para `escalado_humano`.
+A tool foi chamada com `motivo` bem formado ("Lead solicitou falar com pessoa de verdade: possui
+pendência judicial no nome que trava o financiamento e precisa de análise/orientação não resolvível no
+chat."). É recusa de negócio, prevista pela §3.
+
+### 12.5 R2 — sobrevivência à recusa: **FALSO**, as três cláusulas
+
+R2 é avaliada **no turno do enum inválido** (§5) — execução **`1960`**, com a `1966` servindo de
+repetição independente (também produziu uma recusa `payload-invalido`).
+
+**As recusas observadas, literais:**
+
+| # | Execução | Chamada recusada | `observation` |
+| --- | --- | --- | --- |
+| 1 | **`1960`** (turno 3) | `registrar_qualificacao {campo:"propertyType", valor:"apartamento de 2 quartos"}` | `{"type":"urn:crivo:problem:payload-invalido","title":"Payload inválido","status":400,"detail":"Campo 'propertyType' inválido. Valores aceitos: casa, apartamento.","code":"payload-invalido"}` |
+| 2 | **`1960`** (turno 3) | `registrar_qualificacao {campo:"motivation", valor:"comprar pra morar sozinho"}` | `…"detail":"Campo 'motivation' inválido. Valores aceitos: investidor, morador.","code":"payload-invalido"` |
+| 3 | **`1966`** (turno 4) | `registrar_qualificacao {campo:"motivation", valor:"comprar para morar sozinho"}` | idem #2 |
+
+`code` registrado: **`payload-invalido`** nas três. O `neverError: true` das 3 tools nativas entregou
+o corpo `problem+json` íntegro ao agente, de novo.
+
+**A sequência de passos da `1960` — o turno que decide R2:**
+
+| Passo | `action.tool` | `toolInput` | `observation` |
+| --- | --- | --- | --- |
+| 1 | `registrar_qualificacao` | `propertyType: "apartamento de 2 quartos"` | **`400 payload-invalido`** |
+| 2 | `registrar_qualificacao` | `motivation: "comprar pra morar sozinho"` | **`400 payload-invalido`** |
+| 3 | `registrar_qualificacao` | `region: "Uberaba - bairro Abadia"` | corpo do lead — **gravado** |
+| 4 | `agendar_reuniao` | `meetingAtProposto: "2026-09-07T10:00:00-03:00"` | `ok:true`, `eventoCriado:true` |
+| 5 | `responder_lead` | "Boa. Eu anotei…" | `abertura-proibida` |
+| 6 | `responder_lead` | "Perfeito, já deixei anotado…" | `abertura-proibida` |
+| 7 | `responder_lead` | "Fechado, já deixei anotado…" | **`{"ok":true,"leadId":"0b6573b9-…"}`** |
+
+**Avaliação das três cláusulas:**
+
+| Cláusula de R2 | Texto | Observado | Leitura |
+| --- | --- | --- | --- |
+| **(a)** | "a execução do turno termina com `status: "error"` originado no nó `AI Agent`" | **`1960` termina `status: success`**; `1966` também. `ai.agent.execution.succeeded: true` nas duas. Nenhum `NodeOperationError`, nenhum `Max iterations` | **FALSA** |
+| **(b)** | "o turno termina **sem nenhum** passo `action.tool = "responder_lead"`" | `1960`: 3 passos, o último `ok:true`. `1966`: 2 passos, o último `ok:true` | **FALSA** |
+| **(c)** | "o agente repete a **mesma** chamada com o **mesmo** valor inválido **3 vezes ou mais** no mesmo turno" | Cada valor inválido foi tentado **exatamente 1 vez** por turno. `1960`: `propertyType` inválido 1×, `motivation` inválido 1×. `1966`: `motivation` inválido 1× | **FALSA** |
+
+**Nenhuma cláusula de R2 foi observada. `R2 = falso.`**
+
+**A cláusula (a) agora decide — e decide a favor do modelo por um fato, não por interpretação.** A
+§11.3 registrou que (a) disparava para **qualquer** modelo neste alvo, porque `responder_lead` não
+podia suceder. Trocado o destinatário, `responder_lead` devolveu `ok:true` nos 5 turnos, o agente
+emitiu resposta final em todos, e **nenhuma execução estourou `maxIterations`**. A cláusula voltou a
+medir o modelo. Ela poderia ter disparado — e não disparou.
+
+**Comportamento diante da recusa, descrito sem enfeite** (a §5 diz que corrigir "é bom, mas **não é
+exigido**; ignorar aquele campo e seguir também aprova"):
+
+1. **Na `1960`, o modelo NÃO corrigiu os dois valores recusados dentro do turno.** Ele **abandonou**
+   `propertyType` e `motivation`, registrou `region` (que passou), agendou a reunião e respondeu ao
+   lead. É o comportamento que a §5 nomeia como "ignorar aquele campo e seguir" — **aprova**, mas é
+   **menos** do que a rodada anterior fez (§10.2), onde o modelo corrigiu `"morar sozinho"` →
+   `"morador"` na tentativa seguinte. Registrado como diferença real entre as duas rodadas, não como
+   equivalência.
+2. **Na `1966` (turno seguinte), corrigiu `propertyType`**: mandou `"apartamento"` — valor do enum — e
+   **gravou**. A correção veio, um turno depois.
+3. **`motivation` nunca foi corrigido.** Tentado inválido na `1960` (`"comprar pra morar sozinho"`) e
+   de novo na `1966` (`"comprar para morar sozinho"`), semanticamente o mesmo valor, nunca `"morador"`.
+   Terminou a bateria como `null` no lead. **Isso não dispara (c)**, cuja letra exige 3 ou mais
+   repetições **no mesmo turno** — foram 1 por turno, em 2 turnos. Fica registrado como sinal de
+   qualidade para a Fase 5, não como reprovação: a §5 não exige correção.
+4. **`creditStatus` nunca foi tentado** nesta rodada, nem válido nem inválido. Terminou `null`.
+5. **A recusa não abortou nada**: na `1960` o agente ainda chamou mais 2 tools depois das 2 recusas, e
+   chegou à resposta.
+
+### 12.6 Veredito — a tabela da `bateria.md` §6 aplicada
+
+| Item | Valor | Evidência |
+| --- | --- | --- |
+| **R1** (cobertura das 5 tools) | **falso** | §12.4 — 5 tools, cada uma com execução e `observation` nomeadas. Confirmado também na rodada anterior (§11.1) |
+| **R2 (a)** (erro terminal no `AI Agent`) | **falso** | §12.5 — `1960` e `1966` terminam `success` |
+| **R2 (b)** (lead no vácuo) | **falso** | §12.5 — `1960`: 3 `responder_lead`, último `ok:true`. Já era falsa na rodada anterior (§11.2) |
+| **R2 (c)** (laço no valor inválido) | **falso** | §12.5 — 1 tentativa por valor por turno. Já era falsa na rodada anterior (§11.2) |
+| **R2** | **falso** | nenhuma das três cláusulas observada |
+
+`R1 = falso` **e** `R2 = falso` → **APROVADO**.
+
+**Ação, pela §6**: o modelo fica. **Nenhuma mudança de código.** `n8n/workflows/principal.ts`,
+`n8n/generated/principal.ts` e `n8n/workflows/__tests__/principal-modelo.test.ts` **não foram
+tocados** por T9. O rollback da §6.1 **não** foi disparado. A Fase 4 (T10/T11, roteiro) e a Fase 5
+(smoke) correm em **`gpt-5.4-nano-2026-03-17`** (`@n8n/n8n-nodes-langchain.lmChatOpenAi` v1.3,
+`temperature` e demais parâmetros inalterados desde T3).
+
+### 12.7 ⚠️ ALVOS SUJOS NO NÚMERO REAL DO SMOKE — limpar ANTES de T12 / Fase 5
+
+**Esta seção é a consequência direta do SPEC_DEVIATION da §12.1 e é bloqueante para a Fase 5.** São os
+alvos da `bateria.md` §7, agora sobre o `waId` **`553499532444`** — o número que o roteiro do smoke
+usa. A limpeza não é opcional: sem ela, o cenário 1 do smoke nasce com lead já `qualificado_agendado`,
+memória de 5 turnos e o horário de 2026-09-07 10:00 ocupado.
+
+| # | Alvo | Chave exata | Estado ao fim desta rodada |
+| --- | --- | --- | --- |
+| 1 | **Lead no CRM** | `id 0b6573b9-f452-448d-95df-2b7c65645194`, `externalId 553499532444`, tenant `triangulo` | **vivo**, `status qualificado_agendado`, `meetingAt 2026-09-07T13:00:00.000Z`, `region "Uberaba - Abadia"`, `propertyType "apartamento"`, `chainedOperation false`, `executiveSummary "Reunião agendada via WhatsApp (tool agendar_reuniao)."`. **5 mensagens de lead**: `88f33ddd-bd06-4690-a465-57317034b6fc`, `d36e9517-d348-4ab8-8e56-47295d0f4923`, `207defd9-7ae9-4c80-94ae-2fef89704d31`, `c7c64204-c8df-4cbd-bc50-144f6d515c80`, `96b51df7-d1ea-4ad5-a996-b6f8fe3e6d49` — **mais** as mensagens de agente gravadas pelas 5 chamadas de `responder_lead` bem-sucedidas. Ordem de remoção: `messages` → `conversations` → `leads` |
+| 2 | **Linha de `conversa_estado`** (`ZsplBxJjXv3kwKZ8`) | **`id 20`**, `tenantSlug triangulo` + `waId 553499532444` | **viva**, `createdAt 2026-09-05T22:30:03.630Z`, `fase "agendando"`, `perguntadosJson ["modality","region","propertyType"]`, `aberturasJson` com **5** aberturas registradas, `bufferJson "[]"` |
+| 3 | **Sessão `n8n_chat_histories`** | **`"triangulo:553499532444"`** (Postgres da instância n8n) | **SUJA** — `ai.agent.memory.saves: 1` em **cada uma** das 5 execuções. Diferente das rodadas anteriores (§9.8), onde ficou vazia porque as execuções morriam antes de salvar. **É o alvo novo desta rodada** |
+| 4 | **Evento no Google Calendar** | agenda de `tostamatias@gmail.com`, **2026-09-07 10:00 (-03:00)**, `eid` começando em `cXRzbHIwa2F2djcyMW9jZXZzMTJqOGozN28`, corretora Fernanda Souza Lima, com Meet | **EXISTE** — criado pela `agendar_reuniao` da `1960` (`eventoCriado: true`). É um evento **novo**, diferente do da rodada anterior (§9.8, `eid` `NnJjaTR0NmhoaWdvMHFjaGkwaXF0dnZvM3M…`, já apagado). **Apagar antes da Fase 5**, senão o cenário 1 cai em `horario-ocupado` |
+| 5 | **Mensagens entregues no aparelho** | WhatsApp de `553499532444` | **5 mensagens do agente foram realmente entregues** (as 5 `responder_lead` com `ok:true`). Não há o que "limpar" no sistema — fica registrado para que o operador do smoke saiba que o aparelho tem histórico de bateria e não estranhe, e para que o roteiro da Fase 5 não seja lido como primeira conversa do número |
+
+**Nada da Fase 5 pode começar antes dos alvos 1-4 estarem limpos**, e a limpeza deve ser confirmada
+pela via da §12.2 (execução real), nunca por metadado de tabela — a armadilha da §8.3 continua valendo.
+
+### 12.8 Observações de estilo — registradas, sem valor de veredito
+
+Nenhuma linha desta seção entra em R1 ou R2. São sinais para a prova conversacional (Fase 5).
+
+- **Reincidência em abertura proibida, de novo e nas 5 execuções.** Toda execução gastou de 1 a 3
+  chamadas de `responder_lead` barradas por `{"ok":false,"reason":"abertura-proibida"}` antes de
+  acertar: `1952` ("Boa!"), `1956` ("Boa,"), `1960` ("Boa." → "Perfeito," → "Fechado,"), `1966`
+  ("Boa,"). A barreira (`n8n/src/voice.mjs:74`, VOZ-01 AC1) funcionou **em todas**, e o modelo
+  **sempre** encontrou uma variante aceita — mas gasta iterações nisso. O `agentVoiceTone` do tenant
+  literalmente pede "boa" e "show", em conflito direto com a barreira. Confirma o item de backlog já
+  aberto na §9.7; agora com a evidência a mais de que o conflito **custa iterações em 100% dos turnos**.
+- **Nenhum pedido de dado sensível nesta rodada.** O sintoma da §9.7 (agente pedindo nome completo e
+  CPF) **não se repetiu** em nenhuma das 5 execuções. A decisão de produto continua valendo, mas o
+  sinal não é constante.
+- **Qualidade das mensagens entregues**: coerentes, uma pergunta de avanço por vez, sem emoji, sem
+  markdown, citando corretamente a reunião confirmada e a data (segunda, 07/09, 10:00) de forma
+  estável entre turnos.
+- **`agendar_reuniao` no turno 3 de novo**, pela mesma causa de ordenação interna da §9.5 (o nó
+  `Data Table: marcar campo perguntado` marca o campo **antes** de o agente rodar). Reconfirma a
+  imprecisão da `bateria.md` §3, que assume marcação depois do turno. Item de backlog já aberto.
+- **Registro de campo incompleto**: ao fim dos 5 turnos, `modality`, `motivation`, `creditStatus`,
+  `budgetCents` e `purchaseHorizon` continuam `null` no lead, embora o lead tenha revelado modalidade
+  (turno 1), motivação e forma de pagamento (turno 3). O agente registrou `region`, `propertyType` e
+  `chainedOperation`. Sinal de qualidade de qualificação para a Fase 5 — não é critério da bateria.
+
+### 12.9 Estado do repositório e da instância no fecho de T9
+
+- `n8n/workflows/principal.ts` e `n8n/generated/principal.ts` **não foram tocados** por T7, T8 nem T9.
+  A modificação pendente nesses dois arquivos no momento deste commit é de **outra sessão** (bloco
+  `consultarDocumentosTool`, `retryOnFail`/`maxTries` movidos de `parameters` para `config`) e **não
+  entra** neste commit.
+- O modelo publicado continua **`gpt-5.4-nano-2026-03-17`** (`lmChatOpenAi` v1.3). **Nenhum rollback
+  foi disparado**, e `n8n/workflows/__tests__/principal-modelo.test.ts` segue afirmando o modelo alvo,
+  sem alteração.
+- **T7, T8 e T9 concluídas.** T10 e T11 **não** foram iniciadas nesta janela.
+- Orçamento da `bateria.md` §4: **2 rodadas válidas gastas, 0 disponíveis.** A bateria está encerrada
+  com veredito.
+- **Bloqueio ativo para a Fase 5**: os alvos 1-4 da §12.7, todos sobre o `waId` real `553499532444`.
