@@ -312,10 +312,10 @@ turno ou trava.
 - Skill: NONE
 
 **Done when**:
-- [ ] Recusa `400 payload-invalido` observada de verdade na execução, com o `code` do `problem+json` registrado
-- [ ] Comportamento do agente após a recusa descrito: seguiu, repetiu, ou travou
-- [ ] Id da execução registrado
-- [ ] Comparação explícita com o comportamento da execução 462 no Gemini
+- [x] Recusa `400 payload-invalido` observada de verdade na execução, com o `code` do `problem+json` registrado
+- [x] Comportamento do agente após a recusa descrito: seguiu, repetiu, ou travou
+- [x] Id da execução registrado
+- [x] Comparação explícita com o comportamento da execução 462 no Gemini
 
 **Tests**: none
 **Gate**: evidência

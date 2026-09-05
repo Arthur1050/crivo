@@ -719,3 +719,115 @@ Substitui a tabela da §8.7. **O alvo 4 deixou de ser vazio.**
 | 2 | Linha de `conversa_estado` (`ZsplBxJjXv3kwKZ8`) | `id 19`, `tenantSlug triangulo` + `waId 553490000010` | **viva**, `perguntadosJson ["modality","region","propertyType"]`, `bufferJson` com as 5 mensagens |
 | 3 | Sessão `n8n_chat_histories` | `"triangulo:553490000010"` | **limpa** — `ai.agent.memory.saves: 0` nas 5 execuções |
 | 4 | **Evento no Google Calendar** | agenda de `tostamatias@gmail.com` | **EXISTE**: evento em **2026-09-07 10:00 (-03:00)** com Meet, criado pela `agendar_reuniao` da `1923`, corretora `Fernanda Souza Lima`. **Apagar antes da Fase 5** — senão o cenário 1 do smoke pode cair em `horario-ocupado` |
+
+---
+
+## T8 — Recusa por enum inválido: observada 5 vezes, em 3 execuções (2026-09-05)
+
+> **RESULTADO: a recusa `400 payload-invalido` foi observada de verdade, com `code` íntegro, e o
+> agente SEGUIU o turno nas três execuções — corrigindo o valor para um do enum e chegando a
+> `responder_lead`.** Nenhuma das cláusulas de R2 que descrevem o comportamento do agente diante da
+> recusa (§6 R2, cláusulas 2 e 3) foi observada.
+
+### 10.1 As recusas, literais
+
+O `neverError: true` das 3 tools nativas funcionou como projetado: o corpo `problem+json` chegou
+íntegro ao agente como `observation`, com `code` legível.
+
+| # | Execução | Chamada recusada | `observation` (literal) |
+| --- | --- | --- | --- |
+| 1 | **`1900`** (turno 1) | `registrar_qualificacao {campo: "propertyType", valor: "apartamento usado"}` | `{"type":"urn:crivo:problem:payload-invalido","title":"Payload inválido","status":400,"detail":"Campo 'propertyType' inválido. Valores aceitos: casa, apartamento.","code":"payload-invalido"}` |
+| 2 | **`1934`** (turno 4) | `registrar_qualificacao {campo: "motivation", valor: "morar sozinho"}` | `…"detail":"Campo 'motivation' inválido. Valores aceitos: investidor, morador.","code":"payload-invalido"` |
+| 3 | **`1934`** (turno 4) | `registrar_qualificacao {campo: "creditStatus", valor: "recurso próprio junto com FGTS"}` | `…"detail":"Campo 'creditStatus' inválido. Valores aceitos: pre_aprovado, recurso_proprio, fgts.","code":"payload-invalido"` |
+| 4 | **`1942`** (turno 5) | `registrar_qualificacao {campo: "motivation", valor: "morar sozinho"}` | idem #2 |
+| 5 | **`1942`** (turno 5) | `registrar_qualificacao {campo: "creditStatus", valor: "recurso próprio junto com FGTS para fechar"}` | idem #3 |
+
+**`code` registrado: `payload-invalido`** (`type: urn:crivo:problem:payload-invalido`, `status: 400`)
+nas cinco.
+
+A recusa #1 é espontânea — não foi provocada pelo roteiro. O modelo tentou gravar o texto cru do lead
+("apartamento usado") num campo de enum já no turno 1. As #2 e #3 são o caso da `bateria.md` §5,
+provocado de propósito; as #4 e #5 são a repetição do mesmo caso num turno posterior, e servem de
+confirmação de que o comportamento não foi sorte de uma execução.
+
+### 10.2 Comportamento do agente depois da recusa: SEGUIU e CORRIGIU
+
+Em nenhuma das três execuções o agente travou, abortou por causa da recusa, ou repetiu o valor
+inválido. A sequência de passos, na ordem real:
+
+**`1900`** — recusa no passo 1, correção no passo 2:
+
+| Passo | `action.tool` | `toolInput` | `observation` |
+| --- | --- | --- | --- |
+| 1 | `registrar_qualificacao` | `propertyType: "apartamento usado"` | **`400 payload-invalido`** |
+| 2 | `registrar_qualificacao` | `propertyType: "apartamento"` | corpo do lead, `propertyType: "apartamento"` — **gravado** |
+| 3-8 | `responder_lead` | (6 tentativas) | `abertura-proibida` / falha de envio ao número fictício |
+
+**`1934`** — duas recusas seguidas, duas correções, depois a resposta:
+
+| Passo | `action.tool` | `toolInput` | `observation` |
+| --- | --- | --- | --- |
+| 1 | `registrar_qualificacao` | `region: "Abadia"` | ok |
+| 2 | `registrar_qualificacao` | `motivation: "morar sozinho"` | **`400 payload-invalido`** |
+| 3 | `registrar_qualificacao` | `creditStatus: "recurso próprio junto com FGTS"` | **`400 payload-invalido`** |
+| 4 | `registrar_qualificacao` | `motivation: "morador"` | **gravado** |
+| 5 | `registrar_qualificacao` | `creditStatus: "recurso_proprio"` | **gravado** |
+| 6-8 | `responder_lead` | (3 tentativas) | `abertura-proibida` / falha de envio |
+
+**`1942`** — duas recusas, outra tool no meio, depois correção e resposta:
+
+| Passo | `action.tool` | `toolInput` | `observation` |
+| --- | --- | --- | --- |
+| 1 | `registrar_qualificacao` | `motivation: "morar sozinho"` | **`400 payload-invalido`** |
+| 2 | `registrar_qualificacao` | `creditStatus: "recurso próprio junto com FGTS para fechar"` | **`400 payload-invalido`** |
+| 3 | `escalar_para_humano` | `motivo: "…pendência judicial…"` | `409 transicao-invalida` |
+| 4 | `registrar_qualificacao` | `motivation: "morador"` | **gravado** |
+| 5 | `consultar_documentos` | `{}` | lista real |
+| 6-8 | `responder_lead` | (4 tentativas) | `abertura-proibida` / falha de envio |
+
+Três fatos que fecham a leitura, todos verificáveis nas tabelas acima:
+
+1. **Correção, não teimosia.** Cada valor inválido foi tentado **exatamente uma vez**. O modelo leu o
+   `detail` do `problem+json` (que lista os valores aceitos) e mandou um valor do enum na tentativa
+   seguinte — `"morar sozinho"` → `"morador"`, `"recurso próprio junto com FGTS"` → `"recurso_proprio"`,
+   `"apartamento usado"` → `"apartamento"`. A `bateria.md` §5 diz que corrigir "é bom, mas não é
+   exigido"; o modelo fez o que não era exigido.
+2. **Chegou a `responder_lead` nos três turnos.** O lead nunca ficou no vácuo por causa da recusa.
+3. **A recusa não abortou nada.** Em `1942` o agente ainda chamou mais duas tools (`escalar_para_humano`,
+   `consultar_documentos`) depois das duas recusas.
+
+### 10.3 Comparação explícita com a execução `462` no Gemini
+
+A referência está em `n8n/README.md` §11.2 e na `bateria.md` §5.
+
+| | **`462` (Gemini, lote-6c)** | **`1934`/`1942` (gpt-5.4-nano, esta bateria)** |
+| --- | --- | --- |
+| Gesto que provocou | `motivation: "morar sozinho"` | `motivation: "morar sozinho"` — **o mesmo, literalmente** |
+| Recusa recebida | `400 payload-invalido` | `400 payload-invalido` — mesmo `code`, mesmo `detail` |
+| Agente travou? | Não | **Não** |
+| Chegou a `responder_lead`? | Sim | **Sim** (3 de 3 turnos com recusa) |
+| Corrigiu o valor para um do enum? | **Não registrado** — o README diz apenas "o agente seguiu sem travar" | **Sim**, nas 5 recusas |
+| Repetiu o valor inválido? | Não registrado | **Não** — cada valor inválido, uma única vez |
+| Status final da execução | `success` | `error` — `Max iterations (8)` |
+
+**A última linha é a única divergência, e ela NÃO vem do enum.** Vem do alvo: a `462` rodou sobre o
+**número de teste real** `553499532444`, então `responder_lead` enviou de verdade
+(`{ok:true, leadId:"7fdc4ae6-…"}`, sub-execução `463` com `status: success`) e o turno pôde terminar.
+Esta bateria roda sobre o **número fictício** `553490000010`, onde a Meta recusa com `131030` e
+`responder_lead` **nunca** pode devolver sucesso (§9.6) — o agente fica sem como encerrar o turno e
+consome as 8 iterações. **A comparação com a `462` é assimétrica no ambiente, não no modelo**, e essa
+assimetria é o que a §11 tem de resolver.
+
+Nos itens que dependem só do modelo — reconhecer a recusa, não travar, não repetir o valor inválido,
+chegar a `responder_lead` — o `gpt-5.4-nano` fez tudo o que a `462` fez, e a correção do valor a mais.
+
+### 10.4 Nota honesta sobre a linha de base do Gemini
+
+O comentário em `n8n/workflows/principal.ts:1258` afirma que "a execucao 462 mostrou o Gemini
+reagindo mal a recusa de tool". O registro da própria `462` em `n8n/README.md` §11.2 descreve o
+oposto: "uma rejeição de enum inválido **corretamente tratada** … o agente seguiu sem travar".
+
+As duas frases descrevem a mesma execução e não podem estar as duas certas. Isso **não muda nada** em
+T8 — o que T8 mede é o comportamento do modelo novo, e esse está medido acima com passo e id. Fica
+registrado porque a `bateria.md` §5 usa a `462` como referência de comparação, e a referência está
+documentada de duas maneiras contraditórias no repositório. Item para o backlog.
