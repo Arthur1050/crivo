@@ -185,13 +185,13 @@ fixa o que mudou e o que não pode ter mudado.
 - Skill: NONE
 
 **Done when**:
-- [ ] `agentModel` é `@n8n/n8n-nodes-langchain.lmChatOpenAi` v1.3, `model` como resource locator com `value` **e** `cachedResultName` iguais a `gpt-5.4-nano-2026-03-17`, credencial `newCredential("OpenAI account")`
-- [ ] `options` tem `reasoningEffort: "low"` e `timeout: 120000`, e **não** tem `temperature`
-- [ ] O comentário acima do bloco explica por que o snapshot é datado e por que `temperature` saiu — no mesmo tom do comentário que ele substitui
-- [ ] Suíte nova `n8n/workflows/__tests__/principal-modelo.test.ts` cobre, sobre `principal.toJSON()`: (a) tipo, versão e id do modelo; (b) `cachedResultName === value`; (c) nenhum nó `lmChatGoogleGemini` no grafo; (d) ausência de `temperature`; (e) as 5 tools presentes por nome; (f) memória segue `memoryPostgresChat` com `sessionKey` inalterada; (g) contagem total de nós e de conexões igual à registrada em T2 — o discriminante de MOD-01 AC2
-- [ ] Nenhum arquivo de `n8n/src/` alterado
-- [ ] Gate check passa: `npx vitest run n8n/workflows`
-- [ ] Contagem de testes: piso de T1 + os novos desta suíte, sem nenhuma deleção silenciosa
+- [x] `agentModel` é `@n8n/n8n-nodes-langchain.lmChatOpenAi` v1.3, `model` como resource locator com `value` **e** `cachedResultName` iguais a `gpt-5.4-nano-2026-03-17`, credencial `newCredential("OpenAI account")`
+- [x] `options` tem `reasoningEffort: "low"` e `timeout: 120000`, e **não** tem `temperature`
+- [x] O comentário acima do bloco explica por que o snapshot é datado e por que `temperature` saiu — no mesmo tom do comentário que ele substitui
+- [x] Suíte nova `n8n/workflows/__tests__/principal-modelo.test.ts` cobre, sobre `principal.toJSON()`: (a) tipo, versão e id do modelo; (b) `cachedResultName === value`; (c) nenhum nó `lmChatGoogleGemini` no grafo; (d) ausência de `temperature`; (e) as 5 tools presentes por nome; (f) memória segue `memoryPostgresChat` com `sessionKey` inalterada; (g) contagem total de nós e de conexões igual à registrada em T2 — o discriminante de MOD-01 AC2
+- [x] Nenhum arquivo de `n8n/src/` alterado
+- [x] Gate check passa: `npx vitest run n8n/workflows`
+- [x] Contagem de testes: piso de T1 + os novos desta suíte, sem nenhuma deleção silenciosa
 
 **Tests**: unit
 **Gate**: quick
