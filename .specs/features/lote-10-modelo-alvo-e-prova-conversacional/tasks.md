@@ -363,12 +363,12 @@ exigido, evidência a coletar.
 - Skill: NONE
 
 **Done when**:
-- [ ] Cenário 1 (qualificar→agendar): estado final `status = reuniao_agendada` + evento com link do Meet
-- [ ] Cenário 2 (escalar): estado final `status = escalado_humano` **com responsável atribuído**, mais uma mensagem seguinte que precisa ficar sem resposta
-- [ ] Cenário 3 (opt-out por palavra-chave): estado final `optedOutAt` preenchido, memória purgada, silêncio depois
-- [ ] Turnos escritos como **intenção**, não como fala literal — o agente não é determinístico
-- [ ] Barra de aprovação declarada por desfecho, com uma seção separada para observações de estilo que **não** reprovam
-- [ ] Gate check passa: `npx vitest run && npm run lint && npm run build`
+- [x] Cenário 1 (qualificar→agendar): estado final `status = reuniao_agendada` + evento com link do Meet — **correção registrada no roteiro**: o valor real do enum `lead_status` é `qualificado_agendado`, não `reuniao_agendada` (nome de rascunho que sobreviveu na spec/design/tasks); o roteiro exige o valor real
+- [x] Cenário 2 (escalar): estado final `status = escalado_humano` **com responsável atribuído**, mais uma mensagem seguinte que precisa ficar sem resposta
+- [x] Cenário 3 (opt-out por palavra-chave): estado final `optedOutAt` preenchido, memória purgada, silêncio depois
+- [x] Turnos escritos como **intenção**, não como fala literal — o agente não é determinístico
+- [x] Barra de aprovação declarada por desfecho, com uma seção separada para observações de estilo que **não** reprovam
+- [x] Gate check passa: `npx vitest run && npm run lint && npm run build`
 
 **Tests**: none
 **Gate**: build
