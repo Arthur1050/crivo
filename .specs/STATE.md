@@ -212,7 +212,50 @@
 
 ## Handoff
 
-### Estado atual (2026-08-30)
+### Estado atual (2026-09-05) — lote-10 PLANEJADO, não executado
+
+**Lote 10 (`lote-10-modelo-alvo-e-prova-conversacional`) — planejamento fechado e aprovado nesta
+janela; Execute NÃO começou.** Specify → Design → Tasks completos (`validate_spec` 0/0,
+`validate_tasks` 0 erros), 25 tasks em 8 fases, `EXECUTE-PROMPT.md` escrito. Commit `22b520d`.
+A execução acontece em janela separada, pelo `EXECUTE-PROMPT.md`.
+
+**Três achados do planejamento que mudam o escopo em relação ao roadmap:**
+
+1. **O item 2 do roadmap L10 está obsoleto.** `n8n/workflows/principal.ts:1269` (e o `generated/`
+   idêntico) já declara `models/gemini-3.5-flash-lite` — a divergência fonte × instância foi
+   fechada no lote-8 T30. O item vira uma checagem de paridade publicado == `generated/` antes de
+   tocar o nó (MOD-03).
+2. **Os 3 cenários da AD-015 não rodam em sequência sem limpeza entre eles.** `n8n/src/gate.mjs:67-72`
+   é terminal em `optedOutAt` e `escalado_humano`, e o lead é idempotente por `externalId` (=`waId`):
+   um número de teste = um lead por tenant. Rodar escalar trava o lead e o cenário de opt-out nunca
+   alcança o agente. É a explicação de por que a AD-015 nunca foi executada. **Decisão do usuário
+   (2026-09-05)**: a limpeza dos três alvos (lead no CRM, linha de `conversa_estado`, sessão em
+   `n8n_chat_histories`) é feita **à mão por ele** — o lote entrega o checklist que nomeia os alvos,
+   não o código que os apaga.
+3. **O modelo alvo é `gpt-5.4-nano-2026-03-17`**, não o `gpt-5-nano` que o roadmap nomeava. A
+   listagem real da conta OpenAI (via MCP, `searchModels`) mostra as duas gerações disponíveis;
+   snapshot datado em vez de alias flutuante, pela reprodutibilidade da prova conversacional.
+
+**Confirmado ao vivo no planejamento** (não reconferir do zero no Execute — está no `design.md` §
+Pesquisa): nó `@n8n/n8n-nodes-langchain.lmChatOpenAi` v1.3; `model` é resource locator, não string;
+`reasoningEffort` disponível só para `gpt-5.*`/`o[3-9]`, e `temperature` fica de fora (Responses API
+é o default do nó); credencial `OpenAI account` (`openAiApi`, `bGnmNn5iFH4sBCoo`) criada pelo usuário
+nesta janela; não existe ferramenta MCP para apagar linha de Data Table; `conversations.leadId` e
+`messages.conversationId` são FK sem `onDelete`.
+
+**Duas AD ficam para o fechamento do Execute, deliberadamente**: AD-026 (modelo alvo) só pode ser
+escrita depois do veredito da bateria de tool calling — se o rollback disparar, o modelo que ficou é
+o Gemini e uma AD escrita antes estaria mentindo. AD-027 (protocolo de prova conversacional) encerra
+a AD-015, que passa a `superseded by AD-027`.
+
+**Estado do repositório**: branch `main`, HEAD `22b520d`, `origin/main` em `d550b79` — **1 commit
+local pendente de push** (só artefatos de planejamento; push não autorizado nesta janela).
+**Piso de testes**: 1015 em 81 arquivos, a confirmar por medição na T1.
+**Next step**: abrir janela nova e colar o `EXECUTE-PROMPT.md` do lote-10.
+**Blockers**: nenhum para começar. O 2º número homologado na Meta (MTN-01) segue pendente e é
+condicional por decisão — não bloqueia AGT-04/05 nem LGPD-03.
+
+### Estado do lote 9 (2026-08-30)
 
 **Lote 9 (`lote-9-metricas-piloto`) — EXECUTADO E VERIFICADO. Verifier: PASS.** 34/34 tasks `Done`, mais 2 commits avulsos pós-Verifier (`53be6d0`, fix visual de i18n; `1ca82e1`, fecha o gap de cobertura do sensor). `validation.md` escrito, `validate_state.py` exit 0. Rastreabilidade da spec fechada em `0c56715` (10/10 requirement IDs `✅ Verified`). Execução em 4 batch workers sequenciais (Phases 1+2 / 3+4 / 5+6 / 7+8) + fechamento (T34) pelo orquestrador, dentro desta mesma janela — o `EXECUTE-PROMPT.md` previa uma janela separada, mas a execução acabou acontecendo aqui. Piso de testes confirmado antes de T1 com `npx vitest run`: **915 passed / 75 arquivos** (não os 912/74 herdados na documentação do lote-8 — duas correções pós-Verifier do lote-8, `d1430af`/`1b41ca1`, já tinham subido o número; usado o piso real, como a própria task mandava). Piso final, confirmado pelo orquestrador de forma independente a cada batch (nunca só aceito do relatório do worker): **1014 passed / 81 arquivos**, monotônico em toda a execução, mais 1 commit de fix pós-verificação visual que não alterou contagem de teste (gate build).
 
