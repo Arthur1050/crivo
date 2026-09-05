@@ -285,3 +285,130 @@ no fluxo principal com a memória pendurada como subnode deles, não como subnod
 validador do MCP não modela esse arranjo. Nenhum deles é o nó tocado por esta publicação, e as
 contagens 61/75 provam que nada foi desconectado. Registrado para que a próxima publicação não os
 confunda com regressão.
+
+---
+
+## T7 — BATERIA NÃO REALIZADA: conta OpenAI sem créditos (2026-09-05)
+
+> **VEREDITO: BLOQUEIO POR CAUSA ALHEIA AO MODELO. `bateria.md` §6.2, 4ª cláusula.**
+> A bateria **não rodou**: o modelo não chegou a ser invocado nenhuma vez. Nenhuma das 5 tools foi
+> exercitada, R1 e R2 são **indeterminados**, e o veredito de T9 **não pode ser emitido**.
+> **Nenhum rollback foi disparado** e nenhuma linha de código foi alterada. T7, T8 e T9 ficam
+> **não concluídas**; T10 e T11 não foram iniciadas. A decisão é do orquestrador/usuário.
+
+### 7.1 O que foi tentado, exatamente como `bateria.md` manda
+
+Alvo correto e respeitado: tenant `triangulo`, `phoneNumberId` `1321478747709350`, **`waId`
+`553490000010`** (lead de descarte). **O `waId` `553499532444` do roteiro do smoke não foi tocado em
+nenhum momento** — nenhuma das duas execuções o referencia.
+
+Disparo pelo mecanismo da §2: `test_workflow` no workflow `0B1nqjODu7xuYYKF` com `pinData` **só** no
+nó `WhatsApp Trigger`, no formato achatado do webhook da Meta. Nenhum outro nó pinado.
+
+| Execução | `wamid` | Turno (§4) | Intenção do lead | Status |
+| --- | --- | --- | --- | --- |
+| **`1884`** | `wamid.BATERIA-L10-1` | 1 | Interesse inicial, revela modalidade (apartamento usado, compra) | `error` |
+| **`1885`** | `wamid.BATERIA-L10-2` | 2 | Revela região (Abadia) e pergunta quais documentos levar | `error` |
+
+Só 2 turnos foram disparados porque o 2º confirmou que a falha é determinística. Turnos 3, 4 e 5
+(enum inválido, agendamento, escalonamento) **não foram disparados** — não havia o que medir.
+
+### 7.2 A falha, com o texto literal do erro
+
+As duas execuções morrem no mesmo ponto, com a mesma mensagem, vinda do nó `AI Agent`
+(`@n8n/n8n-nodes-langchain.agent` v3.1):
+
+```
+NodeOperationError: OpenAI: Rate limit reached
+description: "You have no credits remaining. Add credits to continue using the API
+              at https://platform.openai.com/settings/organization/billing/."
+```
+
+**"Rate limit reached" aqui é rótulo, não diagnóstico.** A `description` é o corpo real da resposta
+da OpenAI: é o erro `insufficient_quota`, que a API devolve com HTTP 429 e o SDK rotula como classe
+"rate limit". Não é throttle transitório — é **estado de faturamento**: a organização
+`org-qkmJQuJ2WnvoIKMr2UJwIJkZ` está com saldo zerado.
+
+Três fatos, dos dados de execução, que sustentam "determinístico" em vez de "tente de novo":
+
+1. O nó de modelo já carrega `max_retries: 2` (visível no `ai_languageModel` de ambas as execuções).
+   Cada execução, portanto, **já tentou 3 vezes** internamente antes de desistir.
+2. As duas execuções, separadas por ~40 s (21:06:57Z e 21:07:33Z), falharam de forma idêntica.
+3. A `description` é uma condição de saldo, não uma janela de tempo. Nenhuma espera a resolve.
+
+### 7.3 Por que isto não é R1, não é R2, e não autoriza rollback
+
+`bateria.md` §6.2 nomeia este caso na letra: *"a execução falhou por causa **alheia ao modelo**
+(credencial, quota, rede) — isso não é R1 nem R2: é bateria não realizada, e a rodada não conta
+contra o orçamento da §4."*
+
+O telemetry do nó `AI Agent` fecha a questão — o modelo não produziu **nenhuma** saída:
+
+```
+ai.agent.tool_calls.requested: 0
+ai.agent.tool_calls.completed: 0
+ai.agent.iteration.count:      0
+ai.agent.execution.succeeded:  false
+ai.agent.failure.type:         NodeOperationError
+```
+
+- **R1 (cobertura das 5 tools) é indeterminado, não verdadeiro.** R1 lê "zero passos `action.tool`
+  ao fim do orçamento de 2 rodadas". Aqui há zero passos porque **o orçamento não foi gasto**: o
+  modelo nunca respondeu para poder chamar tool alguma. Ler isso como `R1 = verdadeiro` seria
+  reprovar o `gpt-5.4-nano` por uma fatura não paga — exatamente o erro que a §6.2 existe para
+  impedir. As duas rodadas da §4 continuam **integralmente disponíveis**.
+- **R2 (sobrevivência à recusa) é indeterminado.** O turno do enum inválido (§5) nunca foi disparado;
+  não há recusa `payload-invalido` observada, e portanto nada a julgar. **T8 não foi executada.**
+- **Logo, T9 não tem veredito.** Nem APROVADO (R1/R2 não são falsos — são desconhecidos) nem
+  REPROVADO. `n8n/workflows/principal.ts` e `n8n/generated/principal.ts` **não foram tocados** por
+  esta task, e o modelo publicado na instância continua `gpt-5.4-nano-2026-03-17`
+  (versão `8f9f8418-35b0-4d63-b8a0-e522f6f4e679`, `active: true`).
+
+### 7.4 O que ficou PROVADO por estas duas execuções
+
+O bloqueio é tardio: tudo antes do nó de modelo rodou de verdade, com credencial real. Isso fecha uma
+pendência honesta que a §5.2 deixara em aberto ("confirmação real só virá da primeira execução — T7"):
+
+| Confirmado | Evidência (execuções `1884` / `1885`) |
+| --- | --- |
+| `pinData` só no `WhatsApp Trigger` funciona | As duas execuções alcançaram o `AI Agent`; nenhum nó intermediário precisou de pin |
+| Chave de serviço do CRM válida | `POST /leads` idempotente devolveu o lead `60f537c3-e8a5-4ad2-b036-b37dca2ab3df`; `GET /settings` e `GET /leads/{id}/messages` devolveram corpo real |
+| `Code: gate` roteia certo | `route: "conversa"` nas duas |
+| Debounce e buffer funcionam | `bufferArray` da `1885` traz as 2 mensagens na ordem; `perguntadosJson` evoluiu de `["modality"]` para `["modality","region"]` |
+| Nó de modelo publicado é o do T5 | O `ai_languageModel` mostra `model: "gpt-5.4-nano-2026-03-17"`, `timeout: 120000`, `model_kwargs.reasoning.effort: "low"` — sem `temperature` |
+| **Credencial OpenAI está vinculada e é usada** | A chamada saiu para `https://api.openai.com/v1` com a org `org-qkmJQuJ2WnvoIKMr2UJwIJkZ`. A falha é de **saldo**, não de credencial ausente — o que a §5.2 não conseguia observar por `get_workflow_details` |
+
+Dito de forma honesta: **o único elo não exercitado da cadeia é justamente o que a bateria existe
+para medir.**
+
+### 7.5 Rejeito deixado no ambiente — alvos de limpeza pendentes
+
+As duas execuções chegaram a escrever antes de morrer. Nada disso foi limpo por este worker (limpar
+exige acesso direto ao Postgres da instância e ao CRM, e a bateria pode ser retomada exatamente daqui
+se a quota voltar — apagar agora custaria o estado já construído):
+
+| # | Alvo | Chave |
+| --- | --- | --- |
+| 1 | Lead de descarte no CRM | `id 60f537c3-e8a5-4ad2-b036-b37dca2ab3df`, `externalId 553490000010`, `status em_qualificacao` — com 2 mensagens (`6a54fa57-…`, `af9d7f61-…`) |
+| 2 | Linha de `conversa_estado` (`ZsplBxJjXv3kwKZ8`) | `id 18`, `tenantSlug triangulo` + `waId 553490000010`, `perguntadosJson ["modality","region"]` |
+| 3 | Sessão `n8n_chat_histories` | Chave `"triangulo:553490000010"` — provavelmente vazia (`ai.agent.memory.saves: 0` nas duas execuções), mas o `loadMemoryVariables` foi chamado; conferir antes da Fase 5 |
+| 4 | Evento no Google Calendar | **Nenhum** — o turno 4 nunca rodou. `agendar_reuniao` não foi chamada nenhuma vez |
+
+Nenhum desses alvos é o lead do roteiro do smoke.
+
+### 7.6 O que o orquestrador precisa decidir
+
+Este worker **não** escolhe entre as opções abaixo — `bateria.md` §6.2 tira essa decisão de quem
+executa a bateria. Os dados para decidir:
+
+- **Retomar no OpenAI** exige adicionar créditos à organização `org-qkmJQuJ2WnvoIKMr2UJwIJkZ`. Nada
+  de código muda; a bateria recomeça do turno 1 com o orçamento da §4 intacto, depois de limpar os
+  alvos da §7.5 (o lead já tem `modality` e `region` marcados como perguntados).
+- **Trocar de modelo** é possível sem obstáculo técnico: a credencial `Google Gemini(PaLM) Api
+  account` (`kXQDjxSVrWhSCr6H`, tipo `googlePalmApi`) **continua existindo na instância**, então o
+  rollback de `6.1` é executável a qualquer momento. Mas fazê-lo **agora** seria reverter o
+  `gpt-5.4-nano` sem nenhuma evidência contra ele — o oposto do que o portão de rollback foi
+  desenhado para fazer.
+- **Seguir para a Fase 4 sem a bateria** deixaria T9 permanentemente sem veredito e MOD-02 sem
+  fechamento. O roteiro (T10/T11) é documental e não depende do modelo, mas a Fase 5 depende: uma
+  conversa real no WhatsApp bate no mesmo `insufficient_quota` e morre no mesmo nó.
