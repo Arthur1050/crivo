@@ -412,3 +412,169 @@ executa a bateria. Os dados para decidir:
 - **Seguir para a Fase 4 sem a bateria** deixaria T9 permanentemente sem veredito e MOD-02 sem
   fechamento. O roteiro (T10/T11) é documental e não depende do modelo, mas a Fase 5 depende: uma
   conversa real no WhatsApp bate no mesmo `insufficient_quota` e morre no mesmo nó.
+
+---
+
+## T7 (2ª tentativa) — BATERIA PARADA NO TURNO 1: estado sujo + credencial do Calendar (2026-09-05)
+
+> **VEREDITO: DUAS CONDIÇÕES DE PARADA DISPARARAM ANTES DE QUALQUER MEDIÇÃO VÁLIDA.**
+> (1) A limpeza dos alvos da §7.5 **não foi efetivada** — o turno 1 encontrou o lead de descarte e a
+> linha `id 18` de `conversa_estado` vivos, com o buffer da tentativa anterior intacto; a bateria
+> rodou, sem querer, **sobre estado sujo**. (2) A credencial `Google Calendar account` da instância
+> **precisa ser reconectada**, o que torna `agendar_reuniao` não mensurável.
+> **Esta rodada NÃO conta contra o orçamento de 2 rodadas da `bateria.md` §4** — nem por §6.2
+> (causa alheia ao modelo), nem como medição, porque o turno 1 não partiu do estado inicial que a
+> §4 pressupõe. **Nenhum rollback foi disparado. Nenhuma linha de código foi alterada.**
+> T7, T8 e T9 continuam **não concluídas**; T10 e T11 não foram iniciadas.
+
+### 8.1 O bloqueio anterior (§7) está resolvido — a quota da OpenAI voltou
+
+O primeiro fato a registrar é positivo e fecha a §7: **o `insufficient_quota` sumiu**. Na execução
+`1886` o nó `OpenAI Chat Model` respondeu **8 vezes** (8 `subRun` registrados), o `AI Agent` emitiu
+**8 chamadas de tool** com argumentos bem formados e recebeu 8 `observation`. O elo que a §7.4
+apontava como "o único não exercitado da cadeia" **passou a ser exercitável**. Nada abaixo põe isso
+em dúvida — o que segue é sobre o *ambiente*, não sobre o modelo.
+
+### 8.2 Como o turno 1 foi disparado
+
+Mecanismo da `bateria.md` §2, sem desvio: `test_workflow` em `0B1nqjODu7xuYYKF`, `pinData` **só** no
+nó `WhatsApp Trigger`, `timeout` 300 s, `triggerNodeName: "WhatsApp Trigger"`. Alvo correto: tenant
+`triangulo`, `phoneNumberId` `1321478747709350`, **`waId` `553490000010`**. O `wamid` recebeu série
+nova (`wamid.BATERIA-L10-R1-1`) para não colidir com os ids da tentativa anterior.
+
+**O `waId` `553499532444` do roteiro do smoke não foi tocado** — a execução `1886` não o referencia
+em nenhum ponto.
+
+| Execução | `wamid` | Turno (§4) | Intenção do lead | Status |
+| --- | --- | --- | --- | --- |
+| **`1886`** | `wamid.BATERIA-L10-R1-1` | 1 | Interesse inicial, revela modalidade (apartamento usado, compra) | `error` — `Max iterations (8) reached` no nó `AI Agent` |
+
+Turnos 2 a 5 **não foram disparados**: as duas condições de parada abaixo já eram visíveis nos dados
+da `1886`, e continuar só aprofundaria a contaminação.
+
+### 8.3 PARADA 1 — a limpeza dos três alvos não foi efetivada
+
+A verificação foi feita **nos dados da própria execução `1886`** (os alvos 1 e 3 não são legíveis por
+nenhuma ferramenta MCP disponível: não existe tool de leitura de linha de Data Table, e as variáveis
+de ambiente do projeto são inacessíveis a agentes por política, o que impede consultar o Postgres da
+instância ou a API do CRM diretamente).
+
+| # | Alvo (§7.5) | Esperado se limpo | **Observado na `1886`** |
+| --- | --- | --- | --- |
+| 1 | Lead no CRM | `POST /leads` idempotente devolveria um **id novo** | `HTTP: POST /leads (idempotente)` devolveu **`60f537c3-e8a5-4ad2-b036-b37dca2ab3df`** — **o mesmo id da tentativa anterior**, `status em_qualificacao`, `firstContactAt 2026-09-05T21:06:24.000Z` |
+| 1b | Mensagens do lead | Só a mensagem do turno novo | `HTTP: GET /leads/{id}/messages (semeadura)` devolveu **3** mensagens: `6a54fa57-…` e `af9d7f61-…` (as duas da tentativa anterior) **mais** a nova `fb675a4c-…` |
+| 2 | Linha de `conversa_estado` | Linha ausente (id novo ao ser criada) | `Data Table: conversa_estado (antes do buffer)` devolveu **`id 18`**, `createdAt 2026-09-05T21:06:39.643Z` — **a mesma linha**, com `perguntadosJson ["modality","region"]` e `bufferJson` contendo `wamid.BATERIA-L10-1` e `wamid.BATERIA-L10-2` |
+| 3 | Sessão `n8n_chat_histories` | Vazia | `Chat Memory Manager: carregar sessão` → `{"messages":[],"messagesCount":0}` — **este alvo está limpo** (como a §7.5 já previa: nunca chegou a ser escrito) |
+
+**Sinal que enganou, e por que está registrado**: antes de disparar, `search_data_tables` mostrou
+`conversa_estado` com `updatedAt: 2026-09-05T21:43:41.654Z` — 36 min depois das execuções
+`1884`/`1885` e 4 min antes deste turno. Foi lido como indício de limpeza manual recente. **Era falso
+indício**: esse `updatedAt` é do *registro da tabela*, não das linhas, e a linha `id 18` continuava lá
+com `updatedAt 2026-09-05T21:07:32.295Z`. Fica registrado para que a próxima verificação **não** use
+`search_data_tables` como prova de linha apagada — ele não prova nada sobre linhas.
+
+**Consequência direta e mensurável da sujeira** — não é preocupação teórica:
+
+1. O `bufferJson` velho foi **reidratado**: `Code: gate` entregou ao agente um `bufferArray` com as
+   **3** mensagens (as 2 antigas + a nova), como se o lead tivesse acabado de mandar as três.
+2. `perguntadosJson` saltou de `["modality","region"]` para **`["modality","region","propertyType"]`**
+   já no turno 1 — ou seja, `resolveConversationPhase` colocou a conversa na fase **`agendando`**
+   **no primeiro turno**, quando a `bateria.md` §3 diz explicitamente que essa fase "não é alcançável
+   antes do 4º turno".
+3. Por isso o agente foi direto tentar `agendar_reuniao` no turno 1. **A ordem de turnos da §4 foi
+   violada pelo estado herdado, não pelo roteiro.** Qualquer leitura de R1/R2 sobre esta execução
+   estaria medindo a sujeira, não o modelo.
+
+### 8.4 PARADA 2 — credencial `Google Calendar account` precisa ser reconectada
+
+As **três** chamadas de `agendar_reuniao` da execução `1886` voltaram com a mesma `observation`,
+literal:
+
+```
+[{"error":"The credential \"Google Calendar account\" needs to be reconnected."}]
+```
+
+A credencial **existe** na instância (`list_credentials`: id `2kXea9a4br8Gn3pp`, tipo
+`googleCalendarOAuth2Api`, projeto pessoal `tTVoFkYzH7IEInaG`) — o que caducou é o **token OAuth**.
+Reconectar exige o fluxo OAuth na UI do n8n, ação do usuário; nenhum worker pode fazê-la.
+
+**Por que isto é uma parada, e não um resultado**: a `bateria.md` §3 diz que "o efeito externo não
+conta" — a Meta recusando o número fictício ou o Calendar recusando *o evento* são falhas do ambiente
+de descarte. Mas aqui a tool **nem alcançou** o Google: o nó falhou na resolução da credencial, antes
+da chamada. Isso é a 4ª cláusula da §6.2 pela letra — *"a execução falhou por causa alheia ao modelo
+(credencial, quota, rede)"* — e vale especificamente para `agendar_reuniao`: enquanto o token estiver
+caducado, essa tool **não é mensurável**, e a §7 alvo 4 (evento fantasma no calendário) fica sem
+risco, porque nenhum evento chega a ser criado.
+
+Vale notar o contraste que confirma o diagnóstico: `consultar_documentos` e `responder_lead`
+alcançaram seus serviços e voltaram com **corpo real**. Não é falha geral de credenciais — é esta.
+
+### 8.5 O que a execução `1886` mostrou mesmo assim — registrado, mas SEM valor de veredito
+
+Isto **não** é evidência de T7. Está aqui porque descartar observação real seria pior que registrá-la
+com a ressalva certa. **Nenhuma linha desta seção pode ser citada em R1 ou R2.**
+
+Passos do `AI Agent` na `1886`, na ordem (8 iterações, `maxIterations: 8`):
+
+| # | `action.tool` | `toolInput` (resumo) | `observation` |
+| --- | --- | --- | --- |
+| 1 | `consultar_documentos` | `{}` | lista real com 2 documentos (`Tabela de Preços…`, `Modelo de Contrato Padrão.docx`) |
+| 2 | `agendar_reuniao` | `meetingAtProposto: "2026-09-07T10:00:00-03:00"` | `credential … needs to be reconnected` |
+| 3 | `responder_lead` | mensagem abrindo com "Boa, …" | `{"ok":false,"reason":"abertura-proibida"}` |
+| 4 | `responder_lead` | mensagem reescrita, abertura trocada | `{"error":"Bad request - please check your parameters"}` |
+| 5 | `agendar_reuniao` | `meetingAtProposto: "2026-09-07T15:00:00-03:00"` | `credential … needs to be reconnected` |
+| 6 | `responder_lead` | mensagem abrindo com "Boa! …" | `{"ok":false,"reason":"abertura-proibida"}` |
+| 7 | `agendar_reuniao` | `meetingAtProposto: "2026-09-07T17:00:00-03:00"` | `credential … needs to be reconnected` |
+| 8 | `responder_lead` | mensagem abrindo com "Boa! …" | `{"ok":false,"reason":"abertura-proibida"}` |
+
+Leitura honesta, com as ressalvas na frente:
+
+- **`registrar_qualificacao` não foi chamada** neste turno. Mas o turno **não era** o turno 1 do
+  roteiro na prática: o estado sujo já marcava `modality`, `region` e `propertyType` como perguntados
+  e empurrou a conversa para `agendando`. Não dá para dizer se o modelo deixaria de registrar
+  qualificação num turno 1 limpo. **Indeterminado, não "não chamada".**
+- **`escalar_para_humano` não foi chamada** — correto e esperado: §4 a reserva para o último turno.
+- `abertura-proibida` **não é falha do ambiente**: é a barreira determinística de persona
+  (`n8n/src/voice.mjs:74`, VOZ-01 AC1) rejeitando aberturas como "Boa"/"Show". Ela funcionou como
+  projetada. O que se observa é o modelo **reincidindo** na mesma classe de abertura três vezes
+  (passos 3, 6, 8) em vez de mudar de estratégia — sinal de estilo que **merece ser reavaliado numa
+  rodada limpa**, mas que aqui está confundido com o laço causado pelo Calendar quebrado.
+- O `Bad request` do passo 4 é da própria tool `responder_lead` e **não** foi investigado — fora do
+  escopo desta parada, fica anotado como ponto a observar na rodada limpa.
+- O `Max iterations (8)` que matou a execução é **consequência do ambiente**: 3 das 8 iterações foram
+  gastas batendo numa credencial caducada. Não é R2 — R2 fala do turno do enum inválido (§5), que
+  **nunca foi disparado**.
+
+### 8.6 Estado de R1, R2 e do veredito de T9
+
+- **R1 — indeterminado.** O orçamento de 2 rodadas da §4 continua **integralmente disponível**: esta
+  execução não é uma rodada, é um turno abortado sobre estado sujo.
+- **R2 — indeterminado.** O turno do enum inválido (§5) não foi disparado; nenhuma recusa
+  `payload-invalido` foi observada. **T8 não foi executada.**
+- **T9 sem veredito.** Nem APROVADO nem REPROVADO. `n8n/workflows/principal.ts` e
+  `n8n/generated/principal.ts` **não foram tocados**; o modelo publicado segue
+  `gpt-5.4-nano-2026-03-17` (versão `8f9f8418-35b0-4d63-b8a0-e522f6f4e679`, `active: true`).
+
+### 8.7 Alvos de limpeza — estado atualizado (a `1886` acrescentou rejeito)
+
+Substitui a tabela da §7.5. Tudo abaixo precisa ser limpo **antes** de retomar o turno 1.
+
+| # | Alvo | Chave | Estado depois da `1886` |
+| --- | --- | --- | --- |
+| 1 | Lead de descarte no CRM | `id 60f537c3-e8a5-4ad2-b036-b37dca2ab3df`, `externalId 553490000010` | **vivo**, `status em_qualificacao`, agora com **3** mensagens: `6a54fa57-…`, `af9d7f61-…` e `fb675a4c-841d-405e-9993-11d2daca539b` (nova). Ordem de remoção: `messages` → `conversations` → `leads` |
+| 2 | Linha de `conversa_estado` (`ZsplBxJjXv3kwKZ8`) | `id 18`, `tenantSlug triangulo` + `waId 553490000010` | **viva**, agora com `perguntadosJson ["modality","region","propertyType"]`, `bufferJson` com **3** mensagens e `updatedAt 2026-09-05T21:48:10.694Z`. **É a linha mais crítica**: é ela que forçou a fase `agendando` no turno 1 |
+| 3 | Sessão `n8n_chat_histories` | `"triangulo:553490000010"` | **limpa** — `messagesCount: 0` na carga, e `ai.agent.memory.saves: 0` (a execução morreu antes de salvar o turno) |
+| 4 | Evento no Google Calendar | agenda de `tostamatias@gmail.com` | **nenhum** — as 3 tentativas de `agendar_reuniao` pararam na credencial, nada foi criado |
+
+### 8.8 O que precisa acontecer antes de retomar
+
+Duas coisas, ambas de fora deste worker, e a bateria **não deve ser retomada sem as duas**:
+
+1. **Limpar os alvos 1 e 2 da §8.7** — e confirmar a limpeza por um meio que leia linha, não
+   metadado de tabela (a armadilha da §8.3). Sem isso, o turno 1 volta a nascer na fase `agendando`.
+2. **Reconectar a credencial `Google Calendar account`** (`2kXea9a4br8Gn3pp`) pelo fluxo OAuth na UI
+   do n8n. Sem isso, `agendar_reuniao` é estruturalmente não mensurável e R1 ficaria verdadeiro por
+   um motivo que não é o modelo — exatamente o erro que a §6.2 existe para impedir.
+
+Feitas as duas, a bateria recomeça do turno 1 com o orçamento da §4 intacto. **Nenhuma decisão de
+rollback pode ser tomada com o que existe hoje.**
