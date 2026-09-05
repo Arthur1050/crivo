@@ -133,10 +133,10 @@ fonte dos workflows está sincronizada com `n8n/generated/`.
 - Skill: NONE
 
 **Done when**:
-- [ ] `npx vitest run` rodado e o número real registrado (passed / arquivos) — **o número medido, nunca o herdado da documentação**
-- [ ] `node scripts/n8n-inline.mjs` rodado e `git status` confirma diff zero em `n8n/generated/`
-- [ ] Se houver diff, ele é registrado no arquivo antes de qualquer outra coisa (fonte e gerado estavam dessincronizados)
-- [ ] Gate check passa: `npx vitest run`
+- [x] `npx vitest run` rodado e o número real registrado (passed / arquivos) — **o número medido, nunca o herdado da documentação**
+- [x] `node scripts/n8n-inline.mjs` rodado e `git status` confirma diff zero em `n8n/generated/`
+- [x] Se houver diff, ele é registrado no arquivo antes de qualquer outra coisa (fonte e gerado estavam dessincronizados)
+- [x] Gate check passa: `npx vitest run`
 
 **Tests**: none
 **Gate**: full
