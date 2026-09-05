@@ -12,7 +12,7 @@ vitrine pública) — as únicas do backlog inteiro com demanda declarada por cl
 **Premissa que ordena tudo**: as duas imobiliárias-piloto ainda são fictícias, só um número de
 WhatsApp homologado, nenhuma conversa real roteirizada. O produto está pronto; o piloto não
 começou. A prioridade é o que coloca uma imobiliária real conversando — não o que amplia
-superfície. A exceção deliberada são L11/L14, que têm sinal de cliente real.
+superfície.
 
 ---
 
@@ -31,11 +31,11 @@ superfície. A exceção deliberada são L11/L14, que têm sinal de cliente real
 
 **Por que o modelo vem antes do smoke.** A AD-015 deferiu o smoke até "a qualidade das respostas
 estar madura o suficiente para sustentar um roteiro". O smoke **é o artefato de evidência dessa
-qualidade** — rodá-lo no Gemini e trocar o modelo depois invalidaria a prova.
+qualidade** — rodá-lo no Gemini e trocar o modelo depois invalidaria a prova. A motivação do
+usuário para a troca é **qualidade conversacional percebida**, não custo (2026-09-04).
 
 **Isolamento deliberado**: este lote não introduz tool nova nem muda o gate, para que qualquer
-diferença observada no smoke seja atribuível ao modelo. Mesma disciplina que o `design.md` do
-lote-6c aplicou ao recusar trocar modelo e arquitetura no mesmo ciclo.
+diferença observada no smoke seja atribuível ao modelo.
 
 ---
 
@@ -44,33 +44,31 @@ lote-6c aplicou ao recusar trocar modelo e arquitetura no mesmo ciclo.
 **Origem**: usuário, 2026-09-04, a partir de necessidade declarada por dono de imobiliária.
 **Registro perdido**: o usuário lembra de ter levantado a ideia durante a execução de algum lote,
 mas ela **não existe em lugar nenhum** de `.specs/` — nem em `Deferred Ideas`, nem em `STATE.md`,
-nem no PRD, e não há tabela de imóveis no schema (15 tabelas, nenhuma de inventário). Causa
-provável: a skill captura `Deferred Ideas` na fase de discuss; ideia que nasce no meio do Execute
-não tem onde pousar. Convenção nova: ideia surgida em execução vai para o `context.md` do lote
-corrente na hora.
+nem no PRD, e não há tabela de imóveis no schema. Causa provável: a skill captura `Deferred Ideas`
+na fase de discuss; ideia que nasce no meio do Execute não tem onde pousar. **Convenção nova**:
+ideia surgida em execução vai para o `context.md` do lote corrente na hora.
 
 | # | Item |
 | --- | --- |
 | 1 | Tabela de imóveis com `tenant_id` desde o schema (AD-002), reusando `modalityEnum` (`novo`/`usado`/`ambos`) que já existe |
 | 2 | Campos: tipo, endereço/bairro/cidade, preço, área, quartos, banheiros, vagas, status (disponível/reservado/vendido), descrição, fotos, datas |
-| 3 | **Corretor de captação** — FK para `users` (lote-8 fez corretor = usuário), distinto do responsável pelo atendimento |
+| 3 | **Corretor de captação como atributo do imóvel** — FK de imóvel para `users` (lote-8 fez corretor = usuário) |
 | 4 | CRUD no CRM, com permissão por papel (gestor/administrador cadastram; corretor conforme decisão do Specify) |
 | 5 | Tool `buscar_imoveis` para o agente — consulta estruturada, filtros por modalidade/faixa de preço/bairro/quartos |
+
+**Decisão de modelagem (usuário, 2026-09-04)**: o captador pertence ao **imóvel**, não ao lead. E
+**nenhum imóvel é vinculado a lead** — não existe relação imóvel↔lead no schema. A qualificação
+continua sendo sobre critérios (`region`, `purchaseHorizon`, faixa de preço), não sobre uma unidade
+específica. Isso mantém `leads` intocado por este lote e elimina a questão de comissão do escopo
+técnico.
 
 **Por que isto é a resposta certa para "o agente não sabe nada".** Com inventário em linhas
 estruturadas, "quais opções de 3 quartos até 500 mil no Santa Maria" vira **consulta SQL
 determinística** — exata, barata, sem alucinação. É estritamente melhor que texto de documento, e
-muito melhor que RAG, para a pergunta que mais aparece numa qualificação. O conteúdo de documento
-(L12) continua necessário, mas para o que **não** é inventário.
-
-**Questão de negócio para o Specify resolver, não o agente**: captador e corretor responsável são
-papéis distintos com implicação de comissão. `leads.assigned_user_id` (AD-022) aponta o responsável
-pelo atendimento; o captador é outro vínculo. Se os dois disputam comissão na vida real, isso é
-regra de negócio antes de ser schema.
+melhor que RAG, para a pergunta que mais aparece numa qualificação.
 
 **Sequenciamento da tool**: o item 5 introduz tool nova. Se o L10 ainda não tiver fechado, ele
-confunde a atribuição do smoke. Ou entra depois do L10, ou o Specify separa o CRUD (itens 1–4) da
-tool (item 5).
+confunde a atribuição do smoke. Ou entra depois do L10, ou o Specify separa o CRUD (1–4) da tool (5).
 
 ---
 
@@ -91,9 +89,8 @@ política de financiamento, documentação exigida, condições de pagamento, re
 
 **A lacuna, em três evidências**: `documents` guarda só metadado (`schema.ts:274-291`); o
 upload-dialog descarta o binário por construção (comentário no próprio código); `content` é `null`
-hardcoded no contrato. Os únicos campos de texto livre em `tenants` são persona e operação
-(`agentName`, `agentPresentationMessage`, `agentVoiceTone`, horários). Hoje a imobiliária cadastra
-"Tabela de preços — Residencial Aurora" e o agente recebe **o título do arquivo**.
+hardcoded no contrato. Hoje a imobiliária cadastra "Tabela de preços — Residencial Aurora" e o
+agente recebe **o título do arquivo**.
 
 ---
 
@@ -116,46 +113,7 @@ respondendo. Pedido explícito de parar, entendido pelo modelo, que não virou r
 
 ---
 
-## L14 — Vitrine pública do catálogo
-
-**Origem**: usuário, 2026-09-04, mesma conversa do L11. **Depende de L11** — sem catálogo não há o
-que exibir.
-
-| # | Item |
-| --- | --- |
-| 1 | Página pública de catálogo + página de item, por tenant, sem autenticação |
-| 2 | Personalização: paleta (conjunto fechado), logo, template de disposição (começar com **dois**, bem-feitos) |
-| 3 | CRECI e rodapé legal — **obrigatório** em anúncio imobiliário no Brasil, campo requerido e não opcional |
-| 4 | Domínio próprio (`imoveis.imobiliariax.com.br`) — o item que o cliente mais vai pedir e o de maior custo de infra (DNS, certificado). Decidir cedo |
-| 5 | Metadados de compartilhamento (título, descrição, imagem OG) — a página nasce para circular em grupo de WhatsApp |
-| 6 | Curadoria de destaques — quais imóveis aparecem primeiro. É o controle de uso diário do gestor, mais que paleta |
-| 7 | Contato e redes (WhatsApp, Instagram, telefone, endereço) e textos institucionais |
-| 8 | Captura de lead na página → link para o WhatsApp do agente **com contexto do imóvel**, fechando o laço vitrine → agente → CRM |
-
-**Duas ADs ativas que este lote contradiz e precisa emendar explicitamente** (regra do `CLAUDE.md`):
-
-- **AD-010** diz "fidelidade limitada aos tokens padrão da Astryx (**sem theming custom por ora**)".
-  Paleta escolhida pelo cliente é exatamente theming custom. Recomendação: construir a vitrine
-  **fora da Astryx** — uma lib de componentes de CRM não é a ferramenta para uma página que precisa
-  parecer de outra empresa.
-- **AD-007** desabilitou Cache Components do Next 16 (render dinâmico por request), correto para o
-  CRM. A vitrine quer o oposto — estático/ISR, por SEO e custo. Carve-out necessário.
-
-**Risco novo, o mais sensível do produto até aqui**: é a primeira superfície sem autenticação. Toda
-a disciplina de isolamento (`verifySession()` memoizada, `LeadScope` como tipo obrigatório)
-pressupõe usuário autenticado. O caminho de leitura público precisa do próprio escopo, incapaz de
-vazar qualquer coisa além do catálogo daquele tenant.
-
-**Decisão de AD pendente**: roteamento por tenant sem sessão — subdomínio, path (`/c/<slug>`) ou
-domínio próprio. Determina custo de infra e o que dá para vender.
-
-**Contenção deliberada**: nada de seletor livre de fonte nem cor arbitrária — caminho curto para
-uma vitrine ilegível que o cliente vai culpar o produto por ter permitido. 4–6 paletas prontas,
-2–3 pares tipográficos, 2 templates.
-
----
-
-## L15 — Humano no laço
+## L14 — Humano no laço
 
 **Fecha**: #7, #11, `openapi.yaml` desatualizado, L5 Fix 1.
 
@@ -173,7 +131,7 @@ humano escreveu no CRM" — descreve algo que nunca aconteceu, porque não há c
 
 ---
 
-## L16 — Prontidão operacional do piloto real
+## L15 — Prontidão operacional do piloto real
 
 **Fecha**: #3, #23, baselines reais, e a limpeza de dívidas de `STATE.md` § Handoff.
 
@@ -190,6 +148,76 @@ humano escreveu no CRM" — descreve algo que nunca aconteceu, porque não há c
 
 ---
 
+## L16 — Vitrine pública do catálogo *(último lote, por decisão do usuário)*
+
+**Origem**: usuário, 2026-09-04. **Depende de L11** — sem catálogo não há o que exibir.
+**Posição**: deliberadamente a última preocupação deste roadmap (usuário, 2026-09-05), apesar de ter
+sinal de cliente real. Tudo que vem antes serve o piloto que já existe; a vitrine amplia superfície.
+
+**Arquitetura decidida (2026-09-05): projeto separado, leitura pura, usuário de banco SELECT-only.**
+Ver AD-025 em `STATE.md`.
+
+### Escopo funcional
+
+| # | Item |
+| --- | --- |
+| 1 | Página de catálogo + página de item, por tenant, sem autenticação |
+| 2 | **Leitura pura**: nenhum formulário, nenhuma escrita, nenhum PII. O botão de interesse abre `wa.me` do agente com mensagem pré-preenchida citando a referência do imóvel |
+| 3 | Personalização por tenant: cor, fonte e layout (template pré-montado). **Componentes não são personalizáveis** |
+| 4 | CRECI e rodapé legal — **obrigatório** em anúncio imobiliário no Brasil, campo requerido |
+| 5 | Metadados de compartilhamento (título, descrição, imagem OG) — a página nasce para circular em grupo de WhatsApp |
+| 6 | Curadoria de destaques — quais imóveis aparecem primeiro |
+| 7 | Contato e redes (WhatsApp, Instagram, telefone, endereço) e textos institucionais |
+
+### Decisões técnicas fechadas
+
+**Roteamento**: por **path** (`/c/<slug>`) neste lote. Domínio próprio por imobiliária fica para
+uma evolução posterior — decisão do usuário, para não pagar DNS/certificado antes de haver cliente.
+
+**Frescor**: quase real. `use cache` + `cacheLife('minutes')` (revalida a ~1 min) +
+`cacheTag('tenant:<slug>:catalogo')`, com `revalidateTag` disparado pelo CRM quando o gestor
+publica, despublica ou marca como vendido. O caso que dói — imóvel vendido continuar anunciado —
+sai do ar na hora, não no fim da janela.
+
+**Isolamento**: a app pública lê o mesmo Postgres com um **usuário de banco distinto**, com
+`GRANT SELECT` restrito a imóveis e às colunas de identidade visual de `tenants`. Isso converte
+segurança de *disciplina de código* para *privilégio de banco*: se a app pública tentar ler `leads`,
+o Postgres recusa, independente do bug ou de quem escreveu.
+
+**Tema**: `<Theme>` da Astryx é **provider React**, com escopo por subárvore — dois temas coexistem
+sem conflito, então a personalização por tenant funciona em runtime sem sair da lib.
+`defineTheme` recebe `color.accent` (hex) + `neutralStyle` e **gera a paleta inteira** com contraste
+resolvido; `typography.body/heading` recebem `family`/`url`; `extends` deriva o tema do tenant de um
+tema-base Crivo. A tabela de SSR da doc diz que **tokens são SSR-safe** sob injeção em runtime — só
+*component overrides* piscam na hidratação, e componentes estão fora de escopo por decisão do
+usuário. **A AD-010 não precisa de emenda**: o `CLAUDE.md` já nomeia `astryx theme` como o caminho
+sancionado para brand/accent.
+
+**Layout ≠ tema**: são eixos independentes. Tema é cor/fonte; layout é composição de página, um
+enum escolhendo entre templates pré-montados. Nada de blocos arrastáveis. Começar com **dois**
+templates bem-feitos.
+
+### Por que projeto separado — os três argumentos que decidiram
+
+1. **`cacheComponents` é flag global do `next.config.ts`**, não por rota. A vitrine precisa dela
+   (`use cache`/`cacheLife`/`cacheTag`); o CRM a tem desligada de propósito pela AD-007. No mesmo
+   projeto seria ou emendar a AD-007 para o produto inteiro (PPR default + `<Activity>`, obrigando
+   reauditar a renderização de 12 lotes verificados), ou cair no modelo de cache anterior
+   (`unstable_cache`). Projetos separados dão a cada um o seu `next.config.ts`.
+2. **O `proxy.ts` tem matcher pega-tudo** (`/((?!api|_next/static|_next/image|.*\..*).*)`): toda
+   rota não-estática passa pela máquina de autenticação. No mesmo projeto, todo visitante anônimo
+   atravessaria isso e seria preciso abrir exceção na regex — errar para o lado errado expõe rota
+   do CRM.
+3. **Raio de alcance**: tráfego anônimo, robô de busca e scraper nunca dividem processo com o CRM
+   onde os corretores trabalham. A vitrine é a superfície de tráfego mais imprevisível do produto.
+
+**Custo aceito conscientemente**: dois deploys, dois envs, e conhecimento do schema em dois lugares
+(mitigável publicando o subset de tipos, ou duplicando as duas tabelas, que mudam pouco). É
+burocracia adiantada, visível e limitada — preferida ao custo difuso e permanente de uma fronteira
+mantida só por revisão de código.
+
+---
+
 ## L-RAG — condicional, com gatilho nomeado
 
 **Não é lote agendado.** Posição revista em 2026-09-04, depois de o usuário levantar o cenário de
@@ -201,30 +229,27 @@ falha concreto: com ~200 PDFs, injeção direta estoura janela de contexto, cust
 vez.
 
 **O que continua valendo**: RAG não é a resposta para "o agente conhece os imóveis" — o catálogo
-(L11) é, e melhor, porque devolve resposta exata em vez de aproximada. E construir embeddings antes
-de existir corpus é otimizar o vazio.
+(L11) é, e melhor. E construir embeddings antes de existir corpus é otimizar o vazio.
 
 **Gatilho**: corpus de algum tenant acima do teto de injeção direta medido no L12 item 4.
 
 **Por que a espera é barata**: o PRD §7.6 já comprou essa opção — "acesso ao contexto atrás de uma
 interface única (`getContext(tenant_id, modalidade, pergunta)`), permitindo trocar a implementação
 por busca vetorial no futuro sem alterar quem consome". A interface já existe em
-`src/server/integration/context.ts`; o L12 item 3 adiciona o parâmetro que falta. Quando o gatilho
-disparar, é troca de implementação atrás da mesma interface, não redesenho.
+`src/server/integration/context.ts`; o L12 item 3 adiciona o parâmetro que falta.
 
 **Nota comercial**: o cliente não compra "RAG", compra "ele sabe responder sobre a minha
 imobiliária". Catálogo estruturado + documentos legíveis já entregam essa frase.
 
 ---
 
-## Ordem sugerida e pontos em aberto
+## Ordem
 
-L10 → L11 → L12 → L13 → L14 → L15 → L16, com duas ressalvas:
+L10 → L11 → L12 → L13 → L14 → L15 → **L16 por último**.
 
-1. **L11 vs. L10**: o catálogo tem o único sinal de cliente real do backlog inteiro. Se a janela
-   comercial pedir, ele pode vir primeiro — o custo é adiar a AD-015, aberta desde 2026-08-09.
-2. **L14 pode subir** se a vitrine for o argumento de venda da próxima reunião. Depende de L11,
-   nunca do resto.
+Ressalva única: **L11 pode subir na frente do L10** se a janela comercial pedir — o catálogo tem o
+único sinal de cliente real do backlog, e o custo de trocar é adiar a AD-015, aberta desde
+2026-08-09. Todo o resto segue a ordem acima.
 
 ---
 
@@ -235,7 +260,7 @@ cross-tenant (#4), queue mode/Redis (#19), baseline versionado (#24), ranking po
 reordenação manual no Kanban (#12), atribuição por região (#13), upload de comprovante (#10), 2FA
 (#5), L4 Fix 2 como artefato.
 
-Adiados com gatilho nomeado: RAG (#18 — ver L-RAG acima; **saiu dos descartados**), log de sucesso
-com latência (#25 — quando a saúde inferida errar pela primeira vez), pacote Google + Agenda (#8 —
-quando uma imobiliária real pedir), tela de sugestões do agente (#6), produtização SaaS (#1
-créditos, #2 Embedded Signup).
+Adiados com gatilho nomeado: RAG (#18 — ver L-RAG acima), log de sucesso com latência (#25 — quando
+a saúde inferida errar pela primeira vez), pacote Google + Agenda (#8 — quando uma imobiliária real
+pedir), tela de sugestões do agente (#6), produtização SaaS (#1 créditos, #2 Embedded Signup),
+domínio próprio por imobiliária na vitrine (evolução do L16).
