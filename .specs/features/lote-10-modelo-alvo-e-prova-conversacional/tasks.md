@@ -261,12 +261,12 @@ critério que aprova ou dispara o rollback.
 - Skill: NONE
 
 **Done when**:
-- [ ] Alvo declarado: lead de descarte, `waId` fictício, tenant `triangulo` — nunca o número do smoke
-- [ ] As 5 tools listadas com o que conta como chamada bem-sucedida em cada uma
-- [ ] `escalar_para_humano` explicitamente por último, com o motivo (trava o lead de descarte, `gate.mjs:70`)
-- [ ] O caso do enum inválido descrito com o comportamento esperado (agente segue, não trava)
-- [ ] Critério de rollback escrito como condição binária, não como julgamento
-- [ ] Gate check passa: `npx vitest run && npm run lint && npm run build`
+- [x] Alvo declarado: lead de descarte, `waId` fictício, tenant `triangulo` — nunca o número do smoke
+- [x] As 5 tools listadas com o que conta como chamada bem-sucedida em cada uma
+- [x] `escalar_para_humano` explicitamente por último, com o motivo (trava o lead de descarte, `gate.mjs:70`)
+- [x] O caso do enum inválido descrito com o comportamento esperado (agente segue, não trava)
+- [x] Critério de rollback escrito como condição binária, não como julgamento
+- [x] Gate check passa: `npx vitest run && npm run lint && npm run build`
 
 **Tests**: none
 **Gate**: build
