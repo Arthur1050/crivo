@@ -418,12 +418,12 @@ ao modelo está em ordem — e declarar o congelamento de `vitest`.
 - Skill: NONE
 
 **Done when**:
-- [ ] Chave de serviço confirmada funcionando contra `/api/v1` (uma chamada real, com o resultado registrado)
-- [ ] `crivo-agente-principal` ativo, com o modelo do veredito de T9
-- [ ] `tenant_config` com a linha do `triangulo` presente e apontando para o `calendarId` certo
-- [ ] Número de teste e destinatário confirmados na lista permitida da Meta
-- [ ] **Congelamento declarado**: nenhum `npx vitest run` até T16 terminar, com o motivo escrito
-- [ ] Os três alvos do checklist confirmados limpos antes do cenário 1 (estado inicial)
+- [x] Chave de serviço confirmada funcionando contra `/api/v1` (uma chamada real, com o resultado registrado) — execução `1974`, workflow-escrutínio `ZlyEJOIWY0gs5bSY` (arquivado depois)
+- [x] `crivo-agente-principal` ativo, com o modelo do veredito de T9 — `gpt-5.4-nano-2026-03-17`, versão `8f9f8418-…`
+- [x] `tenant_config` com a linha do `triangulo` presente e apontando para o `calendarId` certo — exercitado de verdade em T7/T9 (eventos reais criados em `tostamatias@gmail.com`), não só lido
+- [x] Número de teste e destinatário confirmados na lista permitida da Meta — `553499532444`, já usado com sucesso na rodada final de T9
+- [x] **Congelamento declarado**: nenhum `npx vitest run` até T16 terminar, com o motivo escrito — §13.5
+- [x] Os três alvos do checklist confirmados limpos antes do cenário 1 (estado inicial) — confirmado pelo usuário; a prova real é o primeiro turno de T13 (lead novo, não `0b6573b9-…`)
 
 **Tests**: none
 **Gate**: evidência

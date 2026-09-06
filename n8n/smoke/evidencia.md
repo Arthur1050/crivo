@@ -1211,3 +1211,76 @@ Nenhuma linha desta seção entra em R1 ou R2. São sinais para a prova conversa
 - Orçamento da `bateria.md` §4: **2 rodadas válidas gastas, 0 disponíveis.** A bateria está encerrada
   com veredito.
 - **Bloqueio ativo para a Fase 5**: os alvos 1-4 da §12.7, todos sobre o `waId` real `553499532444`.
+
+---
+
+## T12 — Pré-condições da Fase 5 confirmadas (2026-09-06)
+
+> **RESULTADO: as cinco pré-condições estão satisfeitas. Congelamento de `vitest` declarado a partir
+> deste commit.** A Fase 5 pode começar pelo cenário 1.
+
+### 13.1 Chave de serviço — confirmada por execução real contra `/api/v1`
+
+Workflow-escrutínio temporário (`Manual Trigger` → `HTTP: GET /settings`, mesma configuração do nó
+publicado: credencial `httpHeaderAuth` "Crivo - chave de servico" `YhGcdfGtdEBBU9YP`, header
+`X-Crivo-Tenant: triangulo`), criado via `create_workflow_from_code` (`ZlyEJOIWY0gs5bSY`), seguindo o
+padrão do `n8n/README.md` §12.2.
+
+- **Achado de instrumento, não do produto**: `create_workflow_from_code` não anexou a credencial
+  apesar de `newCredential(...)` no código (`autoAssignedCredentials: []`, e desta vez a lacuna era
+  real — a execução `1973` falhou com `Credentials not found`, diferente do caso do T5 onde a mesma
+  mensagem de instrumento acompanhava uma credencial que funcionava). Corrigido com
+  `update_workflow` / `setNodeCredential` (`credentialId: YhGcdfGtdEBBU9YP`).
+- **Execução `1974`, status `success`**: corpo de resposta
+  `{"realEstateName":"Triângulo Imóveis","agentName":"Lucas","supportedModality":"ambos",
+  "agentPresentationMessage":"Oi! Sou o Lucas, da Triângulo Imóveis...",
+  "agentVoiceTone":"Tom direto e descontraído... Usa \"boa\" e \"show\"...",
+  "meetingDays":null,"meetingHoursStart":null,"meetingHoursEnd":null}`. Confirma autenticação e
+  resolução do tenant certo, e corrobora o achado de `agentVoiceTone` já registrado em `evidencia.md`
+  §9.7/§12.8 (conflito com a barreira `abertura-proibida`).
+- `meetingDays`/`meetingHoursStart`/`meetingHoursEnd` nulos confirma que o tenant `triangulo` usa o
+  fallback de horário comercial (`n8n/src/business-hours.mjs`, seg-sex 09:00-18:00) — relevante para
+  o cenário 1 da Fase 5.
+- Workflow-escrutínio arquivado (`archive_workflow`) logo após a execução — nada ficou pendurado na
+  instância.
+
+### 13.2 `crivo-agente-principal` — ativo, com o modelo do veredito de T9
+
+`get_workflow_details` (id `0B1nqjODu7xuYYKF`): `active: true`, `versionId == activeVersionId ==
+"8f9f8418-35b0-4d63-b8a0-e522f6f4e679"` — a mesma versão publicada em T5, inalterada desde então.
+Nó de modelo: `lmChatOpenAi`, `value` e `cachedResultName` `"gpt-5.4-nano-2026-03-17"`.
+`settings.errorWorkflow = "73Yx70RMJrpLiYQn"` (`crivo-agente-erros`), como antes.
+
+### 13.3 `tenant_config` — linha do `triangulo` presente, `calendarId` já exercitado
+
+A tabela (`xRHckWWd6fxGeNta`) tem 3 colunas (`phoneNumberId`, `tenantSlug`, `calendarId`) e nenhuma
+tool MCP lê uma linha específica por id — o mesmo limite já registrado em §8.3/§9.1. Em vez de repetir
+a armadilha do metadado de tabela, esta pré-condição já tem prova mais forte que uma leitura: as duas
+rodadas da bateria (T7/T9) **usaram** essa linha de verdade em toda chamada HTTP (`X-Crivo-Tenant:
+triangulo` resolvendo, `agendar_reuniao` criando eventos reais em `tostamatias@gmail.com` — execuções
+`1923` e a rodada final de T9). O `calendarId` certo não é uma leitura pendente; já foi exercitado
+duas vezes com sucesso.
+
+### 13.4 Número de teste e destinatário — homologados
+
+`553499532444` é o número de teste homologado desde o lote-6/6c (não o `waId` fictício da bateria,
+que a Meta recusa por não estar na lista permitida — `evidencia.md` §11.3). A rodada final de T9 já
+enviou e recebeu mensagens reais nesse número (`responder_lead` `ok:true` nos 5 turnos, execuções
+`1952`-`1970`) — a homologação está confirmada pela própria bateria, não precisa de checagem nova.
+
+### 13.5 Congelamento de `vitest` — declarado
+
+**A partir deste commit e até o commit de T16, nenhum `npx vitest run` roda.** `src/db/__tests__/seed.test.ts`
+chama `runSeed()` em `beforeAll` e rotaciona a chave de serviço a cada execução — a mesma chave
+confirmada funcionando na §13.1. Uma rodada de teste no meio de um cenário invalidaria essa chave e
+mataria a conversa com `401`, por motivo alheio ao modelo (incidente real do lote-6 T11,
+`n8n/README.md` §4). Nenhuma task de T12 a T16 tem gate `full`/`quick`/`build` — todas são
+`evidência`, por desenho.
+
+### 13.6 Estado inicial dos três alvos — confirmado limpo pelo usuário
+
+O usuário confirmou a limpeza dos quatro alvos nomeados em §12.7 (lead `0b6573b9-…`, linha `id 20` de
+`conversa_estado`, sessão `"triangulo:553499532444"` em `n8n_chat_histories`, e o evento residual no
+Google Calendar de 2026-09-07 10:00) antes desta task. Por construção, o primeiro turno do cenário 1
+(T13) **é** a confirmação por execução real — o mesmo padrão exigido em §8.3/§9.1/§12.2: o `POST
+/leads` do turno 1 precisa criar um lead **novo**, não reidratar `0b6573b9-…`.
