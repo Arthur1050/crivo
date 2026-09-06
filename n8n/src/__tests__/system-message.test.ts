@@ -244,6 +244,17 @@ describe("buildSystemMessage — reunião já confirmada (achado real, Phase 4 l
     expect(message).toMatch(/pedir EXPLICITAMENTE para remarcar/i);
   });
 
+  it("com meetingAt preenchido: proíbe pergunta nova de qualificação (QLF-01 AC4/AC5)", () => {
+    const message = buildSystemMessage({ ...AGENDADO, meetingAt: "2026-08-17T18:00:00Z" });
+    expect(message).toMatch(/NÃO faça nenhuma pergunta nova de qualificação/i);
+    expect(message).toMatch(/só são registrados quando o lead fala por conta própria, nunca perguntados/i);
+  });
+
+  it("com meetingAt preenchido: manda encerrar em uma linha, sem puxar assunto novo", () => {
+    const message = buildSystemMessage({ ...AGENDADO, meetingAt: "2026-08-17T18:00:00Z" });
+    expect(message).toMatch(/responda em UMA linha e encerre, sem puxar assunto novo/i);
+  });
+
   it("sem meetingAt: mantém a instrução original de propor e agendar", () => {
     const message = buildSystemMessage({ ...AGENDADO, meetingAt: null });
     expect(message).toMatch(/proponha ao lead um horário de reunião/i);
@@ -316,9 +327,21 @@ describe("buildSystemMessage — agendar só após aceite (achado real, Fase 5 l
     expect(message).toMatch(/sempre para o horário que ele aceitou/i);
   });
 
-  it("diz o que fazer quando o lead recusa: propor de novo e esperar o aceite", () => {
+  it("diz o que fazer quando o lead recusa sem propor horário: propor de novo e esperar", () => {
     const message = buildSystemMessage(AGENDANDO);
-    expect(message).toMatch(/recusar ou pedir outro, proponha de novo e espere o aceite/i);
+    expect(message).toMatch(/recusar sem dizer outro horário, proponha um novo e espere o aceite/i);
+  });
+
+  it("proíbe perguntar e chamar a tool no mesmo turno — é um ou outro", () => {
+    const message = buildSystemMessage(AGENDANDO);
+    expect(message).toMatch(/ou você PERGUNTA se um horário serve, ou você CHAMA a tool — nunca as duas coisas/i);
+    expect(message).toMatch(/se perguntou, encerre o turno e espere a resposta/i);
+  });
+
+  it("trata horário concreto dito pelo lead como aceite, sem nova pergunta", () => {
+    const message = buildSystemMessage(AGENDANDO);
+    expect(message).toMatch(/o próprio lead disser um horário concreto, isso JÁ é o aceite/i);
+    expect(message).toMatch(/chame a tool para esse horário e confirme, sem perguntar de novo/i);
   });
 
   it("registra o motivo da regra — agenda do corretor ocupada sem confirmação", () => {
