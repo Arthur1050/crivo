@@ -986,7 +986,14 @@ const buildAgentSystemMessage = node({
         // `Code: gate` carrega a resposta do POST /leads, que já traz
         // `meetingAt` do turno anterior.
         "const meetingAt = $('Code: gate').first().json.meetingAt || null;\n" +
-        "const systemMessage = buildSystemMessage({ settings, phase, perguntados: updatedPerguntados, businessHours, now, meetingAt });\n" +
+        // Abertura de sessão (achado real da Fase 5 do lote-10): `perguntados`
+        // vazio ANTES da atualização deste turno é exatamente "nenhum campo
+        // perguntado ainda nesta sessão" — vale tanto para o primeiro contato
+        // do lead quanto para a volta depois de a sessão expirar (12h), que é
+        // quando `wasExpired` já zera a lista. É o sinal que faltava para o
+        // agente cumprimentar e dizer quem é antes de perguntar.
+        "const firstTurn = perguntados.length === 0;\n" +
+        "const systemMessage = buildSystemMessage({ settings, phase, perguntados: updatedPerguntados, businessHours, now, meetingAt, firstTurn });\n" +
         "const buffer = $('Code: contexto do lead').first().json.bufferArray || [];\n" +
         "const userMessage = buffer.map((m) => m.text).join('\\n');\n" +
         "return [{ json: { systemMessage, userMessage, phase, perguntadosJson: JSON.stringify(updatedPerguntados) } }];\n",

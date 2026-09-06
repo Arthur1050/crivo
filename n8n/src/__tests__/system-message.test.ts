@@ -294,6 +294,95 @@ describe("buildSystemMessage — horário comercial", () => {
   });
 });
 
+describe("buildSystemMessage — abertura de sessão (achado real, Fase 5 lote-10)", () => {
+  const PRESENTATION = "Oi! Sou o Lucas, da Triângulo Imóveis. Me conta qual imóvel você procura.";
+
+  it("primeiro turno: manda cumprimentar e dizer quem é antes de qualquer pergunta", () => {
+    const message = buildSystemMessage({
+      settings: BASE_SETTINGS,
+      phase: "qualificando",
+      perguntados: [],
+      firstTurn: true,
+    });
+    expect(message).toMatch(/antes de qualquer pergunta, cumprimente o lead e diga quem você é/i);
+    expect(message).toMatch(/nome da imobiliária/i);
+  });
+
+  it("turno seguinte: NÃO manda cumprimentar nem se apresentar", () => {
+    const message = buildSystemMessage({
+      settings: BASE_SETTINGS,
+      phase: "qualificando",
+      perguntados: ["modality"],
+      firstTurn: false,
+    });
+    expect(message).not.toMatch(/cumprimente o lead/i);
+  });
+
+  it("sem firstTurn informado: degrada para o comportamento anterior (não cumprimenta)", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando", perguntados: [] });
+    expect(message).not.toMatch(/cumprimente o lead/i);
+  });
+
+  it("primeiro turno: a mensagem de apresentação do tenant vira BASE da apresentação, não texto proibido", () => {
+    const message = buildSystemMessage({
+      settings: { ...BASE_SETTINGS, agentPresentationMessage: PRESENTATION },
+      phase: "qualificando",
+      perguntados: [],
+      firstTurn: true,
+    });
+    expect(message).toContain(PRESENTATION);
+    expect(message).toMatch(/base da sua apresentação neste primeiro turno/i);
+    expect(message).not.toMatch(/NUNCA copie este texto literalmente/i);
+  });
+
+  it("turno seguinte: a mensagem de apresentação continua sendo contexto que não se copia", () => {
+    const message = buildSystemMessage({
+      settings: { ...BASE_SETTINGS, agentPresentationMessage: PRESENTATION },
+      phase: "qualificando",
+      perguntados: ["modality"],
+      firstTurn: false,
+    });
+    expect(message).toContain(PRESENTATION);
+    expect(message).toMatch(/NUNCA copie este texto literalmente/i);
+  });
+
+  it("primeiro turno sem apresentação configurada: ainda manda cumprimentar e se identificar", () => {
+    const message = buildSystemMessage({
+      settings: BASE_SETTINGS,
+      phase: "qualificando",
+      perguntados: [],
+      firstTurn: true,
+    });
+    expect(message).not.toContain("Contexto institucional");
+    expect(message).toMatch(/cumprimente o lead e diga quem você é/i);
+  });
+
+  it("primeiro turno: a saudação não vira desculpa para se anunciar como IA (AD-016 intacta)", () => {
+    const message = buildSystemMessage({
+      settings: BASE_SETTINGS,
+      phase: "qualificando",
+      perguntados: [],
+      firstTurn: true,
+    });
+    expect(message).toContain(
+      'você NUNCA se anuncia como "assistente virtual", "agente virtual", "robô", "IA" ou "automatizado" por iniciativa própria'
+    );
+  });
+
+  it("primeiro turno: continua pedindo UM campo só, sem listar os 3 obrigatórios", () => {
+    const message = buildSystemMessage({
+      settings: BASE_SETTINGS,
+      phase: "qualificando",
+      perguntados: [],
+      firstTurn: true,
+    });
+    const mentionedRequiredLabels = (REQUIRED_FIELDS as readonly FieldName[]).filter((field) =>
+      message.includes(FIELD_LABELS[field])
+    );
+    expect(mentionedRequiredLabels).toHaveLength(1);
+  });
+});
+
 describe("buildSystemMessage — defensivo", () => {
   it("funciona sem settings/perguntados/businessHours", () => {
     const message = buildSystemMessage({ phase: "qualificando" });
