@@ -114,6 +114,16 @@ export function montarRecusaAgendamento(reason) {
  * invertida: sem `htmlLink`, a reunião existe no CRM e não no Calendar, e o
  * `aviso` reporta essa divergência ao agente (mesmo mecanismo que antes
  * cobria a direção oposta).
+ *
+ * ACHADO REAL (Fase 5 do lote-10, 2026-09-06): `meetLink` vinha do
+ * `htmlLink`, que é a PÁGINA do evento no Google Calendar, não o link de
+ * entrada na chamada. O lead não tem e-mail no CRM e por isso nunca recebe
+ * convite — o WhatsApp é o único caminho até ele, e mandar a página do
+ * calendário o levaria a uma tela de login, não à reunião. O link de entrada
+ * é o `hangoutLink`, que a API devolve porque o evento é criado com
+ * `conferenceSolution: "hangoutsMeet"`. Os dois campos passam a ter papéis
+ * separados: `htmlLink` continua sendo a PROVA de que o evento existe
+ * (`eventoCriado`), e `hangoutLink` é o link que vai para o lead.
  * @param {{meetingAt?: unknown, evento?: unknown, corretor?: unknown}} [entrada]
  * @returns {{ok: true, meetingAt: string | null, meetLink: string | null, corretor: Corretor | null, crmAtualizado: true, eventoCriado: boolean, aviso: string | null}}
  */
@@ -121,11 +131,12 @@ export function montarRespostaAgendamento({ meetingAt, evento, corretor } = {}) 
   const eventoObj = evento !== null && typeof evento === "object" ? evento : {};
   const link = typeof eventoObj.htmlLink === "string" ? eventoObj.htmlLink.trim() : "";
   const eventoCriado = link !== "";
+  const meetLink = typeof eventoObj.hangoutLink === "string" ? eventoObj.hangoutLink.trim() : "";
 
   return {
     ok: true,
     meetingAt: typeof meetingAt === "string" && meetingAt !== "" ? meetingAt : null,
-    meetLink: eventoCriado ? link : null,
+    meetLink: meetLink !== "" ? meetLink : null,
     corretor: normalizarCorretor(corretor),
     crmAtualizado: true,
     eventoCriado,

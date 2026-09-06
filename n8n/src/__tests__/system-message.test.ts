@@ -361,6 +361,60 @@ describe("buildSystemMessage — agendar só após aceite (achado real, Fase 5 l
   });
 });
 
+describe("buildSystemMessage — canal da reunião (achado real, Fase 5 lote-10)", () => {
+  it("declara que toda reunião é online pelo Google Meet", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).toMatch(/toda reunião marcada é ONLINE, pelo Google Meet/i);
+  });
+
+  it("proíbe dizer que a reunião acontece pelo WhatsApp ou outro canal", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).toMatch(
+      /NUNCA diga que a reunião acontece pelo WhatsApp, por ligação, presencialmente ou por qualquer outro canal/i
+    );
+  });
+
+  it("manda enviar o link devolvido pela tool na confirmação, e nunca inventar um", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).toMatch(/mande esse link para o lead na mesma mensagem da confirmação/i);
+    expect(message).toMatch(/nunca invente um link/i);
+  });
+
+  it("oferece a alternativa de ligação comum durante o agendamento", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).toMatch(/se o lead preferir, a conversa pode ser por ligação comum/i);
+  });
+
+  it("explica o Meet em palavras simples, porque o lead pode nunca ter usado", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).toMatch(/o lead pode nunca ter usado o Meet/i);
+  });
+});
+
+describe("buildSystemMessage — falha de tool em linguagem do lead (achado real, Fase 5 lote-10)", () => {
+  it("proíbe repetir o termo técnico ou o código do erro", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).toMatch(/NUNCA repita o termo técnico nem o código do erro/i);
+  });
+
+  it("proíbe nominalmente os jargões que vazaram na conversa real", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    for (const jargao of ["agenda", "conflito", "sistema", "CRM", "API", "erro ao atualizar"]) {
+      expect(message).toContain(`\"${jargao}\"`);
+    }
+  });
+
+  it("dá a tradução exata de horário indisponível", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).toMatch(/Horário indisponível vira \"esse horário já está reservado\"/i);
+  });
+
+  it("dá a tradução exata de falha técnica, sem detalhe", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).toMatch(/qualquer outra falha técnica vira \"o sistema está fora do ar agora\", sem detalhe nenhum/i);
+  });
+});
+
 describe("buildSystemMessage — abertura de sessão (achado real, Fase 5 lote-10)", () => {
   const PRESENTATION = "Oi! Sou o Lucas, da Triângulo Imóveis. Me conta qual imóvel você procura.";
 

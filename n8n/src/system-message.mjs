@@ -65,6 +65,15 @@ const CONSULTIVE_PERSONA_INSTRUCTION = [
 const FIRST_TURN_INSTRUCTION =
   "Primeira mensagem desta conversa: antes de qualquer pergunta, cumprimente o lead e diga quem você é — seu primeiro nome e o nome da imobiliária. Uma linha curta, natural, com suas próprias palavras. Só depois disso reaja ao que o lead falou e faça a pergunta deste turno.";
 
+// ACHADO REAL (Fase 5 do lote-10, 2026-09-06, conversa real): ao confirmar,
+// o agente disse "a conversa acontece aqui no WhatsApp no horário combinado".
+// É falso: `agendar_reuniao` cria um evento com Google Meet
+// (`conferenceSolution: "hangoutsMeet"`), e é lá que a reunião acontece.
+// Como o lead não tem e-mail no CRM, ele nunca recebe convite — a conversa do
+// WhatsApp é o único caminho até o link, então o agente precisa mandá-lo.
+const MEETING_CHANNEL_INSTRUCTION =
+  "Canal da reunião: toda reunião marcada é ONLINE, pelo Google Meet. Ao propor e ao confirmar, diga isso com palavras simples (o lead pode nunca ter usado o Meet) — por exemplo, que é uma chamada de vídeo pelo link que você manda aqui. NUNCA diga que a reunião acontece pelo WhatsApp, por ligação, presencialmente ou por qualquer outro canal. Quando a tool devolver o link da reunião, mande esse link para o lead na mesma mensagem da confirmação; se ela não devolver link nenhum, confirme a reunião e diga que o link chega em seguida — nunca invente um link. Ao propor o horário, deixe claro que, se o lead preferir, a conversa pode ser por ligação comum em vez de vídeo: se ele pedir isso, confirme que o corretor vai ligar no horário combinado.";
+
 // Fronteira de capacidade (spec.md — VOZ-02): o agente nunca teve a
 // capacidade de buscar imóvel, mandar foto ou informar preço — reconhece
 // abertamente e usa como ponte para o agendamento, sem escalar por isso
@@ -91,7 +100,7 @@ const TOOLS_CATALOG_INSTRUCTION = [
 // confirmou ao lead mesmo com a tool devolvendo falha. Isso não é
 // específico de um modelo — qualquer LLM erra data relativa sem âncora.
 const TOOL_FAILURE_INSTRUCTION =
-  "Sempre que uma tool devolver que algo falhou ou está indisponível (ex.: horário já ocupado, erro ao atualizar o sistema), NUNCA confirme ao lead como se tivesse dado certo — siga exatamente a orientação que a tool devolveu (proponha outro horário, avise do problema, o que for indicado).";
+  "Sempre que uma tool devolver que algo falhou ou está indisponível (ex.: horário já ocupado, erro ao atualizar o sistema), NUNCA confirme ao lead como se tivesse dado certo — siga exatamente a orientação que a tool devolveu (proponha outro horário, avise do problema, o que for indicado). Traduza a falha para a linguagem do lead: NUNCA repita o termo técnico nem o código do erro, e nunca fale de \"agenda\", \"conflito\", \"sistema\", \"CRM\", \"API\" ou \"erro ao atualizar\". Horário indisponível vira \"esse horário já está reservado\"; qualquer outra falha técnica vira \"o sistema está fora do ar agora\", sem detalhe nenhum. Uma frase curta, e siga oferecendo o próximo passo.";
 
 // Âncora de data (spec.md — achado real da Phase 4 do lote-7, ver nota em
 // TOOL_FAILURE_INSTRUCTION acima). `now` chega como ISO-8601 pronto — quem
@@ -202,7 +211,8 @@ function buildPhaseInstruction(phase, perguntados, meetingAt) {
  * Monta o system message do turno (design.md — Components:
  * `buildSystemMessage`). Ordem das seções: identidade → tom do tenant
  * (delimitado + reafirmação) → persona consultiva → abertura de sessão
- * (só no primeiro turno) → fronteira de capacidade → transparência (AD-016)
+ * (só no primeiro turno) → fronteira de capacidade → canal da reunião →
+ * transparência (AD-016)
  * → âncora de data → instrução por fase → horário comercial → catálogo de
  * tools → instrução de falha de tool.
  *
@@ -233,6 +243,7 @@ export function buildSystemMessage({ settings, phase, perguntados, businessHours
     CONSULTIVE_PERSONA_INSTRUCTION,
     firstTurn ? FIRST_TURN_INSTRUCTION : null,
     CAPABILITY_BOUNDARY_INSTRUCTION,
+    MEETING_CHANNEL_INSTRUCTION,
     AI_TRANSPARENCY_INSTRUCTION,
     buildTodayAnchor(now),
     buildPhaseInstruction(phase, perguntados, meetingAt),

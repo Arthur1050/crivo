@@ -135,18 +135,46 @@ describe("montarRecusaAgendamento (ATRIB-02 AC5)", () => {
 });
 
 describe("montarRespostaAgendamento (divergência CRM x Calendar nunca é silenciosa)", () => {
-  it("evento criado devolve link, corretor e nenhum aviso", () => {
+  it("evento criado devolve o link de ENTRADA do Meet, corretor e nenhum aviso", () => {
+    const resposta = montarRespostaAgendamento({
+      meetingAt: "2026-08-17T13:00:00.000Z",
+      evento: {
+        htmlLink: "https://calendar.google.com/event?eid=evt123",
+        hangoutLink: "https://meet.google.com/abc-defg-hij",
+      },
+      corretor: CORRETORA,
+    });
+
+    expect(resposta.ok).toBe(true);
+    expect(resposta.eventoCriado).toBe(true);
+    expect(resposta.meetLink).toBe("https://meet.google.com/abc-defg-hij");
+    expect(resposta.meetingAt).toBe("2026-08-17T13:00:00.000Z");
+    expect(resposta.corretor).toEqual(CORRETORA);
+    expect(resposta.aviso).toBeNull();
+  });
+
+  it("nunca devolve a pagina do evento como meetLink — htmlLink so prova que o evento existe", () => {
+    const resposta = montarRespostaAgendamento({
+      meetingAt: "2026-08-17T13:00:00.000Z",
+      evento: {
+        htmlLink: "https://calendar.google.com/event?eid=evt123",
+        hangoutLink: "https://meet.google.com/abc-defg-hij",
+      },
+      corretor: CORRETORA,
+    });
+
+    expect(resposta.meetLink).not.toContain("calendar.google.com");
+  });
+
+  it("evento criado sem conferencia: confirma a reuniao, mas sem link e sem inventar um", () => {
     const resposta = montarRespostaAgendamento({
       meetingAt: "2026-08-17T13:00:00.000Z",
       evento: { htmlLink: "https://calendar.google.com/event?eid=evt123" },
       corretor: CORRETORA,
     });
 
-    expect(resposta.ok).toBe(true);
     expect(resposta.eventoCriado).toBe(true);
-    expect(resposta.meetLink).toBe("https://calendar.google.com/event?eid=evt123");
-    expect(resposta.meetingAt).toBe("2026-08-17T13:00:00.000Z");
-    expect(resposta.corretor).toEqual(CORRETORA);
+    expect(resposta.meetLink).toBeNull();
     expect(resposta.aviso).toBeNull();
   });
 

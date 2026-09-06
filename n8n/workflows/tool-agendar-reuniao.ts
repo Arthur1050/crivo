@@ -333,7 +333,7 @@ const createEvent = node({
     },
     credentials: { googleCalendarOAuth2Api: newCredential("Google Calendar account") },
   },
-  output: [{ id: "evt123", htmlLink: "https://calendar.google.com/event?eid=evt123", start: { dateTime: "2026-08-17T13:00:00.000Z" } }],
+  output: [{ id: "evt123", htmlLink: "https://calendar.google.com/event?eid=evt123", hangoutLink: "https://meet.google.com/abc-defg-hij", start: { dateTime: "2026-08-17T13:00:00.000Z" } }],
 });
 
 const insertAgendaEnvio = node({
@@ -355,7 +355,10 @@ const insertAgendaEnvio = node({
           meetingAt: expr("{{ $('Code: checar horario comercial').first().json.meetingAtProposto }}"),
           // `|| ''` porque a criação do evento agora pode falhar sem derrubar
           // o agendamento já gravado no CRM (ordem invertida — T29).
-          meetLink: expr("{{ $('Google Calendar: criar evento (Meet)').first().json.htmlLink || '' }}"),
+          // `hangoutLink` (link de ENTRADA na chamada), nunca `htmlLink` (a
+          // página do evento no Calendar): o lembrete vai para o lead, que não
+          // tem e-mail no CRM e portanto nunca recebeu convite — lote-10.
+          meetLink: expr("{{ $('Google Calendar: criar evento (Meet)').first().json.hangoutLink || '' }}"),
         },
         schema: [
           { id: "leadId", displayName: "leadId", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: true },
@@ -392,7 +395,7 @@ const scheduledResponse = node({
     {
       ok: true,
       meetingAt: "2026-08-17T13:00:00.000Z",
-      meetLink: "https://calendar.google.com/event?eid=evt123",
+      meetLink: "https://meet.google.com/abc-defg-hij",
       corretor: { name: "Corretora Manhã", email: "corretora.manha@imobiliaria-a.com.br" },
       crmAtualizado: true,
       eventoCriado: true,
