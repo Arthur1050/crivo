@@ -162,6 +162,16 @@ function formatMeetingLabel(meetingAt) {
  * se falasse com outra pessoa. Não é alucinação do modelo: o prompt mandava
  * agendar de novo. Com `meetingAt` preenchido, a instrução vira o oposto.
  *
+ * ACHADO REAL (Fase 5 do lote-10, 2026-09-06, conversa real): a instrução
+ * sem `meetingAt` dizia "proponha um horário [...] e use a tool
+ * agendar_reuniao para confirmar" — propor e gravar no MESMO turno. O agente
+ * obedeceu ao pé da letra: gravou 07/09 10:30 na agenda da corretora e só
+ * então perguntou "esse horário tá ok pra você?". O lead disse que preferia
+ * outro dia, e aí o lead já estava em `qualificado_agendado` — estado do
+ * qual `TRANSITIONS` (`src/server/integration/leads.ts:98`) não deixa sair,
+ * então toda remarcação passou a falhar. Os dois passos agora são separados
+ * explicitamente: propor, esperar o aceite, só então chamar a tool.
+ *
  * @param {"qualificando" | "agendando"} phase
  * @param {string[] | null | undefined} perguntados
  * @param {string | null | undefined} meetingAt - ISO-8601 da reunião já confirmada
@@ -173,7 +183,7 @@ function buildPhaseInstruction(phase, perguntados, meetingAt) {
     if (meetingLabel) {
       return `Fase atual: REUNIÃO JÁ CONFIRMADA para ${meetingLabel} (horário de Brasília). NÃO proponha nenhum horário e NÃO chame a tool agendar_reuniao — a reunião já está marcada e chamar de novo derrubaria o agendamento que já existe. Converse normalmente: se o lead agradecer ou se despedir, responda com naturalidade e encerre. Só use agendar_reuniao se o lead pedir EXPLICITAMENTE para remarcar, e nesse caso para o NOVO horário que ele pedir.`;
     }
-    return "Fase atual: AGENDAMENTO. Todos os campos obrigatórios já foram perguntados. NÃO pergunte mais nada sobre qualificação — proponha um horário de reunião com o corretor, dentro do horário comercial informado, e use a tool agendar_reuniao para confirmar.";
+    return "Fase atual: AGENDAMENTO. Todos os campos obrigatórios já foram perguntados. NÃO pergunte mais nada sobre qualificação — proponha ao lead um horário de reunião com o corretor, dentro do horário comercial informado. NUNCA chame a tool agendar_reuniao no mesmo turno em que você propõe o horário: só chame depois que o lead ACEITAR explicitamente um horário, e sempre para o horário que ele aceitou. Se ele recusar ou pedir outro, proponha de novo e espere o aceite. Agendar antes do aceite ocupa a agenda do corretor com um horário que o lead não confirmou.";
   }
 
   const field = nextFieldToAsk(perguntados);

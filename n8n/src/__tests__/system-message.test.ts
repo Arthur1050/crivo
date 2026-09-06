@@ -91,13 +91,13 @@ describe("buildSystemMessage — instrução por fase (QLF-01 AC7/AC8, QLF-03)",
     }
   });
 
-  it("fase agendando: instrui a propor horário de reunião", () => {
+  it("fase agendando: instrui a propor horário de reunião ao lead", () => {
     const message = buildSystemMessage({
       settings: BASE_SETTINGS,
       phase: "agendando",
       perguntados: ["modality", "region", "propertyType"],
     });
-    expect(message).toMatch(/proponha um horário de reunião/i);
+    expect(message).toMatch(/proponha ao lead um horário de reunião/i);
   });
 
   it("fase qualificando (nada perguntado ainda): menciona só o rótulo de 'modality', não os outros 2 obrigatórios", () => {
@@ -228,7 +228,7 @@ describe("buildSystemMessage — reunião já confirmada (achado real, Phase 4 l
 
   it("com meetingAt preenchido: NÃO instrui a propor horário", () => {
     const message = buildSystemMessage({ ...AGENDADO, meetingAt: "2026-08-17T18:00:00Z" });
-    expect(message).not.toMatch(/proponha um horário de reunião/i);
+    expect(message).not.toMatch(/proponha ao lead um horário de reunião/i);
   });
 
   it("com meetingAt preenchido: informa o horário já confirmado ao agente", () => {
@@ -246,13 +246,13 @@ describe("buildSystemMessage — reunião já confirmada (achado real, Phase 4 l
 
   it("sem meetingAt: mantém a instrução original de propor e agendar", () => {
     const message = buildSystemMessage({ ...AGENDADO, meetingAt: null });
-    expect(message).toMatch(/proponha um horário de reunião/i);
+    expect(message).toMatch(/proponha ao lead um horário de reunião/i);
     expect(message).not.toContain("REUNIÃO JÁ CONFIRMADA");
   });
 
   it("com meetingAt inválido: degrada para a instrução original, sem quebrar", () => {
     const message = buildSystemMessage({ ...AGENDADO, meetingAt: "not-a-date" });
-    expect(message).toMatch(/proponha um horário de reunião/i);
+    expect(message).toMatch(/proponha ao lead um horário de reunião/i);
     expect(message).not.toContain("REUNIÃO JÁ CONFIRMADA");
   });
 
@@ -291,6 +291,50 @@ describe("buildSystemMessage — horário comercial", () => {
   it("omite a seção de horário comercial quando não informado", () => {
     const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando", perguntados: [] });
     expect(message).not.toContain("Horário comercial");
+  });
+});
+
+describe("buildSystemMessage — agendar só após aceite (achado real, Fase 5 lote-10)", () => {
+  const AGENDANDO = {
+    settings: BASE_SETTINGS,
+    phase: "agendando" as const,
+    perguntados: ["modality", "region", "propertyType"],
+  };
+
+  it("proíbe chamar agendar_reuniao no mesmo turno em que propõe o horário", () => {
+    const message = buildSystemMessage(AGENDANDO);
+    expect(message).toMatch(/NUNCA chame a tool agendar_reuniao no mesmo turno em que você propõe/i);
+  });
+
+  it("condiciona a chamada da tool ao aceite explícito do lead", () => {
+    const message = buildSystemMessage(AGENDANDO);
+    expect(message).toMatch(/s[óo] chame depois que o lead ACEITAR explicitamente um horário/i);
+  });
+
+  it("manda agendar exatamente o horário que o lead aceitou, não outro", () => {
+    const message = buildSystemMessage(AGENDANDO);
+    expect(message).toMatch(/sempre para o horário que ele aceitou/i);
+  });
+
+  it("diz o que fazer quando o lead recusa: propor de novo e esperar o aceite", () => {
+    const message = buildSystemMessage(AGENDANDO);
+    expect(message).toMatch(/recusar ou pedir outro, proponha de novo e espere o aceite/i);
+  });
+
+  it("registra o motivo da regra — agenda do corretor ocupada sem confirmação", () => {
+    const message = buildSystemMessage(AGENDANDO);
+    expect(message).toMatch(/ocupa a agenda do corretor com um horário que o lead não confirmou/i);
+  });
+
+  it("com reunião já confirmada: a regra de aceite não aparece (a instrução é outra)", () => {
+    const message = buildSystemMessage({ ...AGENDANDO, meetingAt: "2026-08-17T18:00:00Z" });
+    expect(message).not.toMatch(/NUNCA chame a tool agendar_reuniao no mesmo turno/i);
+    expect(message).toContain("REUNIÃO JÁ CONFIRMADA");
+  });
+
+  it("na fase de qualificação: a regra de aceite não aparece", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando", perguntados: [] });
+    expect(message).not.toMatch(/NUNCA chame a tool agendar_reuniao no mesmo turno/i);
   });
 });
 
