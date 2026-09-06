@@ -1284,3 +1284,95 @@ O usuário confirmou a limpeza dos quatro alvos nomeados em §12.7 (lead `0b6573
 Google Calendar de 2026-09-07 10:00) antes desta task. Por construção, o primeiro turno do cenário 1
 (T13) **é** a confirmação por execução real — o mesmo padrão exigido em §8.3/§9.1/§12.2: o `POST
 /leads` do turno 1 precisa criar um lead **novo**, não reidratar `0b6573b9-…`.
+
+---
+
+## T13 — Cenário 1 (qualificar → agendar): **APROVADO** (2026-09-06)
+
+> **RESULTADO: o desfecho exigido por SMK-02 / AGT-04 foi atingido por conversa real.** Lead
+> `d0aee73c-72e2-468e-bb6b-920e3b88bf17`, `status = qualificado_agendado`, reunião em
+> 2026-09-08 13:00 (BRT), corretor André Luiz Martins atribuído, evento no Google Calendar com link
+> de entrada do Meet. Conduzido pelo usuário no WhatsApp do próprio aparelho.
+
+### 14.1 Quatro rodadas até a rodada limpa — e por que as três primeiras não contam
+
+O cenário rodou quatro vezes. As três primeiras não são reprovação do modelo; cada uma parou por um
+motivo de ambiente ou por um defeito que a própria conversa revelou, e todas produziram correção.
+
+| # | Lead | O que aconteceu | Desfecho |
+| --- | --- | --- | --- |
+| 1 | `0b6573b9-…` | Estado sujo: a limpeza não pegou. O `POST /leads` reidratou o lead da bateria (`status qualificado_agendado`, `meetingAt` de ontem) e a memória da bateria foi carregada. Toda remarcação bateu em `409 transicao-invalida` | **Não realizado** (§6 do roteiro: causa alheia ao modelo) |
+| 2 | `4e6db4df-…` | Estado limpo. Desfecho atingido, mas o agente **agendou antes de o lead aceitar** e depois não conseguiu remarcar | Desfecho OK, dois defeitos achados |
+| 3 | `6111d33f-…` | Estado limpo. Desfecho atingido. Achados: agente disse que a reunião seria "aqui no WhatsApp", e traduziu `horario-ocupado` como "deu um conflito na agenda" | Desfecho OK, dois defeitos achados |
+| 4 | `d0aee73c-…` | Estado limpo, todas as correções publicadas | **APROVADO** |
+
+### 14.2 Execuções da rodada aprovada
+
+| Turno | Execução | O que prova |
+| --- | --- | --- |
+| 1 | `2123` | Lead **novo** (`firstContactAt 2026-09-06T21:08:01`, campos `null`) — limpeza confirmada por execução real, não por metadado (§8.3). Agente cumprimenta e se identifica: "Oi! Eu sou o Lucas, da Triângulo Imóveis" |
+| 2 | `2128` | Registra `region`; pergunta um campo só |
+| 3 | `2135` | Fase `agendando`. **Propõe horário e encerra o turno** — `meetingAt` segue `null`, nenhuma chamada de `agendar_reuniao`. Já menciona Google Meet e oferece ligação como alternativa |
+| 4 | `2142` | Lead diz "terça as 13h" (horário concreto = aceite). Agente **chama a tool direto**, sem repetir a pergunta, e confirma com o link |
+| — | `2143` (sub-workflow) | `{ok:true, meetingAt:"2026-09-08T13:00:00-03:00", meetLink:"https://meet.google.com/bsy-htxg-evt", corretor:{name:"André Luiz Martins",…}, crmAtualizado:true, eventoCriado:true, aviso:null}` |
+
+**Mensagem de confirmação, literal**: *"Terça às 13:00 fica combinado. Vai ser uma chamada de vídeo
+pelo Google Meet: https://meet.google.com/bsy-htxg-evt. Se preferir, o corretor também pode te ligar
+no horário."*
+
+### 14.3 Desfecho exigido — item a item
+
+| Exigência (roteiro §6) | Status | Evidência |
+| --- | --- | --- |
+| `status = qualificado_agendado` | ✅ | Captura do CRM: "Qualificado e agendado" |
+| `meetingAt` no horário combinado | ✅ | Captura: "Agendada para 8 de set. de 2026, 13:00" |
+| Responsável atribuído | ✅ | Captura: Corretor "André Luiz Martins" |
+| Evento no Calendar com link do Meet | ✅ | `meetLink: https://meet.google.com/bsy-htxg-evt` (execução `2143`) |
+
+**Captura de tela do CRM**: fornecida pelo usuário nesta janela (2026-09-06), painel do lead
+"Arthur T." / `553499532444`, mostrando status "Qualificado e agendado", "Reunião — Agendada para
+8 de set. de 2026, 13:00", "Corretor — André Luiz Martins", "Compareceu à reunião — Pendente" e o
+resumo executivo "Reunião agendada via WhatsApp (tool agendar_reuniao)".
+
+### 14.4 Correções publicadas durante a Fase 5, e o que cada uma fechou
+
+Nenhuma delas é redesenho de persona (a AD-016 continua intacta); todas nasceram de defeito observado
+em conversa real, com teste e publicação conferida por hash antes de ativar.
+
+| Commit | Versão publicada | O que corrigiu |
+| --- | --- | --- |
+| `213d36a` | `03057a06-…` | Prompt não tinha instrução de cumprimentar/se apresentar, e o `agentPresentationMessage` do tenant entrava como texto PROIBIDO de aparecer na fala |
+| `22b0a6c` | `0df7de8d-…` | Instrução mandava propor e gravar no mesmo turno; virou propor → esperar aceite → chamar a tool |
+| `9b4cadd` | `aeabef7b-…` | Desempate "ou pergunta, ou agenda"; e proibição de pergunta nova de campo oportunista depois da reunião confirmada (fechava lacuna de QLF-01 AC4/AC5) |
+| `f8651d9` | `e63e5fd6-…` (principal) e `931b8a13-…` (tool) | `meetLink` passou de `htmlLink` (página do evento) para `hangoutLink` (link de entrada); canal da reunião declarado como Google Meet com alternativa de ligação; falha de tool traduzida para linguagem do lead |
+
+### 14.5 Observações de estilo — registradas, sem valor de veredito (roteiro §7)
+
+- **Registro de qualificação incompleto, em todas as rodadas.** No lead final, `modality` e
+  `propertyType` seguem `null` (a captura mostra "2 de 9 campos" e "Tipo não informado") embora o
+  lead tenha dito "imóvel usado" e "Apartamento". Só `region` foi gravada. É o padrão mais
+  persistente do smoke e o melhor candidato a próximo ajuste.
+- **`agentVoiceTone` × `voice.mjs`.** O tom configurado pelo tenant pede "boa" e "show" — exatamente
+  as palavras que `voice.mjs:27` barra como abertura. O modelo as usa no meio da frase (passa) ou na
+  abertura (é rejeitado e regenera, custando iterações). Conflito de configuração, não do modelo.
+- **Rodada 4 não exercitou a regra de linguagem em falha de tool.** Nada falhou. A tradução de
+  `horario-ocupado` para "esse horário já está reservado" tem cobertura de teste, não de execução
+  real. Para provar, bastaria pedir um horário já ocupado na agenda.
+
+### 14.6 Alvos de limpeza antes do cenário 2
+
+| # | Alvo | Chave |
+| --- | --- | --- |
+| 1 | Sessão de memória | `"triangulo:553499532444"` em `n8n_chat_histories` |
+| 2 | Linha de `conversa_estado` | Data Table `ZsplBxJjXv3kwKZ8`, `tenantSlug`+`waId` |
+| 3 | Lead no CRM | `d0aee73c-72e2-468e-bb6b-920e3b88bf17`, ordem `messages` → `conversations` → `leads` |
+| 4 | Evento no Calendar | `tostamatias@gmail.com`, terça 2026-09-08 13:00 (Meet `bsy-htxg-evt`) |
+
+### 14.7 Achado de paridade, não corrigido de propósito
+
+O nó `Code: checar horario comercial` do `crivo-tool-agendar-reuniao` publicado é uma cópia
+**minificada** do módulo (1.867 chars contra 5.704 em `n8n/generated/`): mesma lógica, mesmos
+identificadores, mesmo harness final, sem comentários e sem formatação. Divergência cosmética
+anterior a este lote, encontrada ao publicar a correção do `meetLink`. Não foi tocada — está fora do
+escopo desta task, e reescrever 5.704 chars à mão para restaurar comentários inertes seria risco sem
+retorno. Fica como dívida de paridade nomeada.

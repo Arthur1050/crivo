@@ -444,13 +444,13 @@ ao modelo está em ordem — e declarar o congelamento de `vitest`.
 - Skill: NONE
 
 **Done when**:
-- [ ] Conversa conduzida no WhatsApp pelo usuário, seguindo os turnos do roteiro
-- [ ] Lead termina com `status = reuniao_agendada` no CRM — confirmado na tela, não inferido
-- [ ] Evento existe no Google Calendar com link do Meet, e o link é registrado
-- [ ] Id da execução n8n registrado
-- [ ] Captura de tela do CRM anexada ou seu caminho registrado
-- [ ] Observações de estilo registradas em seção própria, sem reprovar o cenário
-- [ ] Limpeza dos três alvos confirmada antes de T14
+- [x] Conversa conduzida no WhatsApp pelo usuário, seguindo os turnos do roteiro
+- [x] Lead termina com `status = reuniao_agendada` no CRM — confirmado na tela, não inferido — valor real do enum é `qualificado_agendado` (ver correção de nomenclatura registrada em T10); captura mostra "Qualificado e agendado"
+- [x] Evento existe no Google Calendar com link do Meet, e o link é registrado — `https://meet.google.com/bsy-htxg-evt`, link de ENTRADA na chamada (corrigido em `f8651d9`: antes vinha a página do evento)
+- [x] Id da execução n8n registrado — turnos `2123`, `2128`, `2135`, `2142` e sub-workflow `2143`
+- [x] Captura de tela do CRM anexada ou seu caminho registrado — fornecida pelo usuário nesta janela, conteúdo descrito em `evidencia.md` §14.3
+- [x] Observações de estilo registradas em seção própria, sem reprovar o cenário — §14.5
+- [ ] Limpeza dos três alvos confirmada antes de T14 — pendente (alvos nomeados em §14.6, agora quatro: inclui o evento no Calendar)
 
 **Tests**: none
 **Gate**: evidência
