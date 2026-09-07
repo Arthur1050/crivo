@@ -1,0 +1,4 @@
+## 2023-10-27 - [Fix timing attack in secret verification]
+**Vulnerability:** The API endpoint `app/api/cron/expire-documents/route.ts` used a non-constant time string comparison (`!==`) to verify the CRON_SECRET against the provided Bearer token, which exposes the system to a timing attack. An attacker might exploit this by measuring the time the server takes to respond and incrementally guessing the token characters.
+**Learning:** `timingSafeEqual` throws an error if strings are of unequal length. A robust way to prevent timing attacks, even when lengths are different or when avoiding length leakage, is to hash both values (e.g. using SHA-256) and then apply `timingSafeEqual` on the resulting hashes.
+**Prevention:** Always use `node:crypto.timingSafeEqual` with hashed inputs when verifying secrets or passwords, rather than plain equality operators.

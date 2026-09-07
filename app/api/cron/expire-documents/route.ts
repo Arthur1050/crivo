@@ -1,3 +1,4 @@
+import { timingSafeEqual, createHash } from "node:crypto";
 import { runDailyMaintenance } from "../../../../src/server/integration/lgpd";
 import { problem } from "../../../../src/server/integration/problem";
 
@@ -23,7 +24,17 @@ async function handleExpireDocuments(request: Request): Promise<Response> {
   const header = request.headers.get("authorization");
   const provided = /^Bearer\s+(.+)$/i.exec(header ?? "")?.[1]?.trim();
 
-  if (!secret || !provided || provided !== secret) {
+  if (!secret || !provided) {
+    return problem(401, "nao-autenticado", "Secret do cron ausente ou inválido.");
+  }
+
+  // Prevents timing attacks on the secret comparison
+  const isValid = timingSafeEqual(
+    createHash("sha256").update(provided).digest(),
+    createHash("sha256").update(secret).digest()
+  );
+
+  if (!isValid) {
     return problem(401, "nao-autenticado", "Secret do cron ausente ou inválido.");
   }
 
