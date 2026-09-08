@@ -361,6 +361,50 @@ describe("buildSystemMessage — agendar só após aceite (achado real, Fase 5 l
   });
 });
 
+describe("buildSystemMessage — postura de conversa (achado real, cenário 2 lote-10)", () => {
+  it("declara que o agente atende uma pessoa, não aplica questionário", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).toMatch(/você atende uma pessoa, não aplica um questionário/i);
+  });
+
+  it("manda reagir ao que o lead trouxe antes de puxar campo", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).toMatch(/Antes de puxar qualquer campo, REAJA ao que o lead acabou de trazer/i);
+  });
+
+  it("nomeia o caso do anúncio: perguntar de qual imóvel se trata", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).toMatch(/se ele falou de um anúncio, o natural é perguntar de qual imóvel se trata/i);
+  });
+
+  it("prefere pergunta aberta a pedir região/tipo quando o lead disse pouco", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).toMatch(/é MELHOR do que já pedir região ou tipo de imóvel/i);
+  });
+
+  it("proíbe soar apressado ou ansioso para fechar", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).toMatch(/NUNCA soe apressado, insistente ou ansioso para fechar/i);
+    expect(message).toMatch(/não empurre reunião a cada turno/i);
+  });
+
+  it("autoriza conversar algumas trocas antes de qualificar", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).toMatch(/Duas ou três trocas de conversa antes de qualificar são normais e desejáveis/i);
+  });
+
+  it("primeiro turno: proíbe abrir pedindo dado de cadastro", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando", perguntados: [], firstTurn: true });
+    expect(message).toMatch(/NÃO abra pedindo região, tipo de imóvel ou qualquer outro dado de cadastro/i);
+  });
+
+  it("fase qualificação: o campo é opcional no turno, não uma ordem", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando", perguntados: [] });
+    expect(message).toMatch(/Se couber com naturalidade neste turno, o campo a descobrir é este UM/i);
+    expect(message).toMatch(/deixe o campo para o próximo turno — a conversa vem antes da coleta/i);
+  });
+});
+
 describe("buildSystemMessage — entrega ao humano (achado real, cenário 2 lote-10)", () => {
   it("manda encerrar em uma mensagem curta depois de escalar", () => {
     const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });

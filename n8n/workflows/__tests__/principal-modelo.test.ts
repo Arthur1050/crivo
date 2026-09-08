@@ -131,3 +131,37 @@ describe("a troca de modelo não mexeu em mais nada do grafo (MOD-01 AC2)", () =
     expect(contarConexoes()).toBe(CONEXOES_ESPERADAS);
   });
 });
+
+describe("escalar_para_humano — resposta recortada na fronteira (achado real, cenário 2 lote-10)", () => {
+  const graph = principal.toJSON() as WorkflowJson;
+  const node = graph.nodes.find((n) => n.name === "escalar_para_humano");
+
+  it("o nó existe e é o httpRequestTool esperado", () => {
+    expect(node).toBeDefined();
+    expect(node?.type).toBe("n8n-nodes-base.httpRequestTool");
+  });
+
+  it("recorta a resposta antes de ela chegar ao modelo", () => {
+    expect(node?.parameters.optimizeResponse).toBe(true);
+    expect(node?.parameters.responseType).toBe("json");
+  });
+
+  it("remove os campos que identificam o LEAD — é o que impedia o nome errado", () => {
+    expect(node?.parameters.fieldsToInclude).toBe("except");
+    const fields = String(node?.parameters.fields).split(",").map((f) => f.trim());
+    expect(fields).toContain("name");
+    expect(fields).toContain("contactName");
+  });
+
+  it("NÃO usa `selected`: `except` preserva o `code` do problem+json do 409 (AD-013)", () => {
+    expect(node?.parameters.fieldsToInclude).not.toBe("selected");
+    const fields = String(node?.parameters.fields).split(",").map((f) => f.trim());
+    expect(fields).not.toContain("code");
+    expect(fields).not.toContain("assignedBroker");
+  });
+
+  it("mantém `neverError` — sem ele o 409 perde o corpo e o `code` (lote-6c)", () => {
+    const options = node?.parameters.options as { response?: { response?: { neverError?: boolean } } };
+    expect(options?.response?.response?.neverError).toBe(true);
+  });
+});

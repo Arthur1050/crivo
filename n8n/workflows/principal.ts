@@ -1124,6 +1124,22 @@ const escalarParaHumanoTool = tool({
         "{{ { status: 'escalado_humano', escalationReason: $fromAI('motivo', 'Motivo pelo qual a conversa esta sendo escalada para um humano', 'string') } }}"
       ),
       options: { response: { response: { neverError: true } } },
+      // ACHADO REAL (Fase 5 do lote-10, cenário 2, 2026-09-07 e 2026-09-08):
+      // o `PATCH /leads/{id}` devolve o LEAD INTEIRO, e o `name` do topo é o
+      // nome do lead. Ao anunciar a passagem para um humano, o modelo leu esse
+      // `name` e disse ao lead que ele mesmo iria atendê-lo ("o Arthur T. vai
+      // continuar seu atendimento"), ignorando `assignedBroker.name`. Instrução
+      // de prompt NÃO resolveu — foi tentada em `16cfbf4` e o erro repetiu na
+      // rodada seguinte. Quando a resposta errada é o campo mais óbvio do
+      // payload, a correção é na fronteira, não na discrição do modelo
+      // (AD-018): os campos que identificam o lead saem da resposta, e o único
+      // nome que sobra é o do responsável. `except` (em vez de `selected`)
+      // preserva tudo o mais — inclusive o `code` do `problem+json` de um 409,
+      // que é o canal de correção que a AD-013 exige.
+      optimizeResponse: true,
+      responseType: "json",
+      fieldsToInclude: "except",
+      fields: "name,contactName,phone,externalId",
     },
     credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
   },
