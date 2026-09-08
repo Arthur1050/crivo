@@ -1376,3 +1376,104 @@ identificadores, mesmo harness final, sem comentários e sem formatação. Diver
 anterior a este lote, encontrada ao publicar a correção do `meetLink`. Não foi tocada — está fora do
 escopo desta task, e reescrever 5.704 chars à mão para restaurar comentários inertes seria risco sem
 retorno. Fica como dívida de paridade nomeada.
+
+---
+
+## T14 — Cenário 2 (escalar para humano): **APROVADO** (2026-09-08)
+
+> **RESULTADO: o desfecho exigido por SMK-03 / AGT-05 foi atingido por conversa real.** Lead
+> `3c9ce0fe-6b7c-439f-9912-eced234d018f`, `status = escalado_humano` com `escalationReason` gravado e
+> responsável atribuído (André Luiz Martins), e a mensagem seguinte do lead registrada **sem nenhuma
+> resposta do agente** — a trava provada pelo comportamento, não pelo status.
+
+### 15.1 Três rodadas: as duas primeiras acharam defeitos, a terceira passou
+
+| # | Lead | Desfecho | O que apareceu |
+| --- | --- | --- | --- |
+| 1 | `41e81d48-…` (07/09) | Os 3 requisitos atingidos | Mas o agente disse "vou chamar **o Arthur** pra cuidar do seu financiamento" — Arthur é o nome do PRÓPRIO LEAD; e pediu horário depois de a conversa já ter passado para um humano |
+| 2 | `f3a9f435-…` (08/09) | Os 3 requisitos atingidos | Nome errado **repetiu** ("O Arthur T. vai continuar seu atendimento"), já com a correção de prompt publicada — prova de que instrução não bastava. Postura lida pelo usuário como "arrogante e desesperado para vender" |
+| 3 | `3c9ce0fe-…` (08/09) | **APROVADO** | Nome correto, uma mensagem curta, sem negociar horário, abertura acolhedora |
+
+### 15.2 Execuções da rodada aprovada
+
+| Turno | Execução | O que prova |
+| --- | --- | --- |
+| 1 | `2190` | Lead **novo** (`firstContactAt 2026-09-08T21:47:02`, campos `null`). Abertura com a postura nova: "Oi, tudo bem? Eu sou o Lucas, da Triângulo Imóveis. Me diz qual anúncio você viu (ou o bairro/rua do imóvel) que eu te ajudo a entender a melhor opção pra você." — reage ao que o lead trouxe (o anúncio) em vez de pedir região como campo de formulário |
+| 2 | `2195` | Transparência (AD-016): "Sim, eu sou um agente de atendimento automatizado da Triângulo Imóveis..." — confirma quando perguntado diretamente, sem negar |
+| 3 | `2200` | `escalar_para_humano` com motivo; CRM devolve `status escalado_humano`, `escalationReason` e `assignedBroker` |
+| 4 | `2206` | **`route: "somente-registrar"`**, sem `response_ai_agent` no metadata — a mensagem "Ok. Obrigado" foi gravada e o agente **não rodou** |
+
+### 15.3 Desfecho exigido — item a item
+
+| Exigência (roteiro §4) | Status | Evidência |
+| --- | --- | --- |
+| `status = escalado_humano` | OK | Captura do CRM: "Escalado para humano" |
+| `escalationReason` gravado | OK | "Lead pediu para falar com um humano." (captura e execução `2200`) |
+| Responsável atribuído | OK | `assignedBroker` com "André Luiz Martins" na observação de `2200` (rede de segurança da AD-022) |
+| Mensagem seguinte gravada **sem resposta** | OK | Execução `2206`, rota `somente-registrar`, agente não executado |
+
+**Captura de tela do CRM**: fornecida pelo usuário nesta janela (2026-09-08), painel do lead
+"Arthur T." / `553499532444`, com o marcador vermelho "Escalado para humano", o banner "Lead pediu
+para falar com um humano.", "Qualificação 0 de 9 campos" e "Reunião — Agendada para —".
+
+### 15.4 O achado mais importante desta task: instrução de prompt perdeu para o payload
+
+O nome errado foi corrigido **duas vezes**, e só a segunda funcionou.
+
+- **Tentativa 1** (`16cfbf4`, versão `f3ab55ad`) — regra no prompt: "use EXATAMENTE o nome que a tool
+  devolveu no campo do responsável — NUNCA o nome do lead". **Falhou na rodada seguinte**: o agente
+  disse "O Arthur T. vai continuar seu atendimento".
+- **Causa**: `escalar_para_humano` é um `httpRequestTool` que faz `PATCH /leads/{id}` e entrega ao
+  modelo **o corpo cru da resposta** — o lead inteiro, cujo `name` de primeiro nível é o nome do
+  lead. O campo certo (`assignedBroker.name`) está aninhado e é menos proeminente. Quando a resposta
+  errada é o campo mais óbvio do payload, instrução não resolve.
+- **Tentativa 2** (`98ac0f8`, versão `d7c14587`) — correção na **fronteira**, na disciplina da
+  AD-018: `optimizeResponse: true` + `fieldsToInclude: "except"` +
+  `fields: "name,contactName,phone,externalId"`. O nome do lead deixou de existir no que o agente lê.
+- **`except` e não `selected`, de propósito**: `selected` derrubaria o `code` do `problem+json` de um
+  `409` (`transicao-invalida`, `lead-travado-por-humano`), que a AD-013 define como o canal de
+  correção do agente. Fixado por teste em `principal-modelo.test.ts`.
+- **Comparação direta do payload que o modelo lê**, mesma tool, duas rodadas:
+  - antes (`2185`): `id`, `externalId`, **`name: "Arthur T."`**, `phone`, `status`, …, `assignedBroker.name: "André Luiz Martins"`
+  - depois (`2200`): `id`, `status`, …, `assignedBroker.name: "André Luiz Martins"` — sem `name`, `contactName`, `phone` nem `externalId`
+
+### 15.5 Correção de postura de conversa (mesma task, `98ac0f8`)
+
+Feedback literal do usuário sobre a rodada 2: o agente parecia "arrogante e desesperado para vender",
+"alguém que não está preocupado com mais nada além de conseguir fechar uma reunião". O diagnóstico
+não é uma frase: todas as instruções empurravam para extrair campo e agendar, e nenhuma pedia
+conversa. Três mudanças, todas de prompt:
+
+1. **Postura**: reagir ao que o lead trouxe antes de puxar campo (se ele cita um anúncio, perguntar
+   de qual imóvel se trata); pergunta aberta é melhor que pedir região quando ele disse pouco; nunca
+   soar apressado nem empurrar reunião a cada turno; duas ou três trocas antes de qualificar são
+   desejáveis.
+2. **Primeiro turno**: proibido abrir pedindo região, tipo de imóvel ou dado de cadastro.
+3. **Instrução de fase**: o campo do turno deixou de ser ordem — "se couber com naturalidade"; se o
+   turno pedir só uma resposta, o campo espera.
+
+Efeito visível na rodada aprovada: a abertura passou de "Em qual região você quer procurar?" para
+"Me diz qual anúncio você viu (ou o bairro/rua do imóvel) que eu te ajudo a entender a melhor opção
+pra você." Aprovado pelo usuário ("melhorou").
+
+### 15.6 Observações de estilo — registradas, sem valor de veredito
+
+- **`abertura-proibida` de novo**: 1 rejeição em `2200` ("Boa.") antes de acertar com "Certo.". Mesmo
+  conflito com o `agentVoiceTone` do tenant, que pede "boa" e "show".
+- **Qualificação zerada nesta conversa** (captura: "0 de 9 campos"). Aqui é **correto**: o lead pediu
+  humano no segundo turno e nunca revelou modalidade, região ou tipo. Não é o defeito de registro
+  incompleto do cenário 1.
+- **Consequência conhecida do afrouxamento da instrução de fase**: os campos continuam sendo marcados
+  como "perguntados" ANTES de o agente rodar. Se ele conversar em vez de perguntar, o campo é contado
+  como perguntado mesmo assim. Defeito pré-existente (§14.5), que esta mudança torna mais visível.
+  Não foi tocado: é mudança na máquina de fases, não no prompt.
+
+### 15.7 Alvos de limpeza antes do cenário 3
+
+Três alvos (não houve agendamento, então nada no Calendar):
+
+| # | Alvo | Chave |
+| --- | --- | --- |
+| 1 | Sessão de memória | `"triangulo:553499532444"` em `n8n_chat_histories` |
+| 2 | Linha de `conversa_estado` | Data Table `ZsplBxJjXv3kwKZ8`, `tenantSlug`+`waId` |
+| 3 | Lead no CRM | `3c9ce0fe-6b7c-439f-9912-eced234d018f`, ordem `messages` -> `conversations` -> `leads` |

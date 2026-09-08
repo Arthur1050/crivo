@@ -471,12 +471,12 @@ ao modelo está em ordem — e declarar o congelamento de `vitest`.
 - Skill: NONE
 
 **Done when**:
-- [ ] Lead termina com `status = escalado_humano` no CRM
-- [ ] Responsável atribuído (rede de segurança da AD-022), com o nome registrado
-- [ ] Uma mensagem enviada **depois** do escalonamento aparece registrada no CRM **sem resposta do agente** — é isso que prova a trava, não o status
-- [ ] Id da execução registrado, mostrando a rota `somente-registrar`
-- [ ] Captura de tela do CRM registrada
-- [ ] Limpeza dos três alvos confirmada antes de T15
+- [x] Lead termina com `status = escalado_humano` no CRM — lead `3c9ce0fe-…`, captura mostra "Escalado para humano"
+- [x] Responsável atribuído (rede de segurança da AD-022), com o nome registrado — André Luiz Martins, na observação da execução `2200`
+- [x] Uma mensagem enviada **depois** do escalonamento aparece registrada no CRM **sem resposta do agente** — é isso que prova a trava, não o status — execução `2206`
+- [x] Id da execução registrado, mostrando a rota `somente-registrar` — `2206`, sem `response_ai_agent` no metadata
+- [x] Captura de tela do CRM registrada — fornecida pelo usuário, conteúdo descrito em `evidencia.md` §15.3
+- [ ] Limpeza dos três alvos confirmada antes de T15 — pendente (alvos em §15.7)
 
 **Tests**: none
 **Gate**: evidência
