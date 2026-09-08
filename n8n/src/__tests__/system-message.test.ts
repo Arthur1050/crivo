@@ -361,6 +361,35 @@ describe("buildSystemMessage — agendar só após aceite (achado real, Fase 5 l
   });
 });
 
+describe("buildSystemMessage — entrega ao humano (achado real, cenário 2 lote-10)", () => {
+  it("manda encerrar em uma mensagem curta depois de escalar", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).toMatch(/Depois de chamar escalar_para_humano, a conversa passa a ser de uma pessoa da imobiliária/i);
+    expect(message).toMatch(/Responda UMA mensagem curta dizendo que alguém da equipe vai continuar o atendimento/i);
+  });
+
+  it("proíbe negociar horário ou fazer pergunta nova depois de escalar", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).toMatch(/NÃO proponha horário, NÃO chame agendar_reuniao e NÃO faça pergunta nova/i);
+  });
+
+  it("exige o nome vindo do campo do responsável devolvido pela tool", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).toMatch(/use EXATAMENTE o nome que a tool devolveu no campo do responsável/i);
+  });
+
+  it("proíbe nominalmente usar o nome do lead como se fosse o corretor", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).toMatch(/NUNCA o nome do lead \(é com ele que você está falando\)/i);
+    expect(message).toMatch(/nunca um nome inventado/i);
+  });
+
+  it("define o fallback quando a tool não devolve nome: não nomear ninguém", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).toMatch(/Se a tool não devolver nome, diga só que um corretor da equipe vai assumir, sem nomear ninguém/i);
+  });
+});
+
 describe("buildSystemMessage — canal da reunião (achado real, Fase 5 lote-10)", () => {
   it("declara que toda reunião é online pelo Google Meet", () => {
     const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });

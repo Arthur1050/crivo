@@ -74,6 +74,15 @@ const FIRST_TURN_INSTRUCTION =
 const MEETING_CHANNEL_INSTRUCTION =
   "Canal da reunião: toda reunião marcada é ONLINE, pelo Google Meet. Ao propor e ao confirmar, diga isso com palavras simples (o lead pode nunca ter usado o Meet) — por exemplo, que é uma chamada de vídeo pelo link que você manda aqui. NUNCA diga que a reunião acontece pelo WhatsApp, por ligação, presencialmente ou por qualquer outro canal. Quando a tool devolver o link da reunião, mande esse link para o lead na mesma mensagem da confirmação; se ela não devolver link nenhum, confirme a reunião e diga que o link chega em seguida — nunca invente um link. Ao propor o horário, deixe claro que, se o lead preferir, a conversa pode ser por ligação comum em vez de vídeo: se ele pedir isso, confirme que o corretor vai ligar no horário combinado.";
 
+// ACHADO REAL (Fase 5 do lote-10, cenário 2, 2026-09-07, conversa real):
+// depois de escalar, o agente disse "vou chamar o Arthur pra cuidar do seu
+// financiamento" — mas Arthur é o nome do PRÓPRIO LEAD (`contactName`), e o
+// corretor que a tool devolveu era André Luiz Martins. Na mesma mensagem ele
+// pediu o melhor horário, negociando agenda depois de a conversa já ter
+// passado para um humano. Nada no prompt dizia o que fazer depois de escalar.
+const ESCALATION_HANDOFF_INSTRUCTION =
+  "Depois de chamar escalar_para_humano, a conversa passa a ser de uma pessoa da imobiliária, não sua. Responda UMA mensagem curta dizendo que alguém da equipe vai continuar o atendimento, e encerre: NÃO proponha horário, NÃO chame agendar_reuniao e NÃO faça pergunta nova. Se for citar o nome de quem vai atender, use EXATAMENTE o nome que a tool devolveu no campo do responsável — NUNCA o nome do lead (é com ele que você está falando) e nunca um nome inventado. Se a tool não devolver nome, diga só que um corretor da equipe vai assumir, sem nomear ninguém.";
+
 // Fronteira de capacidade (spec.md — VOZ-02): o agente nunca teve a
 // capacidade de buscar imóvel, mandar foto ou informar preço — reconhece
 // abertamente e usa como ponte para o agendamento, sem escalar por isso
@@ -212,7 +221,7 @@ function buildPhaseInstruction(phase, perguntados, meetingAt) {
  * `buildSystemMessage`). Ordem das seções: identidade → tom do tenant
  * (delimitado + reafirmação) → persona consultiva → abertura de sessão
  * (só no primeiro turno) → fronteira de capacidade → canal da reunião →
- * transparência (AD-016)
+ * entrega ao humano → transparência (AD-016)
  * → âncora de data → instrução por fase → horário comercial → catálogo de
  * tools → instrução de falha de tool.
  *
@@ -244,6 +253,7 @@ export function buildSystemMessage({ settings, phase, perguntados, businessHours
     firstTurn ? FIRST_TURN_INSTRUCTION : null,
     CAPABILITY_BOUNDARY_INSTRUCTION,
     MEETING_CHANNEL_INSTRUCTION,
+    ESCALATION_HANDOFF_INSTRUCTION,
     AI_TRANSPARENCY_INSTRUCTION,
     buildTodayAnchor(now),
     buildPhaseInstruction(phase, perguntados, meetingAt),
