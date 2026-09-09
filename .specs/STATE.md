@@ -228,13 +228,23 @@
 
 ## Handoff
 
-### Estado atual (2026-09-09) — lote-10 EM EXECUÇÃO: Fases 1–7 fechadas, Fase 8 (T25) pendente
+### Estado atual (2026-09-09) — lote-10: T1–T25 concluídas, Verifier pendente
 
-**T1–T24 concluídas e commitadas.** Fases 1–7 (linha de base, troca do modelo, bateria de tool
-calling, roteiro do smoke, as três conversas reais, reconciliação documental e fechamento/rastreabilidade)
-estão fechadas. Resta só a Fase 8 — T25, multi-tenancy condicional ao 2º número homologado na Meta —
-que não é delegável a um worker (depende de homologação no painel da Meta) e não exige conversa real
-nem publicação na instância para as tasks já concluídas.
+**T1–T25 concluídas e commitadas.** Todas as 8 fases (linha de base, troca do modelo, bateria de tool
+calling, roteiro do smoke, as três conversas reais, reconciliação documental, fechamento/rastreabilidade
+e multi-tenancy condicional) estão fechadas. Falta só o Verifier — automático, nunca opcional — que o
+orquestrador despacha em seguida, e o `validate_state.py` do fechamento.
+
+**T25 fechou pelo caminho indisponível.** Perguntado diretamente, o usuário informou nesta janela
+(2026-09-09): "Não tem como adicionar o numero dele. Ignore essa pendencia. Vale do Uberaba é
+fictício." Isso é mais específico que a pendência herdada dos lotes 7–9 ("falta 2º número
+homologado") — não é atraso, é ausência de caminho. `MTN-01` fica **explicitamente não verificado**
+na rastreabilidade (`lote-10/spec.md`), nunca aprovado por ausência. Nenhuma linha nova em
+`tenant_config`, nenhum lead criado sob `vale-uberaba` (`evidencia.md` §18). Os três desfechos
+(AGT-04/05, LGPD-03) não dependem disso e seguem fechados. **Nota para reconciliação futura, fora do
+escopo deste lote**: a AD-001 descreve dois clientes-âncora reais; se `vale-uberaba` nunca teve
+caminho para número real, isso é uma pergunta sobre premissa de produto para uma rodada de Specify
+futura, não uma correção retroativa deste lote.
 
 **O modelo alvo ficou.** `gpt-5.4-nano-2026-03-17` (`@n8n/n8n-nodes-langchain.lmChatOpenAi` v1.3)
 passou na bateria de tool calling (T9, veredito APROVADO em `evidencia.md` §12.6) e está em produção.
@@ -304,22 +314,20 @@ produzem falhas falsas convincentes — `23503` em `create-admin.test.ts` numa, 
 `seed.test.ts` espera 3 na outra. Nenhuma era regressão. Antes de aceitar uma falha de suíte como
 real, confirme que nenhum outro processo `node` está vivo e repita isolado.
 
-**Estado do repositório**: branch `main`, 35 commits à frente de `origin/main` no fechamento de T22
-(este commit de T23 e o de T24 fecham em 37), **nenhum push feito** (não autorizado nesta janela). A
-Vercel redeploya em push a `main`; como o lote não muda código do app, não há motivo para push antes
-do fim.
+**Estado do repositório**: branch `main`, 38 commits à frente de `origin/main` no fechamento de T25
+(37 até T24 + este commit de T25), **nenhum push feito** (não autorizado nesta janela). A Vercel
+redeploya em push a `main`; como o lote não muda código do app, não há motivo para push antes do fim.
 
-**Next step**: T25 — multi-tenancy real, condicional ao 2º número homologado na Meta (MTN-01). Não
-delegável a um worker.
+**Next step**: dispatch do Verifier (automático, sobre o range completo do lote-10) e, se PASS,
+`validate_state.py lote-10-modelo-alvo-e-prova-conversacional` deve sair 0.
 
-**Pendências nomeadas** (T17–T24 são documentação pura; nenhuma delas tocou código, então nenhuma
-destas pendências foi resolvida ou alterada por este batch — repetidas aqui para não sumirem):
+**Pendências nomeadas** (T17–T25 são documentação pura; nenhuma delas tocou código, então nenhuma
+destas pendências foi resolvida ou alterada por este lote — repetidas aqui para não sumirem):
 - **Limpeza dos 3 alvos do cenário 3** (`evidencia.md` §16.7): lead `81509a2c-…` e a linha de
   `conversa_estado`. A memória já foi purgada pelo próprio fluxo.
-- **MTN-01 (T25)**: o 2º número homologado na Meta segue pendente. `lote-10/spec.md` já registra
-  MTN-01 como `⏳ Pending — depende de T25` (T21), nunca `Verified` por antecipação. Se T25 não puder
-  rodar por falta de homologação, MTN-01 fica explicitamente **não verificado** — nunca aprovado por
-  ausência.
+- **MTN-01 — fechada como não verificada, sem caminho disponível** (T25, `evidencia.md` §18): o
+  tenant `vale-uberaba` é fictício, sem número para homologar. Não é mais uma pendência em aberto —
+  é um resultado final, registrado como tal na rastreabilidade.
 - **Remarcação de reunião é impossível** (`TRANSITIONS.qualificado_agendado = []`,
   `src/server/integration/leads.ts:98`). Fix adiado pelo usuário: exige coluna para o id do evento,
   a tool passar a atualizar/cancelar o evento antigo, mudança de contrato e deploy na Vercel.
@@ -337,8 +345,7 @@ destas pendências foi resolvida ou alterada por este batch — repetidas aqui p
   `assignedBroker` nem os 2 códigos de erro do lote-8; `RESEND_FROM` a confirmar na Vercel; alerta
   ativo de queda da integração (L15); baselines dos tenants-piloto ainda fictícios (L15).
 
-**Blockers**: nenhum para a T25 — exceto a própria homologação do 2º número no painel da Meta, que
-não é controlável por nenhuma sessão de trabalho.
+**Blockers**: nenhum. Todas as 25 tasks fechadas; falta só o Verifier.
 
 
 ### Estado do lote 9 (2026-08-30)

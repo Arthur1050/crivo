@@ -1655,3 +1655,44 @@ falsas antes desta: uma acusou `23503` em `create-admin.test.ts`, outra acusou 6
 `seed.test.ts` espera 3. Não são regressões — são duas execuções semeando o mesmo banco ao mesmo
 tempo. A rodada isolada, com nenhum outro processo `node` vivo, veio limpa. **A suíte usa um banco
 compartilhado: nunca rodar duas ao mesmo tempo.**
+
+## T25 — Multi-tenancy real: **caminho indisponível** (2026-09-09)
+
+### 18.1 Decisão do usuário
+
+Perguntado diretamente se o 2º número (Vale do Uberaba) já tinha sido homologado no painel da Meta, o
+usuário respondeu, nesta janela, em 2026-09-09: **"Não tem como adicionar o numero dele. Ignore essa
+pendencia. Vale do Uberaba é fictício."**
+
+Isso muda a natureza da pendência que o Handoff do lote-9 e do lote-8 vinham carregando como "Vale do
+Uberaba sem `tenant_config` (falta 2º número homologado)" — uma formulação que presumia homologação
+futura, só atrasada. O que o usuário registrou agora é diferente: **não existe caminho para obter esse
+número**, porque o tenant `vale-uberaba` não corresponde a um negócio real capaz de passar pela
+verificação de empresa da Meta. Este lote não teve como confirmar de forma independente o motivo
+exato (não há tool MCP para consultar status de homologação de número no painel da Meta) — o registro
+aqui é o que o usuário informou diretamente, não uma inferência.
+
+### 18.2 MTN-01 — não verificado, por ausência estrutural de caminho, nunca por omissão
+
+`MTN-01` fica **explicitamente não verificado** na rastreabilidade do lote-10 (`spec.md`, atualizado
+nesta task). Não é "não tentado" nem "aprovado por ausência" — é um requisito cujo pré-requisito
+(número real homologável para `vale-uberaba`) não existe, segundo a informação do usuário. Nenhuma
+linha nova foi escrita em `tenant_config`; nenhum cenário foi repetido no segundo número; nenhum lead
+foi criado sob `vale-uberaba` nesta task.
+
+### 18.3 O que permanece fechado
+
+Os três desfechos que dependiam de conversa real — `AGT-04`/`SMK-02` (qualificar→agendar), `AGT-05`/
+`SMK-03` (escalonamento) e `LGPD-03`/`SMK-04` (opt-out) — foram todos provados no tenant `triangulo`
+(T13–T15) e não dependem de `vale-uberaba` nem de MTN-01. Nada neste achado reabre nenhum dos três.
+
+### 18.4 Nota para reconciliação futura, fora do escopo desta task
+
+A AD-001 descreve o MVP como piloto pago com **dois** clientes-âncora reais de Uberaba/MG, e o
+Handoff do lote-9 já registrava que as métricas-baseline de ambos os tenants-piloto (`vale-uberaba` e
+`triangulo`) foram preenchidas com dado **fictício**, por decisão do usuário, à espera de dado de
+campo real. O que este T25 acrescenta é mais específico: para `vale-uberaba`, não é só a métrica que
+é provisória — o próprio número de WhatsApp não tem caminho de homologação no momento. Se isso
+significa que o segundo cliente-âncora da AD-001 não está mais em pé, ou que `vale-uberaba` sempre foi
+só um tenant de demonstração, é uma pergunta sobre premissa de produto que cabe ao usuário resolver
+numa rodada de Specify futura — não é reescrita aqui, e a AD-001 não é emendada por este lote.

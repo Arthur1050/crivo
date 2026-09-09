@@ -759,9 +759,9 @@ repetir o cenário 1 nele; se não estiver, registrar a pendência nomeada.
 - Skill: NONE
 
 **Done when**:
-- [ ] **Caminho disponível**: linha nova em `tenant_config` mapeando o `phoneNumberId` para `vale-uberaba`; cenário 1 repetido no segundo número; lead nasce sob `vale-uberaba` e nenhum lead de `triangulo` é tocado; id de execução e captura registrados
-- [ ] **Caminho indisponível**: pendência registrada em `STATE.md` § Handoff nomeando o que falta e quem depende dela, e MTN-01 fica explicitamente **não verificado** na rastreabilidade — nunca marcado como aprovado por ausência
-- [ ] Nos dois caminhos, AGT-04, AGT-05 e LGPD-03 permanecem fechados
+- [ ] ~~**Caminho disponível**~~: não aplicável — sem número para homologar (§18.1)
+- [x] **Caminho indisponível**: pendência registrada em `STATE.md` § Handoff nomeando o que falta e quem depende dela, e MTN-01 fica explicitamente **não verificado** na rastreabilidade — nunca marcado como aprovado por ausência (`evidencia.md` §18, `spec.md` linha MTN-01)
+- [x] Nos dois caminhos, AGT-04, AGT-05 e LGPD-03 permanecem fechados (§18.3 — nenhum dos três depende de `vale-uberaba`)
 
 **Tests**: none
 **Gate**: evidência

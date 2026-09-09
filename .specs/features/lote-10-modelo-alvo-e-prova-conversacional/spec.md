@@ -174,9 +174,9 @@ sob `vale-uberaba` no CRM, com o lead de `triangulo` intocado.
 | SMK-06 | P1: Prova conversacional dos três desfechos | Execute | ✅ Verified — veredito por desfecho, nunca por estilo (`evidencia.md` §17.1); nenhum cenário reprovou na rodada final, então nenhuma fix task foi aberta antes da subida a Verified (§17.5) |
 | DOC-01 | P2: Rastreabilidade honesta do que o agente faz | Execute | ✅ Verified — VOZ-03 AC4 e o Edge Case correspondente do lote-6c já declaravam o silêncio como comportamento aceito (reconciliado em `5a43b5b`, antes deste lote; reconfirmado em T17); Finding 1 do `validation.md` do lote-6c fechado por reconciliação documental em T18, com a opção (b) do Verifier registrada como deliberadamente não escolhida |
 | DOC-02 | P2: Rastreabilidade honesta do que o agente faz | Execute | ✅ Verified — `n8n/README.md` §4 corrigida (T19, `a947dee`): guard `process.env.VITEST` → `TEST_DATABASE_URL` de `src/db/index.ts:9-11` registrado, incidente original preservado como histórico, `npm run db:seed` explícito continua rotacionando chaves |
-| MTN-01 | P3: Multi-tenancy real exercitada no smoke | Execute | ⏳ **Pending — depende de T25, ainda não executada nesta janela.** T25 é condicional à homologação do 2º número no painel da Meta; nunca aprovado por ausência. Ver `STATE.md` § Handoff para o estado exato da pendência |
+| MTN-01 | P3: Multi-tenancy real exercitada no smoke | Execute | ❌ **Not verified — sem caminho disponível.** T25 avaliou o caminho condicional e o usuário informou, em 2026-09-09, que não há como homologar o 2º número: o tenant `vale-uberaba` é fictício. Nenhuma linha nova em `tenant_config`, nenhum cenário repetido, nenhum lead criado sob `vale-uberaba`. Não verificado nunca é aprovado por ausência — ver `evidencia.md` §18 e `STATE.md` § Handoff |
 
-**Coverage:** 12 total, 12 mapeados a critérios, 0 sem mapeamento. **11 Verified, 1 Pending (MTN-01, condicional a T25)**.
+**Coverage:** 12 total, 12 mapeados a critérios, 0 sem mapeamento. **11 Verified, 1 Not verified (MTN-01 — sem caminho disponível, não é falha de execução)**.
 
 ### Mapa de cobertura — requisito, critérios e dívida que fecha
 
@@ -203,5 +203,5 @@ sob `vale-uberaba` no CRM, com o lead de `triangulo` intocado.
 - [x] Os três desfechos existem no CRM, cada um com captura de tela e id de execução. `evidencia.md` §14.3 (cenário 1), §15.3 (cenário 2), §16.3 (cenário 3).
 - [x] Um evento com link do Google Meet foi criado no Calendar por uma conversa real, não por fixture. `meetLink: https://meet.google.com/bsy-htxg-evt`, execução `2143` (sub-workflow real do cenário 1, não `test_workflow`/fixture).
 - [x] AD-015 encerrada em `STATE.md`, com registro honesto do que ficou provado e do que não. `Status: superseded by AD-027` (T20); AD-027 registra o protocolo, AD-026 registra o modelo.
-- [ ] AGT-04, AGT-05 e LGPD-03 com veredito atualizado na rastreabilidade do lote-6. **Pendente de T22** (próxima task deste mesmo lote, ainda não executada no momento em que T21 fecha este arquivo) — a prova em si já está feita (`evidencia.md` §14-16); falta só levar o veredito para `lote-6-agente-n8n-whatsapp/spec.md`.
+- [x] AGT-04, AGT-05 e LGPD-03 com veredito atualizado na rastreabilidade do lote-6. Feito em T22 (`951135b`), `lote-6-agente-n8n-whatsapp/spec.md`.
 - [x] Nenhuma tool nova e nenhuma linha de `n8n/src/gate.mjs` alterada ao fim do lote. Confirmado em T3 ("Nenhum arquivo de `n8n/src/` alterado") e reafirmado em `evidencia.md` §16.4 sobre a mudança de opt-out por linguagem natural ("`gate.mjs` não mudou uma linha").
