@@ -556,11 +556,13 @@ Detalhe em `evidencia.md` §16.4.
 - Skill: NONE
 
 **Done when**:
-- [ ] VOZ-03 AC4 reescrito declarando o silêncio como comportamento aceito
-- [ ] O bullet correspondente em Edge Cases reescrito no mesmo sentido
-- [ ] A razão registrada (silêncio é degradação mais segura que mensagem errada), não só o fato
-- [ ] Nenhuma mudança de código — a reconciliação é documental
-- [ ] Gate check passa: `npx vitest run && npm run lint && npm run build`
+- [x] VOZ-03 AC4 reescrito declarando o silêncio como comportamento aceito — **já satisfeito**: o `spec.md` do lote-6c reconciliou isso no commit `5a43b5b` (2026-08-15), como fix imediato do Finding 1 do próprio Verifier daquele lote, muito antes deste lote existir. Reconferido linha a linha nesta task: o texto atual de VOZ-03 AC4 já declara "silêncio é o comportamento aceito, não uma mensagem ativa de fallback"
+- [x] O bullet correspondente em Edge Cases reescrito no mesmo sentido — mesmo commit `5a43b5b`; o bullet já diz "silêncio é o comportamento aceito, preferível a uma mensagem genérica ou incorreta"
+- [x] A razão registrada (silêncio é degradação mais segura que mensagem errada), não só o fato — presente nos dois lugares, citando `design.md` Error Handling Strategy
+- [x] Nenhuma mudança de código — a reconciliação é documental (e já era, desde `5a43b5b`)
+- [x] Gate check passa: `npx vitest run && npm run lint && npm run build`
+
+**Nota desta task**: nenhuma edição em `spec.md` do lote-6c foi necessária — o conteúdo já satisfazia integralmente os critérios acima antes de T17 começar. O que faltava era só o fechamento formal do Finding 1 no `validation.md`, que é o objeto de T18.
 
 **Tests**: none
 **Gate**: build
