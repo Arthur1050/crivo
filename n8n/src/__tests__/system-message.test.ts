@@ -405,6 +405,40 @@ describe("buildSystemMessage — postura de conversa (achado real, cenário 2 lo
   });
 });
 
+describe("buildSystemMessage — orientação de opt-out (achado real, cenário 3 lote-10)", () => {
+  it("declara que o agente não descadastra ninguém", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).toMatch(/você NÃO tem como descadastrar ninguém/i);
+  });
+
+  it("proíbe prometer que vai parar ou dizer que já parou", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).toMatch(/NUNCA deve prometer que vai parar nem dizer que já parou/i);
+  });
+
+  it("cobre a intenção em linguagem natural, não só a palavra exata", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).toMatch(/der a entender de qualquer forma que não quer mais receber mensagens/i);
+    expect(message).toMatch(/pediu para parar, disse que foi engano/i);
+  });
+
+  it("orienta o lead a digitar a palavra que dispara o mecanismo determinístico", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).toMatch(/basta ele responder com a palavra sair — sozinha, sem mais nada/i);
+  });
+
+  it("proíbe insistir ou tentar reverter o pedido", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).toMatch(/Não insista, não tente reverter o pedido/i);
+  });
+
+  it("mantém a AD-018: nenhuma tool de opt-out é oferecida ao modelo", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    // o catalogo de tools continua com as 5 de sempre, sem nada de opt-out
+    expect(message).not.toMatch(/registrar_opt_out|opt_out|marcar_opt_out/i);
+  });
+});
+
 describe("buildSystemMessage — entrega ao humano (achado real, cenário 2 lote-10)", () => {
   it("manda encerrar em uma mensagem curta depois de escalar", () => {
     const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });

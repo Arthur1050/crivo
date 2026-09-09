@@ -84,6 +84,24 @@ const FIRST_TURN_INSTRUCTION =
 const MEETING_CHANNEL_INSTRUCTION =
   "Canal da reunião: toda reunião marcada é ONLINE, pelo Google Meet. Ao propor e ao confirmar, diga isso com palavras simples (o lead pode nunca ter usado o Meet) — por exemplo, que é uma chamada de vídeo pelo link que você manda aqui. NUNCA diga que a reunião acontece pelo WhatsApp, por ligação, presencialmente ou por qualquer outro canal. Quando a tool devolver o link da reunião, mande esse link para o lead na mesma mensagem da confirmação; se ela não devolver link nenhum, confirme a reunião e diga que o link chega em seguida — nunca invente um link. Ao propor o horário, deixe claro que, se o lead preferir, a conversa pode ser por ligação comum em vez de vídeo: se ele pedir isso, confirme que o corretor vai ligar no horário combinado.";
 
+// ACHADO REAL (Fase 5 do lote-10, cenário 3, 2026-09-09, conversa real): o
+// lead escreveu "quero que você pare de me mandar mensagens" — pedido de
+// descadastro em português comum. `detectOptOut` (`gate.mjs:36`) só reconhece
+// a palavra exata, então a rota `opt-out` não disparou, `optedOutAt` ficou
+// nulo, e o agente respondeu "vou deixar de te mandar mensagens" — uma
+// promessa que ele não tem como cumprir — e seguiu respondendo mais três
+// vezes.
+//
+// A correção mantém a AD-018 INTACTA de propósito: o efeito continua
+// determinístico e antes do agente, nenhuma tool de opt-out é exposta ao
+// modelo, e `gate.mjs` não muda. O modelo faz só o que cabe a ele —
+// reconhecer a intenção e orientar o lead a digitar a palavra que dispara o
+// mecanismo. A confirmação vira ato explícito do próprio lead, que é o
+// consentimento mais forte para LGPD, e um falso positivo custa zero: quem
+// não quer sair simplesmente não digita.
+const OPT_OUT_GUIDANCE_INSTRUCTION =
+  "Pedido para parar de receber mensagens: você NÃO tem como descadastrar ninguém, e NUNCA deve prometer que vai parar nem dizer que já parou — quem encerra é um mecanismo automático que só reconhece uma palavra exata. Se o lead der a entender de qualquer forma que não quer mais receber mensagens (pediu para parar, disse que foi engano, que não tem interesse, que quer sair da lista, que não é para mandar mais nada), reconheça o pedido com respeito e diga em UMA frase curta que, para encerrar de vez, basta ele responder com a palavra sair — sozinha, sem mais nada. Não insista, não tente reverter o pedido, não faça pergunta nova e não puxe assunto depois disso.";
+
 // ACHADO REAL (Fase 5 do lote-10, cenário 2, 2026-09-07, conversa real):
 // depois de escalar, o agente disse "vou chamar o Arthur pra cuidar do seu
 // financiamento" — mas Arthur é o nome do PRÓPRIO LEAD (`contactName`), e o
@@ -232,7 +250,7 @@ function buildPhaseInstruction(phase, perguntados, meetingAt) {
  * (delimitado + reafirmação) → persona consultiva → postura na conversa →
  * abertura de sessão
  * (só no primeiro turno) → fronteira de capacidade → canal da reunião →
- * entrega ao humano → transparência (AD-016)
+ * entrega ao humano → orientação de opt-out → transparência (AD-016)
  * → âncora de data → instrução por fase → horário comercial → catálogo de
  * tools → instrução de falha de tool.
  *
@@ -266,6 +284,7 @@ export function buildSystemMessage({ settings, phase, perguntados, businessHours
     CAPABILITY_BOUNDARY_INSTRUCTION,
     MEETING_CHANNEL_INSTRUCTION,
     ESCALATION_HANDOFF_INSTRUCTION,
+    OPT_OUT_GUIDANCE_INSTRUCTION,
     AI_TRANSPARENCY_INSTRUCTION,
     buildTodayAnchor(now),
     buildPhaseInstruction(phase, perguntados, meetingAt),
