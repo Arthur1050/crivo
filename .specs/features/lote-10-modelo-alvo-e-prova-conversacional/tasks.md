@@ -735,9 +735,9 @@ em aberto.
 - Skill: NONE
 
 **Done when**:
-- [ ] Linha do lote-10 com data, veredito do Verifier, requisitos, o que entregou e o que ficou aberto
-- [ ] A nota do roadmap pós-piloto atualizada — L10 sai de "proposto" para "executado"
-- [ ] Gate check passa: `npx vitest run && npm run lint && npm run build`
+- [x] Linha do lote-10 com data, veredito do Verifier, requisitos, o que entregou e o que ficou aberto
+- [x] A nota do roadmap pós-piloto atualizada — L10 sai de "proposto" para "executado"
+- [x] Gate check passa: `npx vitest run && npm run lint && npm run build`
 
 **Tests**: none
 **Gate**: build
