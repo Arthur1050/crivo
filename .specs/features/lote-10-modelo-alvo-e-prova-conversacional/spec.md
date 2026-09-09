@@ -158,22 +158,25 @@ sob `vale-uberaba` no CRM, com o lead de `triangulo` intocado.
 
 ## Requirement Traceability
 
+> Atualizado 2026-09-09 (T21). "Verified" exige evidência citável (commit, id de execução MCP, ou
+> captura de tela) — onde não chegou lá, o motivo está escrito, nunca um status otimista.
+
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| MOD-01 | P1: Modelo alvo em produção | Design | Pending |
-| MOD-02 | P1: Modelo alvo em produção | Design | Pending |
-| MOD-03 | P1: Modelo alvo em produção | Design | Pending |
-| SMK-01 | P1: Prova conversacional dos três desfechos | Design | Pending |
-| SMK-02 | P1: Prova conversacional dos três desfechos | Design | Pending |
-| SMK-03 | P1: Prova conversacional dos três desfechos | Design | Pending |
-| SMK-04 | P1: Prova conversacional dos três desfechos | Design | Pending |
-| SMK-05 | P1: Prova conversacional dos três desfechos | Design | Pending |
-| SMK-06 | P1: Prova conversacional dos três desfechos | Design | Pending |
-| DOC-01 | P2: Rastreabilidade honesta do que o agente faz | Design | Pending |
-| DOC-02 | P2: Rastreabilidade honesta do que o agente faz | Design | Pending |
-| MTN-01 | P3: Multi-tenancy real exercitada no smoke | Design | Pending |
+| MOD-01 | P1: Modelo alvo em produção | Execute | ✅ Verified — nó `agentModel` trocado para `@n8n/n8n-nodes-langchain.lmChatOpenAi` v1.3 / `gpt-5.4-nano-2026-03-17`, credencial `OpenAI account`, publicado e ativo (`evidencia.md` §5.1-5.3, versão `8f9f8418-…`); as 5 tools, `gate.mjs` e a memória inalterados por construção (suíte `principal-modelo.test.ts`, T3, `99b8783`) |
+| MOD-02 | P1: Modelo alvo em produção | Execute | ✅ Verified — bateria de tool calling APROVADA (`evidencia.md` §12.6): `R1 = falso` (5 tools, execuções `1952`,`1956`,`1960`,`1966`,`1970`), `R2 = falso` (as três cláusulas, mesmo bloco). Rollback (§6.1) não disparado |
+| MOD-03 | P1: Modelo alvo em produção | Execute | ✅ Verified — paridade publicado × `n8n/generated/` confirmada nó a nó antes da troca (`evidencia.md` §2.2, 61 nós/75 conexões dos dois lados; a divergência lógica encontrada foi corrigida e registrada, não escondida) |
+| SMK-01 | P1: Prova conversacional dos três desfechos | Execute | ✅ Verified — `n8n/smoke/roteiro.md` (T10/T11), versionado, com os três cenários, turnos como intenção e checklist de limpeza dos três alvos |
+| SMK-02 | P1: Prova conversacional dos três desfechos | Execute | ✅ Verified — cenário qualificar→agendar por conversa real: lead `d0aee73c-…`, `status = qualificado_agendado`, evento com Meet `bsy-htxg-evt` (`evidencia.md` §14, execuções `2123`,`2128`,`2135`,`2142`,`2143`) |
+| SMK-03 | P1: Prova conversacional dos três desfechos | Execute | ✅ Verified — cenário escalar por conversa real: lead `3c9ce0fe-…`, `status = escalado_humano` + responsável, mensagem seguinte sem resposta (`evidencia.md` §15, execuções `2190`,`2195`,`2200`,`2206`) |
+| SMK-04 | P1: Prova conversacional dos três desfechos | Execute | ✅ Verified — cenário opt-out por conversa real: lead `81509a2c-…`, `optedOutAt` gravado, memória purgada pelo próprio fluxo, silêncio depois (`evidencia.md` §16, execuções `2229`,`2234`,`2239`,`2243`) |
+| SMK-05 | P1: Prova conversacional dos três desfechos | Execute | ✅ Verified — evidência registrada por cenário (id de execução, captura, e o link do Meet no cenário 1) e checklist de limpeza dos três alvos aplicado entre os três cenários (`roteiro.md` T11; confirmações em `evidencia.md` §14.6, §15.7, §16.7) |
+| SMK-06 | P1: Prova conversacional dos três desfechos | Execute | ✅ Verified — veredito por desfecho, nunca por estilo (`evidencia.md` §17.1); nenhum cenário reprovou na rodada final, então nenhuma fix task foi aberta antes da subida a Verified (§17.5) |
+| DOC-01 | P2: Rastreabilidade honesta do que o agente faz | Execute | ✅ Verified — VOZ-03 AC4 e o Edge Case correspondente do lote-6c já declaravam o silêncio como comportamento aceito (reconciliado em `5a43b5b`, antes deste lote; reconfirmado em T17); Finding 1 do `validation.md` do lote-6c fechado por reconciliação documental em T18, com a opção (b) do Verifier registrada como deliberadamente não escolhida |
+| DOC-02 | P2: Rastreabilidade honesta do que o agente faz | Execute | ✅ Verified — `n8n/README.md` §4 corrigida (T19, `a947dee`): guard `process.env.VITEST` → `TEST_DATABASE_URL` de `src/db/index.ts:9-11` registrado, incidente original preservado como histórico, `npm run db:seed` explícito continua rotacionando chaves |
+| MTN-01 | P3: Multi-tenancy real exercitada no smoke | Execute | ⏳ **Pending — depende de T25, ainda não executada nesta janela.** T25 é condicional à homologação do 2º número no painel da Meta; nunca aprovado por ausência. Ver `STATE.md` § Handoff para o estado exato da pendência |
 
-**Coverage:** 12 total, 12 mapeados a critérios, 0 sem mapeamento.
+**Coverage:** 12 total, 12 mapeados a critérios, 0 sem mapeamento. **11 Verified, 1 Pending (MTN-01, condicional a T25)**.
 
 ### Mapa de cobertura — requisito, critérios e dívida que fecha
 
@@ -196,9 +199,9 @@ sob `vale-uberaba` no CRM, com o lead de `triangulo` intocado.
 
 ## Success Criteria
 
-- [ ] Uma mensagem real no WhatsApp produz resposta do agente rodando `gpt-5.4-nano-2026-03-17`, com id de execução registrado.
-- [ ] Os três desfechos existem no CRM, cada um com captura de tela e id de execução.
-- [ ] Um evento com link do Google Meet foi criado no Calendar por uma conversa real, não por fixture.
-- [ ] AD-015 encerrada em `STATE.md`, com registro honesto do que ficou provado e do que não.
-- [ ] AGT-04, AGT-05 e LGPD-03 com veredito atualizado na rastreabilidade do lote-6.
-- [ ] Nenhuma tool nova e nenhuma linha de `n8n/src/gate.mjs` alterada ao fim do lote.
+- [x] Uma mensagem real no WhatsApp produz resposta do agente rodando `gpt-5.4-nano-2026-03-17`, com id de execução registrado. Execução `2123` (turno 1 do cenário 1, T13) — `ai_languageModel` confirma o modelo, `evidencia.md` §14.2.
+- [x] Os três desfechos existem no CRM, cada um com captura de tela e id de execução. `evidencia.md` §14.3 (cenário 1), §15.3 (cenário 2), §16.3 (cenário 3).
+- [x] Um evento com link do Google Meet foi criado no Calendar por uma conversa real, não por fixture. `meetLink: https://meet.google.com/bsy-htxg-evt`, execução `2143` (sub-workflow real do cenário 1, não `test_workflow`/fixture).
+- [x] AD-015 encerrada em `STATE.md`, com registro honesto do que ficou provado e do que não. `Status: superseded by AD-027` (T20); AD-027 registra o protocolo, AD-026 registra o modelo.
+- [ ] AGT-04, AGT-05 e LGPD-03 com veredito atualizado na rastreabilidade do lote-6. **Pendente de T22** (próxima task deste mesmo lote, ainda não executada no momento em que T21 fecha este arquivo) — a prova em si já está feita (`evidencia.md` §14-16); falta só levar o veredito para `lote-6-agente-n8n-whatsapp/spec.md`.
+- [x] Nenhuma tool nova e nenhuma linha de `n8n/src/gate.mjs` alterada ao fim do lote. Confirmado em T3 ("Nenhum arquivo de `n8n/src/` alterado") e reafirmado em `evidencia.md` §16.4 sobre a mudança de opt-out por linguagem natural ("`gate.mjs` não mudou uma linha").

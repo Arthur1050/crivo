@@ -660,10 +660,10 @@ aconteceu, e marcar a AD-015 como superada.
 - Skill: NONE
 
 **Done when**:
-- [ ] Cada um dos 12 IDs com status atualizado e a evidência citada (commit, id de execução, ou arquivo)
-- [ ] Qualquer ID que não chegou a `Verified` fica com o motivo escrito, não com status otimista
-- [ ] Os Success Criteria da spec marcados um a um, inclusive os que não foram atingidos
-- [ ] Gate check passa: `npx vitest run && npm run lint && npm run build`
+- [x] Cada um dos 12 IDs com status atualizado e a evidência citada (commit, id de execução, ou arquivo)
+- [x] Qualquer ID que não chegou a `Verified` fica com o motivo escrito, não com status otimista
+- [x] Os Success Criteria da spec marcados um a um, inclusive os que não foram atingidos
+- [x] Gate check passa: `npx vitest run && npm run lint && npm run build`
 
 **Tests**: none
 **Gate**: build
