@@ -584,10 +584,10 @@ documental, sem apagar a análise original.
 - Skill: NONE
 
 **Done when**:
-- [ ] Nota de resolução acrescentada ao Finding 1, com data e referência ao lote-10
-- [ ] O texto original preservado — o histórico do achado não é reescrito
-- [ ] A opção (b) do Verifier (contador de regeneração + envio dedicado) registrada como deliberadamente não escolhida
-- [ ] Gate check passa: `npx vitest run && npm run lint && npm run build`
+- [x] Nota de resolução acrescentada ao Finding 1, com data e referência ao lote-10
+- [x] O texto original preservado — o histórico do achado não é reescrito
+- [x] A opção (b) do Verifier (contador de regeneração + envio dedicado) registrada como deliberadamente não escolhida
+- [x] Gate check passa: `npx vitest run && npm run lint && npm run build`
 
 **Tests**: none
 **Gate**: build
