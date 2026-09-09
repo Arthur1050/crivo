@@ -685,10 +685,10 @@ o smoke provou.
 - Skill: NONE
 
 **Done when**:
-- [ ] AGT-04, AGT-05 e LGPD-03 com veredito novo, cada um citando o cenário e o id de execução que o fechou
-- [ ] A menção à AD-015 preservada como histórico, com a nota de que o lote-10 a fechou
-- [ ] Se algum cenário reprovou, o veredito reflete isso — a tabela não sobe para `Verified` por conveniência
-- [ ] Gate check passa: `npx vitest run && npm run lint && npm run build`
+- [x] AGT-04, AGT-05 e LGPD-03 com veredito novo, cada um citando o cenário e o id de execução que o fechou
+- [x] A menção à AD-015 preservada como histórico, com a nota de que o lote-10 a fechou
+- [x] Se algum cenário reprovou, o veredito reflete isso — a tabela não sobe para `Verified` por conveniência (não se aplica: os três cenários passaram na rodada final, por `evidencia.md` §17.1)
+- [x] Gate check passa: `npx vitest run && npm run lint && npm run build`
 
 **Tests**: none
 **Gate**: build
