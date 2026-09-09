@@ -1477,3 +1477,93 @@ Três alvos (não houve agendamento, então nada no Calendar):
 | 1 | Sessão de memória | `"triangulo:553499532444"` em `n8n_chat_histories` |
 | 2 | Linha de `conversa_estado` | Data Table `ZsplBxJjXv3kwKZ8`, `tenantSlug`+`waId` |
 | 3 | Lead no CRM | `3c9ce0fe-6b7c-439f-9912-eced234d018f`, ordem `messages` -> `conversations` -> `leads` |
+
+---
+
+## T15 — Cenário 3 (opt-out): **APROVADO** (2026-09-09)
+
+> **RESULTADO: o desfecho exigido por SMK-04 / LGPD-03 foi atingido por conversa real, ponta a
+> ponta.** Lead `81509a2c-83ca-4bcc-8f3c-60aba7ffe374`, `optedOutAt = 2026-09-09T12:46:14.541Z`,
+> sessão de memória purgada **pelo próprio fluxo**, exatamente uma confirmação enviada e silêncio
+> depois. É o desfecho que a AD-015 deferiu em 2026-08-09 e que nunca tinha rodado.
+
+### 16.1 Duas rodadas: a primeira achou um defeito de compliance
+
+| # | Lead | O que aconteceu |
+| --- | --- | --- |
+| 1 | (09/09, manhã) | O lead escreveu "quero que você pare de me mandar mensagens" — pedido em português comum. `detectOptOut` só reconhece a palavra exata, então a rota `opt-out` **não disparou**, `optedOutAt` ficou nulo, e o agente respondeu "vou deixar de te mandar mensagens" (promessa que não tem como cumprir) e **seguiu respondendo mais três vezes**. Defeito de compliance real, não de estilo |
+| 2 | `81509a2c-…` (09/09, 12:44) | **APROVADO** — com a orientação nova publicada |
+
+### 16.2 Execuções da rodada aprovada
+
+| Turno | Execução | O que prova |
+| --- | --- | --- |
+| 1 | `2229` | Lead **novo** (`firstContactAt 2026-09-09T12:44:46`, campos `null`) — estado limpo |
+| 2 | `2234` | Lead diz "foi engano, não quero você me mandando mais mensagens". Agente: *"Entendi. Para encerrar de vez, basta você responder com a palavra sair, sozinha, sem mais nada."* — reconhece a intenção, **não promete parar**, e orienta |
+| 3 | `2239` | `route: "opt-out"` (gate determinístico na palavra exata). Nó `Chat Memory Manager: purgar memória (opt-out)` executou com `{success: true}` — **purga pelo próprio fluxo**. Confirmação única enviada |
+| 4 | `2243` | `optedOutAt: "2026-09-09T12:46:14.541Z"` já preenchido; `route: "somente-registrar"`; a mensagem "teste" foi gravada e **nenhuma resposta** foi enviada |
+
+### 16.3 Desfecho exigido — item a item
+
+| Exigência (roteiro §5) | Status | Evidência |
+| --- | --- | --- |
+| `optedOutAt` preenchido | OK | `2026-09-09T12:46:14.541Z`, lido no gate de `2243` |
+| Sessão purgada **pelo fluxo**, não pela limpeza manual | OK | Nó de purga executou em `2239` com `{success: true}`, dentro da rota `opt-out` |
+| Exatamente UMA confirmação, e silêncio depois | OK | Confirmação em `2239`; `2243` roteado para `somente-registrar`, sem resposta |
+
+**Captura**: conversa completa fornecida pelo usuário (09/09), mostrando os quatro turnos e a ausência
+de resposta ao "teste".
+
+### 16.4 A correção que destravou o cenário — e por que ela não emenda a AD-018
+
+A rodada 1 expôs um buraco de compliance: quem pede para parar em português comum não era
+descadastrado. Quatro desenhos foram postos ao usuário; ele escolheu um quinto, melhor que os três
+que eu havia proposto:
+
+> **O agente interpreta a intenção e orienta o lead a digitar a palavra `sair`.**
+
+Por que este desenho é o certo:
+
+- **O efeito continua 100% determinístico.** `gate.mjs` **não mudou uma linha** (confirmado por
+  `git status` antes do commit). O opt-out segue detectado antes do agente, por igualdade exata.
+- **Nenhuma tool de opt-out é exposta ao modelo** — a metade literal da AD-018 que trata do
+  invariante de LGPD. **A AD-018 fica intacta, sem emenda.**
+- **O modelo faz só o que cabe a ele**: reconhecer intenção e orientar. Não decide efeito nenhum.
+- **A confirmação vira ato explícito do lead**, que é o consentimento mais forte para LGPD — mais
+  forte que uma inferência de modelo.
+- **Falso positivo custa zero**: quem não quer sair simplesmente não digita. Compare com a
+  alternativa de expor a tool, onde um falso positivo tira o lead do funil e exige ato humano para
+  desfazer.
+
+Fecha também a promessa fora de capacidade: o agente passa a nunca dizer que vai parar nem que já
+parou.
+
+**SPEC_DEVIATION registrado**: "opt-out por linguagem natural" estava Out of Scope no `spec.md` deste
+lote, adiado para o L13. Trazido para cá por decisão explícita do usuário (2026-09-09), com o
+argumento de compliance. Commit `d91f379`, versão publicada `57ea08a0-…`.
+
+### 16.5 Limite conhecido e aceito
+
+A cobertura **não** é total, e não deve ser lida como tal: o agente agora *orienta* em qualquer
+redação, mas o descadastro só acontece se o lead digitar a palavra. Se ele pedir para parar e não
+responder mais nada, `optedOutAt` continua nulo — a conversa morre sem registro formal. É inerente ao
+desenho que preserva a AD-018, e é exatamente o que um L13 precisaria resolver se o produto quiser
+cobertura sem ato do lead.
+
+### 16.6 Observações de estilo
+
+- Nenhuma rejeição por `abertura-proibida` nesta conversa.
+- Abertura do turno 1 com a postura nova ("Me conta qual imóvel você procura que eu te ajudo a chegar
+  na melhor opção") — sem pedir dado de cadastro de saída.
+- A confirmação de opt-out é texto fixo do fluxo, não do modelo — por desenho.
+
+### 16.7 Alvos de limpeza depois do cenário 3
+
+Três alvos. **Atenção**: a sessão de memória já foi purgada pelo fluxo; o que resta é o lead e a linha
+de estado.
+
+| # | Alvo | Chave |
+| --- | --- | --- |
+| 1 | Sessão de memória | `"triangulo:553499532444"` — já purgada pelo fluxo em `2239`, conferir só por garantia |
+| 2 | Linha de `conversa_estado` | Data Table `ZsplBxJjXv3kwKZ8`, `tenantSlug`+`waId` |
+| 3 | Lead no CRM | `81509a2c-83ca-4bcc-8f3c-60aba7ffe374`, ordem `messages` -> `conversations` -> `leads` |

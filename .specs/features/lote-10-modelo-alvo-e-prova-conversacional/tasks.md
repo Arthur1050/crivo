@@ -497,12 +497,19 @@ ao modelo está em ordem — e declarar o congelamento de `vitest`.
 - Skill: NONE
 
 **Done when**:
-- [ ] Lead termina com `optedOutAt` preenchido no CRM
-- [ ] Sessão em `n8n_chat_histories` confirmada purgada pelo próprio fluxo (não pela limpeza manual)
-- [ ] Uma mensagem enviada depois do opt-out fica sem resposta, e nada é enviado ao lead
-- [ ] Id da execução registrado
-- [ ] Captura de tela do CRM registrada
-- [ ] Limpeza dos três alvos confirmada ao fim
+- [x] Lead termina com `optedOutAt` preenchido no CRM — `2026-09-09T12:46:14.541Z`, lead `81509a2c-…`
+- [x] Sessão em `n8n_chat_histories` confirmada purgada pelo próprio fluxo (não pela limpeza manual) — nó `Chat Memory Manager: purgar memória (opt-out)` executou com `{success: true}` na execução `2239`, dentro da rota `opt-out`
+- [x] Uma mensagem enviada depois do opt-out fica sem resposta, e nada é enviado ao lead — execução `2243`, `route: "somente-registrar"`
+- [x] Id da execução registrado — turnos `2229`, `2234`, `2239` (opt-out) e `2243` (silêncio)
+- [x] Captura de tela do CRM registrada — conversa completa fornecida pelo usuário; ver `evidencia.md` §16.3
+- [ ] Limpeza dos três alvos confirmada ao fim — pendente (alvos em §16.7)
+
+**SPEC_DEVIATION**: a spec previa provar só o caminho por palavra-chave exata ("opt-out por linguagem
+natural" estava Out of Scope, adiado para o L13). A primeira rodada expôs um buraco de compliance — o
+lead pediu para parar em português comum e não foi descadastrado —, e por decisão explícita do
+usuário (2026-09-09) a orientação em linguagem natural entrou neste lote (commit `d91f379`). A
+AD-018 **não foi emendada**: `gate.mjs` não mudou e nenhuma tool de opt-out foi exposta ao modelo.
+Detalhe em `evidencia.md` §16.4.
 
 **Tests**: none
 **Gate**: evidência
