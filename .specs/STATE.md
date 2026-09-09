@@ -212,48 +212,93 @@
 
 ## Handoff
 
-### Estado atual (2026-09-05) — lote-10 PLANEJADO, não executado
+### Estado atual (2026-09-09) — lote-10 EM EXECUÇÃO: Fases 1–5 fechadas, Fases 6–8 pendentes
 
-**Lote 10 (`lote-10-modelo-alvo-e-prova-conversacional`) — planejamento fechado e aprovado nesta
-janela; Execute NÃO começou.** Specify → Design → Tasks completos (`validate_spec` 0/0,
-`validate_tasks` 0 erros), 25 tasks em 8 fases, `EXECUTE-PROMPT.md` escrito. Commit `22b520d`.
-A execução acontece em janela separada, pelo `EXECUTE-PROMPT.md`.
+**T1–T16 concluídas e commitadas. A próxima task é a T17.** A execução continua em janela nova, pelo
+mesmo `EXECUTE-PROMPT.md`; o que falta é documentação e fechamento (T17–T24) mais a MTN-01 condicional
+(T25). Nenhuma delas exige conversa real nem publicação na instância.
 
-**Três achados do planejamento que mudam o escopo em relação ao roadmap:**
+**O modelo alvo ficou.** `gpt-5.4-nano-2026-03-17` (`@n8n/n8n-nodes-langchain.lmChatOpenAi` v1.3)
+passou na bateria de tool calling (T9, veredito APROVADO em `evidencia.md` §12.6) e está em produção.
+O rollback da `bateria.md` §6.1 **não** foi disparado. A AD-026 (T20) deve nomear este modelo.
 
-1. **O item 2 do roadmap L10 está obsoleto.** `n8n/workflows/principal.ts:1269` (e o `generated/`
-   idêntico) já declara `models/gemini-3.5-flash-lite` — a divergência fonte × instância foi
-   fechada no lote-8 T30. O item vira uma checagem de paridade publicado == `generated/` antes de
-   tocar o nó (MOD-03).
-2. **Os 3 cenários da AD-015 não rodam em sequência sem limpeza entre eles.** `n8n/src/gate.mjs:67-72`
-   é terminal em `optedOutAt` e `escalado_humano`, e o lead é idempotente por `externalId` (=`waId`):
-   um número de teste = um lead por tenant. Rodar escalar trava o lead e o cenário de opt-out nunca
-   alcança o agente. É a explicação de por que a AD-015 nunca foi executada. **Decisão do usuário
-   (2026-09-05)**: a limpeza dos três alvos (lead no CRM, linha de `conversa_estado`, sessão em
-   `n8n_chat_histories`) é feita **à mão por ele** — o lote entrega o checklist que nomeia os alvos,
-   não o código que os apaga.
-3. **O modelo alvo é `gpt-5.4-nano-2026-03-17`**, não o `gpt-5-nano` que o roadmap nomeava. A
-   listagem real da conta OpenAI (via MCP, `searchModels`) mostra as duas gerações disponíveis;
-   snapshot datado em vez de alias flutuante, pela reprodutibilidade da prova conversacional.
+**Os três desfechos da AD-015 estão provados por conversa real** — é o que o lote existia para fazer:
 
-**Confirmado ao vivo no planejamento** (não reconferir do zero no Execute — está no `design.md` §
-Pesquisa): nó `@n8n/n8n-nodes-langchain.lmChatOpenAi` v1.3; `model` é resource locator, não string;
-`reasoningEffort` disponível só para `gpt-5.*`/`o[3-9]`, e `temperature` fica de fora (Responses API
-é o default do nó); credencial `OpenAI account` (`openAiApi`, `bGnmNn5iFH4sBCoo`) criada pelo usuário
-nesta janela; não existe ferramenta MCP para apagar linha de Data Table; `conversations.leadId` e
-`messages.conversationId` são FK sem `onDelete`.
+| Cenário | Requisito | Estado final provado | Execuções |
+| --- | --- | --- | --- |
+| Qualificar → agendar | SMK-02 / AGT-04 | `qualificado_agendado`, 2026-09-08 13:00, André Luiz Martins, Meet `bsy-htxg-evt` | `2123`, `2135`, `2142`, `2143` |
+| Escalar | SMK-03 / AGT-05 | `escalado_humano` + responsável + mensagem seguinte sem resposta | `2190`, `2195`, `2200`, `2206` |
+| Opt-out | SMK-04 / LGPD-03 | `optedOutAt` gravado, memória purgada pelo fluxo, silêncio depois | `2229`, `2234`, `2239`, `2243` |
 
-**Duas AD ficam para o fechamento do Execute, deliberadamente**: AD-026 (modelo alvo) só pode ser
-escrita depois do veredito da bateria de tool calling — se o rollback disparar, o modelo que ficou é
-o Gemini e uma AD escrita antes estaria mentindo. AD-027 (protocolo de prova conversacional) encerra
-a AD-015, que passa a `superseded by AD-027`.
+**A Fase 5 achou 11 defeitos reais e todos foram corrigidos** (detalhe em `evidencia.md` §17.3):
+apresentação ausente; agendamento antes do aceite; pergunta e agendamento no mesmo turno; pergunta de
+campo oportunista após confirmar; `meetLink` que era a página do evento e não o link de entrada;
+canal da reunião dito errado ("pelo WhatsApp"); jargão técnico vazando ao lead; nome do lead
+anunciado como se fosse o corretor; postura de vendedor apressado; negociação de horário depois de
+escalar; opt-out em linguagem natural sem registro.
 
-**Estado do repositório**: branch `main`, HEAD `22b520d`, `origin/main` em `d550b79` — **1 commit
-local pendente de push** (só artefatos de planejamento; push não autorizado nesta janela).
-**Piso de testes**: 1015 em 81 arquivos, a confirmar por medição na T1.
-**Next step**: abrir janela nova e colar o `EXECUTE-PROMPT.md` do lote-10.
-**Blockers**: nenhum para começar. O 2º número homologado na Meta (MTN-01) segue pendente e é
-condicional por decisão — não bloqueia AGT-04/05 nem LGPD-03.
+**Achado que vale além deste lote** (`evidencia.md` §15.4): o defeito do nome foi corrigido duas vezes.
+A primeira, por instrução de prompt, **falhou** — o `PATCH /leads/{id}` devolvia o lead inteiro e o
+`name` do topo era mais óbvio que o `assignedBroker.name`. Só a correção na **fronteira**
+(`optimizeResponse` + `fieldsToInclude: "except"`) funcionou. Quando a resposta errada é o campo mais
+visível do payload, instrução de prompt não vence — é preciso remover o campo. É a AD-018 na prática.
+
+**Versões publicadas na instância** (todas conferidas por SHA-256 antes de ativar):
+- `crivo-agente-principal` (`0B1nqjODu7xuYYKF`): **`57ea08a0-6054-4b65-8518-d848293a878c`**
+- `crivo-tool-agendar-reuniao` (`2qCs6rPzmeOqan65`): **`931b8a13-9bbc-431b-a198-0de8e4371d80`**
+
+**⚠️ Há uma edição ALHEIA não commitada na árvore de trabalho.** `n8n/workflows/principal.ts` e
+`n8n/generated/principal.ts` aparecem como modificados: é a correção de indentação do
+`retryOnFail`/`maxTries` do nó `consultar_documentos`, de uma sessão separada que foi pausada. **Não
+é deste lote e não deve entrar em commit dele.** Ao longo da execução ela foi preservada por
+salvar-patch → `git checkout` → trabalhar → commitar → `git apply` de volta. Mantenha esse cuidado.
+
+**SPEC_DEVIATION a refletir na rastreabilidade (T21)**: "opt-out por linguagem natural" estava Out of
+Scope no `spec.md` (adiado para o L13) e foi trazido para este lote por decisão explícita do usuário
+(2026-09-09), depois que a primeira rodada do cenário 3 expôs um buraco de compliance. A **AD-018 não
+foi emendada**: `gate.mjs` não mudou e nenhuma tool de opt-out foi exposta ao modelo — o agente apenas
+orienta o lead a digitar a palavra que dispara o mecanismo determinístico.
+
+**Piso de testes**: **1076 passed em 82 arquivos, 0 falhas** (era 1015 em 81 no início do lote,
+medido na T1). A suíte `n8n/src` sozinha foi de 168 para 236. **O congelamento de `vitest` declarado
+na T12 foi encerrado na T16** — testes podem rodar normalmente daqui em diante.
+
+**⚠️ Nunca rodar duas suítes ao mesmo tempo.** Descoberto na T16: `npx vitest run` semeia um
+`TEST_DATABASE_URL` compartilhado, então duas rodadas concorrentes se corrompem mutuamente e
+produzem falhas falsas convincentes — `23503` em `create-admin.test.ts` numa, 6 tenants onde
+`seed.test.ts` espera 3 na outra. Nenhuma era regressão. Antes de aceitar uma falha de suíte como
+real, confirme que nenhum outro processo `node` está vivo e repita isolado.
+
+**Estado do repositório**: branch `main`, 29 commits à frente de `origin/main`, **nenhum
+push feito** (não autorizado nesta janela). A Vercel redeploya em push a `main`; como o lote não muda
+código do app, não há motivo para push antes do fim.
+
+**Next step**: T17 — reconciliar VOZ-03 AC4 e os Edge Cases do lote-6c (DOC-01).
+
+**Pendências nomeadas**:
+- **Limpeza dos 3 alvos do cenário 3** (`evidencia.md` §16.7): lead `81509a2c-…` e a linha de
+  `conversa_estado`. A memória já foi purgada pelo próprio fluxo.
+- **MTN-01 (T25)**: o 2º número homologado na Meta segue pendente. Se não sair, MTN-01 fica
+  explicitamente **não verificado** — nunca aprovado por ausência.
+- **Remarcação de reunião é impossível** (`TRANSITIONS.qualificado_agendado = []`,
+  `src/server/integration/leads.ts:98`). Fix adiado pelo usuário: exige coluna para o id do evento,
+  a tool passar a atualizar/cancelar o evento antigo, mudança de contrato e deploy na Vercel.
+- **`agentVoiceTone` × `voice.mjs`**: o tom do tenant pede "boa" e "show", que `voice.mjs:27` barra
+  como abertura. Custa iterações em quase todo turno. É ajuste de configuração do tenant, não de
+  código.
+- **Registro de qualificação incompleto**: `modality` e `propertyType` ficaram `null` mesmo revelados
+  pelo lead. E os campos são marcados como "perguntados" antes de o agente rodar — defeito
+  pré-existente da máquina de fases, mais visível depois do afrouxamento da instrução de fase.
+- **Paridade cosmética do `crivo-tool-agendar-reuniao`**: o nó `Code: checar horario comercial`
+  publicado é uma cópia minificada do módulo (1.867 chars contra 5.704 no repo) — mesma lógica, sem
+  comentários. Anterior a este lote, não tocada (`evidencia.md` §14.7).
+- **Dívidas herdadas não tocadas**: duas linhas inertes em `conversa_estado`; ausência de helper de
+  revogação de chave de serviço por label na DAL; L4 Fix 1, L4 Fix 2 e L5 Fix 1; `openapi.yaml` sem
+  `assignedBroker` nem os 2 códigos de erro do lote-8; `RESEND_FROM` a confirmar na Vercel; alerta
+  ativo de queda da integração (L15); baselines dos tenants-piloto ainda fictícios (L15).
+
+**Blockers**: nenhum para a T17.
+
 
 ### Estado do lote 9 (2026-08-30)
 
