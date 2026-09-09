@@ -634,12 +634,12 @@ aconteceu, e marcar a AD-015 como superada.
 - Skill: NONE
 
 **Done when**:
-- [ ] AD-026 registra o modelo que **realmente ficou** após o veredito de T9 — se o rollback disparou, ela nomeia o Gemini e o motivo, nunca o alvo planejado
-- [ ] AD-026 cobre: snapshot datado obrigatório (alias flutuante proibido), `reasoningEffort` no lugar de `temperature`, troca confinada a um nó
-- [ ] AD-027 registra o protocolo de prova conversacional: roteiro versionado, checklist dos três alvos, barra por desfecho
-- [ ] AD-015 com `Status: superseded by AD-027`
-- [ ] Trade-off honesto em cada uma — inclusive o de a limpeza ser manual e não verificável
-- [ ] Gate check passa: `npx vitest run && npm run lint && npm run build`
+- [x] AD-026 registra o modelo que **realmente ficou** após o veredito de T9 — se o rollback disparou, ela nomeia o Gemini e o motivo, nunca o alvo planejado
+- [x] AD-026 cobre: snapshot datado obrigatório (alias flutuante proibido), `reasoningEffort` no lugar de `temperature`, troca confinada a um nó
+- [x] AD-027 registra o protocolo de prova conversacional: roteiro versionado, checklist dos três alvos, barra por desfecho
+- [x] AD-015 com `Status: superseded by AD-027`
+- [x] Trade-off honesto em cada uma — inclusive o de a limpeza ser manual e não verificável
+- [x] Gate check passa: `npx vitest run && npm run lint && npm run build`
 
 **Tests**: none
 **Gate**: build
