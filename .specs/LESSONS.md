@@ -152,6 +152,18 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: src/server/data/index.ts:2375 purgeIntegrationRefusals RETENTION_MS — validation.md Discrimination Sensor mutation 4 (testing)
 - last seen: 2026-08-30T13:31:12Z
 
+### L-024 - When an agent's turn can only end successfully via an external send (e.g. a WhatsApp reply), verify that send can actually succeed against the isolated/discard test target before relying on that target for a pass/fail measurement — otherwise every run dies the same way regardless of the thing under test.
+- signal: `spec_deviation` · recurrence: 1 feature(s) · scope: `n8n-agent-testing` · harmful: 0
+- features: lote-10-modelo-alvo-e-prova-conversacional
+- evidence: n8n/smoke/evidencia.md §12.1 (T9 SPEC_DEVIATION) (n8n-agent-testing)
+- last seen: 2026-09-09T20:13:02Z
+
+### L-025 - When a deterministic compliance gate keys off one exact trigger word or phrase, plan for and test natural-language paraphrases of the same user intent before smoke/production — real users phrase intent naturally far more often than they know the exact keyword.
+- signal: `spec_deviation` · recurrence: 1 feature(s) · scope: `compliance,gate` · harmful: 0
+- features: lote-10-modelo-alvo-e-prova-conversacional
+- evidence: n8n/smoke/evidencia.md §16.4 (T15 SPEC_DEVIATION) (compliance,gate)
+- last seen: 2026-09-09T20:13:02Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

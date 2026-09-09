@@ -19,14 +19,16 @@ superfície.
 ## L10 — Modelo alvo e prova conversacional — ✅ EXECUTADO (2026-09-09)
 
 > **Status**: sai de proposto para executado. `.specs/features/lote-10-modelo-alvo-e-prova-conversacional/`
-> (spec.md com 11/12 requirement IDs `Verified`, MTN-01 pendente de T25 condicional). AD-026 (modelo)
-> e AD-027 (protocolo de prova conversacional) registradas em `STATE.md`; AD-015 encerrada
-> (`superseded by AD-027`). Dos 6 itens abaixo: **1, 3, 5 e 6 entregues**; **2 absorvido pelo item 1**
-> (a checagem de paridade publicado↔`generated/` virou parte do próprio Design/Execute da troca —
-> `evidencia.md` §2); **4 condicional**, roda em T25 se o 2º número for homologado a tempo, senão fica
-> pendência nomeada (nunca aprovado por ausência). O Verifier independente da feature roda depois de
-> T25 (dispatch do orquestrador) — este índice será revisitado com o veredito final quando isso
-> acontecer.
+> (spec.md com 11/12 requirement IDs `Verified`, MTN-01 **não verificado, permanentemente sem
+> caminho disponível** — não mais "condicional a T25"). AD-026 (modelo) e AD-027 (protocolo de prova
+> conversacional) registradas em `STATE.md`; AD-015 encerrada (`superseded by AD-027`). Dos 6 itens
+> abaixo: **1, 3, 5 e 6 entregues**; **2 absorvido pelo item 1** (a checagem de paridade
+> publicado↔`generated/` virou parte do próprio Design/Execute da troca — `evidencia.md` §2); **4
+> fechado em T25 pelo caminho indisponível** — o usuário confirmou que o tenant `vale-uberaba` é
+> fictício, sem número real para homologar (`evidencia.md` §18), não uma homologação apenas atrasada.
+> O Verifier independente da feature rodou após T25 e retornou **PASS** (12/12 requirement IDs
+> spec-anchored, 7/7 mutações do sensor de discriminação mortas, gate 1076/1076) —
+> `validation.md` na pasta do lote.
 
 **Fecha**: AD-015 (smoke deferido), AGT-04, AGT-05, LGPD-03 ponta a ponta, #16, #17, #21.
 

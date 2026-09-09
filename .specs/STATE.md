@@ -228,12 +228,22 @@
 
 ## Handoff
 
-### Estado atual (2026-09-09) — lote-10: T1–T25 concluídas, Verifier pendente
+### Estado do lote 10 (2026-09-09) — encerrado
 
-**T1–T25 concluídas e commitadas.** Todas as 8 fases (linha de base, troca do modelo, bateria de tool
-calling, roteiro do smoke, as três conversas reais, reconciliação documental, fechamento/rastreabilidade
-e multi-tenancy condicional) estão fechadas. Falta só o Verifier — automático, nunca opcional — que o
-orquestrador despacha em seguida, e o `validate_state.py` do fechamento.
+**Lote 10 (`lote-10-modelo-alvo-e-prova-conversacional`) — EXECUTADO E VERIFICADO. Verifier: PASS.**
+T1–T25 concluídas e commitadas (37 commits, `513691a..fc732aa`, mais o commit de fechamento deste
+Handoff). `validation.md` escrito pelo Verifier (sub-agente independente, author ≠ verifier),
+`validate_state.py lote-10-modelo-alvo-e-prova-conversacional` confirmado com exit 0 pelo
+orquestrador de forma independente (não só aceito do relatório do sub-agente). Spec-anchored check:
+12/12 requirement IDs com evidência `file:line` batendo com o outcome definido na spec, 0 gaps de
+precisão. Sensor de discriminação: **7/7 mutações mortas** — as 5 nomeadas no plano contra
+`principal-modelo.test.ts` (id do modelo, nó Gemini reintroduzido, tool renomeada, `sessionKey`
+alterada, contagem de nós/conexões) mais 2 mutações leves contra as correções reais da Fase 5
+(`meetLink` em `agendamento.test.ts`, saudação do primeiro turno em `system-message.test.ts`) —
+nenhuma sobreviveu, nenhuma suíte decorativa encontrada. `gate.mjs` confirmado com zero toques nos 37
+commits (grep independente do Verifier), sustentando a alegação de que a AD-018 não foi emendada.
+2 lições distiladas (`L-024`, `L-025`, status `candidate`) a partir dos dois `SPEC_DEVIATION`
+fundamentados do lote (bateria sobre alvo trocado; opt-out por linguagem natural).
 
 **T25 fechou pelo caminho indisponível.** Perguntado diretamente, o usuário informou nesta janela
 (2026-09-09): "Não tem como adicionar o numero dele. Ignore essa pendencia. Vale do Uberaba é
@@ -314,12 +324,13 @@ produzem falhas falsas convincentes — `23503` em `create-admin.test.ts` numa, 
 `seed.test.ts` espera 3 na outra. Nenhuma era regressão. Antes de aceitar uma falha de suíte como
 real, confirme que nenhum outro processo `node` está vivo e repita isolado.
 
-**Estado do repositório**: branch `main`, 38 commits à frente de `origin/main` no fechamento de T25
-(37 até T24 + este commit de T25), **nenhum push feito** (não autorizado nesta janela). A Vercel
-redeploya em push a `main`; como o lote não muda código do app, não há motivo para push antes do fim.
+**Estado do repositório**: branch `main`, 39 commits à frente de `origin/main` incluindo o commit que
+fecha este Handoff (38 até T25 + 1 de fechamento com `validation.md`/lições/índices), **nenhum push
+feito** (não autorizado nesta janela). A Vercel redeploya em push a `main`; como o lote não muda
+código do app, não há motivo para push antes do fim.
 
-**Next step**: dispatch do Verifier (automático, sobre o range completo do lote-10) e, se PASS,
-`validate_state.py lote-10-modelo-alvo-e-prova-conversacional` deve sair 0.
+**Next step**: nenhuma task formal restante no lote-10. `ROADMAP-POS-PILOTO.md` lista L11–L16 como
+propostos — próximo trabalho é escopo novo, a definir pelo usuário via nova rodada de Specify.
 
 **Pendências nomeadas** (T17–T25 são documentação pura; nenhuma delas tocou código, então nenhuma
 destas pendências foi resolvida ou alterada por este lote — repetidas aqui para não sumirem):
@@ -345,7 +356,7 @@ destas pendências foi resolvida ou alterada por este lote — repetidas aqui pa
   `assignedBroker` nem os 2 códigos de erro do lote-8; `RESEND_FROM` a confirmar na Vercel; alerta
   ativo de queda da integração (L15); baselines dos tenants-piloto ainda fictícios (L15).
 
-**Blockers**: nenhum. Todas as 25 tasks fechadas; falta só o Verifier.
+**Blockers**: nenhum. Lote fechado.
 
 
 ### Estado do lote 9 (2026-08-30)

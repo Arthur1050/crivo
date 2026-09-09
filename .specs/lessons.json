@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 24,
+  "next_id": 26,
   "lessons": [
     {
       "id": "L-001",
@@ -418,6 +418,42 @@
       ],
       "created": "2026-08-30T13:31:12Z",
       "last_seen": "2026-08-30T13:31:12Z"
+    },
+    {
+      "id": "L-024",
+      "key": "spec_deviation::when an agent s turn can only end successfully via an external send e g a whatsapp reply verify that send can actually succeed against the isolated discard test target before relying on that target for a pass fail measurement otherwise every run dies the same way regardless of the thing under test",
+      "text": "When an agent's turn can only end successfully via an external send (e.g. a WhatsApp reply), verify that send can actually succeed against the isolated/discard test target before relying on that target for a pass/fail measurement — otherwise every run dies the same way regardless of the thing under test.",
+      "signal": "spec_deviation",
+      "scope": "n8n-agent-testing",
+      "status": "candidate",
+      "features": [
+        "lote-10-modelo-alvo-e-prova-conversacional"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "n8n/smoke/evidencia.md §12.1 (T9 SPEC_DEVIATION) (n8n-agent-testing)"
+      ],
+      "created": "2026-09-09T20:13:02Z",
+      "last_seen": "2026-09-09T20:13:02Z"
+    },
+    {
+      "id": "L-025",
+      "key": "spec_deviation::when a deterministic compliance gate keys off one exact trigger word or phrase plan for and test natural language paraphrases of the same user intent before smoke production real users phrase intent naturally far more often than they know the exact keyword",
+      "text": "When a deterministic compliance gate keys off one exact trigger word or phrase, plan for and test natural-language paraphrases of the same user intent before smoke/production — real users phrase intent naturally far more often than they know the exact keyword.",
+      "signal": "spec_deviation",
+      "scope": "compliance,gate",
+      "status": "candidate",
+      "features": [
+        "lote-10-modelo-alvo-e-prova-conversacional"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "n8n/smoke/evidencia.md §16.4 (T15 SPEC_DEVIATION) (compliance,gate)"
+      ],
+      "created": "2026-09-09T20:13:02Z",
+      "last_seen": "2026-09-09T20:13:02Z"
     }
   ]
 }
