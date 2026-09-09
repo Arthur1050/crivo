@@ -710,11 +710,11 @@ em aberto.
 - Skill: NONE
 
 **Done when**:
-- [ ] Piso de testes final registrado (medido, não estimado)
-- [ ] Veredito da bateria e do smoke resumidos, com os ids de execução
-- [ ] Dívidas herdadas que este lote **não** tocou repetidas explicitamente, para não sumirem
-- [ ] Pendências novas nomeadas — inclusive MTN-01, se não tiver rodado
-- [ ] Gate check passa: `npx vitest run && npm run lint && npm run build`
+- [x] Piso de testes final registrado (medido, não estimado)
+- [x] Veredito da bateria e do smoke resumidos, com os ids de execução
+- [x] Dívidas herdadas que este lote **não** tocou repetidas explicitamente, para não sumirem
+- [x] Pendências novas nomeadas — inclusive MTN-01, se não tiver rodado
+- [x] Gate check passa: `npx vitest run && npm run lint && npm run build`
 
 **Tests**: none
 **Gate**: build

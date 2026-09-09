@@ -228,23 +228,36 @@
 
 ## Handoff
 
-### Estado atual (2026-09-09) — lote-10 EM EXECUÇÃO: Fases 1–5 fechadas, Fases 6–8 pendentes
+### Estado atual (2026-09-09) — lote-10 EM EXECUÇÃO: Fases 1–7 fechadas, Fase 8 (T25) pendente
 
-**T1–T16 concluídas e commitadas. A próxima task é a T17.** A execução continua em janela nova, pelo
-mesmo `EXECUTE-PROMPT.md`; o que falta é documentação e fechamento (T17–T24) mais a MTN-01 condicional
-(T25). Nenhuma delas exige conversa real nem publicação na instância.
+**T1–T24 concluídas e commitadas.** Fases 1–7 (linha de base, troca do modelo, bateria de tool
+calling, roteiro do smoke, as três conversas reais, reconciliação documental e fechamento/rastreabilidade)
+estão fechadas. Resta só a Fase 8 — T25, multi-tenancy condicional ao 2º número homologado na Meta —
+que não é delegável a um worker (depende de homologação no painel da Meta) e não exige conversa real
+nem publicação na instância para as tasks já concluídas.
 
 **O modelo alvo ficou.** `gpt-5.4-nano-2026-03-17` (`@n8n/n8n-nodes-langchain.lmChatOpenAi` v1.3)
 passou na bateria de tool calling (T9, veredito APROVADO em `evidencia.md` §12.6) e está em produção.
-O rollback da `bateria.md` §6.1 **não** foi disparado. A AD-026 (T20) deve nomear este modelo.
+O rollback da `bateria.md` §6.1 **não** foi disparado. **AD-026 registra este modelo** (T20): snapshot
+datado obrigatório (nunca alias flutuante), `reasoningEffort` no lugar de `temperature`, troca
+confinada ao nó `agentModel`.
 
-**Os três desfechos da AD-015 estão provados por conversa real** — é o que o lote existia para fazer:
+**Os três desfechos da AD-015 estão provados por conversa real** — é o que o lote existia para fazer.
+**A AD-015 está encerrada** (T20, `Status: superseded by AD-027`), e a rastreabilidade do lote-6 já
+reflete isso (T22, `lote-6-agente-n8n-whatsapp/spec.md`, commit `951135b`):
 
 | Cenário | Requisito | Estado final provado | Execuções |
 | --- | --- | --- | --- |
 | Qualificar → agendar | SMK-02 / AGT-04 | `qualificado_agendado`, 2026-09-08 13:00, André Luiz Martins, Meet `bsy-htxg-evt` | `2123`, `2135`, `2142`, `2143` |
 | Escalar | SMK-03 / AGT-05 | `escalado_humano` + responsável + mensagem seguinte sem resposta | `2190`, `2195`, `2200`, `2206` |
 | Opt-out | SMK-04 / LGPD-03 | `optedOutAt` gravado, memória purgada pelo fluxo, silêncio depois | `2229`, `2234`, `2239`, `2243` |
+
+**Bateria de tool calling — veredito APROVADO** (T9, `evidencia.md` §12.6): `R1 = falso` (as 5 tools
+com chamada bem-sucedida, execuções `1952`,`1956`,`1960`,`1966`,`1970`) e `R2 = falso` (as três
+cláusulas de sobrevivência à recusa, mesmo bloco de execuções). Duas rodadas anteriores não contaram
+(quota da OpenAI zerada; depois estado sujo + credencial do Google Calendar caducada) — nenhuma delas
+imputável ao modelo. **Smoke conversacional — veredito consolidado APROVADO** (T16, `evidencia.md`
+§17.1): os três cenários acima, todos aprovados pelo estado final no CRM/Calendar, nunca pelo estilo.
 
 **A Fase 5 achou 11 defeitos reais e todos foram corrigidos** (detalhe em `evidencia.md` §17.3):
 apresentação ausente; agendamento antes do aceite; pergunta e agendamento no mesmo turno; pergunta de
@@ -269,15 +282,21 @@ visível do payload, instrução de prompt não vence — é preciso remover o c
 é deste lote e não deve entrar em commit dele.** Ao longo da execução ela foi preservada por
 salvar-patch → `git checkout` → trabalhar → commitar → `git apply` de volta. Mantenha esse cuidado.
 
-**SPEC_DEVIATION a refletir na rastreabilidade (T21)**: "opt-out por linguagem natural" estava Out of
+**SPEC_DEVIATION refletido na rastreabilidade (T21)**: "opt-out por linguagem natural" estava Out of
 Scope no `spec.md` (adiado para o L13) e foi trazido para este lote por decisão explícita do usuário
 (2026-09-09), depois que a primeira rodada do cenário 3 expôs um buraco de compliance. A **AD-018 não
 foi emendada**: `gate.mjs` não mudou e nenhuma tool de opt-out foi exposta ao modelo — o agente apenas
 orienta o lead a digitar a palavra que dispara o mecanismo determinístico.
 
-**Piso de testes**: **1076 passed em 82 arquivos, 0 falhas** (era 1015 em 81 no início do lote,
+**Piso de testes final: 1076 passed em 82 arquivos, 0 falhas** (era 1015 em 81 no início do lote,
 medido na T1). A suíte `n8n/src` sozinha foi de 168 para 236. **O congelamento de `vitest` declarado
-na T12 foi encerrado na T16** — testes podem rodar normalmente daqui em diante.
+na T12 foi encerrado na T16** — testes podem rodar normalmente daqui em diante, e T17–T22 confirmaram
+isso na prática: cada uma rodou o gate build completo (`npx vitest run && npm run lint && npm run
+build`) de forma independente, e as seis rodadas bateram exatamente **1076 passed / 82 arquivos, 0
+falhas** — monotônico, medido, nunca herdado da documentação (T17–T22 são só documentação; nenhuma
+delas tocou código ou teste). Lint: os mesmos 3 avisos pré-existentes (`ifElse` não usado em
+`scheduler.ts`/`generated`, diretiva eslint redundante em `route-instrumentation.test.ts`), 0 erros.
+Build: exit 0 em todas as seis rodadas.
 
 **⚠️ Nunca rodar duas suítes ao mesmo tempo.** Descoberto na T16: `npx vitest run` semeia um
 `TEST_DATABASE_URL` compartilhado, então duas rodadas concorrentes se corrompem mutuamente e
@@ -285,17 +304,22 @@ produzem falhas falsas convincentes — `23503` em `create-admin.test.ts` numa, 
 `seed.test.ts` espera 3 na outra. Nenhuma era regressão. Antes de aceitar uma falha de suíte como
 real, confirme que nenhum outro processo `node` está vivo e repita isolado.
 
-**Estado do repositório**: branch `main`, 29 commits à frente de `origin/main`, **nenhum
-push feito** (não autorizado nesta janela). A Vercel redeploya em push a `main`; como o lote não muda
-código do app, não há motivo para push antes do fim.
+**Estado do repositório**: branch `main`, 35 commits à frente de `origin/main` no fechamento de T22
+(este commit de T23 e o de T24 fecham em 37), **nenhum push feito** (não autorizado nesta janela). A
+Vercel redeploya em push a `main`; como o lote não muda código do app, não há motivo para push antes
+do fim.
 
-**Next step**: T17 — reconciliar VOZ-03 AC4 e os Edge Cases do lote-6c (DOC-01).
+**Next step**: T25 — multi-tenancy real, condicional ao 2º número homologado na Meta (MTN-01). Não
+delegável a um worker.
 
-**Pendências nomeadas**:
+**Pendências nomeadas** (T17–T24 são documentação pura; nenhuma delas tocou código, então nenhuma
+destas pendências foi resolvida ou alterada por este batch — repetidas aqui para não sumirem):
 - **Limpeza dos 3 alvos do cenário 3** (`evidencia.md` §16.7): lead `81509a2c-…` e a linha de
   `conversa_estado`. A memória já foi purgada pelo próprio fluxo.
-- **MTN-01 (T25)**: o 2º número homologado na Meta segue pendente. Se não sair, MTN-01 fica
-  explicitamente **não verificado** — nunca aprovado por ausência.
+- **MTN-01 (T25)**: o 2º número homologado na Meta segue pendente. `lote-10/spec.md` já registra
+  MTN-01 como `⏳ Pending — depende de T25` (T21), nunca `Verified` por antecipação. Se T25 não puder
+  rodar por falta de homologação, MTN-01 fica explicitamente **não verificado** — nunca aprovado por
+  ausência.
 - **Remarcação de reunião é impossível** (`TRANSITIONS.qualificado_agendado = []`,
   `src/server/integration/leads.ts:98`). Fix adiado pelo usuário: exige coluna para o id do evento,
   a tool passar a atualizar/cancelar o evento antigo, mudança de contrato e deploy na Vercel.
@@ -313,7 +337,8 @@ código do app, não há motivo para push antes do fim.
   `assignedBroker` nem os 2 códigos de erro do lote-8; `RESEND_FROM` a confirmar na Vercel; alerta
   ativo de queda da integração (L15); baselines dos tenants-piloto ainda fictícios (L15).
 
-**Blockers**: nenhum para a T17.
+**Blockers**: nenhum para a T25 — exceto a própria homologação do 2º número no painel da Meta, que
+não é controlável por nenhuma sessão de trabalho.
 
 
 ### Estado do lote 9 (2026-08-30)
