@@ -609,10 +609,10 @@ documental, sem apagar a análise original.
 - Skill: NONE
 
 **Done when**:
-- [ ] A §4 registra o guard `process.env.VITEST` → `TEST_DATABASE_URL` e o que ele neutraliza
-- [ ] O relato do incidente original (execuções 56/T10 e T11) permanece, marcado como histórico
-- [ ] O que **continua** verdadeiro fica separado do que ficou obsoleto: `npm run db:seed` explícito ainda rotaciona as chaves
-- [ ] Gate check passa: `npx vitest run && npm run lint && npm run build`
+- [x] A §4 registra o guard `process.env.VITEST` → `TEST_DATABASE_URL` e o que ele neutraliza
+- [x] O relato do incidente original (execuções 56/T10 e T11) permanece, marcado como histórico
+- [x] O que **continua** verdadeiro fica separado do que ficou obsoleto: `npm run db:seed` explícito ainda rotaciona as chaves
+- [x] Gate check passa: `npx vitest run && npm run lint && npm run build`
 
 **Tests**: none
 **Gate**: build

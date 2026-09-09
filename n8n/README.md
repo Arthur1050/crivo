@@ -126,7 +126,29 @@ Perder esta tabela **não é perda de dado**: o cold start reconstrói `leadId`/
 
 ## 4. `tenant_config` com chaves do seed de produção — ordem seed ↔ rotação (Risco R6)
 
-**O problema**: `npm run db:seed` gera **novas** API keys por tenant toda vez que roda (imprime o valor em claro **uma única vez**, no próprio stdout do comando — nunca grava em arquivo, só o hash sha256 fica no banco). Rodar o seed de novo depois que a `tenant_config` já foi populada **invalida** as chaves que estavam lá, sem aviso — o próximo `POST /leads` do agente responde `401` para os dois tenants.
+> **Atualização (lote-10, 2026-09-09): a preocupação central desta seção — `npx vitest run` rotacionar
+> chaves reais como efeito colateral — está obsoleta.** Confirmado obsoleta pelo lote-8 (Batch 1) e
+> reconfirmado aqui: `src/db/index.ts:9-11` já resolve a connection string do Postgres a partir de
+> `process.env.VITEST` (que o Vitest define automaticamente em toda execução da suíte) — quando
+> `VITEST` está presente, o banco usado é `TEST_DATABASE_URL`, nunca `DATABASE_URL`. `src/db/__tests__/seed.test.ts`
+> continua chamando `runSeed()` no `beforeAll` (e mais duas vezes em testes de idempotência), mas
+> `runSeed()` roda contra o banco de teste isolado, não contra o banco real onde `tenant_config` mora.
+> **`npx vitest run`, isolado, não rotaciona mais nenhuma chave real** — o guard neutraliza exatamente
+> o efeito colateral que o incidente abaixo documentou.
+>
+> **O que continua verdadeiro**: `npm run db:seed` executado **diretamente** (fora do Vitest, sem
+> `process.env.VITEST` definido) continua gerando e imprimindo novas API keys por tenant, e continua
+> invalidando as chaves que já estavam em `tenant_config` — o procedimento de rotação da seção 4
+> abaixo (ordem obrigatória seed → captura → `add_data_table_rows`) segue em vigor tal como escrito,
+> sem nenhuma mudança. O guard protege só contra a suíte de testes; não protege contra um `db:seed`
+> deliberado.
+>
+> O relato abaixo (execuções 56/T10 e T11, lote-6) fica registrado como **histórico** — foi o
+> incidente real que motivou esta seção, antes de o guard existir/ser identificado, e continua útil
+> para explicar por que a ordem seed↔rotação importa. Não é mais um risco vivo para `vitest run`
+> isolado.
+
+**O problema (histórico)**: `npm run db:seed` gera **novas** API keys por tenant toda vez que roda (imprime o valor em claro **uma única vez**, no próprio stdout do comando — nunca grava em arquivo, só o hash sha256 fica no banco). Rodar o seed de novo depois que a `tenant_config` já foi populada **invalida** as chaves que estavam lá, sem aviso — o próximo `POST /leads` do agente responde `401` para os dois tenants.
 
 **Ordem obrigatória, uma única vez por ambiente**:
 
@@ -138,7 +160,7 @@ Perder esta tabela **não é perda de dado**: o cold start reconstrói `leadId`/
 
 Se o ambiente for reseedado por qualquer outro motivo depois deste passo, a `tenant_config` precisa ser re-sincronizada (repetir 2-4) — é seguro fazer de novo, só desperdiça um ciclo se evitável.
 
-**Ocorrido de fato no T11** (não hipotético, causa raiz confirmada — não é mais mistério): a `apiKey` gravada no T10 parou de autenticar (`401 nao-autenticado`, "Chave de API inválida ou revogada") entre a execução 56 (T10, ~18:28) e a primeira execução do scheduler (T11, ~18:47). Causa raiz: `src/db/__tests__/seed.test.ts` chama `runSeed()` no próprio `beforeAll` (mais 2 chamadas extras em testes de idempotência) — e o próprio comentário do arquivo confirma que a API key é **não determinística de propósito**, regenerada a cada execução. Ou seja: **qualquer `npx vitest run`, de qualquer sessão, em qualquer lugar, reseeda o banco e rotaciona as duas chaves como efeito colateral** — não precisa ser `npm run db:seed` direto; o próprio gate de testes já faz isso. Este worker não rodou nem `db:seed` nem `vitest run` no intervalo exato 18:28-18:47 — outra sessão da mesma orquestração rodou `vitest run` nesse intervalo (mandato de "uma vez só por lote" vale para `db:seed` direto; o suite de testes reseedar como efeito colateral é comportamento pré-existente do repositório, fora do controle de qualquer worker individual). A mesma causa também produz falhas *intra-run* — ex.: `src/server/integration/__tests__/e2e-smoke.test.ts` (que bate na API real) pode ver 401/404 quando corre em paralelo com `seed.test.ts` dentro do **mesmo** `npx vitest run`, se o vitest paraleliza arquivos de teste (não investigado a fundo aqui — fora do escopo deste worker; watchpoint para quem mexer em `vitest.config.ts`). **Ordem segura, já usada neste lote**: terminar todo código+gate primeiro, rodar `npx vitest run` pela última vez, e só then fazer UM `npm run db:seed` final + captura de chaves + `add_data_table_rows` + toda a evidência MCP ao vivo restante, sem nenhum `vitest run` depois disso (ver seção 4, passos 1-5). **Próximo passo para quem pegar T12/T13**: confirmar se a `tenant_config` ainda tem a `apiKey` válida antes de assumir que o round-trip com o CRM funciona (qualquer `vitest run` rodado por qualquer pessoa desde a última sincronização já invalida); se não, repetir só os passos 3-4 (nunca o 2) usando as chaves atuais do ambiente.
+**Ocorrido de fato no T11** (histórico — ver a atualização no topo desta seção: o guard `process.env.VITEST` de `src/db/index.ts:9-11` neutraliza esta causa raiz para `vitest run` isolado desde então; não hipotético, causa raiz confirmada — não é mais mistério): a `apiKey` gravada no T10 parou de autenticar (`401 nao-autenticado`, "Chave de API inválida ou revogada") entre a execução 56 (T10, ~18:28) e a primeira execução do scheduler (T11, ~18:47). Causa raiz: `src/db/__tests__/seed.test.ts` chama `runSeed()` no próprio `beforeAll` (mais 2 chamadas extras em testes de idempotência) — e o próprio comentário do arquivo confirma que a API key é **não determinística de propósito**, regenerada a cada execução. Ou seja: **qualquer `npx vitest run`, de qualquer sessão, em qualquer lugar, reseeda o banco e rotaciona as duas chaves como efeito colateral** — não precisa ser `npm run db:seed` direto; o próprio gate de testes já faz isso. Este worker não rodou nem `db:seed` nem `vitest run` no intervalo exato 18:28-18:47 — outra sessão da mesma orquestração rodou `vitest run` nesse intervalo (mandato de "uma vez só por lote" vale para `db:seed` direto; o suite de testes reseedar como efeito colateral é comportamento pré-existente do repositório, fora do controle de qualquer worker individual). A mesma causa também produz falhas *intra-run* — ex.: `src/server/integration/__tests__/e2e-smoke.test.ts` (que bate na API real) pode ver 401/404 quando corre em paralelo com `seed.test.ts` dentro do **mesmo** `npx vitest run`, se o vitest paraleliza arquivos de teste (não investigado a fundo aqui — fora do escopo deste worker; watchpoint para quem mexer em `vitest.config.ts`). **Ordem segura, já usada neste lote**: terminar todo código+gate primeiro, rodar `npx vitest run` pela última vez, e só then fazer UM `npm run db:seed` final + captura de chaves + `add_data_table_rows` + toda a evidência MCP ao vivo restante, sem nenhum `vitest run` depois disso (ver seção 4, passos 1-5). **Próximo passo para quem pegar T12/T13**: confirmar se a `tenant_config` ainda tem a `apiKey` válida antes de assumir que o round-trip com o CRM funciona (qualquer `vitest run` rodado por qualquer pessoa desde a última sincronização já invalida); se não, repetir só os passos 3-4 (nunca o 2) usando as chaves atuais do ambiente.
 
 ---
 
