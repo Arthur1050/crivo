@@ -1567,3 +1567,91 @@ de estado.
 | 1 | Sessão de memória | `"triangulo:553499532444"` — já purgada pelo fluxo em `2239`, conferir só por garantia |
 | 2 | Linha de `conversa_estado` | Data Table `ZsplBxJjXv3kwKZ8`, `tenantSlug`+`waId` |
 | 3 | Lead no CRM | `81509a2c-83ca-4bcc-8f3c-60aba7ffe374`, ordem `messages` -> `conversations` -> `leads` |
+
+---
+
+## T16 — Veredito consolidado da prova conversacional: **APROVADO** (2026-09-09)
+
+> **Os três desfechos que a AD-015 deferiu em 2026-08-09 têm, agora, prova de execução real.** Cada
+> um foi atingido numa conversa limpa, com id de execução, estado final conferido no CRM e captura de
+> tela. O veredito é APROVADO **pela barra da spec** — o estado final no CRM, nunca o estilo
+> (`spec.md` P1-smoke AC7).
+
+### 17.1 Veredito por cenário
+
+| Cenário | Requisito | Veredito | Desfecho provado |
+| --- | --- | --- | --- |
+| 1 — qualificar → agendar | SMK-02 / AGT-04 | **APROVADO** | `qualificado_agendado`, reunião 2026-09-08 13:00, André Luiz Martins, evento com Meet `bsy-htxg-evt` |
+| 2 — escalar para humano | SMK-03 / AGT-05 | **APROVADO** | `escalado_humano` + `escalationReason` + responsável, e mensagem seguinte sem resposta (`2206`, rota `somente-registrar`) |
+| 3 — opt-out | SMK-04 / LGPD-03 | **APROVADO** | `optedOutAt` gravado, memória purgada pelo próprio fluxo, uma confirmação e silêncio (`2243`) |
+
+### 17.2 As rodadas reprovadas, nominalmente
+
+Registradas porque o veredito só é honesto com elas à vista. **Nenhuma foi reprovação do modelo** no
+sentido de qualidade de fala: cada uma expôs um defeito do produto que só uma conversa real revelaria.
+
+| Cenário | Rodada | Por que não valeu |
+| --- | --- | --- |
+| 1 | `0b6573b9-…` | **Não realizada**: a limpeza não pegou. O `POST /leads` reidratou o lead da bateria, com `status` terminal e memória de ontem. Toda remarcação bateu em `409` |
+| 1 | `4e6db4df-…` | Desfecho atingido, mas o agente **agendou antes do aceite** e depois não conseguiu remarcar |
+| 1 | `6111d33f-…` | Desfecho atingido, mas disse que a reunião seria "aqui no WhatsApp" e traduziu `horario-ocupado` como "conflito na agenda" |
+| 2 | `41e81d48-…` | Desfecho atingido, mas anunciou **o nome do próprio lead** como se fosse o corretor, e pediu horário depois de escalar |
+| 2 | `f3a9f435-…` | Nome errado **repetiu**, já com a correção de prompt publicada. Postura lida como "arrogante e desesperado para vender" |
+| 3 | (09/09 manhã) | **Buraco de compliance**: o lead pediu para parar em português comum, o opt-out não disparou, e o agente prometeu parar e continuou respondendo |
+
+### 17.3 O que o smoke encontrou — e por que isso justifica o lote
+
+Onze defeitos reais, nenhum deles alcançável por teste automatizado, todos corrigidos e republicados
+com hash conferido antes de ativar:
+
+| # | Defeito | Correção | Commit |
+| --- | --- | --- | --- |
+| 1 | Não cumprimentava nem se apresentava | Instrução de abertura de sessão | `213d36a` |
+| 2 | Agendava antes do lead aceitar | Propor → esperar aceite → chamar tool | `22b0a6c` |
+| 3 | Perguntava e agendava no mesmo turno | Regra "ou pergunta, ou agenda" | `9b4cadd` |
+| 4 | Perguntava campo oportunista após confirmar | Proibição no ramo de reunião confirmada (QLF-01 AC4/AC5) | `9b4cadd` |
+| 5 | `meetLink` era a página do evento, não o link de entrada | `hangoutLink` no lugar de `htmlLink` | `f8651d9` |
+| 6 | Dizia que a reunião seria "pelo WhatsApp" | Canal declarado como Google Meet, com alternativa de ligação | `f8651d9` |
+| 7 | Vazava jargão técnico ao lead | Tradução obrigatória para linguagem do lead | `f8651d9` |
+| 8 | Anunciava o nome do lead como corretor | Recorte da resposta na fronteira da tool | `98ac0f8` |
+| 9 | Postura de vendedor apressado | Seção de postura de conversa | `98ac0f8` |
+| 10 | Negociava horário depois de escalar | Regra de entrega ao humano | `16cfbf4` |
+| 11 | Opt-out em linguagem natural sem registro | Orientação para digitar a palavra, sem tocar no gate | `d91f379` |
+
+**O achado que vale além deste lote** (§15.4): o defeito 8 foi corrigido duas vezes. A primeira, por
+instrução de prompt, **falhou** — o payload devolvia o lead inteiro e o `name` do topo era mais óbvio
+que o `assignedBroker.name`. Só a correção na fronteira funcionou. Quando a resposta errada é o campo
+mais visível do payload, instrução não vence: é preciso remover o campo.
+
+### 17.4 Observações de estilo consolidadas — nenhuma reprova cenário
+
+- **`agentVoiceTone` × `voice.mjs` (recorrente, em todos os cenários)**: o tom configurado pelo tenant
+  pede "boa" e "show", exatamente as palavras que `voice.mjs:27` barra como abertura. Custa de 1 a 3
+  iterações por turno quando o modelo tenta usá-las. **É conflito de configuração, não do modelo** —
+  o melhor candidato a próximo ajuste, e é ajuste de tenant, não de código.
+- **Registro de qualificação incompleto (cenário 1, todas as rodadas)**: `modality` e `propertyType`
+  ficaram `null` mesmo o lead tendo dito "imóvel usado" e "Apartamento". Só `region` foi gravada.
+- **Campos marcados como perguntados antes de o agente rodar**: defeito pré-existente da máquina de
+  fases, que o afrouxamento da instrução de fase (defeito 9) torna mais visível. Não foi tocado.
+
+### 17.5 Fix task? Não
+
+Nenhum cenário reprovou pelo desfecho na rodada final, então `spec.md` P1-smoke AC8 não é acionado.
+Os itens da §17.4 são observação, e os defeitos da §17.3 já foram corrigidos durante a própria fase —
+não sobra nenhum aberto que exija fix task antes de SMK-02/03/04 e AGT-04/AGT-05/LGPD-03 subirem na
+rastreabilidade.
+
+### 17.6 Congelamento de `vitest` encerrado
+
+O congelamento declarado em §13.5 vigorou da T12 até aqui. Esta é a primeira rodada completa de
+testes desde então.
+
+**Resultado**: `npx vitest run` = **1076 passed (1076) em 82 arquivos, 0 falhas, exit 0**. Piso de T1
+era 1015 em 81 arquivos: **+61 testes, +1 arquivo**, monotônico. A suíte `n8n/src` sozinha foi de 168
+para 236 ao longo do lote.
+
+**Nota de método** — duas rodadas concorrentes contra o mesmo `TEST_DATABASE_URL` produziram falhas
+falsas antes desta: uma acusou `23503` em `create-admin.test.ts`, outra acusou 6 tenants onde o
+`seed.test.ts` espera 3. Não são regressões — são duas execuções semeando o mesmo banco ao mesmo
+tempo. A rodada isolada, com nenhum outro processo `node` vivo, veio limpa. **A suíte usa um banco
+compartilhado: nunca rodar duas ao mesmo tempo.**

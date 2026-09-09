@@ -530,11 +530,11 @@ Detalhe em `evidencia.md` §16.4.
 - Skill: NONE
 
 **Done when**:
-- [ ] Cada cenário marcado aprovado ou reprovado **pelo estado final**, com a evidência citada
-- [ ] Observações de estilo consolidadas numa seção separada, sem influenciar o veredito
-- [ ] Se algum cenário reprovou: fix task aberta com o motivo, antes de qualquer requisito subir para `Verified`
-- [ ] Se o estilo ficou ruim mas os desfechos passaram: registrado como candidato a ajuste de prompt (válvula da decisão E do `context.md`), não como falha
-- [ ] Gate check passa: `npx vitest run` — primeira rodada de teste desde T12, com o congelamento encerrado
+- [x] Cada cenário marcado aprovado ou reprovado **pelo estado final**, com a evidência citada
+- [x] Observações de estilo consolidadas numa seção separada, sem influenciar o veredito
+- [x] Se algum cenário reprovou: fix task aberta com o motivo, antes de qualquer requisito subir para `Verified`
+- [x] Se o estilo ficou ruim mas os desfechos passaram: registrado como candidato a ajuste de prompt (válvula da decisão E do `context.md`), não como falha
+- [x] Gate check passa: `npx vitest run` — primeira rodada de teste desde T12, com o congelamento encerrado
 
 **Tests**: none
 **Gate**: full
