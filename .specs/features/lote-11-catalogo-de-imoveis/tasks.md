@@ -628,10 +628,10 @@ T25 → T26 → T27 → T28 → T29
 - Skill: NONE
 
 **Done when**:
-- [ ] Captura real (nunca inspeção de DOM) das duas visões, anexada e referenciada em `evidencia.md`
-- [ ] A visão de corretor não exibe botão de criar, menu de linha nem controle de publicação — é a prova de `IMOV-04 AC2`, que o projeto não consegue provar por teste (zero `.test.tsx`)
-- [ ] Tela conferida em tema claro e escuro
-- [ ] Gate build passa
+- [x] Captura real (nunca inspeção de DOM) das duas visões, anexada e referenciada em `evidencia.md`
+- [x] A visão de corretor não exibe botão de criar, menu de linha nem controle de publicação — é a prova de `IMOV-04 AC2`, que o projeto não consegue provar por teste (zero `.test.tsx`)
+- [x] Tela conferida em tema claro e escuro
+- [x] Gate build passa
 
 **Tests**: none
 **Gate**: build
