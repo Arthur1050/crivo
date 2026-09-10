@@ -27,6 +27,8 @@ tags:
     description: Opt-out de leads (LGPD-01).
   - name: settings
     description: Leitura de persona, modalidade e horário comercial do tenant (INT-09).
+  - name: properties
+    description: Busca do catálogo de imóveis visíveis (lote-11 — BUSCA-01).
 paths:
   /leads:
     post:
@@ -286,6 +288,78 @@ paths:
       security:
         - bearerAuth: []
         - serviceAuth: []
+  /properties:
+    get:
+      operationId: searchProperties
+      tags: [properties]
+      summary: Busca de imóveis visíveis do catálogo, por critério
+      description: >-
+        Devolve, no máximo 3 por chamada, os imóveis do tenant que satisfazem
+        `status = disponivel` E `published = true` (BUSCA-01/BUSCA-02),
+        combinando por conjunção os filtros presentes. `total` conta todos os
+        imóveis que casaram com o filtro, mesmo quando maior que o número
+        devolvido em `imoveis`. `precoMin`/`precoMax` são recebidos em REAIS
+        inteiros; o preço devolvido por imóvel já vem formatado em Real
+        brasileiro — centavos nunca atravessam este contrato. A resposta
+        nunca inclui logradouro, número, complemento, descrição, foto ou
+        qualquer campo do captador (BUSCA-03).
+      parameters:
+        - name: modalidade
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/Modality"
+        - name: tipo
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/PropertyKind"
+        - name: bairro
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: cidade
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: precoMin
+          in: query
+          required: false
+          description: Preço mínimo, em reais inteiros (não centavos).
+          schema:
+            type: integer
+            minimum: 1
+        - name: precoMax
+          in: query
+          required: false
+          description: Preço máximo, em reais inteiros (não centavos).
+          schema:
+            type: integer
+            minimum: 1
+        - name: quartosMin
+          in: query
+          required: false
+          description: Número mínimo de quartos.
+          schema:
+            type: integer
+            minimum: 1
+        - $ref: "#/components/parameters/XCrivoTenant"
+      responses:
+        "200":
+          description: Imóveis visíveis do tenant que casam com o filtro.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PropertySearchResult"
+        "400":
+          $ref: "#/components/responses/PayloadInvalido"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+      security:
+        - bearerAuth: []
+        - serviceAuth: []
 components:
   securitySchemes:
     bearerAuth:
@@ -406,6 +480,78 @@ components:
     PropertyType:
       type: string
       enum: [casa, apartamento]
+    PropertyKind:
+      type: string
+      description: >-
+        Enum própria do catálogo de imóveis (lote-11) — superset de
+        `PropertyType` (a enum de qualificação acima, inalterada) nos dois
+        valores compartilhados.
+      enum:
+        - casa
+        - apartamento
+        - sobrado
+        - cobertura
+        - terreno
+        - sala_comercial
+        - chacara
+    SerializedProperty:
+      type: object
+      description: >-
+        Um imóvel do catálogo, do jeito que o contrato devolve (BUSCA-03) —
+        sem logradouro, número, complemento, descrição, foto ou qualquer
+        campo do captador.
+      required:
+        - referencia
+        - tipo
+        - modalidade
+        - bairro
+        - cidade
+        - uf
+        - preco
+        - areaM2
+        - quartos
+        - banheiros
+        - vagas
+      properties:
+        referencia:
+          type: string
+        tipo:
+          $ref: "#/components/schemas/PropertyKind"
+        modalidade:
+          $ref: "#/components/schemas/Modality"
+        bairro:
+          type: string
+        cidade:
+          type: string
+        uf:
+          type: string
+        preco:
+          type: string
+          description: >-
+            Já formatado em Real brasileiro (ex.: "R$ 450.000,00") — nunca
+            centavos crus (bigint não é JSON-safe).
+        areaM2:
+          type: integer
+        quartos:
+          type: integer
+        banheiros:
+          type: integer
+        vagas:
+          type: integer
+    PropertySearchResult:
+      type: object
+      required: [imoveis, total]
+      properties:
+        imoveis:
+          type: array
+          maxItems: 3
+          items:
+            $ref: "#/components/schemas/SerializedProperty"
+        total:
+          type: integer
+          description: >-
+            Quantos imóveis casaram com o filtro, mesmo quando maior que o
+            número devolvido em `imoveis`.
     Motivation:
       type: string
       enum: [investidor, morador]

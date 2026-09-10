@@ -474,12 +474,12 @@ T25 → T26 → T27 → T28 → T29
 - Skill: NONE
 
 **Done when**:
-- [ ] `openapi.test.ts` valida o documento sem erro
-- [ ] Asserção nova confirmando que o caminho existe com os 7 parâmetros de filtro e o schema de resposta com `imoveis` e `total`
-- [ ] O schema documentado **não** declara endereço, descrição, foto nem captador
-- [ ] A dívida herdada do lote-8 (`assignedBroker`, os 2 códigos de erro) **não** é adotada aqui — continua no L14
-- [ ] Gate passa: `npx vitest run src/server/integration`
-- [ ] Contagem de testes registrada, maior que a da T13
+- [x] `openapi.test.ts` valida o documento sem erro
+- [x] Asserção nova confirmando que o caminho existe com os 7 parâmetros de filtro e o schema de resposta com `imoveis` e `total`
+- [x] O schema documentado **não** declara endereço, descrição, foto nem captador
+- [x] A dívida herdada do lote-8 (`assignedBroker`, os 2 códigos de erro) **não** é adotada aqui — continua no L14
+- [x] Gate passa: `npx vitest run src/server/integration` (242 testes, 25 arquivos)
+- [x] Contagem de testes registrada — a suíte completa fechou o batch em 1241 testes / 88 arquivos (0 falhas), maior que o piso de 1151 do fim da Fase 1
 
 **Tests**: unit
 **Gate**: quick

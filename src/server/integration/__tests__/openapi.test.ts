@@ -43,6 +43,7 @@ describe("docs/integration/openapi.yaml — SwaggerParser.validate()", () => {
         "/leads/{id}/messages",
         "/leads/{id}/opt-out",
         "/context",
+        "/properties",
       ])
     );
     expect(api.paths["/leads"].post).toBeDefined();
@@ -51,5 +52,74 @@ describe("docs/integration/openapi.yaml — SwaggerParser.validate()", () => {
     expect(api.paths["/leads/{id}/messages"].get).toBeDefined();
     expect(api.paths["/leads/{id}/opt-out"].post).toBeDefined();
     expect(api.paths["/context"].get).toBeDefined();
+    expect(api.paths["/properties"].get).toBeDefined();
+  });
+
+  // lote-11 — T14: a rota nova documentada, com os 7 parâmetros de filtro e
+  // o schema de resposta (`imoveis` + `total`). O schema NÃO declara
+  // endereço/descrição/foto/captador (BUSCA-03) — a dívida herdada do
+  // lote-8 (`assignedBroker`, os 2 códigos de erro) não é adotada aqui,
+  // continua no L14.
+  it("GET /properties tem os 7 parâmetros de filtro e o schema de resposta com imoveis e total (T14)", async () => {
+    const api = (await SwaggerParser.validate(OPENAPI_PATH)) as {
+      paths: Record<
+        string,
+        {
+          get?: {
+            parameters?: { name?: string }[];
+            responses?: Record<
+              string,
+              { content?: { "application/json"?: { schema?: Record<string, unknown> } } }
+            >;
+          };
+        }
+      >;
+    };
+
+    const get = api.paths["/properties"].get;
+    expect(get).toBeDefined();
+
+    const paramNames = (get!.parameters ?? [])
+      .map((p) => p.name)
+      .filter((name): name is string => typeof name === "string");
+    expect(paramNames).toEqual(
+      expect.arrayContaining([
+        "modalidade",
+        "tipo",
+        "bairro",
+        "cidade",
+        "precoMin",
+        "precoMax",
+        "quartosMin",
+      ])
+    );
+
+    const responseSchema = get!.responses?.["200"]?.content?.["application/json"]
+      ?.schema as
+      | { properties?: Record<string, unknown>; required?: string[] }
+      | undefined;
+    expect(responseSchema).toBeDefined();
+    expect(responseSchema!.required).toEqual(
+      expect.arrayContaining(["imoveis", "total"])
+    );
+    expect(Object.keys(responseSchema!.properties ?? {})).toEqual(
+      expect.arrayContaining(["imoveis", "total"])
+    );
+
+    const itemSchema = (
+      responseSchema!.properties!.imoveis as { items?: Record<string, unknown> }
+    ).items as { properties?: Record<string, unknown> } | undefined;
+    const itemFields = Object.keys(itemSchema?.properties ?? {});
+    for (const forbidden of [
+      "street",
+      "number",
+      "complement",
+      "description",
+      "photoUrls",
+      "capturedByUserId",
+      "assignedBroker",
+    ]) {
+      expect(itemFields).not.toContain(forbidden);
+    }
   });
 });
