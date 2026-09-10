@@ -1,8 +1,9 @@
 {
   "schema": 1,
   "promote_threshold": 2,
-  "window_days": 365,
+  "window_days": 45,
   "quarantine_threshold": 2,
+  "prune_requires_confirmation": true,
   "next_id": 26,
   "lessons": [
     {
