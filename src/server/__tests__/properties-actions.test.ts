@@ -20,7 +20,7 @@ import type { AuthContext } from "../auth/session";
 
 let sessionRoles: Role[] = ["administrador"];
 let sessionTenantId = "";
-let sessionUser = { id: "", name: "", email: "" };
+const sessionUser = { id: "", name: "", email: "" };
 
 vi.mock("../auth/session", async (importActual) => {
   const actual = await importActual<typeof import("../auth/session")>();
@@ -88,6 +88,16 @@ async function createMember(
   });
   createdUserIds.push(userId);
   return userId;
+}
+
+/** Remove uma chave de um objeto — usado para simular um campo AUSENTE do
+ * payload (IMOV-07 AC5), sem introduzir uma variável descartada e não usada
+ * (o que o `delete` numa cópia rasa evita, ao contrário de desestruturar e
+ * ignorar o valor). */
+function omit<T extends object, K extends keyof T>(obj: T, key: K): Omit<T, K> {
+  const clone = { ...obj };
+  delete clone[key];
+  return clone;
 }
 
 function baseInput(
@@ -201,7 +211,7 @@ describe("server actions properties (T8)", () => {
       const capturerId = await createMember(tenantId, "Captador Kind Ausente");
       sessionTenantId = tenantId;
 
-      const { kind: _omitted, ...withoutKind } = baseInput(capturerId);
+      const withoutKind = omit(baseInput(capturerId), "kind");
       const result = await createPropertyAction(
         withoutKind as CreatePropertyInput
       );
@@ -216,8 +226,7 @@ describe("server actions properties (T8)", () => {
       const capturerId = await createMember(tenantId, "Captador Bairro Ausente");
       sessionTenantId = tenantId;
 
-      const { neighborhood: _omitted, ...withoutNeighborhood } =
-        baseInput(capturerId);
+      const withoutNeighborhood = omit(baseInput(capturerId), "neighborhood");
       const result = await createPropertyAction(
         withoutNeighborhood as CreatePropertyInput
       );
@@ -232,7 +241,7 @@ describe("server actions properties (T8)", () => {
       const capturerId = await createMember(tenantId, "Captador Preco Ausente");
       sessionTenantId = tenantId;
 
-      const { priceCents: _omitted, ...withoutPrice } = baseInput(capturerId);
+      const withoutPrice = omit(baseInput(capturerId), "priceCents");
       const result = await createPropertyAction(
         withoutPrice as CreatePropertyInput
       );
@@ -246,9 +255,7 @@ describe("server actions properties (T8)", () => {
       const tenantId = await createTenant("T8 Create Captador Ausente");
       sessionTenantId = tenantId;
 
-      const { capturedByUserId: _omitted, ...withoutCapturer } = baseInput(
-        randomUUID()
-      );
+      const withoutCapturer = omit(baseInput(randomUUID()), "capturedByUserId");
       const result = await createPropertyAction(
         withoutCapturer as CreatePropertyInput
       );
