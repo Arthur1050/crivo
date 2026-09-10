@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "promote_threshold": 2,
-  "window_days": 45,
+  "window_days": 365,
   "quarantine_threshold": 2,
   "next_id": 26,
   "lessons": [
@@ -11,7 +11,7 @@
       "text": "When a spec criterion asserts an entity is left untouched by an unrelated update, add a before/after count or field assertion for it, not just a structural argument from the code's shape.",
       "signal": "spec_precision_gap",
       "scope": "server/data",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-2-configuracoes-documentos"
       ],
@@ -29,7 +29,7 @@
       "text": "For a spec criterion about partial-write/atomicity on insert failure, add a fault-injection test (mock/force the insert to throw) rather than relying only on the insert being a single statement.",
       "signal": "spec_precision_gap",
       "scope": "server/data",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-2-configuracoes-documentos"
       ],
@@ -47,7 +47,7 @@
       "text": "Computed presentation logic (deltas, comparisons, conditional fallback text) in UI components needs its own unit test even when the layer's default policy is build-gate-only, because build gates don't exercise conditional branches or numeric correctness.",
       "signal": "ac_gap",
       "scope": "dashboard,ui",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-4-dashboard"
       ],
@@ -65,7 +65,7 @@
       "text": "Structural correctness of independent state sources (URL period + cookie tenant) still needs an integration or manual-verification artifact logged in validation.md, since 'the code can't possibly couple them' is not the same as evidence the combination was exercised.",
       "signal": "spec_precision_gap",
       "scope": "dashboard,tenant-isolation",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-4-dashboard"
       ],
@@ -83,7 +83,7 @@
       "text": "Quando um AC define o caso 'campo vazio', defina explicitamente tambem o caso 'campo ausente no payload' — payload parcial e payload vazio nao sao o mesmo estado e a implementacao escolhe sozinha se a spec calar.",
       "signal": "spec_precision_gap",
       "scope": "spec/acceptance-criteria",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "redesign-crm-astryx"
       ],
@@ -101,7 +101,7 @@
       "text": "Se um AC depende de uma condicao que o seed nunca produz (ex.: conversa cruzando a virada do dia), o smoke nao consegue observa-lo — planeje o dado de seed junto com o AC ou aceite de antemao que a evidencia sera so de teste unitario.",
       "signal": "spec_precision_gap",
       "scope": "db/seed",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "redesign-crm-astryx"
       ],
@@ -137,7 +137,7 @@
       "text": "Componente de lib de terceiro (Recharts) embutido numa design system nao herda o tema: sem props de estilo explicitas ele renderiza no default claro. Trate cada ponto de integracao como superficie a tematizar, nao como caixa-preta.",
       "signal": "ac_gap",
       "scope": "src/components/dashboard",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "polimento-visual-astryx"
       ],
@@ -155,7 +155,7 @@
       "text": "Inspecao de DOM prova token aplicado, nao composicao correta: so a captura de tela mostrou timestamps em ingles, grid de KPI 4+1 orfao e filtros desalinhados. Em trabalho de UI, screenshot e o gate, nao o DOM.",
       "signal": "ac_gap",
       "scope": "ui/verificacao",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "passada-visual-screenshots"
       ],
@@ -173,7 +173,7 @@
       "text": "Design system de terceiro pode ter texto de UI cravado num idioma sem prop de locale nem chave de catalogo; antes de adotar um componente da lib num ponto visivel, verificar se ele EMITE string propria.",
       "signal": "ac_gap",
       "scope": "@astryxdesign/core",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "passada-visual-screenshots"
       ],
@@ -191,7 +191,7 @@
       "text": "Before citing an MCP execution ID as evidence in spec.md, call get_execution to confirm it exists and shows the claimed outcome — do not cite from memory of a live debugging session.",
       "signal": "ac_gap",
       "scope": "n8n-evidence",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-6-agente-n8n-whatsapp"
       ],
@@ -209,7 +209,7 @@
       "text": "When an acceptance criterion lists multiple prohibited/allowed sub-clauses in one sentence, write a dedicated assertion citing each sub-clause's exact text, not just the first clause of the sentence.",
       "signal": "spec_precision_gap",
       "scope": "n8n/src/prompt.mjs",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-6b-persona-e-lapidacao"
       ],
@@ -227,7 +227,7 @@
       "text": "When a spec promises an active fallback message on exhausted retries/iterations, verify a real send path exists for it, not just a silent-registration flag - degrade-to-silence is a common unannounced substitution for degrade-to-message.",
       "signal": "ac_gap",
       "scope": "n8n-agent",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-6c-agente-ai-agent-memoria-tools"
       ],
@@ -245,7 +245,7 @@
       "text": "When a design.md function signature omits a parameter the spec's word choice implies (e.g. 'perguntado' vs 'confirmado'), document explicitly which weaker semantic was implemented and why a stronger one was structurally unreachable.",
       "signal": "spec_precision_gap",
       "scope": "n8n-agent",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-6c-agente-ai-agent-memoria-tools"
       ],
@@ -263,7 +263,7 @@
       "text": "Before removing a shared configuration column or field, grep every workflow and module that reads it and migrate them all in the same change.",
       "signal": "ac_gap",
       "scope": "n8n",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-7-dado-real-ponta-a-ponta"
       ],
@@ -281,7 +281,7 @@
       "text": "Record the verification run's evidence (execution id, status and response payload) in the report before archiving or deleting the scratch artifact that produced it - an archived n8n workflow makes its own executions unreadable, so cleanup destroys the only live proof of the fix.",
       "signal": "ac_gap",
       "scope": "n8n",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-7-dado-real-ponta-a-ponta"
       ],
@@ -317,7 +317,7 @@
       "text": "Em conta unica multi-tenant, escrever desativacao como perda de acesso ao vinculo, nunca como recusa de login global.",
       "signal": "spec_deviation",
       "scope": "auth",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-8-usuarios-papeis-atribuicao"
       ],
@@ -335,7 +335,7 @@
       "text": "Usar como valor de spec o identificador ja gravado no seed, nos testes e no contrato publicado, nunca um valor suposto no planejamento.",
       "signal": "spec_deviation",
       "scope": "spec",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-8-usuarios-papeis-atribuicao"
       ],
@@ -353,7 +353,7 @@
       "text": "Quando o design manda estender um modulo cujo teste de pureza proibe imports, criar modulo irmao em vez de enfraquecer a assercao existente.",
       "signal": "spec_deviation",
       "scope": "src/lib",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-8-usuarios-papeis-atribuicao"
       ],
@@ -371,7 +371,7 @@
       "text": "Server action nova sem consumidor de producao nao e feature entregue: grepar consumidores antes de marcar a task done.",
       "signal": "spec_deviation",
       "scope": "server-actions",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-8-usuarios-papeis-atribuicao"
       ],
@@ -407,7 +407,7 @@
       "text": "When testing a retention/expiry cutoff, assert a fixture aged exactly at the boundary itself, not only one unit inside and one unit outside — a fence-post regression that shortens the window can leave both off-boundary assertions unchanged.",
       "signal": "surviving_mutant",
       "scope": "testing",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-9-metricas-piloto"
       ],
@@ -425,7 +425,7 @@
       "text": "When an agent's turn can only end successfully via an external send (e.g. a WhatsApp reply), verify that send can actually succeed against the isolated/discard test target before relying on that target for a pass/fail measurement — otherwise every run dies the same way regardless of the thing under test.",
       "signal": "spec_deviation",
       "scope": "n8n-agent-testing",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-10-modelo-alvo-e-prova-conversacional"
       ],
@@ -443,7 +443,7 @@
       "text": "When a deterministic compliance gate keys off one exact trigger word or phrase, plan for and test natural-language paraphrases of the same user intent before smoke/production — real users phrase intent naturally far more often than they know the exact keyword.",
       "signal": "spec_deviation",
       "scope": "compliance,gate",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-10-modelo-alvo-e-prova-conversacional"
       ],

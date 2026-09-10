@@ -2,17 +2,11 @@
 
 > Machine-owned. Do NOT hand-edit. Changes are overwritten on the next `lessons.py` write.
 > Canonical state lives in `.specs/lessons.json`. Edit lessons only via the script.
-> promote_threshold=2 distinct features · window_days=45 · quarantine_threshold=2
+> promote_threshold=2 distinct features · window_days=365 · quarantine_threshold=2
 
 ## Confirmed (load these at Specify/Design)
 
 Corroborated across multiple features. Safe to apply as guidance.
-
-_none_
-
-## Candidates (under observation - do NOT load as guidance yet)
-
-Seen once or not yet corroborated. Tracked, not trusted.
 
 ### L-001 - When a spec criterion asserts an entity is left untouched by an unrelated update, add a before/after count or field assertion for it, not just a structural argument from the code's shape.
 - signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `server/data` · harmful: 0
@@ -49,12 +43,6 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - features: redesign-crm-astryx
 - evidence: RD-06 AC3 (db/seed)
 - last seen: 2026-08-03T03:56:06Z
-
-### L-007 - Self-check de design que so roda nos arquivos tocados pela feature nunca alcanca o globals.css — boilerplate de scaffold sobrevive ali e vence o tema inteiro; audite a folha de entrada uma vez por projeto, nao por feature.
-- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `app/globals.css` · harmful: 0
-- features: polimento-visual-astryx
-- evidence: app/globals.css:28 (app/globals.css)
-- last seen: 2026-08-03T06:15:03Z
 
 ### L-008 - Componente de lib de terceiro (Recharts) embutido numa design system nao herda o tema: sem props de estilo explicitas ele renderiza no default claro. Trate cada ponto de integracao como superficie a tematizar, nao como caixa-preta.
 - signal: `ac_gap` · recurrence: 1 feature(s) · scope: `src/components/dashboard` · harmful: 0
@@ -110,12 +98,6 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: SEC-01 AC2 - execucao n8n 1649 no workflow scratch MuJojnEv7X0emzPT (get_execution e search_executions recusam: workflow arquivado) (n8n)
 - last seen: 2026-08-23T02:43:24Z
 
-### L-017 - Confirmar a chave do rate limit nativo da biblioteca antes de escrever a AC: better-auth conta por IP e rota, nunca por identidade.
-- signal: `spec_deviation` · recurrence: 1 feature(s) · scope: `auth` · harmful: 0
-- features: lote-8-usuarios-papeis-atribuicao
-- evidence: src/server/auth/config.ts:86 (auth)
-- last seen: 2026-08-28T00:13:19Z
-
 ### L-018 - Em conta unica multi-tenant, escrever desativacao como perda de acesso ao vinculo, nunca como recusa de login global.
 - signal: `spec_deviation` · recurrence: 1 feature(s) · scope: `auth` · harmful: 0
 - features: lote-8-usuarios-papeis-atribuicao
@@ -140,12 +122,6 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: src/server/actions/work-window.ts:38 (server-actions)
 - last seen: 2026-08-28T00:13:20Z
 
-### L-022 - Edge case da spec com duas metades exige assercao para cada metade, nunca so para a mais facil de testar.
-- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `tests` · harmful: 0
-- features: lote-8-usuarios-papeis-atribuicao
-- evidence: src/server/data/__tests__/broker-assignment.test.ts:153 (tests)
-- last seen: 2026-08-28T00:13:20Z
-
 ### L-023 - When testing a retention/expiry cutoff, assert a fixture aged exactly at the boundary itself, not only one unit inside and one unit outside — a fence-post regression that shortens the window can leave both off-boundary assertions unchanged.
 - signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `testing` · harmful: 0
 - features: lote-9-metricas-piloto
@@ -163,6 +139,28 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - features: lote-10-modelo-alvo-e-prova-conversacional
 - evidence: n8n/smoke/evidencia.md §16.4 (T15 SPEC_DEVIATION) (compliance,gate)
 - last seen: 2026-09-09T20:13:02Z
+
+## Candidates (under observation - do NOT load as guidance yet)
+
+Seen once or not yet corroborated. Tracked, not trusted.
+
+### L-007 - Self-check de design que so roda nos arquivos tocados pela feature nunca alcanca o globals.css — boilerplate de scaffold sobrevive ali e vence o tema inteiro; audite a folha de entrada uma vez por projeto, nao por feature.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `app/globals.css` · harmful: 0
+- features: polimento-visual-astryx
+- evidence: app/globals.css:28 (app/globals.css)
+- last seen: 2026-08-03T06:15:03Z
+
+### L-017 - Confirmar a chave do rate limit nativo da biblioteca antes de escrever a AC: better-auth conta por IP e rota, nunca por identidade.
+- signal: `spec_deviation` · recurrence: 1 feature(s) · scope: `auth` · harmful: 0
+- features: lote-8-usuarios-papeis-atribuicao
+- evidence: src/server/auth/config.ts:86 (auth)
+- last seen: 2026-08-28T00:13:19Z
+
+### L-022 - Edge case da spec com duas metades exige assercao para cada metade, nunca so para a mais facil de testar.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `tests` · harmful: 0
+- features: lote-8-usuarios-papeis-atribuicao
+- evidence: src/server/data/__tests__/broker-assignment.test.ts:153 (tests)
+- last seen: 2026-08-28T00:13:20Z
 
 ## Quarantined (failed when applied - ignore)
 
