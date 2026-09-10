@@ -192,7 +192,7 @@ Decisão do orquestrador sobre a §2.5: **publicar e seguir** (autorizada pelo u
 retomou em T3 com esse aval — a §2.6 já registrava que a divergência é por ausência no publicado, e
 portanto que publicar restaura em vez de apagar.
 
-- **T3** (`99b8783`): `agentModel` em `n8n/workflows/principal.ts` deixa de ser
+- **T3** (`0f514dd`): `agentModel` em `n8n/workflows/principal.ts` deixa de ser
   `@n8n/n8n-nodes-langchain.lmChatGoogleGemini` v1.1 / `models/gemini-3.5-flash-lite` /
   `temperature: 0.4` e passa a `@n8n/n8n-nodes-langchain.lmChatOpenAi` v1.3, `model` como resource
   locator (`value` = `cachedResultName` = `gpt-5.4-nano-2026-03-17`),
@@ -201,7 +201,7 @@ portanto que publicar restaura em vez de apagar.
   não podia mudar (5 tools, memória, 61 nós / 75 conexões da §2.2).
 - **Contagem de testes**: `npx vitest run` = **1022 passed (1022) em 82 arquivos**. Piso de T1 era
   1015 em 81 arquivos: +7 testes, +1 arquivo, exatamente a suíte nova. Nenhuma deleção silenciosa.
-- **T4** (`dacba56`): `node scripts/n8n-inline.mjs` rodado; `git diff n8n/generated/principal.ts`
+- **T4** (`d43c904`): `node scripts/n8n-inline.mjs` rodado; `git diff n8n/generated/principal.ts`
   ficou **inteiramente dentro do bloco `agentModel`** (linhas 1245-1290 do gerado) — nenhuma linha
   fora dele. Gate `npx vitest run && npm run lint && npm run build` verde (lint com os mesmos 3
   avisos pré-existentes de `ifElse` não usado e diretiva eslint redundante, 0 erros).
@@ -1341,10 +1341,10 @@ em conversa real, com teste e publicação conferida por hash antes de ativar.
 
 | Commit | Versão publicada | O que corrigiu |
 | --- | --- | --- |
-| `213d36a` | `03057a06-…` | Prompt não tinha instrução de cumprimentar/se apresentar, e o `agentPresentationMessage` do tenant entrava como texto PROIBIDO de aparecer na fala |
-| `22b0a6c` | `0df7de8d-…` | Instrução mandava propor e gravar no mesmo turno; virou propor → esperar aceite → chamar a tool |
-| `9b4cadd` | `aeabef7b-…` | Desempate "ou pergunta, ou agenda"; e proibição de pergunta nova de campo oportunista depois da reunião confirmada (fechava lacuna de QLF-01 AC4/AC5) |
-| `f8651d9` | `e63e5fd6-…` (principal) e `931b8a13-…` (tool) | `meetLink` passou de `htmlLink` (página do evento) para `hangoutLink` (link de entrada); canal da reunião declarado como Google Meet com alternativa de ligação; falha de tool traduzida para linguagem do lead |
+| `4ec5ab3` | `03057a06-…` | Prompt não tinha instrução de cumprimentar/se apresentar, e o `agentPresentationMessage` do tenant entrava como texto PROIBIDO de aparecer na fala |
+| `b469316` | `0df7de8d-…` | Instrução mandava propor e gravar no mesmo turno; virou propor → esperar aceite → chamar a tool |
+| `f378d47` | `aeabef7b-…` | Desempate "ou pergunta, ou agenda"; e proibição de pergunta nova de campo oportunista depois da reunião confirmada (fechava lacuna de QLF-01 AC4/AC5) |
+| `32236b5` | `e63e5fd6-…` (principal) e `931b8a13-…` (tool) | `meetLink` passou de `htmlLink` (página do evento) para `hangoutLink` (link de entrada); canal da reunião declarado como Google Meet com alternativa de ligação; falha de tool traduzida para linguagem do lead |
 
 ### 14.5 Observações de estilo — registradas, sem valor de veredito (roteiro §7)
 
@@ -1420,14 +1420,14 @@ para falar com um humano.", "Qualificação 0 de 9 campos" e "Reunião — Agend
 
 O nome errado foi corrigido **duas vezes**, e só a segunda funcionou.
 
-- **Tentativa 1** (`16cfbf4`, versão `f3ab55ad`) — regra no prompt: "use EXATAMENTE o nome que a tool
+- **Tentativa 1** (`15f8697`, versão `f3ab55ad`) — regra no prompt: "use EXATAMENTE o nome que a tool
   devolveu no campo do responsável — NUNCA o nome do lead". **Falhou na rodada seguinte**: o agente
   disse "O Arthur T. vai continuar seu atendimento".
 - **Causa**: `escalar_para_humano` é um `httpRequestTool` que faz `PATCH /leads/{id}` e entrega ao
   modelo **o corpo cru da resposta** — o lead inteiro, cujo `name` de primeiro nível é o nome do
   lead. O campo certo (`assignedBroker.name`) está aninhado e é menos proeminente. Quando a resposta
   errada é o campo mais óbvio do payload, instrução não resolve.
-- **Tentativa 2** (`98ac0f8`, versão `d7c14587`) — correção na **fronteira**, na disciplina da
+- **Tentativa 2** (`143f5d1`, versão `d7c14587`) — correção na **fronteira**, na disciplina da
   AD-018: `optimizeResponse: true` + `fieldsToInclude: "except"` +
   `fields: "name,contactName,phone,externalId"`. O nome do lead deixou de existir no que o agente lê.
 - **`except` e não `selected`, de propósito**: `selected` derrubaria o `code` do `problem+json` de um
@@ -1437,7 +1437,7 @@ O nome errado foi corrigido **duas vezes**, e só a segunda funcionou.
   - antes (`2185`): `id`, `externalId`, **`name: "Arthur T."`**, `phone`, `status`, …, `assignedBroker.name: "André Luiz Martins"`
   - depois (`2200`): `id`, `status`, …, `assignedBroker.name: "André Luiz Martins"` — sem `name`, `contactName`, `phone` nem `externalId`
 
-### 15.5 Correção de postura de conversa (mesma task, `98ac0f8`)
+### 15.5 Correção de postura de conversa (mesma task, `143f5d1`)
 
 Feedback literal do usuário sobre a rodada 2: o agente parecia "arrogante e desesperado para vender",
 "alguém que não está preocupado com mais nada além de conseguir fechar uma reunião". O diagnóstico
@@ -1540,7 +1540,7 @@ parou.
 
 **SPEC_DEVIATION registrado**: "opt-out por linguagem natural" estava Out of Scope no `spec.md` deste
 lote, adiado para o L13. Trazido para cá por decisão explícita do usuário (2026-09-09), com o
-argumento de compliance. Commit `d91f379`, versão publicada `57ea08a0-…`.
+argumento de compliance. Commit `f80fa82`, versão publicada `57ea08a0-…`.
 
 ### 16.5 Limite conhecido e aceito
 
@@ -1606,17 +1606,17 @@ com hash conferido antes de ativar:
 
 | # | Defeito | Correção | Commit |
 | --- | --- | --- | --- |
-| 1 | Não cumprimentava nem se apresentava | Instrução de abertura de sessão | `213d36a` |
-| 2 | Agendava antes do lead aceitar | Propor → esperar aceite → chamar tool | `22b0a6c` |
-| 3 | Perguntava e agendava no mesmo turno | Regra "ou pergunta, ou agenda" | `9b4cadd` |
-| 4 | Perguntava campo oportunista após confirmar | Proibição no ramo de reunião confirmada (QLF-01 AC4/AC5) | `9b4cadd` |
-| 5 | `meetLink` era a página do evento, não o link de entrada | `hangoutLink` no lugar de `htmlLink` | `f8651d9` |
-| 6 | Dizia que a reunião seria "pelo WhatsApp" | Canal declarado como Google Meet, com alternativa de ligação | `f8651d9` |
-| 7 | Vazava jargão técnico ao lead | Tradução obrigatória para linguagem do lead | `f8651d9` |
-| 8 | Anunciava o nome do lead como corretor | Recorte da resposta na fronteira da tool | `98ac0f8` |
-| 9 | Postura de vendedor apressado | Seção de postura de conversa | `98ac0f8` |
-| 10 | Negociava horário depois de escalar | Regra de entrega ao humano | `16cfbf4` |
-| 11 | Opt-out em linguagem natural sem registro | Orientação para digitar a palavra, sem tocar no gate | `d91f379` |
+| 1 | Não cumprimentava nem se apresentava | Instrução de abertura de sessão | `4ec5ab3` |
+| 2 | Agendava antes do lead aceitar | Propor → esperar aceite → chamar tool | `b469316` |
+| 3 | Perguntava e agendava no mesmo turno | Regra "ou pergunta, ou agenda" | `f378d47` |
+| 4 | Perguntava campo oportunista após confirmar | Proibição no ramo de reunião confirmada (QLF-01 AC4/AC5) | `f378d47` |
+| 5 | `meetLink` era a página do evento, não o link de entrada | `hangoutLink` no lugar de `htmlLink` | `32236b5` |
+| 6 | Dizia que a reunião seria "pelo WhatsApp" | Canal declarado como Google Meet, com alternativa de ligação | `32236b5` |
+| 7 | Vazava jargão técnico ao lead | Tradução obrigatória para linguagem do lead | `32236b5` |
+| 8 | Anunciava o nome do lead como corretor | Recorte da resposta na fronteira da tool | `143f5d1` |
+| 9 | Postura de vendedor apressado | Seção de postura de conversa | `143f5d1` |
+| 10 | Negociava horário depois de escalar | Regra de entrega ao humano | `15f8697` |
+| 11 | Opt-out em linguagem natural sem registro | Orientação para digitar a palavra, sem tocar no gate | `f80fa82` |
 
 **O achado que vale além deste lote** (§15.4): o defeito 8 foi corrigido duas vezes. A primeira, por
 instrução de prompt, **falhou** — o payload devolvia o lead inteiro e o `name` do topo era mais óbvio

@@ -2,7 +2,7 @@
 
 **Date**: 2026-09-09
 **Spec**: `.specs/features/lote-10-modelo-alvo-e-prova-conversacional/spec.md`
-**Diff range**: `513691a~1..HEAD` (37 commits, `513691a`..`fc732aa`)
+**Diff range**: `a019bad~1..HEAD` (37 commits, `a019bad`..`0dd1d7b`)
 **Verifier**: independent sub-agent (author ≠ verifier)
 
 ---
@@ -13,29 +13,29 @@
 | --- | --- | --- |
 | T1 | ✅ Done | Baseline: 1015/81 measured, generated/ diff zero (`evidencia.md` §T1) |
 | T2 | ✅ Done | Found and resolved a logical divergence (§2.5) before proceeding — batch stopped, orchestrator decided, publish-and-reconcile |
-| T3 | ✅ Done | `99b8783` — model swapped, graph suite added |
-| T4 | ✅ Done | `dacba56` — generated diff confined to `agentModel` block |
-| T5 | ✅ Done | `1423de9` — published, version `8f9f8418-…` |
-| T6 | ✅ Done | `c99ee7c` — bateria procedure |
-| T7 | ✅ Done (3 attempts) | Two false starts (OpenAI quota exhausted, then dirty state + stale Calendar credential) correctly excluded from the 2-round budget per `bateria.md` §6.2; the valid round landed in `a98bbc5` |
-| T8 | ✅ Done | `d1c1421` — enum-refusal behavior observed 5×, agent corrected and continued |
-| T9 | ✅ Done | Ambiguous first (`9c38e8a`), then final APROVADO (`f88bd63`) after a user-authorized, explicitly logged `SPEC_DEVIATION` (bateria ran on the smoke's real `waId` to remove an environment confound) |
-| T10 | ✅ Done | `8620485` — three scenarios, turns as intent, approval bar by outcome |
-| T11 | ✅ Done | `964abc4` — three-target cleanup checklist |
-| T12 | ✅ Done | `11ae91b` — preconditions confirmed, vitest freeze declared |
-| T13 | ✅ Done (4 rounds) | Three false starts (dirty lead, scheduled-before-acceptance, wrong meeting-channel claim) all found and fixed in-phase; 4th round APROVADO — `213d36a`, `22b0a6c`, `9b4cadd`, `f8651d9` |
-| T14 | ✅ Done (3 rounds) | Two false starts (wrong broker name announced, repeated after a prompt-only fix) drove the boundary-level fix; 3rd round APROVADO — `16cfbf4`, `98ac0f8` |
-| T15 | ✅ Done (2 rounds) | 1st round exposed a real compliance hole (natural-language stop request not honored); fixed via `d91f379` (SPEC_DEVIATION, gate.mjs untouched); 2nd round APROVADO |
-| T16 | ✅ Done | `4483ea4` — consolidated verdict, no fix task needed, vitest freeze lifted, 1076/82 measured |
-| T17 | ✅ Done | `213c6b9` — confirmed already-satisfied by a pre-existing commit (`5a43b5b`), reconfirmed line-by-line |
-| T18 | ✅ Done | `465c7a8` — lote-6c `validation.md` Finding 1 closed by documented resolution note |
-| T19 | ✅ Done | `a947dee` — README §4 corrected, incident preserved as history |
-| T20 | ✅ Done | `9464122` — AD-026, AD-027 recorded; AD-015 `superseded by AD-027` |
-| T21 | ✅ Done | `eb91942` — spec.md traceability closed for all 12 IDs |
-| T22 | ✅ Done | `951135b` — AGT-04/05/LGPD-03 updated in lote-6 spec.md |
-| T23 | ✅ Done | `9b09c06` — STATE.md Handoff updated |
-| T24 | ✅ Done | `ad2045c` — INDEX.md entry added (see Code Quality note below — status text not revisited after T25) |
-| T25 | ✅ Done | `fc732aa` — MTN-01 registered as a named, permanent pendency (no path available; user confirmed `vale-uberaba` is fictitious) |
+| T3 | ✅ Done | `0f514dd` — model swapped, graph suite added |
+| T4 | ✅ Done | `d43c904` — generated diff confined to `agentModel` block |
+| T5 | ✅ Done | `b74f24c` — published, version `8f9f8418-…` |
+| T6 | ✅ Done | `f9fb5c8` — bateria procedure |
+| T7 | ✅ Done (3 attempts) | Two false starts (OpenAI quota exhausted, then dirty state + stale Calendar credential) correctly excluded from the 2-round budget per `bateria.md` §6.2; the valid round landed in `4928dce` |
+| T8 | ✅ Done | `13ff745` — enum-refusal behavior observed 5×, agent corrected and continued |
+| T9 | ✅ Done | Ambiguous first (`9951cec`), then final APROVADO (`ea6ae4f`) after a user-authorized, explicitly logged `SPEC_DEVIATION` (bateria ran on the smoke's real `waId` to remove an environment confound) |
+| T10 | ✅ Done | `0975e16` — three scenarios, turns as intent, approval bar by outcome |
+| T11 | ✅ Done | `13df19b` — three-target cleanup checklist |
+| T12 | ✅ Done | `50b2fca` — preconditions confirmed, vitest freeze declared |
+| T13 | ✅ Done (4 rounds) | Three false starts (dirty lead, scheduled-before-acceptance, wrong meeting-channel claim) all found and fixed in-phase; 4th round APROVADO — `4ec5ab3`, `b469316`, `f378d47`, `32236b5` |
+| T14 | ✅ Done (3 rounds) | Two false starts (wrong broker name announced, repeated after a prompt-only fix) drove the boundary-level fix; 3rd round APROVADO — `15f8697`, `143f5d1` |
+| T15 | ✅ Done (2 rounds) | 1st round exposed a real compliance hole (natural-language stop request not honored); fixed via `f80fa82` (SPEC_DEVIATION, gate.mjs untouched); 2nd round APROVADO |
+| T16 | ✅ Done | `384dd09` — consolidated verdict, no fix task needed, vitest freeze lifted, 1076/82 measured |
+| T17 | ✅ Done | `f3b1804` — confirmed already-satisfied by a pre-existing commit (`5a43b5b`), reconfirmed line-by-line |
+| T18 | ✅ Done | `ecc5a6e` — lote-6c `validation.md` Finding 1 closed by documented resolution note |
+| T19 | ✅ Done | `cebe22c` — README §4 corrected, incident preserved as history |
+| T20 | ✅ Done | `4247ddc` — AD-026, AD-027 recorded; AD-015 `superseded by AD-027` |
+| T21 | ✅ Done | `31a3ce3` — spec.md traceability closed for all 12 IDs |
+| T22 | ✅ Done | `0391c85` — AGT-04/05/LGPD-03 updated in lote-6 spec.md |
+| T23 | ✅ Done | `a39a422` — STATE.md Handoff updated |
+| T24 | ✅ Done | `09935bf` — INDEX.md entry added (see Code Quality note below — status text not revisited after T25) |
+| T25 | ✅ Done | `0dd1d7b` — MTN-01 registered as a named, permanent pendency (no path available; user confirmed `vale-uberaba` is fictitious) |
 
 All 25 tasks complete. Two `SPEC_DEVIATION` markers were added during Execute (bateria target swap in T9/§12.1, opt-out natural-language guidance in T15/§16.4) — both explicitly logged, both user-authorized, neither touches `gate.mjs`.
 
@@ -48,7 +48,7 @@ All 25 tasks complete. Two `SPEC_DEVIATION` markers were added during Execute (b
 | Criterion | Spec-defined outcome | `file:line` + assertion | Result |
 | --- | --- | --- | --- |
 | MOD-01 AC1: nó de modelo é `lmChatOpenAi` → `gpt-5.4-nano-2026-03-17`, cred `OpenAI account`, nenhum `lmChatGoogleGemini` | Exact type/version/model id/credential; zero Gemini nodes | `n8n/workflows/principal.ts:1273-1312` (source, confirmed by direct read); `n8n/workflows/__tests__/principal-modelo.test.ts:69-77` — `expect(modelo.type).toBe("@n8n/n8n-nodes-langchain.lmChatOpenAi")`, `expect(modelo.typeVersion).toBe(1.3)`, `expect(workflow.nodes.filter(n => n.type.includes("lmChatGoogleGemini"))).toEqual([])`; published-instance confirmation `n8n/smoke/evidencia.md:230-241` (§5.2, `get_workflow_details` after publish) | ✅ PASS |
-| MOD-01 AC2: swap confined to one node — 5 tools, `gate.mjs`, memory unchanged | 5 named tools present; memory node type + `sessionKey` unchanged; total node/connection count unchanged from the pre-swap baseline (61/75) | `principal-modelo.test.ts:111-132` — tool-name loop, `memoria.parameters.sessionKey` exact-string match, `expect(workflow.nodes).toHaveLength(61)` / `expect(contarConexoes()).toBe(75)`; `gate.mjs` absent from `git diff --stat 513691a~1..HEAD` (confirmed directly — zero touches) | ✅ PASS |
+| MOD-01 AC2: swap confined to one node — 5 tools, `gate.mjs`, memory unchanged | 5 named tools present; memory node type + `sessionKey` unchanged; total node/connection count unchanged from the pre-swap baseline (61/75) | `principal-modelo.test.ts:111-132` — tool-name loop, `memoria.parameters.sessionKey` exact-string match, `expect(workflow.nodes).toHaveLength(61)` / `expect(contarConexoes()).toBe(75)`; `gate.mjs` absent from `git diff --stat a019bad~1..HEAD` (confirmed directly — zero touches) | ✅ PASS |
 | MOD-01 AC3/4 (bateria: 5 tools + enum-400 non-blocking) | Each tool ≥1 successful call with execution id; agent proceeds past `400 payload-invalido` | `evidencia.md:1059-1067` (§12.4, R1=false, execs `1960`/`1966`/`1970`/`1952`/`1956`); `evidencia.md:1076-1150` (§12.5, R2=false, 3 refusals observed with `code: payload-invalido`, agent corrected/continued in all cases) | ✅ PASS |
 | MOD-01 AC5 (rollback on bateria failure) | If bateria fails, model reverts to Gemini before any smoke scenario | Not triggered — `evidencia.md:1150` §12.6 `R1=falso, R2=falso → APROVADO`; `principal.ts`/`generated/principal.ts` confirmed untouched by T7-T9 (`evidencia.md:1201-1210` §12.9) | ✅ PASS (N/A path correctly not taken) |
 | MOD-01 AC6 (paridade publicado × generated antes da troca) | Node-by-node parity confirmed or divergence logged before any new publish | `evidencia.md:74-185` (§2.2-§2.7) — 61/61 nodes, 75/75 connections; one logical divergence found (§2.5, missing `retryOnFail`/`onError` on 3 nodes) and explicitly escalated to the orchestrator before proceeding, not silently published over | ✅ PASS |
@@ -105,8 +105,8 @@ Per the task's tiering guidance (standard feature, 1-3 mutations per file), 2 mu
 
 | # | File:line | Mutation | Targets | Killed? |
 | - | --------- | -------- | ------- | ------- |
-| 6 | `n8n/src/agendamento.mjs:139` | Reverted the fix: `meetLink: meetLink !== "" ? meetLink : null` → `meetLink: eventoCriado ? link : null` (regresses to serving the Calendar event-page link instead of the Meet entry link) | The `f8651d9` `meetLink` fix (defect #5 in `evidencia.md` §17.3) | ✅ Killed — 3 tests failed in `agendamento.test.ts`: `not.toContain("calendar.google.com")`, and the `eventoCriado` without a `hangoutLink` case (`meetLink` expected `null`, got the page URL) |
-| 7 | `n8n/src/system-message.mjs:283` | `firstTurn ? FIRST_TURN_INSTRUCTION : null` → `null` (drops the greeting instruction unconditionally) | The `213d36a` first-turn greeting fix (defect #1 in `evidencia.md` §17.3) | ✅ Killed — 3 tests failed in `system-message.test.ts`, including `primeiro turno: proíbe abrir pedindo dado de cadastro` and the first-turn-with-`agentPresentationMessage` case |
+| 6 | `n8n/src/agendamento.mjs:139` | Reverted the fix: `meetLink: meetLink !== "" ? meetLink : null` → `meetLink: eventoCriado ? link : null` (regresses to serving the Calendar event-page link instead of the Meet entry link) | The `32236b5` `meetLink` fix (defect #5 in `evidencia.md` §17.3) | ✅ Killed — 3 tests failed in `agendamento.test.ts`: `not.toContain("calendar.google.com")`, and the `eventoCriado` without a `hangoutLink` case (`meetLink` expected `null`, got the page URL) |
+| 7 | `n8n/src/system-message.mjs:283` | `firstTurn ? FIRST_TURN_INSTRUCTION : null` → `null` (drops the greeting instruction unconditionally) | The `4ec5ab3` first-turn greeting fix (defect #1 in `evidencia.md` §17.3) | ✅ Killed — 3 tests failed in `system-message.test.ts`, including `primeiro turno: proíbe abrir pedindo dado de cadastro` and the first-turn-with-`agentPresentationMessage` case |
 
 **Sensor depth**: lightweight (7 total mutations: 5 required + 2 tiered), all behavior-level, targeting the highest-risk new/changed code.
 **Result**: 7/7 killed — **PASS ✅**. No decorative test found in either the graph suite or the two `.mjs` test suites.
@@ -123,7 +123,7 @@ Per the task's tiering guidance (standard feature, 1-3 mutations per file), 2 mu
 | Matches patterns | ✅ | New test file follows the `tool-agendar-reuniao.test.ts` graph-testing precedent the task named; prompt instructions follow the existing `*_INSTRUCTION` constant + inline "ACHADO REAL" comment pattern already used elsewhere in the file |
 | Spec-anchored outcome check (asserted values match spec) | ✅ | See Spec-Anchored ACs table above — every assertion checked targets the exact spec-defined value (model id, session key, CRM status enum, execution ids), not a loose existence check |
 | Per-layer Coverage Expectation met | ✅ | Domain logic (`principal-modelo.test.ts`) has the required 1:1 invariant mapping (model identity + "nothing else changed"); the `n8n/src` layer test suites for the two files that changed real code cover the Fase-5 defects directly |
-| Every test maps to a spec AC or a Done-when criterion | ✅ | `principal-modelo.test.ts`'s `escalar_para_humano` block maps to the `98ac0f8` fix and is exercised as MOD-01 AC2 infrastructure (the tool's shape didn't change count-wise, but its response-shaping is fixed by this suite); the two `.mjs` suites map 1:1 to the 11 named defects in `evidencia.md` §17.3 |
+| Every test maps to a spec AC or a Done-when criterion | ✅ | `principal-modelo.test.ts`'s `escalar_para_humano` block maps to the `143f5d1` fix and is exercised as MOD-01 AC2 infrastructure (the tool's shape didn't change count-wise, but its response-shaping is fixed by this suite); the two `.mjs` suites map 1:1 to the 11 named defects in `evidencia.md` §17.3 |
 | Documented project quality/testing guidelines followed | ✅ | `tasks.md`'s Test Coverage Matrix (graph testing via `toJSON()`, no test for the generated artifact, no test for real WhatsApp conversations) followed exactly — no attempt to fake-test the untestable layers |
 
 **Foreign uncommitted edit (out of scope, left untouched)**: `git status --porcelain` on the real tree shows `M n8n/generated/principal.ts` and `M n8n/workflows/principal.ts` — a `retryOnFail`/`maxTries` indentation fix moving those fields from inside `parameters` to the node `config` level on `consultar_documentos`. This is **not** part of this feature's commits; `evidencia.md:1204-1206` (§T9, closing note) explicitly documents it as belonging to another session and states it deliberately does not enter T9's commit. It is in fact the exact fix for the bug this feature's own T5 discovered and deliberately deferred to backlog (§5.3). Confirmed via `git diff` before any sensor work, left byte-identical throughout verification, and not evaluated as part of this feature's scope.
@@ -156,7 +156,7 @@ Per the task's tiering guidance (standard feature, 1-3 mutations per file), 2 mu
 
 ## Requirement Traceability Update
 
-The author already updated `spec.md`'s traceability table in T21 (`eb91942`) and this Verifier's independent re-derivation (Spec-Anchored ACs table above) confirms it — no status changes needed from this pass.
+The author already updated `spec.md`'s traceability table in T21 (`31a3ce3`) and this Verifier's independent re-derivation (Spec-Anchored ACs table above) confirms it — no status changes needed from this pass.
 
 | Requirement | Author's status (T21) | Verifier's independent check |
 | --- | --- | --- |

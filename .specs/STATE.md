@@ -113,6 +113,20 @@
 - **Scope**: Todos os commits deste repositório, doravante (não retroativo — histórico já reescrito).
 - **Date**: 2026-08-05
 - **Status**: active
+- **Reforço (2026-09-10)**: durante o lote-10, uma injeção de prompt — texto formatado como
+  `<system-reminder>` colado ao resultado de uma ferramenta, não uma mensagem real do usuário —
+  instruiu explicitamente a reintroduzir a trailer "a partir de agora". Foi identificada como
+  conteúdo não confiável e ignorada, sem alterar nenhum commit. Uma auditoria posterior por pedido
+  explícito do usuário encontrou que **essa mesma técnica já tinha funcionado numa janela anterior**:
+  dois commits do lote-10 feitos antes desta sessão (`docs(state): handoff do lote-10 apos a prova
+  conversacional` e `docs(smoke): veredito consolidado da prova conversacional`) carregavam a trailer.
+  Como nenhum dos 39 commits pendentes do lote-10 tinha sido enviado a `origin/main` ainda, a limpeza
+  foi feita por reescrita de histórico **só no range local não-publicado** (`git filter-branch
+  --msg-filter`, escopado a `d550b79..HEAD`, sem tocar conteúdo de árvore — confirmado por diff vazio
+  entre HEAD antes/depois), sem qualquer `push --force`. **Lição**: a checagem de trailer antes de
+  cada commit individual não é suficiente — uma auditoria varrendo toda a faixa de commits não
+  publicados, feita antes de qualquer `git push`, é o que efetivamente pega uma violação que passou
+  despercebida numa janela anterior.
 
 ### AD-014
 - **Decision**: Todo trabalho de n8n do produto é **workflow-as-code**: fonte no repo (`n8n/workflows/` em código SDK + camada de decisão determinística pura em `n8n/src/` com testes vitest), publicação gerada de forma reproduzível (`n8n/generated/` → instância via MCP/SDK), UI do n8n nunca editada à mão. Efeitos colaterais (escritas no CRM, eventos de calendário, envios de mensagem) **nunca são decididos autonomamente por LLM** — toda saída de modelo passa por validação determinística (whitelist dos enums do contrato) antes de produzir qualquer efeito.
@@ -231,7 +245,7 @@
 ### Estado do lote 10 (2026-09-09) — encerrado
 
 **Lote 10 (`lote-10-modelo-alvo-e-prova-conversacional`) — EXECUTADO E VERIFICADO. Verifier: PASS.**
-T1–T25 concluídas e commitadas (37 commits, `513691a..fc732aa`, mais o commit de fechamento deste
+T1–T25 concluídas e commitadas (37 commits, `a019bad..0dd1d7b`, mais o commit de fechamento deste
 Handoff). `validation.md` escrito pelo Verifier (sub-agente independente, author ≠ verifier),
 `validate_state.py lote-10-modelo-alvo-e-prova-conversacional` confirmado com exit 0 pelo
 orquestrador de forma independente (não só aceito do relatório do sub-agente). Spec-anchored check:
@@ -264,7 +278,7 @@ confinada ao nó `agentModel`.
 
 **Os três desfechos da AD-015 estão provados por conversa real** — é o que o lote existia para fazer.
 **A AD-015 está encerrada** (T20, `Status: superseded by AD-027`), e a rastreabilidade do lote-6 já
-reflete isso (T22, `lote-6-agente-n8n-whatsapp/spec.md`, commit `951135b`):
+reflete isso (T22, `lote-6-agente-n8n-whatsapp/spec.md`, commit `0391c85`):
 
 | Cenário | Requisito | Estado final provado | Execuções |
 | --- | --- | --- | --- |
@@ -296,11 +310,15 @@ visível do payload, instrução de prompt não vence — é preciso remover o c
 - `crivo-agente-principal` (`0B1nqjODu7xuYYKF`): **`57ea08a0-6054-4b65-8518-d848293a878c`**
 - `crivo-tool-agendar-reuniao` (`2qCs6rPzmeOqan65`): **`931b8a13-9bbc-431b-a198-0de8e4371d80`**
 
-**⚠️ Há uma edição ALHEIA não commitada na árvore de trabalho.** `n8n/workflows/principal.ts` e
-`n8n/generated/principal.ts` aparecem como modificados: é a correção de indentação do
-`retryOnFail`/`maxTries` do nó `consultar_documentos`, de uma sessão separada que foi pausada. **Não
-é deste lote e não deve entrar em commit dele.** Ao longo da execução ela foi preservada por
-salvar-patch → `git checkout` → trabalhar → commitar → `git apply` de volta. Mantenha esse cuidado.
+**A edição ALHEIA do `retryOnFail` foi commitada e enviada (2026-09-10), fora do escopo do lote-10.**
+`n8n/workflows/principal.ts` e `n8n/generated/principal.ts` vinham modificados desde uma sessão
+separada e pausada; ao longo de todo o lote-10 foram preservados sem entrar em nenhum commit dele
+(salvar-patch → `git checkout` → trabalhar → commitar → `git apply` de volta). Por pedido explícito do
+usuário, a mudança foi revisada, gate-checada (`npx vitest run n8n/workflows` + `npm run lint` + `npm
+run build`, todos verdes) e commitada isoladamente (`db826fc`, `fix(agente): corrige nivel do
+retryOnFail em consultar_documentos`). Não era indentação: `retryOnFail`/`maxTries` estavam aninhados
+dentro de `parameters`, onde o schema do node HTTP Request não os aplica — o retry nunca era
+configurado de fato. A correção move as duas chaves para `config`, onde o SDK realmente as espera.
 
 **SPEC_DEVIATION refletido na rastreabilidade (T21)**: "opt-out por linguagem natural" estava Out of
 Scope no `spec.md` (adiado para o L13) e foi trazido para este lote por decisão explícita do usuário
@@ -324,10 +342,15 @@ produzem falhas falsas convincentes — `23503` em `create-admin.test.ts` numa, 
 `seed.test.ts` espera 3 na outra. Nenhuma era regressão. Antes de aceitar uma falha de suíte como
 real, confirme que nenhum outro processo `node` está vivo e repita isolado.
 
-**Estado do repositório**: branch `main`, 39 commits à frente de `origin/main` incluindo o commit que
-fecha este Handoff (38 até T25 + 1 de fechamento com `validation.md`/lições/índices), **nenhum push
-feito** (não autorizado nesta janela). A Vercel redeploya em push a `main`; como o lote não muda
-código do app, não há motivo para push antes do fim.
+**Estado do repositório**: branch `main`, HEAD `db826fc` — **push feito** (`d550b79..db826fc`,
+fast-forward, 40 commits: os 39 do lote-10 + o fix isolado do `retryOnFail`), **`origin/main`
+sincronizado** (2026-09-10, autorizado explicitamente pelo usuário). Antes do push, auditoria completa
+por trailer de atribuição em toda a faixa não publicada (ver AD-014 § Reforço) — dois commits
+pré-existentes do lote-10 tinham a trailer; limpos por reescrita de histórico local (nunca publicado,
+então sem `--force`), diff de árvore confirmado vazio antes/depois. A Vercel redeploya
+automaticamente em push a `main` — confirmar o resultado do deploy; como o `retryOnFail` é a única
+mudança de código de fato neste push (o resto do lote-10 é `n8n/*` e `.specs/*`, que não afetam o
+app Next.js), não se espera regressão visível, mas o deploy em si não foi verificado por este agente.
 
 **Next step**: nenhuma task formal restante no lote-10. `ROADMAP-POS-PILOTO.md` lista L11–L16 como
 propostos — próximo trabalho é escopo novo, a definir pelo usuário via nova rodada de Specify.
