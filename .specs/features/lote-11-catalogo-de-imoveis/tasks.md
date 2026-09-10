@@ -222,11 +222,11 @@ T25 → T26 → T27 → T28 → T29
 - Skill: NONE
 
 **Done when**:
-- [ ] `getProperties` filtra por status, publicação, tipo, modalidade e busca textual normalizada
-- [ ] Teste de isolamento: imóvel de outro tenant nunca aparece
-- [ ] `isActiveMemberOf` falso para usuário de outro tenant **e** para vínculo com `deactivatedAt` preenchido
-- [ ] Gate passa: `npx vitest run`
-- [ ] Contagem de testes registrada, maior que a da T4
+- [x] `getProperties` filtra por status, publicação, tipo, modalidade e busca textual normalizada
+- [x] Teste de isolamento: imóvel de outro tenant nunca aparece
+- [x] `isActiveMemberOf` falso para usuário de outro tenant **e** para vínculo com `deactivatedAt` preenchido
+- [x] Gate passa: `npx vitest run` (1140 testes, 84 arquivos)
+- [x] Contagem de testes registrada, maior que a da T4 (218 testes em T4 → 1140 no total da suíte, 14 novos em `properties.test.ts`)
 
 **Tests**: integration
 **Gate**: full

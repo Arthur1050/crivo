@@ -27,6 +27,7 @@ import {
   integrationRefusals,
   leads,
   messages,
+  properties,
   serviceApiKeys,
   tenant_invitations,
   tenant_members,
@@ -41,6 +42,7 @@ import {
   type BrokerCandidate,
 } from "../../lib/broker-availability";
 import type { LeadScope } from "../../lib/lead-scope";
+import { normalizeForSearch } from "../../lib/normalize-text";
 import { parseRoles, type Role } from "../../lib/permissions";
 import { isPendingAttendance } from "../../lib/pilot-metrics";
 
@@ -96,9 +98,12 @@ export type Conversation = typeof conversations.$inferSelect;
 export type Message = typeof messages.$inferSelect;
 export type Document = typeof documents.$inferSelect;
 export type DocumentCategory = typeof documentCategories.$inferSelect;
+export type Property = typeof properties.$inferSelect;
 export type LeadStatus = Lead["status"];
 export type Modality = Document["modality"];
 export type CategoryColor = DocumentCategory["color"];
+export type PropertyKind = Property["kind"];
+export type PropertyStatus = Property["status"];
 
 const ALL_MODALITIES: Modality[] = ["novo", "usado", "ambos"];
 
@@ -608,6 +613,80 @@ export async function getDocumentSample(
   }
 
   return { recent, countsByModality };
+}
+
+// ---------------------------------------------------------------------------
+// Catálogo de imóveis (lote-11 — IMOV-01/02). Molde direto de `getDocuments`
+// (`and(...)` com `undefined` condicional) e de `isNull(tenant_members.
+// deactivatedAt)` (`getBrokers`).
+// ---------------------------------------------------------------------------
+
+export interface PropertyFilters {
+  status?: PropertyStatus;
+  published?: boolean;
+  kind?: PropertyKind;
+  modality?: Modality;
+  // Comparado contra `neighborhoodNormalized`/`cityNormalized` — o chamador
+  // não precisa normalizar antes; `getProperties` normaliza aqui, uma vez,
+  // com a mesma função usada na escrita (design.md — Colunas `*Normalized`).
+  search?: string;
+}
+
+export async function getProperties(
+  tenantId: string,
+  filters?: PropertyFilters
+): Promise<Property[]> {
+  const normalizedSearch = filters?.search
+    ? normalizeForSearch(filters.search)
+    : undefined;
+
+  return db
+    .select()
+    .from(properties)
+    .where(
+      and(
+        eq(properties.tenantId, tenantId),
+        filters?.status ? eq(properties.status, filters.status) : undefined,
+        filters?.published !== undefined
+          ? eq(properties.published, filters.published)
+          : undefined,
+        filters?.kind ? eq(properties.kind, filters.kind) : undefined,
+        filters?.modality
+          ? eq(properties.modality, filters.modality)
+          : undefined,
+        normalizedSearch
+          ? or(
+              ilike(properties.neighborhoodNormalized, `%${normalizedSearch}%`),
+              ilike(properties.cityNormalized, `%${normalizedSearch}%`)
+            )
+          : undefined
+      )
+    )
+    .orderBy(desc(properties.updatedAt));
+}
+
+/**
+ * Membro ativo de uma imobiliária (IMOV-02 AC4): falso para usuário de outro
+ * tenant e para vínculo com `deactivatedAt` preenchido — mesma condição de
+ * `IS_ASSIGNABLE_BROKER`, sem o filtro de papel (o captador não precisa ser
+ * corretor; qualquer papel ativo serve).
+ */
+export async function isActiveMemberOf(
+  tenantId: string,
+  userId: string
+): Promise<boolean> {
+  const rows = await db
+    .select({ id: tenant_members.id })
+    .from(tenant_members)
+    .where(
+      and(
+        eq(tenant_members.organizationId, tenantId),
+        eq(tenant_members.userId, userId),
+        isNull(tenant_members.deactivatedAt)
+      )
+    )
+    .limit(1);
+  return rows.length > 0;
 }
 
 export interface DashboardRange {
