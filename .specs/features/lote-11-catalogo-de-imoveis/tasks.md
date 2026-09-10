@@ -119,10 +119,10 @@ T25 → T26 → T27 → T28 → T29
 - Skill: NONE
 
 **Done when**:
-- [ ] `git status --porcelain` vazio antes de medir (os artefatos de planejamento ja foram commitados em `2026-09-10`, fora desta task)
-- [ ] Gate build passa: `npx vitest run && npm run lint && npm run build`
-- [ ] `evidencia.md` §1 registra: N testes / M arquivos / exit 0 no build / os 3 avisos de lint pré-existentes
-- [ ] O número registrado é o medido nesta janela, nunca copiado do Handoff do lote-10
+- [x] `git status --porcelain` vazio antes de medir (os artefatos de planejamento ja foram commitados em `2026-09-10`, fora desta task)
+- [x] Gate build passa: `npx vitest run && npm run lint && npm run build`
+- [x] `evidencia.md` §1 registra: N testes / M arquivos / exit 0 no build / os 3 avisos de lint pré-existentes
+- [x] O número registrado é o medido nesta janela, nunca copiado do Handoff do lote-10
 
 **Tests**: none
 **Gate**: build
