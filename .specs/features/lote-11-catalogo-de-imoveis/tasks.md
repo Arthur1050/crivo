@@ -276,11 +276,11 @@ T25 → T26 → T27 → T28 → T29
 - Skill: NONE
 
 **Done when**:
-- [ ] Teste cobre as 6 combinações papel × ação para `imoveis`
-- [ ] Teste de papéis acumulados: corretor + gestor recebe `escrever` (união, PERM-01 AC4)
-- [ ] Nenhum escopo por captador foi introduzido (IMOV-04 AC6) — grep por `PropertyScope` vazio
-- [ ] Gate passa: `npx vitest run src/lib`
-- [ ] Contagem de testes registrada
+- [x] Teste cobre as 6 combinações papel × ação para `imoveis`
+- [x] Teste de papéis acumulados: corretor + gestor recebe `escrever` (união, PERM-01 AC4)
+- [x] Nenhum escopo por captador foi introduzido (IMOV-04 AC6) — grep por `PropertyScope` vazio
+- [x] Gate passa: `npx vitest run src/lib`
+- [x] Contagem de testes registrada (216 testes, 17 arquivos em `src/lib`)
 
 **Tests**: unit
 **Gate**: quick

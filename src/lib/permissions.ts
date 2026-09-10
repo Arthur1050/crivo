@@ -20,6 +20,7 @@ export const RESOURCES = [
   "documentos",
   "configuracoes",
   "usuarios",
+  "imoveis",
 ] as const;
 export type Resource = (typeof RESOURCES)[number];
 
@@ -51,6 +52,8 @@ const PERMISSION_MATRIX: Record<Role, Record<Resource, readonly Action[]>> = {
     // PERM-01 AC2: gestão de usuários, papéis e convites é exclusiva do
     // administrador — é a única linha que separa administrador de gestor.
     usuarios: ["ler", "escrever"],
+    // IMOV-04 AC1: administrador e gestor cadastram e mantêm o catálogo.
+    imoveis: ["ler", "escrever"],
   },
   gestor: {
     dashboard: ["ler"],
@@ -59,6 +62,7 @@ const PERMISSION_MATRIX: Record<Role, Record<Resource, readonly Action[]>> = {
     documentos: ["ler", "escrever"],
     configuracoes: ["ler", "escrever"],
     usuarios: [],
+    imoveis: ["ler", "escrever"],
   },
   corretor: {
     dashboard: ["ler"],
@@ -69,6 +73,9 @@ const PERMISSION_MATRIX: Record<Role, Record<Resource, readonly Action[]>> = {
     // PERM-01 AC3: nenhum acesso a Configurações — nem leitura.
     configuracoes: [],
     usuarios: [],
+    // IMOV-04 AC1/AC6: corretor lê o inventário inteiro da imobiliária, sem
+    // escrever — nenhum escopo por captador análogo ao de leads é introduzido.
+    imoveis: ["ler"],
   },
 };
 

@@ -22,6 +22,7 @@ const EXPECTED: Record<Role, Record<Resource, Action[]>> = {
     documentos: ["ler", "escrever"],
     configuracoes: ["ler", "escrever"],
     usuarios: ["ler", "escrever"],
+    imoveis: ["ler", "escrever"],
   },
   gestor: {
     dashboard: ["ler"],
@@ -30,6 +31,7 @@ const EXPECTED: Record<Role, Record<Resource, Action[]>> = {
     documentos: ["ler", "escrever"],
     configuracoes: ["ler", "escrever"],
     usuarios: [],
+    imoveis: ["ler", "escrever"],
   },
   corretor: {
     dashboard: ["ler"],
@@ -38,6 +40,7 @@ const EXPECTED: Record<Role, Record<Resource, Action[]>> = {
     documentos: ["ler"],
     configuracoes: [],
     usuarios: [],
+    imoveis: ["ler"],
   },
 };
 
@@ -109,6 +112,14 @@ describe("lib/permissions — can (lote-8, PERM-01)", () => {
     it("acumular não concede o que nenhum dos papéis concede", () => {
       expect(can(["corretor", "gestor"], "usuarios", "ler")).toBe(false);
       expect(can(["corretor", "gestor"], "dashboard", "escrever")).toBe(false);
+    });
+
+    // lote-11 — IMOV-04 AC1: corretor sozinho só lê o catálogo; acumulado com
+    // gestor, ganha a união (escrever), nunca a interseção (só ler).
+    it("corretor + gestor recebe escrever em imoveis (união, PERM-01 AC4)", () => {
+      expect(can(["corretor"], "imoveis", "escrever")).toBe(false);
+      expect(can(["corretor", "gestor"], "imoveis", "escrever")).toBe(true);
+      expect(can(["corretor", "gestor"], "imoveis", "ler")).toBe(true);
     });
   });
 
