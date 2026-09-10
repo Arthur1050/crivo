@@ -26,6 +26,31 @@ export const propertyTypeEnum = pgEnum("property_type", [
   "apartamento",
 ]);
 
+// Enum própria do catálogo de imóveis (lote-11 — IMOV-01/03). Superset de
+// `propertyTypeEnum` nos dois valores compartilhados ("casa", "apartamento"),
+// o que faz o filtro vindo de um lead mapear 1:1 sem tabela de tradução.
+// `propertyTypeEnum` acima fica intocada: é campo obrigatório de qualificação
+// (`n8n/src/phase.mjs`) e seu rótulo está publicado dentro do workflow —
+// ampliá-la arrastaria a republicação (design.md — Tech Decisions).
+export const propertyKindEnum = pgEnum("property_kind", [
+  "casa",
+  "apartamento",
+  "sobrado",
+  "cobertura",
+  "terreno",
+  "sala_comercial",
+  "chacara",
+]);
+
+// Status do imóvel (lote-11 — IMOV-05). Transição livre entre os três
+// valores, sem tabela de transições permitidas (design.md — Assumptions):
+// diferente de `leads`, o imóvel não tem trava humana nem ator agente.
+export const propertyStatusEnum = pgEnum("property_status", [
+  "disponivel",
+  "reservado",
+  "vendido",
+]);
+
 export const motivationEnum = pgEnum("motivation", [
   "investidor",
   "morador",
@@ -594,5 +619,87 @@ export const integrationRefusals = pgTable(
     ),
     // Purga por retenção de 30 dias (SAUDE-03), atravessando todos os tenants.
     index("integration_refusals_occurred_at_idx").on(table.occurredAt),
+  ]
+);
+
+// ---------------------------------------------------------------------------
+// Catálogo de imóveis (lote-11 — IMOV-01/02/03/05/06). CRUD no CRM e consulta
+// pelo agente através da tool `buscar_imoveis` (design.md — Data Models).
+//
+// Sem relação com `leads` por decisão de modelagem do usuário (2026-09-04):
+// a qualificação continua sobre critérios, nunca sobre uma unidade
+// específica — o que mantém a questão de comissão fora do escopo técnico.
+// ---------------------------------------------------------------------------
+
+export const properties = pgTable(
+  "properties",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
+    // Captador (IMOV-02). NOT NULL: todo imóvel nasce com dono da captação.
+    // `restrict` implícito (default do Postgres) — a FK impede excluir
+    // usuário que ainda capta (T9 traduz a violação numa recusa legível).
+    capturedByUserId: uuid("captured_by_user_id")
+      .notNull()
+      .references(() => users.id),
+
+    // Referência legível (IMOV-03). `sequence` é o número por imobiliária;
+    // `reference` é o rótulo derivado ("AP-0142"). Os dois nascem juntos e
+    // nunca mudam depois (imutabilidade garantida pelo tipo do patch de
+    // `updateProperty`, não por checagem em runtime).
+    sequence: integer("sequence").notNull(),
+    reference: text("reference").notNull(),
+
+    kind: propertyKindEnum("kind").notNull(),
+    modality: modalityEnum("modality").notNull(),
+    status: propertyStatusEnum("status").notNull().default("disponivel"),
+    published: boolean("published").notNull().default(false),
+
+    street: text("street"), // só o CRM lê (BUSCA-03)
+    number: text("number"), // só o CRM lê
+    complement: text("complement"), // só o CRM lê
+    neighborhood: text("neighborhood").notNull(),
+    neighborhoodNormalized: text("neighborhood_normalized").notNull(),
+    city: text("city").notNull(),
+    cityNormalized: text("city_normalized").notNull(),
+    state: text("state").notNull(), // UF, 2 chars por convenção (como tenants.state)
+
+    priceCents: bigint("price_cents", { mode: "bigint" }).notNull(),
+    areaSqm: integer("area_sqm").notNull(),
+    bedrooms: integer("bedrooms").notNull(),
+    bathrooms: integer("bathrooms").notNull(),
+    parkingSpots: integer("parking_spots").notNull(),
+
+    description: text("description"),
+    photoUrls: text("photo_urls").array(), // URLs externas; nenhum byte (IMOV-06)
+
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    // IMOV-03 AC7: a trava da referência é do BANCO. Duas criações
+    // concorrentes leem o mesmo `max(sequence)` e escolhem o mesmo número;
+    // só o índice garante que exatamente uma confirma.
+    uniqueIndex("properties_tenant_id_sequence_idx").on(
+      table.tenantId,
+      table.sequence
+    ),
+    uniqueIndex("properties_tenant_id_reference_idx").on(
+      table.tenantId,
+      table.reference
+    ),
+    // BUSCA-02: o corte de visibilidade é a consulta mais quente da rota.
+    index("properties_tenant_visible_idx").on(
+      table.tenantId,
+      table.status,
+      table.published
+    ),
+    index("properties_captured_by_user_id_idx").on(table.capturedByUserId),
   ]
 );

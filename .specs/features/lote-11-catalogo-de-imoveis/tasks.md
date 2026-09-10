@@ -170,11 +170,11 @@ T25 → T26 → T27 → T28 → T29
 - Skill: NONE
 
 **Done when**:
-- [ ] `propertyKindEnum` com os 7 valores do design; `propertyTypeEnum` **inalterada** (diff do arquivo prova)
-- [ ] `properties` com `tenant_id` e `captured_by_user_id` NOT NULL, e as colunas `*Normalized`
-- [ ] Os 4 índices declarados: `(tenant_id, sequence)` único, `(tenant_id, reference)` único, `(tenant_id, status, published)`, `(captured_by_user_id)`
-- [ ] Migração aplicada no banco de desenvolvimento e a tabela existe
-- [ ] Gate build passa
+- [x] `propertyKindEnum` com os 7 valores do design; `propertyTypeEnum` **inalterada** (diff do arquivo prova)
+- [x] `properties` com `tenant_id` e `captured_by_user_id` NOT NULL, e as colunas `*Normalized`
+- [x] Os 4 índices declarados: `(tenant_id, sequence)` único, `(tenant_id, reference)` único, `(tenant_id, status, published)`, `(captured_by_user_id)`
+- [x] Migração aplicada no banco de desenvolvimento e a tabela existe
+- [x] Gate build passa
 
 **Tests**: none
 **Gate**: build
