@@ -383,14 +383,14 @@ T25 → T26 → T27 → T28 → T29
 - Skill: NONE
 
 **Done when**:
-- [ ] Preço em **reais** é convertido para centavos aqui, uma única vez
-- [ ] `precoMin > precoMax` recusado (Edge Case), com detalhe nomeando o conflito
-- [ ] Preço não inteiro, negativo ou zero recusado — e nunca reinterpretado como centavos (Edge Case)
-- [ ] `quartosMin` zero ou negativo recusado (Edge Case)
-- [ ] Enum inválida recusada; ausência de todo filtro aceita
-- [ ] `bairro`/`cidade` passam por `normalizeForSearch`
-- [ ] Gate passa: `npx vitest run src/server/integration`
-- [ ] Contagem de testes registrada, maior que a da T10
+- [x] Preço em **reais** é convertido para centavos aqui, uma única vez
+- [x] `precoMin > precoMax` recusado (Edge Case), com detalhe nomeando o conflito
+- [x] Preço não inteiro, negativo ou zero recusado — e nunca reinterpretado como centavos (Edge Case)
+- [x] `quartosMin` zero ou negativo recusado (Edge Case)
+- [x] Enum inválida recusada; ausência de todo filtro aceita
+- [x] `bairro`/`cidade` passam por `normalizeForSearch`
+- [x] Gate passa: `npx vitest run src/server/integration` (242 testes, 25 arquivos)
+- [x] Contagem de testes registrada, maior que a da T10 (+26 novos em `property-filters.test.ts`, arquivo novo)
 
 **Tests**: unit
 **Gate**: quick
