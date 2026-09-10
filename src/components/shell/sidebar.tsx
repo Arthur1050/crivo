@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Building2Icon,
   CalendarClockIcon,
   ChartLineIcon,
   FileTextIcon,
@@ -60,6 +61,10 @@ const NAV_ITEMS: readonly NavItem[] = [
   { label: "Pipeline", href: "/pipeline", icon: FolderKanbanIcon, resource: "pipeline" },
   { label: "Chats", href: "/chats", icon: MessageCircleIcon, resource: "chats" },
   { label: "Documentos", href: "/documentos", icon: FileTextIcon, resource: "documentos" },
+  // lote-11 (T19): `imoveis` já concede `ler` a corretor na matriz de
+  // permissões — nenhuma lógica de visibilidade nova, `visibleItems` abaixo
+  // filtra igual aos demais itens.
+  { label: "Imóveis", href: "/imoveis", icon: Building2Icon, resource: "imoveis" },
   {
     label: "Configurações",
     href: "/configuracoes",

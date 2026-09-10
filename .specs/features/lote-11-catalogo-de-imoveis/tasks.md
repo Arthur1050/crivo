@@ -604,9 +604,9 @@ T25 → T26 → T27 → T28 → T29
 - Skill: NONE
 
 **Done when**:
-- [ ] Item aponta para `/imoveis` com `resource: "imoveis"` e um ícone `lucide-react` coerente com os demais
-- [ ] Nenhuma condicional nova de visibilidade foi escrita — a filtragem existente resolve (IMOV-04 AC4)
-- [ ] Gate build passa
+- [x] Item aponta para `/imoveis` com `resource: "imoveis"` e um ícone `lucide-react` coerente com os demais
+- [x] Nenhuma condicional nova de visibilidade foi escrita — a filtragem existente resolve (IMOV-04 AC4)
+- [x] Gate build passa
 
 **Tests**: none
 **Gate**: build
