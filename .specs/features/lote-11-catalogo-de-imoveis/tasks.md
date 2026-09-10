@@ -443,16 +443,16 @@ T25 → T26 → T27 → T28 → T29
 - Skill: NONE
 
 **Done when**:
-- [ ] Happy path com filtros combinados e sem filtro nenhum
-- [ ] Filtro inválido → `400` `application/problem+json` com `code` `payload-invalido`
-- [ ] Chave de serviço ausente/inválida e `X-Crivo-Tenant` desconhecido recusados (SEC-01), sem cair em tenant default
-- [ ] Tenant A e tenant B com a mesma chave devolvem conjuntos disjuntos
-- [ ] Os 4 verbos não suportados devolvem `405` em `problem+json`
-- [ ] `route-instrumentation.test.ts` (varredura existente) passa sem alteração — o export está marcado `INSTRUMENTED`
-- [ ] Recusa registrada em `integration_refusals` (AD-023)
-- [ ] Nenhuma regra de negócio no corpo do handler
-- [ ] Gate passa: `npx vitest run`
-- [ ] Contagem de testes registrada, maior que a da T12
+- [x] Happy path com filtros combinados e sem filtro nenhum
+- [x] Filtro inválido → `400` `application/problem+json` com `code` `payload-invalido`
+- [x] Chave de serviço ausente/inválida e `X-Crivo-Tenant` desconhecido recusados (SEC-01), sem cair em tenant default
+- [x] Tenant A e tenant B com a mesma chave devolvem conjuntos disjuntos
+- [x] Os 4 verbos não suportados devolvem `405` em `problem+json`
+- [x] `route-instrumentation.test.ts` (varredura existente) passa sem alteração — o export está marcado `INSTRUMENTED`
+- [x] Recusa registrada em `integration_refusals` (AD-023)
+- [x] Nenhuma regra de negócio no corpo do handler
+- [x] Gate passa: `npx vitest run` (1241 testes, 88 arquivos)
+- [x] Contagem de testes registrada, maior que a da T12 (+9 novos em `properties-get.test.ts`, arquivo novo)
 
 **Tests**: e2e
 **Gate**: full
