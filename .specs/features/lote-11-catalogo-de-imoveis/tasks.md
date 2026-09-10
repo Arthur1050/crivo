@@ -196,11 +196,11 @@ T25 → T26 → T27 → T28 → T29
 - Skill: NONE
 
 **Done when**:
-- [ ] Um caso válido e um inválido por regra, mais as fronteiras: preço `0` e `1`, área `0` e `1`, contagem `-1` e `0`, descrição em 4000 e em 4001 caracteres
-- [ ] `validatePhotoUrls`: URL sem esquema recusada, 12 aceitas, 13 recusadas, lista vazia aceita
-- [ ] Toda mensagem de erro nomeia o campo
-- [ ] Gate passa: `npx vitest run src/server/__tests__`
-- [ ] Contagem de testes registrada
+- [x] Um caso válido e um inválido por regra, mais as fronteiras: preço `0` e `1`, área `0` e `1`, contagem `-1` e `0`, descrição em 4000 e em 4001 caracteres
+- [x] `validatePhotoUrls`: URL sem esquema recusada, 12 aceitas, 13 recusadas, lista vazia aceita
+- [x] Toda mensagem de erro nomeia o campo
+- [x] Gate passa: `npx vitest run src/server/__tests__`
+- [x] Contagem de testes registrada (218 testes, 8 arquivos em `src/server/__tests__`)
 
 **Tests**: unit
 **Gate**: quick

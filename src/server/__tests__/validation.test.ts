@@ -3,17 +3,29 @@ import {
   ACCEPTED_MIME_TYPES,
   CATEGORY_COLOR_PALETTE,
   LEAD_STATUSES,
+  MAX_DESCRIPTION_LENGTH,
   MAX_FILE_SIZE_BYTES,
   MAX_NAME_LENGTH,
+  MAX_PHOTO_URLS,
+  PROPERTY_KINDS,
+  PROPERTY_STATUSES,
+  validateAreaSqm,
   validateBaselineCount,
   validateBaselinePercent,
   validateBusinessHours,
   validateCategoryColor,
+  validateDescription,
   validateFileSize,
   validateLeadStatus,
   validateMimeType,
   validateModality,
   validateName,
+  validatePhotoUrls,
+  validatePriceCents,
+  validatePropertyKind,
+  validatePropertyStatus,
+  validateRoomCount,
+  validateUf,
 } from "../validation";
 
 describe("validateName", () => {
@@ -328,6 +340,207 @@ describe("validateBaselinePercent", () => {
 
   it("rejeita não numérico (NaN — ex.: Number('abc'))", () => {
     const result = validateBaselinePercent(Number("abc"), "Comparecimento");
+    expect(result.ok).toBe(false);
+  });
+});
+
+// lote-11 — IMOV-06/07: validações do catálogo de imóveis.
+
+describe("validatePriceCents", () => {
+  it("aceita um preço comum", () => {
+    expect(validatePriceCents(45_000_00)).toEqual({ ok: true });
+  });
+
+  it("rejeita 0 (fronteira: zero não é preço válido)", () => {
+    const result = validatePriceCents(0);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toContain("Preço");
+  });
+
+  it("aceita 1 (fronteira: o menor inteiro positivo)", () => {
+    expect(validatePriceCents(1)).toEqual({ ok: true });
+  });
+
+  it("rejeita negativo", () => {
+    const result = validatePriceCents(-1);
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejeita fracionário", () => {
+    const result = validatePriceCents(100.5);
+    expect(result.ok).toBe(false);
+  });
+
+  it("aceita um bigint positivo (valor já lido do banco)", () => {
+    expect(validatePriceCents(BigInt(45_000_00))).toEqual({ ok: true });
+  });
+
+  it("rejeita um bigint zero", () => {
+    const result = validatePriceCents(0n);
+    expect(result.ok).toBe(false);
+  });
+});
+
+describe("validateAreaSqm", () => {
+  it("aceita uma área comum", () => {
+    expect(validateAreaSqm(80)).toEqual({ ok: true });
+  });
+
+  it("rejeita 0 (fronteira)", () => {
+    const result = validateAreaSqm(0);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toContain("Área");
+  });
+
+  it("aceita 1 (fronteira)", () => {
+    expect(validateAreaSqm(1)).toEqual({ ok: true });
+  });
+
+  it("rejeita negativo", () => {
+    const result = validateAreaSqm(-10);
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejeita fracionário", () => {
+    const result = validateAreaSqm(80.5);
+    expect(result.ok).toBe(false);
+  });
+});
+
+describe("validateRoomCount", () => {
+  it("aceita uma contagem comum", () => {
+    expect(validateRoomCount(3, "Quartos")).toEqual({ ok: true });
+  });
+
+  it("rejeita -1 (fronteira)", () => {
+    const result = validateRoomCount(-1, "Quartos");
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toContain("Quartos");
+  });
+
+  it("aceita 0 (fronteira: zero é válido — ex.: sem vaga de garagem)", () => {
+    expect(validateRoomCount(0, "Vagas")).toEqual({ ok: true });
+  });
+
+  it("rejeita fracionário", () => {
+    const result = validateRoomCount(2.5, "Banheiros");
+    expect(result.ok).toBe(false);
+  });
+
+  it("usa o label informado na mensagem de erro", () => {
+    const result = validateRoomCount(-1, "Banheiros");
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toContain("Banheiros");
+  });
+});
+
+describe("validatePhotoUrls", () => {
+  it("aceita lista vazia (fotos são opcionais)", () => {
+    expect(validatePhotoUrls([])).toEqual({ ok: true });
+  });
+
+  it("rejeita URL sem esquema http(s)", () => {
+    const result = validatePhotoUrls(["www.exemplo.com/foto.jpg"]);
+    expect(result.ok).toBe(false);
+  });
+
+  it(`aceita exatamente ${MAX_PHOTO_URLS} URLs (fronteira)`, () => {
+    const urls = Array.from(
+      { length: MAX_PHOTO_URLS },
+      (_, i) => `https://exemplo.com/foto-${i}.jpg`
+    );
+    expect(validatePhotoUrls(urls)).toEqual({ ok: true });
+  });
+
+  it(`rejeita ${MAX_PHOTO_URLS + 1} URLs (fronteira)`, () => {
+    const urls = Array.from(
+      { length: MAX_PHOTO_URLS + 1 },
+      (_, i) => `https://exemplo.com/foto-${i}.jpg`
+    );
+    const result = validatePhotoUrls(urls);
+    expect(result.ok).toBe(false);
+  });
+});
+
+describe("validatePropertyKind", () => {
+  for (const kind of PROPERTY_KINDS) {
+    it(`aceita '${kind}' (enum property_kind)`, () => {
+      expect(validatePropertyKind(kind)).toEqual({ ok: true });
+    });
+  }
+
+  it("rejeita um tipo fora do enum", () => {
+    const result = validatePropertyKind("fazenda");
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejeita string vazia", () => {
+    const result = validatePropertyKind("");
+    expect(result.ok).toBe(false);
+  });
+});
+
+describe("validatePropertyStatus", () => {
+  for (const status of PROPERTY_STATUSES) {
+    it(`aceita '${status}' (enum property_status)`, () => {
+      expect(validatePropertyStatus(status)).toEqual({ ok: true });
+    });
+  }
+
+  it("rejeita um status fora do enum", () => {
+    const result = validatePropertyStatus("alugado");
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejeita string vazia", () => {
+    const result = validatePropertyStatus("");
+    expect(result.ok).toBe(false);
+  });
+});
+
+describe("validateDescription", () => {
+  it("aceita undefined (descrição é opcional)", () => {
+    expect(validateDescription(undefined)).toEqual({ ok: true });
+  });
+
+  it("aceita null", () => {
+    expect(validateDescription(null)).toEqual({ ok: true });
+  });
+
+  it("aceita string vazia", () => {
+    expect(validateDescription("")).toEqual({ ok: true });
+  });
+
+  it(`aceita exatamente ${MAX_DESCRIPTION_LENGTH} caracteres (fronteira)`, () => {
+    const description = "a".repeat(MAX_DESCRIPTION_LENGTH);
+    expect(validateDescription(description)).toEqual({ ok: true });
+  });
+
+  it(`rejeita ${MAX_DESCRIPTION_LENGTH + 1} caracteres (fronteira)`, () => {
+    const description = "a".repeat(MAX_DESCRIPTION_LENGTH + 1);
+    const result = validateDescription(description);
+    expect(result.ok).toBe(false);
+  });
+});
+
+describe("validateUf", () => {
+  it("aceita uma UF comum", () => {
+    expect(validateUf("MG")).toEqual({ ok: true });
+  });
+
+  it("rejeita string vazia", () => {
+    const result = validateUf("");
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toContain("UF");
+  });
+
+  it("rejeita undefined", () => {
+    const result = validateUf(undefined);
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejeita null", () => {
+    const result = validateUf(null);
     expect(result.ok).toBe(false);
   });
 });
