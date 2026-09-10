@@ -1075,6 +1075,7 @@ export async function getLeadDistributions(
 // afetado por engano.
 
 const POSTGRES_UNIQUE_VIOLATION = "23505";
+const POSTGRES_FOREIGN_KEY_VIOLATION = "23503";
 
 function pgErrorCode(err: unknown): string | undefined {
   if (typeof err !== "object" || err === null) return undefined;
@@ -1088,6 +1089,10 @@ function pgErrorCode(err: unknown): string | undefined {
 
 function isUniqueViolation(err: unknown): boolean {
   return pgErrorCode(err) === POSTGRES_UNIQUE_VIOLATION;
+}
+
+function isForeignKeyViolation(err: unknown): boolean {
+  return pgErrorCode(err) === POSTGRES_FOREIGN_KEY_VIOLATION;
 }
 
 export interface TenantSettingsUpdate {
@@ -2509,6 +2514,45 @@ export async function deactivateMembership(
     )
     .returning({ id: tenant_members.id });
   return rows.length > 0;
+}
+
+export type DeleteUserResult =
+  | { ok: true }
+  | { ok: false; propertiesCaptured: number };
+
+/**
+ * Exclusão real de um usuário (lote-11 — T9; spec.md Edge Cases: "exclusão de
+ * usuário tentada enquanto ele for captador de algum imóvel"). `tenant_members`
+ * referencia `users.id` com `onDelete: "cascade"` (schema.ts), então apagar o
+ * usuário já remove o vínculo em qualquer imobiliária a que ele pertença —
+ * nenhum delete explícito de `tenant_members` é necessário aqui.
+ *
+ * `properties.captured_by_user_id` referencia `users.id` sem `onDelete`
+ * (restrict — o default do Postgres): se o usuário ainda captar algum imóvel,
+ * a exclusão é rejeitada pelo próprio banco, e a contagem de imóveis é lida
+ * só nesse caminho de erro para compor a recusa legível.
+ *
+ * Uma violação de FK vinda de OUTRA tabela (ex.: `leads.assigned_user_id`,
+ * que também referencia `users.id` sem cascata) não é traduzida aqui — está
+ * fora do escopo desta task, que só cobre `captured_by_user_id` — e é
+ * relançada como está.
+ */
+export async function deleteUser(userId: string): Promise<DeleteUserResult> {
+  try {
+    await db.delete(users).where(eq(users.id, userId));
+    return { ok: true };
+  } catch (err) {
+    if (!isForeignKeyViolation(err)) throw err;
+
+    const [row] = await db
+      .select({ capturedCount: count() })
+      .from(properties)
+      .where(eq(properties.capturedByUserId, userId));
+    const capturedCount = Number(row.capturedCount);
+
+    if (capturedCount === 0) throw err;
+    return { ok: false, propertiesCaptured: capturedCount };
+  }
 }
 
 // ---------------------------------------------------------------------------

@@ -14,6 +14,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import { db } from "../../db";
 import {
   accounts,
+  properties,
   sessions,
   tenant_invitations,
   tenant_members,
@@ -69,10 +70,13 @@ vi.mock("../auth/session", async (importActual) => {
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
+import { revalidatePath } from "next/cache";
 import { auth } from "../auth/config";
 import { resolveAuthContext } from "../auth/session";
 import { getTenantMembers } from "../data";
+import { deactivateMemberAction } from "../actions/deactivate";
 import {
+  deleteUserAction,
   inviteUserAction,
   resendInviteAction,
   updateMemberRolesAction,
@@ -541,6 +545,118 @@ describe("server/actions/users — convite e papéis (lote-8, USER-01)", () => {
 
       expect(result).toEqual({ ok: false, error: "Escolha ao menos um papel." });
       expect(mocks.sendInvitationEmail).not.toHaveBeenCalled();
+    });
+  });
+
+  // lote-11 — T9: a FK `properties.captured_by_user_id` (restrict, sem
+  // `onDelete`) rejeita excluir um usuário que ainda captura imóvel; esta
+  // action traduz a violação numa recusa legível em vez do erro cru do
+  // Postgres. `tenant_members` referencia `users.id` com `onDelete: cascade`
+  // (schema.ts), então o happy path também prova que o vínculo desaparece
+  // junto — nenhum delete explícito de `tenant_members` é necessário.
+  describe("deleteUserAction (lote-11 — T9)", () => {
+    async function createCapturedProperty(capturedByUserId: string): Promise<string> {
+      const propertyId = randomUUID();
+      await db.insert(properties).values({
+        id: propertyId,
+        tenantId,
+        capturedByUserId,
+        sequence: Date.now() % 1_000_000,
+        reference: `T9-${propertyId.slice(0, 8)}`,
+        kind: "casa",
+        modality: "novo",
+        neighborhood: "Centro",
+        neighborhoodNormalized: "centro",
+        city: "Uberaba",
+        cityNormalized: "uberaba",
+        state: "MG",
+        priceCents: 100_000_00n,
+        areaSqm: 80,
+        bedrooms: 2,
+        bathrooms: 1,
+        parkingSpots: 1,
+      });
+      return propertyId;
+    }
+
+    it("exclui um usuário sem imóvel, removendo também o vínculo (happy path)", async () => {
+      const user = await createUser("Usuário Sem Imóvel T9");
+      const memberId = await link(tenantId, user.id, ["corretor"]);
+
+      const result = await deleteUserAction({ memberId });
+      expect(result).toEqual({ ok: true });
+
+      const remainingUser = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, user.id));
+      expect(remainingUser).toHaveLength(0);
+
+      const remainingMember = await db
+        .select()
+        .from(tenant_members)
+        .where(eq(tenant_members.id, memberId));
+      expect(remainingMember).toHaveLength(0);
+
+      expect(revalidatePath).toHaveBeenCalledWith("/usuarios");
+    });
+
+    it("recusa a exclusão de um usuário que ainda captura imóvel, dizendo quantos ele capta", async () => {
+      const user = await createUser("Captador T9");
+      const memberId = await link(tenantId, user.id, ["corretor"]);
+      const propertyId = await createCapturedProperty(user.id);
+
+      const result = await deleteUserAction({ memberId });
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.error).toContain("1 imóvel");
+
+      const remainingUser = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, user.id));
+      expect(remainingUser).toHaveLength(1);
+
+      await db.delete(properties).where(eq(properties.id, propertyId));
+    });
+
+    it("excluir usuário sem vínculo (memberId inexistente) retorna { ok: false } (not-found)", async () => {
+      const result = await deleteUserAction({ memberId: randomUUID() });
+      expect(result.ok).toBe(false);
+    });
+
+    it("desativar continua funcionando para um usuário que ainda captura imóvel (USER-02 não regride)", async () => {
+      const user = await createUser("Captador Desativa T9");
+      const memberId = await link(tenantId, user.id, ["corretor"]);
+      const propertyId = await createCapturedProperty(user.id);
+
+      const result = await deactivateMemberAction({ memberId });
+      expect(result.ok).toBe(true);
+
+      const [member] = await db
+        .select()
+        .from(tenant_members)
+        .where(eq(tenant_members.id, memberId));
+      expect(member.deactivatedAt).not.toBeNull();
+
+      await db.delete(properties).where(eq(properties.id, propertyId));
+    });
+
+    it("corretor é recusado ao tentar excluir usuário, e nada é removido", async () => {
+      const user = await createUser("Usuário Recusa T9");
+      const memberId = await link(tenantId, user.id, ["corretor"]);
+      sessionRoles = ["corretor"];
+
+      const result = await deleteUserAction({ memberId });
+      expect(result).toEqual({
+        ok: false,
+        error: "Sem permissão para escrever usuarios.",
+      });
+
+      const remainingUser = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, user.id));
+      expect(remainingUser).toHaveLength(1);
     });
   });
 });

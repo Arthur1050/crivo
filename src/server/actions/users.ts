@@ -10,6 +10,7 @@ import {
   createInvitation,
   createMembership,
   createPendingUser,
+  deleteUser,
   findUserByEmail,
   getMembership,
   getTenant,
@@ -263,6 +264,45 @@ export async function updateMemberRolesAction(
   }
 
   await setMemberRoles(session.tenantId, member.memberId, input.roles);
+
+  revalidatePath("/usuarios");
+  return { ok: true };
+}
+
+export interface DeleteUserInput {
+  memberId: string;
+}
+
+/**
+ * Exclusão real de um usuário (lote-11 — T9; spec.md Edge Cases). Diferente
+ * de `deactivateMemberAction` (USER-02): aqui a linha é apagada de verdade, e
+ * a FK `properties.captured_by_user_id` (restrict) é a barreira — se o
+ * usuário ainda captar algum imóvel, `deleteUser` traduz a violação numa
+ * recusa legível em vez do erro cru do Postgres. Desativar continua
+ * funcionando nos dois casos (com ou sem imóvel capturado): esta action não
+ * toca `deactivateMembership`.
+ */
+export async function deleteUserAction(
+  input: DeleteUserInput
+): Promise<UsersActionResult> {
+  const denied = await denyIfForbidden("usuarios", "escrever");
+  if (denied) return denied;
+
+  const session = await verifySession();
+  const member = await getTenantMemberById(session.tenantId, input.memberId);
+
+  if (!member) {
+    return { ok: false, error: "Usuário não encontrado." };
+  }
+
+  const result = await deleteUser(member.userId);
+  if (!result.ok) {
+    const plural = result.propertiesCaptured === 1 ? "imóvel" : "imóveis";
+    return {
+      ok: false,
+      error: `Não é possível excluir: este usuário ainda é captador de ${result.propertiesCaptured} ${plural}. Transfira a captação para outro usuário ou desative-o em vez de excluir.`,
+    };
+  }
 
   revalidatePath("/usuarios");
   return { ok: true };

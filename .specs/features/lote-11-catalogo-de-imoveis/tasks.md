@@ -330,11 +330,11 @@ T25 → T26 → T27 → T28 → T29
 - Skill: NONE
 
 **Done when**:
-- [ ] Excluir usuário que é captador devolve `{ ok:false }` com mensagem que diz quantos imóveis ele capta
-- [ ] Excluir usuário sem imóvel continua funcionando
-- [ ] **Desativar** continua funcionando em ambos os casos (USER-02: desativação não apaga a linha)
-- [ ] Gate passa: `npx vitest run`
-- [ ] Contagem de testes registrada, maior que a da T8
+- [x] Excluir usuário que é captador devolve `{ ok:false }` com mensagem que diz quantos imóveis ele capta
+- [x] Excluir usuário sem imóvel continua funcionando
+- [x] **Desativar** continua funcionando em ambos os casos (USER-02: desativação não apaga a linha)
+- [x] Gate passa: `npx vitest run` (1185 testes, 85 arquivos)
+- [x] Contagem de testes registrada, maior que a da T8 (1179 em T8 → 1185, 5 novos em `users-actions.test.ts`)
 
 **Tests**: integration
 **Gate**: full
