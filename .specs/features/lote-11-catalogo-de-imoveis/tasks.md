@@ -302,13 +302,13 @@ T25 → T26 → T27 → T28 → T29
 - Skill: NONE
 
 **Done when**:
-- [ ] Sessão de corretor recebe recusa em **cada uma** das 5 actions, e o banco fica inalterado (IMOV-04 AC3)
-- [ ] Captador de outro tenant e captador desativado recusados, sem gravar (IMOV-02 AC4)
-- [ ] Campo obrigatório **ausente** no payload de criação recusado como campo vazio, nunca tratado como "manter valor atual" (IMOV-07 AC5)
-- [ ] `tenantId` vem sempre de `getActiveTenantId()` — nenhuma action lê tenant do `input`
-- [ ] `revalidatePath("/imoveis")` em toda escrita bem-sucedida
-- [ ] Gate passa: `npx vitest run`
-- [ ] Contagem de testes registrada, maior que a da T7
+- [x] Sessão de corretor recebe recusa em **cada uma** das 5 actions, e o banco fica inalterado (IMOV-04 AC3)
+- [x] Captador de outro tenant e captador desativado recusados, sem gravar (IMOV-02 AC4)
+- [x] Campo obrigatório **ausente** no payload de criação recusado como campo vazio, nunca tratado como "manter valor atual" (IMOV-07 AC5)
+- [x] `tenantId` vem sempre de `getActiveTenantId()` — nenhuma action lê tenant do `input`
+- [x] `revalidatePath("/imoveis")` em toda escrita bem-sucedida
+- [x] Gate passa: `npx vitest run` (1179 testes, 85 arquivos)
+- [x] Contagem de testes registrada, maior que a da T7 (216 em T7 → 1179 no total, 21 novos em `properties-actions.test.ts`)
 
 **Tests**: integration
 **Gate**: full
