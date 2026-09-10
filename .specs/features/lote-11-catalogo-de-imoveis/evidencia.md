@@ -45,12 +45,25 @@ o CSS do design system já expõe.
 
 | # | Arquivo | Papel / tema | O que prova |
 | --- | --- | --- | --- |
-| 1 | `evidencia/t20-01-gestor-claro-catalogo.jpg` | Gestor, tema claro | Botão **Novo imóvel**, coluna **Ações** (editar/excluir) e toda a barra de filtros visíveis — os controles de escrita aparecem quando a permissão concede `escrever` (IMOV-04 AC1). |
-| 2 | `evidencia/t20-02-corretor-claro-catalogo.jpg` | Corretor, tema claro | Mesma tela, mesmo inventário (4 imóveis, os mesmos preços e status) — mas **sem** botão de criar, **sem** coluna de Ações e **sem** nenhum controle de escrita. É a prova de `IMOV-04 AC2`, que o projeto não consegue provar por teste automatizado (zero `.test.tsx` — design.md § Risks). |
+| 1 | `evidencia/t20-01-gestor-claro-catalogo.jpg` | Gestor, tema claro | Botão **Novo imóvel** e toda a barra de filtros visíveis no viewport capturado. A tabela tem mais colunas do que cabem nesse recorte — a barra de scroll horizontal no rodapé mostra isso — e a coluna **Ações** fica fora da área capturada nesta imagem. Ver #5 para a prova da coluna Ações. |
+| 2 | `evidencia/t20-02-corretor-claro-catalogo.jpg` | Corretor, tema claro | Mesma tela, mesmo inventário (4 imóveis, os mesmos preços e status) — **sem** botão de criar. Este recorte, por si só, não distingue "coluna Ações ausente" de "coluna Ações fora da área capturada" (o mesmo corte de tabela que afeta #1); ver #6 para a distinção real. |
 | 3 | `evidencia/t20-03-dialogo-cadastro-claro.jpg` | Gestor, tema claro | Diálogo **Novo imóvel** aberto (`property-form-dialog.tsx`, T17): Captador/Tipo/Modalidade/Status obrigatórios, switch de Publicado, nenhum campo de Referência (só existe na edição), campos de endereço opcionais. |
-| 4 | `evidencia/t20-04-gestor-escuro-catalogo.jpg` | Gestor, tema escuro | A mesma tela do #1 com `data-theme="dark"` — confirma que a tabela, os badges de publicação e o `StatusDot` de status seguem os tokens de cor do tema escuro sem quebrar layout. |
+| 4 | `evidencia/t20-04-gestor-escuro-catalogo.jpg` | Gestor, tema escuro | A mesma tela do #1 com `data-theme="dark"` — confirma que a tabela, os badges de publicação e o `StatusDot` de status seguem os tokens de cor do tema escuro sem quebrar layout. Mesmo corte de tabela que #1 — coluna Ações também fora da área capturada aqui. |
+| 5 | `evidencia/t20-01b-gestor-claro-acoes-visiveis.jpg` | Gestor, tema claro | Mesma tela do #1, tabela rolada horizontalmente até o fim (o monitor desta máquina é 1440px de largura — mais estreito que os 1600–1800px pedidos originalmente — então a rolagem, não o redimensionamento de janela, foi o jeito de trazer a coluna à vista). A coluna **Ações** aparece nas 4 linhas, cada uma com um botão "Ações" que abre `DropdownMenu` (editar/excluir) — prova real de `IMOV-04 AC1`. |
+| 6 | `evidencia/t20-02b-corretor-claro-sem-acoes.jpg` | Corretor, tema claro | Mesma tela do #2, mesma rolagem até o fim. A última coluna visível é **Publicação** — não há coluna Ações nenhuma depois dela, nem vazia: `properties-table.tsx` só executa `columns.push({ key: "actions", ... })` quando `canWrite` é verdadeiro (`src/components/properties/properties-table.tsx:176-203`), então para o corretor a célula nunca é montada, não é apenas ocultada. Esta é a prova real de `IMOV-04 AC2`. |
 
-**Desfecho:** as quatro capturas confirmam o comportamento esperado por IMOV-01/IMOV-04/IMOV-05 —
-gestor com controle completo, corretor em leitura pura, diálogo único de cadastro/edição, e paridade
-visual entre os dois temas. Nenhuma foi obtida por inspeção de DOM; todas são renderização real do
-dev server via login de sessão real.
+**Desfecho:** as seis capturas confirmam o comportamento esperado por IMOV-01/IMOV-04/IMOV-05 —
+gestor com controle completo (incluindo o menu de linha, #5), corretor em leitura pura sem a coluna
+de ações existir no DOM (#6), diálogo único de cadastro/edição, e paridade visual entre os dois
+temas. Nenhuma foi obtida por inspeção de DOM; todas são renderização real do dev server via login
+de sessão real.
+
+**Correção (mesma T20, registrada depois do commit original):** as capturas #1/#2/#4 originais não
+mostravam a coluna Ações — ela ficava fora do viewport capturado, cortada pela barra de scroll
+horizontal visível no rodapé das duas primeiras imagens — mas o texto desta tabela, na sua versão
+anterior, afirmava que a captura 1 mostrava "coluna Ações (editar/excluir)" visível. Isso não era
+verdade: a evidência provava apenas a diferença do botão "Novo imóvel" entre os dois papéis, não a
+diferença do menu de linha que `IMOV-04 AC1`/`AC2` exige. As capturas #5 e #6 acima, tiradas com a
+tabela rolada até o fim (mesma sessão, mesmas contas de teste, mesmo tema), fecham essa lacuna: #5
+mostra o menu de linha para o gestor, #6 confirma pelo código (não só pela imagem) que ele não
+existe para o corretor.
