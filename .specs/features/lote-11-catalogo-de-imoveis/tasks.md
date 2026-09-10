@@ -248,13 +248,13 @@ T25 → T26 → T27 → T28 → T29
 - Skill: NONE
 
 **Done when**:
-- [ ] Referências nascem sequenciais **por imobiliária**: dois tenants começam ambos em 1
-- [ ] O tipo do patch de `updateProperty` **não aceita** `sequence` nem `reference` (imutabilidade por construção, não por checagem — IMOV-03 AC6)
-- [ ] Colisão forçada (inserir `sequence` duplicado direto no banco) é rejeitada pelo índice, e a linha não é gravada pela metade
-- [ ] `createProperty` grava `neighborhoodNormalized`/`cityNormalized` via `normalizeForSearch`
-- [ ] `updatedAt` avança no update
-- [ ] Gate passa: `npx vitest run`
-- [ ] Contagem de testes registrada, maior que a da T5
+- [x] Referências nascem sequenciais **por imobiliária**: dois tenants começam ambos em 1
+- [x] O tipo do patch de `updateProperty` **não aceita** `sequence` nem `reference` (imutabilidade por construção, não por checagem — IMOV-03 AC6; provado por `@ts-expect-error` + `npm run build`)
+- [x] Colisão forçada (inserir `sequence` duplicado direto no banco) é rejeitada pelo índice, e a linha não é gravada pela metade
+- [x] `createProperty` grava `neighborhoodNormalized`/`cityNormalized` via `normalizeForSearch`
+- [x] `updatedAt` avança no update
+- [x] Gate passa: `npx vitest run` (1151 testes, 84 arquivos) — fim de fase, `npm run lint` (0 erros, 3 avisos pré-existentes) e `npm run build` (exit 0) também rodados
+- [x] Contagem de testes registrada, maior que a da T5 (1140 em T5 → 1151, 11 novos em `properties.test.ts`)
 
 **Tests**: integration
 **Gate**: full

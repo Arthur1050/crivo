@@ -689,6 +689,154 @@ export async function isActiveMemberOf(
   return rows.length > 0;
 }
 
+/**
+ * Campos de entrada de um imóvel (IMOV-01/03). `sequence` e `reference`
+ * nascem calculados por `createProperty` — nunca aceitos aqui, o que é o que
+ * torna `UpdatePropertyPatch` (abaixo) imutável para os dois por construção
+ * (IMOV-03 AC6), não por checagem em runtime.
+ */
+export interface NewProperty {
+  capturedByUserId: string;
+  kind: PropertyKind;
+  modality: Modality;
+  status?: PropertyStatus;
+  published?: boolean;
+  street?: string | null;
+  number?: string | null;
+  complement?: string | null;
+  neighborhood: string;
+  city: string;
+  state: string;
+  priceCents: bigint;
+  areaSqm: number;
+  bedrooms: number;
+  bathrooms: number;
+  parkingSpots: number;
+  description?: string | null;
+  photoUrls?: string[];
+}
+
+export type UpdatePropertyPatch = Partial<NewProperty>;
+
+export type CreatePropertyResult =
+  | { ok: true; id: string }
+  | { ok: false; error: string };
+
+const MAX_PROPERTY_REFERENCE_ATTEMPTS = 3;
+
+function buildPropertyReference(sequence: number): string {
+  return `IM-${String(sequence).padStart(4, "0")}`;
+}
+
+/**
+ * `sequence` nasce como `max(sequence) + 1` **por tenant** (IMOV-03 AC5) e
+ * `reference` é derivada dele. A corrida entre duas criações concorrentes
+ * lendo o mesmo `max` é resolvida pelo índice único do banco (IMOV-03 AC7),
+ * nunca pela aplicação — por isso a leitura do `max` não roda em transação
+ * com o insert: é a rejeição do índice na segunda tentativa que garante a
+ * unicidade, e o retry aqui é só recuperação dessa rejeição.
+ */
+export async function createProperty(
+  tenantId: string,
+  input: NewProperty
+): Promise<CreatePropertyResult> {
+  for (let attempt = 0; attempt < MAX_PROPERTY_REFERENCE_ATTEMPTS; attempt++) {
+    const [row] = await db
+      .select({ maxSequence: max(properties.sequence) })
+      .from(properties)
+      .where(eq(properties.tenantId, tenantId));
+    const sequence = (row?.maxSequence ?? 0) + 1;
+
+    try {
+      const rows = await db
+        .insert(properties)
+        .values({
+          tenantId,
+          capturedByUserId: input.capturedByUserId,
+          sequence,
+          reference: buildPropertyReference(sequence),
+          kind: input.kind,
+          modality: input.modality,
+          status: input.status ?? "disponivel",
+          published: input.published ?? false,
+          street: input.street ?? null,
+          number: input.number ?? null,
+          complement: input.complement ?? null,
+          neighborhood: input.neighborhood,
+          neighborhoodNormalized: normalizeForSearch(input.neighborhood),
+          city: input.city,
+          cityNormalized: normalizeForSearch(input.city),
+          state: input.state,
+          priceCents: input.priceCents,
+          areaSqm: input.areaSqm,
+          bedrooms: input.bedrooms,
+          bathrooms: input.bathrooms,
+          parkingSpots: input.parkingSpots,
+          description: input.description ?? null,
+          photoUrls: input.photoUrls ?? [],
+        })
+        .returning({ id: properties.id });
+      return { ok: true, id: rows[0].id };
+    } catch (err) {
+      if (!isUniqueViolation(err)) throw err;
+      // Colisão em (tenant_id, sequence) ou (tenant_id, reference): outra
+      // criação concorrente já ocupou este número — recalcula o `max` e
+      // tenta de novo (até `MAX_PROPERTY_REFERENCE_ATTEMPTS` vezes).
+    }
+  }
+  return {
+    ok: false,
+    error:
+      "Não foi possível gerar uma referência única para o imóvel. Tente novamente.",
+  };
+}
+
+/**
+ * Retorna `false` (no-op) quando nenhuma linha corresponde a `tenantId` +
+ * `propertyId`. `sequence`/`reference` não podem aparecer em `patch` — o
+ * tipo `UpdatePropertyPatch` não os declara (IMOV-03 AC6). Ao alterar
+ * `neighborhood`/`city`, a coluna `*Normalized` gêmea é recalculada aqui,
+ * nunca deixada como estava.
+ */
+export async function updateProperty(
+  tenantId: string,
+  propertyId: string,
+  patch: UpdatePropertyPatch
+): Promise<boolean> {
+  const setValues: Partial<typeof properties.$inferInsert> = {
+    ...patch,
+    updatedAt: new Date(),
+  };
+  if (patch.neighborhood !== undefined) {
+    setValues.neighborhoodNormalized = normalizeForSearch(patch.neighborhood);
+  }
+  if (patch.city !== undefined) {
+    setValues.cityNormalized = normalizeForSearch(patch.city);
+  }
+
+  const rows = await db
+    .update(properties)
+    .set(setValues)
+    .where(and(eq(properties.tenantId, tenantId), eq(properties.id, propertyId)))
+    .returning({ id: properties.id });
+  return rows.length > 0;
+}
+
+/**
+ * Retorna `false` (no-op) quando nenhuma linha corresponde a `tenantId` +
+ * `propertyId` — nunca lança erro para um id inexistente/de outro tenant.
+ */
+export async function deleteProperty(
+  tenantId: string,
+  propertyId: string
+): Promise<boolean> {
+  const rows = await db
+    .delete(properties)
+    .where(and(eq(properties.tenantId, tenantId), eq(properties.id, propertyId)))
+    .returning({ id: properties.id });
+  return rows.length > 0;
+}
+
 export interface DashboardRange {
   from: Date;
   to: Date;
