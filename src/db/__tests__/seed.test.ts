@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { createHash } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { and, eq, inArray, lte, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, lte, sql } from "drizzle-orm";
 import { db } from "../index";
 import {
   conversations,
@@ -9,6 +9,7 @@ import {
   documents,
   leads,
   messages,
+  properties,
   serviceApiKeys,
   tenant_members,
   tenantApiKeys,
@@ -44,7 +45,7 @@ const DEMO_SLUG = "crivo-demo";
 const PILOT_SLUGS = ["triangulo", "vale-uberaba"] as const;
 
 async function snapshotIds() {
-  const [t, u, b, cat, l, c, m, d] = await Promise.all([
+  const [t, u, b, cat, l, c, m, d, p] = await Promise.all([
     db.select({ id: tenants.id }).from(tenants),
     db.select({ id: users.id }).from(users),
     db.select({ id: tenant_members.id }).from(tenant_members),
@@ -53,6 +54,7 @@ async function snapshotIds() {
     db.select({ id: conversations.id }).from(conversations),
     db.select({ id: messages.id }).from(messages),
     db.select({ id: documents.id }).from(documents),
+    db.select({ id: properties.id }).from(properties),
   ]);
   const sortIds = (rows: { id: string }[]) => rows.map((r) => r.id).sort();
   return {
@@ -64,6 +66,7 @@ async function snapshotIds() {
     conversations: sortIds(c),
     messages: sortIds(m),
     documents: sortIds(d),
+    properties: sortIds(p),
   };
 }
 
@@ -642,6 +645,90 @@ describe("db/seed", () => {
           and(eq(documents.tenantId, tenant.id), lte(documents.expiresAt, new Date()))
         );
       expect(expired.length).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  // lote-11 — SEEDIM-01: cada imobiliária ganha as 4 combinações de status ×
+  // publicação necessárias para exercitar o corte de visibilidade do
+  // contrato (`disponivel` + `published` é a única combinação visível —
+  // IMOV-05 AC3), e todo captador é membro ATIVO daquela mesma imobiliária.
+  it("cada imobiliária tem as 4 combinações de status × publicação exigidas, com captador membro ativo (lote-11 — SEEDIM-01)", async () => {
+    const allTenants = await db.select().from(tenants);
+    expect(allTenants).toHaveLength(3);
+
+    for (const tenant of allTenants) {
+      const tenantProperties = await db
+        .select()
+        .from(properties)
+        .where(eq(properties.tenantId, tenant.id));
+
+      const disponivelPublicado = tenantProperties.filter(
+        (p) => p.status === "disponivel" && p.published === true
+      );
+      const disponivelNaoPublicado = tenantProperties.filter(
+        (p) => p.status === "disponivel" && p.published === false
+      );
+      const reservado = tenantProperties.filter((p) => p.status === "reservado");
+      const vendido = tenantProperties.filter((p) => p.status === "vendido");
+
+      expect(disponivelPublicado.length).toBeGreaterThanOrEqual(1);
+      expect(disponivelNaoPublicado.length).toBeGreaterThanOrEqual(1);
+      expect(reservado.length).toBeGreaterThanOrEqual(1);
+      expect(vendido.length).toBeGreaterThanOrEqual(1);
+
+      const activeMemberUserIds = new Set(
+        (
+          await db
+            .select({ userId: tenant_members.userId })
+            .from(tenant_members)
+            .where(
+              and(
+                eq(tenant_members.organizationId, tenant.id),
+                isNull(tenant_members.deactivatedAt)
+              )
+            )
+        ).map((m) => m.userId)
+      );
+      for (const property of tenantProperties) {
+        expect(activeMemberUserIds.has(property.capturedByUserId)).toBe(true);
+      }
+    }
+  });
+
+  // lote-11 — SEEDIM-01 AC3: idempotência específica do catálogo — não basta
+  // os IDs baterem (já provado por `snapshotIds()` acima), referência, preço
+  // e captador de cada imóvel precisam ser LITERALMENTE os mesmos nas duas
+  // execuções.
+  it("rodar o seed novamente mantém referência, preço e captador idênticos por imóvel (lote-11 — SEEDIM-01 AC3)", async () => {
+    const before = await db
+      .select({
+        id: properties.id,
+        reference: properties.reference,
+        priceCents: properties.priceCents,
+        capturedByUserId: properties.capturedByUserId,
+      })
+      .from(properties);
+    expect(before.length).toBeGreaterThan(0);
+
+    await runSeed();
+
+    const after = await db
+      .select({
+        id: properties.id,
+        reference: properties.reference,
+        priceCents: properties.priceCents,
+        capturedByUserId: properties.capturedByUserId,
+      })
+      .from(properties);
+
+    const beforeById = new Map(before.map((row) => [row.id, row]));
+    expect(after.length).toBe(before.length);
+    for (const row of after) {
+      const original = beforeById.get(row.id);
+      expect(original).toBeDefined();
+      expect(row.reference).toBe(original!.reference);
+      expect(row.priceCents).toBe(original!.priceCents);
+      expect(row.capturedByUserId).toBe(original!.capturedByUserId);
     }
   });
 });

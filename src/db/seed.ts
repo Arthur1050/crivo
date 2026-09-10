@@ -8,12 +8,14 @@ import {
   documents,
   leads,
   messages,
+  properties,
   serviceApiKeys,
   tenant_members,
   tenantApiKeys,
   tenants,
   users,
 } from "./schema";
+import { normalizeForSearch } from "../lib/normalize-text";
 
 /**
  * Gera um UUID v4 determinístico a partir de uma seed textual fixa.
@@ -48,6 +50,16 @@ type CategoryColor =
   | "purple"
   | "pink"
   | "gray";
+// 1:1 com os enums do catálogo de imóveis (lote-11 — schema.ts).
+type PropertyKind =
+  | "casa"
+  | "apartamento"
+  | "sobrado"
+  | "cobertura"
+  | "terreno"
+  | "sala_comercial"
+  | "chacara";
+type PropertyStatus = "disponivel" | "reservado" | "vendido";
 
 const REGIONS = [
   "Abadia",
@@ -76,6 +88,81 @@ const ESCALATION_REASONS = [
   "Negociação de permuta complexa que exige avaliação presencial.",
   "Dúvidas jurídicas sobre financiamento que fogem do escopo do agente.",
   "Solicitação de visita técnica urgente antes de concluir a qualificação.",
+];
+
+interface PropertyCatalogDef {
+  key: string;
+  kind: PropertyKind;
+  modality: Modality;
+  status: PropertyStatus;
+  published: boolean;
+  neighborhood: string;
+  priceCents: bigint;
+  areaSqm: number;
+  bedrooms: number;
+  bathrooms: number;
+  parkingSpots: number;
+}
+
+// lote-11 — SEEDIM-01: as 4 combinações de status × publicação necessárias
+// para exercitar o corte de visibilidade (`disponivel`+publicado é o único
+// caso visível ao contrato — IMOV-05 AC3). `PROPERTY_TYPES` acima é a enum de
+// QUALIFICAÇÃO (2 valores, inalterada); `kind` aqui é a enum PRÓPRIA do
+// catálogo (7 valores, design.md — Data Models) — as duas nunca se
+// confundem.
+const PROPERTY_CATALOG_DEFS: PropertyCatalogDef[] = [
+  {
+    key: "disponivel-publicado",
+    kind: "apartamento",
+    modality: "novo",
+    status: "disponivel",
+    published: true,
+    neighborhood: REGIONS[0],
+    priceCents: BigInt(380000 * 100),
+    areaSqm: 72,
+    bedrooms: 2,
+    bathrooms: 2,
+    parkingSpots: 1,
+  },
+  {
+    key: "disponivel-nao-publicado",
+    kind: "casa",
+    modality: "usado",
+    status: "disponivel",
+    published: false,
+    neighborhood: REGIONS[1],
+    priceCents: BigInt(520000 * 100),
+    areaSqm: 140,
+    bedrooms: 3,
+    bathrooms: 2,
+    parkingSpots: 2,
+  },
+  {
+    key: "reservado",
+    kind: "cobertura",
+    modality: "novo",
+    status: "reservado",
+    published: true,
+    neighborhood: REGIONS[2],
+    priceCents: BigInt(890000 * 100),
+    areaSqm: 180,
+    bedrooms: 4,
+    bathrooms: 3,
+    parkingSpots: 3,
+  },
+  {
+    key: "vendido",
+    kind: "sobrado",
+    modality: "usado",
+    status: "vendido",
+    published: false,
+    neighborhood: REGIONS[3],
+    priceCents: BigInt(610000 * 100),
+    areaSqm: 160,
+    bedrooms: 3,
+    bathrooms: 3,
+    parkingSpots: 2,
+  },
 ];
 
 const FIRST_NAMES = [
@@ -702,6 +789,7 @@ export async function runSeed(): Promise<SeedResult> {
   const messageRows: (typeof messages.$inferInsert)[] = [];
   const documentRows: (typeof documents.$inferInsert)[] = [];
   const apiKeyRows: (typeof tenantApiKeys.$inferInsert)[] = [];
+  const propertyRows: (typeof properties.$inferInsert)[] = [];
   const seededApiKeys: SeededApiKey[] = [];
 
   // Chave de serviço do agente (lote-7 — SEC-01): gerada UMA vez, fora do
@@ -778,6 +866,40 @@ export async function runSeed(): Promise<SeedResult> {
         workDays: m.workDays ?? null,
         workHoursStart: m.workHoursStart ?? null,
         workHoursEnd: m.workHoursEnd ?? null,
+      });
+    }
+
+    // lote-11 — SEEDIM-01: bloco de imóveis por imobiliária, com captador
+    // sempre entre os corretores ativos DAQUELA imobiliária (`brokerIds`,
+    // construído acima) — nunca um usuário de outro tenant. `sequence`/
+    // `reference` nascem no próprio seed (não passam por `createProperty`),
+    // então são atribuídos aqui na mesma disciplina da DAL (`IM-000N`).
+    // Determinístico: mesma `tenantDef.key` + mesma `def.key` sempre geram o
+    // mesmo `id()`, o que é o que faz duas execuções produzirem o mesmo
+    // conjunto (AC 1.3 — idempotência, mesmo padrão de tenants/users/leads).
+    for (const [i, def] of PROPERTY_CATALOG_DEFS.entries()) {
+      const propertyId = id(`property:${tenantDef.key}:${def.key}`);
+      const capturedByUserId = brokerIds[i % brokerIds.length];
+      propertyRows.push({
+        id: propertyId,
+        tenantId,
+        capturedByUserId,
+        sequence: i + 1,
+        reference: `IM-${String(i + 1).padStart(4, "0")}`,
+        kind: def.kind,
+        modality: def.modality,
+        status: def.status,
+        published: def.published,
+        neighborhood: def.neighborhood,
+        neighborhoodNormalized: normalizeForSearch(def.neighborhood),
+        city: tenantDef.city,
+        cityNormalized: normalizeForSearch(tenantDef.city),
+        state: tenantDef.state,
+        priceCents: def.priceCents,
+        areaSqm: def.areaSqm,
+        bedrooms: def.bedrooms,
+        bathrooms: def.bathrooms,
+        parkingSpots: def.parkingSpots,
       });
     }
 
@@ -917,6 +1039,10 @@ export async function runSeed(): Promise<SeedResult> {
     await tx.delete(conversations);
     await tx.delete(documents);
     await tx.delete(leads);
+    // `properties.captured_by_user_id`/`tenant_id` também não têm cascata
+    // (lote-11 — restrict implícito, T3), mesma razão de `leads` acima: vem
+    // ANTES de `tenant_members`/`tenants`/`users`.
+    await tx.delete(properties);
     await tx.delete(documentCategories);
     await tx.delete(tenantApiKeys);
     // service_api_keys não referencia tenants (sem FK — schema.ts), mas
@@ -936,6 +1062,8 @@ export async function runSeed(): Promise<SeedResult> {
     await tx.insert(tenants).values(tenantRows);
     await tx.insert(users).values(userRows);
     await tx.insert(tenant_members).values(memberRows);
+    // `properties` referencia `tenants`/`users`, ambos já inseridos acima.
+    await tx.insert(properties).values(propertyRows);
     await tx.insert(documentCategories).values(categoryRows);
     await tx.insert(leads).values(leadRows);
     await tx.insert(conversations).values(conversationRows);

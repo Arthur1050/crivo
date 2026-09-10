@@ -356,12 +356,12 @@ T25 → T26 → T27 → T28 → T29
 - Skill: NONE
 
 **Done when**:
-- [ ] Duas execuções sobre banco limpo produzem o mesmo conjunto (referências, preços e captadores idênticos)
-- [ ] Cada imobiliária tem pelo menos um `disponivel`+`publicado`, um `disponivel`+não publicado, um `reservado` e um `vendido`
-- [ ] Todo captador é membro ativo da imobiliária do imóvel
-- [ ] `seed.test.ts` continua passando sem afrouxar nenhuma asserção existente
-- [ ] Gate passa: `npx vitest run`
-- [ ] Contagem de testes registrada, maior que a da T9
+- [x] Duas execuções sobre banco limpo produzem o mesmo conjunto (referências, preços e captadores idênticos)
+- [x] Cada imobiliária tem pelo menos um `disponivel`+`publicado`, um `disponivel`+não publicado, um `reservado` e um `vendido`
+- [x] Todo captador é membro ativo da imobiliária do imóvel
+- [x] `seed.test.ts` continua passando sem afrouxar nenhuma asserção existente
+- [x] Gate passa: `npx vitest run` (1241 testes, 88 arquivos)
+- [x] Contagem de testes registrada, maior que a da T9 (1185 em T9; +2 novos em `seed.test.ts`)
 
 **Tests**: integration
 **Gate**: full
