@@ -1156,6 +1156,8 @@ const consultarDocumentosTool = tool({
   config: {
     name: "consultar_documentos",
     position: [7560, 900],
+    retryOnFail: true,
+    maxTries: 2,
     parameters: {
       toolDescription: "Consulta a lista de documentos e materiais de apoio do tenant. Use somente quando precisar dessa informação para responder ao lead — não chame em todo turno.",
       method: "GET",
@@ -1170,8 +1172,6 @@ const consultarDocumentosTool = tool({
       headerParameters: {
         parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }],
       },
-      retryOnFail: true,
-      maxTries: 2,
       options: { response: { response: { neverError: true } } },
     },
     credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
