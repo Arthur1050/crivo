@@ -525,12 +525,12 @@ T25 → T26 → T27 → T28 → T29
 - Skill: NONE
 
 **Done when**:
-- [ ] `Table` edge-to-edge, **não** `Card` por linha (regra do `CLAUDE.md`)
-- [ ] Status via `StatusDot`/`Token`; publicação via `Badge` — nunca `Badge` decorativo
-- [ ] Os controles de escrita só são renderizados quando a permissão concede `escrever`
-- [ ] Exclusão passa por `AlertDialog`
-- [ ] Nenhum `<div>`, nenhum `style={{}}`, nenhum hex ou px cru
-- [ ] Gate build passa
+- [x] `Table` edge-to-edge, **não** `Card` por linha (regra do `CLAUDE.md`)
+- [x] Status via `StatusDot`/`Token`; publicação via `Badge` — nunca `Badge` decorativo
+- [x] Os controles de escrita só são renderizados quando a permissão concede `escrever`
+- [x] Exclusão passa por `AlertDialog`
+- [x] Nenhum `<div>`, nenhum `style={{}}`, nenhum hex ou px cru
+- [x] Gate build passa
 
 **Tests**: none
 **Gate**: build
