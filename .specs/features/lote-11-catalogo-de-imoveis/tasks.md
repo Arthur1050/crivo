@@ -579,10 +579,10 @@ T25 → T26 → T27 → T28 → T29
 - Skill: NONE
 
 **Done when**:
-- [ ] "Nenhum imóvel cadastrado" e "nenhum imóvel casa com o filtro" são estados distintos (Edge Case)
-- [ ] `getActiveTenantId()` resolve a imobiliária no servidor
-- [ ] Os controles de escrita são passados à tabela conforme a permissão da sessão
-- [ ] Gate build passa
+- [x] "Nenhum imóvel cadastrado" e "nenhum imóvel casa com o filtro" são estados distintos (Edge Case)
+- [x] `getActiveTenantId()` resolve a imobiliária no servidor
+- [x] Os controles de escrita são passados à tabela conforme a permissão da sessão
+- [x] Gate build passa
 
 **Tests**: none
 **Gate**: build
