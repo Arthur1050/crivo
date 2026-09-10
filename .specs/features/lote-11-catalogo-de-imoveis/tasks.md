@@ -144,11 +144,11 @@ T25 → T26 → T27 → T28 → T29
 - Skill: NONE
 
 **Done when**:
-- [ ] `normalizeForSearch("Santa María ")` e `normalizeForSearch("santa maria")` produzem o mesmo valor
-- [ ] Cobre: acento, cedilha, caixa, espaço duplo, espaço nas pontas, string vazia
-- [ ] Nenhum import — função pura, sem `server-only`
-- [ ] Gate passa: `npx vitest run src/lib/__tests__/normalize-text.test.ts`
-- [ ] Contagem de testes do arquivo registrada
+- [x] `normalizeForSearch("Santa María ")` e `normalizeForSearch("santa maria")` produzem o mesmo valor
+- [x] Cobre: acento, cedilha, caixa, espaço duplo, espaço nas pontas, string vazia
+- [x] Nenhum import — função pura, sem `server-only`
+- [x] Gate passa: `npx vitest run src/lib/__tests__/normalize-text.test.ts`
+- [x] Contagem de testes do arquivo registrada (6 testes)
 
 **Tests**: unit
 **Gate**: quick
