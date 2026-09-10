@@ -501,9 +501,9 @@ T25 → T26 → T27 → T28 → T29
 - Skill: NONE
 
 **Done when**:
-- [ ] Cada filtro escreve seu parâmetro na URL; nenhum filtro é aplicado no client
-- [ ] Componentes Astryx (`Selector`, `TextInput`, `HStack`) — nenhum `<div>`, nenhum `style={{}}`, nenhum valor cru
-- [ ] Gate build passa
+- [x] Cada filtro escreve seu parâmetro na URL; nenhum filtro é aplicado no client
+- [x] Componentes Astryx (`Selector`, `TextInput`, `HStack`) — nenhum `<div>`, nenhum `style={{}}`, nenhum valor cru
+- [x] Gate build passa
 
 **Tests**: none
 **Gate**: build
