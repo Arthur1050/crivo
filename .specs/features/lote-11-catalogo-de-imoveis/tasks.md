@@ -412,16 +412,16 @@ T25 → T26 → T27 → T28 → T29
 - Skill: NONE
 
 **Done when**:
-- [ ] O corte `status = 'disponivel' AND published = true` existe **só neste módulo** (grep prova)
-- [ ] Teste nas fronteiras **3 e 4**: com 3 casando, `total` é 3 e a lista tem 3; com 4 casando, `total` é 4 e a lista tem 3
-- [ ] Ordenação `updatedAt` desc, `id` asc, provada com empate de `updatedAt`
-- [ ] Uma asserção **por campo proibido**, separadamente: sem `street`, sem `number`, sem `complement`, sem `description`, sem foto, sem nenhum campo de captador
-- [ ] `preco` sai como string formatada; nenhum `bigint` atravessa o DTO
-- [ ] Catálogo vazio devolve `{ imoveis: [], total: 0 }`, nunca erro (Edge Case)
-- [ ] Filtro com acento e caixa diferentes casa o imóvel (Edge Case)
-- [ ] Captador desativado não torna o imóvel invisível (Edge Case)
-- [ ] Gate passa: `npx vitest run`
-- [ ] Contagem de testes registrada, maior que a da T11
+- [x] O corte `status = 'disponivel' AND published = true` existe **só neste módulo** (grep prova — só `properties.ts` e seu próprio teste citam a combinação)
+- [x] Teste nas fronteiras **3 e 4**: com 3 casando, `total` é 3 e a lista tem 3; com 4 casando, `total` é 4 e a lista tem 3
+- [x] Ordenação `updatedAt` desc, `id` asc, provada com empate de `updatedAt`
+- [x] Uma asserção **por campo proibido**, separadamente: sem `street`, sem `number`, sem `complement`, sem `description`, sem foto, sem nenhum campo de captador
+- [x] `preco` sai como string formatada; nenhum `bigint` atravessa o DTO
+- [x] Catálogo vazio devolve `{ imoveis: [], total: 0 }`, nunca erro (Edge Case)
+- [x] Filtro com acento e caixa diferentes casa o imóvel (Edge Case)
+- [x] Captador desativado não torna o imóvel invisível (Edge Case)
+- [x] Gate passa: `npx vitest run` (1241 testes, 88 arquivos)
+- [x] Contagem de testes registrada, maior que a da T11 (+19 novos em `properties.test.ts`, arquivo novo)
 
 **Tests**: integration
 **Gate**: full
