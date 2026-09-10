@@ -552,12 +552,12 @@ T25 → T26 → T27 → T28 → T29
 - Skill: NONE
 
 **Done when**:
-- [ ] Captador é campo obrigatório, listando só membros ativos daquela imobiliária
-- [ ] Referência aparece somente leitura na edição, e não existe na criação
-- [ ] Fotos são campo de URL, com o teto de 12 refletido na interface
-- [ ] Erro devolvido pela action aparece no formulário, sem fechar o diálogo
-- [ ] Nenhum `<div>`, nenhum `style={{}}`, nenhum valor cru
-- [ ] Gate build passa
+- [x] Captador é campo obrigatório, listando só membros ativos daquela imobiliária
+- [x] Referência aparece somente leitura na edição, e não existe na criação
+- [x] Fotos são campo de URL, com o teto de 12 refletido na interface
+- [x] Erro devolvido pela action aparece no formulário, sem fechar o diálogo
+- [x] Nenhum `<div>`, nenhum `style={{}}`, nenhum valor cru
+- [x] Gate build passa
 
 **Tests**: none
 **Gate**: build
