@@ -189,7 +189,7 @@ passos `action.tool` registrados no nó `AI Agent` em todas as execuções da ba
 
 **6.1 Rollback, se reprovado**: o nó `agentModel` de `n8n/workflows/principal.ts` volta a
 `@n8n/n8n-nodes-langchain.lmChatGoogleGemini` v1.1 / `models/gemini-3.5-flash-lite` /
-`temperature: 0.4` (recuperável em `git show ae859e9:n8n/workflows/principal.ts`), o inliner roda, a
+`temperature: 0.4` (recuperável em `git show 5b22a6b:n8n/workflows/principal.ts`), o inliner roda, a
 instância é republicada via MCP, e `n8n/workflows/__tests__/principal-modelo.test.ts` é atualizado
 para o modelo revertido. O **motivo** — qual R disparou e com que evidência — é registrado em
 `evidencia.md`; "reprovou" sozinho não é registro. O smoke roda mesmo assim, no Gemini: bateria

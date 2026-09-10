@@ -446,7 +446,7 @@ ao modelo está em ordem — e declarar o congelamento de `vitest`.
 **Done when**:
 - [x] Conversa conduzida no WhatsApp pelo usuário, seguindo os turnos do roteiro
 - [x] Lead termina com `status = reuniao_agendada` no CRM — confirmado na tela, não inferido — valor real do enum é `qualificado_agendado` (ver correção de nomenclatura registrada em T10); captura mostra "Qualificado e agendado"
-- [x] Evento existe no Google Calendar com link do Meet, e o link é registrado — `https://meet.google.com/bsy-htxg-evt`, link de ENTRADA na chamada (corrigido em `32236b5`: antes vinha a página do evento)
+- [x] Evento existe no Google Calendar com link do Meet, e o link é registrado — `https://meet.google.com/bsy-htxg-evt`, link de ENTRADA na chamada (corrigido em `c3b8848`: antes vinha a página do evento)
 - [x] Id da execução n8n registrado — turnos `2123`, `2128`, `2135`, `2142` e sub-workflow `2143`
 - [x] Captura de tela do CRM anexada ou seu caminho registrado — fornecida pelo usuário nesta janela, conteúdo descrito em `evidencia.md` §14.3
 - [x] Observações de estilo registradas em seção própria, sem reprovar o cenário — §14.5
@@ -507,7 +507,7 @@ ao modelo está em ordem — e declarar o congelamento de `vitest`.
 **SPEC_DEVIATION**: a spec previa provar só o caminho por palavra-chave exata ("opt-out por linguagem
 natural" estava Out of Scope, adiado para o L13). A primeira rodada expôs um buraco de compliance — o
 lead pediu para parar em português comum e não foi descadastrado —, e por decisão explícita do
-usuário (2026-09-09) a orientação em linguagem natural entrou neste lote (commit `f80fa82`). A
+usuário (2026-09-09) a orientação em linguagem natural entrou neste lote (commit `585633a`). A
 AD-018 **não foi emendada**: `gate.mjs` não mudou e nenhuma tool de opt-out foi exposta ao modelo.
 Detalhe em `evidencia.md` §16.4.
 

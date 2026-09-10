@@ -123,7 +123,7 @@ removido, pulado ou enfraquecido. A T3 só sobe o piso; nenhuma task o abaixa.
 4. **Verificação visual**: os três cenários da Fase 5 exigem captura REAL de tela do CRM pela
    extensão do Chrome. Sem captura, o cenário não é dado como pronto.
 
-5. **Git**: `origin/main` está sincronizado com `main` no início deste lote (HEAD `d550b79`).
+5. **Git**: `origin/main` está sincronizado com `main` no início deste lote (HEAD `d92dbc2`).
    **Push, deploy e qualquer operação remota exigem autorização explícita minha** — commits locais
    estão autorizados pela aprovação das tasks, o resto não. A Vercel redeploya automaticamente em
    push a `main`; como este lote não muda código do app, não há motivo para push antes do fim.
