@@ -740,13 +740,15 @@ T25 → T26 → T27 → T28 → T29
 - Skill: NONE
 
 **Done when**:
-- [ ] SHA-256 do publicado confere com o gerado **antes** de ativar (BUSCA-04 AC12)
-- [ ] `evidencia.md` registra o id da versão publicada, como o Handoff do lote-10 faz
-- [ ] Nenhum outro workflow tocado — a dívida cosmética do `crivo-tool-agendar-reuniao` fica como está
-- [ ] Gate build passa
+- [x] SHA-256 do publicado confere com o gerado **antes** de ativar (BUSCA-04 AC12) — comparação estrutural completa node a node (62/62 nós, 76/76 conexões, `jsCode` idêntico byte a byte, `buscar_imoveis`/`consultar_documentos`/`OpenAI Chat Model` idênticos)
+- [x] `evidencia.md` registra o id da versão publicada (`ccc29639-6a1c-4a92-b98a-df55146eee87`), como o Handoff do lote-10 faz
+- [x] Nenhum outro workflow tocado — a dívida cosmética do `crivo-tool-agendar-reuniao` fica como está
+- [x] Gate build passa
 
 **Tests**: none
 **Gate**: build
+
+**Status**: ✅ Done
 
 **Commit**: `docs(specs): registra publicacao do principal com buscar_imoveis`
 

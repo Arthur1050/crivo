@@ -67,3 +67,62 @@ diferença do menu de linha que `IMOV-04 AC1`/`AC2` exige. As capturas #5 e #6 a
 tabela rolada até o fim (mesma sessão, mesmas contas de teste, mesmo tema), fecham essa lacuna: #5
 mostra o menu de linha para o gestor, #6 confirma pelo código (não só pela imagem) que ele não
 existe para o corretor.
+
+---
+
+## §24 — Publicação de `crivo-agente-principal` com `buscar_imoveis` (T24)
+
+Workflow `crivo-agente-principal` (`0B1nqjODu7xuYYKF`), via MCP `update_workflow` + `publish_workflow`
+— nenhuma edição pela UI (AD-014).
+
+**Operações aplicadas** (tradução mecânica do que `n8n/generated/principal.ts` já declarava):
+
+1. `addNode` `buscar_imoveis` (`httpRequestTool` v4.5, `GET /api/v1/properties`, 7 critérios via
+   `$fromAI`, `X-Crivo-Tenant` por expressão do fluxo, `neverError`)
+2. `setNodeSettings` em `buscar_imoveis`: `retryOnFail: true`, `maxTries: 2`
+3. `addConnection` `buscar_imoveis` → `AI Agent` em `ai_tool`
+4. `setNodeSettings` em `consultar_documentos`: `retryOnFail: true`, `maxTries: 2` — a fonte já tinha
+   isso certo desde o commit `a80760c` (lote-10), mas a instância nunca tinha sido republicada depois
+   desse fix; ficou pendurado até esta publicação
+5. `updateNodeParameters` em `Code: montar system message e marcar campo perguntado`: `jsCode`
+   substituído pelo conteúdo inteiro gerado (remove as duas cláusulas da fronteira, acrescenta
+   `buscar_imoveis` ao catálogo)
+
+Um segundo `update_workflow` foi necessário: a primeira chamada passou a credencial de
+`buscar_imoveis` só por nome (`{httpHeaderAuth: {name: "Crivo - chave de servico"}}`) e o MCP devolveu
+`"note": "HTTP Request nodes (buscar_imoveis) were skipped during credential auto-assignment"` — a
+credencial não foi atribuída. Corrigido com `setNodeCredential` explícito (`credentialId`
+`YhGcdfGtdEBBU9YP`, resolvido via `list_credentials`).
+
+**Conferência antes de ativar (BUSCA-04 AC12)**: comparação estrutural completa entre o publicado
+(`get_workflow_details`) e o gerado (`n8n/generated/principal.ts` via `toJSON()`), node a node:
+
+| Item | Publicado | Gerado | Bate? |
+| --- | --- | --- | --- |
+| Nós | 62 | 62 | ✅ |
+| Conexões | 76 | 76 | ✅ |
+| Nós só num dos dois lados | nenhum | nenhum | ✅ |
+| `buscar_imoveis` — parâmetros | (dump completo) | (dump completo) | ✅ idênticos |
+| `buscar_imoveis` — `retryOnFail`/`maxTries` | `true`/`2` | `true`/`2` | ✅ |
+| `buscar_imoveis` — conexão | `ai_tool` → `AI Agent` idx 0 | idem | ✅ |
+| `consultar_documentos` — `retryOnFail`/`maxTries` | `true`/`2` | `true`/`2` | ✅ |
+| `Code: montar system message...` — `jsCode` | 32290 chars | 32290 chars | ✅ **idêntico byte a byte** |
+| `OpenAI Chat Model` — parâmetros | (dump completo) | (dump completo) | ✅ idênticos (AD-026, zero linhas tocadas) |
+
+**Um achado sem relação com este lote, registrado e não corrigido**: `consultar_documentos` publicado
+nunca teve o campo `method` declarado explicitamente (nem antes nem depois desta publicação) — o
+schema do node (`get_node_types`) documenta `method` com `@default GET`, e a tool sempre fez `GET` na
+prática (provado pela bateria de tool calling do lote-10). Divergência estrutural sem efeito funcional,
+anterior a este lote e fora do escopo de T24 (que é publicar o que T23 gerou) — registrado para não
+sumir, não corrigido aqui.
+
+**Ativação**: `publish_workflow` → `activeVersionId` **`ccc29639-6a1c-4a92-b98a-df55146eee87`**.
+Confirmado por `get_workflow_details` pós-publicação: `active: true`, `isArchived: false`,
+`versionId == activeVersionId`, 62 nós.
+
+**Avisos de validação em ambas as chamadas de `update_workflow`**: os mesmos 5 `SUBNODE_NOT_CONNECTED`
+sobre os nós `Chat Memory Manager: *` já registrados no lote-10 (`n8n/smoke/evidencia.md` §5.4) —
+pré-existentes, não relacionados a esta publicação.
+
+**Nenhum outro workflow tocado** — a dívida cosmética do `crivo-tool-agendar-reuniao` (paridade
+fonte × instância, lote-10 `evidencia.md`/`§14.7`) fica como está, fora do escopo deste lote.
