@@ -767,14 +767,16 @@ T25 → T26 → T27 → T28 → T29
 - Skill: NONE
 
 **Done when**:
-- [ ] Cenário descrito como **intenção de turno**, nunca como fala literal (o modelo não é determinístico)
-- [ ] Cobre os dois desfechos: critério que casa e critério que não casa
-- [ ] Checklist nomeia lead no CRM, linha de `conversa_estado` e sessão em `n8n_chat_histories`, com linha de confirmação antes de começar
-- [ ] Barra de aprovação por desfecho; qualidade de fala em seção separada que não reprova sozinha
-- [ ] Gate build passa
+- [x] Cenário descrito como **intenção de turno**, nunca como fala literal (o modelo não é determinístico)
+- [x] Cobre os dois desfechos: critério que casa e critério que não casa
+- [x] Checklist nomeia lead no CRM, linha de `conversa_estado` e sessão em `n8n_chat_histories`, com linha de confirmação antes de começar (§9, reusado — mesmos 3 alvos dos 3 cenários existentes)
+- [x] Barra de aprovação por desfecho; qualidade de fala em seção separada que não reprova sozinha (§7/§8)
+- [x] Gate build passa (1259 passed/89 arquivos, lint 0 erros/3 avisos, build exit 0)
 
 **Tests**: none
 **Gate**: build
+
+**Status**: ✅ Done
 
 **Commit**: `docs(smoke): adiciona cenario de consulta de inventario`
 

@@ -1,8 +1,10 @@
-# Prova conversacional — roteiro dos três cenários
+# Prova conversacional — roteiro dos cenários
 
-Roteiro reexecutável dos **três desfechos** que a AD-015 deferiu em 2026-08-09 e que este lote
-(lote-10, SMK-01/SMK-06) finalmente executa por conversa real no WhatsApp: **qualificar→agendar**,
-**escalar para humano** e **opt-out por palavra-chave**.
+Roteiro reexecutável dos **três desfechos** que a AD-015 deferiu em 2026-08-09 e que o lote-10
+(SMK-01/SMK-06) executou por conversa real no WhatsApp: **qualificar→agendar**, **escalar para
+humano** e **opt-out por palavra-chave**. O lote-11 acrescenta um quarto cenário (§9 — **consulta de
+inventário**, BUSCA-05/PROVA-01/02), sob o mesmo protocolo (AD-027): a AD-027 nomeia "nova tool"
+explicitamente como caso de uso obrigatório.
 
 Este arquivo descreve **o que conduzir** e **como julgar**. Os resultados de cada cenário — id de
 execução, captura do CRM, link do evento — ficam em `n8n/smoke/evidencia.md`, nunca aqui. É o mesmo
@@ -62,7 +64,7 @@ exatamente o que aconteceu na bateria (`evidencia.md` §12.4). Por isso o cenár
 **2.4 Persona (AD-016) é expectativa, não critério.** O agente não se anuncia como IA por iniciativa
 própria, confirma quando perguntado, fala pt-BR informal **sem emoji**, e entrega **1 a 3 mensagens**
 por turno (teto no validador determinístico, não só no prompt). Nada disso reprova cenário: entra
-na §7, observações de estilo.
+na §8, observações de estilo.
 
 **2.5 Nenhum `npx vitest run` durante a Fase 5.** `src/db/__tests__/seed.test.ts` roda `runSeed()` e
 **rotaciona as chaves do seed** — uma rodada de teste no meio de um cenário derruba a autenticação do
@@ -195,7 +197,44 @@ isso o lead ainda está `escalado_humano` e o gate nunca chega a avaliar o texto
 
 ---
 
-## 6. Barra de aprovação — desfecho, nunca estilo
+## 6. Cenário 4 — consulta de inventário (BUSCA-05, PROVA-01/02)
+
+**Objetivo**: o lead pergunta por imóveis dentro de um critério que casa com o catálogo real da
+imobiliária, e depois por um critério que não casa com nada — o agente usa `buscar_imoveis` nos dois
+turnos e responde de acordo com o que a tool devolveu, nunca inventando.
+
+**Estado inicial exigido**: os três alvos do checklist (§9) confirmados limpos depois do cenário 3 —
+lead novo em `em_qualificacao`.
+
+**Pré-condição própria**: o tenant `triangulo` precisa ter, no seed determinístico (SEEDIM-01), pelo
+menos um imóvel `disponivel` **e** `publicado` — é o que a tool pode de fato devolver. O critério do
+turno 3 precisa ser escolhido para **não** casar com nenhum imóvel do tenant (ex.: um bairro que não
+existe no seed, ou uma faixa de preço fora de qualquer imóvel cadastrado) — confirmar isso direto no
+banco/seed antes de conduzir o turno, não supor.
+
+| Turno | Intenção do lead | O que precisa acontecer no sistema |
+| --- | --- | --- |
+| 1 | Interesse inicial curto (ex.: "tô procurando um imóvel por aí") | Lead criado; agente responde e reage ao que foi trazido, sem ainda buscar nada |
+| 2 | Pergunta por imóveis com um critério que **casa** com pelo menos um imóvel `disponivel`+`publicado` do seed (ex.: bairro ou tipo de um imóvel real) | `buscar_imoveis` chamada com os critérios como parâmetros de query separados; a tool devolve ao menos 1 imóvel; o agente cita **referência e preço** batendo com a linha do banco, sem endereço exato nem nome de captador |
+| 3 | Pergunta por um critério que **não casa** com nenhum imóvel do tenant | `buscar_imoveis` chamada de novo; a tool devolve lista vazia; o agente declara a ausência ao lead e **não cita nenhum imóvel** |
+
+**Desfecho exigido — é isto que aprova ou reprova:**
+
+1. No turno 2, o imóvel citado ao lead tem **referência e preço batendo exatamente** com a linha do
+   banco (PROVA-02 AC3) — conferir contra o seed/banco, não de memória.
+2. No turno 3, o lead recebe uma declaração de ausência e **nenhum imóvel é citado** nesse turno
+   (PROVA-02 AC4).
+3. Nenhum dos dois turnos cita endereço exato (logradouro/número/complemento) nem nome do corretor de
+   captação.
+
+**Evidência a coletar**: id de execução de cada turno (2 e 3), conferidos por `get_execution` antes de
+citados (lição `L-011` — nunca de memória); número de iterações do turno observado e registrado — se
+`maxIterations: 8` (`n8n/workflows/principal.ts:1326`) estourar em algum turno, abrir task de correção
+dentro do próprio lote (risco nomeado no `design.md`); captura da conversa.
+
+---
+
+## 7. Barra de aprovação — desfecho, nunca estilo
 
 **A regra**: cada cenário é aprovado **exclusivamente** pelo estado final no CRM (mais o evento no
 Calendar, no cenário 1). Nada que dependa de achar a conversa boa entra no veredito (SMK-06,
@@ -206,6 +245,7 @@ Calendar, no cenário 1). Nada que dependa de achar a conversa boa entra no vere
 | 1 — qualificar→agendar | `status = qualificado_agendado` **e** `meetingAt` no horário combinado **e** responsável atribuído **e** evento no Calendar com link do Meet |
 | 2 — escalar | `status = escalado_humano` **e** responsável atribuído **e** a mensagem seguinte gravada sem nenhuma resposta do agente |
 | 3 — opt-out | `optedOutAt` preenchido **e** sessão de memória purgada pelo fluxo **e** exatamente uma confirmação enviada, com silêncio depois |
+| 4 — consulta de inventário | Turno 2 cita imóvel real (referência + preço batendo com o banco) **e** turno 3 declara ausência sem citar nenhum imóvel **e** nenhum dos dois cita endereço exato nem nome de captador |
 
 **Quantos turnos o cenário pode gastar**: o roteiro sugere a quantidade mínima, não um teto. Turnos a
 mais — porque o agente perguntou de novo, porque um turno saiu mudo por `maxIterations`, porque a
@@ -219,10 +259,10 @@ cenário reprovado: registrar como tal e repetir depois de corrigir o ambiente.
 
 ---
 
-## 7. Observações de estilo — registradas, sem valor de veredito
+## 8. Observações de estilo — registradas, sem valor de veredito
 
 Esta seção existe para que a qualidade de fala tenha **onde** ser anotada sem contaminar a barra da
-§6. Nenhuma linha daqui reprova cenário; no máximo vira candidata a ajuste de prompt (válvula
+§7. Nenhuma linha daqui reprova cenário; no máximo vira candidata a ajuste de prompt (válvula
 limitada da spec: fix task pós-smoke, nunca redesenho da persona da AD-016).
 
 O que anotar, por cenário:
@@ -242,7 +282,7 @@ O que anotar, por cenário:
 
 ---
 
-## 8. Checklist de limpeza entre cenários
+## 9. Checklist de limpeza entre cenários
 
 Três alvos, em dois sistemas. Nenhum deles avisa quando é esquecido — o cenário seguinte roda e
 produz um resultado que parece válido, só que sobre estado velho. A bateria já provou os dois modos
