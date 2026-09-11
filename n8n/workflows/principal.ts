@@ -1179,6 +1179,53 @@ const consultarDocumentosTool = tool({
   output: [{}],
 });
 
+// `buscar_imoveis` (lote-11 — BUSCA-04): consulta o inventário real de
+// imóveis. Todo critério é um parâmetro de query próprio e opcional
+// (`$fromAI`) — BUSCA-04 AC4, um parâmetro por critério, nunca um blob único.
+// `X-Crivo-Tenant` vem de `Code: gate` por expressão do fluxo, igual às
+// outras tools — a imobiliária consultada NUNCA é escolhida pelo modelo
+// (BUSCA-04 AC3). `retryOnFail`/`maxTries` ficam em `config`, nunca dentro de
+// `parameters` — é o bug que o commit a80760c corrigiu em
+// `consultar_documentos`: aninhados em `parameters`, o schema do node HTTP
+// Request não os aplica e o retry nunca é configurado de fato.
+const buscarImoveisTool = tool({
+  type: "n8n-nodes-base.httpRequestTool",
+  version: 4.5,
+  config: {
+    name: "buscar_imoveis",
+    position: [7560, 1700],
+    retryOnFail: true,
+    maxTries: 2,
+    parameters: {
+      toolDescription:
+        "Consulta o inventário real de imóveis disponíveis desta imobiliária pelos critérios que o lead informar. Todos os parâmetros são opcionais — inclua só os que o lead efetivamente mencionou. Preço em reais (nunca centavos).",
+      method: "GET",
+      url: `${CRM_BASE_URL}/properties`,
+      sendQuery: true,
+      queryParameters: {
+        parameters: [
+          { name: "modalidade", value: fromAi("modalidade", "Modalidade do imóvel: novo, usado ou ambos. Só inclua se o lead mencionou.", "string") },
+          { name: "tipo", value: fromAi("tipo", "Tipo do imóvel: casa, apartamento, sobrado, cobertura, terreno, sala_comercial ou chacara. Só inclua se o lead mencionou.", "string") },
+          { name: "bairro", value: fromAi("bairro", "Bairro que o lead procura, texto livre. Só inclua se o lead mencionou.", "string") },
+          { name: "cidade", value: fromAi("cidade", "Cidade que o lead procura, texto livre. Só inclua se o lead mencionou.", "string") },
+          { name: "precoMin", value: fromAi("precoMin", "Preço mínimo em reais, inteiro maior que zero. Só inclua se o lead deu um valor mínimo.", "number") },
+          { name: "precoMax", value: fromAi("precoMax", "Preço máximo em reais, inteiro maior que zero. Só inclua se o lead deu um valor máximo.", "number") },
+          { name: "quartosMin", value: fromAi("quartosMin", "Número mínimo de quartos/dormitórios, inteiro maior que zero. Só inclua se o lead mencionou.", "number") },
+        ],
+      },
+      authentication: "genericCredentialType",
+      genericAuthType: "httpHeaderAuth",
+      sendHeaders: true,
+      headerParameters: {
+        parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }],
+      },
+      options: { response: { response: { neverError: true } } },
+    },
+    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
+  },
+  output: [{}],
+});
+
 // Sub-workflows (T7/T8) — compõem múltiplos efeitos, expostos como tool via
 // `toolWorkflow`. `leadId` sempre de expressão do fluxo aqui também, pela
 // mesma razão das tools nativas.
@@ -1330,7 +1377,7 @@ const aiAgent = node({
     subnodes: {
       model: agentModel,
       memory: conversationMemory,
-      tools: [registrarQualificacaoTool, escalarParaHumanoTool, consultarDocumentosTool, responderLeadTool, agendarReuniaoTool],
+      tools: [registrarQualificacaoTool, escalarParaHumanoTool, consultarDocumentosTool, buscarImoveisTool, responderLeadTool, agendarReuniaoTool],
     },
   },
   output: [{ output: "Beleza, e qual a região que você procura?" }],

@@ -682,19 +682,21 @@ T25 → T26 → T27 → T28 → T29
 - Skill: NONE
 
 **Done when**:
-- [ ] `retryOnFail` e `maxTries` estão em `config`, **não** dentro de `parameters` — o erro que o commit `a80760c` corrigiu em `consultar_documentos`
-- [ ] `X-Crivo-Tenant` vem de `$('Code: gate')`, nunca de `$fromAI` (BUSCA-04 AC3)
-- [ ] A tool entra em `subnodes.tools` do `AI Agent`; as 5 existentes permanecem
-- [ ] Teste estrutural: nome da tool, origem de cada parâmetro, e as contagens de nós e conexões batendo com a adição de exatamente uma tool
-- [ ] `agentModel` com zero linhas tocadas (AD-026)
-- [ ] `validate_workflow` do MCP passa
-- [ ] Gate passa: `npx vitest run n8n/workflows`
-- [ ] Contagem de testes registrada, maior que a da T21
+- [x] `retryOnFail` e `maxTries` estão em `config`, **não** dentro de `parameters` — o erro que o commit `a80760c` corrigiu em `consultar_documentos`
+- [x] `X-Crivo-Tenant` vem de `$('Code: gate')`, nunca de `$fromAI` (BUSCA-04 AC3)
+- [x] A tool entra em `subnodes.tools` do `AI Agent`; as 5 existentes permanecem
+- [x] Teste estrutural: nome da tool, origem de cada parâmetro, e as contagens de nós e conexões batendo com a adição de exatamente uma tool
+- [x] `agentModel` com zero linhas tocadas (AD-026)
+- [x] `validate_workflow` do MCP passa (`valid:true`, 62 nós, nenhum warning novo — os 5 avisos pré-existentes são sobre outros nós de memória)
+- [x] Gate passa: `npx vitest run n8n/workflows`
+- [x] Contagem de testes registrada, maior que a da T21 (`n8n/workflows`: 33 passed/3 arquivos, era 12/1 antes desta task)
 
 **Tests**: unit
 **Gate**: quick
 
 **Commit**: `feat(agente): adiciona tool buscar_imoveis ao fluxo principal`
+
+**Status**: ✅ Done
 
 ---
 

@@ -11,25 +11,30 @@ import principal from "../principal";
  * aresta. Estes testes leem o grafo que o SDK emite (o mesmo `toJSON` que o
  * inliner leva para `n8n/generated/`), e fixam os dois lados.
  *
- * As contagens 61/75 não são inventadas aqui: são as medidas em `n8n/smoke/
- * evidencia.md` §2.2 (T2), batendo entre `n8n/generated/principal.ts` e o
- * workflow publicado na instância, ANTES da troca. É esse par que faz o teste
- * discriminar MOD-01 AC2 ("nenhum outro nó do grafo muda") em vez de só
- * repetir a implementação.
+ * As contagens 61/75 (lote-10) não são inventadas aqui: são as medidas em
+ * `n8n/smoke/evidencia.md` §2.2 (T2), batendo entre `n8n/generated/
+ * principal.ts` e o workflow publicado na instância, ANTES da troca. É esse
+ * par que faz o teste discriminar MOD-01 AC2 ("nenhum outro nó do grafo
+ * muda") em vez de só repetir a implementação.
+ *
+ * lote-11 (T22 — BUSCA-04 AC11): a tool `buscar_imoveis` some as contagens
+ * para 62/76 — exatamente +1 nó e +1 conexão (a aresta `ai_tool` da tool nova
+ * até o `AI Agent`), medido via `principal.toJSON()` nesta própria janela.
  */
 
 const MODEL_NODE = "OpenAI Chat Model";
 const MODEL_ID = "gpt-5.4-nano-2026-03-17";
 const MEMORY_NODE = "Postgres Chat Memory";
 
-/** Medidas em T2 (`n8n/smoke/evidencia.md` §2.2), fonte × instância publicada. */
-const NOS_ESPERADOS = 61;
-const CONEXOES_ESPERADAS = 75;
+/** lote-10 (T2): 61/75. lote-11 (T22): +1 tool (`buscar_imoveis`) → 62/76. */
+const NOS_ESPERADOS = 62;
+const CONEXOES_ESPERADAS = 76;
 
 const TOOLS = [
   "registrar_qualificacao",
   "escalar_para_humano",
   "consultar_documentos",
+  "buscar_imoveis",
   "responder_lead",
   "agendar_reuniao",
 ];
@@ -108,7 +113,7 @@ describe("nó de modelo do agente é o OpenAI alvo (MOD-01 AC1)", () => {
 });
 
 describe("a troca de modelo não mexeu em mais nada do grafo (MOD-01 AC2)", () => {
-  it("as 5 tools do agente continuam presentes, pelo nome", () => {
+  it("as tools do agente continuam presentes, pelo nome", () => {
     const nomes = workflow.nodes.map((n) => n.name);
 
     for (const ferramenta of TOOLS) {
@@ -126,7 +131,7 @@ describe("a troca de modelo não mexeu em mais nada do grafo (MOD-01 AC2)", () =
     );
   });
 
-  it("o grafo continua com 61 nós e 75 conexões — as contagens medidas em T2", () => {
+  it("o grafo continua com 62 nós e 76 conexões — as contagens medidas nesta janela (T22 do lote-11)", () => {
     expect(workflow.nodes).toHaveLength(NOS_ESPERADOS);
     expect(contarConexoes()).toBe(CONEXOES_ESPERADAS);
   });
