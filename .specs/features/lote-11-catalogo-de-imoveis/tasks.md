@@ -713,15 +713,17 @@ T25 → T26 → T27 → T28 → T29
 - Skill: NONE
 
 **Done when**:
-- [ ] `n8n/generated/principal.ts` regenerado pelo script, nunca editado à mão (AD-014)
-- [ ] O diff contém a tool nova e as duas mudanças de `system-message`, e **nada mais** inesperado
-- [ ] `scripts/__tests__/n8n-inline.test.ts` passa
-- [ ] Gate build passa
+- [x] `n8n/generated/principal.ts` regenerado pelo script, nunca editado à mão (AD-014)
+- [x] O diff contém a tool nova e as duas mudanças de `system-message`, e **nada mais** inesperado (confirmado por grep: `buscar_imoveis` presente, "NÃO busca imóveis"/"NÃO informa preços" ausentes, "NÃO manda fotos" presente; só `n8n/generated/principal.ts` mudou entre os 5 artefatos gerados)
+- [x] `scripts/__tests__/n8n-inline.test.ts` passa (12/12)
+- [x] Gate build passa (1259 passed/89 arquivos, lint 0 erros/3 avisos, build exit 0)
 
 **Tests**: none
 **Gate**: build
 
 **Commit**: `chore(agente): regenera principal com a tool buscar_imoveis`
+
+**Status**: ✅ Done
 
 ---
 
