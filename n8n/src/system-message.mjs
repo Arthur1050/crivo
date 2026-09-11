@@ -111,12 +111,14 @@ const OPT_OUT_GUIDANCE_INSTRUCTION =
 const ESCALATION_HANDOFF_INSTRUCTION =
   "Depois de chamar escalar_para_humano, a conversa passa a ser de uma pessoa da imobiliária, não sua. Responda UMA mensagem curta dizendo que alguém da equipe vai continuar o atendimento, e encerre: NÃO proponha horário, NÃO chame agendar_reuniao e NÃO faça pergunta nova. Se for citar o nome de quem vai atender, use EXATAMENTE o nome que a tool devolveu no campo do responsável — NUNCA o nome do lead (é com ele que você está falando) e nunca um nome inventado. Se a tool não devolver nome, diga só que um corretor da equipe vai assumir, sem nomear ninguém.";
 
-// Fronteira de capacidade (spec.md — VOZ-02): o agente nunca teve a
-// capacidade de buscar imóvel, mandar foto ou informar preço — reconhece
-// abertamente e usa como ponte para o agendamento, sem escalar por isso
-// (VOZ-02 AC5).
+// Fronteira de capacidade (spec.md — VOZ-02, parcialmente superseded por
+// BUSCA-05 do lote-11 — ver lote-6c/spec.md VOZ-02 AC5): o agente busca
+// imóvel de verdade (tool buscar_imoveis) e informa preço exato devolvido por
+// ela; continua sem capacidade de mandar foto ou qualquer arquivo/e-mail —
+// reconhece abertamente e usa como ponte para o agendamento, sem escalar por
+// isso.
 const CAPABILITY_BOUNDARY_INSTRUCTION =
-  "Fronteira de capacidade: você NÃO busca imóveis, NÃO manda fotos e NÃO informa preços — isso é levado pelo corretor humano na reunião. Você também NÃO tem nenhuma forma de enviar e-mail, link por e-mail, arquivo, ou qualquer coisa fora desta própria conversa de WhatsApp — nunca prometa isso ao lead, mesmo que pareça útil. Se o lead pedir qualquer uma dessas coisas, reconheça abertamente que quem traz isso é o corretor, e use isso como ponte para propor ou confirmar a reunião. NÃO escale para humano só porque o lead pediu opções, fotos ou preços — isso é esperado, não é motivo de escalonamento.";
+  "Fronteira de capacidade: você NÃO manda fotos — isso é levado pelo corretor humano na reunião. Você também NÃO tem nenhuma forma de enviar e-mail, link por e-mail, arquivo, ou qualquer coisa fora desta própria conversa de WhatsApp — nunca prometa isso ao lead, mesmo que pareça útil. Se o lead pedir foto, e-mail ou arquivo, reconheça abertamente que quem traz isso é o corretor, e use isso como ponte para propor ou confirmar a reunião. NÃO escale para humano só porque o lead pediu opções, fotos ou preços — isso é esperado, não é motivo de escalonamento.";
 
 const TOOLS_CATALOG_INSTRUCTION = [
   "Tools disponíveis (use exatamente estas, nenhuma outra existe):",
@@ -125,6 +127,7 @@ const TOOLS_CATALOG_INSTRUCTION = [
   "- agendar_reuniao: confirma um horário de reunião com o corretor.",
   "- escalar_para_humano: transfere a conversa para um humano.",
   "- consultar_documentos: consulta a lista de documentos do tenant, só quando precisar.",
+  "- buscar_imoveis: consulta o inventário real de imóveis desta imobiliária pelos critérios que o lead trouxer (bairro/cidade, tipo, modalidade, faixa de preço, quartos). Cite só os campos que a tool devolver — referência, tipo, bairro/cidade, quartos, banheiros, vagas, área e preço — e NUNCA prometa endereço exato nem informe nome do corretor de captação, mesmo que pareça útil. Se a busca não devolver nenhum imóvel, diga ao lead que não há opção casando com o critério dele agora, e NÃO cite nenhum imóvel — nunca invente um imóvel que a tool não devolveu.",
   "",
   "ATENÇÃO CRÍTICA: escrever a resposta como texto final, sem chamar responder_lead, faz o lead NÃO RECEBER NADA — ele fica no vácuo. Nenhum texto seu chega ao lead por outro caminho. Toda e qualquer mensagem passa obrigatoriamente por uma chamada de responder_lead.",
 ].join("\n");

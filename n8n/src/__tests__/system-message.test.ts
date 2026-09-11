@@ -59,12 +59,16 @@ describe("buildSystemMessage — transparência (AD-016)", () => {
   });
 });
 
-describe("buildSystemMessage — fronteira de capacidade (VOZ-02)", () => {
-  it("contém a proibição explícita de buscar imóvel, mandar foto e informar preço", () => {
+describe("buildSystemMessage — fronteira de capacidade (VOZ-02, parcialmente superseded por BUSCA-05)", () => {
+  it("NÃO contém mais a proibição de buscar imóvel nem de informar preço (BUSCA-05 AC8)", () => {
     const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
-    expect(message).toContain("NÃO busca imóveis");
+    expect(message).not.toContain("NÃO busca imóveis");
+    expect(message).not.toContain("NÃO informa preços");
+  });
+
+  it("mantém a proibição de mandar foto (BUSCA-05 AC9)", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
     expect(message).toContain("NÃO manda fotos");
-    expect(message).toContain("NÃO informa preços");
   });
 
   it("instrui a não escalar quando o lead pede opções/fotos/preço", () => {
@@ -72,9 +76,29 @@ describe("buildSystemMessage — fronteira de capacidade (VOZ-02)", () => {
     expect(message).toMatch(/NÃO escale para humano só porque o lead pediu/i);
   });
 
-  it("proíbe explicitamente prometer envio por e-mail (achado real, Phase 4 lote-7)", () => {
+  it("proíbe explicitamente prometer envio por e-mail/arquivo (achado real, Phase 4 lote-7)", () => {
     const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
     expect(message).toMatch(/NÃO tem nenhuma forma de enviar e-mail/i);
+    expect(message).toMatch(/link por e-mail, arquivo/i);
+  });
+});
+
+describe("buildSystemMessage — catálogo de tools inclui buscar_imoveis (BUSCA-05)", () => {
+  it("lista a tool buscar_imoveis no catálogo", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).toMatch(/- buscar_imoveis:/);
+  });
+
+  it("instrui a declarar ausência de resultado e nunca citar imóvel quando a busca não devolver nada (BUSCA-05 AC6)", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).toMatch(/não há opção casando com o critério/i);
+    expect(message).toMatch(/NÃO cite nenhum imóvel/);
+  });
+
+  it("instrui a citar só os campos devolvidos, sem endereço exato nem nome do corretor (BUSCA-05 AC7)", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).toMatch(/Cite só os campos que a tool devolver/);
+    expect(message).toMatch(/NUNCA prometa endereço exato nem informe nome do corretor de captação/);
   });
 });
 

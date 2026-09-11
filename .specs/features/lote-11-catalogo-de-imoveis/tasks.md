@@ -653,17 +653,19 @@ T25 → T26 → T27 → T28 → T29
 - Skill: NONE
 
 **Done when**:
-- [ ] Uma asserção **por cláusula**: "não busca imóveis" ausente, "não informa preços" ausente, proibição de foto presente, proibição de arquivo/e-mail presente
-- [ ] Linha de `buscar_imoveis` presente no catálogo, instruindo a declarar ausência quando não houver resultado (BUSCA-05 AC6)
-- [ ] Instrução de citar somente os campos devolvidos, sem prometer endereço nem nome de corretor (BUSCA-05 AC7)
-- [ ] `n8n/src/gate.mjs` e `n8n/src/phase.mjs` com **zero** linhas tocadas (grep no diff prova — BUSCA-05 AC10)
-- [ ] Gate passa: `npx vitest run n8n/src`
-- [ ] Contagem de testes registrada, maior que a da T14
+- [x] Uma asserção **por cláusula**: "não busca imóveis" ausente, "não informa preços" ausente, proibição de foto presente, proibição de arquivo/e-mail presente
+- [x] Linha de `buscar_imoveis` presente no catálogo, instruindo a declarar ausência quando não houver resultado (BUSCA-05 AC6)
+- [x] Instrução de citar somente os campos devolvidos, sem prometer endereço nem nome de corretor (BUSCA-05 AC7)
+- [x] `n8n/src/gate.mjs` e `n8n/src/phase.mjs` com **zero** linhas tocadas (grep no diff prova — BUSCA-05 AC10)
+- [x] Gate passa: `npx vitest run n8n/src`
+- [x] Contagem de testes registrada, maior que a da T14 (`n8n/src`: 221 passed/9 arquivos; piso geral do projeto era 1241/88 ao fim da Fase 4)
 
 **Tests**: unit
 **Gate**: quick
 
 **Commit**: `feat(agente): libera busca de imoveis na fronteira de capacidade`
+
+**Status**: ✅ Done
 
 ---
 
