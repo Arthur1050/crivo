@@ -294,10 +294,28 @@ chegue no intervalo entre as duas limpezas recria o lead no CRM, e a linha nova 
 (ou a sessão de memória) que o n8n cria em seguida aponta para um lead que está prestes a ser
 apagado — o próximo cenário nasceria com metade do estado velho e metade do novo.
 
+**Os três alvos têm rotina — a limpeza manual descrita na tabela abaixo é a referência do que cada
+uma faz, não o procedimento a seguir à mão.** Na mesma ordem obrigatória:
+
+1. **n8n (alvos 1 e 2)** — executar o workflow `crivo-smoke-reset` (`rgf3t1cVsd2q0X0f`; fonte em
+   `n8n/workflows/smoke-reset.ts`), trigger manual, sem parâmetro: purga a sessão de memória e apaga
+   a linha de `conversa_estado` do alvo.
+2. **CRM (alvo 3)** — `npm run smoke:reset` (`src/db/smoke-reset.ts`): apaga `messages` →
+   `conversations` → `leads` do lead de teste, numa transação. Idempotente.
+
+Os dois lados ficam separados de propósito: para um alcançar o outro seria preciso credencial
+cruzada (o script no Postgres da instância n8n) ou uma rota destrutiva no contrato `/api/v1` — cada
+sistema limpa o próprio estado, e o desacoplamento de INT-08 vale nas duas direções.
+
+**A rotina não dispensa a confirmação por execução real** (última linha do checklist): `deleteRows`
+com zero linhas afetadas é indistinguível, pela resposta, de "a linha não existia" e de "o filtro não
+casou", e metadado de tabela não resolve a dúvida (ver a nota de armadilha abaixo). Quem confirma
+continua sendo o turno 1 do cenário seguinte.
+
 | # | Alvo | Onde | Chave / identificação | Se esquecido |
 | --- | --- | --- | --- | --- |
 | 1 | Sessão de memória | `n8n_chat_histories` (Postgres da instância n8n) | `"triangulo:553499532444"` (padrão geral: `"<tenantSlug>:<waId>"`, `principal.ts:679`) | O agente do cenário seguinte "lembra" de uma conversa que, para o CRM, nunca aconteceu — mistura contexto de dois desfechos diferentes na mesma resposta |
-| 2 | Linha de `conversa_estado` | Data Table `ZsplBxJjXv3kwKZ8` | Casada por `tenantSlug = triangulo` + `waId = 553499532444` (o MCP não apaga linha de Data Table — remover pela UI da Data Table) | `perguntadosJson` chega cheio; a fase pode virar `agendando` no 1º turno, pulando a qualificação que o cenário exige (mesma falha observada em `evidencia.md` §8) |
+| 2 | Linha de `conversa_estado` | Data Table `ZsplBxJjXv3kwKZ8` | Casada por `tenantSlug = triangulo` + `waId = 553499532444`, com `allConditions` (a ferramenta MCP não apaga linha de Data Table; o **nó** `dataTable` v1.1 apaga, em `operation: deleteRows` — é o que o `crivo-smoke-reset` usa, e é por isso que a remoção deixou de ser trabalho de UI) | `perguntadosJson` chega cheio; a fase pode virar `agendando` no 1º turno, pulando a qualificação que o cenário exige (mesma falha observada em `evidencia.md` §8) |
 | 3 | Lead e conversa no CRM | Postgres do CRM, ordem `messages` → `conversations` → `leads` (FKs sem `onDelete`, `src/db/schema.ts:211-229`) | `externalId = 553499532444`, tenant `triangulo` | `POST /leads` idempotente devolve o lead **velho**, com o `status` terminal do cenário anterior ainda gravado — o cenário seguinte nunca começa do zero |
 
 **Confirmação obrigatória antes do próximo cenário**: não confie em metadado de tabela
