@@ -120,6 +120,21 @@ const ESCALATION_HANDOFF_INSTRUCTION =
 const CAPABILITY_BOUNDARY_INSTRUCTION =
   "Fronteira de capacidade: você NÃO manda fotos — isso é levado pelo corretor humano na reunião. Você também NÃO tem nenhuma forma de enviar e-mail, link por e-mail, arquivo, ou qualquer coisa fora desta própria conversa de WhatsApp — nunca prometa isso ao lead, mesmo que pareça útil. Se o lead pedir foto, e-mail ou arquivo, reconheça abertamente que quem traz isso é o corretor, e use isso como ponte para propor ou confirmar a reunião. NÃO escale para humano só porque o lead pediu opções, fotos ou preços — isso é esperado, não é motivo de escalonamento.";
 
+// ACHADO REAL (prova conversacional do lote-11, 2026-09-12, cenário 4): com a
+// tool `buscar_imoveis` no ar e a fronteira de capacidade já liberada, o agente
+// **nunca buscou por iniciativa própria**. O lead disse "procuro algo no bairro
+// Abadia", depois "seria um apartamento mesmo", e o agente respondeu propondo
+// reunião — só chamou a tool quando o lead perguntou explicitamente "você não
+// consegue já me mostrar alguma opção?".
+//
+// A causa não é o modelo: é que o catálogo de tools descreve O QUE a tool faz e
+// nada no prompt dizia QUANDO chamá-la, enquanto a instrução da fase
+// `agendando` mandava, imperativa e sozinha, propor horário. O agente obedeceu
+// o que estava escrito. Sem esta seção, `PROVA-02 AC3` (citar imóvel real ao
+// lead) é inalcançável por desenho — a busca só aconteceria se o lead cobrasse.
+const INVENTORY_SEARCH_INSTRUCTION =
+  "Quando buscar imóveis: assim que o lead disser QUALQUER critério de busca (bairro, cidade, tipo de imóvel, faixa de preço, número de quartos, novo ou usado), chame buscar_imoveis com o que ele deu e mostre o que voltou — ANTES de propor qualquer reunião. Isso vale em qualquer fase da conversa, inclusive quando você já poderia agendar. A reunião com o corretor é a consequência de ter mostrado opções, nunca o substituto delas: propor reunião sem antes buscar, tendo critério na mão, é o erro a evitar. Se o lead deu só um critério (só o bairro, por exemplo), busque mesmo assim com esse único critério em vez de esperar ter todos. Se a busca voltar vazia ou falhar, siga a regra da tool no catálogo abaixo — nunca invente imóvel.";
+
 const TOOLS_CATALOG_INSTRUCTION = [
   "Tools disponíveis (use exatamente estas, nenhuma outra existe):",
   "- responder_lead: ÚNICA forma de enviar mensagem ao lead. Toda resposta sua passa por ela, mesmo que seja só uma reação.",
@@ -165,7 +180,22 @@ function buildTodayAnchor(now) {
     year: "numeric",
   }).format(date);
 
-  return `Hoje é ${label} (horário de Brasília, America/Sao_Paulo). Use esta data como âncora para resolver qualquer dia relativo ("amanhã", "terça-feira", "semana que vem"): a data resultante nunca pode ser anterior a hoje, e o mesmo dia relativo tem que resolver para a MESMA data em toda a conversa — nunca proponha ou confirme duas datas diferentes para o que já foi combinado como "terça-feira" (ou qualquer outro dia) na mesma conversa.`;
+  // ACHADO REAL (prova conversacional do lote-11, 2026-09-12): às 20:16 de um
+  // SÁBADO o agente propôs "hoje, às 16:30" — horário já passado, e num dia que
+  // nem está na janela comercial do tenant (seg-sex). A âncora ancorava só a
+  // DATA ("nunca anterior a hoje"), e nada falava da hora corrente, então
+  // propor um horário passado do próprio dia não violava nenhuma instrução. A
+  // barreira determinística (`isSlotWithinBusinessHours`) existe, mas só roda
+  // quando `agendar_reuniao` é chamada: ela impede AGENDAR fora da janela, não
+  // impede PROPOR — e propor um horário impossível queima um turno e obriga o
+  // agente a se retratar depois.
+  const timeLabel = new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+
+  return `Hoje é ${label}, e agora são ${timeLabel} (horário de Brasília, America/Sao_Paulo). Use esta data como âncora para resolver qualquer dia relativo ("amanhã", "terça-feira", "semana que vem"): a data resultante nunca pode ser anterior a hoje, e o mesmo dia relativo tem que resolver para a MESMA data em toda a conversa — nunca proponha ou confirme duas datas diferentes para o que já foi combinado como "terça-feira" (ou qualquer outro dia) na mesma conversa. NUNCA proponha nem confirme um horário que já passou: se for para hoje, o horário tem que ser depois de ${timeLabel}; se já não couber mais nada hoje, ofereça o próximo dia disponível em vez de insistir em hoje.`;
 }
 
 /**
@@ -175,7 +205,7 @@ function buildTodayAnchor(now) {
 function buildBusinessHoursSection(businessHours) {
   const days = (businessHours?.days ?? []).map((day) => WEEKDAY_LABELS_PT[day] ?? String(day));
   if (days.length === 0 || !businessHours?.start || !businessHours?.end) return null;
-  return `Horário comercial para propor reuniões: ${days.join(", ")}, das ${businessHours.start} às ${businessHours.end} (horário de Brasília, America/Sao_Paulo).`;
+  return `Horário comercial para propor reuniões: ${days.join(", ")}, das ${businessHours.start} às ${businessHours.end} (horário de Brasília, America/Sao_Paulo). NUNCA proponha reunião em um dia que não esteja nessa lista nem em horário fora dessa faixa — hoje pode não ser um dia atendido: se não for, ofereça o próximo dia que esteja na lista, nunca hoje.`;
 }
 
 /**
@@ -232,7 +262,7 @@ function buildPhaseInstruction(phase, perguntados, meetingAt) {
     if (meetingLabel) {
       return `Fase atual: REUNIÃO JÁ CONFIRMADA para ${meetingLabel} (horário de Brasília). NÃO proponha nenhum horário e NÃO chame a tool agendar_reuniao — a reunião já está marcada e chamar de novo derrubaria o agendamento que já existe. NÃO faça nenhuma pergunta nova de qualificação (objetivo, orçamento, prazo de compra, forma de pagamento, imóvel para vender): esses campos só são registrados quando o lead fala por conta própria, nunca perguntados por você. Se o lead agradecer ou se despedir, responda em UMA linha e encerre, sem puxar assunto novo. Só use agendar_reuniao se o lead pedir EXPLICITAMENTE para remarcar, e nesse caso para o NOVO horário que ele pedir.`;
     }
-    return "Fase atual: AGENDAMENTO. Todos os campos obrigatórios já foram perguntados. NÃO pergunte mais nada sobre qualificação — proponha ao lead um horário de reunião com o corretor, dentro do horário comercial informado. NUNCA chame a tool agendar_reuniao no mesmo turno em que você propõe o horário: só chame depois que o lead ACEITAR explicitamente um horário, e sempre para o horário que ele aceitou. Num mesmo turno, ou você PERGUNTA se um horário serve, ou você CHAMA a tool — nunca as duas coisas: se perguntou, encerre o turno e espere a resposta. Quando o próprio lead disser um horário concreto, isso JÁ é o aceite: chame a tool para esse horário e confirme, sem perguntar de novo. Se ele recusar sem dizer outro horário, proponha um novo e espere o aceite. Agendar antes do aceite ocupa a agenda do corretor com um horário que o lead não confirmou.";
+    return "Fase atual: AGENDAMENTO. Todos os campos obrigatórios já foram perguntados. NÃO pergunte mais nada sobre qualificação. Se o lead já deu algum critério de busca, ou se pedir opções, BUSQUE os imóveis e mostre o que voltou antes de falar de horário — estar nesta fase não dispensa a busca. Feito isso, proponha ao lead um horário de reunião com o corretor, dentro do horário comercial informado. NUNCA chame a tool agendar_reuniao no mesmo turno em que você propõe o horário: só chame depois que o lead ACEITAR explicitamente um horário, e sempre para o horário que ele aceitou. Num mesmo turno, ou você PERGUNTA se um horário serve, ou você CHAMA a tool — nunca as duas coisas: se perguntou, encerre o turno e espere a resposta. Quando o próprio lead disser um horário concreto, isso JÁ é o aceite: chame a tool para esse horário e confirme, sem perguntar de novo. Se ele recusar sem dizer outro horário, proponha um novo e espere o aceite. Agendar antes do aceite ocupa a agenda do corretor com um horário que o lead não confirmou.";
   }
 
   const field = nextFieldToAsk(perguntados);
@@ -285,6 +315,7 @@ export function buildSystemMessage({ settings, phase, perguntados, businessHours
     CONVERSATION_POSTURE_INSTRUCTION,
     firstTurn ? FIRST_TURN_INSTRUCTION : null,
     CAPABILITY_BOUNDARY_INSTRUCTION,
+    INVENTORY_SEARCH_INSTRUCTION,
     MEETING_CHANNEL_INSTRUCTION,
     ESCALATION_HANDOFF_INSTRUCTION,
     OPT_OUT_GUIDANCE_INSTRUCTION,

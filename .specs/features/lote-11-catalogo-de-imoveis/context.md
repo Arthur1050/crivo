@@ -137,3 +137,15 @@ escolhido e a razão — e são confirmadas pela aprovação da spec.
 - **Histórico de preço do imóvel** — não pedido; um imóvel guarda o preço atual.
 - **Busca vetorial / RAG sobre descrição de imóvel** — a consulta estruturada é estritamente melhor
   para a pergunta que aparece na qualificação. Fica no L-RAG condicional do L12 item 4.
+- **Switch por imobiliária: o agente pode exibir opções do catálogo?** (decisão do usuário,
+  2026-09-13, durante a prova conversacional deste lote) — configuração nova em Configurações,
+  **ligada por padrão** (quem não mexer continua com o agente citando imóveis). Desligada, o agente
+  volta ao comportamento anterior: não cita inventário e usa a reunião como ponte. Implica campo novo
+  em `tenants`, tela de Configurações, `GET /api/v1/settings`, e uma condicional no system message —
+  fora deste lote de propósito, para não inflá-lo.
+- **Antecedência mínima de agendamento, por imobiliária** (mesma conversa) — input numérico em dias:
+  `3` faz o agente só propor reuniões a partir de 3 dias à frente; `0` ou vazio mantém o
+  comportamento atual (do próprio dia em diante). Hoje a única barreira de horário é a janela
+  comercial (`business-hours.mjs`), que não tem noção de antecedência. Implica campo novo em
+  `tenants`, tela, contrato e a validação determinística do `agendar_reuniao` — não só o prompt, para
+  a regra não depender da discrição do modelo (AD-018).

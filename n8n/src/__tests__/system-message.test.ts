@@ -83,6 +83,39 @@ describe("buildSystemMessage — fronteira de capacidade (VOZ-02, parcialmente s
   });
 });
 
+describe("buildSystemMessage — quando buscar imóveis (achado real, prova do lote-11)", () => {
+  it("manda buscar assim que o lead der QUALQUER critério", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).toMatch(/assim que o lead disser QUALQUER critério de busca/);
+  });
+
+  it("manda buscar ANTES de propor reunião — a reunião é consequência, não substituto", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).toMatch(/ANTES de propor qualquer reunião/);
+    expect(message).toMatch(/propor reunião sem antes buscar, tendo critério na mão, é o erro a evitar/i);
+  });
+
+  it("vale em qualquer fase, inclusive quando já daria para agendar", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).toMatch(/vale em qualquer fase da conversa, inclusive quando você já poderia agendar/i);
+  });
+
+  it("um único critério já basta — não espera ter todos", () => {
+    const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+    expect(message).toMatch(/busque mesmo assim com esse único critério em vez de esperar ter todos/i);
+  });
+
+  it("a fase agendando deixa de ser monotemática: manda buscar antes de falar de horário", () => {
+    const message = buildSystemMessage({
+      settings: BASE_SETTINGS,
+      phase: "agendando",
+      perguntados: ["modality", "region", "propertyType"],
+    });
+    expect(message).toMatch(/BUSQUE os imóveis e mostre o que voltou antes de falar de horário/);
+    expect(message).toMatch(/estar nesta fase não dispensa a busca/i);
+  });
+});
+
 describe("buildSystemMessage — catálogo de tools inclui buscar_imoveis (BUSCA-05)", () => {
   it("lista a tool buscar_imoveis no catálogo", () => {
     const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
@@ -226,6 +259,36 @@ describe("buildSystemMessage — âncora de data (achado real, Phase 4 lote-7)",
     expect(message).toMatch(/nunca proponha ou confirme duas datas diferentes/i);
   });
 
+  it("ancora também a HORA corrente, não só a data (achado real, prova do lote-11)", () => {
+    const message = buildSystemMessage({
+      settings: BASE_SETTINGS,
+      phase: "agendando",
+      now: "2026-08-16T12:00:00Z",
+    });
+    // 12:00Z em America/Sao_Paulo (UTC-3) é 09:00 — conferido via
+    // Intl.DateTimeFormat antes de escrever o teste, nunca suposto.
+    expect(message).toContain("e agora são 09:00");
+  });
+
+  it("proíbe propor horário já passado, citando a hora corrente como piso", () => {
+    const message = buildSystemMessage({
+      settings: BASE_SETTINGS,
+      phase: "agendando",
+      now: "2026-08-16T12:00:00Z",
+    });
+    expect(message).toMatch(/NUNCA proponha nem confirme um horário que já passou/);
+    expect(message).toContain("o horário tem que ser depois de 09:00");
+  });
+
+  it("manda oferecer o próximo dia quando não cabe mais nada hoje", () => {
+    const message = buildSystemMessage({
+      settings: BASE_SETTINGS,
+      phase: "agendando",
+      now: "2026-08-16T12:00:00Z",
+    });
+    expect(message).toMatch(/ofereça o próximo dia disponível em vez de insistir em hoje/i);
+  });
+
   it("omite a âncora de data quando `now` não é informado", () => {
     const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
     expect(message).not.toContain("Hoje é");
@@ -321,6 +384,17 @@ describe("buildSystemMessage — horário comercial", () => {
     expect(message).toContain("segunda, terça, quarta, quinta, sexta");
     expect(message).toContain("09:00");
     expect(message).toContain("18:00");
+  });
+
+  it("proíbe propor dia fora da lista, e manda oferecer o próximo dia atendido (achado real: sábado)", () => {
+    const message = buildSystemMessage({
+      settings: BASE_SETTINGS,
+      phase: "agendando",
+      businessHours: { days: [1, 2, 3, 4, 5], start: "09:00", end: "18:00" },
+    });
+    expect(message).toMatch(/NUNCA proponha reunião em um dia que não esteja nessa lista/);
+    expect(message).toMatch(/hoje pode não ser um dia atendido/i);
+    expect(message).toMatch(/ofereça o próximo dia que esteja na lista, nunca hoje/i);
   });
 
   it("omite a seção de horário comercial quando não informado", () => {

@@ -888,6 +888,40 @@ T25 → T26 → T27 → T28 → T29
 
 ---
 
+### T30 (fix): Instrução de quando buscar, e âncora de hora no agendamento
+
+**What**: Correção aberta pela primeira rodada do cenário 4 (`roteiro.md` §7 — reprovação por desfecho abre fix task antes de o requisito subir para `Verified`). Dois defeitos, ambos de prompt.
+**Where**: `n8n/src/system-message.mjs`
+**Depends on**: T26 (primeira rodada, que expôs os dois)
+**Reuses**: O padrão de bloco `ACHADO REAL` já usado nas 11 correções da Fase 5 do lote-10
+**Requirement**: BUSCA-05 (ganha a cláusula de iniciativa), PROVA-02 (destravada por ela)
+
+**Tools**:
+- MCP: `n8n` (`update_workflow`, `get_workflow_details`, `publish_workflow`)
+- Skill: NONE
+
+**Contexto — o que a conversa real de 2026-09-12 mostrou** (execuções `2260`-`2270`):
+
+1. **O agente nunca buscou por iniciativa própria.** O lead deu bairro (`Abadia`) e tipo (`apartamento`) em turnos seguidos; o agente respondeu propondo reunião. Só chamou `buscar_imoveis` quando o lead perguntou "você não consegue já me mostrar alguma opção?". Causa: o catálogo de tools dizia O QUE a tool faz e nada dizia QUANDO chamá-la, enquanto a instrução da fase `agendando` mandava, sozinha e imperativa, propor horário. Sem isso, `PROVA-02 AC3` é inalcançável por desenho.
+2. **Propôs horário impossível**: "hoje às 16:30" às 20:16 de um **sábado** — horário já passado, em dia fora da janela comercial (seg-sex). A âncora ancorava só a DATA; `isSlotWithinBusinessHours` impede *agendar* fora da janela, nunca *propor*.
+
+**Done when**:
+- [x] Instrução dedicada de **quando** buscar: qualquer critério do lead dispara a busca, ANTES de propor reunião, em qualquer fase, e um único critério já basta
+- [x] A fase `agendando` deixa de ser monotemática — manda buscar e mostrar antes de falar de horário
+- [x] Âncora passa a citar a **hora corrente** e a proibir horário já passado, com o piso explícito
+- [x] Seção de horário comercial passa a proibir dia fora da lista e a mandar oferecer o próximo dia atendido
+- [x] Uma asserção **por cláusula** (lição `L-012`): 9 testes novos em `system-message.test.ts`
+- [x] `n8n/src/gate.mjs` e `n8n/src/phase.mjs` com **zero** linhas tocadas — a AD-018 segue intacta, a correção é toda de prompt
+- [x] Artefato regenerado e republicado com conferência estrutural antes de ativar
+- [ ] T26 repetida do zero depois desta correção (com reset antes)
+
+**Tests**: unit
+**Gate**: build
+
+**Commit**: `fix(agente): manda buscar imoveis antes de propor reuniao`
+
+---
+
 ## Phase Execution Map
 
 ```
