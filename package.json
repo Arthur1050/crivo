@@ -9,6 +9,7 @@
     "lint": "eslint",
     "db:seed": "tsx src/db/seed.ts",
     "db:create-admin": "tsx --conditions=react-server src/db/create-admin.ts",
+    "db:mint-service-key": "tsx src/db/mint-service-key.ts",
     "smoke:reset": "tsx src/db/smoke-reset.ts",
     "test": "vitest run"
   },
