@@ -263,64 +263,54 @@
 
 ## Handoff
 
-### Lote 11 — T33 publicada na T34; reset autorizado em preparação (2026-09-14)
+### Lote 11 — revisão publicada e sessão limpa (2026-09-14)
 
-- **Feature**: lote-11-catalogo-de-imoveis. Retomada pela tlc-spec-driven; planejamento preservado.
-- **Phase / Task**: Fase 6 / T33/T34 Done; reset autorizado; T26–T29 abertas.
-- **Completed**: T1–T25, T31 (`2268671`) e T32 (`6cca049`), T33 (`2245565`) e T34 (recibo §36). T30 (`6a05fa1`) é
-  histórico da primeira tentativa; a revisão consultiva T31 substitui sua regra absoluta.
-- **Última entrega**: n8n/src/system-message.mjs:134 e principal.ts:1200 aplicam
-  AJUSTE-PROATIVIDADE-PROPOSTO.md aprovado por “Aprovado”. BUSCA-05 AC19–24 e T33
-  declaradas. Evidencia.md §35 traz RED/GREEN, estrutura e mapeamento de asserções.
-- **Next step**: executar reset autorizado, n8n→CRM, conferir ausência do lead de teste
-  e preparar nova conversa. Verificar lembrete anterior para não reintroduzir a sessão.
-- **Blockers**: nenhum local. publicação e reset autorizados nesta rodada; Calendar preservado;
-  captura real pendente para T26; T27 depende dela. Não declarar lote concluído.
-- **Uncommitted files**: nenhum após commit atômico T33, com prompt/testes/workflow/gerado
-  e STATE/spec/tasks/evidencia/proposta. Commit: `fix(agente): busca alternativas e antecipa convite com imoveis legiveis`
-  (localizar hash em git log; check_commit.py exit 0).
-- **Branch**: main, HEAD ao iniciar f65bc1d; origin/main local 5275511; sem push/deploy.
+- **Feature**: lote-11-catalogo-de-imoveis; tlc-spec-driven ativa, planejamento preservado.
+- **Phase / Task**: Fase 6 / T33 e T34 entregues; T26–T29 abertas.
+- **Completed**: T1–T25; T31 (`2268671`), T32 (`6cca049`), T33 (`2245565`),
+  T34 (`d918363`). T30 (`6a05fa1`) é histórico da primeira tentativa, sem refazer a regra absoluta.
+- **Última entrega**: revisão de proatividade/convite/apresentação T33 publicada na T34.
+  Usuário autorizou publicação e reset (“Permito. Rode também o reset…”).
+  Recibos em evidencia.md §36/37; helper pontual em RESET-LEMBRETE-2026-09-14.md.
+- **Next step**: usuário iniciar nova conversa WhatsApp; conferir primeiro turno limpo,
+  expansão automática com critérios preservados, convite após ausência e legibilidade.
+  Buscar execuções e CRM, sem assumir teste local como obediência do modelo.
+- **Blockers**: nenhum para iniciar. Falta captura real para T26; T27 depende dela.
+  Calendar do teste anterior preservado, conforme nota abaixo.
+- **Uncommitted files**: nenhum após commit documental do reset; STATE, evidencia.md
+  e RESET-LEMBRETE-2026-09-14.md incluídos no mesmo commit.
+- **Branch**: main, sem push/deploy; origin/main local 5275511.
 
-**Revisão local**: expansão automática única omite só bairro flexível e mantém demais
-critérios conhecidos. Após expansão vazia, ou ausência sem poder expandir, orienta
-convite no mesmo turno. Bairro obrigatório, orçamento/quartos/tipo/cidade e critérios
-CRM não são afrouxados. Cidade confirmada sem /UF; não inferir cidade desejada de imóvel
-anterior nem enviar proximidade como bairro literal. Alternativas mostram localização
-real sem alegar distância. Imóvel em linhas separadas; pergunta em outro balão, até três.
-Cortesia/aceite/falha/opt-out/fronteiras/reunião confirmada preservados. Testes comprovam
-instruções e parâmetros, comportamento do modelo depende de nova conversa real.
+**Principal**: 0B1nqjODu7xuYYKF ativo em 833f525c-4d59-43a2-b466-8ef8268a0468.
+Antes de ativar, código normalizado/descrições/sete fromAi iguais ao gerado; hash
+93a36f5e281297925272f9799c47800e60c2fbb20037b9e2102da6ca33541689.
+Somente nove caminhos em dois nós alterados; demais nós, credenciais, grupos, settings
+preservados. 62 nós / 76 conexões / maxIterations 8; versão ativa e grafo reconsultados
+depois da publicação e depois do reset. T33 gate completo: 1.347 testes / 91 arquivos,
+656,97 s, lint/build exit 0, avisos prévios apenas. Adequação A/B/C/D local em §35.
 
-**Verificação atual**: focado RED 43 falhas / 135 PASS; GREEN 178 PASS em 2 arquivos,
-43 novos, 135 anteriores intactos. Inliner exit 0; texto gerado igual à transformação
-pura da fonte. SDK valid=true, cinco avisos prévios de Memory Manager. 62 nós / 76
-conexões / maxIterations 8, conexões iguais ao HEAD. Só jsCode do system message,
-toolDescription e sete descrições fromAi mudam. gate/phase/voice/banco/booking intactos.
-SHA-256 jsCode gerado bc190cc00a86fd61aceab2aac07369823d606efd944ff529f7b29481411f6156.
-Gate completo exit 0: 1.347 testes / 91 arquivos (656,97 s), sessão 27477; lint
-0 erros / 3 avisos prévios; build exit 0 (avisos Better Auth locais prévios).
-validate_tasks/spec e diff --check exit 0. Adequação A/B/C/D PASS local em §35.
+**Reset concluído (§37)**: crivo-smoke-reset execução 2370 success conferida,
+purgou memória triangulo:553499532444 e removeu conversa_estado id 33. Rotina original
+intacta. Lembrete anterior id 16, agenda_envios, removido por quatro condições AND
+(id/tenant/waId/leadId), preflight dryRun 2371 conferido, remoção 2372 success e get
+posterior vazio. Helper temporário d5gqmDVdZ9vLfhmg arquivado, sem publicação;
+artefato reproduzível preservado. Só depois, smoke:reset CRM exit 0 apagou 16 mensagens,
+1 conversa e lead b639766a-f273-4c30-aa39-695226141bed. SQL READ ONLY remaining=0.
+Nenhum reset extra necessário antes de o usuário iniciar a nova conversa.
 
-**Estado remoto herdado**: principal 0B1nqjODu7xuYYKF ativo na revisão T33
-833f525c-4d59-43a2-b466-8ef8268a0468 (recibo §36, T34). Último reset autorizado: execução
-2320 success, limpeza n8n→CRM confirmada (§33). Não repetir reset automaticamente.
+**Histórico e Calendar**: segunda conversa §34 tinha 8 turnos, IM-0001 / R$ 380.000,00,
+ausência correta, máximo 6 runs do modelo, CRM qualificado_agendado/André e Calendar
+success 2360. Google reconectado comprovado pela disponibilidade + criação reais.
+Agora CRM/memória daquela sessão foram removidos por autorização; evidência histórica
+preservada. Evento opblu5rf7n0sml8p3c7ue3gpe4 / Meet kgb-upvk-ndo, 15/09/2026 15h
+Brasília, continua no Calendar. Lembrete n8n id 16 não existe mais. Cancelamento Calendar
+não solicitado nem feito; não assumir esse horário livre. Sem mensagens externas.
 
-**Segunda conversa (§34)**: 8 turnos / 16 mensagens, lead novo
-b639766a-f273-4c30-aa39-695226141bed. Execuções 2321, 2327, 2335, 2342, 2349, 2354,
-2359, 2365 e filha 2360 confirmadas por get_execution. IM-0001 / R$ 380.000,00 e
-ausência corretos; máximo seis runs do modelo, sem estouro. CRM qualificado_agendado,
-André atribuído, 15/09/2026 15h Brasília. Calendar reconectado comprovado em availability
-+ criação Meet. Evento opblu5rf7n0sml8p3c7ue3gpe4, Meet kgb-upvk-ndo; lembrete id 16
-continuam existentes. Não cancelar/resetar Calendar sem autorização específica.
-Qualificação permaneceu nula, dívida herdada. Falta captura real: T26 não é Done;
-T27 ainda depende dela, apesar do desfecho de reunião comprovado nesta conversa.
-Histórico da primeira conversa/falha OAuth permanece em evidencia.md §26.1/31/34.
-
-**Restante**: preparar reset autorizado; nova prova real para os três refinamentos;
-T26 captura/gate, T27 regressão, T28 supersessão parcial VOZ-02, T29 rastreabilidade
-completa/INDEX/roadmap/handoff/revisão de lições. Verifier independente obrigatório
-após as tasks finais, com as oito mutações do design e validate_state.py exit 0.
-Não há validation.md. Lições: 22 confirmadas carregadas; promoção/exclusão humana
-AD-028, trava prune_requires_confirmation mantida.
+**Restante**: nova prova real dos três refinamentos; T26 captura/gate e T27 regressão,
+T28 supersessão VOZ-02, T29 rastreabilidade completa/INDEX/roadmap/handoff/revisão de
+lições. Verifier independente obrigatório após as tasks finais, oito mutações do design
++ validate_state.py exit 0. Não há validation.md, lote ainda não concluído.
+Lições: 22 confirmadas, promoção/exclusão humana AD-028; trava prune_requires_confirmation.
 
 **Pendências herdadas que permanecem**:
 - Remarcação impossível após `qualificado_agendado`; requer contrato, id de evento e
@@ -338,9 +328,3 @@ AD-028, trava prune_requires_confirmation mantida.
 - Switch para permitir exibição do catálogo (ligado por padrão) e antecedência mínima
   de agendamento em dias: deferidos pelo usuário, registrados em `context.md`.
 - Upload/storage/preview ficam no L12; vitrine pública separada, no L16 (AD-025).
-
-**T34**: autorização “Permito”, publicada e ativa conferida. Código e descrições/argumentos
-iguais ao gerado antes de ativar; hash normalizado 93a36f5e281297925272f9799c47800e60c2fbb20037b9e2102da6ca33541689.
-Somente nove caminhos em dois nós mudaram, 62/76/maxIterations 8 e demais definições
-preservados. Commit docs(specs): registra publicacao da revisao de proatividade.
-Reset ainda em preparação; não afirmar limpeza concluída antes de conferir os dois lados.

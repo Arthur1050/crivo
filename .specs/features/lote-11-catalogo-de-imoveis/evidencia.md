@@ -732,3 +732,68 @@ superfície, ativo/grafo, recibo/validadores). Sem código, novo teste ou efeito
 reivindicado. Gate validate_tasks/spec e diff --check exit 0. T34 marcada Done antes
 do commit atômico docs(specs): registra publicacao da revisao de proatividade.
 T26–T29 e Verifier final permanecem pendentes. Reset autorizado será registrado em §37.
+
+
+## 37. Reset autorizado após publicação da T33 (2026-09-14)
+
+**PASS preparação da sessão**. Usuário autorizou “Rode também o reset para que eu
+inicie uma nova sessão”. Alvo homologado fixo: tenant triangulo / waId 553499532444.
+Principal publicado na T34, versão 833f525c-4d59-43a2-b466-8ef8268a0468.
+Nenhuma mensagem WhatsApp/e-mail, reseed, booking ou cancelamento Calendar enviado.
+
+**Antes de limpar**: SQL READ ONLY confirmou lead
+b639766a-f273-4c30-aa39-695226141bed, qualificado_agendado, 1 conversa / 16 mensagens,
+meeting_at=2026-09-15T18:00:00Z. get_execution 2360 novamente conferiu que o lembrete
+id 16 de agenda_envios pertence a esse lead/tenant/waId, Meet kgb-upvk-ndo.
+Scheduler reconsulta/cria lead pelo waId (scheduler.ts:172/192/203): deixar essa linha
+após apagar o CRM permitiria recriar a sessão e enviar link do teste anterior.
+Foi removido somente esse resíduo associado, como parte do reset autorizado.
+
+**n8n, rotina existente**: execute_workflow manual no crivo-smoke-reset
+rgf3t1cVsd2q0X0f, execução **2370**, confirmada por get_execution, success,
+2026-09-14T17:52:03.181Z–17:52:03.255Z. Memory Manager success=true para
+triangulo:553499532444. deleteRows removeu conversa_estado id 33, filtrado por
+triangulo AND 553499532444, incluindo campos perguntados/aberturas/fase antiga.
+A rotina não foi alterada: comparação posterior dos nós e conexões com baseline igual.
+Não afirmar leitura SQL direta do Postgres n8n; prova é a execução de purga bem-sucedida.
+
+**Resíduo de lembrete**: como MCP não apaga linha de Data Table diretamente, foi usado
+helper administrativo temporário d5gqmDVdZ9vLfhmg, código reproduzível em
+RESET-LEMBRETE-2026-09-14.md. Tipos/get_node_types, SDK, data_persistence e
+validate_workflow (valid=true, 3 nós, sem avisos) consultados antes da criação.
+Tabela agenda_envios m83dxX8YZYg1NDYq e colunas reais obtidas por search_data_tables.
+Nenhum workflow operacional foi editado para esta operação.
+
+Preflight **2371** manual success, get_execution confirmado: dryRun=true devolveu
+uma linha before, id=16, tenantSlug=triangulo, waId=553499532444,
+leadId=b639766a-f273-4c30-aa39-695226141bed, meetLink=https://meet.google.com/kgb-upvk-ndo.
+Cada valor conferido separadamente por assert; exactly one before row. A leitura
+seguinte ainda devolveu a linha (executada duas vezes, pois dry run emite before/after).
+Depois, somente options.dryRun=false alterado por updateNodeParameters sem replace.
+Execução manual **2372**, confirmada por get_execution, success,
+2026-09-14T17:53:22.743Z–17:53:22.792Z. Removida somente linha 16 pelas quatro
+condições AND (id + tenant + waId + leadId). get posterior retornou main=[[]], assert
+rows.length===0 passou. archive_workflow retornou archived=true para o helper.
+Ele não foi publicado; consulta posterior não o expõe após arquivo. Código/evidência
+preservados antes do descarte, sem criar nova rotina permanente ou parser.
+
+**CRM, após n8n**: npm run smoke:reset exit 0, alvo fixo, apagou o lead homologado,
+**16 mensagens / 1 conversa**. Texto genérico sobre faltar n8n não é pendência:
+o lado n8n já tinha concluído. SQL independente em transação READ ONLY confirmou
+remaining=0, com assert. Sem tocar outros leads ou inventário.
+
+**Conferência final**: get_workflow_details do principal confirmou active=true,
+activeVersionId=833f525c-4d59-43a2-b466-8ef8268a0468; nós/conexões iguais à versão
+publicada antes do reset. Usuário pode iniciar nova conversa; seu primeiro turno
+confirmará em campo a sessão inicial. T26–T29 continuam abertas e precisam da captura,
+prova real e fechamento/Verifier; reset não aprova comportamento de prompt.
+
+**Calendar preservado**: evento opblu5rf7n0sml8p3c7ue3gpe4, 15/09/2026 às 15h Brasília,
+continua no Google Calendar; nenhum cancelamento solicitado/executado nesta rodada.
+O lembrete n8n desse evento foi removido para não interferir na sessão nova. Não
+reutilizar esse horário presumindo agenda livre. Cancelamento é uma ação separada.
+
+**Gate documental**: validate_tasks.py, validate_spec.py, check_commit.py e
+ git diff --check exit 0. Sem código de produto novo ou repetição da suíte completa,
+que passou na T33. Commit separado do recibo da publicação:
+docs(specs): registra reset autorizado apos revisao de proatividade.
