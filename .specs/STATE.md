@@ -274,9 +274,9 @@
 - **In-progress**: `evidencia.md` §26/26.1 registra leitura da conversa/execuções;
   §31 registra mudança local e asserções; §32 registra hash e publicação autorizada. `tasks.md` T31 e `spec.md`
   BUSCA-05 AC13–18 refletem aprovação. Gate local passou: 1.304 testes / 91 arquivos.
-- **Next step**: usuário iniciar nova conversa no WhatsApp e depois conferir mensagens,
-  tools, CRM e Calendar para repetir T26/T27. Reset autorizado concluído em 2026-09-14
-  (execução n8n 2320 + CRM limpo); evidencia.md §33.
+- **Next step**: usuário revisar AJUSTE-PROATIVIDADE-PROPOSTO.md; depois implementar
+  e verificar o ajuste aprovado. T26 ainda precisa de captura real, embora referência,
+  preço, ausência e chamadas do modelo estejam comprovados na segunda conversa (§34).
 - **Branch**: `main`; HEAD de implementação ao iniciar `6a05fa1`, `origin/main`
   local `5275511`. T32 alterou/publicou somente o principal; reset posterior autorizado.
   Nenhum push/deploy.
@@ -300,8 +300,8 @@ antes de ativar: `c7a1ce26e192ba382ac56b14605f939334fecaf3c0e40a84d36f7d4e5b6a4e
 (jsCode com CRLF normalizado). Nova leitura confirmou código ativo igual, 62/76,
 settings/modelo/grupos e demais parâmetros preservados; recibo em evidencia.md §32.
 
-**Credencial**: usuário relatou ter resolvido `Google Calendar account` (id
-`2kXea9a4br8Gn3pp`); funcionamento ainda precisa ser confirmado no agendamento real.
+**Credencial**: Google Calendar reconectado e comprovado na execução 2360 success
+(segunda conversa): availability e criação de evento Meet bem-sucedidas.
 Execuções `2305` e `2308` falharam em `Google Calendar: availability`, antes de evento
 ou atualização CRM. Causa específica de expiração/revogação não comprovada. A T31
 corrige instruções de não confirmar/prometer depois, mas não conserta OAuth.
@@ -360,3 +360,22 @@ remaining=0. Principal ativo na revisão fd7faf28-c070-4585-a22d-c322f1e1765d.
 A conversa de §26.1 permanece documentada como evidência histórica; o próximo lead
 será novo. Usuário pode iniciar. Nenhum booking executado para testar a credencial;
 T26/T27 seguem abertas. Commit documental do reset, sem código ou novos testes.
+
+**Última conversa investigada (2026-09-14, evidencia.md §34)**: oito turnos / 16
+mensagens; lead novo b639766a-f273-4c30-aa39-695226141bed. Execuções 2321, 2327, 2335,
+2342, 2349, 2354, 2359, 2365 e filha 2360 confirmadas por get_execution. Referência
+IM-0001 / R$ 380.000,00 e ausência de casa no Abadia chegaram corretamente. Máximo
+seis runs do modelo por turno (teto oito preservado), sem estouro. CRM
+qualificado_agendado, André atribuído, 15/09/2026 às 15h Brasília. Evento Calendar
+opblu5rf7n0sml8p3c7ue3gpe4, Meet kgb-upvk-ndo; lembrete agenda_envios id 16 existente.
+Não cancelar/resetar sem autorização específica. Campos de qualificação continuam
+nulos (dívida herdada). Falta captura real para T26; T27 depende dela, sem fechamento.
+
+**Refinamento solicitado**: busca automática de alternativas, convite mais cedo e
+apresentação em linhas curtas. Proposta concreta em AJUSTE-PROATIVIDADE-PROPOSTO.md,
+aguardando aprovação local. Tool atual só compara bairro/cidade por igualdade:
+2349 mandou bairro literal próximo do Abadia, e 2342 cidade Uberlândia/MG não informada.
+Proposta preserva critérios e amplia apenas bairro flexível, sem fingir geografia;
+sem resultado após uma expansão já oferece reunião, sem novas voltas de refinamento.
+Nenhum código/teste/publicação/reset alterado nesta investigação. Evidência, proposta,
+tasks (cláusulas comprovadas, sem Done) e Handoff são os arquivos documentais desta rodada.

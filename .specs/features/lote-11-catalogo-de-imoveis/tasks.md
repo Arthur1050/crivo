@@ -800,11 +800,11 @@ a repetição da T26 depois do reset continua pendente antes de seguir para T27.
 - Skill: NONE
 
 **Done when**:
-- [ ] Imóvel citado ao lead tem referência e preço batendo com a linha do banco (PROVA-02 AC3)
-- [ ] Critério sem resultado produz declaração de ausência, sem nenhum imóvel citado (PROVA-02 AC4)
-- [ ] Ids de execução conferidos por `get_execution` antes de citados — nunca de memória (lição `L-011`)
+- [x] Imóvel citado ao lead tem referência e preço batendo com a linha do banco (PROVA-02 AC3) — segunda conversa, evidencia.md §34, execução 2327
+- [x] Critério sem resultado produz declaração de ausência, sem nenhum imóvel citado (PROVA-02 AC4) — chamada corrigida de 2335, evidencia.md §34
+- [x] Ids de execução conferidos por `get_execution` antes de citados — nunca de memória (lição `L-011`) — oito turnos e filha 2360, evidencia.md §34
 - [ ] Captura da conversa registrada
-- [ ] Iterações do turno observadas e registradas — se `maxIterations: 8` estourar, abrir task de correção dentro do lote (risco nomeado no `design.md`)
+- [x] Iterações do turno observadas e registradas — máximo seis chamadas ao modelo, runs de OpenAI Chat Model conferidos; teto oito não estourou (evidencia.md §34)
 - [ ] Gate build passa
 
 **Tests**: none

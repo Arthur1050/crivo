@@ -428,3 +428,78 @@ Ambiente preparado para o usuário iniciar a conversa. A reconexão da credencia
 foi relatada pelo usuário; nenhum agendamento foi disparado para confirmá-la nesta
 limpeza. Validação real de Calendar, referência/preço, captura e iterações ainda
 pendentes. T26/T27 seguem abertas.
+
+## 34. Segunda conversa após T31 — inspeção de 2026-09-14
+
+Usuário gostou do atendimento e pediu busca alternativa automática, convite mais
+cedo quando não houver opção e apresentação legível do imóvel. Investigação por
+consulta SQL READ ONLY e MCP, sem mudança de código/publicação/reset/Calendar.
+Proposta concreta: `AJUSTE-PROATIVIDADE-PROPOSTO.md`, aguardando revisão do usuário.
+
+**Sessão**: reset anterior 2320 confirmado (§33). Lead novo
+`b639766a-f273-4c30-aa39-695226141bed`; oito turnos, **16 mensagens** no CRM,
+14/09/2026 de 17:08:28Z a 17:15:08Z. Principal reconsultado, ativo em
+`fd7faf28-c070-4585-a22d-c322f1e1765d`, maxIterations 8. Todos os ids abaixo
+confirmados individualmente por `get_execution`; leituras adicionais filtradas
+para `OpenAI Chat Model` permitem medir chamadas do modelo, não só tools.
+
+| Turno / execução | Lead / resultado enviado ao WhatsApp | Tool steps | Chamadas do modelo |
+| --- | --- | --- | --- |
+| 1 / 2321 | “Boa tarde! Como vai?” → respondeu cortesia, identificou Lucas/Triângulo e convidou a contar o que procura | 1 | 2 |
+| 2 / 2327 | Bairro Abadia → IM-0001, apartamento novo, Uberlândia/MG, 2 quartos, 2 banheiros, 1 vaga, 72 m², R$ 380.000,00; perguntou casa/apartamento | 5 | 6 |
+| 3 / 2335 | Preferência por casa → busca casa + Abadia vazia; declarou ausência e pediu orçamento/quartos | 5 | 6 |
+| 4 / 2342 | 2 quartos / até 200k → busca vazia; perguntou se podia procurar próximos ou aumentar valor | 3 | 4 |
+| 5 / 2349 | “Tem algo próximo?” → buscou bairro literal “próximo do Abadia”, vazio; sugeriu aumentar teto ou 1 quarto | 2 | 3 |
+| 6 / 2354 | “Não tenho interesse” → primeiro convite de reunião, hoje 15:30 ou amanhã mesmo horário | 1 | 2 |
+| 7 / 2359 | “Prefiro amanhã as 15h” → agendar_reuniao para 15/09 às 15h; confirmou André e mandou link Meet | 2 | 3 |
+| 8 / 2365 | “Obrigado” → despedida curta, sem nova tool de booking | 1 | 2 |
+
+**Positivo real**: 2327 buscar_imoveis com bairro=Abadia retornou IM-0001 e os
+mesmos campos informados na mensagem CRM. Consulta READ ONLY das propriedades
+disponíveis/publicadas de triangulo retornou somente essa unidade: price_cents
+38000000, área 72, 2/2/1, tipo apartamento, modalidade novo, bairro Abadia,
+Uberlândia/MG. Referência **e** preço desta vez enviados corretamente. PROVA-02 AC3
+comprovada nesta sessão; nada de endereço exato ou captador na mensagem.
+
+**Negativo real**: a primeira chamada 2335 enviou modalidade="" e outros
+preenchimentos desconhecidos e recebeu 400 payload-invalido. O agente corrigiu para
+tipo=casa/bairro=Abadia, recebeu imoveis=[]/total=0 e declarou ausência, sem citar
+imóvel nesse turno. PROVA-02 AC4 comprovada pela chamada corrigida e mensagem enviada;
+o 400 não é prova de ausência. Os únicos imóveis visíveis conferidos não incluem casa.
+
+**Causa das voltas**: 2335 já tinha ausência válida de casa nesse bairro; acrescentar
+preço/quartos não amplia esse conjunto. 2342 ainda incluiu cidade="Uberlândia/MG",
+embora o lead não tivesse informado cidade. `properties.ts:82` compara cidade
+normalizada por igualdade, não separa UF nem interpreta proximidade. 2349 usou
+bairro="próximo do Abadia"; `properties.ts:80` compara nome normalizado por igualdade.
+Lista vazia dessa query não prova ausência em bairros próximos. A tool não possui
+distância/adjacência; a proposta amplia para outros bairros sem afirmar proximidade
+não comprovada, preservando critérios, sem pedir permissão para mera consulta.
+
+**Latência e teto**: durações totais 20,053 / 26,436 / 26,474 / 19,672 / 17,738 /
+16,331 / 18,890 / 15,562 s, incluindo debounce de 10 s. O maior consumo foi **6
+chamadas ao modelo**, medido pelos seis runs de OpenAI Chat Model em 2327 e 2335;
+todos success. Não houve estouro do teto oito. 2327 recusou três vezes a mesma
+abertura “Boa!” antes de enviar; 2335 recusou “Boa” e “Show”, além do retry do 400;
+2342 recusou “Boa” uma vez. São custos reais da dívida tom × voice já registrada,
+sem alteração da barreira nesta investigação.
+
+**Agendamento confirmado**: execução filha **2360**, conferida por get_execution,
+status success. Calendar availability available=true; PATCH CRM confirmado;
+Google Calendar criar evento (Meet) success, evento `opblu5rf7n0sml8p3c7ue3gpe4`,
+15/09/2026 15:00–15:30, America/Sao_Paulo,
+Meet `https://meet.google.com/kgb-upvk-ndo`; agenda_envios registrou lembrete id 16.
+Resposta da tool: ok=true, crmAtualizado=true, eventoCriado=true e responsável
+André Luiz Martins. Consulta SQL independente: qualificado_agendado,
+meeting_at=2026-09-15T18:00:00Z, assigned_user_id=3ea96a1f-3fb4-436b-a4ab-862dbf36f394,
+assigned_name=André Luiz Martins. Horário concreto do próprio lead precedeu a chamada.
+Reconexão da credencial comprovada por disponibilidade e criação reais, não só relato.
+
+**Limites / dívidas**: modality, region, property_type e budget_cents permanecem
+nulos no lead; nenhuma registrar_qualificacao ocorreu nessa conversa. É o achado
+herdado do Handoff, mantido separado do desfecho de reunião. A captura real ainda
+não foi coletada; transcrição/outputs não são screenshot. T26 não é Done e T27
+mantém dependência da T26, embora desfecho/aceite/evento estejam comprovados.
+Nenhum novo gate de código rodado: código inalterado desde T31, cujo gate completo
+passou com 1.304 testes. Novo ajuste e seu gate só serão executados após aprovação.
+Evento e lembrete reais continuam existentes; não foram cancelados nesta inspeção.
