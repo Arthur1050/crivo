@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { runDailyMaintenance } from "../../../../src/server/integration/lgpd";
 import { problem } from "../../../../src/server/integration/problem";
 
@@ -23,7 +24,16 @@ async function handleExpireDocuments(request: Request): Promise<Response> {
   const header = request.headers.get("authorization");
   const provided = /^Bearer\s+(.+)$/i.exec(header ?? "")?.[1]?.trim();
 
-  if (!secret || !provided || provided !== secret) {
+  if (!secret || !provided) {
+    return problem(401, "nao-autenticado", "Secret do cron ausente ou inválido.");
+  }
+
+  const providedBuffer = Buffer.from(provided);
+  const secretBuffer = Buffer.from(secret);
+
+  const isInvalid = providedBuffer.length !== secretBuffer.length || !timingSafeEqual(providedBuffer, secretBuffer);
+
+  if (isInvalid) {
     return problem(401, "nao-autenticado", "Secret do cron ausente ou inválido.");
   }
 
