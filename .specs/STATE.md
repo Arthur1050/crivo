@@ -263,19 +263,18 @@
 
 ## Handoff
 
-### Lote 11 — T33 implementada e verificada localmente (2026-09-14)
+### Lote 11 — T33 publicada na T34; reset autorizado em preparação (2026-09-14)
 
 - **Feature**: lote-11-catalogo-de-imoveis. Retomada pela tlc-spec-driven; planejamento preservado.
-- **Phase / Task**: Fase 6 / T33 Done local; publicação pendente; T26–T29 abertas.
-- **Completed**: T1–T25, T31 (`2268671`) e T32 (`6cca049`), T33 (commit local abaixo). T30 (`6a05fa1`) é
+- **Phase / Task**: Fase 6 / T33/T34 Done; reset autorizado; T26–T29 abertas.
+- **Completed**: T1–T25, T31 (`2268671`) e T32 (`6cca049`), T33 (`2245565`) e T34 (recibo §36). T30 (`6a05fa1`) é
   histórico da primeira tentativa; a revisão consultiva T31 substitui sua regra absoluta.
 - **Última entrega**: n8n/src/system-message.mjs:134 e principal.ts:1200 aplicam
   AJUSTE-PROATIVIDADE-PROPOSTO.md aprovado por “Aprovado”. BUSCA-05 AC19–24 e T33
   declaradas. Evidencia.md §35 traz RED/GREEN, estrutura e mapeamento de asserções.
-- **Next step**: solicitar autorização específica para publicar somente o principal
-  (system message e descrições/argumentos da busca); conferir versão salva antes
-  de ativar e depois fazer nova prova real quando a sessão estiver preparada com autorização.
-- **Blockers**: nenhum local. Publicação/reset/Calendar não aprovados nesta rodada;
+- **Next step**: executar reset autorizado, n8n→CRM, conferir ausência do lead de teste
+  e preparar nova conversa. Verificar lembrete anterior para não reintroduzir a sessão.
+- **Blockers**: nenhum local. publicação e reset autorizados nesta rodada; Calendar preservado;
   captura real pendente para T26; T27 depende dela. Não declarar lote concluído.
 - **Uncommitted files**: nenhum após commit atômico T33, com prompt/testes/workflow/gerado
   e STATE/spec/tasks/evidencia/proposta. Commit: `fix(agente): busca alternativas e antecipa convite com imoveis legiveis`
@@ -301,8 +300,8 @@ Gate completo exit 0: 1.347 testes / 91 arquivos (656,97 s), sessão 27477; lint
 0 erros / 3 avisos prévios; build exit 0 (avisos Better Auth locais prévios).
 validate_tasks/spec e diff --check exit 0. Adequação A/B/C/D PASS local em §35.
 
-**Estado remoto herdado**: principal 0B1nqjODu7xuYYKF ativo na revisão T31
-fd7faf28-c070-4585-a22d-c322f1e1765d (recibo §32). Último reset autorizado: execução
+**Estado remoto herdado**: principal 0B1nqjODu7xuYYKF ativo na revisão T33
+833f525c-4d59-43a2-b466-8ef8268a0468 (recibo §36, T34). Último reset autorizado: execução
 2320 success, limpeza n8n→CRM confirmada (§33). Não repetir reset automaticamente.
 
 **Segunda conversa (§34)**: 8 turnos / 16 mensagens, lead novo
@@ -316,7 +315,7 @@ Qualificação permaneceu nula, dívida herdada. Falta captura real: T26 não é
 T27 ainda depende dela, apesar do desfecho de reunião comprovado nesta conversa.
 Histórico da primeira conversa/falha OAuth permanece em evidencia.md §26.1/31/34.
 
-**Restante**: publicar T33 após autorização; nova prova real para os três refinamentos;
+**Restante**: preparar reset autorizado; nova prova real para os três refinamentos;
 T26 captura/gate, T27 regressão, T28 supersessão parcial VOZ-02, T29 rastreabilidade
 completa/INDEX/roadmap/handoff/revisão de lições. Verifier independente obrigatório
 após as tasks finais, com as oito mutações do design e validate_state.py exit 0.
@@ -339,3 +338,9 @@ AD-028, trava prune_requires_confirmation mantida.
 - Switch para permitir exibição do catálogo (ligado por padrão) e antecedência mínima
   de agendamento em dias: deferidos pelo usuário, registrados em `context.md`.
 - Upload/storage/preview ficam no L12; vitrine pública separada, no L16 (AD-025).
+
+**T34**: autorização “Permito”, publicada e ativa conferida. Código e descrições/argumentos
+iguais ao gerado antes de ativar; hash normalizado 93a36f5e281297925272f9799c47800e60c2fbb20037b9e2102da6ca33541689.
+Somente nove caminhos em dois nós mudaram, 62/76/maxIterations 8 e demais definições
+preservados. Commit docs(specs): registra publicacao da revisao de proatividade.
+Reset ainda em preparação; não afirmar limpeza concluída antes de conferir os dois lados.

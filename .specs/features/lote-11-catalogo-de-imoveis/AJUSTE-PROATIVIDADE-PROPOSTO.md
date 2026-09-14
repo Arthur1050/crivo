@@ -1,6 +1,6 @@
 # Proatividade e apresentação após a segunda conversa — 2026-09-14
 
-**Status**: aprovada pelo usuário (“Aprovado”); implementada e verificada localmente na T33. Publicação pendente de autorização específica.
+**Status**: aprovada pelo usuário (“Aprovado”); implementada e verificada localmente na T33. Publicada na T34 após autorização específica (“Permito”).
 **Escopo**: refinamento do lote-11, mantendo o planejamento e a revisão T31.
 **Evidência**: evidencia.md §34; oito turnos conferidos no CRM e por get_execution.
 
@@ -146,3 +146,12 @@ instruções aprovadas; nenhum teste anterior foi alterado/removido/pulado. Graf
 62/76/maxIterations 8 preservado; sem mudanças em banco, booking, gate/phase/voice.
 Detalhes, mapeamento e recibos locais em evidencia.md §35. Publicação e nova prova
 real ainda pendentes. Commit atômico: fix(agente): busca alternativas e antecipa convite com imoveis legiveis.
+
+## Publicação — T34
+
+Principal 0B1nqjODu7xuYYKF ativo na versão 833f525c-4d59-43a2-b466-8ef8268a0468.
+Hash do jsCode gerado/salvo conferido antes de ativar, com CRLF normalizado para LF:
+93a36f5e281297925272f9799c47800e60c2fbb20037b9e2102da6ca33541689.
+Somente jsCode e descrições/argumentos da busca alterados; grafo 62/76, teto oito,
+modelo, memória, credenciais, grupos e settings preservados. Recibo em evidencia.md §36.
+Usuário também autorizou reset da sessão, executado como preparação separada.

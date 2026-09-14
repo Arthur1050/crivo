@@ -101,7 +101,7 @@ T21 → T22 → T23 → T24
 ```
 T25 → T26 → T27 → T28 → T29
 T26 → T30
-T30 → T31 → T32 → T33
+T30 → T31 → T32 → T33 → T34
 ```
 
 T30 nasceu da primeira tentativa da T26. A correção já foi commitada e publicada;
@@ -1024,6 +1024,36 @@ Verifier final permanecem pendentes; testes de instruções não aprovam comport
 
 ---
 
+### T34: Publicar a revisão de proatividade aprovada no principal
+
+**What**: Atualizar jsCode do system message e apenas descrições/argumentos de buscar_imoveis da T33; conferir artefato antes de ativar e versão ativa depois.
+**Where**: tasks.md, spec.md, evidencia.md, AJUSTE-PROATIVIDADE-PROPOSTO.md e STATE.md.
+**Depends on**: T33
+**Reuses**: Artefato e gate completo do commit 2245565; updateNodeParameters sem replace.
+**Requirement**: BUSCA-04 AC12; BUSCA-05 AC19–24.
+**Approval**: Usuário autorizou especificamente publicação e reset (“Permito. Rode também o reset para que eu inicie uma nova sessão”, 2026-09-14).
+
+**Tools**:
+- MCP: n8n (validate_workflow, update_workflow, get_workflow_details, publish_workflow)
+- Skill: tlc-spec-driven
+
+**Done when**:
+- [x] Hash do jsCode salvo igual ao gerado antes de ativar; descrição e sete argumentos iguais ao artefato.
+- [x] Somente parâmetros dos dois nós autorizados mudam; modelo, memória, credenciais, grupos, settings e conexões preservados.
+- [x] Versão ativa conferida com 62 nós / 76 conexões / maxIterations 8.
+- [x] Recibo/handoff e validadores estruturais registram publicação sem aprovar comportamento real ou encerrar o lote.
+
+**Tests**: none
+**Gate**: quick
+**Status**: ✅ Done
+**Commit**: `docs(specs): registra publicacao da revisao de proatividade`
+
+Gate de publicação: validação SDK, comparação do artefato/instância antes e depois,
+validate_tasks/spec e diff --check. Sem código novo; 1.347 testes/lint/build da T33
+já passaram. Reset é preparação de sessão separada, registrada após a publicação.
+
+---
+
 ## Phase Execution Map
 
 ```
@@ -1036,7 +1066,7 @@ Fase 4:  T15 → T16 → T17 → T18 → T19 → T20
 Fase 5:  T21 → T22 → T23 → T24
 Fase 6:  T25 → T26 → T27 → T28 → T29
 Fix da primeira tentativa: T26 → T30
-Revisão aprovada da conversa seguinte: T30 → T31 → T32 → T33
+Revisão aprovada da conversa seguinte: T30 → T31 → T32 → T33 → T34
 ```
 
 Execução estritamente sequencial — não há paralelismo dentro de fase.
@@ -1080,6 +1110,7 @@ Execução estritamente sequencial — não há paralelismo dentro de fase.
 | T31 | Revisão de prompt aprovada após a conversa real | ✅ Granular |
 | T32 | Publicação isolada e recibo da revisão aprovada | ✅ Granular |
 | T33 | Refinamento coeso das instruções após segunda conversa | ✅ Granular |
+| T34 | Publicação isolada da revisão de proatividade | ✅ Granular |
 
 ---
 
@@ -1120,6 +1151,7 @@ Execução estritamente sequencial — não há paralelismo dentro de fase.
 | T31 | T30 (implementação anterior) | T30 → T31 | ✅ Match |
 | T32 | T31 | T31 → T32 | ✅ Match |
 | T33 | T32 | T32 → T33 | ✅ Match |
+| T34 | T33 | T33 → T34 | ✅ Match |
 
 Nenhuma dependência aponta para fase posterior.
 
@@ -1162,6 +1194,7 @@ Nenhuma dependência aponta para fase posterior.
 | T31 | Módulo puro n8n | unit | unit | ✅ OK |
 | T32 | nenhuma (publicação/recibo) | — | none | ✅ OK |
 | T33 | Módulo puro e descrição de tool n8n | unit | unit | ✅ OK |
+| T34 | nenhuma (publicação/recibo) | — | none | ✅ OK |
 
 Nenhum `Tests: none` é deferimento de teste: cada um cai numa camada que a matriz marca `none`
 (componente React, schema, artefato gerado, documentação) ou numa task que não cria código.

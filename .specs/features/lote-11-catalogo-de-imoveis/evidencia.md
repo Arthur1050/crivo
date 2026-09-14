@@ -697,3 +697,38 @@ atômico de prompt/testes/workflow/gerado/registros. Decisions do STATE preserva
 integralmente contra HEAD. Mensagem validada por check_commit.py:
 fix(agente): busca alternativas e antecipa convite com imoveis legiveis.
 Publicação pendente; T26–T29 e validation.md não fechados por este PASS local.
+
+
+## 36. T34 — publicação autorizada da revisão de proatividade (2026-09-14)
+
+**PASS publicação**. Autorização: “Permito. Rode também o reset para que eu inicie
+uma nova sessão”. Base: commit 2245565, 1.347 testes / 91 arquivos, lint/build exit 0.
+Sem alteração de código nesta entrega; gate completo anterior não repetido.
+
+Principal 0B1nqjODu7xuYYKF, versão anterior draft/ativo coincidentes
+fd7faf28-c070-4585-a22d-c322f1e1765d. validate_workflow novamente valid=true,
+62 nós, cinco avisos prévios de Memory Manager.
+Duas operações updateNodeParameters, replace=false: jsCode em Code: montar system
+message e marcar campo perguntado; toolDescription e queryParameters de buscar_imoveis.
+Sem remover/recriar nó, mudar credencial ou alterar outro workflow. O aviso extra de
+builtInTools no update é herdado: definição inteira do modelo ficou idêntica à anterior.
+
+**Antes de ativar**: get_workflow_details confirmou novo draft
+833f525c-4d59-43a2-b466-8ef8268a0468, ativo ainda na versão anterior. Assert do código
+normalizado remoto == gerado passou. SHA-256, CRLF→LF:
+93a36f5e281297925272f9799c47800e60c2fbb20037b9e2102da6ca33541689.
+Hash bruto local bc190cc00a86fd61aceab2aac07369823d606efd944ff529f7b29481411f6156,
+igual ao registrado na T33. Assert toolDescription e queryParameters == gerados passou.
+Diff dos 62 nós: exatamente nove caminhos, jsCode, toolDescription e sete fromAi.value.
+Assert changedPaths == allowedPaths, length=9; demais nós inteiros, conexões, grupos e
+settings iguais ao baseline. Assert nodes=62, edges=76, maxIterations=8.
+
+**Ativação**: publish_workflow com versionId explícito retornou success=true.
+Nova leitura confirmou active=true e activeVersionId=833f525c-4d59-43a2-b466-8ef8268a0468;
+assert activeVersion.nodes == draft.nodes e connections == draft.connections passou.
+
+**Adequação local da task**: cada Done when mapeia aos asserts acima (artefato,
+superfície, ativo/grafo, recibo/validadores). Sem código, novo teste ou efeito de modelo
+reivindicado. Gate validate_tasks/spec e diff --check exit 0. T34 marcada Done antes
+do commit atômico docs(specs): registra publicacao da revisao de proatividade.
+T26–T29 e Verifier final permanecem pendentes. Reset autorizado será registrado em §37.
