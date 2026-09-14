@@ -101,7 +101,7 @@ T21 → T22 → T23 → T24
 ```
 T25 → T26 → T27 → T28 → T29
 T26 → T30
-T30 → T31
+T30 → T31 → T32
 ```
 
 T30 nasceu da primeira tentativa da T26. A correção já foi commitada e publicada;
@@ -953,11 +953,41 @@ a repetição da T26 depois do reset continua pendente antes de seguir para T27.
 
 **Tests**: unit
 **Gate**: build
-**Status**: ✅ Done (implementação local; publicação pendente)
+**Status**: ✅ Done (implementação local; publicação entregue na T32)
 **Commit**: `fix(agente): flexibiliza convite e responde cortesia sem antecipar agendamento`
 
 Publicação e nova prova real não são aprovadas por este gate local. T26/T27 e o
 Verifier final do lote permanecem pendentes.
+
+---
+
+### T32: Publicar a revisão consultiva aprovada no principal
+
+**What**: Atualizar apenas jsCode do nó de system message com o artefato da T31, conferir hash antes de publicar e verificar a versão ativa.
+**Where**: `.specs/features/lote-11-catalogo-de-imoveis/evidencia.md` (recibo), tasks.md, AJUSTE-PROMPT-PROPOSTO.md e STATE.md.
+**Depends on**: T31
+**Reuses**: Artefato e gate completo do commit 2268671; publicação isolada por updateNodeParameters sem replace.
+**Requirement**: BUSCA-04 AC12 e revisão BUSCA-05 AC13–18.
+**Approval**: Usuário autorizou especificamente a publicação (“Pode publicar”, 2026-09-14).
+
+**Tools**:
+- MCP: `n8n` (validate_workflow, update_workflow, get_workflow_details, publish_workflow)
+- Skill: tlc-spec-driven
+
+**Done when**:
+- [x] Código salvo tem SHA-256 igual ao gerado antes de ativar; somente jsCode do nó autorizado mudou.
+- [x] Versão publicada ativa conferida, com 62 nós, 76 conexões e maxIterations 8 preservados.
+- [x] Recibo e handoff registram publicação, sem aprovar T26/T27 ou efetuar reset/booking/push/deploy.
+- [x] Validadores estruturais e diff --check passam; gate completo anterior não repetido, pois não há mudança de código.
+
+**Tests**: none
+**Gate**: quick
+**Status**: ✅ Done
+**Commit**: `docs(specs): registra publicacao da revisao consultiva do principal`
+
+Gate específico de publicação: validate_workflow remoto válido, hash/estrutura antes e
+depois, validate_tasks.py, validate_spec.py e git diff --check. Nenhum teste novo:
+publicação/recibo não criam código; os 1.304 testes, lint e build da T31 seguem válidos.
 
 ---
 
@@ -973,7 +1003,7 @@ Fase 4:  T15 → T16 → T17 → T18 → T19 → T20
 Fase 5:  T21 → T22 → T23 → T24
 Fase 6:  T25 → T26 → T27 → T28 → T29
 Fix da primeira tentativa: T26 → T30
-Revisão aprovada da conversa seguinte: T30 → T31
+Revisão aprovada da conversa seguinte: T30 → T31 → T32
 ```
 
 Execução estritamente sequencial — não há paralelismo dentro de fase.
@@ -1015,6 +1045,7 @@ Execução estritamente sequencial — não há paralelismo dentro de fase.
 | T29 | 1 fechamento | ✅ Granular |
 | T30 | Correção de prompt motivada pela primeira tentativa da T26 | ✅ Granular |
 | T31 | Revisão de prompt aprovada após a conversa real | ✅ Granular |
+| T32 | Publicação isolada e recibo da revisão aprovada | ✅ Granular |
 
 ---
 
@@ -1053,6 +1084,7 @@ Execução estritamente sequencial — não há paralelismo dentro de fase.
 | T29 | T28 | T28 → T29 | ✅ Match |
 | T30 | T26 (primeira tentativa) | T26 → T30 | ✅ Match |
 | T31 | T30 (implementação anterior) | T30 → T31 | ✅ Match |
+| T32 | T31 | T31 → T32 | ✅ Match |
 
 Nenhuma dependência aponta para fase posterior.
 
@@ -1093,6 +1125,7 @@ Nenhuma dependência aponta para fase posterior.
 | T29 | Documentação | none | none | ✅ OK |
 | T30 | Módulo puro n8n | unit | unit | ✅ OK |
 | T31 | Módulo puro n8n | unit | unit | ✅ OK |
+| T32 | nenhuma (publicação/recibo) | — | none | ✅ OK |
 
 Nenhum `Tests: none` é deferimento de teste: cada um cai numa camada que a matriz marca `none`
 (componente React, schema, artefato gerado, documentação) ou numa task que não cria código.

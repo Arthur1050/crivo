@@ -1,7 +1,8 @@
 # Ajuste de prompt após a conversa de 2026-09-14
 
 **Status**: aprovado pelo usuário em 2026-09-14 (“Eu aprovo”); implementação local concluída na T31 (1.304 testes, lint e build passaram).
-Publicação no n8n ainda depende de autorização específica e não está incluída nesta aprovação.
+Publicação autorizada separadamente (“Pode publicar”) e concluída na T32: versão ativa
+`fd7faf28-c070-4585-a22d-c322f1e1765d`, código conferido antes e depois (§32 da evidência).
 **Escopo**: correção dentro do lote-11. Não reabre o planejamento aprovado.
 **Evidência**: `evidencia.md` §26.1, sete turnos reais, execuções verificadas por MCP.
 
@@ -74,5 +75,5 @@ quando uma tool falha.
   referência/preço, busca sem resultado e aceite de horário. Agendamento real depende
   primeiro de reconectar a credencial Google Calendar no n8n.
 
-**Ações externas pendentes de autorização**: atualizar/publicar o principal no n8n.
+**Publicação concluída**: somente o principal no n8n, conforme autorização específica.
 Nenhum push ou deploy Vercel é necessário para uma correção somente de prompt n8n.

@@ -266,19 +266,18 @@
 ### Lote 11 — conversa real investigada e revisão aprovada em 2026-09-14
 
 - **Feature**: `lote-11-catalogo-de-imoveis`.
-- **Phase / Task**: Fase 6 / T26–T27 abertas; T31 concluída localmente após aprovação
-  do usuário (“Eu aprovo”). Proposta concreta em `AJUSTE-PROMPT-PROPOSTO.md`.
-- **Completed**: T1–T25 e T31 implementadas/commitadas localmente. T30 publicada (`6a05fa1`), mas
+- **Phase / Task**: Fase 6 / T26–T27 abertas; T31 implementada (`2268671`), T32 publicada
+  após autorização específica do usuário (“Pode publicar”). Proposta concreta em `AJUSTE-PROMPT-PROPOSTO.md`.
+- **Completed**: T1–T25, T31 e T32 entregues, com commits locais. T30 publicada (`6a05fa1`), mas
   sua repetição da T26 permanece pendente. T31 substitui a regra absoluta de busca,
   responde cortesia e exige aceite em todas as fases. Não refazer o planejamento.
 - **In-progress**: `evidencia.md` §26/26.1 registra leitura da conversa/execuções;
-  §31 registra mudança local e asserções por critério. `tasks.md` T31 e `spec.md`
+  §31 registra mudança local e asserções; §32 registra hash e publicação autorizada. `tasks.md` T31 e `spec.md`
   BUSCA-05 AC13–18 refletem aprovação. Gate local passou: 1.304 testes / 91 arquivos.
-- **Next step**: obter autorização específica para atualizar/publicar somente o principal.
-  Conferir o código publicado antes de ativar e repetir a prova conversacional.
-  Reconectar `Google Calendar account` no n8n antes de repetir booking real.
+- **Next step**: reconectar `Google Calendar account` no n8n; preparar conversa limpa
+  conforme roteiro para repetir T26/T27. Não houve reset nesta publicação.
 - **Branch**: `main`; HEAD de implementação ao iniciar `6a05fa1`, `origin/main`
-  local `5275511`. Nenhum push/deploy/publish/reset nesta implementação.
+  local `5275511`. T32 alterou/publicou somente o principal; nenhum push/deploy/reset.
 
 **Conversa real**: sete turnos / 14 mensagens conferidos no CRM; execuções `2272`,
 `2278`, `2284`, `2291`, `2297`, `2307`, `2313` confirmadas individualmente por
@@ -293,15 +292,18 @@ real e sem medição direta de iterações; intermediateSteps não são iteraç�
 workflows. Grafo SDK com 62 nós / 76 conexões, topologia idêntica ao HEAD anterior,
 somente jsCode do nó de system message muda. gate.mjs/phase.mjs intocados. Validador
 n8n `valid=true`, cinco avisos de Memory Managers existentes. Principal remoto
-`0B1nqjODu7xuYYKF` reconsultado, ativo na versão anterior
-`e0a4f1b7-bee3-4a7d-bf50-0e01c2b6a07f`, maxIterations 8. Novo código ainda só local.
+`0B1nqjODu7xuYYKF` reconsultado, ativo na nova versão
+`fd7faf28-c070-4585-a22d-c322f1e1765d`, maxIterations 8. SHA-256 local/salvo conferido
+antes de ativar: `c7a1ce26e192ba382ac56b14605f939334fecaf3c0e40a84d36f7d4e5b6a4e89`
+(jsCode com CRLF normalizado). Nova leitura confirmou código ativo igual, 62/76,
+settings/modelo/grupos e demais parâmetros preservados; recibo em evidencia.md §32.
 
 **Blockers**: `Google Calendar account` (id `2kXea9a4br8Gn3pp`) exige reconexão humana.
 Execuções `2305` e `2308` falharam em `Google Calendar: availability`, antes de evento
 ou atualização CRM. Causa específica de expiração/revogação não comprovada. A T31
 corrige instruções de não confirmar/prometer depois, mas não conserta OAuth.
 
-**Sequência restante**: publicar revisão autorizada, T26 (referência/preço real,
+**Sequência restante**: T26 (referência/preço real,
 ausência, captura e iterações), T27 (qualificar→agendar com lead limpo e evento Meet),
 T28 (supersessão parcial de VOZ-02), T29 (rastreabilidade, INDEX, roadmap, handoff e
 revisão de lições), Verifier independente com as 8 mutações do design e
@@ -341,3 +343,8 @@ lote-11 tasks.md/spec.md/evidencia.md/AJUSTE-PROMPT-PROPOSTO.md, incluídos no c
 atômico da retomada/T31. **Commit local**: `fix(agente): flexibiliza convite e responde cortesia sem antecipar agendamento`
 (check_commit.py exit 0; localizar hash em git log). T26–T29 seguem abertas; nenhuma
 task real adicional marcada Done. Árvore conferida após o commit, sem push/deploy.
+
+**T32 — recibo**: evidencia.md, tasks.md, AJUSTE-PROMPT-PROPOSTO.md e este Handoff
+atualizados; commit `docs(specs): registra publicacao da revisao consultiva do principal`.
+Gate remoto/hash e validadores estruturais passaram; sem novo código/teste.
+A publicação não aprova comportamento real ou encerra o lote; nenhuma conversa limpa nova.

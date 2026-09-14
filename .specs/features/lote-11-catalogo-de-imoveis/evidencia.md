@@ -350,3 +350,56 @@ a revisão aprovada e a evidência entram juntos no commit da T31.
 Nenhum publish, push, deploy, reset ou chamada de booking real nesta implementação.
 Publicação do principal exige autorização específica; reconexão do Google Calendar
 continua necessária para T27. T26/T27 permanecem abertas.
+
+## 32. Publicação autorizada da revisão consultiva — T32 (2026-09-14)
+
+**Autorização**: usuário respondeu “Pode publicar” ao pedido específico para
+atualizar/publicar somente o principal. Fonte local já verificada: commit `2268671`,
+1.304 testes em 91 arquivos, lint e build passaram (§31). Não houve mudança de
+código ou novo teste nesta task; o gate completo não foi repetido.
+
+**Alvo**: `crivo-agente-principal`, id `0B1nqjODu7xuYYKF`.
+Versão anterior reconsultada antes da alteração:
+`e0a4f1b7-bee3-4a7d-bf50-0e01c2b6a07f`, draft e ativo coincidentes.
+Artefato `n8n/generated/principal.ts` importado pelo SDK e novamente validado pelo
+MCP: `valid=true`, 62 nós, cinco avisos de Memory Managers existentes.
+
+**Aplicação**: a primeira operação `setNodeParameter` com path `jsCode` foi
+recusada como caminho inválido, sem qualquer alteração (batch atômico).
+`updateNodeParameters`, `replace=false`, salvou uma única operação em
+`Code: montar system message e marcar campo perguntado`, somente `parameters.jsCode`.
+Nenhum nó foi removido/recriado. O MCP reportou também aviso sobre `builtInTools`
+no modelo; comparação do modelo inteiro antes/depois confirmou igualdade exata,
+portanto o parâmetro já existia e ficou preservado.
+
+**Conferência ANTES de ativar**: `get_workflow_details` confirmou draft
+`fd7faf28-c070-4585-a22d-c322f1e1765d`, enquanto ativo ainda era a versão anterior.
+Comparação das 62 definições de nós mostrou somente a alteração de jsCode no nó
+autorizado; todos os demais parâmetros e credenciais idênticos à leitura anterior.
+76 conexões idênticas; modelo, grupos e settings preservados; maxIterations 8.
+SHA-256 do jsCode gerado e salvo, normalizando CRLF para LF:
+
+`c7a1ce26e192ba382ac56b14605f939334fecaf3c0e40a84d36f7d4e5b6a4e89`
+
+Hash calculado com hashlib, comparado por igualdade com assert antes do publish;
+JSON temporário contendo os dois códigos removido após a conferência.
+
+**Ativação**: `publish_workflow` com workflowId e versionId explícitos retornou
+`success=true`, activeVersionId `fd7faf28-c070-4585-a22d-c322f1e1765d`.
+Nova leitura por `get_workflow_details` confirmou `active=true`, draft/ativo na
+versão autorizada, jsCode ativo igual ao gerado, 62 nós / 76 conexões idênticas e
+maxIterations 8. Publicação concluída; nenhuma mensagem de WhatsApp enviada pela
+ferramenta, reset, booking real, alteração de credencial, outro workflow, push ou deploy.
+
+**Adequação por task**: hash antes de ativar → assert h[local]==h[remote]; superfície
+isolada → comparação das definições de nós e assert changedParameters==[jsCode];
+versão ativa → assert activeVersionId==draft.versionId e active=true; topologia →
+assert nodes==62/connections==76/connectionsMatch; teto → assert maxIterations==8.
+Essas verificações mapeiam respectivamente ao Done when da T32 / BUSCA-04 AC12,
+sem asserção de comportamento do modelo. Sem código novo, sem camada de teste nova.
+Gate documental: validate_tasks.py e validate_spec.py exit 0; git diff --check exit 0.
+
+**Próximo passo**: reconectar `Google Calendar account` para testar agendamento;
+preparar conversa limpa conforme roteiro antes de repetir T26/T27. A conversa
+existente não foi limpa nesta publicação. Referência/preço real, captura, iterações
+e evento Meet continuam pendentes; T26–T29 e Verifier final não foram aprovados.
