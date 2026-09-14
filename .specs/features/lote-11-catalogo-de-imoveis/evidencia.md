@@ -503,3 +503,197 @@ mantém dependência da T26, embora desfecho/aceite/evento estejam comprovados.
 Nenhum novo gate de código rodado: código inalterado desde T31, cujo gate completo
 passou com 1.304 testes. Novo ajuste e seu gate só serão executados após aprovação.
 Evento e lembrete reais continuam existentes; não foram cancelados nesta inspeção.
+
+
+## 35. T33 — revisão aprovada de proatividade e apresentação (2026-09-14)
+
+**PASS local; publicação e prova real pendentes**. Usuário aprovou AJUSTE-PROATIVIDADE-PROPOSTO.md
+com “Aprovado”. Implementação mantém o contrato, a memória e o planejamento do lote.
+A aprovação autoriza implementar/testar/commitar localmente; não inclui publicação,
+reset, alteração de Calendar, push ou deploy.
+
+**Antes de implementar**:
+- Premissa: alternativa significa outros bairros reais, sem dados para inferir distância.
+  Uma expansão de bairro flexível preserva os demais critérios conhecidos.
+- Arquivos: system-message.mjs e seu teste; principal.ts e teste de buscar_imoveis;
+  generated/principal.ts pelo inliner; spec/tasks/evidencia/proposta/STATE do lote.
+- Sucesso: cláusulas AC19–24 verificadas nas duas fases, parâmetros orientados,
+  testes anteriores preservados, grafo 62/76/maxIterations 8 e gate completo.
+- Dependência: T32 entregue e publicada; revisão T31 é a base preservada.
+- Implementação: duas instruções específicas de filtros/apresentação e expansão
+  consultiva compartilhada; só descrições da tool e seus sete argumentos mudam.
+  Não há geografia, parser, renderer, banco, booking ou contador novo.
+
+**RED/GREEN focado**: npx vitest run n8n/src/__tests__/system-message.test.ts
+n8n/workflows/__tests__/principal-buscar-imoveis.test.ts --reporter=dot.
+RED exit 1: 43 falharam / 135 passaram / 178 total. GREEN exit 0: 178 passaram,
+2 arquivos, 1,01 s. São 32 casos novos nas duas fases e 11 da tool. Os 135 anteriores
+permanecem intactos; diff dos dois testes tem somente adições, nenhum skip/delete.
+
+**Artefato e limites**: inliner exit 0, seis arquivos regenerados, apenas principal
+com diff semântico. Comparação SDK contra HEAD f65bc1d: 62 nós, 76 conexões,
+maxIterations 8; conexões idênticas. Mudaram exclusivamente jsCode do system message,
+toolDescription e os sete valores de descrição de fromAi em buscar_imoveis.
+inlineWorkflowSource(fonte) == arquivo gerado em bytes. A fonte SDK ainda contém
+marcadores __INLINE; comparar seu jsCode bruto com o gerado seria uma falsa paridade.
+SHA-256 do jsCode gerado: bc190cc00a86fd61aceab2aac07369823d606efd944ff529f7b29481411f6156.
+validate_workflow: valid=true, nodeCount=62, cinco avisos prévios de Memory Manager.
+gate.mjs / phase.mjs / voice.mjs: zero alterações; demais workflows sem diff semântico.
+
+**Gate completo PASS**:
+- npx vitest run --reporter=dot, sessão 27477, exit 0: **1.347 testes em 91 arquivos**,
+  zero falhas, 656,97 s. Piso anterior 1.304 + 43 novos, sem remoção/skip.
+- npm run lint exit 0: zero erros, três avisos prévios (ifElse no scheduler fonte/gerado
+  e diretiva redundante de route-instrumentation.test.ts), nenhum novo aviso.
+- npm run build, sessão 94948, exit 0: compilação, TypeScript e geração concluídas.
+  Avisos locais prévios de Better Auth (baseURL/segredo default), sem mudança de auth.
+- validate_tasks.py exit 0: zero erros, 19 avisos; a T33 é uma revisão coesa de prompt
+  em duas bordas, com teste/gerado/documentação associados no mesmo commit.
+- validate_spec.py exit 0: zero erros/avisos. git diff --check exit 0.
+
+
+### Adequação A — cláusulas e resultados esperados
+
+Cada literal abaixo é a instrução esperada pela AC da emenda aprovada, não uma
+promessa de efeito determinístico do modelo. Cada expect verifica o texto emitido
+por buildSystemMessage ou toJSON, e falha se a cláusula correspondente for retirada.
+O teste de fase roda para qualificando e agendando. Os loops de argumento cobrem
+cada uma das quatro strings e dos três números individualmente.
+
+| AC / cláusula esperada | file:line + expressão de asserção | Cobertura local |
+| --- | --- | --- |
+| BUSCA-05 AC19 | `n8n/src/__tests__/system-message.test.ts:799` — `expect(message).toContain("Se o bairro for uma preferência flexível, faça por iniciativa própria UMA busca alternativa no mesmo turno, sem o filtro bairro")` | ✅ GREEN focado |
+| BUSCA-05 AC19 | `n8n/src/__tests__/system-message.test.ts:800` — `expect(message).toContain("Não peça permissão só para consultar alternativas")` | ✅ GREEN focado |
+| BUSCA-05 AC19 | `n8n/src/__tests__/system-message.test.ts:803` — `expect(message).toContain("mantendo tipo, modalidade, orçamento e quartos conhecidos, além da cidade quando ela estiver confirmada")` | ✅ GREEN focado |
+| BUSCA-05 AC19 | `n8n/src/__tests__/system-message.test.ts:804` — `expect(message).toContain("Não altere teto de preço, quantidade mínima de quartos, tipo de imóvel ou cidade para fabricar uma opção")` | ✅ GREEN focado |
+| BUSCA-05 AC19 | `n8n/src/__tests__/system-message.test.ts:807` — `expect(message).toContain("Se o lead disser que o bairro é obrigatório, não retire esse filtro")` | ✅ GREEN focado |
+| BUSCA-05 AC19 | `n8n/src/__tests__/system-message.test.ts:808` — `expect(message).toContain("A ampliação é só para consulta de alternativas; não mude os critérios gravados do lead")` | ✅ GREEN focado |
+| BUSCA-05 AC20 | `n8n/src/__tests__/system-message.test.ts:811` — `expect(message).toContain("Quando uma busca válida não trouxer opções, não peça mais preço ou quartos só para refinar um conjunto já vazio")` | ✅ GREEN focado |
+| BUSCA-05 AC20 | `n8n/src/__tests__/system-message.test.ts:814` — `expect(message).toContain("Se a busca alternativa também voltar vazia, informe a ausência e ofereça já nessa resposta uma conversa com o corretor")` | ✅ GREEN focado |
+| BUSCA-05 AC20 | `n8n/src/__tests__/system-message.test.ts:815` — `expect(message).toContain("sem esperar outra rodada de perguntas ou que o lead diga que não tem interesse")` | ✅ GREEN focado |
+| BUSCA-05 AC20 | `n8n/src/__tests__/system-message.test.ts:818` — `expect(message).toContain("Se não couber ampliar o bairro, ofereça a conversa após a primeira ausência válida")` | ✅ GREEN focado |
+| BUSCA-05 AC20 | `n8n/src/__tests__/system-message.test.ts:821` — `expect(message).toContain("Não repita uma combinação já consultada e não repita a mesma expansão a cada turno")` | ✅ GREEN focado |
+| BUSCA-05 AC21 | `n8n/src/__tests__/system-message.test.ts:824` — `expect(message).toContain("Omitir filtros desconhecidos: não enviar strings vazias ou números zero como preenchimento")` | ✅ GREEN focado |
+| BUSCA-05 AC21 | `n8n/src/__tests__/system-message.test.ts:827` — `expect(message).toContain("Cidade é apenas o nome da cidade, sem /UF, e só deve ser filtrada quando confirmada pelo lead")` | ✅ GREEN focado |
+| BUSCA-05 AC21 | `n8n/src/__tests__/system-message.test.ts:830` — `expect(message).toContain("Bairro aceita um nome de bairro real, nunca expressões como “próximo do Abadia”, “arredores” ou “bairros próximos”")` | ✅ GREEN focado |
+| BUSCA-05 AC21 | `n8n/src/__tests__/system-message.test.ts:831` — `expect(message).toContain("Para consultar alternativas sem um bairro específico, omita bairro")` | ✅ GREEN focado |
+| BUSCA-05 AC21 | `n8n/src/__tests__/system-message.test.ts:832` — `expect(message).toContain("A tool não calcula distância ou adjacência")` | ✅ GREEN focado |
+| BUSCA-05 AC22 | `n8n/src/__tests__/system-message.test.ts:835` — `expect(message).toContain("Cidade não informada não é assumida a partir de uma opção anterior")` | ✅ GREEN focado |
+| BUSCA-05 AC22 | `n8n/src/__tests__/system-message.test.ts:836` — `expect(message).toContain("Sem cidade confirmada, omita cidade e use os demais critérios conhecidos")` | ✅ GREEN focado |
+| BUSCA-05 AC22 | `n8n/src/__tests__/system-message.test.ts:839` — `expect(message).toContain("Explique que ampliou para outros bairros e mostre a localização real devolvida")` | ✅ GREEN focado |
+| BUSCA-05 AC22 | `n8n/src/__tests__/system-message.test.ts:840` — `expect(message).toContain("não afirme que são próximos sem informação confiável de proximidade")` | ✅ GREEN focado |
+| BUSCA-05 AC22 | `n8n/src/__tests__/system-message.test.ts:841` — `expect(message).toContain("cada alternativa mostra sua cidade de verdade")` | ✅ GREEN focado |
+| BUSCA-05 AC23 | `n8n/src/__tests__/system-message.test.ts:844` — `expect(message).toContain("Uma falha técnica não é resultado vazio: siga a regra de falha e não invente ausência")` | ✅ GREEN focado |
+| BUSCA-05 AC24 | `n8n/src/__tests__/system-message.test.ts:847` — `expect(message).toContain("Ao apresentar um imóvel, facilite a leitura com linhas curtas em uma única mensagem")` | ✅ GREEN focado |
+| BUSCA-05 AC24 | `n8n/src/__tests__/system-message.test.ts:848` — `expect(message).toContain("linhas separadas nesta ordem: tipo/modalidade e referência; bairro e cidade/UF; quartos, banheiros e vagas; área; preço")` | ✅ GREEN focado |
+| BUSCA-05 AC24 | `n8n/src/__tests__/system-message.test.ts:851` — `expect(message).toContain("Use só os campos e os valores devolvidos pela tool")` | ✅ GREEN focado |
+| BUSCA-05 AC24 | `n8n/src/__tests__/system-message.test.ts:852` — `expect(message).toContain("Separe uma eventual pergunta ou convite em outra mensagem curta")` | ✅ GREEN focado |
+| BUSCA-05 AC24 | `n8n/src/__tests__/system-message.test.ts:853` — `expect(message).toContain("Não emende características, preço e pergunta em um parágrafo comprido")` | ✅ GREEN focado |
+| BUSCA-05 AC24 | `n8n/src/__tests__/system-message.test.ts:856` — `expect(message).toContain("respeitando o limite de três mensagens por turno, mesmo ao apresentar mais de uma opção")` | ✅ GREEN focado |
+| BUSCA-05 AC24 | `n8n/src/__tests__/system-message.test.ts:857` — `expect(message).toContain("As demais respostas continuam naturais e curtas. Não use emoji, tabela ou markdown")` | ✅ GREEN focado |
+| BUSCA-05 AC24 | `n8n/src/__tests__/system-message.test.ts:858` — `expect(message).toContain("Frases curtas, sem markdown, sem listas com tópicos")` | ✅ GREEN focado |
+| BUSCA-05 AC21/23 | `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:99` — `expect(description).toContain("Omitir filtros desconhecidos: não enviar strings vazias ou números zero como preenchimento")` | ✅ GREEN focado |
+| BUSCA-05 AC21/23 | `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:100` — `expect(description).toContain("Todos os parâmetros são opcionais")` | ✅ GREEN focado |
+| BUSCA-05 AC21/23 | `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:101` — `expect(description).toContain("Preço em reais (nunca centavos)")` | ✅ GREEN focado |
+| BUSCA-05 AC21/23 | `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:104` — `expect(description).toContain("Cidade é apenas o nome da cidade, sem /UF, e só deve ser filtrada quando confirmada pelo lead")` | ✅ GREEN focado |
+| BUSCA-05 AC21/23 | `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:105` — `expect(queryParam("cidade")).toContain("sem /UF")` | ✅ GREEN focado |
+| BUSCA-05 AC21/23 | `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:106` — `expect(queryParam("cidade")).toContain("Não inferir de imóvel apresentado")` | ✅ GREEN focado |
+| BUSCA-05 AC21/23 | `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:109` — `expect(description).toContain("Bairro aceita um nome de bairro real, nunca expressões de proximidade")` | ✅ GREEN focado |
+| BUSCA-05 AC21/23 | `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:110` — `expect(queryParam("bairro")).toContain("Nunca usar próximo, arredores ou bairros próximos como nome")` | ✅ GREEN focado |
+| BUSCA-05 AC21/23 | `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:111` — `expect(queryParam("bairro")).toContain("Na busca alternativa sem bairro específico, omita bairro")` | ✅ GREEN focado |
+| BUSCA-05 AC21/23 | `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:112` — `expect(description).toContain("A tool não calcula distância ou adjacência")` | ✅ GREEN focado |
+| BUSCA-05 AC21/23 | `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:115` — `expect(queryParam(name)).toContain("Se desconhecido, omita; não enviar string vazia")` | ✅ GREEN focado |
+| BUSCA-05 AC21/23 | `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:118` — `expect(queryParam(name)).toContain("Se desconhecido, omita; não enviar zero")` | ✅ GREEN focado |
+| BUSCA-05 AC21/23 | `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:119` — `expect(queryParam(name)).toContain("inteiro maior que zero")` | ✅ GREEN focado |
+| BUSCA-05 AC21/23 | `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:122` — `expect(description).toContain("Uma falha técnica não é resultado vazio; não invente ausência de imóveis")` | ✅ GREEN focado |
+
+### Adequação C — necessidade por asserção
+
+| file:line + expressão | Requisito da emenda | Manter |
+| --- | --- | --- |
+| `n8n/src/__tests__/system-message.test.ts:799` — `expect(message).toContain("Se o bairro for uma preferência flexível, faça por iniciativa própria UMA busca alternativa no mesmo turno, sem o filtro bairro")` | BUSCA-05 AC19 | ✅ |
+| `n8n/src/__tests__/system-message.test.ts:800` — `expect(message).toContain("Não peça permissão só para consultar alternativas")` | BUSCA-05 AC19 | ✅ |
+| `n8n/src/__tests__/system-message.test.ts:803` — `expect(message).toContain("mantendo tipo, modalidade, orçamento e quartos conhecidos, além da cidade quando ela estiver confirmada")` | BUSCA-05 AC19 | ✅ |
+| `n8n/src/__tests__/system-message.test.ts:804` — `expect(message).toContain("Não altere teto de preço, quantidade mínima de quartos, tipo de imóvel ou cidade para fabricar uma opção")` | BUSCA-05 AC19 | ✅ |
+| `n8n/src/__tests__/system-message.test.ts:807` — `expect(message).toContain("Se o lead disser que o bairro é obrigatório, não retire esse filtro")` | BUSCA-05 AC19 | ✅ |
+| `n8n/src/__tests__/system-message.test.ts:808` — `expect(message).toContain("A ampliação é só para consulta de alternativas; não mude os critérios gravados do lead")` | BUSCA-05 AC19 | ✅ |
+| `n8n/src/__tests__/system-message.test.ts:811` — `expect(message).toContain("Quando uma busca válida não trouxer opções, não peça mais preço ou quartos só para refinar um conjunto já vazio")` | BUSCA-05 AC20 | ✅ |
+| `n8n/src/__tests__/system-message.test.ts:814` — `expect(message).toContain("Se a busca alternativa também voltar vazia, informe a ausência e ofereça já nessa resposta uma conversa com o corretor")` | BUSCA-05 AC20 | ✅ |
+| `n8n/src/__tests__/system-message.test.ts:815` — `expect(message).toContain("sem esperar outra rodada de perguntas ou que o lead diga que não tem interesse")` | BUSCA-05 AC20 | ✅ |
+| `n8n/src/__tests__/system-message.test.ts:818` — `expect(message).toContain("Se não couber ampliar o bairro, ofereça a conversa após a primeira ausência válida")` | BUSCA-05 AC20 | ✅ |
+| `n8n/src/__tests__/system-message.test.ts:821` — `expect(message).toContain("Não repita uma combinação já consultada e não repita a mesma expansão a cada turno")` | BUSCA-05 AC20 | ✅ |
+| `n8n/src/__tests__/system-message.test.ts:824` — `expect(message).toContain("Omitir filtros desconhecidos: não enviar strings vazias ou números zero como preenchimento")` | BUSCA-05 AC21 | ✅ |
+| `n8n/src/__tests__/system-message.test.ts:827` — `expect(message).toContain("Cidade é apenas o nome da cidade, sem /UF, e só deve ser filtrada quando confirmada pelo lead")` | BUSCA-05 AC21 | ✅ |
+| `n8n/src/__tests__/system-message.test.ts:830` — `expect(message).toContain("Bairro aceita um nome de bairro real, nunca expressões como “próximo do Abadia”, “arredores” ou “bairros próximos”")` | BUSCA-05 AC21 | ✅ |
+| `n8n/src/__tests__/system-message.test.ts:831` — `expect(message).toContain("Para consultar alternativas sem um bairro específico, omita bairro")` | BUSCA-05 AC21 | ✅ |
+| `n8n/src/__tests__/system-message.test.ts:832` — `expect(message).toContain("A tool não calcula distância ou adjacência")` | BUSCA-05 AC21 | ✅ |
+| `n8n/src/__tests__/system-message.test.ts:835` — `expect(message).toContain("Cidade não informada não é assumida a partir de uma opção anterior")` | BUSCA-05 AC22 | ✅ |
+| `n8n/src/__tests__/system-message.test.ts:836` — `expect(message).toContain("Sem cidade confirmada, omita cidade e use os demais critérios conhecidos")` | BUSCA-05 AC22 | ✅ |
+| `n8n/src/__tests__/system-message.test.ts:839` — `expect(message).toContain("Explique que ampliou para outros bairros e mostre a localização real devolvida")` | BUSCA-05 AC22 | ✅ |
+| `n8n/src/__tests__/system-message.test.ts:840` — `expect(message).toContain("não afirme que são próximos sem informação confiável de proximidade")` | BUSCA-05 AC22 | ✅ |
+| `n8n/src/__tests__/system-message.test.ts:841` — `expect(message).toContain("cada alternativa mostra sua cidade de verdade")` | BUSCA-05 AC22 | ✅ |
+| `n8n/src/__tests__/system-message.test.ts:844` — `expect(message).toContain("Uma falha técnica não é resultado vazio: siga a regra de falha e não invente ausência")` | BUSCA-05 AC23 | ✅ |
+| `n8n/src/__tests__/system-message.test.ts:847` — `expect(message).toContain("Ao apresentar um imóvel, facilite a leitura com linhas curtas em uma única mensagem")` | BUSCA-05 AC24 | ✅ |
+| `n8n/src/__tests__/system-message.test.ts:848` — `expect(message).toContain("linhas separadas nesta ordem: tipo/modalidade e referência; bairro e cidade/UF; quartos, banheiros e vagas; área; preço")` | BUSCA-05 AC24 | ✅ |
+| `n8n/src/__tests__/system-message.test.ts:851` — `expect(message).toContain("Use só os campos e os valores devolvidos pela tool")` | BUSCA-05 AC24 | ✅ |
+| `n8n/src/__tests__/system-message.test.ts:852` — `expect(message).toContain("Separe uma eventual pergunta ou convite em outra mensagem curta")` | BUSCA-05 AC24 | ✅ |
+| `n8n/src/__tests__/system-message.test.ts:853` — `expect(message).toContain("Não emende características, preço e pergunta em um parágrafo comprido")` | BUSCA-05 AC24 | ✅ |
+| `n8n/src/__tests__/system-message.test.ts:856` — `expect(message).toContain("respeitando o limite de três mensagens por turno, mesmo ao apresentar mais de uma opção")` | BUSCA-05 AC24 | ✅ |
+| `n8n/src/__tests__/system-message.test.ts:857` — `expect(message).toContain("As demais respostas continuam naturais e curtas. Não use emoji, tabela ou markdown")` | BUSCA-05 AC24 | ✅ |
+| `n8n/src/__tests__/system-message.test.ts:858` — `expect(message).toContain("Frases curtas, sem markdown, sem listas com tópicos")` | BUSCA-05 AC24 | ✅ |
+| `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:99` — `expect(description).toContain("Omitir filtros desconhecidos: não enviar strings vazias ou números zero como preenchimento")` | BUSCA-05 AC21/23 | ✅ |
+| `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:100` — `expect(description).toContain("Todos os parâmetros são opcionais")` | BUSCA-05 AC21/23 | ✅ |
+| `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:101` — `expect(description).toContain("Preço em reais (nunca centavos)")` | BUSCA-05 AC21/23 | ✅ |
+| `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:104` — `expect(description).toContain("Cidade é apenas o nome da cidade, sem /UF, e só deve ser filtrada quando confirmada pelo lead")` | BUSCA-05 AC21/23 | ✅ |
+| `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:105` — `expect(queryParam("cidade")).toContain("sem /UF")` | BUSCA-05 AC21/23 | ✅ |
+| `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:106` — `expect(queryParam("cidade")).toContain("Não inferir de imóvel apresentado")` | BUSCA-05 AC21/23 | ✅ |
+| `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:109` — `expect(description).toContain("Bairro aceita um nome de bairro real, nunca expressões de proximidade")` | BUSCA-05 AC21/23 | ✅ |
+| `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:110` — `expect(queryParam("bairro")).toContain("Nunca usar próximo, arredores ou bairros próximos como nome")` | BUSCA-05 AC21/23 | ✅ |
+| `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:111` — `expect(queryParam("bairro")).toContain("Na busca alternativa sem bairro específico, omita bairro")` | BUSCA-05 AC21/23 | ✅ |
+| `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:112` — `expect(description).toContain("A tool não calcula distância ou adjacência")` | BUSCA-05 AC21/23 | ✅ |
+| `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:115` — `expect(queryParam(name)).toContain("Se desconhecido, omita; não enviar string vazia")` | BUSCA-05 AC21/23 | ✅ |
+| `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:118` — `expect(queryParam(name)).toContain("Se desconhecido, omita; não enviar zero")` | BUSCA-05 AC21/23 | ✅ |
+| `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:119` — `expect(queryParam(name)).toContain("inteiro maior que zero")` | BUSCA-05 AC21/23 | ✅ |
+| `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:122` — `expect(description).toContain("Uma falha técnica não é resultado vazio; não invente ausência de imóveis")` | BUSCA-05 AC21/23 | ✅ |
+
+### Preservação e critérios estruturais
+
+| Critério | Evidência / asserção | Resultado esperado |
+| --- | --- | --- |
+| Cortesia AC15 | n8n/src/__tests__/system-message.test.ts:722 — expect(message).toContain("responda ao cumprimento e às perguntas sociais") | Resposta social natural |
+| Convite e recusa AC13 | n8n/src/__tests__/system-message.test.ts:748 — expect(message).toContain("se ele recusar, respeite e continue ajudando") | Convite sem insistência |
+| Prioridade e busca AC14 | n8n/src/__tests__/system-message.test.ts:755 — expect(message).toContain("Se o lead já quiser conversar ou tiver aceitado um horário, priorize esse pedido") | Pedido/aceite têm prioridade |
+| Referência/preço AC16 | n8n/src/__tests__/system-message.test.ts:760 — expect(message).toContain("incluindo a referência de cada imóvel citado e seu preço") | Citação real preservada |
+| Aceite AC18 | n8n/src/__tests__/system-message.test.ts:765 — expect(message).toContain("interesse por um imóvel, dúvida ou agradecimento NÃO é aceite de horário") | Interesse não agenda |
+| Falha AC17 | n8n/src/__tests__/system-message.test.ts:777 — expect(message).toContain("a reunião ainda NÃO está confirmada") | Não confirmar falha técnica |
+| Fronteira AC7/9 | n8n/src/__tests__/system-message.test.ts:137 — expect(message).toMatch(/NUNCA prometa endereço exato nem informe nome do corretor de captação/) e :71 — expect(message).toContain("NÃO manda fotos") | Campos proibidos preservados |
+| Tenant AC2/3 | n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:83 — expect(tenantHeader?.value).toBe("={{ $('Code: gate').first().json.tenantSlug }}") | Tenant do fluxo |
+| Tools/grafo AC11 | n8n/workflows/__tests__/principal-modelo.test.ts:120 — expect(nomes).toContain(ferramenta); :135 — expect(workflow.nodes).toHaveLength(NOS_ESPERADOS); :136 — expect(contarConexoes()).toBe(CONEXOES_ESPERADAS) | 6 tools, 62 nós e 76 conexões |
+| Código intocado AC10 | Comparação git show HEAD com bytes atuais normalizando CRLF: gate/phase/voice iguais; diff SDK dos demais nós vazio | Zero alterações |
+| Gate/artefato | Comandos e resultados acima; gate completo PASS | Testes, lint, build, inliner e validação SDK |
+
+**Adequação B/D**: sem tautologias, mocks ou teste só de contagem; resultados são
+instruções da spec e parâmetros emitidos. Matriz de tasks.md seguida, testes
+co-localizados e fileParallelism=false. Todas as asserções novas têm requisito.
+Revisão local A/C PASS, outcomes derivados da emenda e cláusulas localizadas com
+asserções próprias. B/D PASS, sem testes especulativos ou shallow. Simplicidade e
+escopo conferidos: sem SPEC_DEVIATION novo, sem refatoração adjacente. Verifier independente final
+aguarda T26–T29, incluindo as oito mutações do design; não foi dispensado.
+
+**Publicação/prova real pendentes**: publicar só o principal após autorização
+específica, atualizando apenas o nó de system message e descrições/argumentos da
+busca. Conferir artefato salvo antes de ativar, 62/76/maxIterations 8 e demais nós.
+Nova conversa comprovará expansão automática, convite no mesmo turno e legibilidade.
+Esta T33 não marca T26/T27 completas. Evento real opblu5rf7n0sml8p3c7ue3gpe4 e
+lembrete id 16 da segunda conversa continuam preservados; nenhum reset foi feito.
+
+Critérios preservados adicionais: n8n/src/__tests__/system-message.test.ts:529,
+expect(message).toMatch(/basta ele responder com a palavra sair — sozinha, sem mais nada/i)
+prova orientação de opt-out; :317, expect(message).toMatch(/NÃO chame a tool agendar_reuniao/i)
+prova não agendar novamente reunião confirmada. Mantidos sem alterações.
+
+**Fechamento local**: T33 marcada Done e BUSCA-05 atualizado antes do mesmo commit
+atômico de prompt/testes/workflow/gerado/registros. Decisions do STATE preservado
+integralmente contra HEAD. Mensagem validada por check_commit.py:
+fix(agente): busca alternativas e antecipa convite com imoveis legiveis.
+Publicação pendente; T26–T29 e validation.md não fechados por este PASS local.

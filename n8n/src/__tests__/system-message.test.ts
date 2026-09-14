@@ -792,6 +792,73 @@ describe.each(["qualificando", "agendando"] as const)("buildSystemMessage — re
   });
 });
 
+describe.each(["qualificando", "agendando"] as const)("buildSystemMessage — proatividade aprovada T33, fase %s", (phase) => {
+  const message = buildSystemMessage({ settings: BASE_SETTINGS, phase });
+
+  it("expande apenas bairro flexível por iniciativa própria uma vez no mesmo turno (AC19)", () => {
+    expect(message).toContain("Se o bairro for uma preferência flexível, faça por iniciativa própria UMA busca alternativa no mesmo turno, sem o filtro bairro");
+    expect(message).toContain("Não peça permissão só para consultar alternativas");
+  });
+  it("preserva cada critério conhecido na expansão (AC19)", () => {
+    expect(message).toContain("mantendo tipo, modalidade, orçamento e quartos conhecidos, além da cidade quando ela estiver confirmada");
+    expect(message).toContain("Não altere teto de preço, quantidade mínima de quartos, tipo de imóvel ou cidade para fabricar uma opção");
+  });
+  it("respeita bairro obrigatório e critérios gravados (AC19)", () => {
+    expect(message).toContain("Se o lead disser que o bairro é obrigatório, não retire esse filtro");
+    expect(message).toContain("A ampliação é só para consulta de alternativas; não mude os critérios gravados do lead");
+  });
+  it("não refina um conjunto vazio com preço ou quartos (AC20)", () => {
+    expect(message).toContain("Quando uma busca válida não trouxer opções, não peça mais preço ou quartos só para refinar um conjunto já vazio");
+  });
+  it("convida no mesmo turno após expansão vazia (AC20)", () => {
+    expect(message).toContain("Se a busca alternativa também voltar vazia, informe a ausência e ofereça já nessa resposta uma conversa com o corretor");
+    expect(message).toContain("sem esperar outra rodada de perguntas ou que o lead diga que não tem interesse");
+  });
+  it("convida após a primeira ausência quando não couber ampliar (AC20)", () => {
+    expect(message).toContain("Se não couber ampliar o bairro, ofereça a conversa após a primeira ausência válida");
+  });
+  it("não repete combinação ou expansão a cada turno (AC20)", () => {
+    expect(message).toContain("Não repita uma combinação já consultada e não repita a mesma expansão a cada turno");
+  });
+  it("omite filtros desconhecidos sem preenchimento vazio ou zero (AC21)", () => {
+    expect(message).toContain("Omitir filtros desconhecidos: não enviar strings vazias ou números zero como preenchimento");
+  });
+  it("filtra cidade confirmada pelo nome sem UF (AC21)", () => {
+    expect(message).toContain("Cidade é apenas o nome da cidade, sem /UF, e só deve ser filtrada quando confirmada pelo lead");
+  });
+  it("não transforma proximidade em nome literal de bairro (AC21)", () => {
+    expect(message).toContain("Bairro aceita um nome de bairro real, nunca expressões como “próximo do Abadia”, “arredores” ou “bairros próximos”");
+    expect(message).toContain("Para consultar alternativas sem um bairro específico, omita bairro");
+    expect(message).toContain("A tool não calcula distância ou adjacência");
+  });
+  it("não assume cidade do lead de imóvel apresentado e omite cidade desconhecida (AC22)", () => {
+    expect(message).toContain("Cidade não informada não é assumida a partir de uma opção anterior");
+    expect(message).toContain("Sem cidade confirmada, omita cidade e use os demais critérios conhecidos");
+  });
+  it("explica outros bairros e localização real sem inventar proximidade (AC22)", () => {
+    expect(message).toContain("Explique que ampliou para outros bairros e mostre a localização real devolvida");
+    expect(message).toContain("não afirme que são próximos sem informação confiável de proximidade");
+    expect(message).toContain("cada alternativa mostra sua cidade de verdade");
+  });
+  it("distingue falha técnica de ausência (AC23)", () => {
+    expect(message).toContain("Uma falha técnica não é resultado vazio: siga a regra de falha e não invente ausência");
+  });
+  it("organiza imóvel em uma mensagem com linhas separadas na ordem aprovada (AC24)", () => {
+    expect(message).toContain("Ao apresentar um imóvel, facilite a leitura com linhas curtas em uma única mensagem");
+    expect(message).toContain("linhas separadas nesta ordem: tipo/modalidade e referência; bairro e cidade/UF; quartos, banheiros e vagas; área; preço");
+  });
+  it("usa somente valores reais e separa a pergunta do imóvel (AC24)", () => {
+    expect(message).toContain("Use só os campos e os valores devolvidos pela tool");
+    expect(message).toContain("Separe uma eventual pergunta ou convite em outra mensagem curta");
+    expect(message).toContain("Não emende características, preço e pergunta em um parágrafo comprido");
+  });
+  it("mantém teto de mensagens, naturalidade e proibições da persona (AC24)", () => {
+    expect(message).toContain("respeitando o limite de três mensagens por turno, mesmo ao apresentar mais de uma opção");
+    expect(message).toContain("As demais respostas continuam naturais e curtas. Não use emoji, tabela ou markdown");
+    expect(message).toContain("Frases curtas, sem markdown, sem listas com tópicos");
+  });
+});
+
 describe("buildSystemMessage — defensivo", () => {
   it("funciona sem settings/perguntados/businessHours", () => {
     const message = buildSystemMessage({ phase: "qualificando" });

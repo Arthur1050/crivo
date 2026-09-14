@@ -101,7 +101,7 @@ T21 → T22 → T23 → T24
 ```
 T25 → T26 → T27 → T28 → T29
 T26 → T30
-T30 → T31 → T32
+T30 → T31 → T32 → T33
 ```
 
 T30 nasceu da primeira tentativa da T26. A correção já foi commitada e publicada;
@@ -991,6 +991,39 @@ publicação/recibo não criam código; os 1.304 testes, lint e build da T31 seg
 
 ---
 
+### T33: Refinar busca alternativa, convite e apresentação após a segunda conversa
+
+**What**: Aplicar a revisão aprovada de instruções compartilhadas e descrição de buscar_imoveis, com testes por cláusula e artefato regenerado.
+**Where**: n8n/src/system-message.mjs, n8n/src/__tests__/system-message.test.ts, n8n/workflows/principal.ts, n8n/workflows/__tests__/principal-buscar-imoveis.test.ts, n8n/generated/principal.ts, spec.md, tasks.md, evidencia.md, AJUSTE-PROATIVIDADE-PROPOSTO.md e STATE.md.
+**Depends on**: T32
+**Reuses**: Revisão T31, contrato GET /properties, memória e tool existentes; inliner.
+**Requirement**: BUSCA-05 AC19–24; preservar AC5–18 e grafo BUSCA-04.
+**Approval**: Usuário aprovou a proposta concreta para implementar/verificar/commitar localmente (“Aprovado”, 2026-09-14).
+
+**Tools**:
+- MCP: n8n (referência SDK, chatbot, tipos e validate_workflow)
+- Skill: tlc-spec-driven
+
+**Done when**:
+- [x] Prompt orienta uma expansão automática de bairro flexível com critérios preservados; bairro obrigatório e critérios gravados não mudam.
+- [x] Ausência seguida de expansão vazia, ou sem expansão permitida, orienta convite no mesmo turno; sem refinamentos ou repetições que adiem reunião.
+- [x] Prompt/tool orientam omissão de desconhecidos sem vazio/zero, cidade confirmada sem /UF e bairro real; não calculam proximidade.
+- [x] Alternativas mostram localização real; não inferir cidade desejada nem afirmar proximidade sem dados; erro não inventa ausência.
+- [x] Apresentação usa ordem e linhas separadas, só campos reais, pergunta em outro balão, até três mensagens, sem emoji/tabela/markdown.
+- [x] Cortesia, aceite, fronteiras, opt-out e reunião confirmada preservados; testes anteriores intactos e novas cláusulas com asserção própria nas duas fases.
+- [x] Inliner e validação SDK passam, 62 nós / 76 conexões / maxIterations 8; gate.mjs, phase.mjs, voice.mjs, banco e booking intactos.
+- [x] Gate build completo passa; revisão de adequação, rastreabilidade e handoff registram entrega local e publicação pendente.
+
+**Tests**: unit
+**Gate**: build
+**Status**: ✅ Done (implementação local; publicação pendente)
+**Commit**: `fix(agente): busca alternativas e antecipa convite com imoveis legiveis`
+
+Publicação, reset, Calendar, push e deploy não integram esta aprovação. T26–T29 e
+Verifier final permanecem pendentes; testes de instruções não aprovam comportamento real.
+
+---
+
 ## Phase Execution Map
 
 ```
@@ -1003,7 +1036,7 @@ Fase 4:  T15 → T16 → T17 → T18 → T19 → T20
 Fase 5:  T21 → T22 → T23 → T24
 Fase 6:  T25 → T26 → T27 → T28 → T29
 Fix da primeira tentativa: T26 → T30
-Revisão aprovada da conversa seguinte: T30 → T31 → T32
+Revisão aprovada da conversa seguinte: T30 → T31 → T32 → T33
 ```
 
 Execução estritamente sequencial — não há paralelismo dentro de fase.
@@ -1046,6 +1079,7 @@ Execução estritamente sequencial — não há paralelismo dentro de fase.
 | T30 | Correção de prompt motivada pela primeira tentativa da T26 | ✅ Granular |
 | T31 | Revisão de prompt aprovada após a conversa real | ✅ Granular |
 | T32 | Publicação isolada e recibo da revisão aprovada | ✅ Granular |
+| T33 | Refinamento coeso das instruções após segunda conversa | ✅ Granular |
 
 ---
 
@@ -1085,6 +1119,7 @@ Execução estritamente sequencial — não há paralelismo dentro de fase.
 | T30 | T26 (primeira tentativa) | T26 → T30 | ✅ Match |
 | T31 | T30 (implementação anterior) | T30 → T31 | ✅ Match |
 | T32 | T31 | T31 → T32 | ✅ Match |
+| T33 | T32 | T32 → T33 | ✅ Match |
 
 Nenhuma dependência aponta para fase posterior.
 
@@ -1126,6 +1161,7 @@ Nenhuma dependência aponta para fase posterior.
 | T30 | Módulo puro n8n | unit | unit | ✅ OK |
 | T31 | Módulo puro n8n | unit | unit | ✅ OK |
 | T32 | nenhuma (publicação/recibo) | — | none | ✅ OK |
+| T33 | Módulo puro e descrição de tool n8n | unit | unit | ✅ OK |
 
 Nenhum `Tests: none` é deferimento de teste: cada um cai numa camada que a matriz marca `none`
 (componente React, schema, artefato gerado, documentação) ou numa task que não cria código.

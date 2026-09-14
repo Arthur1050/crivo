@@ -213,6 +213,18 @@ receber opções reais, para decidir se vale agendar uma visita.
 16. WHEN o agente citar uma opção real THEN o system message SHALL exigir referência e preço de cada imóvel citado, usando os valores devolvidos pela tool.
 17. IF o agendamento falhar por indisponibilidade técnica THEN o system message SHALL orientar que a reunião ainda não está confirmada, SHALL NOT prometer confirmação ou aviso automático futuro, e SHALL NOT tratar a falha como horário ocupado nem pedir alternativas de horário por esse motivo.
 18. WHEN o agente propuser um horário em qualquer fase THEN o system message SHALL exigir aguardar o aceite antes de chamar agendar_reuniao, e SHALL NOT tratar interesse por imóvel, dúvida ou agradecimento como aceite de horário.
+19. WHEN uma busca válida retornar vazio com bairro flexível THEN o system message SHALL orientar UMA busca alternativa automática no mesmo turno omitindo apenas bairro, SHALL preservar tipo, modalidade, orçamento, quartos e cidade confirmada, e SHALL NOT retirar bairro obrigatório nem mudar os critérios gravados do lead.
+20. WHEN a expansão também retornar vazio ou não couber ampliar bairro THEN o system message SHALL orientar convite consultivo nessa mesma resposta, SHALL NOT pedir preço ou quartos para refinar um conjunto já vazio, e SHALL NOT repetir combinação ou expansão já consultada para adiar o convite.
+21. WHERE o agente montar argumentos de buscar_imoveis THEN o prompt e a descrição da tool SHALL orientar omitir filtros desconhecidos sem strings vazias ou zero, usar cidade confirmada sem /UF e bairro real sem termos de proximidade, e SHALL informar que a tool não calcula distância ou adjacência.
+22. WHEN uma opção anterior informar cidade ou uma consulta retirar bairro THEN o system message SHALL proibir inferir a cidade desejada do lead dessa opção, SHALL exigir localização real de cada alternativa e explicação da ampliação para outros bairros, e SHALL NOT afirmar proximidade sem informação confiável.
+23. WHEN uma consulta falhar tecnicamente THEN o system message e a descrição da tool SHALL distinguir falha de resultado vazio, e SHALL NOT orientar inventar ausência de imóveis.
+24. WHEN apresentar um imóvel THEN o system message SHALL orientar linhas separadas em uma mensagem na ordem tipo/modalidade e referência, bairro e cidade/UF, quartos/banheiros/vagas, área e preço, SHALL usar apenas campos e valores devolvidos, e SHALL separar eventual pergunta ou convite em outra mensagem respeitando três mensagens por turno, sem emoji, tabela ou markdown.
+
+**Segunda emenda aprovada em 2026-09-14**: AC19–24 concretizam
+`AJUSTE-PROATIVIDADE-PROPOSTO.md`, aprovada pelo usuário para implementação local.
+Não criam geografia, parser, renderer determinístico ou estado adicional. As ACs
+verificam instruções; proatividade, momento do convite e legibilidade do modelo
+continuam dependendo de nova conversa real após publicação autorizada.
 
 **Emenda aprovada em 2026-09-14**: AC13–18 registram a revisão em
 `AJUSTE-PROMPT-PROPOSTO.md`, aprovada pelo usuário após a conversa real. A exigência
@@ -296,7 +308,7 @@ e a tool tenham dado para exercitar sem depender de cadastro manual.
 | BUSCA-02 | P1: Rota de consulta do contrato de integração | Design | In Design |
 | BUSCA-03 | P1: Rota de consulta do contrato de integração | Design | In Design |
 | BUSCA-04 | P1: Tool `buscar_imoveis` no fluxo do agente | Design | In Design |
-| BUSCA-05 | P1: Tool `buscar_imoveis` no fluxo do agente | Execute | T31 local; prova real pendente |
+| BUSCA-05 | P1: Tool `buscar_imoveis` no fluxo do agente | Execute | T33 local; publicação/prova real pendentes |
 | PROVA-01 | P2: Prova conversacional da tool nova | Design | In Design |
 | PROVA-02 | P2: Prova conversacional da tool nova | Design | In Design |
 | SEEDIM-01 | P3: Seed do catálogo | Design | In Design |
@@ -320,7 +332,7 @@ Cada ID acima, contra os critérios de aceite que ele carrega.
 | BUSCA-02 | Rota AC4, AC5 e os Edge Cases de fronteira 3 e 4 — limite, ordenação determinística e total |
 | BUSCA-03 | Rota AC6, AC7, AC8, AC9 — payload mínimo, ausência de endereço e de captador, recusa de filtro inválido |
 | BUSCA-04 | Tool AC1, AC2, AC3, AC4, AC11, AC12 — o nó, a origem dos parâmetros, a paridade do workflow e a conferência de hash |
-| BUSCA-05 | Tool AC5–10 e AC13–18 — erro, resultado vazio, citação, fronteira/gate, busca proativa, convite sem escolha, cortesia, falha sem promessa e aceite explícito |
+| BUSCA-05 | Tool AC5–10 e AC13–24 — erro, resultado vazio, citação, fronteira/gate, busca proativa, convite sem escolha, cortesia, falha sem promessa, aceite explícito, expansão limitada, filtros válidos e apresentação em linhas |
 | PROVA-01 | Prova AC1, AC2, AC5, AC6 — roteiro, checklist de limpeza, evidência e barra por desfecho |
 | PROVA-02 | Prova AC3, AC4, AC7 — os dois desfechos do cenário novo e a regressão do cenário do lote-10 |
 | SEEDIM-01 | Seed AC1, AC2, AC3 |

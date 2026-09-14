@@ -1198,19 +1198,19 @@ const buscarImoveisTool = tool({
     maxTries: 2,
     parameters: {
       toolDescription:
-        "Consulta o inventário real de imóveis disponíveis desta imobiliária pelos critérios que o lead informar. Todos os parâmetros são opcionais — inclua só os que o lead efetivamente mencionou. Preço em reais (nunca centavos).",
+        "Consulta o inventário real de imóveis disponíveis desta imobiliária pelos critérios que o lead informar. Todos os parâmetros são opcionais — inclua só os que o lead efetivamente mencionou. Preço em reais (nunca centavos). Omitir filtros desconhecidos: não enviar strings vazias ou números zero como preenchimento. Cidade é apenas o nome da cidade, sem /UF, e só deve ser filtrada quando confirmada pelo lead; não inferir de imóvel apresentado. Bairro aceita um nome de bairro real, nunca expressões de proximidade. Para consultar alternativas sem um bairro específico, omita bairro. A tool não calcula distância ou adjacência. Uma falha técnica não é resultado vazio; não invente ausência de imóveis.",
       method: "GET",
       url: `${CRM_BASE_URL}/properties`,
       sendQuery: true,
       queryParameters: {
         parameters: [
-          { name: "modalidade", value: fromAi("modalidade", "Modalidade do imóvel: novo, usado ou ambos. Só inclua se o lead mencionou.", "string") },
-          { name: "tipo", value: fromAi("tipo", "Tipo do imóvel: casa, apartamento, sobrado, cobertura, terreno, sala_comercial ou chacara. Só inclua se o lead mencionou.", "string") },
-          { name: "bairro", value: fromAi("bairro", "Bairro que o lead procura, texto livre. Só inclua se o lead mencionou.", "string") },
-          { name: "cidade", value: fromAi("cidade", "Cidade que o lead procura, texto livre. Só inclua se o lead mencionou.", "string") },
-          { name: "precoMin", value: fromAi("precoMin", "Preço mínimo em reais, inteiro maior que zero. Só inclua se o lead deu um valor mínimo.", "number") },
-          { name: "precoMax", value: fromAi("precoMax", "Preço máximo em reais, inteiro maior que zero. Só inclua se o lead deu um valor máximo.", "number") },
-          { name: "quartosMin", value: fromAi("quartosMin", "Número mínimo de quartos/dormitórios, inteiro maior que zero. Só inclua se o lead mencionou.", "number") },
+          { name: "modalidade", value: fromAi("modalidade", "Modalidade do imóvel: novo, usado ou ambos. Só inclua se o lead mencionou. Se desconhecido, omita; não enviar string vazia.", "string") },
+          { name: "tipo", value: fromAi("tipo", "Tipo do imóvel: casa, apartamento, sobrado, cobertura, terreno, sala_comercial ou chacara. Só inclua se o lead mencionou. Se desconhecido, omita; não enviar string vazia.", "string") },
+          { name: "bairro", value: fromAi("bairro", "Nome real do bairro que o lead procura. Só inclua se o lead mencionou. Nunca usar próximo, arredores ou bairros próximos como nome. Na busca alternativa sem bairro específico, omita bairro. Se desconhecido, omita; não enviar string vazia.", "string") },
+          { name: "cidade", value: fromAi("cidade", "Nome da cidade confirmada pelo lead, sem /UF. Não inferir de imóvel apresentado. Se desconhecido, omita; não enviar string vazia.", "string") },
+          { name: "precoMin", value: fromAi("precoMin", "Preço mínimo em reais, inteiro maior que zero. Só inclua se o lead deu um valor mínimo. Se desconhecido, omita; não enviar zero.", "number") },
+          { name: "precoMax", value: fromAi("precoMax", "Preço máximo em reais, inteiro maior que zero. Só inclua se o lead deu um valor máximo. Se desconhecido, omita; não enviar zero.", "number") },
+          { name: "quartosMin", value: fromAi("quartosMin", "Número mínimo de quartos/dormitórios, inteiro maior que zero. Só inclua se o lead mencionou. Se desconhecido, omita; não enviar zero.", "number") },
         ],
       },
       authentication: "genericCredentialType",

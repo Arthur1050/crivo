@@ -1,6 +1,6 @@
 # Proatividade e apresentação após a segunda conversa — 2026-09-14
 
-**Status**: proposta concreta para revisão do usuário; não implementada/publicada.
+**Status**: aprovada pelo usuário (“Aprovado”); implementada e verificada localmente na T33. Publicação pendente de autorização específica.
 **Escopo**: refinamento do lote-11, mantendo o planejamento e a revisão T31.
 **Evidência**: evidencia.md §34; oito turnos conferidos no CRM e por get_execution.
 
@@ -137,3 +137,12 @@ Critérios de aceite propostos, com asserção própria por cláusula nas duas f
 **Limite da aprovação solicitada**: implementar/verificar/commitar esta revisão local.
 Nova publicação, reset e eventuais alterações de Calendar continuam exigindo
 autorização específica. Nenhuma dessas ações foi feita na investigação.
+
+## Entrega local aprovada — T33
+
+Prompt e descrição de buscar_imoveis revisados; generated/principal.ts regenerado.
+1.347 testes / 91 arquivos, lint e build exit 0. Os 43 casos novos comprovam as
+instruções aprovadas; nenhum teste anterior foi alterado/removido/pulado. Grafo
+62/76/maxIterations 8 preservado; sem mudanças em banco, booking, gate/phase/voice.
+Detalhes, mapeamento e recibos locais em evidencia.md §35. Publicação e nova prova
+real ainda pendentes. Commit atômico: fix(agente): busca alternativas e antecipa convite com imoveis legiveis.

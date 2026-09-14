@@ -263,65 +263,65 @@
 
 ## Handoff
 
-### Lote 11 — conversa real investigada e revisão aprovada em 2026-09-14
+### Lote 11 — T33 implementada e verificada localmente (2026-09-14)
 
-- **Feature**: `lote-11-catalogo-de-imoveis`.
-- **Phase / Task**: Fase 6 / T26–T27 abertas; T31 implementada (`2268671`), T32 publicada
-  após autorização específica do usuário (“Pode publicar”). Proposta concreta em `AJUSTE-PROMPT-PROPOSTO.md`.
-- **Completed**: T1–T25, T31 e T32 entregues, com commits locais. T30 publicada (`6a05fa1`), mas
-  sua repetição da T26 permanece pendente. T31 substitui a regra absoluta de busca,
-  responde cortesia e exige aceite em todas as fases. Não refazer o planejamento.
-- **In-progress**: `evidencia.md` §26/26.1 registra leitura da conversa/execuções;
-  §31 registra mudança local e asserções; §32 registra hash e publicação autorizada. `tasks.md` T31 e `spec.md`
-  BUSCA-05 AC13–18 refletem aprovação. Gate local passou: 1.304 testes / 91 arquivos.
-- **Next step**: usuário revisar AJUSTE-PROATIVIDADE-PROPOSTO.md; depois implementar
-  e verificar o ajuste aprovado. T26 ainda precisa de captura real, embora referência,
-  preço, ausência e chamadas do modelo estejam comprovados na segunda conversa (§34).
-- **Branch**: `main`; HEAD de implementação ao iniciar `6a05fa1`, `origin/main`
-  local `5275511`. T32 alterou/publicou somente o principal; reset posterior autorizado.
-  Nenhum push/deploy.
+- **Feature**: lote-11-catalogo-de-imoveis. Retomada pela tlc-spec-driven; planejamento preservado.
+- **Phase / Task**: Fase 6 / T33 Done local; publicação pendente; T26–T29 abertas.
+- **Completed**: T1–T25, T31 (`2268671`) e T32 (`6cca049`), T33 (commit local abaixo). T30 (`6a05fa1`) é
+  histórico da primeira tentativa; a revisão consultiva T31 substitui sua regra absoluta.
+- **Última entrega**: n8n/src/system-message.mjs:134 e principal.ts:1200 aplicam
+  AJUSTE-PROATIVIDADE-PROPOSTO.md aprovado por “Aprovado”. BUSCA-05 AC19–24 e T33
+  declaradas. Evidencia.md §35 traz RED/GREEN, estrutura e mapeamento de asserções.
+- **Next step**: solicitar autorização específica para publicar somente o principal
+  (system message e descrições/argumentos da busca); conferir versão salva antes
+  de ativar e depois fazer nova prova real quando a sessão estiver preparada com autorização.
+- **Blockers**: nenhum local. Publicação/reset/Calendar não aprovados nesta rodada;
+  captura real pendente para T26; T27 depende dela. Não declarar lote concluído.
+- **Uncommitted files**: nenhum após commit atômico T33, com prompt/testes/workflow/gerado
+  e STATE/spec/tasks/evidencia/proposta. Commit: `fix(agente): busca alternativas e antecipa convite com imoveis legiveis`
+  (localizar hash em git log; check_commit.py exit 0).
+- **Branch**: main, HEAD ao iniciar f65bc1d; origin/main local 5275511; sem push/deploy.
 
-**Conversa real**: sete turnos / 14 mensagens conferidos no CRM; execuções `2272`,
-`2278`, `2284`, `2291`, `2297`, `2307`, `2313` confirmadas individualmente por
-`get_execution`. Lead novo `038b679d-510f-418d-8cfa-0ee50532df11`, tenant `triangulo`.
-Reset anterior `2271` confirmado; primeiro turno comprovou a limpeza. Não resetar
-esta conversa sem autorização. Estado final `em_qualificacao`, reunião e responsável
-nulos. Consulta autenticada Abadia retornou IM-0001 / R$ 380.000,00; Uberaba retornou
-vazio. Referência omitida no envio: PROVA-02 AC3 não passou integralmente. Sem captura
-real e sem medição direta de iterações; intermediateSteps não são iterações do LLM.
+**Revisão local**: expansão automática única omite só bairro flexível e mantém demais
+critérios conhecidos. Após expansão vazia, ou ausência sem poder expandir, orienta
+convite no mesmo turno. Bairro obrigatório, orçamento/quartos/tipo/cidade e critérios
+CRM não são afrouxados. Cidade confirmada sem /UF; não inferir cidade desejada de imóvel
+anterior nem enviar proximidade como bairro literal. Alternativas mostram localização
+real sem alegar distância. Imóvel em linhas separadas; pergunta em outro balão, até três.
+Cortesia/aceite/falha/opt-out/fronteiras/reunião confirmada preservados. Testes comprovam
+instruções e parâmetros, comportamento do modelo depende de nova conversa real.
 
-**Artefato**: gerado localmente pelo inliner; só principal.ts muda entre os seis
-workflows. Grafo SDK com 62 nós / 76 conexões, topologia idêntica ao HEAD anterior,
-somente jsCode do nó de system message muda. gate.mjs/phase.mjs intocados. Validador
-n8n `valid=true`, cinco avisos de Memory Managers existentes. Principal remoto
-`0B1nqjODu7xuYYKF` reconsultado, ativo na nova versão
-`fd7faf28-c070-4585-a22d-c322f1e1765d`, maxIterations 8. SHA-256 local/salvo conferido
-antes de ativar: `c7a1ce26e192ba382ac56b14605f939334fecaf3c0e40a84d36f7d4e5b6a4e89`
-(jsCode com CRLF normalizado). Nova leitura confirmou código ativo igual, 62/76,
-settings/modelo/grupos e demais parâmetros preservados; recibo em evidencia.md §32.
+**Verificação atual**: focado RED 43 falhas / 135 PASS; GREEN 178 PASS em 2 arquivos,
+43 novos, 135 anteriores intactos. Inliner exit 0; texto gerado igual à transformação
+pura da fonte. SDK valid=true, cinco avisos prévios de Memory Manager. 62 nós / 76
+conexões / maxIterations 8, conexões iguais ao HEAD. Só jsCode do system message,
+toolDescription e sete descrições fromAi mudam. gate/phase/voice/banco/booking intactos.
+SHA-256 jsCode gerado bc190cc00a86fd61aceab2aac07369823d606efd944ff529f7b29481411f6156.
+Gate completo exit 0: 1.347 testes / 91 arquivos (656,97 s), sessão 27477; lint
+0 erros / 3 avisos prévios; build exit 0 (avisos Better Auth locais prévios).
+validate_tasks/spec e diff --check exit 0. Adequação A/B/C/D PASS local em §35.
 
-**Credencial**: Google Calendar reconectado e comprovado na execução 2360 success
-(segunda conversa): availability e criação de evento Meet bem-sucedidas.
-Execuções `2305` e `2308` falharam em `Google Calendar: availability`, antes de evento
-ou atualização CRM. Causa específica de expiração/revogação não comprovada. A T31
-corrige instruções de não confirmar/prometer depois, mas não conserta OAuth.
+**Estado remoto herdado**: principal 0B1nqjODu7xuYYKF ativo na revisão T31
+fd7faf28-c070-4585-a22d-c322f1e1765d (recibo §32). Último reset autorizado: execução
+2320 success, limpeza n8n→CRM confirmada (§33). Não repetir reset automaticamente.
 
-**Sequência restante**: T26 (referência/preço real,
-ausência, captura e iterações), T27 (qualificar→agendar com lead limpo e evento Meet),
-T28 (supersessão parcial de VOZ-02), T29 (rastreabilidade, INDEX, roadmap, handoff e
-revisão de lições), Verifier independente com as 8 mutações do design e
-`validate_state.py` exit 0. Ainda não há validation.md; lote não está concluído.
+**Segunda conversa (§34)**: 8 turnos / 16 mensagens, lead novo
+b639766a-f273-4c30-aa39-695226141bed. Execuções 2321, 2327, 2335, 2342, 2349, 2354,
+2359, 2365 e filha 2360 confirmadas por get_execution. IM-0001 / R$ 380.000,00 e
+ausência corretos; máximo seis runs do modelo, sem estouro. CRM qualificado_agendado,
+André atribuído, 15/09/2026 15h Brasília. Calendar reconectado comprovado em availability
++ criação Meet. Evento opblu5rf7n0sml8p3c7ue3gpe4, Meet kgb-upvk-ndo; lembrete id 16
+continuam existentes. Não cancelar/resetar Calendar sem autorização específica.
+Qualificação permaneceu nula, dívida herdada. Falta captura real: T26 não é Done;
+T27 ainda depende dela, apesar do desfecho de reunião comprovado nesta conversa.
+Histórico da primeira conversa/falha OAuth permanece em evidencia.md §26.1/31/34.
 
-**Gates**: targeted system-message **121 passaram** (24 novos, 97 existentes).
-Red anterior 27 falhas / 94 passaram. Lint exit 0 (0 erros / 3 avisos prévios), build
-exit 0 (avisos locais prévios Better Auth). Suíte completa exit 0: **1.304 testes em
-91 arquivos**, 0 falhas, 665,22 s; resumo da sessão 89219 recuperado. validate_tasks e
-validate_spec exit 0; diff --check exit 0.
-A sessão herdada `31804` não teve resumo recuperável e não conta como PASS.
-
-**Lições**: 22 confirmadas carregadas; script em `.agents/skills` mantém trava
-`prune_requires_confirmation`. Promoção/exclusão são decisão humana (AD-028).
-Diagrama/formatação da T30 reconciliados; nova T31 declarada no mapa.
+**Restante**: publicar T33 após autorização; nova prova real para os três refinamentos;
+T26 captura/gate, T27 regressão, T28 supersessão parcial VOZ-02, T29 rastreabilidade
+completa/INDEX/roadmap/handoff/revisão de lições. Verifier independente obrigatório
+após as tasks finais, com as oito mutações do design e validate_state.py exit 0.
+Não há validation.md. Lições: 22 confirmadas carregadas; promoção/exclusão humana
+AD-028, trava prune_requires_confirmation mantida.
 
 **Pendências herdadas que permanecem**:
 - Remarcação impossível após `qualificado_agendado`; requer contrato, id de evento e
@@ -339,43 +339,3 @@ Diagrama/formatação da T30 reconciliados; nova T31 declarada no mapa.
 - Switch para permitir exibição do catálogo (ligado por padrão) e antecedência mínima
   de agendamento em dias: deferidos pelo usuário, registrados em `context.md`.
 - Upload/storage/preview ficam no L12; vitrine pública separada, no L16 (AD-025).
-
-
-**Arquivos da T31**: prompt, teste, generated/principal.ts, STATE.md e artefatos
-lote-11 tasks.md/spec.md/evidencia.md/AJUSTE-PROMPT-PROPOSTO.md, incluídos no commit
-atômico da retomada/T31. **Commit local**: `fix(agente): flexibiliza convite e responde cortesia sem antecipar agendamento`
-(check_commit.py exit 0; localizar hash em git log). T26–T29 seguem abertas; nenhuma
-task real adicional marcada Done. Árvore conferida após o commit, sem push/deploy.
-
-**T32 — recibo**: evidencia.md, tasks.md, AJUSTE-PROMPT-PROPOSTO.md e este Handoff
-atualizados; commit `docs(specs): registra publicacao da revisao consultiva do principal`.
-Gate remoto/hash e validadores estruturais passaram; sem novo código/teste.
-A publicação não aprova comportamento real ou encerra o lote; nenhuma conversa limpa nova.
-
-**Última preparação (2026-09-14)**: reset solicitado explicitamente pelo usuário.
-crivo-smoke-reset execução 2320 success confirmada por get_execution; memória da
-sessão purgada e linha conversa_estado id 32 removida. Depois, npm run smoke:reset
-exit 0 removeu o lead homologado (14 mensagens / 1 conversa); SQL READ ONLY confirmou
-remaining=0. Principal ativo na revisão fd7faf28-c070-4585-a22d-c322f1e1765d.
-A conversa de §26.1 permanece documentada como evidência histórica; o próximo lead
-será novo. Usuário pode iniciar. Nenhum booking executado para testar a credencial;
-T26/T27 seguem abertas. Commit documental do reset, sem código ou novos testes.
-
-**Última conversa investigada (2026-09-14, evidencia.md §34)**: oito turnos / 16
-mensagens; lead novo b639766a-f273-4c30-aa39-695226141bed. Execuções 2321, 2327, 2335,
-2342, 2349, 2354, 2359, 2365 e filha 2360 confirmadas por get_execution. Referência
-IM-0001 / R$ 380.000,00 e ausência de casa no Abadia chegaram corretamente. Máximo
-seis runs do modelo por turno (teto oito preservado), sem estouro. CRM
-qualificado_agendado, André atribuído, 15/09/2026 às 15h Brasília. Evento Calendar
-opblu5rf7n0sml8p3c7ue3gpe4, Meet kgb-upvk-ndo; lembrete agenda_envios id 16 existente.
-Não cancelar/resetar sem autorização específica. Campos de qualificação continuam
-nulos (dívida herdada). Falta captura real para T26; T27 depende dela, sem fechamento.
-
-**Refinamento solicitado**: busca automática de alternativas, convite mais cedo e
-apresentação em linhas curtas. Proposta concreta em AJUSTE-PROATIVIDADE-PROPOSTO.md,
-aguardando aprovação local. Tool atual só compara bairro/cidade por igualdade:
-2349 mandou bairro literal próximo do Abadia, e 2342 cidade Uberlândia/MG não informada.
-Proposta preserva critérios e amplia apenas bairro flexível, sem fingir geografia;
-sem resultado após uma expansão já oferece reunião, sem novas voltas de refinamento.
-Nenhum código/teste/publicação/reset alterado nesta investigação. Evidência, proposta,
-tasks (cláusulas comprovadas, sem Done) e Handoff são os arquivos documentais desta rodada.

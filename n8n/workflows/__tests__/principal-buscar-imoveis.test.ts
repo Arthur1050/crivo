@@ -92,6 +92,37 @@ describe("buscar_imoveis — falha da rota não aborta o turno (BUSCA-04 AC5)", 
   });
 });
 
+describe("buscar_imoveis — orientação de filtros aprovada T33 (BUSCA-05 AC21/23)", () => {
+  const description = String(node().parameters.toolDescription);
+
+  it("omite filtros desconhecidos sem strings vazias ou zero", () => {
+    expect(description).toContain("Omitir filtros desconhecidos: não enviar strings vazias ou números zero como preenchimento");
+    expect(description).toContain("Todos os parâmetros são opcionais");
+    expect(description).toContain("Preço em reais (nunca centavos)");
+  });
+  it("orienta cidade confirmada sem UF e não infere preferência de imóvel anterior", () => {
+    expect(description).toContain("Cidade é apenas o nome da cidade, sem /UF, e só deve ser filtrada quando confirmada pelo lead");
+    expect(queryParam("cidade")).toContain("sem /UF");
+    expect(queryParam("cidade")).toContain("Não inferir de imóvel apresentado");
+  });
+  it("rejeita termos de proximidade como bairro e omite bairro na expansão", () => {
+    expect(description).toContain("Bairro aceita um nome de bairro real, nunca expressões de proximidade");
+    expect(queryParam("bairro")).toContain("Nunca usar próximo, arredores ou bairros próximos como nome");
+    expect(queryParam("bairro")).toContain("Na busca alternativa sem bairro específico, omita bairro");
+    expect(description).toContain("A tool não calcula distância ou adjacência");
+  });
+  it.each(["modalidade", "tipo", "bairro", "cidade"])("orienta omitir '%s' desconhecido sem string vazia", (name) => {
+    expect(queryParam(name)).toContain("Se desconhecido, omita; não enviar string vazia");
+  });
+  it.each(["precoMin", "precoMax", "quartosMin"])("orienta omitir '%s' desconhecido sem zero", (name) => {
+    expect(queryParam(name)).toContain("Se desconhecido, omita; não enviar zero");
+    expect(queryParam(name)).toContain("inteiro maior que zero");
+  });
+  it("erro não significa ausência de imóveis", () => {
+    expect(description).toContain("Uma falha técnica não é resultado vazio; não invente ausência de imóveis");
+  });
+});
+
 describe("buscar_imoveis — está registrada como tool do AI Agent, junto das 5 existentes (BUSCA-04 AC11)", () => {
   it("as 6 tools (5 antigas + buscar_imoveis) existem no grafo pelo nome", () => {
     const nomes = workflow.nodes.map((n) => n.name);
