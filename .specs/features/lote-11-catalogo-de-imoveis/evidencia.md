@@ -403,3 +403,28 @@ Gate documental: validate_tasks.py e validate_spec.py exit 0; git diff --check e
 preparar conversa limpa conforme roteiro antes de repetir T26/T27. A conversa
 existente não foi limpa nesta publicação. Referência/preço real, captura, iterações
 e evento Meet continuam pendentes; T26–T29 e Verifier final não foram aprovados.
+
+## 33. Reset autorizado para nova conversa (2026-09-14)
+
+Usuário informou acreditar ter resolvido a credencial e autorizou executar o reset
+para iniciar nova sessão. Alvo fixo do roteiro: tenant `triangulo`, waId `553499532444`.
+Executada a ordem n8n → CRM, sem alterar workflow ou enviar mensagem no WhatsApp.
+
+- `crivo-smoke-reset` (`rgf3t1cVsd2q0X0f`) executado em modo manual;
+  execução **2320**, conferida individualmente por `get_execution`, status **success**,
+  de `2026-09-14T17:04:33.626Z` a `17:04:33.719Z`.
+- Memory Manager retornou `success=true` para sessão `triangulo:553499532444`.
+  Data Table deleteRows executou com sucesso e devolveu a linha removida id 32,
+  filtrada por tenantSlug AND waId. Sem afirmar leitura direta de ausência no Postgres
+  do n8n; limpeza comprovada pela execução dos nós e a primeira conversa confirmará
+  o estado inicial em campo.
+- `npm run smoke:reset` exit 0: lead de teste apagado, **14 mensagens / 1 conversa**.
+  Mensagem do script sobre faltar n8n é genérica; o lado n8n já havia concluído acima.
+- Consulta SQL separada, transação READ ONLY, confirmou **remaining=0** para lead
+  por tenant/externalId. Principal reconsultado: ativo em
+  `fd7faf28-c070-4585-a22d-c322f1e1765d` (prompt da T31).
+
+Ambiente preparado para o usuário iniciar a conversa. A reconexão da credencial
+foi relatada pelo usuário; nenhum agendamento foi disparado para confirmá-la nesta
+limpeza. Validação real de Calendar, referência/preço, captura e iterações ainda
+pendentes. T26/T27 seguem abertas.

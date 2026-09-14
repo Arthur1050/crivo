@@ -274,10 +274,12 @@
 - **In-progress**: `evidencia.md` §26/26.1 registra leitura da conversa/execuções;
   §31 registra mudança local e asserções; §32 registra hash e publicação autorizada. `tasks.md` T31 e `spec.md`
   BUSCA-05 AC13–18 refletem aprovação. Gate local passou: 1.304 testes / 91 arquivos.
-- **Next step**: reconectar `Google Calendar account` no n8n; preparar conversa limpa
-  conforme roteiro para repetir T26/T27. Não houve reset nesta publicação.
+- **Next step**: usuário iniciar nova conversa no WhatsApp e depois conferir mensagens,
+  tools, CRM e Calendar para repetir T26/T27. Reset autorizado concluído em 2026-09-14
+  (execução n8n 2320 + CRM limpo); evidencia.md §33.
 - **Branch**: `main`; HEAD de implementação ao iniciar `6a05fa1`, `origin/main`
-  local `5275511`. T32 alterou/publicou somente o principal; nenhum push/deploy/reset.
+  local `5275511`. T32 alterou/publicou somente o principal; reset posterior autorizado.
+  Nenhum push/deploy.
 
 **Conversa real**: sete turnos / 14 mensagens conferidos no CRM; execuções `2272`,
 `2278`, `2284`, `2291`, `2297`, `2307`, `2313` confirmadas individualmente por
@@ -298,7 +300,8 @@ antes de ativar: `c7a1ce26e192ba382ac56b14605f939334fecaf3c0e40a84d36f7d4e5b6a4e
 (jsCode com CRLF normalizado). Nova leitura confirmou código ativo igual, 62/76,
 settings/modelo/grupos e demais parâmetros preservados; recibo em evidencia.md §32.
 
-**Blockers**: `Google Calendar account` (id `2kXea9a4br8Gn3pp`) exige reconexão humana.
+**Credencial**: usuário relatou ter resolvido `Google Calendar account` (id
+`2kXea9a4br8Gn3pp`); funcionamento ainda precisa ser confirmado no agendamento real.
 Execuções `2305` e `2308` falharam em `Google Calendar: availability`, antes de evento
 ou atualização CRM. Causa específica de expiração/revogação não comprovada. A T31
 corrige instruções de não confirmar/prometer depois, mas não conserta OAuth.
@@ -348,3 +351,12 @@ task real adicional marcada Done. Árvore conferida após o commit, sem push/dep
 atualizados; commit `docs(specs): registra publicacao da revisao consultiva do principal`.
 Gate remoto/hash e validadores estruturais passaram; sem novo código/teste.
 A publicação não aprova comportamento real ou encerra o lote; nenhuma conversa limpa nova.
+
+**Última preparação (2026-09-14)**: reset solicitado explicitamente pelo usuário.
+crivo-smoke-reset execução 2320 success confirmada por get_execution; memória da
+sessão purgada e linha conversa_estado id 32 removida. Depois, npm run smoke:reset
+exit 0 removeu o lead homologado (14 mensagens / 1 conversa); SQL READ ONLY confirmou
+remaining=0. Principal ativo na revisão fd7faf28-c070-4585-a22d-c322f1e1765d.
+A conversa de §26.1 permanece documentada como evidência histórica; o próximo lead
+será novo. Usuário pode iniciar. Nenhum booking executado para testar a credencial;
+T26/T27 seguem abertas. Commit documental do reset, sem código ou novos testes.
