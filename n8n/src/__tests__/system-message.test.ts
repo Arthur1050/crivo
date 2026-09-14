@@ -89,15 +89,17 @@ describe("buildSystemMessage — quando buscar imóveis (achado real, prova do l
     expect(message).toMatch(/assim que o lead disser QUALQUER critério de busca/);
   });
 
-  it("manda buscar ANTES de propor reunião — a reunião é consequência, não substituto", () => {
+  it("busca com critérios novos sem condicionar reunião à escolha de imóvel (BUSCA-05 AC13/14)", () => {
     const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
-    expect(message).toMatch(/ANTES de propor qualquer reunião/);
-    expect(message).toMatch(/propor reunião sem antes buscar, tendo critério na mão, é o erro a evitar/i);
+    expect(message).toContain("critério de busca novo ou alterar o que procura");
+    expect(message).toContain("escolher, aprovar ou decidir por um imóvel NÃO é requisito");
+    expect(message).not.toContain("ANTES de propor qualquer reunião");
+    expect(message).not.toContain("A reunião com o corretor é a consequência de ter mostrado opções");
   });
 
   it("vale em qualquer fase, inclusive quando já daria para agendar", () => {
     const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
-    expect(message).toMatch(/vale em qualquer fase da conversa, inclusive quando você já poderia agendar/i);
+    expect(message).toMatch(/vale em qualquer fase da conversa/i);
   });
 
   it("um único critério já basta — não espera ter todos", () => {
@@ -105,14 +107,15 @@ describe("buildSystemMessage — quando buscar imóveis (achado real, prova do l
     expect(message).toMatch(/busque mesmo assim com esse único critério em vez de esperar ter todos/i);
   });
 
-  it("a fase agendando deixa de ser monotemática: manda buscar antes de falar de horário", () => {
+  it("a fase agendando orienta busca sem exigir opções antes de falar de horário (BUSCA-05 AC14)", () => {
     const message = buildSystemMessage({
       settings: BASE_SETTINGS,
       phase: "agendando",
       perguntados: ["modality", "region", "propertyType"],
     });
-    expect(message).toMatch(/BUSQUE os imóveis e mostre o que voltou antes de falar de horário/);
-    expect(message).toMatch(/estar nesta fase não dispensa a busca/i);
+    expect(message).toContain("A reunião também serve para tirar dúvidas");
+    expect(message).toContain("não espere escolha de imóvel nem decisão de compra");
+    expect(message).not.toContain("BUSQUE os imóveis e mostre o que voltou antes de falar de horário");
   });
 });
 
@@ -453,9 +456,10 @@ describe("buildSystemMessage — agendar só após aceite (achado real, Fase 5 l
     expect(message).toContain("REUNIÃO JÁ CONFIRMADA");
   });
 
-  it("na fase de qualificação: a regra de aceite não aparece", () => {
+  it("na fase de qualificação: a regra de aceite também aparece (BUSCA-05 AC18)", () => {
     const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando", perguntados: [] });
-    expect(message).not.toMatch(/NUNCA chame a tool agendar_reuniao no mesmo turno/i);
+    expect(message).toMatch(/NUNCA chame a tool agendar_reuniao no mesmo turno/i);
+    expect(message).toMatch(/s[óo] chame depois que o lead ACEITAR explicitamente um horário/i);
   });
 });
 
@@ -604,7 +608,7 @@ describe("buildSystemMessage — falha de tool em linguagem do lead (achado real
 
   it("proíbe nominalmente os jargões que vazaram na conversa real", () => {
     const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
-    for (const jargao of ["agenda", "conflito", "sistema", "CRM", "API", "erro ao atualizar"]) {
+    for (const jargao of ["agenda", "conflito", "CRM", "API", "erro ao atualizar"]) {
       expect(message).toContain(`\"${jargao}\"`);
     }
   });
@@ -616,7 +620,8 @@ describe("buildSystemMessage — falha de tool em linguagem do lead (achado real
 
   it("dá a tradução exata de falha técnica, sem detalhe", () => {
     const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
-    expect(message).toMatch(/qualquer outra falha técnica vira \"o sistema está fora do ar agora\", sem detalhe nenhum/i);
+    expect(message).toMatch(/qualquer outra falha técnica vira \"não consegui confirmar agora\", sem detalhe nenhum/i);
+    expect(message).not.toContain('qualquer outra falha técnica vira "o sistema está fora do ar agora"');
   });
 });
 
@@ -706,6 +711,84 @@ describe("buildSystemMessage — abertura de sessão (achado real, Fase 5 lote-1
       message.includes(FIELD_LABELS[field])
     );
     expect(mentionedRequiredLabels).toHaveLength(1);
+  });
+});
+
+describe.each(["qualificando", "agendando"] as const)("buildSystemMessage — revisão consultiva aprovada, fase %s", (phase) => {
+  const build = (firstTurn = false) => buildSystemMessage({ settings: BASE_SETTINGS, phase, firstTurn });
+
+  it("responde ao cumprimento e às perguntas sociais (BUSCA-05 AC15)", () => {
+    const message = build(true);
+    expect(message).toContain("responda ao cumprimento e às perguntas sociais");
+    expect(message).toContain("“tudo bem?” ou “como vai?”");
+  });
+
+  it("adapta a apresentação e não transforma saudação sem pedido em qualificação (BUSCA-05 AC15)", () => {
+    const message = build(true);
+    expect(message).toContain("adapte a frase e sua ordem ao que a pessoa disse");
+    expect(message).toContain("não acrescente uma pergunta de qualificação nesse mesmo turno");
+    expect(message).toContain("Se ele já trouxe um pedido, responda à cortesia e então ao pedido");
+  });
+
+  it("responde cortesia também depois da apresentação (BUSCA-05 AC15)", () => {
+    const message = build();
+    expect(message).toContain("responda ao cumprimento e às perguntas sociais");
+    expect(message).not.toContain("Primeira mensagem desta conversa:");
+  });
+
+  it("oferece ajuda do corretor diante de dúvida e indecisão prolongada (BUSCA-05 AC13)", () => {
+    const message = build();
+    expect(message).toContain("Se o lead demonstrar dúvida ou incerteza");
+    expect(message).toContain("a conversa se prolongar em comparações sem avançar");
+    expect(message).toContain("ofereça uma conversa com o corretor para ajudá-lo a decidir");
+  });
+
+  it("respeita recusa e permite convite quando não houver opções (BUSCA-05 AC13)", () => {
+    const message = build();
+    expect(message).toContain("se ele recusar, respeite e continue ajudando");
+    expect(message).toContain("Você também pode oferecer essa conversa quando a busca não trouxer opções");
+  });
+
+  it("prioriza pedido de reunião e aceite sem forçar novas buscas (BUSCA-05 AC14)", () => {
+    const message = build();
+    expect(message).toContain("Não repita buscas com os mesmos critérios só para adiar a reunião");
+    expect(message).toContain("Se o lead já quiser conversar ou tiver aceitado um horário, priorize esse pedido");
+  });
+
+  it("exige referência e preço por imóvel citado (BUSCA-05 AC16, PROVA-02 AC3)", () => {
+    const message = build();
+    expect(message).toContain("incluindo a referência de cada imóvel citado e seu preço");
+  });
+
+  it("não interpreta interesse, dúvida ou agradecimento como aceite (BUSCA-05 AC18)", () => {
+    const message = build();
+    expect(message).toContain("interesse por um imóvel, dúvida ou agradecimento NÃO é aceite de horário");
+    expect(message).toContain("Dizer que gostou de uma opção não autoriza marcar reunião");
+  });
+
+  it("encerra a proposta antes de chamar a tool e exige horário aceito (BUSCA-05 AC18)", () => {
+    const message = build();
+    expect(message).toContain("se perguntou, encerre o turno e espere a resposta");
+    expect(message).toContain("sempre para o horário que ele aceitou");
+  });
+
+  it("mantém reunião não confirmada quando houver falha técnica (BUSCA-05 AC17)", () => {
+    const message = build();
+    expect(message).toContain("a reunião ainda NÃO está confirmada");
+    expect(message).toContain("Não diga que o horário foi ocupado, a menos que a tool tenha devolvido essa informação");
+  });
+
+  it("não promete retomada automática sem mecanismo (BUSCA-05 AC17)", () => {
+    const message = build();
+    expect(message).toContain("Não prometa que vai confirmar depois, avisar quando voltar, reservar ou deixar encaminhado");
+    expect(message).toContain("não existe acompanhamento automático para cumprir isso");
+  });
+
+  it("não pede novo horário para corrigir falha técnica nem divulga detalhes (BUSCA-05 AC17)", () => {
+    const message = build();
+    expect(message).toContain("não peça novas alternativas de horário por esse motivo");
+    expect(message).toContain("Oriente o lead a retomar a confirmação mais tarde");
+    expect(message).toContain("Não divulgue credenciais, códigos internos ou detalhes de OAuth");
   });
 });
 

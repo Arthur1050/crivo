@@ -100,7 +100,12 @@ T21 → T22 → T23 → T24
 
 ```
 T25 → T26 → T27 → T28 → T29
+T26 → T30
+T30 → T31
 ```
+
+T30 nasceu da primeira tentativa da T26. A correção já foi commitada e publicada;
+a repetição da T26 depois do reset continua pendente antes de seguir para T27.
 
 ---
 
@@ -888,7 +893,7 @@ T25 → T26 → T27 → T28 → T29
 
 ---
 
-### T30 (fix): Instrução de quando buscar, e âncora de hora no agendamento
+### T30: Correção da iniciativa de busca e da âncora de hora no agendamento
 
 **What**: Correção aberta pela primeira rodada do cenário 4 (`roteiro.md` §7 — reprovação por desfecho abre fix task antes de o requisito subir para `Verified`). Dois defeitos, ambos de prompt.
 **Where**: `n8n/src/system-message.mjs`
@@ -922,6 +927,40 @@ T25 → T26 → T27 → T28 → T29
 
 ---
 
+### T31: Revisar cortesia, convite consultivo e aceite após a conversa real
+
+**What**: Aplicar a revisão aprovada em `AJUSTE-PROMPT-PROPOSTO.md` sem manter regras contraditórias.
+**Where**: `n8n/src/system-message.mjs`, `n8n/src/__tests__/system-message.test.ts`, `n8n/generated/principal.ts`, artefatos deste lote e `STATE.md`.
+**Depends on**: T30 (implementação e publicação da correção anterior)
+**Reuses**: Instruções compartilhadas de system message, inliner e testes por cláusula (L-012).
+**Requirement**: BUSCA-05 AC13–18, BUSCA-05 AC6/7/10 e PROVA-02 AC3.
+**Approval**: Usuário aprovou a revisão em 2026-09-14 (“Eu aprovo”), incluindo substituição dos testes da regra anterior.
+
+**Tools**:
+- MCP: `n8n` (leitura de versão e validação, sem publicação nesta task)
+- Skill: tlc-spec-driven
+
+**Done when**:
+- [x] Cortesia respondida, apresentação adaptável e saudação sem pedido não orientada à coleta.
+- [x] Dúvida/indecisão permitem convite sem exigir escolha; recusa respeitada.
+- [x] Critérios novos continuam disparando busca; pedido de reunião ou aceite não exige nova busca.
+- [x] Cada imóvel citado exige referência e preço; sem reintroduzir endereço/foto/captador.
+- [x] Aceite explícito exigido em ambas as fases; gostar de imóvel não autoriza agendar.
+- [x] Falha técnica mantém reunião não confirmada, não vira horário ocupado nem promessa de retomada automática.
+- [x] Tests existentes das regras substituídas atualizados conforme aprovação; nenhum caso removido ou pulado; novas cláusulas com asserções próprias.
+- [x] Artefato regenerado pelo inliner, grafo preservado e gate.mjs/phase.mjs sem alteração.
+- [x] Gate build completo passa; evidência e handoff registram resultado local e publicação pendente.
+
+**Tests**: unit
+**Gate**: build
+**Status**: ✅ Done (implementação local; publicação pendente)
+**Commit**: `fix(agente): flexibiliza convite e responde cortesia sem antecipar agendamento`
+
+Publicação e nova prova real não são aprovadas por este gate local. T26/T27 e o
+Verifier final do lote permanecem pendentes.
+
+---
+
 ## Phase Execution Map
 
 ```
@@ -933,6 +972,8 @@ Fase 3:  T11 → T12 → T13 → T14
 Fase 4:  T15 → T16 → T17 → T18 → T19 → T20
 Fase 5:  T21 → T22 → T23 → T24
 Fase 6:  T25 → T26 → T27 → T28 → T29
+Fix da primeira tentativa: T26 → T30
+Revisão aprovada da conversa seguinte: T30 → T31
 ```
 
 Execução estritamente sequencial — não há paralelismo dentro de fase.
@@ -972,6 +1013,8 @@ Execução estritamente sequencial — não há paralelismo dentro de fase.
 | T27 | 1 execução de regressão | ✅ Granular |
 | T28 | 1 emenda de rastreabilidade | ✅ Granular |
 | T29 | 1 fechamento | ✅ Granular |
+| T30 | Correção de prompt motivada pela primeira tentativa da T26 | ✅ Granular |
+| T31 | Revisão de prompt aprovada após a conversa real | ✅ Granular |
 
 ---
 
@@ -1008,6 +1051,8 @@ Execução estritamente sequencial — não há paralelismo dentro de fase.
 | T27 | T26 | T26 → T27 | ✅ Match |
 | T28 | T27 | T27 → T28 | ✅ Match |
 | T29 | T28 | T28 → T29 | ✅ Match |
+| T30 | T26 (primeira tentativa) | T26 → T30 | ✅ Match |
+| T31 | T30 (implementação anterior) | T30 → T31 | ✅ Match |
 
 Nenhuma dependência aponta para fase posterior.
 
@@ -1046,6 +1091,8 @@ Nenhuma dependência aponta para fase posterior.
 | T27 | nenhuma (execução real) | — | none | ✅ OK |
 | T28 | Documentação | none | none | ✅ OK |
 | T29 | Documentação | none | none | ✅ OK |
+| T30 | Módulo puro n8n | unit | unit | ✅ OK |
+| T31 | Módulo puro n8n | unit | unit | ✅ OK |
 
 Nenhum `Tests: none` é deferimento de teste: cada um cai numa camada que a matriz marca `none`
 (componente React, schema, artefato gerado, documentação) ou numa task que não cria código.

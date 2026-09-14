@@ -207,6 +207,19 @@ receber opções reais, para decidir se vale agendar uma visita.
 10. The system SHALL manter `n8n/src/gate.mjs` e a política de campos de `n8n/src/phase.mjs` sem alteração funcional.
 11. The system SHALL manter as 5 tools existentes registradas, e a contagem de nós e de conexões do workflow SHALL refletir exatamente a adição da tool nova.
 12. WHEN o workflow for publicado na instância THEN o sistema SHALL conferir o hash do artefato publicado contra o gerado a partir do repositório antes de ativar.
+13. WHEN o lead demonstrar dúvida, incerteza ou comparações prolongadas sem avanço THEN o system message SHALL orientar um convite consultivo para reunião sem exigir escolha ou aprovação de um imóvel, e SHALL orientar respeito à recusa do convite.
+14. WHEN o lead informar um critério novo ou alterar o que procura THEN o system message SHALL orientar a busca com os critérios informados, mesmo que seja um único critério, e SHALL NOT exigir buscas repetidas antes de atender um pedido de reunião ou um aceite de horário.
+15. WHEN o lead cumprimentar e perguntar como o atendente está THEN o system message SHALL orientar resposta à cortesia e apresentação natural, e SHALL NOT orientar pergunta de qualificação nesse mesmo turno se nenhum pedido foi trazido.
+16. WHEN o agente citar uma opção real THEN o system message SHALL exigir referência e preço de cada imóvel citado, usando os valores devolvidos pela tool.
+17. IF o agendamento falhar por indisponibilidade técnica THEN o system message SHALL orientar que a reunião ainda não está confirmada, SHALL NOT prometer confirmação ou aviso automático futuro, e SHALL NOT tratar a falha como horário ocupado nem pedir alternativas de horário por esse motivo.
+18. WHEN o agente propuser um horário em qualquer fase THEN o system message SHALL exigir aguardar o aceite antes de chamar agendar_reuniao, e SHALL NOT tratar interesse por imóvel, dúvida ou agradecimento como aceite de horário.
+
+**Emenda aprovada em 2026-09-14**: AC13–18 registram a revisão em
+`AJUSTE-PROMPT-PROPOSTO.md`, aprovada pelo usuário após a conversa real. A exigência
+absoluta da T30 de buscar antes de propor qualquer reunião é substituída pela AC14.
+Busca continua disponível e proativa; escolha de imóvel não condiciona reunião.
+Essas ACs provam instruções do prompt por teste, não garantem obediência do modelo:
+PROVA-02 continua dependendo de conversa real após a nova publicação.
 
 **Independent Test**: rodar o workflow contra um lead de descarte pedindo um critério que casa e um
 que não casa, e conferir os dois turnos.
@@ -283,7 +296,7 @@ e a tool tenham dado para exercitar sem depender de cadastro manual.
 | BUSCA-02 | P1: Rota de consulta do contrato de integração | Design | In Design |
 | BUSCA-03 | P1: Rota de consulta do contrato de integração | Design | In Design |
 | BUSCA-04 | P1: Tool `buscar_imoveis` no fluxo do agente | Design | In Design |
-| BUSCA-05 | P1: Tool `buscar_imoveis` no fluxo do agente | Design | In Design |
+| BUSCA-05 | P1: Tool `buscar_imoveis` no fluxo do agente | Execute | T31 local; prova real pendente |
 | PROVA-01 | P2: Prova conversacional da tool nova | Design | In Design |
 | PROVA-02 | P2: Prova conversacional da tool nova | Design | In Design |
 | SEEDIM-01 | P3: Seed do catálogo | Design | In Design |
@@ -307,7 +320,7 @@ Cada ID acima, contra os critérios de aceite que ele carrega.
 | BUSCA-02 | Rota AC4, AC5 e os Edge Cases de fronteira 3 e 4 — limite, ordenação determinística e total |
 | BUSCA-03 | Rota AC6, AC7, AC8, AC9 — payload mínimo, ausência de endereço e de captador, recusa de filtro inválido |
 | BUSCA-04 | Tool AC1, AC2, AC3, AC4, AC11, AC12 — o nó, a origem dos parâmetros, a paridade do workflow e a conferência de hash |
-| BUSCA-05 | Tool AC5, AC6, AC7, AC8, AC9, AC10 — sobrevivência à recusa, resultado vazio, instrução de citação, emenda da fronteira de capacidade e gate intocado |
+| BUSCA-05 | Tool AC5–10 e AC13–18 — erro, resultado vazio, citação, fronteira/gate, busca proativa, convite sem escolha, cortesia, falha sem promessa e aceite explícito |
 | PROVA-01 | Prova AC1, AC2, AC5, AC6 — roteiro, checklist de limpeza, evidência e barra por desfecho |
 | PROVA-02 | Prova AC3, AC4, AC7 — os dois desfechos do cenário novo e a regressão do cenário do lote-10 |
 | SEEDIM-01 | Seed AC1, AC2, AC3 |

@@ -263,194 +263,81 @@
 
 ## Handoff
 
-### Estado do lote 10 (2026-09-09) — encerrado
+### Lote 11 — conversa real investigada e revisão aprovada em 2026-09-14
 
-**Lote 10 (`lote-10-modelo-alvo-e-prova-conversacional`) — EXECUTADO E VERIFICADO. Verifier: PASS.**
-T1–T25 concluídas e commitadas (37 commits, `5416550..90cf38c`, mais o commit de fechamento deste
-Handoff). `validation.md` escrito pelo Verifier (sub-agente independente, author ≠ verifier),
-`validate_state.py lote-10-modelo-alvo-e-prova-conversacional` confirmado com exit 0 pelo
-orquestrador de forma independente (não só aceito do relatório do sub-agente). Spec-anchored check:
-12/12 requirement IDs com evidência `file:line` batendo com o outcome definido na spec, 0 gaps de
-precisão. Sensor de discriminação: **7/7 mutações mortas** — as 5 nomeadas no plano contra
-`principal-modelo.test.ts` (id do modelo, nó Gemini reintroduzido, tool renomeada, `sessionKey`
-alterada, contagem de nós/conexões) mais 2 mutações leves contra as correções reais da Fase 5
-(`meetLink` em `agendamento.test.ts`, saudação do primeiro turno em `system-message.test.ts`) —
-nenhuma sobreviveu, nenhuma suíte decorativa encontrada. `gate.mjs` confirmado com zero toques nos 37
-commits (grep independente do Verifier), sustentando a alegação de que a AD-018 não foi emendada.
-2 lições distiladas (`L-024`, `L-025`, status `candidate`) a partir dos dois `SPEC_DEVIATION`
-fundamentados do lote (bateria sobre alvo trocado; opt-out por linguagem natural).
+- **Feature**: `lote-11-catalogo-de-imoveis`.
+- **Phase / Task**: Fase 6 / T26–T27 abertas; T31 concluída localmente após aprovação
+  do usuário (“Eu aprovo”). Proposta concreta em `AJUSTE-PROMPT-PROPOSTO.md`.
+- **Completed**: T1–T25 e T31 implementadas/commitadas localmente. T30 publicada (`6a05fa1`), mas
+  sua repetição da T26 permanece pendente. T31 substitui a regra absoluta de busca,
+  responde cortesia e exige aceite em todas as fases. Não refazer o planejamento.
+- **In-progress**: `evidencia.md` §26/26.1 registra leitura da conversa/execuções;
+  §31 registra mudança local e asserções por critério. `tasks.md` T31 e `spec.md`
+  BUSCA-05 AC13–18 refletem aprovação. Gate local passou: 1.304 testes / 91 arquivos.
+- **Next step**: obter autorização específica para atualizar/publicar somente o principal.
+  Conferir o código publicado antes de ativar e repetir a prova conversacional.
+  Reconectar `Google Calendar account` no n8n antes de repetir booking real.
+- **Branch**: `main`; HEAD de implementação ao iniciar `6a05fa1`, `origin/main`
+  local `5275511`. Nenhum push/deploy/publish/reset nesta implementação.
 
-**T25 fechou pelo caminho indisponível.** Perguntado diretamente, o usuário informou nesta janela
-(2026-09-09): "Não tem como adicionar o numero dele. Ignore essa pendencia. Vale do Uberaba é
-fictício." Isso é mais específico que a pendência herdada dos lotes 7–9 ("falta 2º número
-homologado") — não é atraso, é ausência de caminho. `MTN-01` fica **explicitamente não verificado**
-na rastreabilidade (`lote-10/spec.md`), nunca aprovado por ausência. Nenhuma linha nova em
-`tenant_config`, nenhum lead criado sob `vale-uberaba` (`evidencia.md` §18). Os três desfechos
-(AGT-04/05, LGPD-03) não dependem disso e seguem fechados. **Nota para reconciliação futura, fora do
-escopo deste lote**: a AD-001 descreve dois clientes-âncora reais; se `vale-uberaba` nunca teve
-caminho para número real, isso é uma pergunta sobre premissa de produto para uma rodada de Specify
-futura, não uma correção retroativa deste lote.
+**Conversa real**: sete turnos / 14 mensagens conferidos no CRM; execuções `2272`,
+`2278`, `2284`, `2291`, `2297`, `2307`, `2313` confirmadas individualmente por
+`get_execution`. Lead novo `038b679d-510f-418d-8cfa-0ee50532df11`, tenant `triangulo`.
+Reset anterior `2271` confirmado; primeiro turno comprovou a limpeza. Não resetar
+esta conversa sem autorização. Estado final `em_qualificacao`, reunião e responsável
+nulos. Consulta autenticada Abadia retornou IM-0001 / R$ 380.000,00; Uberaba retornou
+vazio. Referência omitida no envio: PROVA-02 AC3 não passou integralmente. Sem captura
+real e sem medição direta de iterações; intermediateSteps não são iterações do LLM.
 
-**O modelo alvo ficou.** `gpt-5.4-nano-2026-03-17` (`@n8n/n8n-nodes-langchain.lmChatOpenAi` v1.3)
-passou na bateria de tool calling (T9, veredito APROVADO em `evidencia.md` §12.6) e está em produção.
-O rollback da `bateria.md` §6.1 **não** foi disparado. **AD-026 registra este modelo** (T20): snapshot
-datado obrigatório (nunca alias flutuante), `reasoningEffort` no lugar de `temperature`, troca
-confinada ao nó `agentModel`.
+**Artefato**: gerado localmente pelo inliner; só principal.ts muda entre os seis
+workflows. Grafo SDK com 62 nós / 76 conexões, topologia idêntica ao HEAD anterior,
+somente jsCode do nó de system message muda. gate.mjs/phase.mjs intocados. Validador
+n8n `valid=true`, cinco avisos de Memory Managers existentes. Principal remoto
+`0B1nqjODu7xuYYKF` reconsultado, ativo na versão anterior
+`e0a4f1b7-bee3-4a7d-bf50-0e01c2b6a07f`, maxIterations 8. Novo código ainda só local.
 
-**Os três desfechos da AD-015 estão provados por conversa real** — é o que o lote existia para fazer.
-**A AD-015 está encerrada** (T20, `Status: superseded by AD-027`), e a rastreabilidade do lote-6 já
-reflete isso (T22, `lote-6-agente-n8n-whatsapp/spec.md`, commit `7009dbd`):
+**Blockers**: `Google Calendar account` (id `2kXea9a4br8Gn3pp`) exige reconexão humana.
+Execuções `2305` e `2308` falharam em `Google Calendar: availability`, antes de evento
+ou atualização CRM. Causa específica de expiração/revogação não comprovada. A T31
+corrige instruções de não confirmar/prometer depois, mas não conserta OAuth.
 
-| Cenário | Requisito | Estado final provado | Execuções |
-| --- | --- | --- | --- |
-| Qualificar → agendar | SMK-02 / AGT-04 | `qualificado_agendado`, 2026-09-08 13:00, André Luiz Martins, Meet `bsy-htxg-evt` | `2123`, `2135`, `2142`, `2143` |
-| Escalar | SMK-03 / AGT-05 | `escalado_humano` + responsável + mensagem seguinte sem resposta | `2190`, `2195`, `2200`, `2206` |
-| Opt-out | SMK-04 / LGPD-03 | `optedOutAt` gravado, memória purgada pelo fluxo, silêncio depois | `2229`, `2234`, `2239`, `2243` |
+**Sequência restante**: publicar revisão autorizada, T26 (referência/preço real,
+ausência, captura e iterações), T27 (qualificar→agendar com lead limpo e evento Meet),
+T28 (supersessão parcial de VOZ-02), T29 (rastreabilidade, INDEX, roadmap, handoff e
+revisão de lições), Verifier independente com as 8 mutações do design e
+`validate_state.py` exit 0. Ainda não há validation.md; lote não está concluído.
 
-**Bateria de tool calling — veredito APROVADO** (T9, `evidencia.md` §12.6): `R1 = falso` (as 5 tools
-com chamada bem-sucedida, execuções `1952`,`1956`,`1960`,`1966`,`1970`) e `R2 = falso` (as três
-cláusulas de sobrevivência à recusa, mesmo bloco de execuções). Duas rodadas anteriores não contaram
-(quota da OpenAI zerada; depois estado sujo + credencial do Google Calendar caducada) — nenhuma delas
-imputável ao modelo. **Smoke conversacional — veredito consolidado APROVADO** (T16, `evidencia.md`
-§17.1): os três cenários acima, todos aprovados pelo estado final no CRM/Calendar, nunca pelo estilo.
+**Gates**: targeted system-message **121 passaram** (24 novos, 97 existentes).
+Red anterior 27 falhas / 94 passaram. Lint exit 0 (0 erros / 3 avisos prévios), build
+exit 0 (avisos locais prévios Better Auth). Suíte completa exit 0: **1.304 testes em
+91 arquivos**, 0 falhas, 665,22 s; resumo da sessão 89219 recuperado. validate_tasks e
+validate_spec exit 0; diff --check exit 0.
+A sessão herdada `31804` não teve resumo recuperável e não conta como PASS.
 
-**A Fase 5 achou 11 defeitos reais e todos foram corrigidos** (detalhe em `evidencia.md` §17.3):
-apresentação ausente; agendamento antes do aceite; pergunta e agendamento no mesmo turno; pergunta de
-campo oportunista após confirmar; `meetLink` que era a página do evento e não o link de entrada;
-canal da reunião dito errado ("pelo WhatsApp"); jargão técnico vazando ao lead; nome do lead
-anunciado como se fosse o corretor; postura de vendedor apressado; negociação de horário depois de
-escalar; opt-out em linguagem natural sem registro.
+**Lições**: 22 confirmadas carregadas; script em `.agents/skills` mantém trava
+`prune_requires_confirmation`. Promoção/exclusão são decisão humana (AD-028).
+Diagrama/formatação da T30 reconciliados; nova T31 declarada no mapa.
 
-**Achado que vale além deste lote** (`evidencia.md` §15.4): o defeito do nome foi corrigido duas vezes.
-A primeira, por instrução de prompt, **falhou** — o `PATCH /leads/{id}` devolvia o lead inteiro e o
-`name` do topo era mais óbvio que o `assignedBroker.name`. Só a correção na **fronteira**
-(`optimizeResponse` + `fieldsToInclude: "except"`) funcionou. Quando a resposta errada é o campo mais
-visível do payload, instrução de prompt não vence — é preciso remover o campo. É a AD-018 na prática.
-
-**Versões publicadas na instância** (todas conferidas por SHA-256 antes de ativar):
-- `crivo-agente-principal` (`0B1nqjODu7xuYYKF`): **`57ea08a0-6054-4b65-8518-d848293a878c`**
-- `crivo-tool-agendar-reuniao` (`2qCs6rPzmeOqan65`): **`931b8a13-9bbc-431b-a198-0de8e4371d80`**
-
-**A edição ALHEIA do `retryOnFail` foi commitada e enviada (2026-09-10), fora do escopo do lote-10.**
-`n8n/workflows/principal.ts` e `n8n/generated/principal.ts` vinham modificados desde uma sessão
-separada e pausada; ao longo de todo o lote-10 foram preservados sem entrar em nenhum commit dele
-(salvar-patch → `git checkout` → trabalhar → commitar → `git apply` de volta). Por pedido explícito do
-usuário, a mudança foi revisada, gate-checada (`npx vitest run n8n/workflows` + `npm run lint` + `npm
-run build`, todos verdes) e commitada isoladamente (`a80760c`, `fix(agente): corrige nivel do
-retryOnFail em consultar_documentos`). Não era indentação: `retryOnFail`/`maxTries` estavam aninhados
-dentro de `parameters`, onde o schema do node HTTP Request não os aplica — o retry nunca era
-configurado de fato. A correção move as duas chaves para `config`, onde o SDK realmente as espera.
-
-**SPEC_DEVIATION refletido na rastreabilidade (T21)**: "opt-out por linguagem natural" estava Out of
-Scope no `spec.md` (adiado para o L13) e foi trazido para este lote por decisão explícita do usuário
-(2026-09-09), depois que a primeira rodada do cenário 3 expôs um buraco de compliance. A **AD-018 não
-foi emendada**: `gate.mjs` não mudou e nenhuma tool de opt-out foi exposta ao modelo — o agente apenas
-orienta o lead a digitar a palavra que dispara o mecanismo determinístico.
-
-**Piso de testes final: 1076 passed em 82 arquivos, 0 falhas** (era 1015 em 81 no início do lote,
-medido na T1). A suíte `n8n/src` sozinha foi de 168 para 236. **O congelamento de `vitest` declarado
-na T12 foi encerrado na T16** — testes podem rodar normalmente daqui em diante, e T17–T22 confirmaram
-isso na prática: cada uma rodou o gate build completo (`npx vitest run && npm run lint && npm run
-build`) de forma independente, e as seis rodadas bateram exatamente **1076 passed / 82 arquivos, 0
-falhas** — monotônico, medido, nunca herdado da documentação (T17–T22 são só documentação; nenhuma
-delas tocou código ou teste). Lint: os mesmos 3 avisos pré-existentes (`ifElse` não usado em
-`scheduler.ts`/`generated`, diretiva eslint redundante em `route-instrumentation.test.ts`), 0 erros.
-Build: exit 0 em todas as seis rodadas.
-
-**⚠️ Nunca rodar duas suítes ao mesmo tempo.** Descoberto na T16: `npx vitest run` semeia um
-`TEST_DATABASE_URL` compartilhado, então duas rodadas concorrentes se corrompem mutuamente e
-produzem falhas falsas convincentes — `23503` em `create-admin.test.ts` numa, 6 tenants onde
-`seed.test.ts` espera 3 na outra. Nenhuma era regressão. Antes de aceitar uma falha de suíte como
-real, confirme que nenhum outro processo `node` está vivo e repita isolado.
-
-**Estado do repositório**: branch `main`, **`origin/main` sincronizado** (2026-09-10). Dois pushes
-nesta janela: (1) fast-forward normal com os 39 commits do lote-10 + o fix isolado do `retryOnFail`,
-autorizado explicitamente pelo usuário; (2) `push --force` sobre `origin/main`, também autorizado
-explicitamente, depois que a auditoria pós-push encontrou 3 commits **já publicados** (2026-09-04,
-anteriores a esta sessão) com a trailer de atribuição — ver AD-014 § Reforço para o relato completo
-dos dois achados e das duas reescritas de histórico (39 commits locais, depois 46 commits incluindo
-3 já remotos). Toda referência a hash de commit em `.specs/**` e `n8n/smoke/**` foi remapeada duas
-vezes para acompanhar; o hash de `HEAD` muda de novo com o commit que fecha este próprio parágrafo —
-não cite um hash fixo aqui, confirme com `git log -1` na retomada. A Vercel redeploya automaticamente
-em push a `main` — confirmar o resultado do deploy; como o `retryOnFail` é a única mudança de código
-de fato nos dois pushes (o resto é `n8n/workflows|generated` sem efeito no app, `.specs/*`, `n8n/smoke/*`
-e `public/*` de lotes anteriores), não se espera regressão visível, mas o deploy em si não foi
-verificado por este agente.
-
-**Next step**: nenhuma task formal restante no lote-10. `ROADMAP-POS-PILOTO.md` lista L11–L16 como
-propostos — próximo trabalho é escopo novo, a definir pelo usuário via nova rodada de Specify.
-
-**Pendências nomeadas** (T17–T25 são documentação pura; nenhuma delas tocou código, então nenhuma
-destas pendências foi resolvida ou alterada por este lote — repetidas aqui para não sumirem):
-- **Limpeza dos 3 alvos do cenário 3** (`evidencia.md` §16.7): lead `81509a2c-…` e a linha de
-  `conversa_estado`. A memória já foi purgada pelo próprio fluxo.
-- **MTN-01 — fechada como não verificada, sem caminho disponível** (T25, `evidencia.md` §18): o
-  tenant `vale-uberaba` é fictício, sem número para homologar. Não é mais uma pendência em aberto —
-  é um resultado final, registrado como tal na rastreabilidade.
-- **Remarcação de reunião é impossível** (`TRANSITIONS.qualificado_agendado = []`,
-  `src/server/integration/leads.ts:98`). Fix adiado pelo usuário: exige coluna para o id do evento,
-  a tool passar a atualizar/cancelar o evento antigo, mudança de contrato e deploy na Vercel.
-- **`agentVoiceTone` × `voice.mjs`**: o tom do tenant pede "boa" e "show", que `voice.mjs:27` barra
-  como abertura. Custa iterações em quase todo turno. É ajuste de configuração do tenant, não de
-  código.
-- **Registro de qualificação incompleto**: `modality` e `propertyType` ficaram `null` mesmo revelados
-  pelo lead. E os campos são marcados como "perguntados" antes de o agente rodar — defeito
-  pré-existente da máquina de fases, mais visível depois do afrouxamento da instrução de fase.
-- **Paridade cosmética do `crivo-tool-agendar-reuniao`**: o nó `Code: checar horario comercial`
-  publicado é uma cópia minificada do módulo (1.867 chars contra 5.704 no repo) — mesma lógica, sem
-  comentários. Anterior a este lote, não tocada (`evidencia.md` §14.7).
-- **Dívidas herdadas não tocadas**: duas linhas inertes em `conversa_estado`; ausência de helper de
-  revogação de chave de serviço por label na DAL; L4 Fix 1, L4 Fix 2 e L5 Fix 1; `openapi.yaml` sem
-  `assignedBroker` nem os 2 códigos de erro do lote-8; `RESEND_FROM` a confirmar na Vercel; alerta
-  ativo de queda da integração (L15); baselines dos tenants-piloto ainda fictícios (L15).
-
-**Blockers**: nenhum. Lote fechado.
+**Pendências herdadas que permanecem**:
+- Remarcação impossível após `qualificado_agendado`; requer contrato, id de evento e
+  atualização/cancelamento do evento antigo.
+- `agentVoiceTone` pede aberturas que `voice.mjs` barra; qualificação pode deixar
+  `modality`/`propertyType` nulos apesar de informados, e marca campos antes da resposta.
+- Paridade cosmética do `crivo-tool-agendar-reuniao`; defaults omitidos na instância
+  (como `method: GET` de `consultar_documentos`) não foram alterados nesta retomada.
+- Duas linhas inertes em `conversa_estado`; helper de revogação de chave por label;
+  L4 Fix 1/2 e L5 Fix 1; documentação de `assignedBroker` e erros do lote-8 (L14).
+- Confirmar `RESEND_FROM`; alerta de queda da integração e substituição dos baselines
+  fictícios por dados reais quando houver piloto real (L15).
+- MTN-01 continua **não verificado**, sem segundo número disponível; não é aprovação
+  por ausência. O antigo reset pendente do lote-10 foi sucedido pela rotina do lote-11.
+- Switch para permitir exibição do catálogo (ligado por padrão) e antecedência mínima
+  de agendamento em dias: deferidos pelo usuário, registrados em `context.md`.
+- Upload/storage/preview ficam no L12; vitrine pública separada, no L16 (AD-025).
 
 
-### Estado do lote 9 (2026-08-30)
-
-**Lote 9 (`lote-9-metricas-piloto`) — EXECUTADO E VERIFICADO. Verifier: PASS.** 34/34 tasks `Done`, mais 2 commits avulsos pós-Verifier (`53be6d0`, fix visual de i18n; `1ca82e1`, fecha o gap de cobertura do sensor). `validation.md` escrito, `validate_state.py` exit 0. Rastreabilidade da spec fechada em `0c56715` (10/10 requirement IDs `✅ Verified`). Execução em 4 batch workers sequenciais (Phases 1+2 / 3+4 / 5+6 / 7+8) + fechamento (T34) pelo orquestrador, dentro desta mesma janela — o `EXECUTE-PROMPT.md` previa uma janela separada, mas a execução acabou acontecendo aqui. Piso de testes confirmado antes de T1 com `npx vitest run`: **915 passed / 75 arquivos** (não os 912/74 herdados na documentação do lote-8 — duas correções pós-Verifier do lote-8, `d1430af`/`1b41ca1`, já tinham subido o número; usado o piso real, como a própria task mandava). Piso final, confirmado pelo orquestrador de forma independente a cada batch (nunca só aceito do relatório do worker): **1014 passed / 81 arquivos**, monotônico em toda a execução, mais 1 commit de fix pós-verificação visual que não alterou contagem de teste (gate build).
-
-**Interrupções por limite de sessão da API**: o Batch 2 foi interrompido uma vez no meio da T14 e retomado via `SendMessage` com o estado reconciliado contra `git log`/`git status` — nenhum trabalho perdido, mesmo padrão do lote-8. O Batch 3 terminou toda a implementação mas parou antes de escrever o resumo final (estava esperando sua própria rodada de teste em background); retomado só para obter o resumo — os commits já estavam corretos.
-
-**Autorização concedida durante a execução**: o schema aditivo (2 colunas nullable + `integration_refusals`) só tinha sido empurrado para `TEST_DATABASE_URL` pelos workers — o banco real de dev/produção (o mesmo do deploy Vercel) ficou desatualizado até o orquestrador pedir autorização explícita e rodar `npx drizzle-kit push` contra ele, para poder fazer a verificação visual real das 4 superfícies novas de UI. Usuário autorizou. Nenhum dado foi reseeded — só schema (DDL), nenhuma linha alterada.
-
-**1 achado real da verificação visual, corrigido**: o bloco "Saúde da integração" (T29) usava `Timestamp format="auto"` da Astryx para os carimbos de tempo relativo, que renderiza em inglês ("3 days ago") — inconsistente com o resto do CRM (a lib crava essas strings, sem ponto de extensão de locale). O projeto já tinha a correção pronta (`src/components/shared/relative-time.tsx`, criada em lote anterior justamente para este caso, usada por Chats/Pipeline). Corrigido pelo orquestrador (commit `53be6d0`, fora do ciclo de nenhuma task específica — achado durante a verificação visual mandatória, não durante a implementação), confirmado visualmente depois do fix.
-
-**Verificação visual real** (extensão Chrome, não o painel embutido, conforme regra do projeto): confirmadas as 4 superfícies novas — bloco "Reuniões a confirmar" (estado vazio), formulário de baseline em Configurações (5 campos, save funcionando, erro de validação testado interativamente), tiles do Dashboard com baseline normalizado e convite condicionado à permissão, bloco "Saúde da integração" (edge case de ausência de atividade lendo como problema, confirmado ao vivo — 3 dias sem atividade e 0 recusas ainda mostra "Problema detectado"), e a rota `/relatorio` (sem shell, 5 KPIs batendo com o Dashboard no mesmo período).
-
-**Condição de parada do lote nunca se confirmou**: o wrapper `withIntegrationRoute` (T8) com `after()` em `try/catch` + fallback síncrono funcionou nos 6 route files sem precisar do Plano B (gravação sempre síncrona) — nenhum teste de rota mudou de expectativa. **O Verifier confirmou isso empiricamente**: a mutação 3 do sensor de discriminação removeu o `try/catch` e reproduziu exatamente o `E468` previsto pelo `design.md`, matando 5/8 testes de `route.test.ts` — prova de que a mitigação é real, não decorativa.
-
-**Verifier (sub-agente independente, `.specs/features/lote-9-metricas-piloto/validation.md`) — PASS.** Gate re-executado de forma independente: 1014 passed / 0 failed / 81 arquivos (bateu exatamente com o número reportado pelo orquestrador). Spec-anchored check: 10/10 requirement IDs com evidência `file:line` + outcome batendo com a spec; camadas de UI (`none` na Test Coverage Matrix do próprio projeto — zero `.test.tsx` no repo) fechadas por inspeção direta de código + a verificação visual já registrada aqui, mesmo precedente aceito no lote-8. Sensor de discriminação: 4 mutações injetadas (normalização de baseline, `assignedTo(scope)` numa escrita do Pipeline, o fallback do `after()`, o corte de 30 dias da purga) — 3 mortas na hora, 1 sobreviveu (o limite exato de 30 dias nunca era exercitado, só 29/31; comportamento de produção já estava correto). Corrigido pelo orquestrador em `1ca82e1` (1 asserção nova, sem tocar as existentes), confirmado com rodada completa antes de subir a rastreabilidade. Rodado em worktree scratch (nunca `git stash`), porcelain da árvore real confirmado idêntico ao baseline depois — o próprio Verifier notou que tentou editar `spec.md` por engano durante a análise e reverteu via `git checkout` ao perceber que isso ultrapassava seu escopo read-only.
-
-**Desvios documentados task a task em `tasks.md`** (nenhum fora do escopo da própria task): T3 zerou baseline também no tenant de demonstração (`tasks.md` autoritativo dizia "todos os tenants semeados", não só os pilotos, como uma frase do `design.md` sugeria); T18 achou um call site não documentado (`deactivateMemberAction`) e escopou corretamente com `assignedUserId: null` (escopo de imobiliária inteira, correto para redistribuição de carteira inteira); T27 tornou `periodDays`/`canEditSettings` opcionais com default no próprio commit (T28 wireia os valores reais no commit seguinte, sem quebrar o build isolado de T27); T29 resolve `resolveIntegrationHealth` dentro do próprio componente (RSC puro) em vez de no chamador, e usa `List`/`ListItem` em vez de `Table` para manter o componente 100% server-side.
-
-**Estado do repositório**: branch `main`, HEAD `0c56715` — push feito (`9039776..0c56715`, fast-forward, 37 commits), **`origin/main` sincronizado**. Working tree limpa fora dos untracked pré-existentes (`public/crivo_*.png`, `skills-lock.json`) e do ruído de fim de linha em `n8n/src/phase.mjs` (`git diff` vazio) — confirmado repetidamente ao longo da execução, nunca um desses arquivos foi commitado. Nenhum deploy explícito disparado por este agente; a Vercel segue configurada para redeploy automático em push a `main` (mesmo padrão dos lotes anteriores) — confirmar o resultado do deploy antes de considerar produção atualizada.
-
-**Baselines dos tenants-piloto preenchidos com dado fictício (2026-08-30, pós-fechamento)**: as duas imobiliárias-piloto são fictícias e não têm número real de campo a levantar — usuário autorizou explicitamente preencher com dado fictício em vez de deixar nulo. Preenchido direto no banco real via script de uso único (`scripts/fill-pilot-baselines.ts`, rodado e apagado — não é código do produto): `vale-uberaba` (45 leads/mês, 180min, 18%/12%/55%) e `triangulo` (60 leads/mês, 150min, 20%/15%/60%). `crivo-demo` (não é tenant-piloto) ficou de fora, mantém os valores mockados antigos (19/240/22, sem os 2 campos novos). Confirmado por leitura direta pós-escrita. Isso resolve o único Success Criteria da spec que dependia de ato humano — mas com dado de demonstração, não real; se o piloto virar produção de verdade com imobiliárias reais, esses valores precisam ser substituídos.
-
-**Dívidas herdadas do lote-7/lote-8, não tocadas por este lote**: opt-out por linguagem natural; duas linhas inertes em `conversa_estado`; ausência de helper de revogação de chave de serviço por label na DAL; Vale do Uberaba sem `tenant_config` (falta 2º número homologado); L4 Fix 2 e L5 Fix 1 seguem abertos; migração do modelo do agente para `gpt-5-nano` (fonte segue alinhada ao `gemini-3.5-flash-lite` da instância); `n8n/README.md §4` obsoleto, não corrigido; `openapi.yaml` sem `assignedBroker` nem os 2 códigos de erro do lote-8; `RESEND_FROM` a confirmar na Vercel; SEED-01 (round-trip real) e ATRIB-02 AC8 seguem como evidência de campo em aberto, não como defeito.
-
-**Piso de testes**: 1015 em 81 arquivos (1014 do Execute + 1 do fix pós-Verifier).
-**In-progress**: nenhum. Lote fechado.
-**Next step**: nenhum lote formal restante — Fase 10 (lote-9) era a última fase do roadmap original de 10 fases (`Roadmap - Fases Épicas.md`); as duas dívidas nomeadas para esta fase (projeção de KPI do lote-7, observabilidade real da fase-1) foram fechadas aqui (PERF-01 e a família SAUDE-01/02/03). O roadmap planejado (F1–F9 via L1–L7, usuários/papéis via L8, F10 via L9) está **100% executado**. Trabalho futuro é escopo novo — dívidas herdadas (lista abaixo) ou features fora do roadmap original, a definir pelo usuário via nova rodada de Specify.
-**Blockers**: nenhum.
-
-### Lote 8 (encerrado)
-
-- **Lote 8 (`lote-8-usuarios-papeis-atribuicao`) — EXECUTADO E VERIFICADO. Verifier: PASS.** 33/33 tasks `Done`, mais 1 commit avulso (`33f09d9`, bug real do CLI `db:create-admin` encontrado no Batch 3). `validation.md` escrito, `validate_state.py` exit 0. Rastreabilidade da spec fechada na T33 (11/11 requirement IDs `Verified`).
-- **Execução real**: 5 batch workers sequenciais (Phases 1+2 / 3+4 / 5 / 6 / 7+8), cada um interrompido por limite de sessão da API pelo menos uma vez e retomado via `SendMessage` com contexto preservado — nunca perdeu trabalho, sempre reconciliado contra `git log`/`git status` antes de continuar. Piso de testes 693 → **912** (+219), monotônico, confirmado de forma independente pelo orquestrador a cada batch (nunca só aceito do relatório do worker).
-- **Achado de processo, não do código**: o `n8n/README.md §4` descrevia um risco de `vitest run` rotacionar chaves de API reais — confirmado como **obsoleto**: o guard em `src/db/index.ts:9-11` (`process.env.VITEST` → `TEST_DATABASE_URL`) já neutraliza isso; nenhum `vitest run` do lote tocou o banco real. A única rotação real veio do `npm run db:seed` explícito (Batch 1/T3, e depois o reseed final do usuário no fechamento da T31). README não foi atualizado — pendência de doc menor.
-- **Verifier — sensor de discriminação**: 4 mutações injetadas em código de alto risco (`LeadScope`/isolamento de carteira, `coversInterval`, degradação do escalonamento, união de permissões), **4 mortas, 0 sobreviventes**. Rodado em worktree scratch, nunca `git stash`, porcelain da árvore real confirmado idêntico ao baseline depois.
-- **6 desvios registrados e re-verificados pelo Verifier como reais** (detalhe em `validation.md` e na rastreabilidade da spec): slug `vale-uberaba` mantido (T3); rate limit de login por IP em vez de e-mail (T6, `AUTH-01` AC4 — limitação nativa do better-auth); `USER-01` AC10 lido como recusa de acesso à imobiliária, não login global (T21, coerente com AD-021); filtros de disponibilidade em `src/lib/broker-availability.ts` em vez de dentro de `broker-assignment.ts` (T26, preserva o teste de pureza do lote-7); mensagem de commit da T31 reflete que não houve reseed naquele commit; `openapi.yaml`/guia de integração não documentam `assignedBroker` nem os 2 códigos novos de erro (T29).
-- **Os 2 gaps do Verifier foram corrigidos depois, em fix tasks próprias**: (1) `AGENDA-01` ganhou UI real (`d1430af`) — corretor edita a própria janela pelo rodapé da sidebar (única superfície que ele alcança), administrador/gestor editam a de qualquer corretor pela ação de linha em Usuários; verificado visualmente em produção, as duas superfícies funcionam e pré-carregam o estado real. (2) `AUTH-01` AC4 ganhou rate limit por e-mail (`1b41ca1`), complementar ao limite por IP já existente, contador em tabela `login_attempts` no Postgres (serverless não sustenta memória de processo) — sensor de discriminação próprio confirmou a recusa (não falha de credencial). Rastreabilidade da spec subida para `Verified` em todos os 11 IDs (`9039776`).
-- **Susto de ambiente pós-lote, resolvido**: `BETTER_AUTH_SECRET` nunca tinha sido configurada na Vercel (só existia no `.env` local) — better-auth caía no "default secret" e o login em produção falhava silenciosamente (mascarava também a falha de reset de senha, que nunca chegava a chamar o Resend). Usuário adicionou `BETTER_AUTH_SECRET` e `BETTER_AUTH_URL` na Vercel e redeployou; login e reset confirmados funcionando. **Lição para o próximo lote**: ao introduzir uma env var nova em `.env.example`, checar explicitamente se ela precisa ir para a Vercel também — não só a mais óbvia (foi só isso que ficou registrado ao fechar o Batch 5, e essa faltou).
-- **Domínio de e-mail real**: usuário verificou `usekrivo.online` no Resend (sending enabled, região sa-east-1). O adaptador (`src/server/auth/email.ts:28`) ainda usa `onboarding@resend.dev` como default se `RESEND_FROM` não estiver setado — confirmar se `RESEND_FROM` está configurado na Vercel apontando para o domínio verificado.
-- **Lições distiladas**: L-017 a L-022 (5 `spec_deviation` + 1 `ac_gap`), todas `candidate`, recurrence 1 — disponíveis via `lessons.py list --status candidate`.
-- **Pendência real, fora do código, ainda aberta**: credencial `httpHeaderAuth` "Crivo - chave de serviço" no n8n foi corrigida pelo usuário (prefixo `Bearer` adicionado), mas o critério "primeira mensagem no número de teste abre conversa nova" (T31) segue sem prova ponta-a-ponta — nenhuma conversa real aconteceu desde o fix ainda. As execuções do scheduler seguem verdes, mas nenhuma amostra recente chegou a chamar `/api/v1` de fato (parou antes, por falta de `tenant_config` de teste).
-- **ATRIB-02 AC8** — resolução do parâmetro `attendees` do Google Calendar só se confirma numa reunião agendada de verdade; segue não exercitado.
-- **Ambiente real**: resemeado pelo usuário (`npm run db:seed` + `npm run db:create-admin` × 3 tenants). Workflow `crivo-tool-agendar-reuniao` publicado na instância n8n via MCP (versão `488b60eb…`, conferida contra `activeVersionId`). Deploy de produção em dia com `main` (`https://crivo-plum.vercel.app`, projeto Vercel `crivo`) — **`origin/main` sincronizado, sem commits pendentes de push**.
-- **In-progress**: nenhum. Lote fechado, incluindo os 2 fix tasks pós-Verifier.
-- **Next step**: iniciar o próximo lote do roadmap (Fase 10 / L9, métricas do piloto, pela AD-020) quando o usuário decidir.
-- **Blockers**: nenhum para o próximo lote. SEED-01 (round-trip real) e ATRIB-02 AC8 seguem como evidência em aberto, não como defeito.
-- **Pendências herdadas do lote-7** (inalteradas, nenhuma tocada neste lote): (1) opt-out por linguagem natural; (2) 2 linhas inertes em `conversa_estado`; (3) sem helper de revogação de chave de serviço por label na DAL; (4) Vale do Uberaba sem `tenant_config` (falta 2º número homologado); (5) L4 Fix 2 e L5 Fix 1 seguem abertos; (6) migração do modelo do agente para `gpt-5-nano` segue de pé, não aplicada (fonte alinhada ao `gemini-3.5-flash-lite` da instância em vez disso, na T30).
+**Arquivos da T31**: prompt, teste, generated/principal.ts, STATE.md e artefatos
+lote-11 tasks.md/spec.md/evidencia.md/AJUSTE-PROMPT-PROPOSTO.md, incluídos no commit
+atômico da retomada/T31. **Commit local**: `fix(agente): flexibiliza convite e responde cortesia sem antecipar agendamento`
+(check_commit.py exit 0; localizar hash em git log). T26–T29 seguem abertas; nenhuma
+task real adicional marcada Done. Árvore conferida após o commit, sem push/deploy.
