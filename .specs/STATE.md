@@ -263,22 +263,22 @@
 
 ## Handoff
 
-### Lote 11 — revisão publicada e sessão limpa (2026-09-14)
+### Lote 11 — terceira conversa conferida; pergunta redundante identificada (2026-09-14)
 
 - **Feature**: lote-11-catalogo-de-imoveis; tlc-spec-driven ativa, planejamento preservado.
 - **Phase / Task**: Fase 6 / T33 e T34 entregues; T26–T29 abertas.
 - **Completed**: T1–T25; T31 (`2268671`), T32 (`6cca049`), T33 (`2245565`),
   T34 (`d918363`). T30 (`6a05fa1`) é histórico da primeira tentativa, sem refazer a regra absoluta.
-- **Última entrega**: revisão de proatividade/convite/apresentação T33 publicada na T34.
-  Usuário autorizou publicação e reset (“Permito. Rode também o reset…”).
-  Recibos em evidencia.md §36/37; helper pontual em RESET-LEMBRETE-2026-09-14.md.
-- **Next step**: usuário iniciar nova conversa WhatsApp; conferir primeiro turno limpo,
-  expansão automática com critérios preservados, convite após ausência e legibilidade.
-  Buscar execuções e CRM, sem assumir teste local como obediência do modelo.
-- **Blockers**: nenhum para iniciar. Falta captura real para T26; T27 depende dela.
-  Calendar do teste anterior preservado, conforme nota abaixo.
-- **Uncommitted files**: nenhum após commit documental do reset; STATE, evidencia.md
-  e RESET-LEMBRETE-2026-09-14.md incluídos no mesmo commit.
+- **Última entrega**: terceira conversa analisada por SQL READ ONLY e get_execution,
+  evidencia.md §38; captura real do usuário preservada sem edição. Publicação/reset
+  anteriores em §36/37; helper pontual em RESET-LEMBRETE-2026-09-14.md.
+- **Next step**: apresentar revisão pontual para não repetir pergunta após ok=true.
+  Sem aprovação/implementação da nova revisão nesta análise. Depois da aprovação,
+  testes das instruções, gate e nova prova real; publicação/reset exigem ação autorizada.
+- **Blockers**: redundância comprovada em 2393, duas chamadas bem-sucedidas ao responder.
+  Captura parcial disponível em §38; fechamento da T26/gate e T27 ainda pendentes.
+- **Uncommitted files**: nenhum após commit documental desta análise; STATE,
+  evidencia.md e captura incluídos no mesmo commit. Sem código novo.
 - **Branch**: main, sem push/deploy; origin/main local 5275511.
 
 **Principal**: 0B1nqjODu7xuYYKF ativo em 833f525c-4d59-43a2-b466-8ef8268a0468.
@@ -296,17 +296,34 @@ intacta. Lembrete anterior id 16, agenda_envios, removido por quatro condições
 posterior vazio. Helper temporário d5gqmDVdZ9vLfhmg arquivado, sem publicação;
 artefato reproduzível preservado. Só depois, smoke:reset CRM exit 0 apagou 16 mensagens,
 1 conversa e lead b639766a-f273-4c30-aa39-695226141bed. SQL READ ONLY remaining=0.
-Nenhum reset extra necessário antes de o usuário iniciar a nova conversa.
+Nova conversa já realizada e conferida em §38; nenhum reset extra executado nesta análise.
+
+**Terceira conversa (§38)**: 13 mensagens / 6 turnos, lead
+e1cefc16-d030-4d27-b199-b3e600d2d526. IM-0001 / R$ 380.000,00 conferidos contra banco,
+características em linhas, convite após primeira ausência. Execuções principais
+2373/2379/2387/2393/2406/2416 confirmadas; máximo 7 runs do modelo, teto 8 preservado.
+Pergunta redundante: 2393 chamou responder 2396 (ok=true) e, 3,264 s depois, 2401
+(ok=true) para pedir horário novamente. Um envio por filha, IDs WhatsApp distintos;
+fallback=false nesse turno. Causa: segunda decisão do modelo após envio confirmado.
+Agendamento 2407 success: CRM qualificado_agendado/André, evento
+gpupvvmct9lvbt4qsm3n7b83t8 confirmado, 15/09/2026 15h Brasília,
+Meet rkw-xtya-fmv, lembrete n8n id 17. Sessão/evento/lembrete preservados.
+Não declarar obediência integral da T33: houve modalidade vazia/400 corrigido,
+repetição de aberturas rejeitadas; cidade inferida do imóvel, nenhuma expansão
+automática, pergunta anexada ao mesmo balão do imóvel. Prioridade da revisão
+proposta é evitar pergunta redundante, mantendo mensagens complementares.
 
 **Histórico e Calendar**: segunda conversa §34 tinha 8 turnos, IM-0001 / R$ 380.000,00,
 ausência correta, máximo 6 runs do modelo, CRM qualificado_agendado/André e Calendar
 success 2360. Google reconectado comprovado pela disponibilidade + criação reais.
 Agora CRM/memória daquela sessão foram removidos por autorização; evidência histórica
 preservada. Evento opblu5rf7n0sml8p3c7ue3gpe4 / Meet kgb-upvk-ndo, 15/09/2026 15h
-Brasília, continua no Calendar. Lembrete n8n id 16 não existe mais. Cancelamento Calendar
-não solicitado nem feito; não assumir esse horário livre. Sem mensagens externas.
+Brasília, foi preservado no reset. Estado atual desse evento antigo não reconsultado;
+2407 recebeu availability=true e criou evento novo. Lembrete n8n id 16 foi removido.
+Cancelamento Calendar não solicitado nem feito nesta análise. Sem mensagens externas.
 
-**Restante**: nova prova real dos três refinamentos; T26 captura/gate e T27 regressão,
+**Restante**: revisão pontual proposta e prova dos refinamentos ainda não obedecidos;
+T26 fechamento da captura/gate e T27 regressão,
 T28 supersessão VOZ-02, T29 rastreabilidade completa/INDEX/roadmap/handoff/revisão de
 lições. Verifier independente obrigatório após as tasks finais, oito mutações do design
 + validate_state.py exit 0. Não há validation.md, lote ainda não concluído.

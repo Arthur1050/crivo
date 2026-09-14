@@ -797,3 +797,91 @@ reutilizar esse horário presumindo agenda livre. Cancelamento é uma ação sep
  git diff --check exit 0. Sem código de produto novo ou repetição da suíte completa,
 que passou na T33. Commit separado do recibo da publicação:
 docs(specs): registra reset autorizado apos revisao de proatividade.
+
+## 38. Terceira conversa real — repetição de pergunta após envio confirmado (2026-09-14)
+
+**Resultado**: catálogo com referência/preço corretos, características em linhas,
+convite após a primeira ausência e reunião efetivamente criada. Duas mensagens
+pedem o mesmo horário no mesmo turno; a segunda é redundante. Não é reenvio da
+mesma mensagem por retry do transporte. Nenhum código ou workflow alterado nesta análise.
+
+Consulta SQL em transação READ ONLY, tenant triangulo / external_id 553499532444:
+lead e1cefc16-d030-4d27-b199-b3e600d2d526, **13 mensagens: 6 do lead e 7 do agente**,
+entre 17:57:48Z e 18:26:34.245Z. Status qualificado_agendado, responsável
+3ea96a1f-3fb4-436b-a4ab-862dbf36f394, meeting_at=2026-09-15T18:00:00Z.
+Todos os seis turnos abaixo conferidos individualmente por get_execution;
+chamadas ao modelo contadas pelos runs de OpenAI Chat Model, não pelo número de tools.
+
+| Execução principal | Intenção do lead | Runs do modelo | Resultado observado |
+| --- | --- | --- | --- |
+| 2373 | Cumprimento / como vai | 2 | Responde à cortesia e apresenta Lucas; também acrescenta pergunta de qualificação |
+| 2379 | Procura pelo Abadia | 7 | Primeiro filtro modalidade="" retorna 400; chamada corrigida devolve IM-0001 / R$ 380.000,00; três aberturas proibidas rejeitadas antes do envio |
+| 2387 | Prefere casa | 3 | Busca casa/Abadia/Uberlândia retorna total=0; declara ausência e oferece corretor imediatamente |
+| 2393 | Quer conversar com corretor | 5 | Duas aberturas proibidas rejeitadas; depois duas perguntas de horário enviadas com sucesso |
+| 2406 | Amanhã às 15h | 6 | Agenda na filha 2407; três aberturas repetidas rejeitadas, depois confirmação enviada |
+| 2416 | Agradece | 1 | Texto final enviado pelo fallback existente, uma única mensagem |
+
+Máximo **7 chamadas ao modelo**, abaixo do teto 8. As rejeições de persona são
+internas; não aparecem como balões no WhatsApp. Não afirmar que toda a instrução
+nova foi obedecida: 2387 inferiu Uberlândia do imóvel anteriormente devolvido,
+ofereceu abrir bairros, mas **não fez busca expandida**. Em 2379 a pergunta ficou
+na mesma mensagem do imóvel; as características, referência e preço ficaram em linhas.
+
+**Conferência do inventário**: SQL READ ONLY confirmou IM-0001 publicado/disponível,
+apartamento novo, Abadia/Uberlândia/MG, price_cents=38000000, 72 m², 2 quartos,
+2 banheiros e 1 vaga, iguais ao resultado da tool e ao texto enviado.
+A casa IM-0002 está não publicada; não é opção exibível pelo agente.
+
+**Causa da repetição, 2393**: após duas rejeições abertura-proibida, responder_lead
+2396 enviou “Fechado. A conversa com o corretor é por chamada de vídeo no Google
+Meet. Que horário fica melhor pra você hoje, a partir de 16:00? Se preferir, pode
+ser por ligação comum também.” às **18:24:44.625Z**. Retorno observado pelo modelo:
+ok=true. Mesmo assim, ele chamou responder_lead novamente, filha 2401, com
+“Certo. Só me diz um horário certinho pra gente marcar com o corretor (pode ser
+por volta de 16:00, ou outro depois disso hoje).” às **18:24:47.889Z**.
+Intervalo **3,264 segundos**, sem nova mensagem do lead.
+
+Get_execution das filhas 2396 e 2401: success, retryOf=null, um envio WhatsApp
+em cada uma; ambos registrar mensagem e aceite terminaram com sucesso. IDs de
+mensagem distintos, coincidentes com os external_id do CRM. O principal recebeu
+ok=true nas duas chamadas; finalizar turno marcou precisaFallback=false.
+Assim, o balão redundante veio de uma segunda decisão do modelo, não do fallback,
+de um retry HTTP de gravação ou de duas execuções principais para aquela entrada.
+O responder permite até três mensagens por turno e não verifica equivalência de intenção.
+
+**Agendamento confirmado**: filha **2407**, success, 18:25:51.509Z–18:25:53.158Z.
+Google Calendar availability available=true; PATCH CRM HTTP 200; André Luiz
+Martins atribuído. Evento **gpupvvmct9lvbt4qsm3n7b83t8**, status confirmed,
+15/09/2026 **15:00–15:30 America/Sao_Paulo**, calendário tostamatias@gmail.com,
+convidado andre.martins@trianguloimoveis.com.br, conferência criada com success.
+Link real **https://meet.google.com/rkw-xtya-fmv**, igual ao enviado ao lead.
+Lembrete agenda_envios **id 17** criado para este lead, ainda não enviado.
+Não cancelado evento, apagado lembrete ou resetada sessão nesta análise.
+O estado atual do evento anterior preservado no reset não foi reconsultado;
+não inferir sua exclusão a partir de available=true.
+
+**Captura real fornecida pelo usuário**: cópia sem edição em
+[t26-2026-09-14-conversa-repeticao.jpg](evidencia/t26-2026-09-14-conversa-repeticao.jpg),
+SHA-256 7355f84d304a7c975d327697c18e4fa9d7d5f842bfe48863372d8658290cb0c2.
+Mostra convite, aceite, perguntas redundantes e confirmação com Meet;
+não mostra a conversa completa nem a apresentação anterior do imóvel.
+
+**Recomendação para revisão pontual**: orientar o encerramento do turno depois
+de uma pergunta enviada com ok=true, sem repetir a mesma solicitação com outras
+palavras. Retentar somente mensagens rejeitadas com ok=false, corrigindo a causa
+da rejeição. Manter até três mensagens complementares para imóvel e convite,
+sem impor uma única mensagem a todos os turnos. Ajuste de prompt é a opção mínima;
+uma barreira semântica no responder exige novo estado/critério de equivalência,
+e limitar globalmente a uma mensagem prejudica o formato aprovado.
+Incluir testes das instruções e repetir prova real; testes de prompt não garantem
+obediência do modelo. Implementação ainda não aprovada para esta nova revisão.
+
+Principal reconsultado: active=true, activeVersionId
+833f525c-4d59-43a2-b466-8ef8268a0468, 62 nós. Sem publicação, push ou deploy.
+T26–T29 e Verifier final continuam abertos; este registro não declara lote concluído.
+
+**Gate documental**: validate_tasks.py exit 0 (avisos existentes), validate_spec.py
+exit 0, check_commit.py OK e git diff --check exit 0. Decisions comparadas contra
+HEAD com CRLF normalizado: conteúdo integral preservado. Captura comparada byte
+a byte ao anexo: igual. Sem novo código de produto; suíte/lint/build da T33 não
+repetidos para esta análise documental. Nenhuma task adicional declarada Done.
