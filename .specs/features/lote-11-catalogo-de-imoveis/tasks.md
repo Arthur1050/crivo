@@ -857,12 +857,14 @@ a repetição da T26 depois do reset continua pendente antes de seguir para T27.
 - Skill: NONE
 
 **Done when**:
-- [ ] A nota diz **qual** metade caiu (buscar imóveis, informar preços) e qual permanece (foto e arquivo)
-- [ ] O veredito original do Verifier daquele lote **não** é reescrito — só recebe a nota de supersessão
-- [ ] Gate build passa
+- [x] A nota diz **qual** metade caiu (buscar imóveis, informar preços) e qual permanece (foto e arquivo)
+- [x] O veredito original do Verifier daquele lote **não** é reescrito — só recebe a nota de supersessão
+- [x] Gate build passa — 1.357 testes/91 arquivos, lint 0 erros/3 avisos prévios, build exit 0 (§43)
 
 **Tests**: none
 **Gate**: build
+
+**Status**: ✅ Done
 
 **Commit**: `docs(specs): registra supersessao parcial de VOZ-02 AC5 pelo lote-11`
 

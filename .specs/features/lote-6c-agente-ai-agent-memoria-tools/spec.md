@@ -135,6 +135,15 @@ Sobre isso soma-se o desenho do fluxo: `n8n/workflows/principal.ts` monta o prom
 3. IF alguma mensagem do turno promete buscar, enviar, mandar, puxar ou separar imóveis, opções, fotos ou valores THEN o validador SHALL rejeitar a saída.
 4. WHEN a tool `responder_lead` recusa uma saída por violar `checkOpening` ou `checkCapabilityPromise` THEN o fluxo SHALL devolver ao agente o motivo nomeado da rejeição como erro de tool, permitindo nova tentativa dentro do limite de `maxIterations` (8) do próprio nó AI Agent — sem contador de tentativas dedicado à regeneração. WHEN o turno termina sem nenhuma chamada aceita de `responder_lead` (por `maxIterations` esgotado ou qualquer outro motivo) THEN o fluxo SHALL registrar a ocorrência (`turnoSemResposta`) e encerrar sem enviar mensagem ao lead — silêncio é o comportamento aceito, não uma mensagem ativa de fallback (reconciliado com o comportamento real em 2026-08-15, achado do Verifier do Execute — ver `design.md`, Error Handling Strategy: "Agente termina sem chamar `responder_lead`").
 5. WHEN o lead pede opções de imóvel, fotos ou valores THEN o agente SHALL reconhecer que quem traz isso é o corretor na reunião e SHALL NOT escalar por esse motivo.
+
+> **Parcialmente superseded por BUSCA-05 do lote 11 (2026-09-14)**: a parte de
+> VOZ-02 AC5 que obrigava encaminhar ao corretor todo pedido de imóveis, opções ou
+> valores não vigora mais. O agente agora chama `buscar_imoveis` e pode apresentar
+> imóveis e preços que a tool realmente devolveu. Permanecem vigentes: fotos e
+> arquivos são trazidos pelo corretor; o pedido desses itens não causa escalonamento;
+> e AC3 continua barrando promessa futura de buscar/enviar, pois executar a busca e
+> responder com seu resultado não é uma promessa. Esta nota não altera o veredito
+> histórico do Verifier deste lote.
 6. The system SHALL manter as regras já vigentes da AD-016 — sem emoji, 1 a 3 mensagens por turno, nunca se anunciar como IA por iniciativa própria, nunca negar quando perguntado.
 
 **Independent Test**: Alimentar o validador com uma saída cujo primeiro item é "Show. Qual seu orçamento?" — rejeitada com motivo `abertura-proibida`; alimentar com "Vou puxar aqui as opções de até 150 mil" — rejeitada com motivo `promessa-fora-de-capacidade`.

@@ -263,15 +263,15 @@
 
 ## Handoff
 
-### Lote 11 — provas conversacionais concluídas; T28 em andamento (2026-09-14)
+### Lote 11 — T28 concluída; fechamento T29 em andamento (2026-09-14)
 
 - **Feature**: lote-11-catalogo-de-imoveis; tlc-spec-driven ativa, planejamento preservado.
-- **Phase / Task**: Fase 6 / T26 e T27 concluídas; seguindo para T28–T29.
+- **Phase / Task**: Fase 6 / T26–T28 concluídas; seguindo para T29.
 - **Completed**: T1–T25; T31 (`2268671`), T32 (`6cca049`), T33 (`2245565`),
   T34 (`d918363`), T35 (`1f90d74`); T36 será o recibo desta entrega.
 - **Última entrega**: T35 publicada na versão ativa
   538b04fd-6682-4690-b0e7-9c2c1452866e; recibo evidencia.md §40.
-- **Next step**: executar T28, depois T29 e Verifier independente.
+- **Next step**: executar T29 e depois o Verifier independente.
 - **Blockers**: nenhum. Reset não foi solicitado nem necessário para o fechamento.
 - **Uncommitted files**: nenhum após o commit atômico T36.
 - **Branch**: main, sem push/deploy; origin/main local 5275511.
@@ -330,6 +330,10 @@ versionada, inventário positivo/ausência e IDs já conferidos em §34/38. Gate
 2373/2379/2387/2393/2406/2416 e booking 2407 conferidos. Lead terminou
 qualificado_agendado com André; evento gpupvvmct9lvbt4qsm3n7b83t8 confirmado,
 Meet rkw-xtya-fmv. Gate repetido: 1.357 testes / 91 arquivos, lint/build exit 0.
+
+**T28 concluída (§43)**: VOZ-02 AC5 do lote 6c recebeu nota de supersessão parcial.
+Catálogo/preço agora vêm de buscar_imoveis; foto/arquivo e barreira de promessa
+permanecem. Veredito histórico intacto. Gate: 1.357 testes, lint/build exit 0.
 
 **Histórico e Calendar**: segunda conversa §34 tinha 8 turnos, IM-0001 / R$ 380.000,00,
 ausência correta, máximo 6 runs do modelo, CRM qualificado_agendado/André e Calendar

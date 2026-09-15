@@ -1016,3 +1016,20 @@ Gate build repetido integralmente e sozinho a partir do commit de T26:
 1.357 testes / 91 arquivos, exit 0, **662,10 s**; lint exit 0, zero erros e os
 três avisos prévios; Next.js build exit 0. Avisos locais conhecidos de Better Auth,
 sem regressão. T27 marcada Done antes do commit atômico.
+
+## 43. T28 — supersessão parcial de VOZ-02 AC5 (2026-09-14)
+
+**PASS**. Nota acrescentada imediatamente após VOZ-02 AC5 no spec do lote 6c.
+Parte superseded: o agente não precisa mais encaminhar ao corretor todo pedido de
+imóveis, opções ou valores; pode buscar e apresentar resultado/preço reais via
+buscar_imoveis. Parte preservada: fotos/arquivos continuam com o corretor, pedir
+esses itens não causa escalonamento, e AC3 ainda barra promessa futura de
+buscar/enviar. Executar a tool e responder seu resultado não é promessa futura.
+
+Diff do spec histórico contém somente a nota nova. Requirement Traceability,
+veredito do Verifier, Success Criteria e validation.md do lote 6c não foram
+reescritos. Isso preserva a prova histórica e explicita a regra atual.
+
+Gate build integral e isolado: 1.357 testes / 91 arquivos, exit 0, **660,02 s**;
+lint exit 0, zero erros e três avisos prévios; Next.js build exit 0. Avisos conhecidos
+de Better Auth, sem mudança no código de autenticação. T28 marcada Done antes do commit.
