@@ -219,6 +219,13 @@ receber opções reais, para decidir se vale agendar uma visita.
 22. WHEN uma opção anterior informar cidade ou uma consulta retirar bairro THEN o system message SHALL proibir inferir a cidade desejada do lead dessa opção, SHALL exigir localização real de cada alternativa e explicação da ampliação para outros bairros, e SHALL NOT afirmar proximidade sem informação confiável.
 23. WHEN uma consulta falhar tecnicamente THEN o system message e a descrição da tool SHALL distinguir falha de resultado vazio, e SHALL NOT orientar inventar ausência de imóveis.
 24. WHEN apresentar um imóvel THEN o system message SHALL orientar linhas separadas em uma mensagem na ordem tipo/modalidade e referência, bairro e cidade/UF, quartos/banheiros/vagas, área e preço, SHALL usar apenas campos e valores devolvidos, e SHALL separar eventual pergunta ou convite em outra mensagem respeitando três mensagens por turno, sem emoji, tabela ou markdown.
+25. WHEN `responder_lead` devolver `ok=true` para uma mensagem com pergunta ou solicitação que dependa do lead THEN o system message SHALL orientar o agente a encerrar imediatamente o turno e esperar a resposta, SHALL NOT repetir, reformular, reforçar ou exemplificar a solicitação, e SHALL distinguir esse envio de `ok=false`, que permite corrigir a rejeição e tentar novamente; mensagens complementares com funções diferentes antes da pergunta terminal SHALL continuar permitidas dentro do limite de três mensagens.
+
+**Terceira emenda aprovada em 2026-09-14**: AC25 corrige o desfecho real da
+execução 2393, na qual responder_lead 2396 devolveu ok=true e, 3,264 segundos
+depois, responder_lead 2401 enviou uma paráfrase da mesma pergunta. A opção
+aprovada é instrução pontual de encerramento após pergunta entregue, preservando
+retries de rejeições e balões complementares. Não cria estado ou barreira semântica.
 
 **Segunda emenda aprovada em 2026-09-14**: AC19–24 concretizam
 `AJUSTE-PROATIVIDADE-PROPOSTO.md`, aprovada pelo usuário para implementação local.
@@ -308,7 +315,7 @@ e a tool tenham dado para exercitar sem depender de cadastro manual.
 | BUSCA-02 | P1: Rota de consulta do contrato de integração | Design | In Design |
 | BUSCA-03 | P1: Rota de consulta do contrato de integração | Design | In Design |
 | BUSCA-04 | P1: Tool `buscar_imoveis` no fluxo do agente | Design | In Design |
-| BUSCA-05 | P1: Tool `buscar_imoveis` no fluxo do agente | Execute | T34 publicada; nova prova real pendente |
+| BUSCA-05 | P1: Tool `buscar_imoveis` no fluxo do agente | Execute | T35 local concluída; publicação e nova prova real pendentes |
 | PROVA-01 | P2: Prova conversacional da tool nova | Design | In Design |
 | PROVA-02 | P2: Prova conversacional da tool nova | Design | In Design |
 | SEEDIM-01 | P3: Seed do catálogo | Design | In Design |
@@ -332,7 +339,7 @@ Cada ID acima, contra os critérios de aceite que ele carrega.
 | BUSCA-02 | Rota AC4, AC5 e os Edge Cases de fronteira 3 e 4 — limite, ordenação determinística e total |
 | BUSCA-03 | Rota AC6, AC7, AC8, AC9 — payload mínimo, ausência de endereço e de captador, recusa de filtro inválido |
 | BUSCA-04 | Tool AC1, AC2, AC3, AC4, AC11, AC12 — o nó, a origem dos parâmetros, a paridade do workflow e a conferência de hash |
-| BUSCA-05 | Tool AC5–10 e AC13–24 — erro, resultado vazio, citação, fronteira/gate, busca proativa, convite sem escolha, cortesia, falha sem promessa, aceite explícito, expansão limitada, filtros válidos e apresentação em linhas |
+| BUSCA-05 | Tool AC5–10 e AC13–25 — erro, resultado vazio, citação, fronteira/gate, busca proativa, convite sem escolha, cortesia, falha sem promessa, aceite explícito, expansão limitada, filtros válidos, apresentação em linhas e encerramento após pergunta entregue |
 | PROVA-01 | Prova AC1, AC2, AC5, AC6 — roteiro, checklist de limpeza, evidência e barra por desfecho |
 | PROVA-02 | Prova AC3, AC4, AC7 — os dois desfechos do cenário novo e a regressão do cenário do lote-10 |
 | SEEDIM-01 | Seed AC1, AC2, AC3 |

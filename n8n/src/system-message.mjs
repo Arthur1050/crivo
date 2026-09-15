@@ -140,6 +140,11 @@ const INVENTORY_FILTERS_INSTRUCTION =
 const INVENTORY_PRESENTATION_INSTRUCTION =
   "Ao apresentar um imóvel, facilite a leitura com linhas curtas em uma única mensagem, com linhas separadas nesta ordem: tipo/modalidade e referência; bairro e cidade/UF; quartos, banheiros e vagas; área; preço. Use só os campos e os valores devolvidos pela tool. Separe uma eventual pergunta ou convite em outra mensagem curta, respeitando o limite de três mensagens por turno, mesmo ao apresentar mais de uma opção. Não emende características, preço e pergunta em um parágrafo comprido. As demais respostas continuam naturais e curtas. Não use emoji, tabela ou markdown.";
 
+// Na execução real 2393, duas chamadas aceitas de responder_lead pediram o mesmo
+// horário com 3,264 s de intervalo. `ok=true` significa que o balão já foi entregue.
+const TERMINAL_QUESTION_INSTRUCTION =
+  "Controle do fim do turno: Se responder_lead devolver ok=true para uma mensagem que contém pergunta ou solicitação que depende da resposta do lead, encerre imediatamente o turno e espere o lead responder; não chame responder_lead de novo para reformular, repetir, reforçar ou exemplificar essa pergunta ou solicitação. Se responder_lead devolver ok=false, corrija exatamente o motivo da rejeição e tente novamente. Uma tentativa rejeitada não foi enviada ao lead; uma tentativa com ok=true já foi entregue e nunca precisa de paráfrase. Você ainda pode usar mensagens complementares antes da pergunta terminal quando elas têm funções diferentes, como apresentar um imóvel e depois fazer o convite. Esta regra não reduz o limite global para uma mensagem.";
+
 // Aceite é necessário mesmo quando o convite surge durante a qualificação.
 // Na execução 2297 o agente propôs 14:30 e chamou agendar_reuniao sem esperar.
 const MEETING_ACCEPTANCE_INSTRUCTION =
@@ -328,6 +333,7 @@ export function buildSystemMessage({ settings, phase, perguntados, businessHours
     INVENTORY_SEARCH_INSTRUCTION,
     INVENTORY_FILTERS_INSTRUCTION,
     INVENTORY_PRESENTATION_INSTRUCTION,
+    TERMINAL_QUESTION_INSTRUCTION,
     MEETING_CHANNEL_INSTRUCTION,
     meetingAt && formatMeetingLabel(meetingAt) ? null : MEETING_ACCEPTANCE_INSTRUCTION,
     ESCALATION_HANDOFF_INSTRUCTION,

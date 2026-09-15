@@ -859,6 +859,31 @@ describe.each(["qualificando", "agendando"] as const)("buildSystemMessage — pr
   });
 });
 
+describe.each(["qualificando", "agendando"] as const)("buildSystemMessage — encerra após pergunta enviada, fase %s", (phase) => {
+  const message = buildSystemMessage({ settings: BASE_SETTINGS, phase });
+
+  it("espera o lead depois de pergunta ou solicitação enviada com sucesso (BUSCA-05 AC25)", () => {
+    expect(message).toContain("Se responder_lead devolver ok=true para uma mensagem que contém pergunta ou solicitação que depende da resposta do lead, encerre imediatamente o turno e espere o lead responder");
+  });
+
+  it("não reformula nem reforça a pergunta já entregue (BUSCA-05 AC25)", () => {
+    expect(message).toContain("não chame responder_lead de novo para reformular, repetir, reforçar ou exemplificar essa pergunta ou solicitação");
+  });
+
+  it("continua corrigindo mensagens rejeitadas (BUSCA-05 AC25)", () => {
+    expect(message).toContain("Se responder_lead devolver ok=false, corrija exatamente o motivo da rejeição e tente novamente");
+  });
+
+  it("não confunde retry rejeitado com envio bem-sucedido (BUSCA-05 AC25)", () => {
+    expect(message).toContain("Uma tentativa rejeitada não foi enviada ao lead; uma tentativa com ok=true já foi entregue e nunca precisa de paráfrase");
+  });
+
+  it("preserva balões complementares antes da pergunta terminal (BUSCA-05 AC25)", () => {
+    expect(message).toContain("Você ainda pode usar mensagens complementares antes da pergunta terminal quando elas têm funções diferentes, como apresentar um imóvel e depois fazer o convite");
+    expect(message).toContain("Esta regra não reduz o limite global para uma mensagem");
+  });
+});
+
 describe("buildSystemMessage — defensivo", () => {
   it("funciona sem settings/perguntados/businessHours", () => {
     const message = buildSystemMessage({ phase: "qualificando" });

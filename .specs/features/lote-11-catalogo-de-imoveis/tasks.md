@@ -1054,6 +1054,37 @@ já passaram. Reset é preparação de sessão separada, registrada após a publ
 
 ---
 
+### T35: Encerrar o turno após pergunta entregue
+
+**What**: Orientar o agente a esperar o lead depois de uma pergunta enviada com
+ok=true, sem repetir a solicitação, preservando correções após ok=false e balões
+complementares antes da pergunta terminal.
+**Where**: n8n/src/system-message.mjs, teste co-localizado, artefato gerado e registros da feature.
+**Depends on**: T34 e evidência real da execução 2393.
+**Reuses**: Retorno ok de responder_lead e limite existente de três mensagens.
+**Requirement**: BUSCA-05 AC25.
+**Approval**: Usuário aprovou o ajuste contra perguntas repetidas (“Eu aprovo”, 2026-09-14).
+
+**Tools**:
+- MCP: NONE
+- Skill: tlc-spec-driven
+
+**Done when**:
+- [x] ok=true após pergunta/solicitação encerra o turno e espera o lead.
+- [x] O agente não reformula, repete, reforça ou exemplifica a solicitação entregue.
+- [x] ok=false continua permitindo corrigir exatamente a rejeição e tentar novamente.
+- [x] Mensagens complementares com funções diferentes continuam permitidas antes da pergunta terminal; o limite global não cai para um balão.
+- [x] Testes derivados da AC25 passam nas fases qualificando e agendando; artefato é regenerado pelo inliner.
+
+**Tests**: unit
+**Gate**: quick
+**Status**: ✅ Done (implementação local; publicação pendente)
+**Commit**: `fix(agente): encerra turno depois de pergunta entregue`
+
+Publicação, reset, conversa externa, push e deploy não integram esta aprovação.
+
+---
+
 ## Phase Execution Map
 
 ```
@@ -1067,6 +1098,7 @@ Fase 5:  T21 → T22 → T23 → T24
 Fase 6:  T25 → T26 → T27 → T28 → T29
 Fix da primeira tentativa: T26 → T30
 Revisão aprovada da conversa seguinte: T30 → T31 → T32 → T33 → T34
+Correção aprovada da terceira conversa: T34 → T35
 ```
 
 Execução estritamente sequencial — não há paralelismo dentro de fase.
@@ -1111,6 +1143,7 @@ Execução estritamente sequencial — não há paralelismo dentro de fase.
 | T32 | Publicação isolada e recibo da revisão aprovada | ✅ Granular |
 | T33 | Refinamento coeso das instruções após segunda conversa | ✅ Granular |
 | T34 | Publicação isolada da revisão de proatividade | ✅ Granular |
+| T35 | Instrução pontual de encerramento após pergunta entregue | ✅ Granular |
 
 ---
 
@@ -1152,6 +1185,7 @@ Execução estritamente sequencial — não há paralelismo dentro de fase.
 | T32 | T31 | T31 → T32 | ✅ Match |
 | T33 | T32 | T32 → T33 | ✅ Match |
 | T34 | T33 | T33 → T34 | ✅ Match |
+| T35 | T34 + evidência 2393 | T34 → T35 | ✅ Match |
 
 Nenhuma dependência aponta para fase posterior.
 
@@ -1195,6 +1229,7 @@ Nenhuma dependência aponta para fase posterior.
 | T32 | nenhuma (publicação/recibo) | — | none | ✅ OK |
 | T33 | Módulo puro e descrição de tool n8n | unit | unit | ✅ OK |
 | T34 | nenhuma (publicação/recibo) | — | none | ✅ OK |
+| T35 | Módulo puro n8n | unit | unit | ✅ OK |
 
 Nenhum `Tests: none` é deferimento de teste: cada um cai numa camada que a matriz marca `none`
 (componente React, schema, artefato gerado, documentação) ou numa task que não cria código.

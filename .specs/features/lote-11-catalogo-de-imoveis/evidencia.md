@@ -885,3 +885,60 @@ exit 0, check_commit.py OK e git diff --check exit 0. Decisions comparadas contr
 HEAD com CRLF normalizado: conteúdo integral preservado. Captura comparada byte
 a byte ao anexo: igual. Sem novo código de produto; suíte/lint/build da T33 não
 repetidos para esta análise documental. Nenhuma task adicional declarada Done.
+
+## 39. T35 — encerrar o turno após pergunta entregue (2026-09-14)
+
+**PASS local; publicação pendente**. Usuário aprovou a recomendação do §38 com
+“Eu aprovo”. Escopo mantido na opção mínima: instrução de prompt, sem novo estado,
+barreira semântica, limite global de um balão ou alteração em responder_lead.
+
+RED: após acrescentar os casos derivados de BUSCA-05 AC25 e antes da implementação,
+system-message.test.ts teve 10 falhas / 153 passes. As cinco regras faltaram nas
+duas fases parametrizadas, qualificando e agendando. Nenhum teste anterior falhou.
+
+GREEN: TERMINAL_QUESTION_INSTRUCTION orienta que ok=true depois de pergunta ou
+solicitação terminal encerra o turno; proíbe paráfrase/repetição/reforço; diferencia
+ok=false e permite corrigir a rejeição; preserva mensagens anteriores com funções
+complementares. Integrada em buildSystemMessage para ambas as fases.
+
+Gate quick completo da camada: `npx vitest run n8n/src`, **296 testes / 9 arquivos**,
+exit 0. Focado anterior: 163 testes no arquivo, exit 0. `node scripts/n8n-inline.mjs`
+regenerou seis artefatos; comparação byte a byte de cada saída contra
+inlineWorkflowSource passou, seis de seis. Diff semântico gerado somente no principal.
+Artefato compilado: 62 nós, maxIterations 8, instrução presente. SHA-256 do jsCode
+local: 3822f108129719e50ebddc0f50ad795bdcc487ad62b98f9bf2f528990c449ff1.
+
+### Adequação A — cobertura suficiente
+
+| Cláusula da AC25 | Evidência exata | Resultado definido | Coberta |
+| --- | --- | --- | --- |
+| ok=true encerra e espera | n8n/src/__tests__/system-message.test.ts:866 — `expect(message).toContain("Se responder_lead devolver ok=true ... encerre imediatamente o turno e espere o lead responder")` | Esperar o próximo turno do lead | Sim |
+| Não repetir a solicitação entregue | n8n/src/__tests__/system-message.test.ts:870 — `expect(message).toContain("não chame responder_lead de novo para reformular, repetir, reforçar ou exemplificar essa pergunta ou solicitação")` | Zero paráfrase após sucesso | Sim |
+| ok=false permite correção | n8n/src/__tests__/system-message.test.ts:874 — `expect(message).toContain("Se responder_lead devolver ok=false, corrija exatamente o motivo da rejeição e tente novamente")` | Retry só após corrigir rejeição | Sim |
+| Distinguir rejeitado de entregue | n8n/src/__tests__/system-message.test.ts:878 — `expect(message).toContain("Uma tentativa rejeitada não foi enviada ao lead; uma tentativa com ok=true já foi entregue e nunca precisa de paráfrase")` | Estados não confundidos | Sim |
+| Preservar complementares | n8n/src/__tests__/system-message.test.ts:882 — `expect(message).toContain("Você ainda pode usar mensagens complementares antes da pergunta terminal quando elas têm funções diferentes, como apresentar um imóvel e depois fazer o convite")` | Imóvel e convite ainda podem ser separados | Sim |
+| Não impor um balão global | n8n/src/__tests__/system-message.test.ts:883 — `expect(message).toContain("Esta regra não reduz o limite global para uma mensagem")` | Teto anterior preservado | Sim |
+
+O describe.each em :862 executa cada asserção para qualificando e agendando,
+produzindo 10 casos. Asserções checam cada cláusula textual separadamente; remover
+qualquer uma das frases correspondentes mata o caso. Não dependem de call count,
+mock ou simples ausência de erro. Não há payload/conjunção persistida nesta task.
+
+### Adequação C — necessidade
+
+| Asserção | Mapeamento | Manter |
+| --- | --- | --- |
+| :866 fim do turno | BUSCA-05 AC25, primeira cláusula | Sim |
+| :870 sem repetição | BUSCA-05 AC25, SHALL NOT | Sim |
+| :874 retry corrigido | BUSCA-05 AC25, ok=false | Sim |
+| :878 distinção de retorno | BUSCA-05 AC25, fronteira sucesso/rejeição | Sim |
+| :882 complementares | BUSCA-05 AC25, preservação do formato | Sim |
+| :883 sem limite de um | BUSCA-05 AC25, limite de três preservado | Sim |
+
+Check B: nenhuma asserção rasa; cada mutação textual plausível falha. Check D:
+co-localização segue a Test Coverage Matrix; AGENTS.md/CLAUDE.md não adicionam regra
+de teste para módulo n8n. Sem SPEC_DEVIATION. Solução é uma constante e uma entrada
+na composição existente; não introduz abstração. T35 marcada Done antes do commit.
+
+Publicação, reset e nova conversa real não realizados. Testes comprovam a presença
+da instrução, não a obediência do modelo. T26–T29 e Verifier final seguem abertos.

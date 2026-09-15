@@ -263,22 +263,19 @@
 
 ## Handoff
 
-### Lote 11 — terceira conversa conferida; pergunta redundante identificada (2026-09-14)
+### Lote 11 — T35 local concluída; publicação pendente (2026-09-14)
 
 - **Feature**: lote-11-catalogo-de-imoveis; tlc-spec-driven ativa, planejamento preservado.
-- **Phase / Task**: Fase 6 / T33 e T34 entregues; T26–T29 abertas.
+- **Phase / Task**: Fase 6 / T35 entregue localmente; T26–T29 abertas.
 - **Completed**: T1–T25; T31 (`2268671`), T32 (`6cca049`), T33 (`2245565`),
-  T34 (`d918363`). T30 (`6a05fa1`) é histórico da primeira tentativa, sem refazer a regra absoluta.
-- **Última entrega**: terceira conversa analisada por SQL READ ONLY e get_execution,
-  evidencia.md §38; captura real do usuário preservada sem edição. Publicação/reset
-  anteriores em §36/37; helper pontual em RESET-LEMBRETE-2026-09-14.md.
-- **Next step**: apresentar revisão pontual para não repetir pergunta após ok=true.
-  Sem aprovação/implementação da nova revisão nesta análise. Depois da aprovação,
-  testes das instruções, gate e nova prova real; publicação/reset exigem ação autorizada.
-- **Blockers**: redundância comprovada em 2393, duas chamadas bem-sucedidas ao responder.
-  Captura parcial disponível em §38; fechamento da T26/gate e T27 ainda pendentes.
-- **Uncommitted files**: nenhum após commit documental desta análise; STATE,
-  evidencia.md e captura incluídos no mesmo commit. Sem código novo.
+  T34 (`d918363`); T35 será o commit desta entrega. T30 (`6a05fa1`) é histórico.
+- **Última entrega**: T35 instrui encerrar o turno depois de pergunta entregue com
+  ok=true, preserva retry de ok=false e balões complementares. Evidência §39.
+- **Next step**: publicar T35 somente com autorização específica; depois resetar a
+  sessão somente se autorizado e repetir prova real. Teste de prompt não é obediência.
+- **Blockers**: nenhum local. Publicação e reset são ações externas não autorizadas
+  por “Eu aprovo”. T26 fechamento da captura/gate e T27 ainda pendentes.
+- **Uncommitted files**: nenhum após o commit atômico T35.
 - **Branch**: main, sem push/deploy; origin/main local 5275511.
 
 **Principal**: 0B1nqjODu7xuYYKF ativo em 833f525c-4d59-43a2-b466-8ef8268a0468.
@@ -313,6 +310,15 @@ repetição de aberturas rejeitadas; cidade inferida do imóvel, nenhuma expans�
 automática, pergunta anexada ao mesmo balão do imóvel. Prioridade da revisão
 proposta é evitar pergunta redundante, mantendo mensagens complementares.
 
+**T35 local (§39)**: AC25 adicionada. RED 10 falhas / 153 passes; GREEN focado
+163 passes. Gate n8n/src 296 testes / 9 arquivos. Inliner regenerou seis artefatos
+e paridade byte a byte passou; somente principal tem diff. Implementação apenas no
+system message: ok=true em pergunta terminal encerra e espera; ok=false corrige e
+retenta; complementares antes da pergunta permanecem. Sem alteração em responder,
+modelo, memória, credenciais, conexões ou instância n8n. Publicação pendente.
+SHA-256 do jsCode local T35:
+3822f108129719e50ebddc0f50ad795bdcc487ad62b98f9bf2f528990c449ff1.
+
 **Histórico e Calendar**: segunda conversa §34 tinha 8 turnos, IM-0001 / R$ 380.000,00,
 ausência correta, máximo 6 runs do modelo, CRM qualificado_agendado/André e Calendar
 success 2360. Google reconectado comprovado pela disponibilidade + criação reais.
@@ -322,7 +328,7 @@ Brasília, foi preservado no reset. Estado atual desse evento antigo não recons
 2407 recebeu availability=true e criou evento novo. Lembrete n8n id 16 foi removido.
 Cancelamento Calendar não solicitado nem feito nesta análise. Sem mensagens externas.
 
-**Restante**: revisão pontual proposta e prova dos refinamentos ainda não obedecidos;
+**Restante**: publicação/prova real da T35 e prova dos refinamentos ainda não obedecidos;
 T26 fechamento da captura/gate e T27 regressão,
 T28 supersessão VOZ-02, T29 rastreabilidade completa/INDEX/roadmap/handoff/revisão de
 lições. Verifier independente obrigatório após as tasks finais, oito mutações do design
