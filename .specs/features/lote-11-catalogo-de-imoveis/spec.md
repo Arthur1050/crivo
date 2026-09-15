@@ -317,7 +317,7 @@ e a tool tenham dado para exercitar sem depender de cadastro manual.
 | BUSCA-04 | P1: Tool `buscar_imoveis` no fluxo do agente | Design | In Design |
 | BUSCA-05 | P1: Tool `buscar_imoveis` no fluxo do agente | Execute | T36 publicada; prova real anterior aceita pelo usuário |
 | PROVA-01 | P2: Prova conversacional da tool nova | Design | In Design |
-| PROVA-02 | P2: Prova conversacional da tool nova | Execute | T26 concluída; T27 em fechamento |
+| PROVA-02 | P2: Prova conversacional da tool nova | Execute | T26 e T27 concluídas com prova real aprovada |
 | SEEDIM-01 | P3: Seed do catálogo | Design | In Design |
 
 **Coverage:** 15 IDs no total, 0 mapeados a tasks (a fase Tasks ainda não foi executada).

@@ -829,14 +829,16 @@ a repetição da T26 depois do reset continua pendente antes de seguir para T27.
 - Skill: NONE
 
 **Done when**:
-- [ ] Lead termina em `qualificado_agendado` com responsável atribuído (PROVA-02 AC7)
-- [ ] Evento com link do Meet existe no calendário
-- [ ] Limpeza dos alvos confirmada antes de começar
-- [ ] Ids de execução conferidos por `get_execution`
-- [ ] Gate build passa
+- [x] Lead termina em `qualificado_agendado` com responsável atribuído (PROVA-02 AC7) — lead e1cefc16..., André atribuído (§38/42)
+- [x] Evento com link do Meet existe no calendário — evento gpupvvmc..., Meet rkw-xtya-fmv, execução 2407
+- [x] Limpeza dos alvos confirmada antes de começar — reset §37, execuções 2370–2372 e SQL remaining=0
+- [x] Ids de execução conferidos por `get_execution` — principais 2373/2379/2387/2393/2406/2416 e filha 2407
+- [x] Gate build passa — 1.357 testes/91 arquivos, lint 0 erros/3 avisos prévios, build exit 0 (§42)
 
 **Tests**: none
 **Gate**: build
+
+**Status**: ✅ Done
 
 **Commit**: `docs(specs): registra regressao do cenario de agendamento`
 

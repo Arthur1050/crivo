@@ -990,3 +990,29 @@ Gate build executado integralmente e sozinho após T36: `npx vitest run` **1.357
 testes / 91 arquivos**, exit 0, 675,05 s; lint exit 0, zero erros e os três avisos
 prévios; Next.js build exit 0. Avisos conhecidos de Better Auth no build local,
 sem regressão ou mudança de autenticação. T26 marcada Done antes do commit atômico.
+
+## 42. T27 — regressão qualificar→agendar concluída (2026-09-14)
+
+**PASS por desfecho, aprovado pelo usuário**. Preparação anterior ao cenário:
+§37 registra n8n reset 2370, remoção do lembrete antigo 2372 e CRM remaining=0,
+sempre na ordem n8n→CRM. A terceira conversa nasceu com lead novo
+e1cefc16-d030-4d27-b199-b3e600d2d526 e estado limpo.
+
+Seis execuções principais conferidas individualmente por get_execution:
+2373, 2379, 2387, 2393, 2406 e 2416. O turno 2406 chamou agendar_reuniao;
+filha **2407**, workflow 2qCs6rPzmeOqan65, status success,
+18:25:51.509Z–18:25:53.158Z, retryOf=null. Availability devolveu true; PATCH CRM
+devolveu HTTP 200 e atribuiu André Luiz Martins. CRM READ ONLY confirmou status
+qualificado_agendado, meeting_at=2026-09-15T18:00:00Z e assigned_user_id
+3ea96a1f-3fb4-436b-a4ab-862dbf36f394.
+
+Google Calendar criou evento **gpupvvmct9lvbt4qsm3n7b83t8**, status confirmed,
+15/09/2026 15:00–15:30 America/Sao_Paulo, com André convidado e conferência
+success. Meet https://meet.google.com/rkw-xtya-fmv, igual ao enviado ao lead.
+Lembrete agenda_envios id 17 criado. A conversa terminou com agradecimento e o
+usuário declarou a última sessão um sucesso. PROVA-02 AC7 atendida.
+
+Gate build repetido integralmente e sozinho a partir do commit de T26:
+1.357 testes / 91 arquivos, exit 0, **662,10 s**; lint exit 0, zero erros e os
+três avisos prévios; Next.js build exit 0. Avisos locais conhecidos de Better Auth,
+sem regressão. T27 marcada Done antes do commit atômico.
