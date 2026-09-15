@@ -17,7 +17,7 @@ Specify/Design/Tasks e não me peça re-aprovação deles.
 ## Contexto aprovado (leia nesta ordem antes de executar)
 
 1. `.specs/STATE.md` — decisões ativas AD-001..AD-028 e o Handoff do lote-10. **Atenção ao item 2 das Restrições Críticas antes de interpretar qualquer AD-014.**
-2. `.specs/features/lote-11-catalogo-de-imoveis/tasks.md` — 29 tasks em 6 fases, Test Coverage Matrix e Gate Check Commands (autoritativos).
+2. `.specs/archive/lote-11-catalogo-de-imoveis/tasks.md` — 29 tasks em 6 fases, Test Coverage Matrix e Gate Check Commands (autoritativos).
 3. `.specs/features/lote-11-catalogo-de-imoveis/spec.md` — as ACs são a fonte de verdade dos testes (IMOV-01..07, BUSCA-01..05, PROVA-01/02, SEEDIM-01) + Edge Cases.
 4. `.specs/features/lote-11-catalogo-de-imoveis/design.md` — arquitetura, Components, Data Models, **Risks & Concerns** (leia inteiro) e a **Test Coverage Matrix** com as 8 mutações nomeadas para o sensor.
 5. `.specs/features/lote-11-catalogo-de-imoveis/context.md` — decisões do usuário, discrição do agente e o que foi deliberadamente adiado.

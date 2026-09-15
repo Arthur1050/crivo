@@ -52,7 +52,7 @@ o CSS do design system já expõe.
 | 5 | `evidencia/t20-01b-gestor-claro-acoes-visiveis.jpg` | Gestor, tema claro | Mesma tela do #1, tabela rolada horizontalmente até o fim (o monitor desta máquina é 1440px de largura — mais estreito que os 1600–1800px pedidos originalmente — então a rolagem, não o redimensionamento de janela, foi o jeito de trazer a coluna à vista). A coluna **Ações** aparece nas 4 linhas, cada uma com um botão "Ações" que abre `DropdownMenu` (editar/excluir) — prova real de `IMOV-04 AC1`. |
 | 6 | `evidencia/t20-02b-corretor-claro-sem-acoes.jpg` | Corretor, tema claro | Mesma tela do #2, mesma rolagem até o fim. A última coluna visível é **Publicação** — não há coluna Ações nenhuma depois dela, nem vazia: `properties-table.tsx` só executa `columns.push({ key: "actions", ... })` quando `canWrite` é verdadeiro (`src/components/properties/properties-table.tsx:176-203`), então para o corretor a célula nunca é montada, não é apenas ocultada. Esta é a prova real de `IMOV-04 AC2`. |
 
-**Desfecho:** as seis capturas confirmam o comportamento esperado por IMOV-01/IMOV-04/IMOV-05 —
+**Desfecho:** as quatro capturas finais confirmam o comportamento esperado por IMOV-01/IMOV-04/IMOV-05 —
 gestor com controle completo (incluindo o menu de linha, #5), corretor em leitura pura sem a coluna
 de ações existir no DOM (#6), diálogo único de cadastro/edição, e paridade visual entre os dois
 temas. Nenhuma foi obtida por inspeção de DOM; todas são renderização real do dev server via login

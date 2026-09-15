@@ -20,7 +20,7 @@ Os artefatos de cada lote têm meias-vidas muito diferentes. A organização ref
 
 | Camada | Arquivos | Papel | Onde |
 | --- | --- | --- | --- |
-| 1 — Vivos | `../STATE.md`, `../LESSONS.md`, `../lessons.json`, PRD, Roadmap | Decisões (AD-001…024) e auto-melhoria. Consultados em toda sessão. | `.specs/` |
+| 1 — Vivos | `../STATE.md`, `../LESSONS.md`, `../lessons.json`, PRD, Roadmap | Decisões ativas e auto-melhoria. Consultados em toda sessão. | `.specs/` |
 | 2 — Durável | `spec.md`, `context.md` | Requisitos EARS + rastreabilidade; decisões do usuário e o que foi **rejeitado** (é daqui que sai o backlog). | `.specs/features/<lote>/` |
 | 3 — Histórico | `design.md`, `validation.md` | Arquitetura no momento X e evidência do Verifier. Envelhecem: quando o código muda, o código vira a verdade. | `.specs/features/<lote>/` |
 | 4 — Arquivado | `tasks.md`, `EXECUTE-PROMPT.md`, evidência detalhada e anexos úteis | Log de execução, instruções de janelas encerradas e provas consultadas apenas sob demanda. Valor principal já destilado para `validation.md`, `STATE.md` e o `git log`. | `.specs/archive/<lote>/` |
