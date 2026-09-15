@@ -883,17 +883,19 @@ a repetição da T26 depois do reset continua pendente antes de seguir para T27.
 - Skill: NONE
 
 **Done when**:
-- [ ] Os 15 requirement IDs com status final e evidência `file:line`; nenhum aprovado por ausência
-- [ ] `INDEX.md` ganha a linha do lote-11, com o que ficou aberto
-- [ ] `ROADMAP-POS-PILOTO.md` marca o L11 como executado e registra o que sobrou para o L12 e o L16
-- [ ] `STATE.md § Handoff` reescrito para o lote-11, preservando as pendências herdadas ainda não resolvidas
-- [ ] Piso de testes final registrado e **maior** que o da T1
-- [ ] `validate_state.py lote-11-catalogo-de-imoveis` exit 0 (roda depois do Verifier)
-- [ ] **Revisão das lições `candidate`**: rodar `lessons.py list --status all`, ler as candidatas destiladas neste lote e **apresentar ao usuário** quais merecem promoção a `confirmed`, com o critério (generalizável além do incidente · acionável no planejamento · ainda verdadeira contra o código atual · não redundante com outra lição, com uma AD ativa ou com o `CLAUDE.md`). A promoção é decisão do usuário — nunca automática. Sem este passo a lição destilada nunca chega a ser carregada em lote nenhum, que foi o que aconteceu com as 25 primeiras (auditado em 2026-09-10)
-- [ ] Gate build passa
+- [x] Os 15 requirement IDs com status final e evidência `file:line`; nenhum aprovado por ausência
+- [x] `INDEX.md` ganha a linha do lote-11, com o que ficou aberto
+- [x] `ROADMAP-POS-PILOTO.md` marca o L11 como executado e registra o que sobrou para o L12 e o L16
+- [x] `STATE.md § Handoff` reescrito para o lote-11, preservando as pendências herdadas ainda não resolvidas
+- [x] Piso de testes final registrado e **maior** que o da T1
+- [x] `validate_state.py lote-11-catalogo-de-imoveis` exit 0 (roda depois do Verifier)
+- [x] **Revisão das lições `candidate`**: rodar `lessons.py list --status all`, ler as candidatas destiladas neste lote e **apresentar ao usuário** quais merecem promoção a `confirmed`, com o critério (generalizável além do incidente · acionável no planejamento · ainda verdadeira contra o código atual · não redundante com outra lição, com uma AD ativa ou com o `CLAUDE.md`). A promoção é decisão do usuário — nunca automática. Sem este passo a lição destilada nunca chega a ser carregada em lote nenhum, que foi o que aconteceu com as 25 primeiras (auditado em 2026-09-10)
+- [x] Gate build passa
 
 **Tests**: none
 **Gate**: build
+
+**Status**: ✅ Done
 
 **Commit**: `docs(specs): fecha o lote-11 com a rastreabilidade final`
 
@@ -955,7 +957,7 @@ a repetição da T26 depois do reset continua pendente antes de seguir para T27.
 - [x] Falha técnica mantém reunião não confirmada, não vira horário ocupado nem promessa de retomada automática.
 - [x] Tests existentes das regras substituídas atualizados conforme aprovação; nenhum caso removido ou pulado; novas cláusulas com asserções próprias.
 - [x] Artefato regenerado pelo inliner, grafo preservado e gate.mjs/phase.mjs sem alteração.
-- [x] Gate build completo passa; evidência e handoff registram resultado local e publicação pendente.
+- [x] Gate build completo passa; evidência e handoff registram o resultado local; publicação concluída na T32.
 
 **Tests**: unit
 **Gate**: build
@@ -1018,11 +1020,11 @@ publicação/recibo não criam código; os 1.304 testes, lint e build da T31 seg
 - [x] Apresentação usa ordem e linhas separadas, só campos reais, pergunta em outro balão, até três mensagens, sem emoji/tabela/markdown.
 - [x] Cortesia, aceite, fronteiras, opt-out e reunião confirmada preservados; testes anteriores intactos e novas cláusulas com asserção própria nas duas fases.
 - [x] Inliner e validação SDK passam, 62 nós / 76 conexões / maxIterations 8; gate.mjs, phase.mjs, voice.mjs, banco e booking intactos.
-- [x] Gate build completo passa; revisão de adequação, rastreabilidade e handoff registram entrega local e publicação pendente.
+- [x] Gate build completo passa; revisão de adequação, rastreabilidade e handoff registram a entrega local; publicação concluída na T34.
 
 **Tests**: unit
 **Gate**: build
-**Status**: ✅ Done (implementação local; publicação pendente)
+**Status**: ✅ Done (implementação local; publicada na T34)
 **Commit**: `fix(agente): busca alternativas e antecipa convite com imoveis legiveis`
 
 Publicação, reset, Calendar, push e deploy não integram esta aprovação. T26–T29 e
@@ -1084,7 +1086,7 @@ complementares antes da pergunta terminal.
 
 **Tests**: unit
 **Gate**: quick
-**Status**: ✅ Done (implementação local; publicação pendente)
+**Status**: ✅ Done (implementação local; publicada na T36)
 **Commit**: `fix(agente): encerra turno depois de pergunta entregue`
 
 Publicação, reset, conversa externa, push e deploy não integram esta aprovação.

@@ -51,7 +51,7 @@ diferença observada no smoke seja atribuível ao modelo.
 
 ---
 
-## L11 — Catálogo de imóveis
+## L11 — Catálogo de imóveis — ✅ EXECUTADO (2026-09-14)
 
 **Origem**: usuário, 2026-09-04, a partir de necessidade declarada por dono de imobiliária.
 **Registro perdido**: o usuário lembra de ter levantado a ideia durante a execução de algum lote,
@@ -59,6 +59,16 @@ mas ela **não existe em lugar nenhum** de `.specs/` — nem em `Deferred Ideas`
 nem no PRD, e não há tabela de imóveis no schema. Causa provável: a skill captura `Deferred Ideas`
 na fase de discuss; ideia que nasce no meio do Execute não tem onde pousar. **Convenção nova**:
 ideia surgida em execução vai para o `context.md` do lote corrente na hora.
+
+**Status final**: PASS do Verifier independente — 78/78 critérios cobertos, gate com 1.357 testes
+e 9/9 mutações mortas. O lote entregou o catálogo multi-tenant no CRM, CRUD e permissões, seed,
+contrato `GET /api/v1/properties`, tool `buscar_imoveis` publicada e provas reais de inventário e
+agendamento. As correções conversacionais aprovadas tornaram a busca proativa, anteciparam o convite
+consultivo, melhoraram a apresentação e encerram o turno depois de uma pergunta já entregue.
+
+**Fronteiras preservadas**: storage do binário, extração de conteúdo e preview/download continuam
+no L12; a vitrine pública continua no L16, conforme AD-025. O switch de exibição do catálogo e a
+antecedência mínima do agendamento permanecem deferidos no `context.md` do lote-11.
 
 | # | Item |
 | --- | --- |

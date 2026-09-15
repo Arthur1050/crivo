@@ -9,8 +9,8 @@ Roadmap original (`../Roadmap - Fases Epicas.md`): 10 fases, executadas em 9 lot
 interstitiais. **100% executado** em 2026-08-30 (`STATE.md` § Handoff).
 
 Trabalho futuro: `../ROADMAP-POS-PILOTO.md` — lotes 10 a 16 a partir do backlog deferido e das
-frentes novas (catálogo de imóveis, vitrine pública), com o que foi descartado e por quê. **L10 já
-executado** (linha acima); L11–L16 seguem propostos.
+frentes novas (catálogo de imóveis, vitrine pública), com o que foi descartado e por quê. **L10 e
+L11 já foram executados** (linhas abaixo); L12–L16 seguem propostos.
 
 ---
 
@@ -46,6 +46,7 @@ Cada diretório de lote tem um `ARCHIVED.md` apontando para os arquivos movidos.
 | `lote-8-usuarios-papeis-atribuicao` | — (novo, AD-020) | 08-27 | ✅ Ready | AUTH-01/02, USER-01/02, PERM-01, SCOPE-01, TENANT-01, ATRIB-01…03, AGENDA-01, SEED-01, SEC-01 | better-auth + plugin `organization` (AD-021), papéis acumuláveis, atribuição no agendamento (AD-022) | Pacote Google + página de Agenda (#8), auditoria completa (#14), 2FA (#5) |
 | `lote-9-metricas-piloto` | F10 | 08-30 | ✅ Ready | BASE-01/02, SAUDE-01…03, PRES-01/02, REL-01, PERF-01, SCOPE-01/02 | Baseline por imobiliária (AD-024), saúde da integração via `integration_refusals` (AD-023), rota `/relatorio` | Alerta ativo (#23), log de sucesso com latência (#25), export CSV (#22) |
 | `lote-10-modelo-alvo-e-prova-conversacional` | — (novo, pós-piloto, `ROADMAP-POS-PILOTO.md` L10) | 09-09 | ✅ PASS | MOD-01…03, SMK-01…06, DOC-01/02, MTN-01 | Modelo trocado para `gpt-5.4-nano-2026-03-17` confinado a um nó (AD-026), bateria de tool calling APROVADA, os três desfechos da AD-015 provados por conversa real (AGT-04/AGT-05/LGPD-03 fechados no lote-6), protocolo de prova conversacional (AD-027), AD-015 encerrada (`superseded by AD-027`), Finding 1 do lote-6c fechado, `n8n/README.md §4` corrigido | MTN-01 **não verificado, sem caminho disponível** — `vale-uberaba` é tenant fictício, sem número para homologar (não é pendência temporária); limpeza manual não verificável por ferramenta; dívidas herdadas listadas em `STATE.md` § Handoff |
+| `lote-11-catalogo-de-imoveis` | — (novo, pós-piloto, `ROADMAP-POS-PILOTO.md` L11) | 09-14 | ✅ PASS | IMOV-01…07, BUSCA-01…05, PROVA-01/02, SEEDIM-01 | Catálogo multi-tenant no CRM, CRUD e permissões por papel, seed determinístico, `GET /api/v1/properties`, tool `buscar_imoveis` publicada e validada por conversa real; agente busca alternativas com iniciativa, apresenta opções legíveis e convida para reunião sem exigir escolha prévia | Storage/conteúdo/preview de documentos continuam no L12; vitrine pública continua no L16; switch de exibição do catálogo e antecedência mínima do agendamento permanecem deferidos em `context.md` |
 
 ---
 

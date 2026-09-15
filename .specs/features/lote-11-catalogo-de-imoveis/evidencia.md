@@ -1033,3 +1033,41 @@ reescritos. Isso preserva a prova histórica e explicita a regra atual.
 Gate build integral e isolado: 1.357 testes / 91 arquivos, exit 0, **660,02 s**;
 lint exit 0, zero erros e três avisos prévios; Next.js build exit 0. Avisos conhecidos
 de Better Auth, sem mudança no código de autenticação. T28 marcada Done antes do commit.
+
+## 44. T29 — fechamento e Verifier independente (2026-09-14)
+
+**PASS**. Um Verifier novo, distinto dos autores, rederivou todos os critérios da
+spec e persistiu `validation.md`. O exame encontrou **78/78 critérios atendidos**,
+zero lacunas de precisão e nenhum gap bloqueante, major ou minor. A matriz cita
+asserções e evidências `file:line`; nenhum requisito recebeu aprovação por ausência.
+
+O gate integral do Verifier, executado sozinho sobre o último commit funcional,
+passou com **1.357 testes em 91 arquivos**, zero falhas e zero skips, em 659,70 s.
+Lint: exit 0, zero erros e os três avisos pré-existentes. Build Next.js: exit 0,
+20 rotas compiladas; os avisos locais conhecidos de Better Auth permanecem ruído
+herdado. Contra o piso da T1, 1.076 testes/82 arquivos, o lote acrescentou 281
+testes passantes e nove arquivos de teste.
+
+O sensor usou worktree destacado, sem `git stash`, e matou **9/9 mutações**: as oito
+nomeadas em `design.md` e a mutação M9 que removeu o encerramento do turno após uma
+pergunta aceita com `ok=true`. O scratch foi removido e o porcelain da árvore real
+voltou ao baseline antes da criação autorizada do relatório.
+
+Rastreabilidade fechada nos 15 IDs da spec; `features/INDEX.md` ganhou o lote-11;
+`ROADMAP-POS-PILOTO.md` marca L11 executado e mantém storage/conteúdo/preview no L12
+e a vitrine pública no L16; `STATE.md § Handoff` aponta para L12 e preserva as dívidas
+herdadas. `validate_spec.py`: zero erros/avisos. `validate_tasks.py`: zero erros e 23
+avisos consultivos já justificados pelas tasks sem teste direto e pelos arquivos de
+documentação agregados. `validate_state.py`: zero erros.
+
+**Revisão de lições (AD-028)**: o PASS limpo não gerou candidata nova. As três
+candidatas existentes foram relidas contra os quatro critérios obrigatórios:
+
+| Lição | Generalizável | Acionável no planejamento | Verdadeira hoje | Não redundante | Decisão |
+| --- | --- | --- | --- | --- | --- |
+| L-007 | Sim | Não — a correção já foi incorporada ao processo visual | Sim | Sim | Não promover |
+| L-017 | Não — descreve um detalhe do rate limit do better-auth | Limitadamente | Sim | Sim | Não promover |
+| L-022 | Sim | Sim | Sim | Não — duplica L-012 | Não promover |
+
+Nenhum status ou registro de `lessons.json` foi alterado. Não há candidata do lote-11
+para submeter à promoção humana.

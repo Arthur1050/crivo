@@ -263,93 +263,40 @@
 
 ## Handoff
 
-### Lote 11 — T28 concluída; fechamento T29 em andamento (2026-09-14)
+### Lote 11 — concluído e validado (2026-09-14)
 
-- **Feature**: lote-11-catalogo-de-imoveis; tlc-spec-driven ativa, planejamento preservado.
-- **Phase / Task**: Fase 6 / T26–T28 concluídas; seguindo para T29.
-- **Completed**: T1–T25; T31 (`2268671`), T32 (`6cca049`), T33 (`2245565`),
-  T34 (`d918363`), T35 (`1f90d74`); T36 será o recibo desta entrega.
-- **Última entrega**: T35 publicada na versão ativa
-  538b04fd-6682-4690-b0e7-9c2c1452866e; recibo evidencia.md §40.
-- **Next step**: executar T29 e depois o Verifier independente.
-- **Blockers**: nenhum. Reset não foi solicitado nem necessário para o fechamento.
-- **Uncommitted files**: nenhum após o commit atômico T36.
-- **Branch**: main, sem push/deploy; origin/main local 5275511.
+- **Feature**: `lote-11-catalogo-de-imoveis`; execução pela `tlc-spec-driven` concluída.
+- **Phase / Task**: Execute / T29 concluída; Verifier independente PASS.
+- **Completed**: T1–T36. As T30–T36 foram correções e publicações abertas pelas três rodadas de
+  conversa real; o usuário encerrou T26/T27 como sucesso e autorizou a publicação final.
+- **Validation**: 78/78 critérios com evidência `file:line`, zero lacunas de precisão; sensor
+  9/9 mutações mortas; `validate_state.py` exit 0. Relatório em
+  `.specs/features/lote-11-catalogo-de-imoveis/validation.md`.
+- **Final gate**: 1.357 testes / 91 arquivos, 0 falhas e 0 skips; lint 0 erros/3 avisos
+  pré-existentes; build exit 0. Piso da T1: 1.076/82; delta +281 testes/+9 arquivos.
+- **Next step**: L12 — conteúdo de documento chega ao agente. Storage do binário,
+  extração de conteúdo e preview/download permanecem nesse lote; vitrine pública no L16.
+- **Blockers**: nenhum para o encerramento do L11.
+- **Uncommitted files**: nenhum após o commit atômico da T29.
+- **Branch**: `main`, sem push/deploy; `origin/main` local em `5275511` na conferência final.
 
-**Principal**: 0B1nqjODu7xuYYKF ativo em 833f525c-4d59-43a2-b466-8ef8268a0468.
-Antes de ativar, código normalizado/descrições/sete fromAi iguais ao gerado; hash
-93a36f5e281297925272f9799c47800e60c2fbb20037b9e2102da6ca33541689.
-Somente nove caminhos em dois nós alterados; demais nós, credenciais, grupos, settings
-preservados. 62 nós / 76 conexões / maxIterations 8; versão ativa e grafo reconsultados
-depois da publicação e depois do reset. T33 gate completo: 1.347 testes / 91 arquivos,
-656,97 s, lint/build exit 0, avisos prévios apenas. Adequação A/B/C/D local em §35.
+**Entrega publicada**: workflow principal `0B1nqjODu7xuYYKF`, versão ativa
+`538b04fd-6682-4690-b0e7-9c2c1452866e`, 62 nós / 76 conexões / `maxIterations` 8. A publicação
+final mudou somente o `jsCode` do system message; modelo, memória, credenciais, grupos, settings e
+conexões foram preservados. O agente encerra o turno depois de uma pergunta entregue com
+`ok=true`; `ok=false` continua permitindo a correção exata. Nenhuma nova mensagem, reset, alteração
+de Calendar, push ou deploy foi feita no fechamento.
 
-**Reset concluído (§37)**: crivo-smoke-reset execução 2370 success conferida,
-purgou memória triangulo:553499532444 e removeu conversa_estado id 33. Rotina original
-intacta. Lembrete anterior id 16, agenda_envios, removido por quatro condições AND
-(id/tenant/waId/leadId), preflight dryRun 2371 conferido, remoção 2372 success e get
-posterior vazio. Helper temporário d5gqmDVdZ9vLfhmg arquivado, sem publicação;
-artefato reproduzível preservado. Só depois, smoke:reset CRM exit 0 apagou 16 mensagens,
-1 conversa e lead b639766a-f273-4c30-aa39-695226141bed. SQL READ ONLY remaining=0.
-Nova conversa já realizada e conferida em §38; nenhum reset extra executado nesta análise.
+**Prova real**: a última sessão foi aceita pelo usuário como sucesso. A busca citou IM-0001 e
+R$ 380.000,00 conforme o banco, declarou corretamente a ausência, apresentou o imóvel em linhas e
+chegou ao agendamento. A execução filha 2407 confirmou `qualificado_agendado`, André atribuído,
+evento `gpupvvmct9lvbt4qsm3n7b83t8`, Meet `rkw-xtya-fmv`, em 15/09/2026 às 15h de Brasília, e
+lembrete n8n id 17. O evento e o lembrete foram preservados. A duplicação observada nessa sessão
+foi corrigida e publicada na T35/T36; a AC25 e a mutação M9 provam a barreira deterministicamente.
 
-**Terceira conversa (§38)**: 13 mensagens / 6 turnos, lead
-e1cefc16-d030-4d27-b199-b3e600d2d526. IM-0001 / R$ 380.000,00 conferidos contra banco,
-características em linhas, convite após primeira ausência. Execuções principais
-2373/2379/2387/2393/2406/2416 confirmadas; máximo 7 runs do modelo, teto 8 preservado.
-Pergunta redundante: 2393 chamou responder 2396 (ok=true) e, 3,264 s depois, 2401
-(ok=true) para pedir horário novamente. Um envio por filha, IDs WhatsApp distintos;
-fallback=false nesse turno. Causa: segunda decisão do modelo após envio confirmado.
-Agendamento 2407 success: CRM qualificado_agendado/André, evento
-gpupvvmct9lvbt4qsm3n7b83t8 confirmado, 15/09/2026 15h Brasília,
-Meet rkw-xtya-fmv, lembrete n8n id 17. Sessão/evento/lembrete preservados.
-Não declarar obediência integral da T33: houve modalidade vazia/400 corrigido,
-repetição de aberturas rejeitadas; cidade inferida do imóvel, nenhuma expansão
-automática, pergunta anexada ao mesmo balão do imóvel. Prioridade da revisão
-proposta é evitar pergunta redundante, mantendo mensagens complementares.
-
-**T35 local (§39)**: AC25 adicionada. RED 10 falhas / 153 passes; GREEN focado
-163 passes. Gate n8n/src 296 testes / 9 arquivos. Inliner regenerou seis artefatos
-e paridade byte a byte passou; somente principal tem diff. Implementação apenas no
-system message: ok=true em pergunta terminal encerra e espera; ok=false corrige e
-retenta; complementares antes da pergunta permanecem. Sem alteração em responder,
-modelo, memória, credenciais, conexões ou instância n8n. Publicação pendente.
-SHA-256 do jsCode local T35:
-3822f108129719e50ebddc0f50ad795bdcc487ad62b98f9bf2f528990c449ff1.
-
-**T36 publicada (§40)**: versão ativa
-538b04fd-6682-4690-b0e7-9c2c1452866e. Exatamente um caminho remoto alterado,
-jsCode do system message; 62 nós, conexões/settings/grupos preservados,
-maxIterations 8. Sem reset ou mensagem externa.
-
-**T26 concluída (§41)**: usuário aceitou a última sessão como sucesso. Captura
-versionada, inventário positivo/ausência e IDs já conferidos em §34/38. Gate integral:
-1.357 testes / 91 arquivos, lint 0 erros/3 avisos prévios, build exit 0.
-
-**T27 concluída (§42)**: reset prévio comprovado; principais
-2373/2379/2387/2393/2406/2416 e booking 2407 conferidos. Lead terminou
-qualificado_agendado com André; evento gpupvvmct9lvbt4qsm3n7b83t8 confirmado,
-Meet rkw-xtya-fmv. Gate repetido: 1.357 testes / 91 arquivos, lint/build exit 0.
-
-**T28 concluída (§43)**: VOZ-02 AC5 do lote 6c recebeu nota de supersessão parcial.
-Catálogo/preço agora vêm de buscar_imoveis; foto/arquivo e barreira de promessa
-permanecem. Veredito histórico intacto. Gate: 1.357 testes, lint/build exit 0.
-
-**Histórico e Calendar**: segunda conversa §34 tinha 8 turnos, IM-0001 / R$ 380.000,00,
-ausência correta, máximo 6 runs do modelo, CRM qualificado_agendado/André e Calendar
-success 2360. Google reconectado comprovado pela disponibilidade + criação reais.
-Agora CRM/memória daquela sessão foram removidos por autorização; evidência histórica
-preservada. Evento opblu5rf7n0sml8p3c7ue3gpe4 / Meet kgb-upvk-ndo, 15/09/2026 15h
-Brasília, foi preservado no reset. Estado atual desse evento antigo não reconsultado;
-2407 recebeu availability=true e criou evento novo. Lembrete n8n id 16 foi removido.
-Cancelamento Calendar não solicitado nem feito nesta análise. Sem mensagens externas.
-
-**Restante**: publicação/prova real da T35 e prova dos refinamentos ainda não obedecidos;
-T26 fechamento da captura/gate e T27 regressão,
-T28 supersessão VOZ-02, T29 rastreabilidade completa/INDEX/roadmap/handoff/revisão de
-lições. Verifier independente obrigatório após as tasks finais, oito mutações do design
-+ validate_state.py exit 0. Não há validation.md, lote ainda não concluído.
-Lições: 22 confirmadas, promoção/exclusão humana AD-028; trava prune_requires_confirmation.
+**Lições**: o Verifier teve PASS limpo e não gerou candidata nova. A revisão obrigatória da AD-028
+releu as três candidatas existentes: L-007 perdeu ação pendente, L-017 é fato específico do
+better-auth e L-022 duplica a L-012. Nenhuma merece promoção; `lessons.json` permaneceu inalterado.
 
 **Pendências herdadas que permanecem**:
 - Remarcação impossível após `qualificado_agendado`; requer contrato, id de evento e
@@ -357,13 +304,13 @@ Lições: 22 confirmadas, promoção/exclusão humana AD-028; trava prune_requir
 - `agentVoiceTone` pede aberturas que `voice.mjs` barra; qualificação pode deixar
   `modality`/`propertyType` nulos apesar de informados, e marca campos antes da resposta.
 - Paridade cosmética do `crivo-tool-agendar-reuniao`; defaults omitidos na instância
-  (como `method: GET` de `consultar_documentos`) não foram alterados nesta retomada.
+  (como `method: GET` de `consultar_documentos`) não foram alterados neste lote.
 - Duas linhas inertes em `conversa_estado`; helper de revogação de chave por label;
   L4 Fix 1/2 e L5 Fix 1; documentação de `assignedBroker` e erros do lote-8 (L14).
 - Confirmar `RESEND_FROM`; alerta de queda da integração e substituição dos baselines
   fictícios por dados reais quando houver piloto real (L15).
 - MTN-01 continua **não verificado**, sem segundo número disponível; não é aprovação
-  por ausência. O antigo reset pendente do lote-10 foi sucedido pela rotina do lote-11.
+  por ausência. O reset pendente do lote-10 foi sucedido pela rotina comprovada do lote-11.
 - Switch para permitir exibição do catálogo (ligado por padrão) e antecedência mínima
-  de agendamento em dias: deferidos pelo usuário, registrados em `context.md`.
-- Upload/storage/preview ficam no L12; vitrine pública separada, no L16 (AD-025).
+  de agendamento em dias: deferidos pelo usuário, registrados no `context.md` do lote-11.
+- Upload/storage/extração/preview ficam no L12; vitrine pública separada, no L16 (AD-025).

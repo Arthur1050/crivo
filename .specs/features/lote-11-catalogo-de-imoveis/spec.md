@@ -304,23 +304,24 @@ e a tool tenham dado para exercitar sem depender de cadastro manual.
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| IMOV-01 | P1: Cadastro de imóveis no CRM | Design | In Design |
-| IMOV-02 | P1: Cadastro de imóveis no CRM | Design | In Design |
-| IMOV-03 | P1: Cadastro de imóveis no CRM | Design | In Design |
-| IMOV-04 | P1: Permissão e navegação | Design | In Design |
-| IMOV-05 | P1: Publicação, status e fotos | Design | In Design |
-| IMOV-06 | P1: Publicação, status e fotos | Design | In Design |
-| IMOV-07 | P1: Validação de entrada | Design | In Design |
-| BUSCA-01 | P1: Rota de consulta do contrato de integração | Design | In Design |
-| BUSCA-02 | P1: Rota de consulta do contrato de integração | Design | In Design |
-| BUSCA-03 | P1: Rota de consulta do contrato de integração | Design | In Design |
-| BUSCA-04 | P1: Tool `buscar_imoveis` no fluxo do agente | Design | In Design |
-| BUSCA-05 | P1: Tool `buscar_imoveis` no fluxo do agente | Execute | T36 publicada; prova real anterior aceita pelo usuário |
-| PROVA-01 | P2: Prova conversacional da tool nova | Design | In Design |
-| PROVA-02 | P2: Prova conversacional da tool nova | Execute | T26 e T27 concluídas com prova real aprovada |
-| SEEDIM-01 | P3: Seed do catálogo | Design | In Design |
+| IMOV-01 | P1: Cadastro de imóveis no CRM | Validate | ✅ Verified — `validation.md:26`, `:27`, `:33`, `:34` |
+| IMOV-02 | P1: Cadastro de imóveis no CRM | Validate | ✅ Verified — `validation.md:28`, `:29` |
+| IMOV-03 | P1: Cadastro de imóveis no CRM | Validate | ✅ Verified — `validation.md:30`–`:32`, `:35`, `:36` |
+| IMOV-04 | P1: Permissão e navegação | Validate | ✅ Verified — `validation.md:42`–`:47` |
+| IMOV-05 | P1: Publicação, status e fotos | Validate | ✅ Verified — `validation.md:53`–`:55` |
+| IMOV-06 | P1: Publicação, status e fotos | Validate | ✅ Verified — `validation.md:56`–`:59` |
+| IMOV-07 | P1: Validação de entrada | Validate | ✅ Verified — `validation.md:65`–`:71` |
+| BUSCA-01 | P1: Rota de consulta do contrato de integração | Validate | ✅ Verified — `validation.md:77`–`:79`, `:86`–`:88` |
+| BUSCA-02 | P1: Rota de consulta do contrato de integração | Validate | ✅ Verified — `validation.md:80`, `:81`, `:154`, `:155` |
+| BUSCA-03 | P1: Rota de consulta do contrato de integração | Validate | ✅ Verified — `validation.md:82`–`:85` |
+| BUSCA-04 | P1: Tool `buscar_imoveis` no fluxo do agente | Validate | ✅ Verified — `validation.md:94`–`:97`, `:104`, `:105` |
+| BUSCA-05 | P1: Tool `buscar_imoveis` no fluxo do agente | Validate | ✅ Verified — `validation.md:98`–`:103`, `:106`–`:118` |
+| PROVA-01 | P2: Prova conversacional da tool nova | Validate | ✅ Verified — `validation.md:124`, `:125`, `:128`, `:129` |
+| PROVA-02 | P2: Prova conversacional da tool nova | Validate | ✅ Verified — `validation.md:126`, `:127`, `:130` |
+| SEEDIM-01 | P3: Seed do catálogo | Validate | ✅ Verified — `validation.md:136`–`:138` |
 
-**Coverage:** 15 IDs no total, 0 mapeados a tasks (a fase Tasks ainda não foi executada).
+**Coverage:** 15 IDs no total, 15 verificados com evidência `file:line`; 78/78 critérios
+de aceitação passaram no Verifier independente (`validation.md:140`, `validation.md:231`).
 
 ### Mapa de cobertura
 
