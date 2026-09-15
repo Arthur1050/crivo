@@ -114,7 +114,7 @@ a repetição da T26 depois do reset continua pendente antes de seguir para T27.
 ### T1: Medir o piso de testes antes de qualquer mudança
 
 **What**: Rodar o gate build completo em árvore limpa e registrar o número exato de testes, arquivos e avisos de lint como baseline do lote.
-**Where**: `.specs/features/lote-11-catalogo-de-imoveis/evidencia.md`
+**Where**: `.specs/archive/lote-11-catalogo-de-imoveis/evidencia.md`
 **Depends on**: None
 **Reuses**: Procedimento da T1 do lote-10
 **Requirement**: — (disciplina de execução)
@@ -623,7 +623,7 @@ a repetição da T26 depois do reset continua pendente antes de seguir para T27.
 ### T20: Evidência visual das duas visões
 
 **What**: Capturas de tela de `/imoveis` como gestor (com controles de escrita) e como corretor (sem nenhum), mais o diálogo de cadastro aberto.
-**Where**: `.specs/features/lote-11-catalogo-de-imoveis/evidencia.md`
+**Where**: `.specs/archive/lote-11-catalogo-de-imoveis/evidencia.md`
 **Depends on**: T19
 **Reuses**: Procedimento de captura já usado nos lotes de UI
 **Requirement**: IMOV-04
@@ -735,7 +735,7 @@ a repetição da T26 depois do reset continua pendente antes de seguir para T27.
 ### T24: Publicar e conferir hash
 
 **What**: Publicar `crivo-agente-principal` na instância a partir de `n8n/generated/principal.ts` e conferir SHA-256 do publicado antes de ativar.
-**Where**: `.specs/features/lote-11-catalogo-de-imoveis/evidencia.md`
+**Where**: `.specs/archive/lote-11-catalogo-de-imoveis/evidencia.md`
 **Depends on**: T23
 **Reuses**: Procedimento do lote-10 (conferência de SHA antes de ativar)
 **Requirement**: BUSCA-04
@@ -790,7 +790,7 @@ a repetição da T26 depois do reset continua pendente antes de seguir para T27.
 ### T26: Executar o cenário de inventário
 
 **What**: Conversa real pelos dois desfechos, com evidência.
-**Where**: `.specs/features/lote-11-catalogo-de-imoveis/evidencia.md`
+**Where**: `.specs/archive/lote-11-catalogo-de-imoveis/evidencia.md`
 **Depends on**: T25
 **Reuses**: Protocolo da AD-027
 **Requirement**: PROVA-02
@@ -819,7 +819,7 @@ a repetição da T26 depois do reset continua pendente antes de seguir para T27.
 ### T27: Regressão do cenário qualificar→agendar
 
 **What**: Repetir o cenário do lote-10 com a 6ª tool no ar e confirmar que o desfecho não regrediu.
-**Where**: `.specs/features/lote-11-catalogo-de-imoveis/evidencia.md`
+**Where**: `.specs/archive/lote-11-catalogo-de-imoveis/evidencia.md`
 **Depends on**: T26
 **Reuses**: Cenário já versionado em `n8n/smoke/roteiro.md`
 **Requirement**: PROVA-02
@@ -937,7 +937,7 @@ a repetição da T26 depois do reset continua pendente antes de seguir para T27.
 
 ### T31: Revisar cortesia, convite consultivo e aceite após a conversa real
 
-**What**: Aplicar a revisão aprovada em `AJUSTE-PROMPT-PROPOSTO.md` sem manter regras contraditórias.
+**What**: Aplicar a revisão consultiva aprovada sem manter regras contraditórias.
 **Where**: `n8n/src/system-message.mjs`, `n8n/src/__tests__/system-message.test.ts`, `n8n/generated/principal.ts`, artefatos deste lote e `STATE.md`.
 **Depends on**: T30 (implementação e publicação da correção anterior)
 **Reuses**: Instruções compartilhadas de system message, inliner e testes por cláusula (L-012).
@@ -972,7 +972,7 @@ Verifier final do lote permanecem pendentes.
 ### T32: Publicar a revisão consultiva aprovada no principal
 
 **What**: Atualizar apenas jsCode do nó de system message com o artefato da T31, conferir hash antes de publicar e verificar a versão ativa.
-**Where**: `.specs/features/lote-11-catalogo-de-imoveis/evidencia.md` (recibo), tasks.md, AJUSTE-PROMPT-PROPOSTO.md e STATE.md.
+**Where**: `.specs/archive/lote-11-catalogo-de-imoveis/evidencia.md` (recibo), tasks.md e STATE.md.
 **Depends on**: T31
 **Reuses**: Artefato e gate completo do commit 2268671; publicação isolada por updateNodeParameters sem replace.
 **Requirement**: BUSCA-04 AC12 e revisão BUSCA-05 AC13–18.
@@ -1002,7 +1002,7 @@ publicação/recibo não criam código; os 1.304 testes, lint e build da T31 seg
 ### T33: Refinar busca alternativa, convite e apresentação após a segunda conversa
 
 **What**: Aplicar a revisão aprovada de instruções compartilhadas e descrição de buscar_imoveis, com testes por cláusula e artefato regenerado.
-**Where**: n8n/src/system-message.mjs, n8n/src/__tests__/system-message.test.ts, n8n/workflows/principal.ts, n8n/workflows/__tests__/principal-buscar-imoveis.test.ts, n8n/generated/principal.ts, spec.md, tasks.md, evidencia.md, AJUSTE-PROATIVIDADE-PROPOSTO.md e STATE.md.
+**Where**: n8n/src/system-message.mjs, n8n/src/__tests__/system-message.test.ts, n8n/workflows/principal.ts, n8n/workflows/__tests__/principal-buscar-imoveis.test.ts, n8n/generated/principal.ts, spec.md, tasks.md, evidencia.md e STATE.md.
 **Depends on**: T32
 **Reuses**: Revisão T31, contrato GET /properties, memória e tool existentes; inliner.
 **Requirement**: BUSCA-05 AC19–24; preservar AC5–18 e grafo BUSCA-04.
@@ -1035,7 +1035,7 @@ Verifier final permanecem pendentes; testes de instruções não aprovam comport
 ### T34: Publicar a revisão de proatividade aprovada no principal
 
 **What**: Atualizar jsCode do system message e apenas descrições/argumentos de buscar_imoveis da T33; conferir artefato antes de ativar e versão ativa depois.
-**Where**: tasks.md, spec.md, evidencia.md, AJUSTE-PROATIVIDADE-PROPOSTO.md e STATE.md.
+**Where**: tasks.md, spec.md, evidencia.md e STATE.md.
 **Depends on**: T33
 **Reuses**: Artefato e gate completo do commit 2245565; updateNodeParameters sem replace.
 **Requirement**: BUSCA-04 AC12; BUSCA-05 AC19–24.

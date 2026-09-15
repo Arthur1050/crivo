@@ -16,16 +16,18 @@ L11 já foram executados** (linhas abaixo); L12–L16 seguem propostos.
 
 ## Como este diretório está organizado
 
-Os seis artefatos de cada lote têm meias-vidas muito diferentes. A organização reflete isso:
+Os artefatos de cada lote têm meias-vidas muito diferentes. A organização reflete isso:
 
 | Camada | Arquivos | Papel | Onde |
 | --- | --- | --- | --- |
 | 1 — Vivos | `../STATE.md`, `../LESSONS.md`, `../lessons.json`, PRD, Roadmap | Decisões (AD-001…024) e auto-melhoria. Consultados em toda sessão. | `.specs/` |
 | 2 — Durável | `spec.md`, `context.md` | Requisitos EARS + rastreabilidade; decisões do usuário e o que foi **rejeitado** (é daqui que sai o backlog). | `.specs/features/<lote>/` |
 | 3 — Histórico | `design.md`, `validation.md` | Arquitetura no momento X e evidência do Verifier. Envelhecem: quando o código muda, o código vira a verdade. | `.specs/features/<lote>/` |
-| 4 — Arquivado | `tasks.md`, `EXECUTE-PROMPT.md` | Log de execução task a task e instrução operacional de janelas já encerradas. Valor já destilado para `validation.md`, `STATE.md` e o `git log`. | `.specs/archive/<lote>/` |
+| 4 — Arquivado | `tasks.md`, `EXECUTE-PROMPT.md`, evidência detalhada e anexos úteis | Log de execução, instruções de janelas encerradas e provas consultadas apenas sob demanda. Valor principal já destilado para `validation.md`, `STATE.md` e o `git log`. | `.specs/archive/<lote>/` |
+| 5 — Transitório | Propostas intermediárias, lembretes de operação, rascunhos e evidências substituídas | Servem somente durante a execução. São apagados no fechamento depois da consolidação nos artefatos duráveis; continuam recuperáveis pelo histórico Git. | Removidos do checkout |
 
-Cada diretório de lote tem um `ARCHIVED.md` apontando para os arquivos movidos. Nada foi apagado.
+Cada diretório de lote tem um `ARCHIVED.md` apontando para os arquivos movidos. A varredura de
+fechamento segue a AD-029 e reconcilia todas as referências depois da movimentação.
 
 ---
 

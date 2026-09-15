@@ -261,6 +261,14 @@
 - **Date**: 2026-09-10
 - **Status**: active
 
+### AD-029
+- **Decision**: O fechamento de todo lote inclui uma varredura de higiene documental antes do handoff final. `spec.md`, `context.md`, `design.md` e `validation.md` permanecem em `.specs/features/<lote>/`; `tasks.md`, `EXECUTE-PROMPT.md`, evidências detalhadas e anexos ainda úteis são movidos para `.specs/archive/<lote>/`; propostas intermediárias, lembretes de operação, rascunhos e evidências substituídas são apagados somente depois de seu resultado estar consolidado nos artefatos duráveis. O diretório ativo recebe `ARCHIVED.md`, todas as referências são reconciliadas e os validadores estruturais rodam após a movimentação.
+- **Reason**: O lote-11 demonstrou que recibos remotos, conversas reais e screenshots são necessários durante a execução, mas poluem a zona de contexto quando continuam ao lado da especificação final. A separação mantém consultas futuras auditáveis sem fazer agentes carregarem logs operacionais por padrão.
+- **Trade-off**: A consulta detalhada passa a exigir seguir o ponteiro para `archive/`, e toda movimentação precisa atualizar referências `file:line`. Conteúdo transitório apagado permanece recuperável pelo histórico Git, mas deixa de existir no checkout atual.
+- **Scope**: Todos os lotes finalizados a partir do lote-11 e lotes anteriores quando forem revisados novamente.
+- **Date**: 2026-09-15
+- **Status**: active
+
 ## Handoff
 
 ### Lote 11 — concluído e validado (2026-09-14)

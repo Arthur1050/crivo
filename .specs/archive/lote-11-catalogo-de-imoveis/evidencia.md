@@ -25,7 +25,7 @@ número contra o qual toda task subsequente do lote-11 deve subir monotonicament
 
 Capturas reais via `mcp__claude-in-chrome__*` (extensão Chrome), nunca o painel embutido nem
 inspeção de DOM. Servidor: `npm run dev` (dev server local, porta 3000), banco de dev seedado com
-`npm run db:seed`. Imagens em `.specs/features/lote-11-catalogo-de-imoveis/evidencia/`.
+`npm run db:seed`. Imagens em `.specs/archive/lote-11-catalogo-de-imoveis/evidencia/`.
 
 **Login real.** O seed só grava credencial (linha em `accounts`) para o administrador via
 `npm run db:create-admin` — gestor e corretor nascem em estado de convite pendente, sem senha
@@ -45,8 +45,8 @@ o CSS do design system já expõe.
 
 | # | Arquivo | Papel / tema | O que prova |
 | --- | --- | --- | --- |
-| 1 | `evidencia/t20-01-gestor-claro-catalogo.jpg` | Gestor, tema claro | Botão **Novo imóvel** e toda a barra de filtros visíveis no viewport capturado. A tabela tem mais colunas do que cabem nesse recorte — a barra de scroll horizontal no rodapé mostra isso — e a coluna **Ações** fica fora da área capturada nesta imagem. Ver #5 para a prova da coluna Ações. |
-| 2 | `evidencia/t20-02-corretor-claro-catalogo.jpg` | Corretor, tema claro | Mesma tela, mesmo inventário (4 imóveis, os mesmos preços e status) — **sem** botão de criar. Este recorte, por si só, não distingue "coluna Ações ausente" de "coluna Ações fora da área capturada" (o mesmo corte de tabela que afeta #1); ver #6 para a distinção real. |
+| 1 | — | Gestor, tema claro | Captura preliminar descartada no fechamento: não mostrava a coluna **Ações** e foi substituída pela prova final #5. |
+| 2 | — | Corretor, tema claro | Captura preliminar descartada no fechamento: não distinguia coluna ausente de coluna fora do recorte e foi substituída pela prova final #6. |
 | 3 | `evidencia/t20-03-dialogo-cadastro-claro.jpg` | Gestor, tema claro | Diálogo **Novo imóvel** aberto (`property-form-dialog.tsx`, T17): Captador/Tipo/Modalidade/Status obrigatórios, switch de Publicado, nenhum campo de Referência (só existe na edição), campos de endereço opcionais. |
 | 4 | `evidencia/t20-04-gestor-escuro-catalogo.jpg` | Gestor, tema escuro | A mesma tela do #1 com `data-theme="dark"` — confirma que a tabela, os badges de publicação e o `StatusDot` de status seguem os tokens de cor do tema escuro sem quebrar layout. Mesmo corte de tabela que #1 — coluna Ações também fora da área capturada aqui. |
 | 5 | `evidencia/t20-01b-gestor-claro-acoes-visiveis.jpg` | Gestor, tema claro | Mesma tela do #1, tabela rolada horizontalmente até o fim (o monitor desta máquina é 1440px de largura — mais estreito que os 1600–1800px pedidos originalmente — então a rolagem, não o redimensionamento de janela, foi o jeito de trazer a coluna à vista). A coluna **Ações** aparece nas 4 linhas, cada uma com um botão "Ações" que abre `DropdownMenu` (editar/excluir) — prova real de `IMOV-04 AC1`. |
@@ -250,7 +250,7 @@ T27 não está aprovada e depende da reconexão humana da credencial.
 
 **Diagnóstico do prompt**: a T30 passou a tratar reunião como consequência obrigatória
 de mostrar opções; essa cláusula absoluta contradiz o pedido atual de usar dúvida e
-indecisão como ponte consultiva. A proposta em `AJUSTE-PROMPT-PROPOSTO.md` substitui
+indecisão como ponte consultiva. A revisão aprovada em 2026-09-14 substitui
 essa regra, flexibiliza a apresentação para responder cortesia, exige referência na
 citação, reafirma aceite em todas as fases e remove promessas de retomar automaticamente.
 A proposta foi aprovada em 2026-09-14 e aplicada localmente na T31 (§31 abaixo).
@@ -434,7 +434,7 @@ pendentes. T26/T27 seguem abertas.
 Usuário gostou do atendimento e pediu busca alternativa automática, convite mais
 cedo quando não houver opção e apresentação legível do imóvel. Investigação por
 consulta SQL READ ONLY e MCP, sem mudança de código/publicação/reset/Calendar.
-Proposta concreta: `AJUSTE-PROATIVIDADE-PROPOSTO.md`, aguardando revisão do usuário.
+Proposta concreta aprovada e consolidada na spec pelas AC19–24.
 
 **Sessão**: reset anterior 2320 confirmado (§33). Lead novo
 `b639766a-f273-4c30-aa39-695226141bed`; oito turnos, **16 mensagens** no CRM,
@@ -507,7 +507,7 @@ Evento e lembrete reais continuam existentes; não foram cancelados nesta inspe�
 
 ## 35. T33 — revisão aprovada de proatividade e apresentação (2026-09-14)
 
-**PASS local; publicação e prova real pendentes**. Usuário aprovou AJUSTE-PROATIVIDADE-PROPOSTO.md
+**PASS local; publicação e prova real pendentes**. Usuário aprovou a revisão de proatividade
 com “Aprovado”. Implementação mantém o contrato, a memória e o planejamento do lote.
 A aprovação autoriza implementar/testar/commitar localmente; não inclui publicação,
 reset, alteração de Calendar, push ou deploy.
@@ -758,8 +758,8 @@ A rotina não foi alterada: comparação posterior dos nós e conexões com base
 Não afirmar leitura SQL direta do Postgres n8n; prova é a execução de purga bem-sucedida.
 
 **Resíduo de lembrete**: como MCP não apaga linha de Data Table diretamente, foi usado
-helper administrativo temporário d5gqmDVdZ9vLfhmg, código reproduzível em
-RESET-LEMBRETE-2026-09-14.md. Tipos/get_node_types, SDK, data_persistence e
+helper administrativo temporário d5gqmDVdZ9vLfhmg, documentado durante a execução;
+o roteiro transitório foi descartado no fechamento. Tipos/get_node_types, SDK, data_persistence e
 validate_workflow (valid=true, 3 nós, sem avisos) consultados antes da criação.
 Tabela agenda_envios m83dxX8YZYg1NDYq e colunas reais obtidas por search_data_tables.
 Nenhum workflow operacional foi editado para esta operação.

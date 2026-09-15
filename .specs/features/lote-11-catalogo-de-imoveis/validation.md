@@ -40,11 +40,11 @@ O lote implementa os 78 critérios da especificação. A prova combina asserçõ
 | AC | Spec-defined outcome | `file:line` + assertion/evidence | Result |
 | --- | --- | --- | --- |
 | PERM-1 | Administrador/gestor leem e escrevem; corretor só lê. | `src/lib/permissions.ts:56`, `:65`, `:78`; `src/lib/__tests__/permissions.test.ts:54` — `expect(can(...)).toBe(expected)` para cada papel/recurso/ação. | ✅ PASS |
-| PERM-2 | Corretor vê inventário inteiro sem criar/editar/excluir. | `.specs/features/lote-11-catalogo-de-imoveis/evidencia.md:49` e `:53` registram UAT com as mesmas quatro linhas e nenhuma ação; `src/components/properties/properties-table.tsx:176` só adiciona ações quando `canWrite`. | ✅ PASS |
+| PERM-2 | Corretor vê inventário inteiro sem criar/editar/excluir. | `.specs/archive/lote-11-catalogo-de-imoveis/evidencia.md:52` e `:53` registram UAT final com ações somente para o gestor; `src/components/properties/properties-table.tsx:176` só adiciona ações quando `canWrite`. | ✅ PASS |
 | PERM-3 | Escrita direta de corretor é recusada no servidor. | `src/server/__tests__/properties-actions.test.ts:448`–`:452`, `:469`–`:473`, `:487`–`:491`, `:510`–`:514`, `:533`–`:537` validam as cinco operações e preservam estado. | ✅ PASS |
 | PERM-4 | Sem leitura, menu não aparece. | `src/components/shell/sidebar.tsx:159` — filtro `can(roles, resource, "ler")`; a decisão pura é coberta em `src/lib/__tests__/permissions.test.ts:54`. Build da navegação passou. | ✅ PASS |
 | PERM-5 | A decisão de permissão é função pura compartilhada. | `src/lib/permissions.ts:89`; consumidores em `src/components/shell/sidebar.tsx:159` e `app/(crm)/imoveis/page.tsx:72`; matriz exaustiva em `src/lib/__tests__/permissions.test.ts:48`–`:60`. | ✅ PASS |
-| PERM-6 | Corretor não recebe escopo por captador. | `app/(crm)/imoveis/page.tsx:84` busca apenas por tenant; `src/server/data/__tests__/properties.test.ts:103` exige que todas as linhas sejam do tenant sem filtro por usuário; UAT em `evidencia.md:49` confirma inventário igual ao do gestor. | ✅ PASS |
+| PERM-6 | Corretor não recebe escopo por captador. | `app/(crm)/imoveis/page.tsx:84` busca apenas por tenant; `src/server/data/__tests__/properties.test.ts:103` exige que todas as linhas sejam do tenant sem filtro por usuário; UAT em `.specs/archive/lote-11-catalogo-de-imoveis/evidencia.md:53` confirma a visão do corretor. | ✅ PASS |
 
 ### P1 — Publicação, status e fotos
 
@@ -95,18 +95,18 @@ O lote implementa os 78 critérios da especificação. A prova combina asserçõ
 | BUSCA-2 | Header tenant vem do fluxo. | `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:83` — igualdade exata com expressão do `Code: gate`. | ✅ PASS |
 | BUSCA-3 | Modelo não escolhe tenant. | `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:84` — `not.toContain("$fromAI")` no header. | ✅ PASS |
 | BUSCA-4 | Cada critério é parâmetro próprio vindo de `$fromAI`. | `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:66`–`:74` itera os sete nomes e compara o conjunto exato. | ✅ PASS |
-| BUSCA-5 | Erro chega ao agente, não aborta, e o lead recebe resposta. | `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:91` exige `neverError === true`; execução real registrada em `evidencia.md:140`–`:146` terminou `success` e chamou `responder_lead` após 404. | ✅ PASS |
-| BUSCA-6 | Vazio é declarado sem citar imóvel. | `n8n/src/__tests__/system-message.test.ts:130`–`:131` exige as duas cláusulas; UAT em `evidencia.md:978`–`:980` confirma resultado real vazio e fala sem imóvel. | ✅ PASS |
+| BUSCA-5 | Erro chega ao agente, não aborta, e o lead recebe resposta. | `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:91` exige `neverError === true`; execução real registrada em `.specs/archive/lote-11-catalogo-de-imoveis/evidencia.md:140`–`:146` terminou `success` e chamou `responder_lead` após 404. | ✅ PASS |
+| BUSCA-6 | Vazio é declarado sem citar imóvel. | `n8n/src/__tests__/system-message.test.ts:130`–`:131` exige as duas cláusulas; UAT em `.specs/archive/lote-11-catalogo-de-imoveis/evidencia.md:978`–`:980` confirma resultado real vazio e fala sem imóvel. | ✅ PASS |
 | BUSCA-7 | Agente cita só payload e não promete endereço/captador. | `n8n/src/__tests__/system-message.test.ts:136`–`:137`; DTO proibido é coberto em `src/server/integration/__tests__/properties.test.ts:281`–`:320`. | ✅ PASS |
 | BUSCA-8 | Fronteira não diz “não busca” nem “não informa preços”. | `n8n/src/__tests__/system-message.test.ts:65`–`:66` usa duas asserções negativas. M8 reintroduziu a primeira frase e foi morto em `:65`. | ✅ PASS |
 | BUSCA-9 | Proibição de fotos permanece. | `n8n/src/__tests__/system-message.test.ts:71` — `expect(message).toContain("NÃO manda fotos")`. | ✅ PASS |
 | BUSCA-10 | `gate.mjs` e `phase.mjs` não mudam funcionalmente. | `git diff d47434e..d8c1354 -- n8n/src/gate.mjs n8n/src/phase.mjs` produziu zero linhas; suítes completas de gate/fase passaram. | ✅ PASS |
 | BUSCA-11 | Cinco tools antigas permanecem; grafo reflete uma nova tool. | `n8n/workflows/__tests__/principal-buscar-imoveis.test.ts:127`–`:137` exige as seis tools; `n8n/workflows/__tests__/principal-modelo.test.ts:135`–`:136` exige 62 nós/76 conexões. | ✅ PASS |
-| BUSCA-12 | Publicação confere hash antes da ativação. | `evidencia.md:97`–`:110` registra comparação inicial byte a byte; publicação final em `evidencia.md:952`–`:963` registra um único caminho alterado, hash e versão ativa idêntica ao draft. | ✅ PASS |
+| BUSCA-12 | Publicação confere hash antes da ativação. | `.specs/archive/lote-11-catalogo-de-imoveis/evidencia.md:97`–`:110` registra comparação inicial byte a byte; `:952`–`:963` registra um único caminho alterado, hash e versão ativa idêntica ao draft. | ✅ PASS |
 | BUSCA-13 | Dúvida/indecisão permite convite sem escolha e recusa é respeitada. | `n8n/src/__tests__/system-message.test.ts:741`–`:749` tem asserções separadas para dúvida, demora, convite, recusa e busca vazia. | ✅ PASS |
 | BUSCA-14 | Critério novo dispara busca; pedido/aceite não espera buscas repetidas. | `n8n/src/__tests__/system-message.test.ts:94`, `:107`, `:754`–`:755` exige cada parte. | ✅ PASS |
-| BUSCA-15 | Cortesia é respondida e saudação isolada não coleta. | `n8n/src/__tests__/system-message.test.ts:722`–`:730` e `:735`–`:736`; UAT final em `evidencia.md:817` registra resposta a “como vai”. | ✅ PASS |
-| BUSCA-16 | Toda opção citada tem referência e preço reais. | `n8n/src/__tests__/system-message.test.ts:760`; UAT/SQL em `evidencia.md:830`–`:832` confirma IM-0001 e R$ 380.000,00. | ✅ PASS |
+| BUSCA-15 | Cortesia é respondida e saudação isolada não coleta. | `n8n/src/__tests__/system-message.test.ts:722`–`:730` e `:735`–`:736`; UAT final em `.specs/archive/lote-11-catalogo-de-imoveis/evidencia.md:817` registra resposta a “como vai”. | ✅ PASS |
+| BUSCA-16 | Toda opção citada tem referência e preço reais. | `n8n/src/__tests__/system-message.test.ts:760`; UAT/SQL em `.specs/archive/lote-11-catalogo-de-imoveis/evidencia.md:830`–`:832` confirma IM-0001 e R$ 380.000,00. | ✅ PASS |
 | BUSCA-17 | Falha técnica não confirma, não inventa ocupação/promessa nem pede outro horário. | `n8n/src/__tests__/system-message.test.ts:777`–`:791` contém asserção própria para cada proibição e próximo passo. | ✅ PASS |
 | BUSCA-18 | Proposta espera aceite; interesse/dúvida/agradecimento não agenda. | `n8n/src/__tests__/system-message.test.ts:765`–`:772` exige não aceite, encerramento e horário aceito nas duas fases. | ✅ PASS |
 | BUSCA-19 | Vazio com bairro flexível gera uma expansão automática, preservando critérios e estado. | `n8n/src/__tests__/system-message.test.ts:799`–`:808` separa iniciativa, uma busca, critérios preservados, bairro obrigatório e não alteração do CRM. | ✅ PASS |
@@ -122,12 +122,12 @@ O lote implementa os 78 critérios da especificação. A prova combina asserçõ
 | AC | Spec-defined outcome | `file:line` + assertion/evidence | Result |
 | --- | --- | --- | --- |
 | PROVA-1 | Roteiro versiona cenário por intenção, sem fala literal. | `n8n/smoke/roteiro.md:200`–`:223` descreve intenções e resultados observáveis. | ✅ PASS |
-| PROVA-2 | Checklist limpa n8n e depois CRM, com confirmação. | `n8n/smoke/roteiro.md:297`–`:303` fixa a ordem; `:329` exige confirmação pela primeira execução; execução real está em `evidencia.md:996`–`:1001`. | ✅ PASS |
-| PROVA-3 | Conversa real cita imóvel do tenant com referência/preço iguais ao banco. | `evidencia.md:978` e `evidencia.md:830`–`:832` cruzam execução 2327, IM-0001, R$ 380.000,00 e SQL read-only. | ✅ PASS |
-| PROVA-4 | Critério sem match declara ausência e não cita imóvel. | `evidencia.md:979`–`:980` registra execução 2335, `total=0` e fala sem imóvel. | ✅ PASS |
-| PROVA-5 | Rodada registra ids n8n e captura da conversa. | `evidencia.md:808`–`:822` registra os seis ids; `:863`–`:867` registra captura, hash e limite visual do artefato. | ✅ PASS |
-| PROVA-6 | Aprovação usa desfecho; estilo fica separado. | `evidencia.md:971`–`:980` registra PASS por desfecho e aprovação explícita do usuário; observação de repetição permanece separada em `:801`–`:806`. | ✅ PASS |
-| PROVA-7 | Regressão termina `qualificado_agendado` com responsável. | `evidencia.md:994`–`:1013` registra execução 2407, PATCH 200, status, `assigned_user_id`, evento e aceite do usuário. | ✅ PASS |
+| PROVA-2 | Checklist limpa n8n e depois CRM, com confirmação. | `n8n/smoke/roteiro.md:297`–`:303` fixa a ordem; `:329` exige confirmação pela primeira execução; execução real está em `.specs/archive/lote-11-catalogo-de-imoveis/evidencia.md:996`–`:1001`. | ✅ PASS |
+| PROVA-3 | Conversa real cita imóvel do tenant com referência/preço iguais ao banco. | `.specs/archive/lote-11-catalogo-de-imoveis/evidencia.md:978` e `:830`–`:832` cruzam execução 2327, IM-0001, R$ 380.000,00 e SQL read-only. | ✅ PASS |
+| PROVA-4 | Critério sem match declara ausência e não cita imóvel. | `.specs/archive/lote-11-catalogo-de-imoveis/evidencia.md:979`–`:980` registra execução 2335, `total=0` e fala sem imóvel. | ✅ PASS |
+| PROVA-5 | Rodada registra ids n8n e captura da conversa. | `.specs/archive/lote-11-catalogo-de-imoveis/evidencia.md:808`–`:822` registra os seis ids; `:863`–`:867` registra captura, hash e limite visual do artefato. | ✅ PASS |
+| PROVA-6 | Aprovação usa desfecho; estilo fica separado. | `.specs/archive/lote-11-catalogo-de-imoveis/evidencia.md:971`–`:980` registra PASS por desfecho e aprovação explícita do usuário; observação de repetição permanece separada em `:801`–`:806`. | ✅ PASS |
+| PROVA-7 | Regressão termina `qualificado_agendado` com responsável. | `.specs/archive/lote-11-catalogo-de-imoveis/evidencia.md:994`–`:1013` registra execução 2407, PATCH 200, status, `assigned_user_id`, evento e aceite do usuário. | ✅ PASS |
 
 ### P3 — Seed
 
@@ -179,9 +179,9 @@ Uma falha secundária de cleanup apareceu nas rodadas M2/M3/M7 porque o próprio
 
 | # | Test | Result | Details |
 | --- | --- | --- | --- |
-| 1 | Gestor e corretor na tela `/imoveis` | ✅ Pass | Seis capturas em `evidencia.md:42`–`:55`; ações aparecem apenas para gestor. |
-| 2 | Busca positiva e negativa pelo WhatsApp | ✅ Pass | Execuções e banco cruzados em `evidencia.md:971`–`:980`. |
-| 3 | Qualificar e agendar após a tool nova | ✅ Pass | Usuário declarou a última sessão um sucesso; CRM, Calendar e Meet conferidos em `evidencia.md:994`–`:1013`. |
+| 1 | Gestor e corretor na tela `/imoveis` | ✅ Pass | Quatro capturas finais em `.specs/archive/lote-11-catalogo-de-imoveis/evidencia.md:50`–`:53`; ações aparecem apenas para gestor. |
+| 2 | Busca positiva e negativa pelo WhatsApp | ✅ Pass | Execuções e banco cruzados em `.specs/archive/lote-11-catalogo-de-imoveis/evidencia.md:971`–`:980`. |
+| 3 | Qualificar e agendar após a tool nova | ✅ Pass | Usuário declarou a última sessão um sucesso; CRM, Calendar e Meet conferidos em `.specs/archive/lote-11-catalogo-de-imoveis/evidencia.md:994`–`:1013`. |
 
 ## Gate Check
 
@@ -189,7 +189,7 @@ Uma falha secundária de cleanup apareceu nas rodadas M2/M3/M7 porque o próprio
 - **Vitest**: 91 files, **1,357 passed**, 0 failed, 0 skipped, 659.70 s.
 - **Lint**: exit 0, 0 errors, 3 known warnings (`scheduler.ts`, generated scheduler, redundant eslint directive).
 - **Build**: exit 0, Next.js 16.2.11 compiled, type checked and generated 20 routes. Local Better Auth secret/base URL warnings are the documented preexisting build behavior.
-- **Before feature**: 82 files, 1,076 tests (`evidencia.md:7`–`:21`).
+- **Before feature**: 82 files, 1,076 tests (`.specs/archive/lote-11-catalogo-de-imoveis/evidencia.md:7`–`:21`).
 - **Delta**: +9 test files and +281 passing tests. Test count did not decrease.
 - **Structural gates**: `validate_spec.py` = 0 errors/0 warnings; `validate_tasks.py` = 0 errors/23 advisory warnings; `git diff --check` = exit 0.
 

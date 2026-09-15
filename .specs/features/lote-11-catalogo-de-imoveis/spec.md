@@ -227,14 +227,14 @@ depois, responder_lead 2401 enviou uma paráfrase da mesma pergunta. A opção
 aprovada é instrução pontual de encerramento após pergunta entregue, preservando
 retries de rejeições e balões complementares. Não cria estado ou barreira semântica.
 
-**Segunda emenda aprovada em 2026-09-14**: AC19–24 concretizam
-`AJUSTE-PROATIVIDADE-PROPOSTO.md`, aprovada pelo usuário para implementação local.
+**Segunda emenda aprovada em 2026-09-14**: AC19–24 consolidam a revisão de
+proatividade aprovada pelo usuário para implementação local.
 Não criam geografia, parser, renderer determinístico ou estado adicional. As ACs
 verificam instruções; proatividade, momento do convite e legibilidade do modelo
 continuam dependendo de nova conversa real após publicação autorizada.
 
-**Emenda aprovada em 2026-09-14**: AC13–18 registram a revisão em
-`AJUSTE-PROMPT-PROPOSTO.md`, aprovada pelo usuário após a conversa real. A exigência
+**Emenda aprovada em 2026-09-14**: AC13–18 registram a revisão
+aprovada pelo usuário após a conversa real. A exigência
 absoluta da T30 de buscar antes de propor qualquer reunião é substituída pela AC14.
 Busca continua disponível e proativa; escolha de imóvel não condiciona reunião.
 Essas ACs provam instruções do prompt por teste, não garantem obediência do modelo:
