@@ -1085,6 +1085,32 @@ Publicação, reset, conversa externa, push e deploy não integram esta aprovaç
 
 ---
 
+### T36: Publicar o encerramento após pergunta entregue
+
+**What**: Publicar somente o jsCode aprovado da T35 e conferir a versão ativa.
+**Where**: tasks.md, spec.md, evidencia.md e STATE.md.
+**Depends on**: T35.
+**Reuses**: Artefato e gate do commit 1f90d74; updateNodeParameters sem replace.
+**Requirement**: BUSCA-05 AC25.
+**Approval**: Usuário autorizou “Pode publicar” (2026-09-14).
+
+**Tools**:
+- MCP: n8n
+- Skill: tlc-spec-driven
+
+**Done when**:
+- [x] Artefato SDK valid=true e jsCode remoto igual ao local antes de ativar.
+- [x] Diff remoto contém somente o jsCode do nó de system message.
+- [x] Versão ativa conferida com 62 nós e maxIterations 8.
+- [x] Recibo registra publicação sem tratar teste de prompt como prova real.
+
+**Tests**: none
+**Gate**: quick
+**Status**: ✅ Done
+**Commit**: `docs(specs): registra publicacao do encerramento de turno`
+
+---
+
 ## Phase Execution Map
 
 ```
@@ -1099,6 +1125,7 @@ Fase 6:  T25 → T26 → T27 → T28 → T29
 Fix da primeira tentativa: T26 → T30
 Revisão aprovada da conversa seguinte: T30 → T31 → T32 → T33 → T34
 Correção aprovada da terceira conversa: T34 → T35
+Publicação da correção: T35 → T36
 ```
 
 Execução estritamente sequencial — não há paralelismo dentro de fase.
@@ -1144,6 +1171,7 @@ Execução estritamente sequencial — não há paralelismo dentro de fase.
 | T33 | Refinamento coeso das instruções após segunda conversa | ✅ Granular |
 | T34 | Publicação isolada da revisão de proatividade | ✅ Granular |
 | T35 | Instrução pontual de encerramento após pergunta entregue | ✅ Granular |
+| T36 | Publicação isolada do jsCode da T35 | ✅ Granular |
 
 ---
 
@@ -1186,6 +1214,7 @@ Execução estritamente sequencial — não há paralelismo dentro de fase.
 | T33 | T32 | T32 → T33 | ✅ Match |
 | T34 | T33 | T33 → T34 | ✅ Match |
 | T35 | T34 + evidência 2393 | T34 → T35 | ✅ Match |
+| T36 | T35 | T35 → T36 | ✅ Match |
 
 Nenhuma dependência aponta para fase posterior.
 
@@ -1230,6 +1259,7 @@ Nenhuma dependência aponta para fase posterior.
 | T33 | Módulo puro e descrição de tool n8n | unit | unit | ✅ OK |
 | T34 | nenhuma (publicação/recibo) | — | none | ✅ OK |
 | T35 | Módulo puro n8n | unit | unit | ✅ OK |
+| T36 | nenhuma (publicação/recibo) | — | none | ✅ OK |
 
 Nenhum `Tests: none` é deferimento de teste: cada um cai numa camada que a matriz marca `none`
 (componente React, schema, artefato gerado, documentação) ou numa task que não cria código.

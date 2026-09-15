@@ -315,7 +315,7 @@ e a tool tenham dado para exercitar sem depender de cadastro manual.
 | BUSCA-02 | P1: Rota de consulta do contrato de integração | Design | In Design |
 | BUSCA-03 | P1: Rota de consulta do contrato de integração | Design | In Design |
 | BUSCA-04 | P1: Tool `buscar_imoveis` no fluxo do agente | Design | In Design |
-| BUSCA-05 | P1: Tool `buscar_imoveis` no fluxo do agente | Execute | T35 local concluída; publicação e nova prova real pendentes |
+| BUSCA-05 | P1: Tool `buscar_imoveis` no fluxo do agente | Execute | T36 publicada; prova real anterior aceita pelo usuário |
 | PROVA-01 | P2: Prova conversacional da tool nova | Design | In Design |
 | PROVA-02 | P2: Prova conversacional da tool nova | Design | In Design |
 | SEEDIM-01 | P3: Seed do catálogo | Design | In Design |

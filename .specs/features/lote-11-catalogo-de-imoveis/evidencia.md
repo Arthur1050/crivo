@@ -942,3 +942,28 @@ na composição existente; não introduz abstração. T35 marcada Done antes do 
 
 Publicação, reset e nova conversa real não realizados. Testes comprovam a presença
 da instrução, não a obediência do modelo. T26–T29 e Verifier final seguem abertos.
+
+## 40. T36 — publicação autorizada da T35 (2026-09-14)
+
+**PASS publicação**. Usuário autorizou “Pode publicar”. Artefato local do commit
+1f90d74 validado pelo SDK: valid=true, 62 nós; cinco avisos conhecidos dos Memory
+Managers. Modelo, memória e workflow auxiliar não alterados.
+
+Baseline remoto ativo/draft 833f525c-4d59-43a2-b466-8ef8268a0468. Uma operação
+updateNodeParameters, replace=false, somente em `Code: montar system message e
+marcar campo perguntado.parameters.jsCode`. Novo draft
+538b04fd-6682-4690-b0e7-9c2c1452866e. Comparação antes de ativar: exatamente um
+caminho diferente; connections, settings e nodeGroups iguais; nomes e contagem dos
+62 nós preservados. jsCode remoto normalizado igual ao artefato local, SHA-256
+3822f108129719e50ebddc0f50ad795bdcc487ad62b98f9bf2f528990c449ff1.
+
+publish_workflow com versionId explícito retornou success=true. Leitura posterior:
+active=true, versionId=activeVersionId=538b04fd-6682-4690-b0e7-9c2c1452866e,
+62 nós, maxIterations 8, draft nodes/connections iguais à activeVersion e código
+igual ao draft conferido. Aviso adicional de builtInTools apareceu no update e é
+herdado; definição inteira do modelo não mudou.
+
+Sem reset, mensagem externa, evento Calendar, push ou deploy nesta publicação.
+Usuário aceitou a última sessão como sucesso e autorizou fechar as tasks de conversa;
+isso será registrado separadamente em T26/T27, sem atribuir obediência à T35 antes
+de uma nova conversa.

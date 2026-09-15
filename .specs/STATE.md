@@ -263,19 +263,18 @@
 
 ## Handoff
 
-### Lote 11 — T35 local concluída; publicação pendente (2026-09-14)
+### Lote 11 — T36 publicada; fechamento das provas em andamento (2026-09-14)
 
 - **Feature**: lote-11-catalogo-de-imoveis; tlc-spec-driven ativa, planejamento preservado.
-- **Phase / Task**: Fase 6 / T35 entregue localmente; T26–T29 abertas.
+- **Phase / Task**: Fase 6 / T36 publicada; fechando T26–T29.
 - **Completed**: T1–T25; T31 (`2268671`), T32 (`6cca049`), T33 (`2245565`),
-  T34 (`d918363`); T35 será o commit desta entrega. T30 (`6a05fa1`) é histórico.
-- **Última entrega**: T35 instrui encerrar o turno depois de pergunta entregue com
-  ok=true, preserva retry de ok=false e balões complementares. Evidência §39.
-- **Next step**: publicar T35 somente com autorização específica; depois resetar a
-  sessão somente se autorizado e repetir prova real. Teste de prompt não é obediência.
-- **Blockers**: nenhum local. Publicação e reset são ações externas não autorizadas
-  por “Eu aprovo”. T26 fechamento da captura/gate e T27 ainda pendentes.
-- **Uncommitted files**: nenhum após o commit atômico T35.
+  T34 (`d918363`), T35 (`1f90d74`); T36 será o recibo desta entrega.
+- **Última entrega**: T35 publicada na versão ativa
+  538b04fd-6682-4690-b0e7-9c2c1452866e; recibo evidencia.md §40.
+- **Next step**: fechar T26/T27 conforme aceite explícito da última sessão, depois
+  T28, T29 e Verifier independente.
+- **Blockers**: nenhum. Reset não foi solicitado nem necessário para o fechamento.
+- **Uncommitted files**: nenhum após o commit atômico T36.
 - **Branch**: main, sem push/deploy; origin/main local 5275511.
 
 **Principal**: 0B1nqjODu7xuYYKF ativo em 833f525c-4d59-43a2-b466-8ef8268a0468.
@@ -318,6 +317,11 @@ retenta; complementares antes da pergunta permanecem. Sem alteração em respond
 modelo, memória, credenciais, conexões ou instância n8n. Publicação pendente.
 SHA-256 do jsCode local T35:
 3822f108129719e50ebddc0f50ad795bdcc487ad62b98f9bf2f528990c449ff1.
+
+**T36 publicada (§40)**: versão ativa
+538b04fd-6682-4690-b0e7-9c2c1452866e. Exatamente um caminho remoto alterado,
+jsCode do system message; 62 nós, conexões/settings/grupos preservados,
+maxIterations 8. Sem reset ou mensagem externa.
 
 **Histórico e Calendar**: segunda conversa §34 tinha 8 turnos, IM-0001 / R$ 380.000,00,
 ausência correta, máximo 6 runs do modelo, CRM qualificado_agendado/André e Calendar
