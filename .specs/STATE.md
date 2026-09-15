@@ -263,16 +263,16 @@
 
 ## Handoff
 
-### Lote 11 — T36 publicada; fechamento das provas em andamento (2026-09-14)
+### Lote 11 — T26 concluída; T27 em fechamento (2026-09-14)
 
 - **Feature**: lote-11-catalogo-de-imoveis; tlc-spec-driven ativa, planejamento preservado.
-- **Phase / Task**: Fase 6 / T36 publicada; fechando T26–T29.
+- **Phase / Task**: Fase 6 / T26 concluída; fechando T27–T29.
 - **Completed**: T1–T25; T31 (`2268671`), T32 (`6cca049`), T33 (`2245565`),
   T34 (`d918363`), T35 (`1f90d74`); T36 será o recibo desta entrega.
 - **Última entrega**: T35 publicada na versão ativa
   538b04fd-6682-4690-b0e7-9c2c1452866e; recibo evidencia.md §40.
-- **Next step**: fechar T26/T27 conforme aceite explícito da última sessão, depois
-  T28, T29 e Verifier independente.
+- **Next step**: fechar T27 conforme aceite explícito da última sessão, depois T28,
+  T29 e Verifier independente.
 - **Blockers**: nenhum. Reset não foi solicitado nem necessário para o fechamento.
 - **Uncommitted files**: nenhum após o commit atômico T36.
 - **Branch**: main, sem push/deploy; origin/main local 5275511.
@@ -322,6 +322,10 @@ SHA-256 do jsCode local T35:
 538b04fd-6682-4690-b0e7-9c2c1452866e. Exatamente um caminho remoto alterado,
 jsCode do system message; 62 nós, conexões/settings/grupos preservados,
 maxIterations 8. Sem reset ou mensagem externa.
+
+**T26 concluída (§41)**: usuário aceitou a última sessão como sucesso. Captura
+versionada, inventário positivo/ausência e IDs já conferidos em §34/38. Gate integral:
+1.357 testes / 91 arquivos, lint 0 erros/3 avisos prévios, build exit 0.
 
 **Histórico e Calendar**: segunda conversa §34 tinha 8 turnos, IM-0001 / R$ 380.000,00,
 ausência correta, máximo 6 runs do modelo, CRM qualificado_agendado/André e Calendar

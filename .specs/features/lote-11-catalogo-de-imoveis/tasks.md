@@ -803,12 +803,14 @@ a repetição da T26 depois do reset continua pendente antes de seguir para T27.
 - [x] Imóvel citado ao lead tem referência e preço batendo com a linha do banco (PROVA-02 AC3) — segunda conversa, evidencia.md §34, execução 2327
 - [x] Critério sem resultado produz declaração de ausência, sem nenhum imóvel citado (PROVA-02 AC4) — chamada corrigida de 2335, evidencia.md §34
 - [x] Ids de execução conferidos por `get_execution` antes de citados — nunca de memória (lição `L-011`) — oito turnos e filha 2360, evidencia.md §34
-- [ ] Captura da conversa registrada
+- [x] Captura da conversa registrada — evidencia/t26-2026-09-14-conversa-repeticao.jpg, §38
 - [x] Iterações do turno observadas e registradas — máximo seis chamadas ao modelo, runs de OpenAI Chat Model conferidos; teto oito não estourou (evidencia.md §34)
-- [ ] Gate build passa
+- [x] Gate build passa — 1.357 testes/91 arquivos, lint 0 erros/3 avisos prévios, build exit 0 (§41)
 
 **Tests**: none
 **Gate**: build
+
+**Status**: ✅ Done
 
 **Commit**: `docs(specs): registra prova conversacional do cenario de inventario`
 

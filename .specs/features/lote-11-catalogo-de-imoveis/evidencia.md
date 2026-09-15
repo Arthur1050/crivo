@@ -967,3 +967,26 @@ Sem reset, mensagem externa, evento Calendar, push ou deploy nesta publicação.
 Usuário aceitou a última sessão como sucesso e autorizou fechar as tasks de conversa;
 isso será registrado separadamente em T26/T27, sem atribuir obediência à T35 antes
 de uma nova conversa.
+
+## 41. T26 — prova conversacional do inventário concluída (2026-09-14)
+
+**PASS por desfecho, aprovado pelo usuário**: “Pode considerar também essas tasks
+de conversação como finalizadas. A ultima sessão foi um sucesso.” A observação de
+qualidade das duas perguntas redundantes permanece no §38 e motivou T35/T36, mas
+não apaga os desfechos funcionais já comprovados.
+
+PROVA-02 AC3: execução 2327 e banco em §34 confirmam IM-0001 e R$ 380.000,00.
+PROVA-02 AC4: execução 2335, chamada válida corrigida, devolveu total=0 e a resposta
+declarou ausência sem citar imóvel. Os oito turnos daquela rodada e a filha 2360
+foram conferidos individualmente por get_execution. Máximo seis runs do modelo.
+
+Captura real registrada em §38:
+evidencia/t26-2026-09-14-conversa-repeticao.jpg, cópia byte a byte do anexo, hash
+7355f84d304a7c975d327697c18e4fa9d7d5f842bfe48863372d8658290cb0c2. Ela mostra
+o desfecho de convite/agendamento; a conversa completa permanece provada pelo CRM
+e pelas execuções registradas nos §34/38.
+
+Gate build executado integralmente e sozinho após T36: `npx vitest run` **1.357
+testes / 91 arquivos**, exit 0, 675,05 s; lint exit 0, zero erros e os três avisos
+prévios; Next.js build exit 0. Avisos conhecidos de Better Auth no build local,
+sem regressão ou mudança de autenticação. T26 marcada Done antes do commit atômico.
