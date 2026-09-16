@@ -377,15 +377,17 @@ T35 -> T36 -> T37
 
 **Done when:**
 
-- [ ] `novo`, `usado` e `ambos` contam exatamente o JSON que a API retornará.
-- [ ] Um documento só entra se couber integralmente em todos os corpora aplicáveis.
-- [ ] Incumbentes são preservados; outsiders são avaliados por idade e candidatos posteriores continuam após um grande não caber.
-- [ ] Redução de teto rebalanceia por antiguidade; benchmark stale não amplia teto.
-- [ ] Pelo menos 18 testes unitários/integrados cobrem modalidade, overhead, boundaries, promoção e não truncamento.
+- [x] `novo`, `usado` e `ambos` contam exatamente o JSON que a API retornará.
+- [x] Um documento só entra se couber integralmente em todos os corpora aplicáveis.
+- [x] Incumbentes são preservados; outsiders são avaliados por idade e candidatos posteriores continuam após um grande não caber.
+- [x] Redução de teto rebalanceia por antiguidade; benchmark stale não amplia teto.
+- [x] Pelo menos 18 testes unitários/integrados cobrem modalidade, overhead, boundaries, promoção e não truncamento.
 
 **Tests:** unit + integration  
 **Gate:** Full  
 **Commit:** `feat(documents): enforce direct context budgets`
+
+**Evidence (2026-09-16):** `context-budget.ts` constrói exatamente o envelope direto aprovado e mede seus bytes UTF-8 via JSON canônico. A admissão exige cabimento integral em todos os corpora aplicáveis, preserva incumbentes enquanto o teto comporta o corpus, reequilibra por antiguidade após redução e continua avaliando candidatos posteriores. Os 19 testes cobrem modalidade, overhead, boundaries, promoção, redução e texto integral; `npm test` passou com 99 arquivos e 1.490 testes.
 
 ### Phase 3: Processamento e ciclo de vida
 
