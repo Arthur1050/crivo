@@ -280,10 +280,10 @@
 ## Handoff
 
 - **Feature**: Lote 12 — `.specs/features/lote-12-conteudo-de-documentos/`.
-- **Phase / Task**: Execute / pré-T1, baseline de testes bloqueado.
-- **Completed**: especificação, contexto, design, AD-030 e plano de 37 tarefas aprovados; estratégia de seis subagentes sequenciais aprovada; `validate_tasks.py` passou após reconciliar a dependência T28 → T33 no diagrama; baseline documental no commit `085221b`; usuário confirmou que `TEST_DATABASE_URL` é descartável e uma consulta somente-leitura confirmou `neondb_owner`.
+- **Phase / Task**: Execute / pré-T1, baseline de testes pendente.
+- **Completed**: especificação, contexto, design, AD-030 e plano de 37 tarefas aprovados; estratégia de seis subagentes sequenciais aprovada; `validate_tasks.py` passou após reconciliar a dependência T28 → T33 no diagrama; baseline documental no commit `085221b`; usuário confirmou que `TEST_DATABASE_URL` é descartável e uma consulta somente-leitura confirmou `neondb_owner`; regressão preexistente de `updatedAt` corrigida no commit `d5e8cdb`.
 - **In-progress** (file:line): nenhum código em andamento.
-- **Next step**: obter orientação sobre a regressão preexistente ou investigar/corrigir essa regressão fora do Lote 12 antes de despachar o Batch 1 (T1–T6).
-- **Blockers**: o baseline completo de `npm test` não concluiu: há pelo menos 91 arquivos e 1.207 testes declarados, a execução serial registrou uma falha preexistente em `src/server/data/__tests__/properties.test.ts` (`avança updatedAt (happy path)`) e parou de progredir; a execução foi encerrada sem alterar o checkout. Nenhuma task pode cumprir o gate Full/Build enquanto essa condição permanecer. Ações conectadas a partir da T29 continuam exigindo autorização específica imediatamente antes de cada efeito externo.
+- **Next step**: reiniciar `npm test` em execução monitorada e deixar a suíte serial concluir; registrar a contagem final e despachar o Batch 1 (T1–T6) somente depois.
+- **Blockers**: nenhum conhecido. O teste isolado de propriedades passou 25/25 após `d5e8cdb`, junto de lint sem erros e build verde. O baseline integral foi interrompido somente porque sua execução serial contra Neon é longa; nenhum teste foi alterado ou suprimido. Ações conectadas a partir da T29 continuam exigindo autorização específica imediatamente antes de cada efeito externo.
 - **Uncommitted files**: nenhum.
 - **Branch**: `main`; HEAD observado antes deste handoff em `e790a0a`; nenhum push/deploy autorizado.
