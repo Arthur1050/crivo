@@ -465,11 +465,11 @@ T35 -> T36 -> T37
 
 **Done when:**
 
-- [ ] `pronto` retorna texto integral; `fora_do_agente` inclui aviso/estado.
-- [ ] Processando/falha não retornam texto; expirado/deleted/outro tenant retornam 404 seguro.
-- [ ] Sem permissão não cria token nem conteúdo parcial.
-- [ ] Resposta é `no-store` e texto nunca é interpretado.
-- [ ] Pelo menos 10 testes de rota cobrem todos os estados e papéis.
+- [x] `pronto` retorna texto integral; `fora_do_agente` inclui aviso/estado.
+- [x] Processando/falha não retornam texto; expirado/deleted/outro tenant retornam 404 seguro.
+- [x] Sem permissão não cria token nem conteúdo parcial.
+- [x] Resposta é `no-store` e texto nunca é interpretado.
+- [x] Pelo menos 10 testes de rota cobrem todos os estados e papéis.
 
 **Tests:** integration/e2e  
 **Gate:** Full  

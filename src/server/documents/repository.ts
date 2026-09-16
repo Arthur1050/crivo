@@ -14,6 +14,32 @@ export type DocumentListItem = Omit<
   "extractedText"
 >;
 
+/** Minimal, tenant-scoped projection for the CRM's on-demand text preview. */
+export interface DocumentTextPreview {
+  status: "pronto" | "fora_do_agente";
+  extractedText: string;
+}
+
+export async function findDocumentTextPreview(
+  tenantId: string,
+  documentId: string,
+  now = new Date()
+): Promise<DocumentTextPreview | null> {
+  const [document] = await db
+    .select({ status: documents.status, extractedText: documents.extractedText })
+    .from(documents)
+    .where(and(
+      eq(documents.tenantId, tenantId),
+      eq(documents.id, documentId),
+      isNull(documents.deletedAt),
+      sql`(${documents.expiresAt} is null or ${documents.expiresAt} > ${now})`,
+      sql`${documents.status} in ('pronto', 'fora_do_agente')`,
+      sql`${documents.extractedText} is not null`
+    ));
+  if (!document?.extractedText) return null;
+  return { status: document.status as DocumentTextPreview["status"], extractedText: document.extractedText };
+}
+
 export interface CreateUploadIntentInput {
   id?: string;
   requestedByUserId: string;
