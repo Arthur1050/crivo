@@ -20,6 +20,19 @@ export interface DocumentTextPreview {
   extractedText: string;
 }
 
+export interface DocumentDownload {
+  storageKey: string;
+  name: string;
+  mimeType: string;
+}
+
+export async function findDocumentForDownload(tenantId: string, documentId: string, now = new Date()): Promise<DocumentDownload | null> {
+  const [document] = await db.select({ storageKey: documents.storageKey, name: documents.name, mimeType: documents.mimeType })
+    .from(documents)
+    .where(and(eq(documents.tenantId, tenantId), eq(documents.id, documentId), isNull(documents.deletedAt), sql`(${documents.expiresAt} is null or ${documents.expiresAt} > ${now})`));
+  return document ?? null;
+}
+
 export async function findDocumentTextPreview(
   tenantId: string,
   documentId: string,

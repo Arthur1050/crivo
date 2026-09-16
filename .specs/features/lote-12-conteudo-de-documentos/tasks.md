@@ -486,11 +486,11 @@ T35 -> T36 -> T37
 
 **Done when:**
 
-- [ ] Download funciona em processando/pronto/falha/fora e bloqueia expirado/deleted/objeto ausente.
-- [ ] Outro tenant e sem permissão não recebem metadata, URL nem stream.
-- [ ] Headers incluem attachment, MIME seguro, `nosniff` e `private, no-store`.
-- [ ] Bytes e SHA-256 da resposta igualam a fixture original.
-- [ ] Pelo menos 12 testes de rota cobrem headers, estados, integridade e erro de storage.
+- [x] Download funciona em processando/pronto/falha/fora e bloqueia expirado/deleted/objeto ausente.
+- [x] Outro tenant e sem permissão não recebem metadata, URL nem stream.
+- [x] Headers incluem attachment, MIME seguro, `nosniff` e `private, no-store`.
+- [x] Bytes e SHA-256 da resposta igualam a fixture original.
+- [x] Pelo menos 12 testes de rota cobrem headers, estados, integridade e erro de storage.
 
 **Tests:** integration/e2e  
 **Gate:** Full  
