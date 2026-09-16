@@ -264,14 +264,16 @@ T35 -> T36 -> T37
 
 **Done when:**
 
-- [ ] Upload usa `access: private`, token curto, tamanho/MIME permitidos e overwrite desabilitado.
-- [ ] `open` devolve stream e metadata; `delete` trata objeto ausente como sucesso.
-- [ ] Nenhum token, URL ou corpo aparece em log.
-- [ ] Pelo menos 10 testes unitários com SDK mockado cobrem sucesso, ausência e falhas transitórias/permanentes.
+- [x] Upload usa `access: private`, token curto, tamanho/MIME permitidos e overwrite desabilitado.
+- [x] `open` devolve stream e metadata; `delete` trata objeto ausente como sucesso.
+- [x] Nenhum token, URL ou corpo aparece em log.
+- [x] Pelo menos 10 testes unitários com SDK mockado cobrem sucesso, ausência e falhas transitórias/permanentes.
 
 **Tests:** unit  
 **Gate:** Quick  
 **Commit:** `feat(documents): add vercel blob storage adapter`
+
+**Evidence (2026-09-16):** `VercelBlobDocumentStorage` usa exclusivamente `generateClientTokenFromReadWriteToken`, `head`, `get` e `del` da versão instalada. O grant exige `access: "private"`, expira em no máximo cinco minutos, limita pathname, MIME e tamanho a 10 MiB e proíbe suffix/overwrite. `head`/`open` removem URLs do retorno; `open` devolve stream privado; `delete` torna ausência idempotente; as exceções são convertidas para o vocabulário sanitizado do domínio. Os 14 testes com SDK mockado e o lint direcionado passaram.
 
 #### T8: Implementar intake e finalização idempotente
 

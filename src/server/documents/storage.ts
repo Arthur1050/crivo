@@ -17,6 +17,7 @@ export interface ClientUploadGrant {
   key: string;
   clientToken: string;
   expiresAt: Date;
+  access: "private";
 }
 
 export interface StoredObject {
