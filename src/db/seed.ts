@@ -5,6 +5,7 @@ import { db } from "./index";
 import {
   conversations,
   documentCategories,
+  documentUploadIntents,
   documents,
   leads,
   messages,
@@ -975,6 +976,7 @@ export async function runSeed(): Promise<SeedResult> {
     // então precisa ser apagada antes dos tenants também.
     await tx.delete(messages);
     await tx.delete(conversations);
+    await tx.delete(documentUploadIntents);
     await tx.delete(documents);
     await tx.delete(leads);
     // `properties.captured_by_user_id`/`tenant_id` também não têm cascata
