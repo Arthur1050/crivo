@@ -516,10 +516,55 @@ export async function tombstoneDocument(
   return existing ? "already_tombstoned" : "not_found";
 }
 
+/** Internal projection for physical deletion; never expose tombstoned documents to product reads. */
+export async function findTombstonedDocumentForDeletion(tenantId: string, documentId: string) {
+  const [document] = await db
+    .select({ storageKey: documents.storageKey })
+    .from(documents)
+    .where(and(
+      eq(documents.tenantId, tenantId),
+      eq(documents.id, documentId),
+      sql`${documents.deletedAt} is not null`
+    ));
+  return document ?? null;
+}
+
+/** Records only the stable storage error vocabulary while a tombstone awaits another attempt. */
+export async function recordDocumentDeletionFailure(
+  tenantId: string,
+  documentId: string,
+  code: "STORAGE_OBJECT_ABSENT" | "STORAGE_TRANSIENT_FAILURE" | "STORAGE_PERMANENT_FAILURE"
+) {
+  await db
+    .update(documents)
+    .set({
+      deletionAttempts: sql`${documents.deletionAttempts} + 1`,
+      deletionLastErrorCode: code,
+    })
+    .where(and(
+      eq(documents.tenantId, tenantId),
+      eq(documents.id, documentId),
+      sql`${documents.deletedAt} is not null`
+    ));
+}
+
+/** CAS hard-delete: a row may disappear only after the private object was confirmed absent. */
+export async function hardDeleteTombstonedDocument(tenantId: string, documentId: string): Promise<boolean> {
+  const rows = await db
+    .delete(documents)
+    .where(and(
+      eq(documents.tenantId, tenantId),
+      eq(documents.id, documentId),
+      sql`${documents.deletedAt} is not null`
+    ))
+    .returning({ id: documents.id });
+  return rows.length === 1;
+}
+
 export async function expireDueDocuments(now = new Date()): Promise<string[]> {
   const rows = await db
     .update(documents)
-    .set({ deletedAt: now, extractedText: null, extractedBytes: null, extractorVersion: null })
+    .set({ deletedAt: now, extractedText: null, extractedBytes: null, extractorVersion: null, failureCode: null, failureMessage: null })
     .where(and(isNull(documents.deletedAt), lte(documents.expiresAt, now)))
     .returning({ id: documents.id });
   return rows.map((row) => row.id);

@@ -507,15 +507,17 @@ T35 -> T36 -> T37
 
 **Done when:**
 
-- [ ] Exclusão/expiração marcam tombstone e removem texto antes da chamada externa.
-- [ ] `delete`/`head` idempotentes confirmam ausência antes do hard delete.
-- [ ] Falha externa mantém linha inacessível e registra somente código sanitizado.
-- [ ] Conclusão tardia do Workflow não reativa linha.
-- [ ] Pelo menos 16 testes de integração cobrem falha parcial, concorrência e outro tenant.
+- [x] Exclusão/expiração marcam tombstone e removem texto antes da chamada externa.
+- [x] `delete`/`head` idempotentes confirmam ausência antes do hard delete.
+- [x] Falha externa mantém linha inacessível e registra somente código sanitizado.
+- [x] Conclusão tardia do Workflow não reativa linha.
+- [x] Pelo menos 16 testes de integração cobrem falha parcial, concorrência e outro tenant.
 
 **Tests:** integration  
 **Gate:** Full  
 **Commit:** `feat(documents): add tombstone document lifecycle`
+
+**Evidence (2026-09-16):** `lifecycle.ts` aplica tombstone antes de qualquer I/O, trata ausência como sucesso idempotente e só apaga fisicamente após `head` confirmar ausência. Falhas ficam retentáveis na linha bloqueada com apenas o código seguro do domínio. Os 16 cenários de integração verificam ordem atômica, falhas parciais, concorrência, isolamento de tenant e CAS tardio; a suíte Full passou (104 arquivos, 1.581 testes).
 
 #### T19: Isolar grupos da manutenção diária
 
