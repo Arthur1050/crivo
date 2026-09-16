@@ -269,56 +269,21 @@
 - **Date**: 2026-09-15
 - **Status**: active
 
+### AD-030
+- **Decision**: Arquivos originais de conhecimento ficam em Vercel Private Blob na região de Frankfurt, atrás de uma interface `DocumentStorage`; o PostgreSQL do CRM mantém metadados e texto extraído canônico, e qualquer futuro banco vetorial será um índice derivado substituível, nunca a fonte primária nem o local do binário.
+- **Reason**: Com apenas duas imobiliárias e baixo volume inicial, o Blob reduz operação, backup e exposição do CX23 sem antecipar infraestrutura própria; separar original, texto canônico e índice permite introduzir RAG depois sem migrar arquivos nem quebrar o contrato de contexto.
+- **Trade-off**: Há dependência operacional e de preço da Vercel, dupla cobrança de transferência no download privado e exigência de plano comercial antes de clientes pagantes; a abstração reduz, mas não elimina, o custo de uma migração futura para Hetzner Object Storage ou outro provedor.
+- **Scope**: Lote 12 e toda evolução futura de documentos, extração, retenção e RAG do CRM.
+- **Date**: 2026-09-15
+- **Status**: active
+
 ## Handoff
 
-### Lote 11 — concluído e validado (2026-09-14)
-
-- **Feature**: `lote-11-catalogo-de-imoveis`; execução pela `tlc-spec-driven` concluída.
-- **Phase / Task**: Execute / T29 concluída; Verifier independente PASS.
-- **Completed**: T1–T36. As T30–T36 foram correções e publicações abertas pelas três rodadas de
-  conversa real; o usuário encerrou T26/T27 como sucesso e autorizou a publicação final.
-- **Validation**: 78/78 critérios com evidência `file:line`, zero lacunas de precisão; sensor
-  9/9 mutações mortas; `validate_state.py` exit 0. Relatório em
-  `.specs/features/lote-11-catalogo-de-imoveis/validation.md`.
-- **Final gate**: 1.357 testes / 91 arquivos, 0 falhas e 0 skips; lint 0 erros/3 avisos
-  pré-existentes; build exit 0. Piso da T1: 1.076/82; delta +281 testes/+9 arquivos.
-- **Next step**: L12 — conteúdo de documento chega ao agente. Storage do binário,
-  extração de conteúdo e preview/download permanecem nesse lote; vitrine pública no L16.
-- **Blockers**: nenhum para o encerramento do L11.
-- **Uncommitted files**: nenhum após o commit atômico da T29.
-- **Branch**: `main`, sem push/deploy; `origin/main` local em `5275511` na conferência final.
-
-**Entrega publicada**: workflow principal `0B1nqjODu7xuYYKF`, versão ativa
-`538b04fd-6682-4690-b0e7-9c2c1452866e`, 62 nós / 76 conexões / `maxIterations` 8. A publicação
-final mudou somente o `jsCode` do system message; modelo, memória, credenciais, grupos, settings e
-conexões foram preservados. O agente encerra o turno depois de uma pergunta entregue com
-`ok=true`; `ok=false` continua permitindo a correção exata. Nenhuma nova mensagem, reset, alteração
-de Calendar, push ou deploy foi feita no fechamento.
-
-**Prova real**: a última sessão foi aceita pelo usuário como sucesso. A busca citou IM-0001 e
-R$ 380.000,00 conforme o banco, declarou corretamente a ausência, apresentou o imóvel em linhas e
-chegou ao agendamento. A execução filha 2407 confirmou `qualificado_agendado`, André atribuído,
-evento `gpupvvmct9lvbt4qsm3n7b83t8`, Meet `rkw-xtya-fmv`, em 15/09/2026 às 15h de Brasília, e
-lembrete n8n id 17. O evento e o lembrete foram preservados. A duplicação observada nessa sessão
-foi corrigida e publicada na T35/T36; a AC25 e a mutação M9 provam a barreira deterministicamente.
-
-**Lições**: o Verifier teve PASS limpo e não gerou candidata nova. A revisão obrigatória da AD-028
-releu as três candidatas existentes: L-007 perdeu ação pendente, L-017 é fato específico do
-better-auth e L-022 duplica a L-012. Nenhuma merece promoção; `lessons.json` permaneceu inalterado.
-
-**Pendências herdadas que permanecem**:
-- Remarcação impossível após `qualificado_agendado`; requer contrato, id de evento e
-  atualização/cancelamento do evento antigo.
-- `agentVoiceTone` pede aberturas que `voice.mjs` barra; qualificação pode deixar
-  `modality`/`propertyType` nulos apesar de informados, e marca campos antes da resposta.
-- Paridade cosmética do `crivo-tool-agendar-reuniao`; defaults omitidos na instância
-  (como `method: GET` de `consultar_documentos`) não foram alterados neste lote.
-- Duas linhas inertes em `conversa_estado`; helper de revogação de chave por label;
-  L4 Fix 1/2 e L5 Fix 1; documentação de `assignedBroker` e erros do lote-8 (L14).
-- Confirmar `RESEND_FROM`; alerta de queda da integração e substituição dos baselines
-  fictícios por dados reais quando houver piloto real (L15).
-- MTN-01 continua **não verificado**, sem segundo número disponível; não é aprovação
-  por ausência. O reset pendente do lote-10 foi sucedido pela rotina comprovada do lote-11.
-- Switch para permitir exibição do catálogo (ligado por padrão) e antecedência mínima
-  de agendamento em dias: deferidos pelo usuário, registrados no `context.md` do lote-11.
-- Upload/storage/extração/preview ficam no L12; vitrine pública separada, no L16 (AD-025).
+- **Feature**: Lote 12 — `.specs/features/lote-12-conteudo-de-documentos/`.
+- **Phase / Task**: Execute / pré-T1, baseline documental validado.
+- **Completed**: especificação, contexto, design, AD-030 e plano de 37 tarefas aprovados; estratégia de seis subagentes sequenciais aprovada; `validate_tasks.py` passou após reconciliar a dependência T28 → T33 no diagrama.
+- **In-progress** (file:line): nenhum código em andamento.
+- **Next step**: confirmar que `TEST_DATABASE_URL` em `.env` é um banco descartável; então obter o baseline da suíte e despachar o Batch 1 (T1–T6).
+- **Blockers**: `TEST_DATABASE_URL` aponta para o banco Neon `neondb`, cujo nome não comprova que é descartável; não rodar testes nem `drizzle-kit push` até confirmação explícita. Ações conectadas a partir da T29 continuam exigindo autorização específica imediatamente antes de cada efeito externo.
+- **Uncommitted files**: baseline documental ainda não commitado: `.specs/STATE.md` e `.specs/features/lote-12-conteudo-de-documentos/{context.md,design.md,spec.md,tasks.md,EXECUTE-PROMPT.md}`.
+- **Branch**: `main`; HEAD observado antes deste handoff em `e790a0a`; nenhum push/deploy autorizado.
