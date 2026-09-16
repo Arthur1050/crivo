@@ -402,11 +402,11 @@ T35 -> T36 -> T37
 
 **Done when:**
 
-- [ ] Retry concorrente cria um único attempt lógico e reutiliza o original.
-- [ ] Resultado antigo, excluído ou expirado é no-op.
-- [ ] Sucesso limpa erro e define `pronto`/`fora_do_agente`; falha preserva original.
-- [ ] Três falhas de dispatch levam a `processamento_indisponivel`, nunca `processando` eterno.
-- [ ] Pelo menos 16 testes de integração cobrem concorrência, late result, delete/expiry e fault injection.
+- [x] Retry concorrente cria um único attempt lógico e reutiliza o original.
+- [x] Resultado antigo, excluído ou expirado é no-op.
+- [x] Sucesso limpa erro e define `pronto`/`fora_do_agente`; falha preserva original.
+- [x] Três falhas de dispatch levam a `processamento_indisponivel`, nunca `processando` eterno.
+- [x] Pelo menos 16 testes de integração cobrem concorrência, late result, delete/expiry e fault injection.
 
 **Tests:** integration  
 **Gate:** Full  

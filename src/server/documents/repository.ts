@@ -7,6 +7,7 @@ import {
   documents,
   tenantDocumentContextLimits,
 } from "../../db/schema";
+import { reconcileDocumentAdmission, type ContextBudgetDocument, type ContextLimits } from "./context-budget";
 
 export type DocumentListItem = Omit<
   typeof documents.$inferSelect,
@@ -324,6 +325,94 @@ export async function retryDocumentProcessing(
     )
     .returning({ id: documents.id });
   return rows.length === 1 ? "applied" : "stale";
+}
+
+/** Claims exactly one retry attempt; concurrent callers reuse the active attempt. */
+export async function claimDocumentProcessingRetry(
+  tenantId: string,
+  documentId: string,
+  now = new Date()
+): Promise<{ kind: "claimed" | "active"; attempt: number } | { kind: "stale" }> {
+  const updated = await retryDocumentProcessing(tenantId, documentId, now);
+  if (updated === "applied") {
+    const [row] = await db
+      .select({ processingAttempt: documents.processingAttempt })
+      .from(documents)
+      .where(and(eq(documents.tenantId, tenantId), eq(documents.id, documentId)));
+    if (row) return { kind: "claimed", attempt: row.processingAttempt };
+  }
+  const [active] = await db
+    .select({ processingAttempt: documents.processingAttempt, status: documents.status, deletedAt: documents.deletedAt, expiresAt: documents.expiresAt })
+    .from(documents)
+    .where(and(eq(documents.tenantId, tenantId), eq(documents.id, documentId)));
+  if (active?.status === "processando" && !active.deletedAt && (!active.expiresAt || active.expiresAt > now)) {
+    return { kind: "active", attempt: active.processingAttempt };
+  }
+  return { kind: "stale" };
+}
+
+/** Returns only an active processing attempt, so a late Workflow run cannot read a tombstoned row. */
+export async function getDocumentForProcessing(
+  tenantId: string,
+  documentId: string,
+  attempt: number,
+  now = new Date()
+) {
+  const [document] = await db
+    .select({
+      id: documents.id,
+      tenantId: documents.tenantId,
+      storageKey: documents.storageKey,
+      mimeType: documents.mimeType,
+      status: documents.status,
+      processingAttempt: documents.processingAttempt,
+      expiresAt: documents.expiresAt,
+      deletedAt: documents.deletedAt,
+    })
+    .from(documents)
+    .where(and(
+      eq(documents.tenantId, tenantId),
+      eq(documents.id, documentId),
+      eq(documents.status, "processando"),
+      eq(documents.processingAttempt, attempt),
+      isNull(documents.deletedAt),
+      sql`(${documents.expiresAt} is null or ${documents.expiresAt} > ${now})`
+    ));
+  return document ?? null;
+}
+
+/** Reapplies the published direct-context limits after text becomes available. */
+export async function reconcileTenantDocumentAdmission(tenantId: string, now = new Date()): Promise<void> {
+  const limitsRows = await db
+    .select({ queryModality: tenantDocumentContextLimits.queryModality, maxResponseBytes: tenantDocumentContextLimits.maxResponseBytes })
+    .from(tenantDocumentContextLimits)
+    .where(and(eq(tenantDocumentContextLimits.tenantId, tenantId), isNull(tenantDocumentContextLimits.staleAt)));
+  if (limitsRows.length !== 3) return;
+  const limits = Object.fromEntries(limitsRows.map((row) => [row.queryModality, row.maxResponseBytes])) as ContextLimits;
+  const rows = await db
+    .select({ id: documents.id, name: documents.name, modality: documents.modality, extractedText: documents.extractedText, uploadedAt: documents.uploadedAt, status: documents.status })
+    .from(documents)
+    .where(and(
+      eq(documents.tenantId, tenantId),
+      isNull(documents.deletedAt),
+      sql`(${documents.expiresAt} is null or ${documents.expiresAt} > ${now})`,
+      sql`${documents.status} in ('pronto', 'fora_do_agente')`,
+      sql`${documents.extractedText} is not null`
+    ));
+  const candidates: ContextBudgetDocument[] = rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    modality: row.modality,
+    content: row.extractedText!,
+    uploadedAt: row.uploadedAt,
+    status: row.status,
+  }));
+  const result = reconcileDocumentAdmission(candidates, limits);
+  await db.transaction(async (tx) => {
+    for (const [id, status] of result.statusByDocumentId) {
+      await tx.update(documents).set({ status }).where(and(eq(documents.tenantId, tenantId), eq(documents.id, id), isNull(documents.deletedAt)));
+    }
+  });
 }
 
 export async function completeDocumentProcessing(
