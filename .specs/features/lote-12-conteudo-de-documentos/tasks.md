@@ -240,14 +240,16 @@ T35 -> T36 -> T37
 
 **Done when:**
 
-- [ ] Interface cobre autorização, `head`, `open` e `delete` sem expor URL como identidade.
-- [ ] Chaves não contêm filename e são imutáveis; filename de download é sanitizado separadamente.
-- [ ] Erros distinguem ausente, transitório e permanente sem conteúdo sensível.
-- [ ] Pelo menos 8 testes unitários cobrem chaves, filename e tradução de erros.
+- [x] Interface cobre autorização, `head`, `open` e `delete` sem expor URL como identidade.
+- [x] Chaves não contêm filename e são imutáveis; filename de download é sanitizado separadamente.
+- [x] Erros distinguem ausente, transitório e permanente sem conteúdo sensível.
+- [x] Pelo menos 8 testes unitários cobrem chaves, filename e tradução de erros.
 
 **Tests:** unit  
 **Gate:** Quick  
 **Commit:** `feat(documents): define document storage contract`
+
+**Evidence (2026-09-16):** O contrato independente expõe somente capability de upload, metadados, stream e operações `head`/`open`/`delete`; URL não é identidade persistível. A chave é versionada, imutável e formada apenas por UUIDs emitidos pelo servidor. O filename de download é sanitizado à parte para uso futuro em `Content-Disposition`. A tradução de exceções reduz erros de provedor a `absent`, `transient` ou `permanent`, com mensagens/códigos estáveis sem segredos. Os 11 testes unitários e o lint direcionado passaram.
 
 ### Phase 2: Entrada, storage e extração
 
