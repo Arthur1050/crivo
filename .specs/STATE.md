@@ -280,10 +280,10 @@
 ## Handoff
 
 - **Feature**: Lote 12 — `.specs/features/lote-12-conteudo-de-documentos/`.
-- **Phase / Task**: Execute / pré-T1, baseline documental validado.
-- **Completed**: especificação, contexto, design, AD-030 e plano de 37 tarefas aprovados; estratégia de seis subagentes sequenciais aprovada; `validate_tasks.py` passou após reconciliar a dependência T28 → T33 no diagrama.
+- **Phase / Task**: Execute / pré-T1, baseline documental commitado.
+- **Completed**: especificação, contexto, design, AD-030 e plano de 37 tarefas aprovados; estratégia de seis subagentes sequenciais aprovada; `validate_tasks.py` passou após reconciliar a dependência T28 → T33 no diagrama; baseline documental no commit `085221b`.
 - **In-progress** (file:line): nenhum código em andamento.
 - **Next step**: confirmar que `TEST_DATABASE_URL` em `.env` é um banco descartável; então obter o baseline da suíte e despachar o Batch 1 (T1–T6).
 - **Blockers**: `TEST_DATABASE_URL` aponta para o banco Neon `neondb`, cujo nome não comprova que é descartável; não rodar testes nem `drizzle-kit push` até confirmação explícita. Ações conectadas a partir da T29 continuam exigindo autorização específica imediatamente antes de cada efeito externo.
-- **Uncommitted files**: baseline documental ainda não commitado: `.specs/STATE.md` e `.specs/features/lote-12-conteudo-de-documentos/{context.md,design.md,spec.md,tasks.md,EXECUTE-PROMPT.md}`.
+- **Uncommitted files**: nenhum.
 - **Branch**: `main`; HEAD observado antes deste handoff em `e790a0a`; nenhum push/deploy autorizado.
