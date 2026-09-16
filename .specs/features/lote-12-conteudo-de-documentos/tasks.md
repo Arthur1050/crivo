@@ -332,14 +332,16 @@ T35 -> T36 -> T37
 
 **Done when:**
 
-- [ ] Palavras, números, pontuação, delimitadores e quebras internas são preservados.
-- [ ] CRLF/CR viram LF; BOM e apenas whitespace externo são removidos.
-- [ ] Conteúdo vazio/invisível e controles binários são recusados.
-- [ ] Pelo menos 14 testes unitários cobrem UTF-8, BOM, Windows-1252, CSV/MD e bytes inválidos.
+- [x] Palavras, números, pontuação, delimitadores e quebras internas são preservados.
+- [x] CRLF/CR viram LF; BOM e apenas whitespace externo são removidos.
+- [x] Conteúdo vazio/invisível e controles binários são recusados.
+- [x] Pelo menos 14 testes unitários cobrem UTF-8, BOM, Windows-1252, CSV/MD e bytes inválidos.
 
 **Tests:** unit  
 **Gate:** Quick  
 **Commit:** `feat(documents): add safe text decoding`
+
+**Evidence (2026-09-16):** `text.ts` usa UTF-8 fatal, fallback explícito Windows-1252 e rejeita controles binários depois de decodificar. A normalização só remove BOM, padroniza quebras e faz trim externo. Os 15 testes preservam CSV/Markdown e conteúdo interno, além de cobrir BOM, fallback, controles, vazio e Unicode invisível.
 
 #### T11: Implementar extratores nativos e guardas estruturais
 

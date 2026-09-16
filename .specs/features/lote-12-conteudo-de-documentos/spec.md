@@ -244,7 +244,7 @@ Every ambiguity is resolved or recorded here; nothing remains silently unclear.
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
 | DOCBIN-01 | P1: Armazenar o arquivo real com segurança | T1, T3–T9, T17, T29, T31–T32, T37 | Implementing — T1, T3–T9 complete |
-| DOCTXT-01 | P1: Extrair e reprocessar texto nativo | T1–T4, T10–T15, T25–T26, T30, T32, T37 | Implementing — T1–T4 complete |
+| DOCTXT-01 | P1: Extrair e reprocessar texto nativo | T1–T4, T10–T15, T25–T26, T30, T32, T37 | Implementing — T1–T4, T10 complete |
 | DOCCTX-01 | P1: Entregar o corpus elegível ao agente | T4, T12, T20–T22, T28, T33, T35–T37 | Implementing — T4 complete |
 | DOCLIM-01 | P1: Aplicar o teto seguro sem truncamento silencioso | T3–T4, T12–T13, T20, T24–T25, T27, T32, T34, T37 | Implementing — T3–T4 complete |
 | DOCVIEW-01 | P1: Visualizar e baixar com o mesmo isolamento | T6–T7, T15–T18, T23–T25, T27, T29, T32, T37 | Implementing — T6–T7 complete |
