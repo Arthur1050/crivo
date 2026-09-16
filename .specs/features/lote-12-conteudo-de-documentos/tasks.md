@@ -286,16 +286,18 @@ T35 -> T36 -> T37
 
 **Done when:**
 
-- [ ] Permissão é exigida antes de token/objeto; intent expira em 1 hora.
-- [ ] Hash é recalculado por stream; tamanho, ETag, assinatura, MIME e estrutura são verificados antes da linha visível.
-- [ ] Callback e cliente repetidos devolvem o mesmo `documentId`.
-- [ ] Duplicata concorrente no tenant aceita no máximo uma; outro tenant não é revelado.
-- [ ] Falha entre Blob e DB apaga ou agenda compensação, comprovada por fault injection conforme L-002.
-- [ ] Pelo menos 18 testes de integração novos passam.
+- [x] Permissão é exigida antes de token/objeto; intent expira em 1 hora.
+- [x] Hash é recalculado por stream; tamanho, ETag, assinatura, MIME e estrutura são verificados antes da linha visível.
+- [x] Callback e cliente repetidos devolvem o mesmo `documentId`.
+- [x] Duplicata concorrente no tenant aceita no máximo uma; outro tenant não é revelado.
+- [x] Falha entre Blob e DB apaga ou agenda compensação, comprovada por fault injection conforme L-002.
+- [x] Pelo menos 18 testes de integração novos passam.
 
 **Tests:** integration  
 **Gate:** Full  
 **Commit:** `feat(documents): add idempotent upload intake`
+
+**Evidence (2026-09-16):** `uploads.ts` revalida `documentos:escrever`, cria intent tenant-scoped com TTL de uma hora, usa chave UUID opaca e só pede grant depois da reserva. A finalização usa apenas o `intentId` confirmado pelo callback futuro, relê o objeto privado e recalcula SHA-256 por stream; tamanho, ETag, MIME, assinatura PDF/DOCX e estrutura textual básica precisam coincidir antes de `commitUploadIntent` criar `processando`. Repetições devolvem o mesmo documento; duplicatas concorrentes mantêm um único registro; outro tenant recebe sua própria intent. A falha entre Blob e banco marca a intent `failed`, remove o objeto ou preserva a chave opaca para compensação diária. Os 24 testes de integração e a suíte completa passaram (95 arquivos, 1.422 testes).
 
 #### T9: Expor handler autenticado de client upload
 

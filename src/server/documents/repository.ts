@@ -14,6 +14,7 @@ export type DocumentListItem = Omit<
 >;
 
 export interface CreateUploadIntentInput {
+  id?: string;
   requestedByUserId: string;
   clientSha256: string;
   name: string;
@@ -24,6 +25,32 @@ export interface CreateUploadIntentInput {
   expiresAt?: Date | null;
   storageKey: string;
   expiresAtIntent: Date;
+}
+
+/** Lookup interno para callback já autenticado pelo provedor; nunca é exposto ao CRM. */
+export async function findUploadIntentById(intentId: string) {
+  const [intent] = await db
+    .select()
+    .from(documentUploadIntents)
+    .where(eq(documentUploadIntents.id, intentId));
+  return intent ?? null;
+}
+
+/** Keeps a failed upload invisible while its private object is compensated later. */
+export async function failUploadIntent(
+  tenantId: string,
+  intentId: string
+): Promise<void> {
+  await db
+    .update(documentUploadIntents)
+    .set({ state: "failed" })
+    .where(
+      and(
+        eq(documentUploadIntents.tenantId, tenantId),
+        eq(documentUploadIntents.id, intentId),
+        sql`${documentUploadIntents.state} in ('pending', 'finalizing')`
+      )
+    );
 }
 
 export type CreateUploadIntentResult =
