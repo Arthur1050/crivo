@@ -280,10 +280,10 @@
 ## Handoff
 
 - **Feature**: Lote 12 — `.specs/features/lote-12-conteudo-de-documentos/`.
-- **Phase / Task**: Execute / pré-T1, baseline de testes pendente.
-- **Completed**: especificação, contexto, design, AD-030 e plano de 37 tarefas aprovados; estratégia de seis subagentes sequenciais aprovada; `validate_tasks.py` passou após reconciliar a dependência T28 → T33 no diagrama; baseline documental no commit `085221b`; usuário confirmou que `TEST_DATABASE_URL` é descartável e uma consulta somente-leitura confirmou `neondb_owner`; regressão preexistente de `updatedAt` corrigida no commit `d5e8cdb`.
+- **Phase / Task**: Execute / Batch 1 concluído (T1–T6).
+- **Completed**: especificação, contexto, design, AD-030 e plano de 37 tarefas aprovados; baseline documental no commit `085221b`; regressão preexistente de `updatedAt` corrigida no commit `d5e8cdb`; dependências e Workflow configurados nos commits `5b6dc5c` e `94d8d6f`; persistência documental e seed compatível em `8d8269d`; repositório transacional em `b61327f`; contrato de storage independente em `af4fe39`. Após autorização explícita, somente o branch Neon de teste recebeu o schema T3 (conexão direta) e o descarte prévio de linhas metadata-only. A suíte completa passou com 92 arquivos e 1.373 testes; build e lint não tiveram erros.
 - **In-progress** (file:line): nenhum código em andamento.
-- **Next step**: reiniciar `npm test` em execução monitorada e deixar a suíte serial concluir; registrar a contagem final e despachar o Batch 1 (T1–T6) somente depois.
-- **Blockers**: nenhum conhecido. O teste isolado de propriedades passou 25/25 após `d5e8cdb`, junto de lint sem erros e build verde. O baseline integral foi interrompido somente porque sua execução serial contra Neon é longa; nenhum teste foi alterado ou suprimido. Ações conectadas a partir da T29 continuam exigindo autorização específica imediatamente antes de cada efeito externo.
+- **Next step**: iniciar T7 — adapter privado do Vercel Blob — somente quando o próximo batch for autorizado; ações conectadas a partir de T29 continuam exigindo autorização específica imediatamente antes de cada efeito externo.
+- **Blockers**: nenhum conhecido. Os avisos de SSL da biblioteca Postgres, de configuração Better Auth em build e dois avisos de regra ESLint em rotas internas geradas pelo Workflow não causaram falha. Nenhum teste foi alterado ou suprimido para obter o resultado.
 - **Uncommitted files**: nenhum.
 - **Branch**: `main`; HEAD observado antes deste handoff em `e790a0a`; nenhum push/deploy autorizado.
