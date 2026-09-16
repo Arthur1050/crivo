@@ -803,16 +803,16 @@ export async function updateProperty(
   propertyId: string,
   patch: UpdatePropertyPatch
 ): Promise<boolean> {
-  const setValues: Partial<typeof properties.$inferInsert> = {
+  const setValues = {
     ...patch,
-    updatedAt: new Date(),
+    updatedAt: sql`now()`,
+    ...(patch.neighborhood !== undefined
+      ? { neighborhoodNormalized: normalizeForSearch(patch.neighborhood) }
+      : {}),
+    ...(patch.city !== undefined
+      ? { cityNormalized: normalizeForSearch(patch.city) }
+      : {}),
   };
-  if (patch.neighborhood !== undefined) {
-    setValues.neighborhoodNormalized = normalizeForSearch(patch.neighborhood);
-  }
-  if (patch.city !== undefined) {
-    setValues.cityNormalized = normalizeForSearch(patch.city);
-  }
 
   const rows = await db
     .update(properties)
