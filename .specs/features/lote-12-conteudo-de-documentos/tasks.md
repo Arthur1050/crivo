@@ -354,15 +354,17 @@ T35 -> T36 -> T37
 
 **Done when:**
 
-- [ ] Cada formato válido produz Unicode normalizado sem OCR nem interpretação ativa.
-- [ ] PDF somente imagem produz `nenhum_texto_extraivel`.
-- [ ] Limites 500 páginas/16 MP, 2.000 entradas/50 MiB e 20 MiB extraídos são aplicados no boundary exato.
-- [ ] Erros são classificados em permanentes/transitórios e não vazam stack/path.
-- [ ] Pelo menos 20 testes unitários com fixtures cobrem todos os formatos e limites.
+- [x] Cada formato válido produz Unicode normalizado sem OCR nem interpretação ativa.
+- [x] PDF somente imagem produz `nenhum_texto_extraivel`.
+- [x] Limites 500 páginas/16 MP, 2.000 entradas/50 MiB e 20 MiB extraídos são aplicados no boundary exato.
+- [x] Erros são classificados em permanentes/transitórios e não vazam stack/path.
+- [x] Pelo menos 20 testes unitários com fixtures cobrem todos os formatos e limites.
 
 **Tests:** unit  
 **Gate:** Quick  
 **Commit:** `feat(documents): extract native document text`
+
+**Evidence (2026-09-16):** `extraction.ts` extrai apenas texto nativo: `unpdf` verifica páginas e imagens sem OCR; DOCX tem preflight de ZIP antes de `mammoth`; TXT/MD/CSV reutilizam o decoder estrito. Limites de página, imagem, ZIP, saída e timeout retornam códigos seguros. Os 20 testes cobrem os cinco formatos, PDF sem texto, boundaries e falhas transitórias/permanentes.
 
 #### T12: Implementar medição e admissão de corpus
 
