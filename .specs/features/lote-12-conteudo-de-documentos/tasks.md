@@ -195,15 +195,17 @@ T35 -> T36 -> T37
 
 **Done when:**
 
-- [ ] Toda leitura/escrita exige tenant e nunca seleciona `extractedText` na listagem.
-- [ ] Reservas/finalizações concorrentes, unique violations e CAS retornam resultados de domínio estáveis.
-- [ ] Operações de retry, conclusão, expiração e tombstone aplicam attempt/estado/validade/deletedAt atomicamente.
-- [ ] Testes cobrem queries críticas, concorrência simulada, outro tenant, insert failure e boundaries.
-- [ ] Pelo menos 16 testes de integração novos passam; nenhum teste anterior é removido.
+- [x] Toda leitura/escrita exige tenant e nunca seleciona `extractedText` na listagem.
+- [x] Reservas/finalizações concorrentes, unique violations e CAS retornam resultados de domínio estáveis.
+- [x] Operações de retry, conclusão, expiração e tombstone aplicam attempt/estado/validade/deletedAt atomicamente.
+- [x] Testes cobrem queries críticas, concorrência simulada, outro tenant, insert failure e boundaries.
+- [x] Pelo menos 16 testes de integração novos passam; nenhum teste anterior é removido.
 
 **Tests:** integration  
 **Gate:** Full  
 **Commit:** `feat(documents): add transactional document repository`
+
+**Evidence (2026-09-16):** `src/server/documents/repository.ts` centraliza todas as operações por tenant: intent, finalização idempotente, projeção de listagem sem texto extraído, CAS de processamento, tombstone, expiração e limites de contexto. A finalização trata disputa de hash com `ON CONFLICT DO NOTHING` contra o índice parcial, evitando transação abortada; os resultados expõem somente estados de domínio. Os 18 novos testes do repositório passaram, assim como lint direcionado e a suíte completa (92 arquivos, 1.373 testes).
 
 #### T5: Remover documentos fictícios do seed
 
