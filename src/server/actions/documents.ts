@@ -1,12 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { start } from "workflow/api";
 import { getActiveTenantId } from "../tenant";
 import { denyIfForbidden } from "./permission";
 import {
   createDocument,
   createDocumentCategory,
-  deleteDocument,
   deleteDocumentCategory,
   updateDocument,
   updateDocumentCategory,
@@ -20,6 +20,10 @@ import {
   validateModality,
   validateName,
 } from "../validation";
+import { createDocumentProcessingService } from "../documents/processing";
+import { reconcileTenantDocumentAdmission, tombstoneDocument } from "../documents/repository";
+import { VercelBlobDocumentStorage } from "../documents/vercel-blob-storage";
+import { processDocumentWorkflow } from "../../../workflows/process-document";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -72,6 +76,23 @@ export interface UpdateDocumentInput {
   name: string;
   modality: Modality;
   categoryId?: string | null;
+  /** Omit preserves the existing date; an empty form field explicitly clears it. */
+  expiresAt?: string;
+}
+
+function resolveExpiresAt(value: string | undefined, now = new Date()):
+  | { ok: true; value: Date | null | undefined }
+  | { ok: false; error: string } {
+  if (value === undefined) return { ok: true, value: undefined };
+  if (value.trim() === "") return { ok: true, value: null };
+  const expiresAt = new Date(value);
+  if (Number.isNaN(expiresAt.getTime())) {
+    return { ok: false, error: "A validade informada é inválida." };
+  }
+  if (expiresAt <= now) {
+    return { ok: false, error: "A validade deve estar no futuro." };
+  }
+  return { ok: true, value: expiresAt };
 }
 
 export async function updateDocumentAction(
@@ -86,17 +107,22 @@ export async function updateDocumentAction(
   const modalityCheck = validateModality(input.modality);
   if (!modalityCheck.ok) return modalityCheck;
 
+  const expiry = resolveExpiresAt(input.expiresAt);
+  if (!expiry.ok) return expiry;
+
   const tenantId = await getActiveTenantId();
   const updated = await updateDocument(tenantId, input.documentId, {
     name: input.name.trim(),
     modality: input.modality,
     categoryId: input.categoryId,
+    ...(expiry.value === undefined ? {} : { expiresAt: expiry.value }),
   });
 
   if (!updated) {
     return { ok: false, error: "Documento não encontrado." };
   }
 
+  await reconcileTenantDocumentAdmission(tenantId);
   revalidatePath("/documentos");
   return { ok: true };
 }
@@ -112,10 +138,40 @@ export async function deleteDocumentAction(
   if (denied) return denied;
 
   const tenantId = await getActiveTenantId();
-  const deleted = await deleteDocument(tenantId, input.documentId);
+  const deleted = await tombstoneDocument(tenantId, input.documentId);
 
-  if (!deleted) {
+  if (deleted === "not_found") {
     return { ok: false, error: "Documento não encontrado." };
+  }
+
+  await reconcileTenantDocumentAdmission(tenantId);
+  revalidatePath("/documentos");
+  return { ok: true };
+}
+
+export interface RetryDocumentInput {
+  documentId: string;
+}
+
+/** Claims a single retry attempt before scheduling it, so concurrent clicks share state. */
+export async function retryDocumentAction(
+  input: RetryDocumentInput
+): Promise<ActionResult> {
+  const denied = await denyIfForbidden("documentos", "escrever");
+  if (denied) return denied;
+
+  const tenantId = await getActiveTenantId();
+  const service = createDocumentProcessingService({
+    storage: new VercelBlobDocumentStorage(),
+    start: async (job) => {
+      const run = await start(processDocumentWorkflow, [job]);
+      return { id: run.runId };
+    },
+  });
+  const result = await service.retry({ tenantId, documentId: input.documentId });
+  if (result.kind === "stale") return { ok: false, error: "Documento não encontrado." };
+  if (result.kind === "dispatch_failed" || result.kind === "failed") {
+    return { ok: false, error: "Não foi possível processar agora. Tente novamente." };
   }
 
   revalidatePath("/documentos");

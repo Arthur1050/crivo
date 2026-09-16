@@ -444,11 +444,11 @@ T35 -> T36 -> T37
 
 **Done when:**
 
-- [ ] Admin/gestor podem editar validade/modalidade, reprocessar falha e excluir; corretor é recusado sem mutação.
-- [ ] Data ausente, vazia, inválida e passada têm semânticas separadas conforme L-005.
-- [ ] Mudança de modalidade dispara reconciliação e preserva conteúdo/original em erro.
-- [ ] Duas actions concorrentes produzem estado final idempotente.
-- [ ] Pelo menos 16 testes de integração novos passam.
+- [x] Admin/gestor podem editar validade/modalidade, reprocessar falha e excluir; corretor é recusado sem mutação.
+- [x] Data ausente, vazia, inválida e passada têm semânticas separadas conforme L-005.
+- [x] Mudança de modalidade dispara reconciliação e preserva conteúdo/original em erro.
+- [x] Duas actions concorrentes produzem estado final idempotente.
+- [x] Pelo menos 16 testes de integração novos passam.
 
 **Tests:** integration  
 **Gate:** Full  

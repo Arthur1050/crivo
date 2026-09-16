@@ -3,10 +3,11 @@ import { randomUUID } from "node:crypto";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "../../db";
-import { leads, tenant_members, users } from "../../db/schema";
+import { documents, leads, tenant_members, users } from "../../db/schema";
 import type { Action, Resource, Role } from "../../lib/permissions";
 import type { AuthContext } from "../auth/session";
 import {
+  createDocument,
   getBrokers,
   getDocumentCategories,
   getDocuments,
@@ -98,12 +99,17 @@ vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
 }));
 
+vi.mock("workflow/api", () => ({
+  start: vi.fn(async () => ({ runId: "workflow-action-test" })),
+}));
+
 import { revalidatePath } from "next/cache";
 import {
   createDocumentAction,
   createDocumentCategoryAction,
   deleteDocumentAction,
   deleteDocumentCategoryAction,
+  retryDocumentAction,
   updateDocumentAction,
   updateDocumentCategoryAction,
   type CreateDocumentInput,
@@ -1194,6 +1200,149 @@ describe("server actions", () => {
       expect(createdOnOther).toHaveLength(0);
 
       await deleteDocumentAction({ documentId: createdOnActive.id });
+    });
+
+    async function createLifecycleDocument(label: string) {
+      const name = `${label} ${randomUUID()}.txt`;
+      await expect(createDocumentAction({ name, mimeType: "text/plain", sizeBytes: 3, modality: "novo" })).resolves.toEqual({ ok: true });
+      const [document] = await getDocuments(activeTenantId, { search: name });
+      expect(document).toBeDefined();
+      return document;
+    }
+
+    async function lifecycleRow(documentId: string) {
+      const [row] = await db.select().from(documents).where(eq(documents.id, documentId));
+      expect(row).toBeDefined();
+      return row!;
+    }
+
+    it("administra validade futura e preserva o conteúdo existente", async () => {
+      const document = await createLifecycleDocument("Validade futura");
+      await db.update(documents).set({ extractedText: "conteúdo original", status: "pronto" }).where(eq(documents.id, document.id));
+      const future = new Date(Date.now() + 86_400_000).toISOString();
+
+      await expect(updateDocumentAction({ documentId: document.id, name: document.name, modality: "ambos", expiresAt: future })).resolves.toEqual({ ok: true });
+      await expect(lifecycleRow(document.id)).resolves.toMatchObject({ modality: "ambos", extractedText: "conteúdo original" });
+      expect((await lifecycleRow(document.id)).expiresAt?.toISOString()).toBe(future);
+    });
+
+    it("validade ausente preserva a data já persistida", async () => {
+      const document = await createLifecycleDocument("Validade ausente");
+      const future = new Date(Date.now() + 86_400_000);
+      await db.update(documents).set({ expiresAt: future }).where(eq(documents.id, document.id));
+
+      await expect(updateDocumentAction({ documentId: document.id, name: document.name, modality: "usado" })).resolves.toEqual({ ok: true });
+      expect((await lifecycleRow(document.id)).expiresAt).toEqual(future);
+    });
+
+    it("validade vazia significa explicitamente sem validade", async () => {
+      const document = await createLifecycleDocument("Validade vazia");
+      await db.update(documents).set({ expiresAt: new Date(Date.now() + 86_400_000) }).where(eq(documents.id, document.id));
+
+      await expect(updateDocumentAction({ documentId: document.id, name: document.name, modality: "novo", expiresAt: "" })).resolves.toEqual({ ok: true });
+      expect((await lifecycleRow(document.id)).expiresAt).toBeNull();
+    });
+
+    it("validade inválida é recusada e preserva a data e o texto", async () => {
+      const document = await createLifecycleDocument("Validade inválida");
+      const future = new Date(Date.now() + 86_400_000);
+      await db.update(documents).set({ expiresAt: future, extractedText: "não tocar", status: "pronto" }).where(eq(documents.id, document.id));
+
+      await expect(updateDocumentAction({ documentId: document.id, name: document.name, modality: "usado", expiresAt: "ontem talvez" })).resolves.toMatchObject({ ok: false });
+      await expect(lifecycleRow(document.id)).resolves.toMatchObject({ expiresAt: future, extractedText: "não tocar", modality: "novo" });
+    });
+
+    it("validade passada é recusada e não altera modalidade", async () => {
+      const document = await createLifecycleDocument("Validade passada");
+      await expect(updateDocumentAction({ documentId: document.id, name: document.name, modality: "ambos", expiresAt: new Date(Date.now() - 1_000).toISOString() })).resolves.toMatchObject({ ok: false });
+      expect((await lifecycleRow(document.id)).modality).toBe("novo");
+    });
+
+    it("gestor edita modalidade e validade como administrador", async () => {
+      const document = await createLifecycleDocument("Gestor edita");
+      sessionRoles = ["gestor"];
+      await expect(updateDocumentAction({ documentId: document.id, name: "Atualizado gestor.txt", modality: "usado", expiresAt: "" })).resolves.toEqual({ ok: true });
+      await expect(lifecycleRow(document.id)).resolves.toMatchObject({ name: "Atualizado gestor.txt", modality: "usado", expiresAt: null });
+      sessionRoles = ["administrador"];
+    });
+
+    it("corretor não edita nem altera o estado existente", async () => {
+      const document = await createLifecycleDocument("Corretor edita");
+      sessionRoles = ["corretor"];
+      await expect(updateDocumentAction({ documentId: document.id, name: "Não autorizado.txt", modality: "ambos", expiresAt: "" })).resolves.toMatchObject({ ok: false });
+      await expect(lifecycleRow(document.id)).resolves.toMatchObject({ name: document.name, modality: "novo", expiresAt: null });
+      sessionRoles = ["administrador"];
+    });
+
+    it("corretor não exclui e não cria tombstone", async () => {
+      const document = await createLifecycleDocument("Corretor exclui");
+      sessionRoles = ["corretor"];
+      await expect(deleteDocumentAction({ documentId: document.id })).resolves.toMatchObject({ ok: false });
+      expect((await lifecycleRow(document.id)).deletedAt).toBeNull();
+      sessionRoles = ["administrador"];
+    });
+
+    it("exclusão limpa texto e erros no tombstone", async () => {
+      const document = await createLifecycleDocument("Tombstone limpa");
+      await db.update(documents).set({ status: "falha", extractedText: "segredo", extractedBytes: 7, extractorVersion: "v1", failureCode: "erro", failureMessage: "interno" }).where(eq(documents.id, document.id));
+
+      await expect(deleteDocumentAction({ documentId: document.id })).resolves.toEqual({ ok: true });
+      await expect(lifecycleRow(document.id)).resolves.toMatchObject({ deletedAt: expect.any(Date), extractedText: null, extractedBytes: null, extractorVersion: null, failureCode: null, failureMessage: null });
+    });
+
+    it("tombstone desaparece imediatamente das leituras normais", async () => {
+      const document = await createLifecycleDocument("Tombstone invisível");
+      await deleteDocumentAction({ documentId: document.id });
+      expect(await getDocuments(activeTenantId, { search: document.name })).toHaveLength(0);
+    });
+
+    it("duas exclusões concorrentes são idempotentes", async () => {
+      const document = await createLifecycleDocument("Exclusão concorrente");
+      await expect(Promise.all([deleteDocumentAction({ documentId: document.id }), deleteDocumentAction({ documentId: document.id })])).resolves.toEqual([{ ok: true }, { ok: true }]);
+      expect((await lifecycleRow(document.id)).deletedAt).toEqual(expect.any(Date));
+    });
+
+    it("retry de falha cria tentativa processando e conserva o original", async () => {
+      const document = await createLifecycleDocument("Retry falha");
+      await db.update(documents).set({ status: "falha", failureCode: "nenhum_texto_extraivel", storageKey: `tenant/${activeTenantId}/retry-${randomUUID()}` }).where(eq(documents.id, document.id));
+      await expect(retryDocumentAction({ documentId: document.id })).resolves.toEqual({ ok: true });
+      await expect(lifecycleRow(document.id)).resolves.toMatchObject({ status: "processando", processingAttempt: 2, failureCode: null, storageKey: expect.stringContaining("retry-") });
+    });
+
+    it("retries concorrentes compartilham o mesmo attempt lógico", async () => {
+      const document = await createLifecycleDocument("Retry concorrente");
+      await db.update(documents).set({ status: "falha" }).where(eq(documents.id, document.id));
+      await expect(Promise.all([retryDocumentAction({ documentId: document.id }), retryDocumentAction({ documentId: document.id })])).resolves.toEqual([{ ok: true }, { ok: true }]);
+      await expect(lifecycleRow(document.id)).resolves.toMatchObject({ status: "processando", processingAttempt: 2 });
+    });
+
+    it("retry de documento pronto é recusado sem criar attempt", async () => {
+      const document = await createLifecycleDocument("Retry pronto");
+      await db.update(documents).set({ status: "pronto", extractedText: "conteúdo" }).where(eq(documents.id, document.id));
+      await expect(retryDocumentAction({ documentId: document.id })).resolves.toMatchObject({ ok: false });
+      await expect(lifecycleRow(document.id)).resolves.toMatchObject({ status: "pronto", processingAttempt: 1, extractedText: "conteúdo" });
+    });
+
+    it("corretor não reprocessa uma falha", async () => {
+      const document = await createLifecycleDocument("Corretor retry");
+      await db.update(documents).set({ status: "falha" }).where(eq(documents.id, document.id));
+      sessionRoles = ["corretor"];
+      await expect(retryDocumentAction({ documentId: document.id })).resolves.toMatchObject({ ok: false });
+      await expect(lifecycleRow(document.id)).resolves.toMatchObject({ status: "falha", processingAttempt: 1 });
+      sessionRoles = ["administrador"];
+    });
+
+    it("IDs de outro tenant recebem o mesmo não-encontrado e não sofrem mutação", async () => {
+      const foreign = await createDocument(otherTenantId, { name: `Estrangeiro ${randomUUID()}.txt`, mimeType: "text/plain", sizeBytes: 2, modality: "novo" });
+      await expect(deleteDocumentAction({ documentId: foreign.id })).resolves.toEqual({ ok: false, error: "Documento não encontrado." });
+      expect((await lifecycleRow(foreign.id)).deletedAt).toBeNull();
+    });
+
+    it("um tombstone não pode ser reeditado", async () => {
+      const document = await createLifecycleDocument("Tombstone bloqueia edição");
+      await deleteDocumentAction({ documentId: document.id });
+      await expect(updateDocumentAction({ documentId: document.id, name: "Não muda.txt", modality: "ambos" })).resolves.toEqual({ ok: false, error: "Documento não encontrado." });
+      expect((await lifecycleRow(document.id)).name).toBe(document.name);
     });
   });
 

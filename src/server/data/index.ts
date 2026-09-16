@@ -557,6 +557,7 @@ export async function getDocuments(
     .where(
       and(
         eq(documents.tenantId, tenantId),
+        isNull(documents.deletedAt),
         filters?.modality ? eq(documents.modality, filters.modality) : undefined,
         filters?.categoryId
           ? eq(documents.categoryId, filters.categoryId)
@@ -592,14 +593,14 @@ export async function getDocumentSample(
   const recent = await db
     .select()
     .from(documents)
-    .where(eq(documents.tenantId, tenantId))
+    .where(and(eq(documents.tenantId, tenantId), isNull(documents.deletedAt)))
     .orderBy(desc(documents.uploadedAt))
     .limit(5);
 
   const counts = await db
     .select({ modality: documents.modality, count: count() })
     .from(documents)
-    .where(eq(documents.tenantId, tenantId))
+    .where(and(eq(documents.tenantId, tenantId), isNull(documents.deletedAt)))
     .groupBy(documents.modality);
 
   const countsByModality = ALL_MODALITIES.reduce(
@@ -1920,6 +1921,8 @@ export interface UpdateDocumentInput {
   name: string;
   modality: Modality;
   categoryId?: string | null;
+  /** Undefined preserves validity; null is the explicit "sem validade". */
+  expiresAt?: Date | null;
 }
 
 /**
@@ -1939,11 +1942,14 @@ export async function updateDocument(
   if ("categoryId" in updates) {
     setValues.categoryId = updates.categoryId ?? null;
   }
+  if ("expiresAt" in updates) {
+    setValues.expiresAt = updates.expiresAt ?? null;
+  }
 
   const rows = await db
     .update(documents)
     .set(setValues)
-    .where(and(eq(documents.tenantId, tenantId), eq(documents.id, documentId)))
+    .where(and(eq(documents.tenantId, tenantId), eq(documents.id, documentId), isNull(documents.deletedAt)))
     .returning();
   return rows[0] ?? null;
 }
