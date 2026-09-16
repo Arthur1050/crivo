@@ -280,10 +280,10 @@
 ## Handoff
 
 - **Feature**: Lote 12 — `.specs/features/lote-12-conteudo-de-documentos/`.
-- **Phase / Task**: Execute / Phase 2 concluída (T7–T12).
-- **Completed**: especificação, contexto, design, AD-030 e plano de 37 tarefas aprovados; baseline documental no commit `085221b`; regressão preexistente de `updatedAt` corrigida no commit `d5e8cdb`; dependências e Workflow configurados nos commits `5b6dc5c` e `94d8d6f`; persistência documental e seed compatível em `8d8269d`; repositório transacional em `b61327f`; contrato de storage independente em `af4fe39`; adapter privado do Blob, intake idempotente, callback privado, decoding seguro, extração nativa e orçamento de contexto nos commits `1f873fe` a `b4283ba`. A auditoria independente encontrou e a correção `7647b13` fechou um bypass de limite DOCX com data descriptor; `d4fe4d8` preservou a compatibilidade do seed com a nova FK. A suíte final em série passou com 99 arquivos e 1.491 testes; build e lint não tiveram erros.
-- **In-progress** (file:line): nenhum código em andamento.
-- **Next step**: iniciar Phase 3 em T13. Ações conectadas a partir de T29 continuam exigindo autorização específica imediatamente antes de cada efeito externo.
-- **Blockers**: nenhum conhecido. O lint final teve cinco warnings preexistentes; o build emitiu warnings de configuração Better Auth (secret/base URL) durante static generation, sem falha. Nenhum teste foi alterado ou suprimido para obter o resultado.
-- **Uncommitted files**: nenhum.
-- **Branch**: `main`; HEAD observado antes deste handoff em `d4fe4d8`; nenhum push/deploy autorizado.
+- **Phase / Task**: Execute / Phase 3, T19 aguardando decisão sobre testes legados.
+- **Completed**: T1–T18. A Phase 3 concluiu serviço de processamento seguro por attempt (`06e6ba5`), workflow durável (`63a36ea`), actions de lifecycle (`4aacbfc`), preview (`09bf62f`), download autenticado (`bc3e541`) e tombstone com remoção física idempotente (`dbd74b9`). Gates Full mais recentes passaram com 104 arquivos e 1.581 testes. O harness Workflow passou 17 testes locais.
+- **In-progress** (file:line): T19 ainda não alterou código. A rotina atual em `src/server/integration/lgpd.ts` faz hard-delete direto; a implementação aprovada exige grupos injetáveis para expiração/tombstones/intents/recusas.
+- **Next step**: após confirmação do usuário, atualizar as expectativas legadas de expiração para o protocolo tombstone e implementar T19 com grupos independentes, depois executar o gate Build.
+- **Blockers**: `src/server/integration/__tests__/lgpd.test.ts:99` exige hard-delete imediato, contradizendo o protocolo aprovado em `design.md:242-249`; a regra de integridade de testes exige confirmação antes de alterar esse teste existente. T19 não requer ação externa.
+- **Uncommitted files**: `.specs/STATE.md` (este handoff).
+- **Branch**: `main`; HEAD observado antes deste handoff em `dbd74b9`; nenhum push/deploy autorizado.
