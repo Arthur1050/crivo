@@ -423,11 +423,11 @@ T35 -> T36 -> T37
 
 **Done when:**
 
-- [ ] Função `use workflow` apenas orquestra IDs; I/O e npm ficam em `use step`.
-- [ ] Input/output durável contém somente IDs, attempt e métricas pequenas.
-- [ ] `FatalError`/`RetryableError` refletem a taxonomia e limitam transientes a três tentativas.
-- [ ] Harness `@workflow/vitest` prova replay, retry, fatal, timeout e CAS stale.
-- [ ] Pelo menos 10 testes unitários/workflow integration passam.
+- [x] Função `use workflow` apenas orquestra IDs; I/O e npm ficam em `use step`.
+- [x] Input/output durável contém somente IDs, attempt e métricas pequenas.
+- [x] `FatalError`/`RetryableError` refletem a taxonomia e limitam transientes a três tentativas.
+- [x] Harness `@workflow/vitest` prova replay, retry, fatal, timeout e CAS stale.
+- [x] Pelo menos 10 testes unitários/workflow integration passam.
 
 **Tests:** workflow integration  
 **Gate:** Full  

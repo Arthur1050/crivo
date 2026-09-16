@@ -12,6 +12,7 @@
 
 # testing
 /coverage
+/.workflow-test/
 
 # next.js
 /.next/

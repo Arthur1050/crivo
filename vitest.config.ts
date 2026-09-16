@@ -11,6 +11,7 @@ export default defineConfig({
     // parallel workers races those writes against each other. Serializing
     // file execution removes the flakiness without touching test code.
     fileParallelism: false,
+    exclude: ["**/node_modules/**", "workflows/**"],
   },
   resolve: {
     alias: {
