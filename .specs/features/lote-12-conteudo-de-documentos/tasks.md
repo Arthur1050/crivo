@@ -310,14 +310,16 @@ T35 -> T36 -> T37
 
 **Done when:**
 
-- [ ] Handler diferencia generate-token e upload-completed sem confiar em `clientPayload` não validado.
-- [ ] Usuário sem permissão não recebe token e nenhum byte é lido/armazenado.
-- [ ] Respostas de erro são seguras e callbacks podem ser repetidos.
-- [ ] Pelo menos 12 testes de rota cobrem auth, payload, tamanho, MIME, callback repetido e compensação.
+- [x] Handler diferencia generate-token e upload-completed sem confiar em `clientPayload` não validado.
+- [x] Usuário sem permissão não recebe token e nenhum byte é lido/armazenado.
+- [x] Respostas de erro são seguras e callbacks podem ser repetidos.
+- [x] Pelo menos 12 testes de rota cobrem auth, payload, tamanho, MIME, callback repetido e compensação.
 
 **Tests:** integration/e2e  
 **Gate:** Full  
 **Commit:** `feat(documents): add private client upload handler`
+
+**Evidence (2026-09-16):** o Route Handler reserva e autoriza metadados somente pela intake T8, substitui o pathname fornecido pelo navegador pela chave UUID opaca e pede ao `handleUpload` um token privado que restringe MIME, tamanho, validade, sobrescrita e callback. O callback só usa o `intentId` incluído no payload assinado e deixa a releitura/compensação ao T8. Quatorze testes de rota cobrem payload, autorização, limites, repetição e compensação; `npm test` passou com 96 arquivos e 1.436 testes.
 
 #### T10: Implementar decodificação e normalização segura
 

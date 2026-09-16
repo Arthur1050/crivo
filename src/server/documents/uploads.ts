@@ -17,7 +17,6 @@ import {
   createUploadIntent,
   failUploadIntent,
   findUploadIntentById,
-  type CreateUploadIntentInput,
 } from "./repository";
 import {
   createDocumentStorageKey,
@@ -48,6 +47,19 @@ export type BeginDocumentUploadResult =
   | { kind: "duplicate_upload" }
   | { kind: "invalid"; code: "upload_input_invalid" }
   | { kind: "storage_failure" };
+
+/** A validated, tenant-scoped upload reservation. It deliberately has no URL. */
+export type ReserveDocumentUploadResult =
+  | {
+      kind: "reserved";
+      intentId: string;
+      storageKey: string;
+      contentType: string;
+      contentLength: number;
+      expiresAt: Date;
+    }
+  | { kind: "duplicate_upload" }
+  | { kind: "invalid"; code: "upload_input_invalid" };
 
 export type FinalizeDocumentUploadResult =
   | { kind: "committed"; documentId: string }
@@ -177,10 +189,10 @@ export function createDocumentUploadIntake(
   const now = dependencies.now ?? (() => new Date());
 
   return {
-    async begin(
+    async reserve(
       input: CreateDocumentUploadInput,
       suppliedActor?: AuthContext
-    ): Promise<BeginDocumentUploadResult> {
+    ): Promise<ReserveDocumentUploadResult> {
       const actor = suppliedActor ?? (await verifySession());
       authorizeOrThrow(actor, "documentos", "escrever");
       const startedAt = now();
@@ -189,36 +201,52 @@ export function createDocumentUploadIntake(
       }
 
       const intentId = randomUUID();
-      const intentInput: CreateUploadIntentInput = {
-        id: intentId,
-        requestedByUserId: actor.user.id,
-        clientSha256: input.clientSha256,
-        name: input.name.trim(),
-        mimeType: input.mimeType,
-        sizeBytes: input.sizeBytes,
-        modality: input.modality,
-        categoryId: input.categoryId ?? null,
-        expiresAt: input.expiresAt ?? null,
-        storageKey: createDocumentStorageKey(actor.tenantId, intentId),
-        expiresAtIntent: new Date(startedAt.getTime() + UPLOAD_INTENT_TTL_MS),
-      };
       const created = await repository.createUploadIntent(
         actor.tenantId,
-        intentInput,
+        {
+          id: intentId,
+          requestedByUserId: actor.user.id,
+          clientSha256: input.clientSha256,
+          name: input.name.trim(),
+          mimeType: input.mimeType,
+          sizeBytes: input.sizeBytes,
+          modality: input.modality,
+          categoryId: input.categoryId ?? null,
+          expiresAt: input.expiresAt ?? null,
+          storageKey: createDocumentStorageKey(actor.tenantId, intentId),
+          expiresAtIntent: new Date(startedAt.getTime() + UPLOAD_INTENT_TTL_MS),
+        },
         startedAt
       );
       if (created.kind === "active_duplicate") return { kind: "duplicate_upload" };
+      return {
+        kind: "reserved",
+        intentId: created.intent.id,
+        storageKey: created.intent.storageKey,
+        contentType: created.intent.mimeType,
+        contentLength: Number(created.intent.sizeBytes),
+        expiresAt: created.intent.expiresAtIntent,
+      };
+    },
+
+    async begin(
+      input: CreateDocumentUploadInput,
+      suppliedActor?: AuthContext
+    ): Promise<BeginDocumentUploadResult> {
+      const reserved = await this.reserve(input, suppliedActor);
+      if (reserved.kind !== "reserved") return reserved;
 
       try {
         const grant = await storage.authorizeClientUpload({
-          key: created.intent.storageKey,
-          contentType: created.intent.mimeType,
-          contentLength: Number(created.intent.sizeBytes),
-          expiresAt: created.intent.expiresAtIntent,
+          key: reserved.storageKey,
+          contentType: reserved.contentType,
+          contentLength: reserved.contentLength,
+          expiresAt: reserved.expiresAt,
         });
-        return { kind: "ready", intentId: created.intent.id, grant };
+        return { kind: "ready", intentId: reserved.intentId, grant };
       } catch {
-        await repository.failUploadIntent(actor.tenantId, created.intent.id);
+        const intent = await repository.findUploadIntentById(reserved.intentId);
+        if (intent) await repository.failUploadIntent(intent.tenantId, intent.id);
         return { kind: "storage_failure" };
       }
     },
