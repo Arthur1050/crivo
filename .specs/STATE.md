@@ -280,10 +280,10 @@
 ## Handoff
 
 - **Feature**: Lote 12 — `.specs/features/lote-12-conteudo-de-documentos/`.
-- **Phase / Task**: Execute / Batch 1 concluído (T1–T6).
-- **Completed**: especificação, contexto, design, AD-030 e plano de 37 tarefas aprovados; baseline documental no commit `085221b`; regressão preexistente de `updatedAt` corrigida no commit `d5e8cdb`; dependências e Workflow configurados nos commits `5b6dc5c` e `94d8d6f`; persistência documental e seed compatível em `8d8269d`; repositório transacional em `b61327f`; contrato de storage independente em `af4fe39`. Após autorização explícita, somente o branch Neon de teste recebeu o schema T3 (conexão direta) e o descarte prévio de linhas metadata-only. A suíte completa passou com 92 arquivos e 1.373 testes; build e lint não tiveram erros.
+- **Phase / Task**: Execute / Phase 2 concluída (T7–T12).
+- **Completed**: especificação, contexto, design, AD-030 e plano de 37 tarefas aprovados; baseline documental no commit `085221b`; regressão preexistente de `updatedAt` corrigida no commit `d5e8cdb`; dependências e Workflow configurados nos commits `5b6dc5c` e `94d8d6f`; persistência documental e seed compatível em `8d8269d`; repositório transacional em `b61327f`; contrato de storage independente em `af4fe39`; adapter privado do Blob, intake idempotente, callback privado, decoding seguro, extração nativa e orçamento de contexto nos commits `1f873fe` a `b4283ba`. A auditoria independente encontrou e a correção `7647b13` fechou um bypass de limite DOCX com data descriptor; `d4fe4d8` preservou a compatibilidade do seed com a nova FK. A suíte final em série passou com 99 arquivos e 1.491 testes; build e lint não tiveram erros.
 - **In-progress** (file:line): nenhum código em andamento.
-- **Next step**: iniciar T7 — adapter privado do Vercel Blob — somente quando o próximo batch for autorizado; ações conectadas a partir de T29 continuam exigindo autorização específica imediatamente antes de cada efeito externo.
-- **Blockers**: nenhum conhecido. Os avisos de SSL da biblioteca Postgres, de configuração Better Auth em build e dois avisos de regra ESLint em rotas internas geradas pelo Workflow não causaram falha. Nenhum teste foi alterado ou suprimido para obter o resultado.
+- **Next step**: iniciar Phase 3 em T13. Ações conectadas a partir de T29 continuam exigindo autorização específica imediatamente antes de cada efeito externo.
+- **Blockers**: nenhum conhecido. O lint final teve cinco warnings preexistentes; o build emitiu warnings de configuração Better Auth (secret/base URL) durante static generation, sem falha. Nenhum teste foi alterado ou suprimido para obter o resultado.
 - **Uncommitted files**: nenhum.
-- **Branch**: `main`; HEAD observado antes deste handoff em `e790a0a`; nenhum push/deploy autorizado.
+- **Branch**: `main`; HEAD observado antes deste handoff em `d4fe4d8`; nenhum push/deploy autorizado.
