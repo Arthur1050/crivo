@@ -42,20 +42,30 @@ const defaultPdf: PdfDependencies = {
 const defaultDocx: DocxDependencies = { extract: (buffer) => mammoth.extractRawText({ buffer }) };
 
 function zipLimits(bytes: Uint8Array) {
-  let offset = 0;
-  let entries = 0;
-  let uncompressed = 0;
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-  while (offset + 30 <= bytes.byteLength && view.getUint32(offset, true) === 0x04034b50) {
-    entries += 1;
-    uncompressed += view.getUint32(offset + 22, true);
-    const compressed = view.getUint32(offset + 18, true);
-    const nameLength = view.getUint16(offset + 26, true);
-    const extraLength = view.getUint16(offset + 28, true);
-    offset += 30 + nameLength + extraLength + compressed;
-    if (entries > MAX_DOCX_ENTRIES || uncompressed > MAX_DOCX_UNCOMPRESSED_BYTES) return false;
+  let eocd = -1;
+  for (let offset = bytes.byteLength - 22; offset >= Math.max(0, bytes.byteLength - 65_557); offset -= 1) {
+    if (view.getUint32(offset, true) === 0x06054b50) {
+      eocd = offset;
+      break;
+    }
   }
-  return entries > 0 && offset <= bytes.byteLength;
+  if (eocd < 0 || eocd + 22 > bytes.byteLength) return false;
+  const entries = view.getUint16(eocd + 10, true);
+  const directorySize = view.getUint32(eocd + 12, true);
+  let offset = view.getUint32(eocd + 16, true);
+  if (!entries || entries > MAX_DOCX_ENTRIES || offset + directorySize > eocd) return false;
+  let uncompressed = 0;
+  for (let index = 0; index < entries; index += 1) {
+    if (offset + 46 > bytes.byteLength || view.getUint32(offset, true) !== 0x02014b50) return false;
+    uncompressed += view.getUint32(offset + 24, true);
+    const nameLength = view.getUint16(offset + 28, true);
+    const extraLength = view.getUint16(offset + 30, true);
+    const commentLength = view.getUint16(offset + 32, true);
+    offset += 46 + nameLength + extraLength + commentLength;
+    if (uncompressed > MAX_DOCX_UNCOMPRESSED_BYTES) return false;
+  }
+  return offset === view.getUint32(eocd + 16, true) + directorySize;
 }
 
 function resultFromText(value: string): ExtractionResult {
