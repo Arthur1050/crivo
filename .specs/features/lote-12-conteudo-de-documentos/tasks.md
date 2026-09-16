@@ -172,15 +172,17 @@ T35 -> T36 -> T37
 
 **Done when:**
 
-- [ ] `document_upload_intents`, `tenant_document_context_limits` e os campos aprovados de `documents` existem com tipos/defaults corretos.
-- [ ] Unicidade parcial de hash por tenant, índices de contexto/listagem/manutenção e relações preservam isolamento.
-- [ ] Schema não armazena URL pública nem credencial do Blob.
-- [ ] `drizzle-kit push --config drizzle-test.config.ts` converge no banco descartável após autorização local do gate.
-- [ ] Gate Build passa; inspeção do schema de teste confirma colunas e índices.
+- [x] `document_upload_intents`, `tenant_document_context_limits` e os campos aprovados de `documents` existem com tipos/defaults corretos.
+- [x] Unicidade parcial de hash por tenant, índices de contexto/listagem/manutenção e relações preservam isolamento.
+- [x] Schema não armazena URL pública nem credencial do Blob.
+- [x] `drizzle-kit push --config drizzle-test.config.ts` converge no banco descartável após autorização local do gate.
+- [x] Gate Build passa; inspeção do schema de teste confirma colunas e índices.
 
 **Tests:** build-only + schema inspection  
 **Gate:** Build  
 **Commit:** `feat(documents): extend document persistence schema`
+
+**Evidence (2026-09-16):** Após confirmação explícita de que o endpoint Neon de teste era descartável, foram removidas somente as linhas `documents` metadata-only desse branch antes da introdução dos campos obrigatórios. O push usou a conexão direta do branch de teste (não o pooler) e convergiu. A inspeção posterior confirmou as três tabelas, enums, defaults, FKs, índices tenant-scoped e índices parciais; nenhuma URL pública ou credencial foi persistida. `npm run lint` teve 0 erros (5 avisos, incluindo 2 gerados pelo Workflow) e `npm run build` passou. A remoção do seed metadata-only e a compatibilidade temporária para rotas legadas foram incluídas nesta unidade porque o schema obrigatório torna o estado intermediário inválido para build/teste.
 
 #### T4: Criar repositório transacional de documentos
 
@@ -214,14 +216,16 @@ T35 -> T36 -> T37
 
 **Done when:**
 
-- [ ] Seed continua criando categorias úteis, mas zero documento sem Blob/texto.
-- [ ] Antes/depois de entidades não relacionadas é afirmado explicitamente conforme L-001.
-- [ ] Testes provam zero documento fictício, categorias preservadas e tenants isolados.
-- [ ] Pelo menos 3 asserções de integração novas passam; nenhum dado fora do banco de teste é alterado.
+- [x] Seed continua criando categorias úteis, mas zero documento sem Blob/texto.
+- [x] Antes/depois de entidades não relacionadas é afirmado explicitamente conforme L-001.
+- [x] Testes provam zero documento fictício, categorias preservadas e tenants isolados.
+- [x] Pelo menos 3 asserções de integração novas passam; nenhum dado fora do banco de teste é alterado.
 
 **Tests:** integration  
 **Gate:** Full  
 **Commit:** `test(seed): remove synthetic document rows`
+
+**Evidence (2026-09-16):** O seed preserva tenants, categorias, usuários, permissões, API keys, leads e demais fixtures, mas não cria mais documentos metadata-only. O teste de seed afirma explicitamente coleção documental vazia e preservação de categorias; as fixtures de integração agora criam documentos completos isolados por tenant quando precisam exercitar a leitura. A suíte completa passou: 92 arquivos e 1.373 testes. Esta alteração acompanhou o commit do schema T3, pois deixar o seed antigo contra as novas colunas obrigatórias quebraria o build e a regressão entre commits.
 
 #### T6: Definir contrato independente de storage
 

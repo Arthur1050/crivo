@@ -2,10 +2,14 @@ import { sql } from "drizzle-orm";
 import {
   bigint,
   boolean,
+  char,
+  check,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -82,6 +86,18 @@ export const categoryColorEnum = pgEnum("category_color", [
   "pink",
   "gray",
 ]);
+
+export const documentStatusEnum = pgEnum("document_status", [
+  "processando",
+  "pronto",
+  "falha",
+  "fora_do_agente",
+]);
+
+export const documentUploadIntentStateEnum = pgEnum(
+  "document_upload_intent_state",
+  ["pending", "finalizing", "committed", "failed"]
+);
 
 // Tables
 
@@ -296,24 +312,137 @@ export const documentCategories = pgTable(
   ]
 );
 
-export const documents = pgTable("documents", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  tenantId: uuid("tenant_id")
-    .notNull()
-    .references(() => tenants.id),
-  name: text("name").notNull(),
-  modality: modalityEnum("modality").notNull(),
-  mimeType: text("mime_type").notNull(),
-  sizeBytes: bigint("size_bytes", { mode: "bigint" }).notNull(),
-  categoryId: uuid("category_id").references(() => documentCategories.id, {
-    onDelete: "set null",
-  }),
-  uploadedAt: timestamp("uploaded_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  // Reserva de TTL (LGPD) — enforcement é Fase 7 (design.md)
-  expiresAt: timestamp("expires_at", { withTimezone: true }),
-});
+export const documents = pgTable(
+  "documents",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
+    name: text("name").notNull(),
+    modality: modalityEnum("modality").notNull(),
+    mimeType: text("mime_type").notNull(),
+    sizeBytes: bigint("size_bytes", { mode: "bigint" }).notNull(),
+    categoryId: uuid("category_id").references(() => documentCategories.id, {
+      onDelete: "set null",
+    }),
+    uploadedAt: timestamp("uploaded_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    // Reserva de TTL (LGPD) — enforcement é Fase 7 (design.md)
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    storageProvider: text("storage_provider").notNull(),
+    storageKey: text("storage_key").notNull(),
+    storageEtag: text("storage_etag").notNull(),
+    contentSha256: char("content_sha256", { length: 64 }).notNull(),
+    status: documentStatusEnum("status").notNull(),
+    extractedText: text("extracted_text"),
+    extractedBytes: integer("extracted_bytes"),
+    extractorVersion: text("extractor_version"),
+    failureCode: text("failure_code"),
+    failureMessage: text("failure_message"),
+    processingAttempt: integer("processing_attempt").notNull().default(1),
+    workflowRunId: text("workflow_run_id"),
+    processingStartedAt: timestamp("processing_started_at", {
+      withTimezone: true,
+    }),
+    processedAt: timestamp("processed_at", { withTimezone: true }),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    deletionAttempts: integer("deletion_attempts").notNull().default(0),
+    deletionLastErrorCode: text("deletion_last_error_code"),
+  },
+  (table) => [
+    uniqueIndex("documents_storage_key_idx").on(table.storageKey),
+    uniqueIndex("documents_tenant_content_sha256_active_idx")
+      .on(table.tenantId, table.contentSha256)
+      .where(sql`${table.deletedAt} is null`),
+    index("documents_tenant_deleted_uploaded_idx").on(
+      table.tenantId,
+      table.deletedAt,
+      table.uploadedAt.desc()
+    ),
+    index("documents_tenant_context_idx").on(
+      table.tenantId,
+      table.status,
+      table.modality,
+      table.expiresAt,
+      table.uploadedAt
+    ),
+    index("documents_maintenance_idx").on(table.expiresAt, table.deletedAt),
+  ]
+);
+
+export const documentUploadIntents = pgTable(
+  "document_upload_intents",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
+    requestedByUserId: uuid("requested_by_user_id")
+      .notNull()
+      .references(() => users.id),
+    clientSha256: char("client_sha256", { length: 64 }).notNull(),
+    name: text("name").notNull(),
+    mimeType: text("mime_type").notNull(),
+    sizeBytes: bigint("size_bytes", { mode: "bigint" }).notNull(),
+    modality: modalityEnum("modality").notNull(),
+    categoryId: uuid("category_id").references(() => documentCategories.id, {
+      onDelete: "set null",
+    }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    storageKey: text("storage_key").notNull(),
+    storageEtag: text("storage_etag"),
+    state: documentUploadIntentStateEnum("state").notNull().default("pending"),
+    documentId: uuid("document_id").references(() => documents.id),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    expiresAtIntent: timestamp("expires_at_intent", { withTimezone: true })
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("document_upload_intents_storage_key_idx").on(table.storageKey),
+    uniqueIndex("document_upload_intents_tenant_hash_active_idx")
+      .on(table.tenantId, table.clientSha256)
+      .where(sql`${table.state} in ('pending', 'finalizing')`),
+    index("document_upload_intents_tenant_expiry_idx").on(
+      table.tenantId,
+      table.expiresAtIntent
+    ),
+  ]
+);
+
+export const tenantDocumentContextLimits = pgTable(
+  "tenant_document_context_limits",
+  {
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
+    queryModality: modalityEnum("query_modality").notNull(),
+    maxResponseBytes: integer("max_response_bytes").notNull(),
+    modelId: text("model_id").notNull(),
+    workflowVersion: text("workflow_version").notNull(),
+    systemMessageHash: text("system_message_hash").notNull(),
+    toolsHash: text("tools_hash").notNull(),
+    memoryWindow: integer("memory_window").notNull(),
+    benchmarkedAt: timestamp("benchmarked_at", { withTimezone: true }).notNull(),
+    staleAt: timestamp("stale_at", { withTimezone: true }),
+    staleReason: text("stale_reason"),
+    metrics: jsonb("metrics").notNull(),
+  },
+  (table) => [
+    primaryKey({
+      name: "tenant_document_context_limits_tenant_modality_pk",
+      columns: [table.tenantId, table.queryModality],
+    }),
+    check(
+      "tenant_document_context_limits_max_response_bytes_positive",
+      sql`${table.maxResponseBytes} > 0`
+    ),
+    index("tenant_document_context_limits_stale_idx").on(table.staleAt),
+  ]
+);
 
 // Contrato de integração (lote-5 — INT-01): 1+ chave por tenant, valor em
 // claro nunca persistido (só o hash sha256 — design.md, Tech Decisions).

@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { createHash } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { and, eq, inArray, isNull, lte, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "../index";
 import {
   conversations,
@@ -139,7 +139,7 @@ describe("db/seed", () => {
     }
   });
 
-  it("os dois tenants-piloto mantêm corretores, categorias, documentos e chave de API (lote-7 — REAL-01 AC2)", async () => {
+  it("os dois tenants-piloto mantêm corretores, categorias e chave de API sem documentos sintéticos (lote-12)", async () => {
     for (const slug of PILOT_SLUGS) {
       const pilot = await tenantBySlug(slug);
 
@@ -153,10 +153,6 @@ describe("db/seed", () => {
         .select()
         .from(documentCategories)
         .where(eq(documentCategories.tenantId, pilot.id));
-      const pilotDocuments = await db
-        .select()
-        .from(documents)
-        .where(eq(documents.tenantId, pilot.id));
       const pilotApiKeys = await db
         .select()
         .from(tenantApiKeys)
@@ -164,7 +160,7 @@ describe("db/seed", () => {
 
       expect(pilotBrokers.length).toBeGreaterThan(0);
       expect(pilotCategories.length).toBeGreaterThan(0);
-      expect(pilotDocuments.length).toBeGreaterThan(0);
+      expect(await db.select().from(documents).where(eq(documents.tenantId, pilot.id))).toEqual([]);
       expect(pilotApiKeys).toHaveLength(1);
     }
   });
@@ -466,16 +462,6 @@ describe("db/seed", () => {
     }
   });
 
-  it("documentos existem tanto com quanto sem categoria atribuída (lote-2 — DOC-04)", async () => {
-    const allDocuments = await db.select().from(documents);
-    expect(allDocuments.length).toBeGreaterThan(0);
-
-    const withCategory = allDocuments.filter((d) => d.categoryId !== null);
-    const withoutCategory = allDocuments.filter((d) => d.categoryId === null);
-    expect(withCategory.length).toBeGreaterThan(0);
-    expect(withoutCategory.length).toBeGreaterThan(0);
-  });
-
   it("os 3 tenants têm as 5 colunas de identidade preenchidas (redesign — RD-01 AC6)", async () => {
     const allTenants = await db.select().from(tenants);
     expect(allTenants).toHaveLength(3);
@@ -631,21 +617,6 @@ describe("db/seed", () => {
       .update(second.serviceApiKey)
       .digest("hex");
     expect(rows[0].keyHash).toBe(expectedHash);
-  });
-
-  it("cada tenant tem pelo menos 1 documento expirado (expiresAt <= agora) após o seed (lote-5 — T1, LGPD-02 fundação)", async () => {
-    const allTenants = await db.select().from(tenants);
-    expect(allTenants).toHaveLength(3);
-
-    for (const tenant of allTenants) {
-      const expired = await db
-        .select()
-        .from(documents)
-        .where(
-          and(eq(documents.tenantId, tenant.id), lte(documents.expiresAt, new Date()))
-        );
-      expect(expired.length).toBeGreaterThanOrEqual(1);
-    }
   });
 
   // lote-11 — SEEDIM-01: cada imobiliária ganha as 4 combinações de status ×

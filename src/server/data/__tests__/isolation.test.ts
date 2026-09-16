@@ -12,6 +12,7 @@ import {
   users,
 } from "../../../db/schema";
 import {
+  createDocument,
   getBrokers,
   getConversations,
   getConversationSummaries,
@@ -58,6 +59,21 @@ describe("server/data isolation", () => {
     expect(other).toBeDefined();
     tenantAId = demo!.id;
     tenantBId = other!.id;
+
+    await Promise.all([
+      createDocument(tenantAId, {
+        name: "Fixture documento isolamento A.pdf",
+        mimeType: "application/pdf",
+        sizeBytes: 100,
+        modality: "novo",
+      }),
+      createDocument(tenantBId, {
+        name: "Fixture documento isolamento B.pdf",
+        mimeType: "application/pdf",
+        sizeBytes: 100,
+        modality: "usado",
+      }),
+    ]);
 
     fixtureLeadBId = randomUUID();
     await db.insert(leads).values({

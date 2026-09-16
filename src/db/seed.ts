@@ -690,54 +690,6 @@ const CATEGORY_DEFS: CategoryDef[] = [
   { key: "guias", name: "Guias e Manuais", color: "gray" },
 ];
 
-function documentDefsFor(tenantKey: string) {
-  return [
-    {
-      key: "tabela-precos-novo",
-      name: "Tabela de Preços - Empreendimentos Novos.pdf",
-      modality: "novo" as Modality,
-      mimeType: "application/pdf",
-      sizeBytes: BigInt(482311),
-      expiresAt: null as Date | null,
-      categoryKey: "tabelas-precos" as string | null,
-    },
-    {
-      key: "guia-avaliacao-usado",
-      name: "Guia de Avaliação - Imóveis Usados.pdf",
-      modality: "usado" as Modality,
-      mimeType: "application/pdf",
-      sizeBytes: BigInt(210004),
-      expiresAt: null as Date | null,
-      // Sem categoria de propósito — prova que documentos podem existir sem
-      // categoria atribuída (lote-2 — DOC-04).
-      categoryKey: null as string | null,
-    },
-    {
-      key: "contrato-padrao",
-      name: "Modelo de Contrato Padrão.docx",
-      modality: "ambos" as Modality,
-      mimeType:
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      sizeBytes: BigInt(88452),
-      expiresAt: new Date(Date.UTC(2027, 0, 1)),
-      categoryKey: "contratos" as string | null,
-    },
-    {
-      // Documento expirado (lote-5 — LGPD-02): data absoluta e fixa no
-      // passado, sempre expirada em qualquer momento em que o seed rodar —
-      // torna o TTL demonstrável por tenant sem depender do job já ter
-      // rodado (spec.md, LGPD-02 AC2).
-      key: "tabela-precos-expirada",
-      name: "Tabela de Preços 2019 (Descontinuada).pdf",
-      modality: "ambos" as Modality,
-      mimeType: "application/pdf",
-      sizeBytes: BigInt(153200),
-      expiresAt: new Date(Date.UTC(2020, 0, 1)),
-      categoryKey: "tabelas-precos" as string | null,
-    },
-  ].map((d) => ({ ...d, key: `${tenantKey}:${d.key}` }));
-}
-
 /**
  * Gera uma chave de API opaca (64 chars hex, alta entropia) e seu hash
  * sha256 — mesmo algoritmo que `src/server/integration/auth.ts` (T2) usa
@@ -787,7 +739,6 @@ export async function runSeed(): Promise<SeedResult> {
   const leadRows: (typeof leads.$inferInsert)[] = [];
   const conversationRows: (typeof conversations.$inferInsert)[] = [];
   const messageRows: (typeof messages.$inferInsert)[] = [];
-  const documentRows: (typeof documents.$inferInsert)[] = [];
   const apiKeyRows: (typeof tenantApiKeys.$inferInsert)[] = [];
   const propertyRows: (typeof properties.$inferInsert)[] = [];
   const seededApiKeys: SeededApiKey[] = [];
@@ -1015,19 +966,6 @@ export async function runSeed(): Promise<SeedResult> {
       }
     }
 
-    for (const d of documentDefsFor(tenantDef.key)) {
-      const docId = id(`document:${d.key}`);
-      documentRows.push({
-        id: docId,
-        tenantId,
-        name: d.name,
-        modality: d.modality,
-        mimeType: d.mimeType,
-        sizeBytes: d.sizeBytes,
-        categoryId: d.categoryKey ? (categoryIds.get(d.categoryKey) ?? null) : null,
-        expiresAt: d.expiresAt,
-      });
-    }
   }
 
   await db.transaction(async (tx) => {
@@ -1056,9 +994,9 @@ export async function runSeed(): Promise<SeedResult> {
     await tx.delete(tenants);
     await tx.delete(users);
 
-    // Ordem de insert respeita as FKs (pais antes dos filhos).
-    // `document_categories` precisa existir antes de `documents`, que
-    // referencia `category_id`.
+    // Ordem de insert respeita as FKs (pais antes dos filhos). Categorias
+    // continuam fixtures de configuração, mas documentos exigem upload real
+    // e não recebem mais linhas metadata-only no seed (lote-12).
     await tx.insert(tenants).values(tenantRows);
     await tx.insert(users).values(userRows);
     await tx.insert(tenant_members).values(memberRows);
@@ -1068,7 +1006,6 @@ export async function runSeed(): Promise<SeedResult> {
     await tx.insert(leads).values(leadRows);
     await tx.insert(conversations).values(conversationRows);
     await tx.insert(messages).values(messageRows);
-    await tx.insert(documents).values(documentRows);
     await tx.insert(tenantApiKeys).values(apiKeyRows);
     await tx.insert(serviceApiKeys).values({
       label: "Seed — agente n8n",

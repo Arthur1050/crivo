@@ -1,4 +1,5 @@
 import "server-only";
+import { createHash, randomUUID } from "node:crypto";
 import {
   and,
   asc,
@@ -1884,6 +1885,11 @@ export async function createDocument(
   tenantId: string,
   input: CreateDocumentInput
 ): Promise<Document> {
+  // Ponte temporária até o fluxo intent + Blob substituir a criação
+  // metadata-only na UI (lote-12). A linha nasce explicitamente inelegível e
+  // sem texto; não finge que existe um objeto no storage nem pode alcançar o
+  // contexto do agente. O repositório novo concentra o caminho real.
+  const legacyId = randomUUID();
   const rows = await db
     .insert(documents)
     .values({
@@ -1896,6 +1902,15 @@ export async function createDocument(
           : BigInt(Math.trunc(input.sizeBytes)),
       modality: input.modality,
       categoryId: input.categoryId ?? null,
+      storageProvider: "legacy_metadata",
+      storageKey: `legacy-metadata/${legacyId}`,
+      storageEtag: "not-uploaded",
+      contentSha256: createHash("sha256")
+        .update(`${tenantId}:${legacyId}`)
+        .digest("hex"),
+      status: "falha",
+      failureCode: "LEGACY_METADATA_UPLOAD_DISABLED",
+      failureMessage: "O documento precisa ser reenviado pelo fluxo de upload atual.",
     })
     .returning();
   return rows[0];

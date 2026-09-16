@@ -56,6 +56,11 @@ describe("routes: GET /api/v1/context", () => {
         modality: "novo",
         mimeType: "application/pdf",
         sizeBytes: BigInt(1000),
+        storageProvider: "test",
+        storageKey: `test/${tenantAId}/${docNovoAId}`,
+        storageEtag: `test-etag-${docNovoAId}`,
+        contentSha256: `${docNovoAId.replaceAll("-", "")}${docNovoAId.replaceAll("-", "")}`,
+        status: "pronto",
         expiresAt: null,
       },
       {
@@ -65,6 +70,11 @@ describe("routes: GET /api/v1/context", () => {
         modality: "novo",
         mimeType: "application/pdf",
         sizeBytes: BigInt(1000),
+        storageProvider: "test",
+        storageKey: `test/${tenantBId}/${docOfBId}`,
+        storageEtag: `test-etag-${docOfBId}`,
+        contentSha256: `${docOfBId.replaceAll("-", "")}${docOfBId.replaceAll("-", "")}`,
+        status: "pronto",
         expiresAt: null,
       },
     ]);

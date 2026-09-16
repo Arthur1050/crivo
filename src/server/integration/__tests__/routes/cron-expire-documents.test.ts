@@ -54,6 +54,11 @@ describe("routes: /api/cron/expire-documents", () => {
         modality: "novo",
         mimeType: "application/pdf",
         sizeBytes: BigInt(100),
+        storageProvider: "test",
+        storageKey: `test/${tenantId}/${expiredDocId}`,
+        storageEtag: `test-etag-${expiredDocId}`,
+        contentSha256: `${expiredDocId.replaceAll("-", "")}${expiredDocId.replaceAll("-", "")}`,
+        status: "pronto",
         expiresAt: new Date("2020-01-01T00:00:00.000Z"),
       },
       {
@@ -63,6 +68,11 @@ describe("routes: /api/cron/expire-documents", () => {
         modality: "novo",
         mimeType: "application/pdf",
         sizeBytes: BigInt(100),
+        storageProvider: "test",
+        storageKey: `test/${tenantId}/${futureDocId}`,
+        storageEtag: `test-etag-${futureDocId}`,
+        contentSha256: `${futureDocId.replaceAll("-", "")}${futureDocId.replaceAll("-", "")}`,
+        status: "pronto",
         expiresAt: new Date("2099-01-01T00:00:00.000Z"),
       },
     ]);
@@ -121,6 +131,11 @@ describe("routes: /api/cron/expire-documents", () => {
       modality: "usado",
       mimeType: "application/pdf",
       sizeBytes: BigInt(100),
+      storageProvider: "test",
+      storageKey: `test/${tenantId}/${anotherExpiredId}`,
+      storageEtag: `test-etag-${anotherExpiredId}`,
+      contentSha256: `${anotherExpiredId.replaceAll("-", "")}${anotherExpiredId.replaceAll("-", "")}`,
+      status: "pronto",
       expiresAt: new Date("2020-01-01T00:00:00.000Z"),
     });
 
@@ -194,6 +209,11 @@ describe("routes: /api/cron/expire-documents", () => {
       modality: "novo",
       mimeType: "application/pdf",
       sizeBytes: BigInt(100),
+      storageProvider: "test",
+      storageKey: `test/${tenantId}/${willExpireId}`,
+      storageEtag: `test-etag-${willExpireId}`,
+      contentSha256: `${willExpireId.replaceAll("-", "")}${willExpireId.replaceAll("-", "")}`,
+      status: "pronto",
       expiresAt: new Date("2020-01-01T00:00:00.000Z"),
     });
 

@@ -2,6 +2,7 @@ import "dotenv/config";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { db } from "../../../db";
 import {
+  createDocument,
   getDocumentCategories,
   getDocumentSample,
   getDocuments,
@@ -20,6 +21,31 @@ describe("server/data documents", () => {
     const tenants = await getTenants();
     expect(tenants.length).toBeGreaterThanOrEqual(2);
     [tenantAId, tenantBId] = tenants.map((t) => t.id);
+
+    const [category] = await getDocumentCategories(tenantAId);
+    expect(category).toBeDefined();
+    if (!category) throw new Error("Categoria fixture ausente");
+    await Promise.all([
+      createDocument(tenantAId, {
+        name: "Fixture filtro novo.pdf",
+        mimeType: "application/pdf",
+        sizeBytes: 100,
+        modality: "novo",
+        categoryId: category.id,
+      }),
+      createDocument(tenantAId, {
+        name: "Fixture filtro ambos.pdf",
+        mimeType: "application/pdf",
+        sizeBytes: 100,
+        modality: "ambos",
+      }),
+      createDocument(tenantBId, {
+        name: "Fixture filtro tenant B.pdf",
+        mimeType: "application/pdf",
+        sizeBytes: 100,
+        modality: "usado",
+      }),
+    ]);
   });
 
   afterAll(async () => {
