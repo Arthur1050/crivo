@@ -48,3 +48,4 @@ next-env.d.ts
 # backlog deferido) e nao existe em nenhum outro lugar. Ver .specs/features/INDEX.md.
 .claude
 .agents
+/.swc

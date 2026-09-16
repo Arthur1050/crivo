@@ -150,14 +150,16 @@ T35 -> T36 -> T37
 
 **Done when:**
 
-- [ ] Guias relevantes de Next 16 e `node_modules/workflow/docs/getting-started/next.mdx` foram lidos.
-- [ ] O config exportado mantém as opções anteriores e habilita a compilação de `use workflow`/`use step`.
-- [ ] Health/build do Workflow é verificável localmente sem iniciar processamento real.
-- [ ] Gate Build passa sem warning novo do plugin.
+- [x] Guias relevantes de Next 16 e `node_modules/workflow/docs/getting-started/next.mdx` foram lidos.
+- [x] O config exportado mantém as opções anteriores e habilita a compilação de `use workflow`/`use step`.
+- [x] Health/build do Workflow é verificável localmente sem iniciar processamento real.
+- [x] Gate Build passa sem warning novo do plugin.
 
 **Tests:** build-only  
 **Gate:** Build  
 **Commit:** `chore(workflow): enable workflow in next`
+
+**Evidence (2026-09-16):** Local Next 16 configuration and TypeScript guides plus `workflow@4.8.9`'s `getting-started/next.mdx` were read. `next.config.ts` preserves its `NextConfig` object and exports `withWorkflow(nextConfig)`. `npm run build` reported `workflows build complete (3 steps, 0 workflows)` and generated the internal Workflow routes; no workflow was started. The build, lint (0 errors; 3 pre-existing warnings), and full test suite (91 files, 1,357 tests) passed.
 
 #### T3: Modelar persistência documental completa
 
