@@ -280,10 +280,10 @@
 ## Handoff
 
 - **Feature**: Lote 12 — `.specs/features/lote-12-conteudo-de-documentos/`.
-- **Phase / Task**: Execute / pré-T1, baseline documental commitado.
-- **Completed**: especificação, contexto, design, AD-030 e plano de 37 tarefas aprovados; estratégia de seis subagentes sequenciais aprovada; `validate_tasks.py` passou após reconciliar a dependência T28 → T33 no diagrama; baseline documental no commit `085221b`.
+- **Phase / Task**: Execute / pré-T1, baseline de testes bloqueado.
+- **Completed**: especificação, contexto, design, AD-030 e plano de 37 tarefas aprovados; estratégia de seis subagentes sequenciais aprovada; `validate_tasks.py` passou após reconciliar a dependência T28 → T33 no diagrama; baseline documental no commit `085221b`; usuário confirmou que `TEST_DATABASE_URL` é descartável e uma consulta somente-leitura confirmou `neondb_owner`.
 - **In-progress** (file:line): nenhum código em andamento.
-- **Next step**: confirmar que `TEST_DATABASE_URL` em `.env` é um banco descartável; então obter o baseline da suíte e despachar o Batch 1 (T1–T6).
-- **Blockers**: `TEST_DATABASE_URL` aponta para o banco Neon `neondb`, cujo nome não comprova que é descartável; não rodar testes nem `drizzle-kit push` até confirmação explícita. Ações conectadas a partir da T29 continuam exigindo autorização específica imediatamente antes de cada efeito externo.
+- **Next step**: obter orientação sobre a regressão preexistente ou investigar/corrigir essa regressão fora do Lote 12 antes de despachar o Batch 1 (T1–T6).
+- **Blockers**: o baseline completo de `npm test` não concluiu: há pelo menos 91 arquivos e 1.207 testes declarados, a execução serial registrou uma falha preexistente em `src/server/data/__tests__/properties.test.ts` (`avança updatedAt (happy path)`) e parou de progredir; a execução foi encerrada sem alterar o checkout. Nenhuma task pode cumprir o gate Full/Build enquanto essa condição permanecer. Ações conectadas a partir da T29 continuam exigindo autorização específica imediatamente antes de cada efeito externo.
 - **Uncommitted files**: nenhum.
 - **Branch**: `main`; HEAD observado antes deste handoff em `e790a0a`; nenhum push/deploy autorizado.
