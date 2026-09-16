@@ -128,14 +128,16 @@ T35 -> T36 -> T37
 
 **Done when:**
 
-- [ ] `@vercel/blob`, `workflow`, `unpdf`, `mammoth` e dependências técnicas estritamente necessárias estão fixadas em versões compatíveis.
-- [ ] `package-lock.json` reflete somente a instalação aprovada, sem pacote de RAG/OCR.
-- [ ] Auditoria das APIs instaladas é registrada para T2, T7 e T14.
-- [ ] Gate Build passa; total da suíte permanece no mínimo no baseline.
+- [x] `@vercel/blob`, `workflow`, `unpdf`, `mammoth` e dependências técnicas estritamente necessárias estão fixadas em versões compatíveis.
+- [x] `package-lock.json` reflete somente a instalação aprovada, sem pacote de RAG/OCR.
+- [x] Auditoria das APIs instaladas é registrada para T2, T7 e T14.
+- [x] Gate Build passa; total da suíte permanece no mínimo no baseline.
 
 **Tests:** build-only  
 **Gate:** Build  
 **Commit:** `chore(deps): add document processing dependencies`
+
+**Evidence (2026-09-16):** Installed and lockfile-resolved versions are `@vercel/blob@2.8.0`, `workflow@4.8.9`, `unpdf@1.8.1`, `mammoth@1.12.3`, and development harness `@workflow/vitest@4.0.25`. Node `v24.18.0` satisfies the strictest installed engine (`unpdf >=22`); no OCR or RAG dependency was added. API audit: T2 uses `withWorkflow` from `workflow/next`; T7 will use the Blob client-upload helpers plus server `head`, `get`, and `del` behind the storage contract; T14 will use the installed Workflow `start` API and `@workflow/vitest` harness. The versioned Workflow guide remains mandatory before T2/T14.
 
 #### T2: Integrar Workflow ao build do Next
 

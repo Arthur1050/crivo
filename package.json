@@ -16,10 +16,12 @@
   "dependencies": {
     "@astryxdesign/core": "^0.2.0",
     "@astryxdesign/theme-neutral": "^0.2.0",
+    "@vercel/blob": "2.8.0",
     "better-auth": "^1.7.1",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "lucide-react": "^1.28.0",
+    "mammoth": "1.12.3",
     "next": "16.2.11",
     "pg": "^8.22.0",
     "react": "19.2.4",
@@ -27,6 +29,8 @@
     "recharts": "^3.10.1",
     "resend": "^6.22.1",
     "server-only": "^0.0.1",
+    "unpdf": "1.8.1",
+    "workflow": "4.8.9",
     "zustand": "^5.0.14"
   },
   "devDependencies": {
@@ -38,6 +42,7 @@
     "@types/pg": "^8.20.3",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@workflow/vitest": "4.0.25",
     "drizzle-kit": "^0.31.10",
     "eslint": "^9",
     "eslint-config-next": "16.2.11",
