@@ -221,7 +221,7 @@ describe("documents repository (lote-12 T4)", () => {
     const result = await commitUploadIntent(TENANT_A, expired.id, { storageProvider: "vercel_blob", storageEtag: "etag-expiry", contentSha256: hash("expiry"), now: NOW });
     if (result.kind !== "committed") throw new Error("fixture document was not committed");
     await db.update(documents).set({ expiresAt: new Date(NOW.getTime() - 1), extractedText: "expirar" }).where(eq(documents.id, result.document.id));
-    expect(await expireDueDocuments(NOW)).toContain(result.document.id);
+    expect((await expireDueDocuments(NOW)).map((row) => row.id)).toContain(result.document.id);
     const [row] = await db.select().from(documents).where(eq(documents.id, result.document.id));
     expect(row).toMatchObject({ extractedText: null, deletedAt: NOW });
   });

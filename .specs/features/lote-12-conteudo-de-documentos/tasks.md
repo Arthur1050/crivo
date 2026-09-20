@@ -530,15 +530,17 @@ T35 -> T36 -> T37
 
 **Done when:**
 
-- [ ] Boundary `expiresAt <= now` bloqueia e processa exatamente no instante conforme L-023.
-- [ ] Falha de qualquer grupo não impede os outros e aparece no resultado sanitizado.
-- [ ] Intents vencidas e objetos órfãos são compensados; tombstones falhos são retomados.
-- [ ] Testes da rota cron continuam verdes e cobrem falha independente de cada grupo.
-- [ ] Pelo menos 10 testes de integração novos passam.
+- [x] Boundary `expiresAt <= now` bloqueia e processa exatamente no instante conforme L-023.
+- [x] Falha de qualquer grupo não impede os outros e aparece no resultado sanitizado.
+- [x] Intents vencidas e objetos órfãos são compensados; tombstones falhos são retomados.
+- [x] Testes da rota cron continuam verdes e cobrem falha independente de cada grupo.
+- [x] Pelo menos 10 testes de integração novos passam.
 
 **Tests:** integration  
 **Gate:** Full  
 **Commit:** `feat(documents): isolate daily document maintenance`
+
+**Evidence (2026-09-20):** `runDailyMaintenance` roda quatro grupos com `catch` próprio — expiração, retry de tombstones, compensação de intents e purga de recusas — e nenhum propaga exceção. A expiração reusa o lifecycle T18: tombstone primeiro, remoção física só depois de `head` confirmar ausência; falha externa vira pendência retentável em vez de documento acessível. O boundary exato `expiresAt == now` tem asserção dedicada, ao lado de ±1 ms e `null` (L-023). São 19 testes de integração novos em `maintenance.integration.test.ts` mais 2 na rota cron, incluindo prova de que um resultado com os quatro grupos falhando não carrega texto do provedor. As suítes legadas de `lgpd`, cron e repository seguem verdes: mudou só a injeção de `DocumentStorage`, nenhuma asserção.
 
 ### Phase 4: Contrato de contexto e CRM
 

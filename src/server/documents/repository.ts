@@ -565,13 +565,56 @@ export async function hardDeleteTombstonedDocument(tenantId: string, documentId:
   return rows.length === 1;
 }
 
-export async function expireDueDocuments(now = new Date()): Promise<string[]> {
+export interface TenantScopedDocument {
+  id: string;
+  tenantId: string;
+}
+
+/** Tombstones every document already due at `now`; `lte` includes the boundary instant itself. */
+export async function expireDueDocuments(now = new Date()): Promise<TenantScopedDocument[]> {
   const rows = await db
     .update(documents)
     .set({ deletedAt: now, extractedText: null, extractedBytes: null, extractorVersion: null, failureCode: null, failureMessage: null })
     .where(and(isNull(documents.deletedAt), lte(documents.expiresAt, now)))
-    .returning({ id: documents.id });
-  return rows.map((row) => row.id);
+    .returning({ id: documents.id, tenantId: documents.tenantId });
+  return rows;
+}
+
+/**
+ * Tombstones still awaiting physical removal. `excludeIds` keeps the daily
+ * retry group from re-processing what the expiry group just handled.
+ */
+export async function listTombstonedDocuments(excludeIds: string[] = []): Promise<TenantScopedDocument[]> {
+  const rows = await db
+    .select({ id: documents.id, tenantId: documents.tenantId })
+    .from(documents)
+    .where(sql`${documents.deletedAt} is not null`);
+  const skip = new Set(excludeIds);
+  return rows.filter((row) => !skip.has(row.id));
+}
+
+export interface ExpiredUploadIntent extends TenantScopedDocument {
+  storageKey: string;
+}
+
+/**
+ * Fails every upload intent past its own deadline and hands back the storage
+ * keys whose objects were never committed, so the caller can compensate them.
+ */
+export async function expireStaleUploadIntents(now = new Date()): Promise<ExpiredUploadIntent[]> {
+  const rows = await db
+    .update(documentUploadIntents)
+    .set({ state: "failed" })
+    .where(and(
+      lte(documentUploadIntents.expiresAtIntent, now),
+      sql`${documentUploadIntents.state} in ('pending', 'finalizing')`
+    ))
+    .returning({
+      id: documentUploadIntents.id,
+      tenantId: documentUploadIntents.tenantId,
+      storageKey: documentUploadIntents.storageKey,
+    });
+  return rows;
 }
 
 export async function upsertDocumentContextLimit(

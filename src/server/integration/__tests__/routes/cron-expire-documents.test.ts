@@ -17,9 +17,27 @@ vi.mock("../../../data", async (importOriginal) => {
 });
 
 import { purgeIntegrationRefusals } from "../../../data";
-import { GET, POST } from "../../../../../app/api/cron/expire-documents/route";
+import { DocumentStorageError, type DocumentStorage } from "../../../documents/storage";
+import {
+  GET as routeGET,
+  POST as routePOST,
+  createExpireDocumentsHandler,
+} from "../../../../../app/api/cron/expire-documents/route";
 
 const mockedPurge = vi.mocked(purgeIntegrationRefusals);
+
+// O cron real fala com o Vercel Blob, que não existe neste ambiente, e as
+// fixtures usam chaves `test/...` que nenhum provedor conhece. O stub confirma
+// ausência — exatamente o que o protocolo tombstone → delete → head → remoção
+// física exige para concluir a remoção (lote-12 T19).
+const storage: DocumentStorage = {
+  authorizeClientUpload: async () => { throw new Error("upload não faz parte do cron"); },
+  delete: async () => undefined,
+  head: async () => null,
+  open: async () => null,
+};
+const GET = createExpireDocumentsHandler({ storage });
+const POST = createExpireDocumentsHandler({ storage });
 
 // `CRON_SECRET` não precisa existir no .env real deste ambiente — o teste
 // define/restaura seu próprio valor em process.env, já que a rota lê o
@@ -230,5 +248,50 @@ describe("routes: /api/cron/expire-documents", () => {
 
     const rows = await db.select().from(documents).where(eq(documents.id, willExpireId));
     expect(rows).toHaveLength(0);
+  });
+
+  it("falha do grupo de expiração ainda responde 200 e reporta os demais grupos (lote-12 T19)", async () => {
+    const failing = createExpireDocumentsHandler({
+      storage: {
+        ...storage,
+        delete: async () => { throw new DocumentStorageError("transient"); },
+      },
+    });
+    const stuckId = randomUUID();
+    await db.insert(documents).values({
+      id: stuckId,
+      tenantId,
+      name: "Original preso no provedor.pdf",
+      modality: "novo",
+      mimeType: "application/pdf",
+      sizeBytes: BigInt(100),
+      storageProvider: "test",
+      storageKey: `test/${tenantId}/${stuckId}`,
+      storageEtag: `test-etag-${stuckId}`,
+      contentSha256: `${stuckId.replaceAll("-", "")}${stuckId.replaceAll("-", "")}`,
+      status: "pronto",
+      extractedText: "conteúdo sensível",
+      expiresAt: new Date("2020-01-01T00:00:00.000Z"),
+    });
+
+    const response = await failing(makeRequest("POST", testSecret));
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.pendingByTenant[tenantId]).toBeGreaterThanOrEqual(1);
+    expect(body.refusalsPurgeFailed).toBe(false);
+
+    // O documento continua inacessível, sem texto, aguardando novo retry.
+    const [row] = await db.select().from(documents).where(eq(documents.id, stuckId));
+    expect(row).toMatchObject({ extractedText: null, deletionLastErrorCode: "STORAGE_TRANSIENT_FAILURE" });
+    expect(row.deletedAt).not.toBeNull();
+
+    await db.delete(documents).where(eq(documents.id, stuckId));
+  });
+
+  it("a rota exporta GET e POST ligados ao storage real, e ambos exigem o secret", async () => {
+    expect(typeof routeGET).toBe("function");
+    expect(typeof routePOST).toBe("function");
+    expect((await routeGET(makeRequest("GET"))).status).toBe(401);
+    expect((await routePOST(makeRequest("POST", "secret-errado"))).status).toBe(401);
   });
 });

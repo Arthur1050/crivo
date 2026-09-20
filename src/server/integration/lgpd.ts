@@ -1,8 +1,15 @@
 import "server-only";
-import { and, eq, lte, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "../../db";
-import { documents, leads } from "../../db/schema";
+import { leads } from "../../db/schema";
 import { purgeIntegrationRefusals } from "../data";
+import { createDocumentLifecycle } from "../documents/lifecycle";
+import {
+  expireDueDocuments,
+  expireStaleUploadIntents,
+  listTombstonedDocuments,
+} from "../documents/repository";
+import { toDocumentStorageError, type DocumentStorage } from "../documents/storage";
 
 export interface OptOutResult {
   optedOutAt: Date;
@@ -32,56 +39,189 @@ export async function optOutLead(
   return { optedOutAt: row.optedOutAt! };
 }
 
+export interface DocumentMaintenanceDependencies {
+  storage: DocumentStorage;
+}
+
 export interface ExpireDocumentsResult {
+  /** Documentos que completaram registro + texto + original nesta execução. */
   deletedByTenant: Record<string, number>;
   total: number;
+  /** Expirados cujo original resistiu: ficam tombstone, inacessíveis e retentáveis. */
+  pendingByTenant: Record<string, number>;
+  pendingTotal: number;
+  /** Ids tombstonados por esta execução — o grupo de retry não os repete. */
+  expiredIds: string[];
+}
+
+function countByTenant(tenantIds: string[]): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const tenantId of tenantIds) counts[tenantId] = (counts[tenantId] ?? 0) + 1;
+  return counts;
 }
 
 /**
- * Deleta documentos expirados (design.md — LGPD-02): job de plataforma, sem
- * escopo de tenant único por definição — atravessa todos os tenants numa
- * chamada e reporta a contagem de deletados por tenant. `lte(expiresAt, now)`
- * já exclui documentos com `expiresAt IS NULL` por semântica de 3 valores do
- * SQL (`NULL <= x` nunca é verdadeiro), sem precisar de filtro extra.
+ * Expira documentos vencidos (design.md — LGPD-02, DOCLIFE-01 AC4/AC5): job de
+ * plataforma, sem escopo de tenant único por definição. O tombstone bloqueia o
+ * acesso antes de qualquer I/O externo, e a linha só some depois que o storage
+ * confirma a ausência do original — uma falha externa deixa pendência
+ * retentável, nunca um documento acessível. `lte(expiresAt, now)` inclui o
+ * instante do boundary e já exclui `expiresAt IS NULL` pela semântica de 3
+ * valores do SQL (`NULL <= x` nunca é verdadeiro).
  */
-export async function expireDocuments(now: Date): Promise<ExpireDocumentsResult> {
-  const deletedRows = await db
-    .delete(documents)
-    .where(lte(documents.expiresAt, now))
-    .returning({ tenantId: documents.tenantId });
+export async function expireDocuments(
+  now: Date,
+  { storage }: DocumentMaintenanceDependencies
+): Promise<ExpireDocumentsResult> {
+  const expired = await expireDueDocuments(now);
+  const lifecycle = createDocumentLifecycle({ storage, now: () => now });
 
-  const deletedByTenant: Record<string, number> = {};
-  for (const row of deletedRows) {
-    deletedByTenant[row.tenantId] = (deletedByTenant[row.tenantId] ?? 0) + 1;
+  const removed: string[] = [];
+  const pending: string[] = [];
+  for (const document of expired) {
+    const result = await lifecycle.retry({ tenantId: document.tenantId, documentId: document.id });
+    (result.kind === "removed" ? removed : pending).push(document.tenantId);
   }
-  return { deletedByTenant, total: deletedRows.length };
+
+  return {
+    deletedByTenant: countByTenant(removed),
+    total: removed.length,
+    pendingByTenant: countByTenant(pending),
+    pendingTotal: pending.length,
+    expiredIds: expired.map((document) => document.id),
+  };
+}
+
+export interface TombstoneRetryResult {
+  removed: number;
+  stillPending: number;
+}
+
+/**
+ * Retoma tombstones que sobraram de execuções anteriores (DOCLIFE-01 AC5/AC10).
+ * Os ids recém-expirados desta mesma execução são excluídos porque o grupo de
+ * expiração já tentou removê-los.
+ */
+export async function retryPendingTombstones(
+  now: Date,
+  { storage }: DocumentMaintenanceDependencies,
+  excludeIds: string[] = []
+): Promise<TombstoneRetryResult> {
+  const pending = await listTombstonedDocuments(excludeIds);
+  const lifecycle = createDocumentLifecycle({ storage, now: () => now });
+
+  let removed = 0;
+  for (const document of pending) {
+    const result = await lifecycle.retry({ tenantId: document.tenantId, documentId: document.id });
+    if (result.kind === "removed") removed += 1;
+  }
+  return { removed, stillPending: pending.length - removed };
+}
+
+export interface UploadIntentCleanupResult {
+  intentsExpired: number;
+  objectsRemoved: number;
+}
+
+/**
+ * Compensa intenções de upload vencidas (DOCBIN-01): a intenção vira `failed` e
+ * o objeto órfão sai do storage. Um objeto que nunca chegou a existir já conta
+ * como compensado — `delete` do contrato é idempotente.
+ */
+export async function cleanupExpiredUploadIntents(
+  now: Date,
+  { storage }: DocumentMaintenanceDependencies
+): Promise<UploadIntentCleanupResult> {
+  const expired = await expireStaleUploadIntents(now);
+
+  let objectsRemoved = 0;
+  for (const intent of expired) {
+    try {
+      await storage.delete(intent.storageKey);
+      objectsRemoved += 1;
+    } catch (error) {
+      // Objeto ausente já é compensação concluída; o resto fica para o próximo dia.
+      if (toDocumentStorageError(error).kind === "absent") objectsRemoved += 1;
+    }
+  }
+  return { intentsExpired: expired.length, objectsRemoved };
 }
 
 export interface DailyMaintenanceResult extends ExpireDocumentsResult {
+  /** `true` quando o grupo de expiração falhou por inteiro; os demais rodaram. */
+  expiryFailed: boolean;
+  /** Tombstones de execuções anteriores concluídos agora (DOCLIFE-01 AC10). */
+  tombstonesRemoved: number;
+  tombstonesStillPending: number;
+  tombstoneRetryFailed: boolean;
+  /** Intenções de upload vencidas e objetos órfãos compensados (DOCBIN-01). */
+  intentsExpired: number;
+  intentObjectsRemoved: number;
+  intentCleanupFailed: boolean;
   /** Recusas de integração com mais de 30 dias removidas nesta execução
    * (lote-9 — SAUDE-03 AC1). Zero quando nenhuma venceu, nunca erro. */
   refusalsDeleted: number;
   /** `true` quando a purga de recusas falhou nesta execução (SAUDE-03 AC3):
-   * a falha é só REPORTADA aqui — nunca impede a expiração de documentos,
-   * que já rodou (e é reportada) antes da purga ser tentada. */
+   * a falha é só REPORTADA aqui — nunca impede a expiração de documentos. */
   refusalsPurgeFailed: boolean;
 }
 
-/**
- * Rotina diária de manutenção (lote-9 — SAUDE-03): a mesma execução agendada
- * que já expirava documentos (LGPD-02) passa a também purgar recusas de
- * integração vencidas, sem introduzir um novo agendamento (AC2). A ordem
- * importa: `expireDocuments` roda primeiro e seu resultado nunca é afetado
- * pelo que acontece com a purga — uma falha na purga (`catch` abaixo) é só
- * reportada em `refusalsPurgeFailed`, nunca propagada (AC3).
- */
-export async function runDailyMaintenance(now: Date): Promise<DailyMaintenanceResult> {
-  const documentsResult = await expireDocuments(now);
+const emptyExpiry: ExpireDocumentsResult = {
+  deletedByTenant: {},
+  total: 0,
+  pendingByTenant: {},
+  pendingTotal: 0,
+  expiredIds: [],
+};
 
+async function runGroup<T>(fallback: T, group: () => Promise<T>): Promise<[T, boolean]> {
   try {
-    const { deleted } = await purgeIntegrationRefusals(now);
-    return { ...documentsResult, refusalsDeleted: deleted, refusalsPurgeFailed: false };
+    return [await group(), false];
   } catch {
-    return { ...documentsResult, refusalsDeleted: 0, refusalsPurgeFailed: true };
+    // Nenhum detalhe do provedor cruza esta fronteira: o resultado só reporta
+    // que o grupo falhou, e os outros grupos seguem rodando (DOCLIFE-01 AC10).
+    return [fallback, true];
   }
+}
+
+/**
+ * Rotina diária de manutenção (lote-9 — SAUDE-03; lote-12 — DOCLIFE-01). Quatro
+ * grupos independentes rodam em sequência, cada um com resultado e `catch`
+ * próprios: expiração, retry de tombstones, compensação de intenções vencidas e
+ * purga de recusas. Uma falha de storage não impede a purga de recusas, e uma
+ * falha da purga não impede a expiração (AC3). Nenhum grupo propaga exceção.
+ */
+export async function runDailyMaintenance(
+  now: Date,
+  dependencies: DocumentMaintenanceDependencies
+): Promise<DailyMaintenanceResult> {
+  const [expiry, expiryFailed] = await runGroup(emptyExpiry, () => expireDocuments(now, dependencies));
+
+  const [tombstones, tombstoneRetryFailed] = await runGroup(
+    { removed: 0, stillPending: 0 },
+    () => retryPendingTombstones(now, dependencies, expiry.expiredIds)
+  );
+
+  const [intents, intentCleanupFailed] = await runGroup(
+    { intentsExpired: 0, objectsRemoved: 0 },
+    () => cleanupExpiredUploadIntents(now, dependencies)
+  );
+
+  const [refusals, refusalsPurgeFailed] = await runGroup(
+    { deleted: 0 },
+    () => purgeIntegrationRefusals(now)
+  );
+
+  return {
+    ...expiry,
+    expiryFailed,
+    tombstonesRemoved: tombstones.removed,
+    tombstonesStillPending: tombstones.stillPending,
+    tombstoneRetryFailed,
+    intentsExpired: intents.intentsExpired,
+    intentObjectsRemoved: intents.objectsRemoved,
+    intentCleanupFailed,
+    refusalsDeleted: refusals.deleted,
+    refusalsPurgeFailed,
+  };
 }

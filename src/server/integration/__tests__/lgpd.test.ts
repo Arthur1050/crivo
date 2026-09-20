@@ -5,9 +5,20 @@ import { eq } from "drizzle-orm";
 import { db } from "../../../db";
 import { documents, leads, tenants } from "../../../db/schema";
 import { getLead, serviceScope } from "../../data";
+import type { DocumentStorage } from "../../documents/storage";
 import { expireDocuments, optOutLead } from "../lgpd";
 
 const NON_EXISTENT_LEAD_ID = "00000000-0000-4000-8000-000000000789";
+
+// Desde o lote-12 a expiração remove o original antes de apagar a linha. As
+// fixtures usam chaves `test/...` que nenhum provedor conhece, então o stub
+// confirma ausência e a remoção física conclui como antes.
+const absentStorage: DocumentStorage = {
+  authorizeClientUpload: async () => { throw new Error("upload não faz parte da expiração"); },
+  delete: async () => undefined,
+  head: async () => null,
+  open: async () => null,
+};
 
 // Tenants + dados PRÓPRIOS deste arquivo (nunca o snapshot do seed) — mesmo
 // padrão de isolamento dos demais testes de integração do lote-5.
@@ -178,7 +189,7 @@ describe("server/integration lgpd — optOutLead + expireDocuments", () => {
         },
       ]);
 
-      const result = await expireDocuments(now);
+      const result = await expireDocuments(now, { storage: absentStorage });
 
       expect(result.deletedByTenant[tenantAId]).toBe(2);
       expect(result.deletedByTenant[tenantBId]).toBe(1);

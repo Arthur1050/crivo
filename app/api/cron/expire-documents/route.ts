@@ -1,3 +1,5 @@
+import type { DocumentStorage } from "../../../../src/server/documents/storage";
+import { VercelBlobDocumentStorage } from "../../../../src/server/documents/vercel-blob-storage";
 import { runDailyMaintenance } from "../../../../src/server/integration/lgpd";
 import { problem } from "../../../../src/server/integration/problem";
 
@@ -18,18 +20,24 @@ import { problem } from "../../../../src/server/integration/problem";
  * para o disparo automático da Vercel, POST preservado para invocação manual
  * (curl/CI), como o contrato original previa.
  */
-async function handleExpireDocuments(request: Request): Promise<Response> {
-  const secret = process.env.CRON_SECRET;
-  const header = request.headers.get("authorization");
-  const provided = /^Bearer\s+(.+)$/i.exec(header ?? "")?.[1]?.trim();
+export function createExpireDocumentsHandler(
+  deps: { storage?: DocumentStorage; now?: () => Date } = {}
+) {
+  const now = deps.now ?? (() => new Date());
+  return async function handleExpireDocuments(request: Request): Promise<Response> {
+    const secret = process.env.CRON_SECRET;
+    const header = request.headers.get("authorization");
+    const provided = /^Bearer\s+(.+)$/i.exec(header ?? "")?.[1]?.trim();
 
-  if (!secret || !provided || provided !== secret) {
-    return problem(401, "nao-autenticado", "Secret do cron ausente ou inválido.");
-  }
+    if (!secret || !provided || provided !== secret) {
+      return problem(401, "nao-autenticado", "Secret do cron ausente ou inválido.");
+    }
 
-  const result = await runDailyMaintenance(new Date());
-  return Response.json(result);
+    const storage = deps.storage ?? new VercelBlobDocumentStorage();
+    const result = await runDailyMaintenance(now(), { storage });
+    return Response.json(result);
+  };
 }
 
-export const GET = handleExpireDocuments;
-export const POST = handleExpireDocuments;
+export const GET = createExpireDocumentsHandler();
+export const POST = createExpireDocumentsHandler();
