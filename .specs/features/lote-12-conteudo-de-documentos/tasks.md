@@ -555,15 +555,17 @@ T35 -> T36 -> T37
 
 **Done when:**
 
-- [ ] `novo`, `usado` e `ambos` obedecem compatibilidade sem duplicar.
-- [ ] Somente `pronto`, ativo e não expirado retorna texto integral.
-- [ ] Perguntas diferentes mantêm conjunto/ordem no modo `direct`.
-- [ ] Resposta vazia é isolada por tenant e serialização coincide byte a byte com T12.
-- [ ] Pelo menos 16 testes de integração novos cobrem os 13 ACs de DOCCTX-01 aplicáveis ao serviço.
+- [x] `novo`, `usado` e `ambos` obedecem compatibilidade sem duplicar.
+- [x] Somente `pronto`, ativo e não expirado retorna texto integral.
+- [x] Perguntas diferentes mantêm conjunto/ordem no modo `direct`.
+- [x] Resposta vazia é isolada por tenant e serialização coincide byte a byte com T12.
+- [x] Pelo menos 16 testes de integração novos cobrem os 13 ACs de DOCCTX-01 aplicáveis ao serviço.
 
 **Tests:** integration  
 **Gate:** Full  
 **Commit:** `feat(context): serve direct document corpus`
+
+**Evidence (2026-09-20):** `getDirectDocumentContext` monta o corpus com `buildCanonicalContext`, a mesma função que a admissão de T12 usa para medir o teto — a paridade byte a byte é estrutural, não coincidência, e tem asserção dedicada. Entram só documentos `pronto`, com texto, sem tombstone e dentro da validade; o boundary `expiresAt == now` já está fora (L-023). São 23 testes de integração novos cobrindo AC1–AC8, AC10 e AC11. O `getContext` legado fica intacto: ele sustenta o GET de rollback que T21 preserva e sai só em T36.
 
 #### T21: Migrar `/api/v1/context` para POST
 
