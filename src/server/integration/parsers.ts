@@ -326,3 +326,53 @@ export function parseMessagesQuery(url: URL): ParseMessagesQueryResult {
 
   return { ok: true, limit: value };
 }
+
+// Teto da pergunta do lead no contrato de contexto (lote-12 — DOCCTX-01 AC9).
+export const MAX_CONTEXT_QUESTION_LENGTH = 4096;
+
+export interface ContextQueryDto {
+  modality: (typeof modalityEnum.enumValues)[number];
+  question: string;
+}
+
+/**
+ * Corpo de `POST /api/v1/context` (DOCCTX-01 AC9). Campo ausente e campo
+ * vazio são estados distintos e recebem `detail` distinto — payload parcial
+ * não é o mesmo que payload com string vazia (L-005). O `trim` define tanto
+ * a vacuidade quanto o comprimento medido.
+ */
+export function parseContextQuery(json: unknown): ParseResult<ContextQueryDto> {
+  if (!isPlainObject(json)) {
+    return { ok: false, detail: "Corpo da requisição deve ser um objeto JSON." };
+  }
+
+  if (json.modality === undefined) {
+    return { ok: false, detail: "Campo 'modality' é obrigatório." };
+  }
+  const modality = enumValue(json.modality, modalityEnum.enumValues);
+  if (!modality) {
+    return {
+      ok: false,
+      detail: `Campo 'modality' inválido. Valores aceitos: ${modalityEnum.enumValues.join(", ")}.`,
+    };
+  }
+
+  if (json.question === undefined) {
+    return { ok: false, detail: "Campo 'question' é obrigatório." };
+  }
+  if (typeof json.question !== "string") {
+    return { ok: false, detail: "Campo 'question' deve ser uma string." };
+  }
+  const question = json.question.trim();
+  if (question === "") {
+    return { ok: false, detail: "Campo 'question' não pode ser vazio." };
+  }
+  if (question.length > MAX_CONTEXT_QUESTION_LENGTH) {
+    return {
+      ok: false,
+      detail: `Campo 'question' excede o limite de ${MAX_CONTEXT_QUESTION_LENGTH} caracteres.`,
+    };
+  }
+
+  return { ok: true, dto: { modality, question } };
+}

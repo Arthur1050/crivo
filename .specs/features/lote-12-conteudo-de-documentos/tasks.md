@@ -578,15 +578,19 @@ T35 -> T36 -> T37
 
 **Done when:**
 
-- [ ] POST valida modalidade e question `trim` de 1–4.096 caracteres; campo ausente e vazio têm testes distintos.
-- [ ] Tenant/header não vem do modelo; question não aparece em URL/log/resposta.
-- [ ] Resposta usa envelope, ordem e `Cache-Control: no-store`.
-- [ ] GET legado continua apenas para rollback e métodos restantes anunciam contrato correto.
-- [ ] Pelo menos 15 testes de rota cobrem auth, isolamento, body, métodos e recusas instrumentadas.
+- [x] POST valida modalidade e question `trim` de 1–4.096 caracteres; campo ausente e vazio têm testes distintos.
+- [x] Tenant/header não vem do modelo; question não aparece em URL/log/resposta.
+- [x] Resposta usa envelope, ordem e `Cache-Control: no-store`.
+- [x] GET legado continua apenas para rollback e métodos restantes anunciam contrato correto.
+- [x] Pelo menos 15 testes de rota cobrem auth, isolamento, body, métodos e recusas instrumentadas.
 
 **Tests:** integration/e2e  
 **Gate:** Full  
 **Commit:** `feat(api): add document context post contract`
+
+**Evidence (2026-09-20):** A pergunta do lead saiu da query string e passou a trafegar no corpo, porque em query string ela acabaria em log de acesso, histórico e referer. `parseContextQuery` trata campo ausente e campo vazio como estados distintos, com `detail` próprio para cada um e um teste que compara os dois (L-005); o boundary de 4.096 caracteres tem asserção no valor exato e em 4.097. O tenant continua vindo só da credencial: há teste que envia `tenantId` de outro tenant no corpo e confirma que ele é ignorado. São 22 testes de rota novos, incluindo a prova de que a recusa instrumentada grava `pathname`, método, status e `code` sem a pergunta. `PUT`, `PATCH` e `DELETE` seguem em 405, agora anunciando `Allow: GET, POST`.
+
+**Nota de contrato:** `context-get.test.ts` afirmava que `POST` respondia 405. Essa asserção codificava o contrato anterior, que esta tarefa substitui por decisão do plano aprovado; `POST` saiu da lista de verbos recusados e sua cobertura passou para `context-post.test.ts`. Nenhuma outra asserção daquele arquivo mudou.
 
 #### T22: Atualizar contrato OpenAPI de contexto
 

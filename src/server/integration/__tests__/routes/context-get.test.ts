@@ -8,7 +8,6 @@ import {
   DELETE,
   GET,
   PATCH,
-  POST,
   PUT,
 } from "../../../../../app/api/v1/context/route";
 
@@ -128,8 +127,11 @@ describe("routes: GET /api/v1/context", () => {
     expect(response.status).toBe(401);
   });
 
-  it("verbo não suportado (POST/PUT/PATCH/DELETE) responde 405 problem+json", async () => {
-    for (const handler of [POST, PUT, PATCH, DELETE]) {
+  // `POST` saiu desta lista no lote-12 (T21): deixou de ser verbo recusado e
+  // passou a ser o contrato de contexto. Sua cobertura vive em
+  // `context-post.test.ts`; aqui restam os verbos que seguem sem suporte.
+  it("verbo não suportado (PUT/PATCH/DELETE) responde 405 problem+json", async () => {
+    for (const handler of [PUT, PATCH, DELETE]) {
       const response = handler();
       expect(response.status).toBe(405);
       expect(response.headers.get("content-type")).toBe("application/problem+json");
