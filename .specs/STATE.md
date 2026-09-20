@@ -280,10 +280,16 @@
 ## Handoff
 
 - **Feature**: Lote 12 — `.specs/features/lote-12-conteudo-de-documentos/`.
-- **Phase / Task**: Execute / Phase 3, T19 aguardando decisão sobre testes legados.
-- **Completed**: T1–T18. A Phase 3 concluiu serviço de processamento seguro por attempt (`06e6ba5`), workflow durável (`63a36ea`), actions de lifecycle (`4aacbfc`), preview (`09bf62f`), download autenticado (`bc3e541`) e tombstone com remoção física idempotente (`dbd74b9`). Gates Full mais recentes passaram com 104 arquivos e 1.581 testes. O harness Workflow passou 17 testes locais.
-- **In-progress** (file:line): T19 ainda não alterou código. A rotina atual em `src/server/integration/lgpd.ts` faz hard-delete direto; a implementação aprovada exige grupos injetáveis para expiração/tombstones/intents/recusas.
-- **Next step**: após confirmação do usuário, atualizar as expectativas legadas de expiração para o protocolo tombstone e implementar T19 com grupos independentes, depois executar o gate Build.
-- **Blockers**: `src/server/integration/__tests__/lgpd.test.ts:99` exige hard-delete imediato, contradizendo o protocolo aprovado em `design.md:242-249`; a regra de integridade de testes exige confirmação antes de alterar esse teste existente. T19 não requer ação externa.
+- **Phase / Task**: Execute / Phase 4 parcial. T22 concluída; T23 é a próxima, mas está deliberadamente parada.
+- **Completed**: T1–T22. Esta janela fechou a Phase 3 com T19 (`fbd1812`) e avançou a Phase 4 até T22: fonte direta de contexto (`d92fef0`), contrato POST (`e78f300`) e OpenAPI (`c031d64`). Gate Full final: 107 arquivos, 1.655 testes, 0 falhas; lint 0 erros (7 avisos preexistentes); build aprovado.
+- **In-progress** (file:line): nenhum. Worktree limpo.
+- **Next step**: T23 (`src/components/documents/upload-dialog.tsx`) só depois que T29 provisionar o Vercel Blob. Ordem de retomada sugerida: T29 → T30 → T31 e então voltar a T23–T27 com a evidência visual completa numa passada só.
+- **Blockers**:
+  - **T23 depende de infraestrutura que o plano sequencia depois dele.** T23 é o upload real para o Blob, mas o Blob é provisionado em T29. Sem `BLOB_READ_WRITE_TOKEN` o caminho de sucesso do upload não existe para ser capturado. Decisão do usuário (2026-09-20): parar em T22 e rodar a fase de UI inteira depois de T29, para cada tarefa fechar com evidência completa.
+  - **T28 está bloqueado por T27**, não só por T21 — não era executável nesta janela de qualquer forma.
+  - **Login para as capturas de T23–T27.** O agente cria o usuário de teste e semeia documentos em todos os estados, mas não digita senha em formulário. O usuário precisa autenticar uma vez no Chrome como admin/gestor e uma vez como corretor (cenários de papel de T25). A extensão do Chrome está conectada e é o caminho de captura, nunca o painel embutido.
+- **Achado fora de escopo, já corrigido**: o gate Build revelou dois erros de tipagem preexistentes em `src/server/documents/repository.ts` (`getDocumentForProcessing` e `reconcileTenantDocumentAdmission` declaravam o enum inteiro de status). Entraram em `06e6ba5` (T13) e passaram despercebidos porque T13–T18 usaram gate Full, que não roda `tsc`. Corrigidos em `0d182e8`, commit separado para não contaminar a atomicidade de T19.
+- **Nota de contrato**: `context-get.test.ts` afirmava que `POST /api/v1/context` respondia 405. Essa asserção descrevia o contrato anterior, substituído por T21; `POST` saiu da lista de verbos recusados e sua cobertura passou para `context-post.test.ts`. As suítes legadas de `lgpd`, cron e repository mantiveram todas as suas asserções — ali mudou só a injeção de `DocumentStorage`.
+- **Backlog levantado, aguardando decisão do usuário**: paralelizar gates com branch Neon por worker. A suíte leva ~14 min porque serializa contra um Postgres remoto compartilhado; branch por worker tornaria o paralelismo seguro e cortaria o tempo. Mexe em infraestrutura de teste de todo o projeto, então é decisão do usuário, possivelmente lote próprio.
 - **Uncommitted files**: `.specs/STATE.md` (este handoff).
-- **Branch**: `main`; HEAD observado antes deste handoff em `dbd74b9`; nenhum push/deploy autorizado.
+- **Branch**: `main`; HEAD em `c031d64`; nenhum push, deploy ou alteração remota autorizado ou executado.
