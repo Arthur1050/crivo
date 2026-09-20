@@ -417,7 +417,9 @@ export async function getDocumentForProcessing(
       isNull(documents.deletedAt),
       sql`(${documents.expiresAt} is null or ${documents.expiresAt} > ${now})`
     ));
-  return document ?? null;
+  // O predicado já restringe o estado; estreitar aqui mantém o tipo do retorno
+  // fiel ao que a query garante, em vez do enum inteiro da coluna.
+  return document ? { ...document, status: "processando" as const } : null;
 }
 
 /** Reapplies the published direct-context limits after text becomes available. */
@@ -444,7 +446,9 @@ export async function reconcileTenantDocumentAdmission(tenantId: string, now = n
     modality: row.modality,
     content: row.extractedText!,
     uploadedAt: row.uploadedAt,
-    status: row.status,
+    // O predicado acima já limita a `pronto`/`fora_do_agente`; o tipo da coluna
+    // carrega o enum inteiro, que a admissão não aceita.
+    status: row.status as ContextBudgetDocument["status"],
   }));
   const result = reconcileDocumentAdmission(candidates, limits);
   await db.transaction(async (tx) => {
