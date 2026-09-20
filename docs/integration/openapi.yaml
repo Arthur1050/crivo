@@ -229,15 +229,71 @@ paths:
         - bearerAuth: []
         - serviceAuth: []
   /context:
+    post:
+      operationId: queryContext
+      tags: [context]
+      summary: Corpus documental do tenant para uma pergunta do lead
+      description: >-
+        Devolve o conteúdo integral de todos os documentos `pronto`, ativos,
+        dentro da validade e compatíveis com a modalidade pedida (DOCCTX-01).
+        `novo` inclui `novo` e `ambos`; `usado` inclui `usado` e `ambos`;
+        `ambos` inclui as três sem duplicar. Documento em `processando`,
+        `falha` ou `fora_do_agente`, com tombstone, ou vencido — mesmo antes
+        da rotina diária — fica fora do corpus.
+
+        A pergunta viaja no corpo, nunca em query string, porque é dado
+        pessoal do lead e em query string acabaria em log de acesso, histórico
+        e referer. Ela não filtra nada no lote 12: o modo `direct` entrega o
+        corpus inteiro, e perguntas diferentes sobre o mesmo corpus devolvem o
+        mesmo conjunto na mesma ordem. O corpus vai do upload mais antigo para
+        o mais recente, com o identificador como desempate determinístico.
+
+        O tenant vem exclusivamente da credencial de serviço; nenhum campo do
+        corpo o influencia. A resposta declara `Cache-Control: no-store`.
+      parameters:
+        - $ref: "#/components/parameters/XCrivoTenant"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContextQuery"
+      responses:
+        "200":
+          description: >-
+            Corpus elegível do tenant. Coleção vazia quando nenhum documento
+            é elegível — nunca erro, nunca conteúdo de outro tenant.
+          headers:
+            Cache-Control:
+              description: Sempre `no-store` — o corpus nunca fica em cache intermediário.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentContextEnvelope"
+        "400":
+          $ref: "#/components/responses/PayloadInvalido"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "413":
+          $ref: "#/components/responses/CorpoGrandeDemais"
+      security:
+        - bearerAuth: []
+        - serviceAuth: []
     get:
       operationId: getContext
+      deprecated: true
       tags: [context]
-      summary: Documentos de contexto do tenant, filtrados por modalidade
+      summary: "[Descontinuado] Documentos de contexto do tenant, filtrados por modalidade"
       description: >-
+        Contrato anterior, mantido apenas como caminho de rollback enquanto o
+        workflow publicado migra para `POST /context`. Continua devolvendo o
+        shape antigo, com `content` sempre `null`, e será removido.
+
         Retorna documentos cuja modalidade é a pedida ou `ambos`, excluindo
         expirados mesmo que o job de TTL ainda não tenha rodado (INT-06,
-        LGPD-02). `content` é sempre `null` no v1 — mock-first; a Fase 9 troca
-        a fonte sem mudar este contrato.
+        LGPD-02).
       parameters:
         - name: modality
           in: query
@@ -723,8 +779,68 @@ components:
           type: string
         color:
           $ref: "#/components/schemas/CategoryColor"
+    ContextQuery:
+      type: object
+      description: >-
+        Corpo de `POST /context`. Campo ausente e campo vazio são estados
+        distintos e recebem `detail` distinto na recusa 400.
+      required: [modality, question]
+      properties:
+        modality:
+          description: >-
+            Modalidade da consulta. Diferente de `ContextModality` (o filtro
+            do GET descontinuado), aqui `ambos` é um valor pedível.
+          $ref: "#/components/schemas/Modality"
+        question:
+          type: string
+          description: >-
+            Pergunta real do lead, entre 1 e 4.096 caracteres depois de
+            `trim`. Não filtra o corpus no lote 12 e nunca é ecoada na
+            resposta nem gravada no registro de recusas.
+          minLength: 1
+          maxLength: 4096
+    DocumentContextEntry:
+      type: object
+      required: [id, name, modality, category, contentMode, content]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          description: Nome do documento, suficiente para o agente atribuir a origem sem misturar os textos.
+        modality:
+          $ref: "#/components/schemas/Modality"
+        category:
+          oneOf:
+            - $ref: "#/components/schemas/ContextDocumentCategory"
+            - type: "null"
+        contentMode:
+          type: string
+          description: Sempre `full` — o lote 12 nunca trunca texto silenciosamente.
+          enum: [full]
+        content:
+          type: string
+          description: Texto extraído integral do documento.
+    DocumentContextEnvelope:
+      type: object
+      required: [retrievalMode, documents]
+      properties:
+        retrievalMode:
+          type: string
+          description: >-
+            Sempre `direct` no lote 12 — o corpus inteiro é injetado. O campo
+            existe para que a chegada de recuperação semântica não quebre o
+            contrato.
+          enum: [direct]
+        documents:
+          type: array
+          description: Corpus ordenado do upload mais antigo para o mais recente.
+          items:
+            $ref: "#/components/schemas/DocumentContextEntry"
     ContextDocument:
       type: object
+      description: "[Descontinuado] Shape do GET legado; substituído por DocumentContextEntry."
       required: [id, name, modality, category, content]
       properties:
         id:

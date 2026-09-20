@@ -603,14 +603,16 @@ T35 -> T36 -> T37
 
 **Done when:**
 
-- [ ] Request/response e limites refletem o handler exatamente.
-- [ ] Auth, tenant e códigos de erro permanecem documentados.
-- [ ] Teste OpenAPI valida o documento e paridade de métodos/schemas.
-- [ ] Pelo menos 5 asserções contratuais novas passam.
+- [x] Request/response e limites refletem o handler exatamente.
+- [x] Auth, tenant e códigos de erro permanecem documentados.
+- [x] Teste OpenAPI valida o documento e paridade de métodos/schemas.
+- [x] Pelo menos 5 asserções contratuais novas passam.
 
 **Tests:** integration  
 **Gate:** Full  
 **Commit:** `docs(api): document context post contract`
+
+**Evidence (2026-09-20):** `POST /context` documentado com `ContextQuery`, `DocumentContextEnvelope` e `DocumentContextEntry`. O limite da pergunta no documento é lido de `MAX_CONTEXT_QUESTION_LENGTH`, a mesma constante que o handler aplica — se um mudar sem o outro, o teste quebra em vez de o contrato mentir silenciosamente. Sete asserções novas travam corpo obrigatório, limites, enum de modalidade do POST contra o filtro do GET, envelope `direct` com `contentMode: full`, os códigos 400/401/413, `Cache-Control: no-store` e o GET marcado `deprecated`. Nenhum exemplo publica conteúdo de documento.
 
 #### T23: Transformar UploadDialog em upload real
 

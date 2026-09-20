@@ -1,6 +1,7 @@
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import SwaggerParser from "@apidevtools/swagger-parser";
+import { MAX_CONTEXT_QUESTION_LENGTH } from "../parsers";
 
 const OPENAPI_PATH = path.resolve(
   __dirname,
@@ -121,5 +122,74 @@ describe("docs/integration/openapi.yaml — SwaggerParser.validate()", () => {
     ]) {
       expect(itemFields).not.toContain(forbidden);
     }
+  });
+
+  /** Nó do documento já validado pelo SwaggerParser, navegado por chave. */
+  type OpenApiNode = { [key: string]: OpenApiNode };
+
+  // lote-12 — T22: o contrato de contexto passou a POST. As asserções abaixo
+  // travam a paridade com o handler real: se o limite da pergunta, o envelope
+  // ou os códigos de erro divergirem, o documento deixa de ser autoridade.
+  describe("POST /context (lote-12 — DOCCTX-01)", () => {
+    async function contextPath() {
+      const api = (await SwaggerParser.validate(OPENAPI_PATH)) as {
+        paths: Record<string, Record<string, OpenApiNode>>;
+        components: { schemas: Record<string, OpenApiNode> };
+      };
+      return { post: api.paths["/context"].post, get: api.paths["/context"].get, api };
+    }
+
+    it("declara POST /context com corpo obrigatório de modalidade e pergunta", async () => {
+      const { post, api } = await contextPath();
+      expect(post).toBeDefined();
+      expect(post.requestBody.required).toBe(true);
+      const schema = api.components.schemas.ContextQuery;
+      expect(schema.required).toEqual(expect.arrayContaining(["modality", "question"]));
+    });
+
+    it("a pergunta documentada tem exatamente os limites que o handler aplica", async () => {
+      const { api } = await contextPath();
+      const question = api.components.schemas.ContextQuery.properties.question;
+      expect(question.type).toBe("string");
+      expect(question.minLength).toBe(1);
+      expect(question.maxLength).toBe(MAX_CONTEXT_QUESTION_LENGTH);
+    });
+
+    it("a modalidade do POST aceita as três, ao contrário do filtro do GET legado", async () => {
+      const { api } = await contextPath();
+      expect(api.components.schemas.Modality.enum).toEqual(["novo", "usado", "ambos"]);
+      expect(api.components.schemas.ContextModality.enum).toEqual(["novo", "usado"]);
+    });
+
+    it("a resposta 200 é o envelope direct, com conteúdo integral e sem truncamento", async () => {
+      const { post, api } = await contextPath();
+      const ref = post.responses["200"].content["application/json"].schema;
+      const envelope = api.components.schemas.DocumentContextEnvelope;
+      expect(ref).toBeDefined();
+      expect(envelope.required).toEqual(expect.arrayContaining(["retrievalMode", "documents"]));
+      expect(envelope.properties.retrievalMode.enum).toEqual(["direct"]);
+      expect(api.components.schemas.DocumentContextEntry.properties.contentMode.enum).toEqual(["full"]);
+      expect(api.components.schemas.DocumentContextEntry.required).toEqual(
+        expect.arrayContaining(["id", "name", "modality", "category", "contentMode", "content"])
+      );
+    });
+
+    it("documenta 400, 401 e 413 e exige autenticação e tenant", async () => {
+      const { post } = await contextPath();
+      expect(Object.keys(post.responses)).toEqual(expect.arrayContaining(["200", "400", "401", "413"]));
+      expect(post.security).toEqual([{ bearerAuth: [] }, { serviceAuth: [] }]);
+      expect(JSON.stringify(post.parameters)).toContain("X-Crivo-Tenant");
+    });
+
+    it("a resposta anuncia Cache-Control no-store, como o handler devolve", async () => {
+      const { post } = await contextPath();
+      expect(post.responses["200"].headers["Cache-Control"]).toBeDefined();
+    });
+
+    it("o GET legado segue documentado, marcado como descontinuado", async () => {
+      const { get } = await contextPath();
+      expect(get).toBeDefined();
+      expect(get.deprecated).toBe(true);
+    });
   });
 });
