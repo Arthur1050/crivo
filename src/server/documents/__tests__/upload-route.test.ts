@@ -99,6 +99,27 @@ describe("document upload route (lote-12 T9)", () => {
     expect(handle).toHaveBeenCalledTimes(1);
   });
 
+  // lote-12 — T23: o cliente precisa da chave reservada para subir, porque o
+  // token só autoriza esse caminho e ele é escolhido pelo servidor. Sem isso o
+  // navegador apontaria para o próprio pathname e o provedor recusaria.
+  it("devolve a chave reservada junto do token, para o cliente subir no caminho autorizado", async () => {
+    const { handler } = fixture();
+    const response = await handler(request(generateEvent(JSON.stringify(input), "nome-do-usuario.txt")));
+
+    const body = (await response.json()) as { pathname: string; clientToken: string };
+    expect(body.pathname).toBe(KEY);
+    expect(body.clientToken).toBeDefined();
+  });
+
+  it("a chave devolvida nunca é o pathname que o navegador mandou", async () => {
+    const { handler } = fixture();
+    const response = await handler(request(generateEvent(JSON.stringify(input), "../../tentativa-de-injecao")));
+
+    const body = (await response.json()) as { pathname: string };
+    expect(body.pathname).toBe(KEY);
+    expect(body.pathname).not.toContain("tentativa-de-injecao");
+  });
+
   it("substitui o pathname fornecido pelo navegador pela chave opaca reservada", async () => {
     const { handler, handle } = fixture();
     await handler(request(generateEvent(JSON.stringify(input), "../../tentativa-de-injecao")));

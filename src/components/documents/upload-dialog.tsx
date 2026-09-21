@@ -3,20 +3,20 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { PlusIcon, UploadIcon } from "lucide-react";
+import { put } from "@vercel/blob/client";
 import { Banner } from "@astryxdesign/core/Banner";
 import { Button } from "@astryxdesign/core/Button";
+import { DateTimeInput, type ISODateTimeString } from "@astryxdesign/core/DateTimeInput";
 import { Dialog, DialogHeader } from "@astryxdesign/core/Dialog";
 import { FileInput } from "@astryxdesign/core/FileInput";
+import { ProgressBar } from "@astryxdesign/core/ProgressBar";
 import { Icon } from "@astryxdesign/core/Icon";
 import { Layout, LayoutContent, LayoutFooter } from "@astryxdesign/core/Layout";
 import { Selector, SelectorOption } from "@astryxdesign/core/Selector";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { Token } from "@astryxdesign/core/Token";
-import {
-  createDocumentAction,
-  createDocumentCategoryAction,
-} from "@/src/server/actions/documents";
+import { createDocumentCategoryAction } from "@/src/server/actions/documents";
 import type { CategoryColor, DocumentCategory, Modality } from "@/src/server/data";
 import {
   CATEGORY_COLOR_PALETTE,
@@ -26,6 +26,12 @@ import {
   validateModality,
   validateName,
 } from "@/src/server/validation";
+import {
+  UPLOAD_PHASE_LABELS,
+  hashFile,
+  requestUploadTicket,
+  type UploadPhase,
+} from "./upload-client";
 
 const MODALITY_OPTIONS: { value: Modality; label: string }[] = [
   { value: "novo", label: "Novo" },
@@ -56,6 +62,13 @@ interface FieldErrors {
   file?: string;
   name?: string;
   modality?: string;
+  expiresAt?: string;
+}
+
+/** O envio é progressivo; 0–100 só tem significado na fase de upload. */
+interface UploadProgress {
+  phase: UploadPhase;
+  percentage: number;
 }
 
 interface UploadDialogProps {
@@ -76,9 +89,11 @@ export function UploadDialog({ categories }: UploadDialogProps) {
   const [isNameTouched, setIsNameTouched] = useState(false);
   const [modality, setModality] = useState<Modality | null>(null);
   const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [expiresAt, setExpiresAt] = useState<ISODateTimeString | undefined>(undefined);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [banner, setBanner] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [progress, setProgress] = useState<UploadProgress>({ phase: "idle", percentage: 0 });
+  const isSubmitting = progress.phase !== "idle";
 
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
@@ -122,9 +137,11 @@ export function UploadDialog({ categories }: UploadDialogProps) {
     setIsNameTouched(false);
     setModality(null);
     setCategoryId(null);
+    setExpiresAt(undefined);
     setPendingCategoryName(null);
     setErrors({});
     setBanner(null);
+    setProgress({ phase: "idle", percentage: 0 });
     setIsCreatingCategory(false);
     setNewCategoryName("");
     setNewCategoryColor("gray");
@@ -158,48 +175,64 @@ export function UploadDialog({ categories }: UploadDialogProps) {
     const mimeCheck = validateMimeType(mimeType);
     const sizeCheck = validateFileSize(file.size);
     const modalityCheck = validateModality(modality);
+    const isExpiryInPast =
+      expiresAt !== undefined && new Date(expiresAt).getTime() <= Date.now();
 
     const nextErrors: FieldErrors = {
       name: nameCheck.ok ? undefined : nameCheck.error,
       file: !mimeCheck.ok ? mimeCheck.error : !sizeCheck.ok ? sizeCheck.error : undefined,
       modality: modalityCheck.ok ? undefined : modalityCheck.error,
+      expiresAt: isExpiryInPast ? "A validade precisa ser uma data futura." : undefined,
     };
 
-    if (nextErrors.name || nextErrors.file || nextErrors.modality) {
+    if (nextErrors.name || nextErrors.file || nextErrors.modality || nextErrors.expiresAt) {
       setErrors(nextErrors);
       return;
     }
     setErrors({});
-    setIsSubmitting(true);
 
-    const result = await createDocumentAction({
-      name,
-      mimeType,
-      sizeBytes: file.size,
-      modality: modality as Modality,
-      categoryId: resolvedCategoryId,
-    });
+    // Falha em qualquer ponto abaixo preserva arquivo e campos: o usuário
+    // corrige e reenvia sem remontar o formulário.
+    try {
+      setProgress({ phase: "hashing", percentage: 0 });
+      const clientSha256 = await hashFile(file);
 
-    setIsSubmitting(false);
+      const ticket = await requestUploadTicket({
+        clientSha256,
+        name,
+        mimeType,
+        sizeBytes: file.size,
+        modality: modality as Modality,
+        categoryId: resolvedCategoryId,
+        expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
+      });
 
-    if (!result.ok) {
-      if (result.error.startsWith("Nome do documento")) {
-        setErrors({ name: result.error });
-      } else if (
-        result.error.startsWith("Tipo de arquivo") ||
-        result.error.startsWith("Arquivo excede")
-      ) {
-        setErrors({ file: result.error });
-      } else if (result.error.startsWith("Modalidade")) {
-        setErrors({ modality: result.error });
-      } else {
-        setBanner(result.error);
+      if (!ticket.ok) {
+        setProgress({ phase: "idle", percentage: 0 });
+        setBanner(ticket.message);
+        return;
       }
-      return;
-    }
 
-    router.refresh();
-    handleOpenChange(false);
+      setProgress({ phase: "uploading", percentage: 0 });
+      await put(ticket.pathname, file, {
+        access: "private",
+        token: ticket.clientToken,
+        contentType: mimeType,
+        onUploadProgress: ({ percentage }) =>
+          setProgress({ phase: "uploading", percentage }),
+      });
+
+      // O provedor confirma a conclusão ao servidor por callback assinado; o
+      // documento aparece na lista quando o processamento começa.
+      setProgress({ phase: "finalizing", percentage: 100 });
+      router.refresh();
+      handleOpenChange(false);
+    } catch {
+      setProgress({ phase: "idle", percentage: 0 });
+      setBanner(
+        "O envio foi interrompido antes de concluir. O arquivo continua selecionado; tente novamente."
+      );
+    }
   }
 
   async function handleCreateCategory() {
@@ -242,7 +275,7 @@ export function UploadDialog({ categories }: UploadDialogProps) {
           header={
             <DialogHeader
               title="Novo documento"
-              subtitle="Apenas os metadados são armazenados; o arquivo não é enviado."
+              subtitle="O arquivo é enviado direto para o armazenamento privado da sua imobiliária."
               onOpenChange={() => handleOpenChange(false)}
             />
           }
@@ -250,6 +283,16 @@ export function UploadDialog({ categories }: UploadDialogProps) {
             <LayoutContent>
               <VStack gap={4}>
                 {banner && <Banner status="error" title={banner} />}
+
+                {progress.phase !== "idle" && (
+                  <ProgressBar
+                    label={UPLOAD_PHASE_LABELS[progress.phase]}
+                    value={progress.percentage}
+                    hasValueLabel={progress.phase === "uploading"}
+                    isIndeterminate={progress.phase !== "uploading"}
+                    variant={progress.phase === "finalizing" ? "success" : "accent"}
+                  />
+                )}
 
                 <FileInput
                   label="Arquivo"
@@ -287,6 +330,23 @@ export function UploadDialog({ categories }: UploadDialogProps) {
                     errors.modality ? { type: "error", message: errors.modality } : undefined
                   }
                   isRequired
+                />
+
+                <DateTimeInput
+                  label="Validade"
+                  description="Depois desse instante o documento deixa de ser usado pelo agente."
+                  placeholder="Sem validade"
+                  hourFormat="24h"
+                  hasClear
+                  isOptional
+                  value={expiresAt}
+                  onChange={(value) => {
+                    setExpiresAt(value);
+                    setErrors((prev) => ({ ...prev, expiresAt: undefined }));
+                  }}
+                  status={
+                    errors.expiresAt ? { type: "error", message: errors.expiresAt } : undefined
+                  }
                 />
 
                 <VStack gap={2}>
@@ -388,10 +448,11 @@ export function UploadDialog({ categories }: UploadDialogProps) {
                 <Button
                   label="Cancelar"
                   variant="secondary"
+                  isDisabled={isSubmitting}
                   onClick={() => handleOpenChange(false)}
                 />
                 <Button
-                  label="Enviar"
+                  label={isSubmitting ? UPLOAD_PHASE_LABELS[progress.phase as Exclude<UploadPhase, "idle">] : "Enviar"}
                   variant="primary"
                   isLoading={isSubmitting}
                   isDisabled={isPendingCategoryUnresolved}

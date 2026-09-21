@@ -625,16 +625,22 @@ T35 -> T36 -> T37
 
 **Done when:**
 
-- [ ] Estados “Validando”, “Enviando” e “Preparando processamento” são observáveis e acessíveis.
-- [ ] SHA-256 e upload rodam sem enviar o binário pela server action.
-- [ ] Data/hora futura ou sem validade funciona; erro preserva campos/arquivo quando suportado.
-- [ ] Duplicata orienta a editar o documento existente.
-- [ ] Self-check Astryx passa sem `div`, estilo inline, CSS novo ou valor arbitrário.
-- [ ] Seis cenários de navegador e screenshots cobrem sucesso, progresso e falhas.
+- [x] Estados “Validando”, “Enviando” e “Preparando processamento” são observáveis e acessíveis.
+- [x] SHA-256 e upload rodam sem enviar o binário pela server action.
+- [x] Data/hora futura ou sem validade funciona; erro preserva campos/arquivo quando suportado.
+- [x] Duplicata orienta a editar o documento existente.
+- [x] Self-check Astryx passa sem `div`, estilo inline, CSS novo ou valor arbitrário.
+- [ ] Seis cenários de navegador e screenshots cobrem sucesso, progresso e falhas. **Adiado para o preview (T32)** — ver nota abaixo.
 
 **Tests:** browser e2e + build  
 **Gate:** Build  
 **Commit:** `feat(documents): upload files with progress`
+
+**Evidence (2026-09-21):** O binário não passa por server action: `hashFile` calcula o SHA-256 no navegador, `requestUploadTicket` pede o token à rota e `put` sobe direto ao storage privado. `createDocumentAction` deixou de ser usado pelo dialog; segue exportado e testado, agora sem consumidor de produção. As três fases têm rótulo próprio e `ProgressBar` com percentual real só na fase de upload. Validade é opcional via `DateTimeInput`, com recusa de data passada. Falha em qualquer ponto preserva arquivo e campos e devolve mensagem; duplicata orienta a abrir o documento existente. 18 testes de `upload-client` cobrem classificação de recusa, ausência de binário no corpo e paridade do hash com `node:crypto`; mais 2 na rota. Self-check Astryx sem `div`, estilo inline, CSS ou valor arbitrário.
+
+**Desvio de contrato de T9 (necessário):** a rota passou a devolver `pathname: reserved.storageKey` junto do token. Sem isso o cliente subiria para o caminho que ele mesmo escolheu, e o provedor recusaria por divergência com o token — `upload()` do SDK é estruturalmente incompatível com uma rota que escolhe a chave no servidor. O helper do SDK também descarta status e corpo da resposta (`client.js:398`), o que tornaria impossível distinguir duplicata de permissão negada; por isso o pedido do token é feito por `fetch` próprio.
+
+**Fronteira de evidência:** o caminho de sucesso não é observável em `localhost`. `onUploadCompleted` é chamado pela infraestrutura da Vercel na `handleUploadUrl` e seu payload é verificado por HMAC, então em localhost a finalização nunca roda e o navegador não pode forjá-la — a verificação de assinatura é a segurança funcionando. O round-trip completo é provado em T32, no preview. Decisão do usuário (2026-09-21): implementar agora e concentrar toda a evidência visual no preview.
 
 #### T24: Criar dialog de preview inerte
 
