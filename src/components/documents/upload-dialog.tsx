@@ -271,6 +271,14 @@ export function UploadDialog({ categories }: UploadDialogProps) {
         onClick={() => setIsOpen(true)}
       />
       <Dialog isOpen={isOpen} onOpenChange={handleOpenChange} purpose="form" width={480}>
+        {/*
+          O conteúdo só monta com o dialog aberto, mesmo padrão do
+          `EditDocumentDialog`. Além de evitar montar um formulário que
+          ninguém pediu, isso tira o calendário do `DateTimeInput` do render
+          de servidor: ele formata o nome do mês por locale e divergia entre
+          servidor e cliente, quebrando a hidratação da página inteira.
+        */}
+        {isOpen && (
         <Layout
           header={
             <DialogHeader
@@ -467,6 +475,7 @@ export function UploadDialog({ categories }: UploadDialogProps) {
             </LayoutFooter>
           }
         />
+        )}
       </Dialog>
     </>
   );

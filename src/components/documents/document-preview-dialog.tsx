@@ -8,7 +8,6 @@ import { Dialog, DialogHeader } from "@astryxdesign/core/Dialog";
 import { Layout, LayoutContent, LayoutFooter } from "@astryxdesign/core/Layout";
 import { Spinner } from "@astryxdesign/core/Spinner";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
-import { Text } from "@astryxdesign/core/Text";
 import { fetchDocumentPreview, type DocumentPreview } from "./preview-client";
 
 interface DocumentPreviewDialogProps {
@@ -70,12 +69,9 @@ export function DocumentPreviewDialog({
         content={
           <LayoutContent>
             <VStack gap={4}>
-              {isLoading && (
-                <HStack gap={2} vAlign="center">
-                  <Spinner size="sm" label="Carregando o texto extraído" />
-                  <Text>Carregando o texto extraído…</Text>
-                </HStack>
-              )}
+              {/* O `label` do Spinner já é conteúdo visível: um texto ao lado
+                  duplicaria a mesma frase na tela. */}
+              {isLoading && <Spinner label="Carregando o texto extraído…" />}
 
               {preview?.ok === false && <Banner status="error" title={preview.message} />}
 
