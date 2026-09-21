@@ -750,15 +750,21 @@ T35 -> T36 -> T37
 
 **Done when:**
 
-- [ ] Body envia modalidade real `novo|usado|ambos` e pergunta do lead; nenhum parâmetro usa `$fromAI`.
-- [ ] Conteúdo retornado fica disponível ao agente antes da resposta.
-- [ ] Modelo snapshot, reasoning, memória, tools e conexões não relacionadas ficam idênticos.
-- [ ] Generated workflow é regenerado e parity test passa.
-- [ ] Pelo menos oito testes estruturais novos cobrem body, ausência de GET/fallback e invariantes.
+- [x] Body envia modalidade real `novo|usado|ambos` e pergunta do lead; nenhum parâmetro usa `$fromAI`.
+- [x] Conteúdo retornado fica disponível ao agente antes da resposta.
+- [x] Modelo snapshot, reasoning, memória, tools e conexões não relacionadas ficam idênticos.
+- [x] Generated workflow é regenerado e parity test passa.
+- [x] Pelo menos oito testes estruturais novos cobrem body, ausência de GET/fallback e invariantes.
 
 **Tests:** unit/structural  
 **Gate:** Quick  
 **Commit:** `feat(agent): send question to document context`
+
+**Evidence (2026-09-21):** A tool passou de `GET ?modality=` para `POST {modality, question}`. Os 18 testes não se limitam a inspecionar o JSON emitido: eles **executam** a expressão do corpo com contextos falsos de `Code: gate`, que é a única forma de provar comportamento numa expressão n8n. Cobrem modalidade real atravessando nos três valores, buffer virando pergunta na ordem de chegada, mensagens vazias descartadas, fallback para o texto do turno, corte no teto de 4.096 e — o mais importante — que nenhum caminho produz `question` vazia, que o contrato recusa por definição.
+
+**Mudança de comportamento deliberada:** o fallback de modalidade deixou de ser `novo` e passou a ser `ambos`. O `novo` existia porque o GET não aceitava `ambos` e, na prática, escondia todo documento exclusivo de `usado` sempre que a modalidade do lead ainda era desconhecida. Com o contrato POST aceitando as três, o corpus inteiro é a resposta correta nesse caso.
+
+**Invariantes verificadas:** `retryOnFail`/`maxTries` seguem em `config` e não em `parameters` — o bug que `a80760c` corrigiu nesta mesma tool —, `neverError` e a credencial de serviço continuam, o modelo permanece no snapshot datado de AD-026, e memória e demais tools seguem presentes e conectadas. `n8n/generated/` foi regenerado: apenas `principal.ts` mudou, os outros cinco saíram byte a byte idênticos. A publicação na instância é T33, não executada aqui.
 
 #### T29: Provisionar Private Blob de Frankfurt
 
