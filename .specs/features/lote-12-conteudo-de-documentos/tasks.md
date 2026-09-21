@@ -777,14 +777,22 @@ T35 -> T36 -> T37
 
 **Done when:**
 
-- [ ] Usuário autorizou explicitamente a criação/conexão externa nesta tarefa.
-- [ ] Store é Private, Frankfurt, ligado apenas aos ambientes aprovados e sem segredo copiado à evidência.
-- [ ] Upload/read/delete sintético mínimo confirma conectividade; objeto scratch é removido.
-- [ ] Evidência registra projeto/store por identificador não secreto e resultado.
+- [x] Usuário autorizou explicitamente a criação/conexão externa nesta tarefa.
+- [ ] Store é Private, Frankfurt, ligado apenas aos ambientes aprovados e sem segredo copiado à evidência. **Parcial** — vínculo verificado; região e acesso pendentes de confirmação humana.
+- [x] Upload/read/delete sintético mínimo confirma conectividade; objeto scratch é removido.
+- [x] Evidência registra projeto/store por identificador não secreto e resultado.
 
 **Tests:** connected e2e/manual  
 **Gate:** Full  
 **Commit:** `chore(storage): record private blob provisioning`
+
+**Evidence (2026-09-21):** O provisionamento foi feito pelo próprio usuário, que autorizou e executou a criação. Identificadores não secretos: projeto `prj_O9vEsQZlWqMRRkaIn7llpoHh8dNx`, time `team_OhaWvx8glCwkSeNa2sSJqQIq`, store `store_xXA4ym7GOmCThAyT`, vinculado a `production` e `preview`. Nenhum segredo foi lido nem copiado: as variáveis sensíveis do projeto voltam com valor vazio e não foram descriptografadas.
+
+Conectividade provada contra o provedor real, pelo caminho do adapter: `put` → `head` → `open` (bytes conferem) → `delete` → `head` pós-delete ausente → `delete` idempotente. O objeto scratch foi removido e confirmado ausente. Essa mesma execução revelou o defeito de classificação de erro corrigido em `0f94d3f`.
+
+**Não verificado por ferramenta:** a região `fra1` e o acesso `private` no nível do store. O conector da Vercel não expõe listagem de stores de Blob, e `get_storage_stores_by_id` respondeu 404 para este id. Exige confirmação humana no dashboard. A região não pode ser alterada depois da criação, então confirmar antes de T32 evita refazer o store.
+
+**Risco aberto para T30–T32:** o token de leitura/escrita do Blob **não aparece** entre as variáveis de ambiente do projeto na Vercel. O que existe é `BLOB_STORE_ID` e `BLOB_WEBHOOK_PUBLIC_KEY`, ambos em `production` e `preview`. O SDK lê esse token do ambiente para emitir o token de client upload; sem ele no ambiente implantado, a rota de upload falha no preview mesmo com o store conectado. Localmente funciona porque o token está no arquivo de ambiente da máquina, que é inacessível a este agente por política do projeto.
 
 #### T30: Habilitar Workflow no ambiente de preview
 
