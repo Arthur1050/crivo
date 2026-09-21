@@ -280,18 +280,18 @@
 ## Handoff
 
 - **Feature**: Lote 12 — `.specs/features/lote-12-conteudo-de-documentos/`.
-- **Phase / Task**: Execute / Phase 5, T30. Parado na fronteira de recurso externo.
-- **Completed**: T1–T28 implementadas; T29 parcial. Esta janela fechou a Phase 3 (T19), a Phase 4 inteira (T20–T27) e T28. Gate final: 113 arquivos, 1.770 testes, 0 falhas; lint 0 erros; build aprovado.
-- **In-progress** (file:line): nenhum. Worktree limpo, exceto `.env.example`, que é alteração do próprio usuário e foi deliberadamente deixada fora dos commits do agente.
-- **Next step**: T30 (habilitar Workflow no ambiente de preview), T31 (aplicar schema no preview) e T32 (provar o fluxo documental). As três exigem ação do usuário no ambiente conectado.
+- **Phase / Task**: Execute / Phase 5, T30. Parado na fronteira de decisão sobre ambiente.
+- **Completed**: T1–T28 e T31. T29 parcial. Gate final: 113 arquivos, 1.770 testes, 0 falhas; lint 0 erros; build aprovado.
+- **Publicado**: `origin/main` em `d92b430` (17 commits enviados com autorização explícita em 2026-09-21). Deploy de produção `dpl_ECFMHDC5dX7Hdp5hySJoJadYVdEn` está **READY** — produção voltou a buildar depois de ~9 dias quebrada pelo erro de tipagem de T13. Aliases: `crivo-plum.vercel.app`, `crivo-arthur1050s-projects.vercel.app`.
+- **Schema de produção**: convergido em T31 (`d92b430`). Três tabelas, 17/17 colunas, 14 índices, 11 constraints. As 9 linhas removidas eram fixtures do seed.
+- **Saúde verificada pós-deploy** (somente leitura): `/login` 200; `/api/v1/context` 401 sem credencial; rotas do Workflow presentes no build (`ƒ /.well-known/workflow/v1/flow`, `/step`, `/webhook/[token]`) — um GET nelas responde 404 porque são endpoints RPC só-POST, não health checks.
+- **Next step**: decidir onde provar T30 e T32. Não existe ambiente de preview separado: `DATABASE_URL` cobre `production` e `preview`, então hoje qualquer preview bate no banco de produção. As opções são criar um ambiente de preview de verdade ou rodar a prova em produção, que agora tem schema e código corretos e zero documentos.
 - **Blockers**:
-  - **Região e acesso do store de Blob não verificados.** O conector da Vercel não expõe listagem de stores e `get_storage_stores_by_id` responde 404 para `store_xXA4ym7GOmCThAyT`. Confirmar `fra1` e `private` no dashboard antes de T32: a região não muda depois da criação.
-  - **Token de leitura/escrita do Blob ausente nas variáveis do projeto.** Só constam `BLOB_STORE_ID` e `BLOB_WEBHOOK_PUBLIC_KEY`, em `production` e `preview`. O SDK lê esse token do ambiente para emitir o token de client upload; sem ele, a rota de upload falha no preview mesmo com o store conectado. Resolver antes de T32, senão o smoke morre por causa alheia ao que se quer medir (mesma classe de erro da lição L-024).
-  - **Evidência visual de T23–T27 concentrada em T32.** Cinco critérios de navegador seguem explicitamente desmarcados no `tasks.md`, apontando para o preview. Decisão do usuário em 2026-09-21. O login é do usuário: o agente não digita senha em formulário, então a sessão precisa estar autenticada no Chrome — uma vez como admin/gestor e uma vez como corretor, para os cenários de papel de T25.
-- **Achados corrigidos nesta janela, fora do escopo das tasks**:
-  - `0d182e8` — dois erros de tipagem preexistentes de T13 (`getDocumentForProcessing`, `reconcileTenantDocumentAdmission`). Sobreviveram porque T13–T18 usaram gate Full, que não roda `tsc`; só o Build do fechamento de fase os revelou.
-  - `0f94d3f` — o adapter classificava `BlobNotFoundError` como falha permanente, porque essa classe do SDK não carrega `status` nem `code`. Como `head() === null` é o que autoriza o hard delete, nenhuma exclusão ou expiração jamais concluiria em produção. Os testes de T7 não pegaram porque dublavam o SDK com erros `{status: 404}`, forma que o provedor nunca produz.
-- **Desvios de contrato registrados**: a rota de upload passou a devolver `pathname: reserved.storageKey` (sem isso o cliente subiria para caminho não autorizado pelo token); o pedido do token usa `fetch` próprio porque o helper `upload()` do SDK descarta status e corpo; e o fallback de modalidade da tool n8n passou de `novo` para `ambos`, que o contrato GET não aceitava e que escondia documentos de usado.
-- **Backlog levantado, aguardando decisão**: paralelizar gates com branch Neon por worker. A suíte leva ~14 min porque serializa contra um Postgres remoto compartilhado. Mexe em infraestrutura de teste de todo o projeto.
+  - **Região e acesso do store de Blob não verificados.** O conector não expõe listagem de stores e `get_storage_stores_by_id` responde 404 para `store_xXA4ym7GOmCThAyT`. Conferir `fra1` e `private` no dashboard. A região não muda depois da criação.
+  - **Tool do n8n não publicada (T33).** `n8n/generated/principal.ts` já tem o contrato POST, mas a instância ainda roda `GET ?modality=`. O GET legado foi mantido de propósito como rollback, então o agente continua funcionando até a publicação.
+  - **Evidência visual de T23–T27 concentrada em T32.** Cinco critérios de navegador seguem desmarcados no `tasks.md`. O login é do usuário: o agente não digita senha em formulário.
+  - **T30 exige um run sintético do Workflow.** Em produção isso criaria execução real e precisaria de um documento — hoje há zero. Entangla com T32; precisa de decisão e autorização.
+- **Nota operacional**: todo `drizzle-kit push` emite `DROP INDEX` + `CREATE UNIQUE INDEX` para `document_categories_tenant_id_lower_name_idx`. Limitação do drizzle-kit com índice de expressão; a unicidade é preservada, mas o ruído reaparece em toda migração.
+- **Backlog levantado, aguardando decisão**: paralelizar gates com branch Neon por worker (o usuário adiou explicitamente em 2026-09-21).
 - **Uncommitted files**: `.specs/STATE.md` (este handoff) e `.env.example` (do usuário).
-- **Branch**: `main`; HEAD em `b72689e`; 15 commits à frente de `origin/main`; nenhum push, deploy ou publicação no n8n autorizado ou executado.
+- **Branch**: `main`, sincronizado com `origin/main` em `d92b430`.
