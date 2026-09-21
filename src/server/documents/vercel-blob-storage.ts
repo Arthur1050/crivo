@@ -1,7 +1,16 @@
 import "server-only";
-import { del, get, head } from "@vercel/blob";
+import {
+  BlobNotFoundError,
+  BlobRequestAbortedError,
+  BlobServiceNotAvailable,
+  BlobServiceRateLimited,
+  del,
+  get,
+  head,
+} from "@vercel/blob";
 import { generateClientTokenFromReadWriteToken } from "@vercel/blob/client";
 import {
+  DocumentStorageError,
   type AuthorizedUpload,
   type ClientUploadGrant,
   type DocumentStorage,
@@ -9,6 +18,34 @@ import {
   type StoredObjectStream,
   toDocumentStorageError,
 } from "./storage";
+
+/**
+ * Traduz o vocabulário de erro do provedor para o do domínio. Vive aqui, e não
+ * em `storage.ts`, porque o contrato de domínio é deliberadamente neutro de
+ * provedor — quem conhece as classes da Vercel é o adapter.
+ *
+ * As classes do SDK não carregam `status` nem `code`: `BlobNotFoundError` só
+ * se identifica pelo próprio tipo. Sem este mapeamento ela caía no default
+ * `permanent`, e como `head() === null` é o que autoriza o hard delete, toda
+ * remoção física ficava presa em pendência eterna.
+ *
+ * `absent` é concedido exclusivamente a `BlobNotFoundError`. Store inexistente,
+ * suspenso ou credencial inválida são `permanent`, nunca `absent`: classificar
+ * um erro de configuração como ausência apagaria a linha enquanto o original
+ * continua existindo num store inalcançável.
+ */
+export function translateVercelBlobError(error: unknown): DocumentStorageError {
+  if (error instanceof DocumentStorageError) return error;
+  if (error instanceof BlobNotFoundError) return new DocumentStorageError("absent");
+  if (
+    error instanceof BlobServiceNotAvailable ||
+    error instanceof BlobServiceRateLimited ||
+    error instanceof BlobRequestAbortedError
+  ) {
+    return new DocumentStorageError("transient");
+  }
+  return toDocumentStorageError(error);
+}
 
 export const MAX_DOCUMENT_UPLOAD_BYTES = 10 * 1024 * 1024;
 export const DOCUMENT_CONTENT_TYPES = [
@@ -83,7 +120,7 @@ export class VercelBlobDocumentStorage implements DocumentStorage {
     try {
       return toStoredObject(await head(key));
     } catch (error) {
-      const translated = toDocumentStorageError(error);
+      const translated = translateVercelBlobError(error);
       if (translated.kind === "absent") return null;
       throw translated;
     }
@@ -99,7 +136,7 @@ export class VercelBlobDocumentStorage implements DocumentStorage {
         stream: result.stream,
       };
     } catch (error) {
-      const translated = toDocumentStorageError(error);
+      const translated = translateVercelBlobError(error);
       if (translated.kind === "absent") return null;
       throw translated;
     }
@@ -109,9 +146,8 @@ export class VercelBlobDocumentStorage implements DocumentStorage {
     try {
       await del(key);
     } catch (error) {
-      if (toDocumentStorageError(error).kind !== "absent") {
-        throw toDocumentStorageError(error);
-      }
+      const translated = translateVercelBlobError(error);
+      if (translated.kind !== "absent") throw translated;
     }
   }
 }

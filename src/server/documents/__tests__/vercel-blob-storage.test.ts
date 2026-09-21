@@ -7,20 +7,35 @@ const sdk = vi.hoisted(() => ({
   generateClientTokenFromReadWriteToken: vi.fn(),
 }));
 
-vi.mock("@vercel/blob", () => ({
-  del: sdk.del,
-  get: sdk.get,
-  head: sdk.head,
-}));
+// Só as três funções de I/O são dubladas. As classes de erro reais do pacote
+// seguem valendo, senão `instanceof` no adapter compararia contra undefined e
+// o teste passaria por um motivo que não existe em produção (lote-12 T29).
+vi.mock("@vercel/blob", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@vercel/blob")>();
+  return { ...actual, del: sdk.del, get: sdk.get, head: sdk.head };
+});
 
 vi.mock("@vercel/blob/client", () => ({
   generateClientTokenFromReadWriteToken: sdk.generateClientTokenFromReadWriteToken,
 }));
 
 import {
+  BlobAccessError,
+  BlobNotFoundError,
+  BlobRequestAbortedError,
+  BlobServiceNotAvailable,
+  BlobServiceRateLimited,
+  BlobStoreNotFoundError,
+  BlobStoreSuspendedError,
+  BlobUnknownError,
+  del,
+  head,
+} from "@vercel/blob";
+import {
   DOCUMENT_CONTENT_TYPES,
   MAX_DOCUMENT_UPLOAD_BYTES,
   VercelBlobDocumentStorage,
+  translateVercelBlobError,
 } from "../vercel-blob-storage";
 
 const KEY = "documents/v1/tenant/intent/object";
@@ -184,3 +199,58 @@ describe("VercelBlobDocumentStorage", () => {
     });
   });
 });
+
+/**
+ * lote-12 — T29: tradução de erro contra as classes REAIS do SDK.
+ *
+ * Os testes de T7 usavam objetos `{ status: 404 }` inventados; o provedor
+ * nunca produz essa forma. `BlobNotFoundError` não carrega `status` nem
+ * `code`, então caía em `permanent` — e como `head() === null` é o que
+ * autoriza o hard delete, toda remoção física ficava presa em pendência
+ * eterna. Estes testes instanciam as classes do próprio pacote, de modo que
+ * uma mudança de vocabulário do provedor quebre aqui em vez de em produção.
+ */
+describe("tradução de erro do provedor (T29)", () => {
+  it("BlobNotFoundError é a única ausência reconhecida", () => {
+    expect(translateVercelBlobError(new BlobNotFoundError()).kind).toBe("absent");
+  });
+
+  it.each([
+    ["BlobServiceNotAvailable", () => new BlobServiceNotAvailable()],
+    ["BlobServiceRateLimited", () => new BlobServiceRateLimited(30)],
+    ["BlobRequestAbortedError", () => new BlobRequestAbortedError()],
+  ])("%s é transitório e retentável", (_nome, build) => {
+    expect(translateVercelBlobError(build()).kind).toBe("transient");
+  });
+
+  it.each([
+    ["BlobStoreNotFoundError", () => new BlobStoreNotFoundError()],
+    ["BlobStoreSuspendedError", () => new BlobStoreSuspendedError()],
+    ["BlobAccessError", () => new BlobAccessError()],
+    ["BlobUnknownError", () => new BlobUnknownError()],
+  ])("%s é permanente, nunca ausência", (_nome, build) => {
+    // Classificar erro de configuração como ausência apagaria a linha
+    // enquanto o original segue existindo num store inalcançável.
+    expect(translateVercelBlobError(build()).kind).toBe("permanent");
+  });
+
+  it("erro de rede sem classe do SDK continua caindo na classificação por code", () => {
+    expect(translateVercelBlobError({ code: "ECONNRESET" }).kind).toBe("transient");
+  });
+
+  it("nenhuma tradução vaza a mensagem do provedor", () => {
+    const traduzido = translateVercelBlobError(new BlobNotFoundError());
+    expect(traduzido.message).not.toContain("Vercel");
+    expect(traduzido.code).toBe("STORAGE_OBJECT_ABSENT");
+  });
+
+  it("head devolve null quando o provedor responde com o erro real de ausência", async () => {
+    vi.mocked(head).mockRejectedValueOnce(new BlobNotFoundError());
+    await expect(new VercelBlobDocumentStorage().head("k")).resolves.toBeNull();
+  });
+
+  it("delete trata a ausência real do provedor como remoção idempotente", async () => {
+    vi.mocked(del).mockRejectedValueOnce(new BlobNotFoundError());
+    await expect(new VercelBlobDocumentStorage().delete("k")).resolves.toBeUndefined();
+  });
+})
