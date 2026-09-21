@@ -247,7 +247,7 @@ Every ambiguity is resolved or recorded here; nothing remains silently unclear.
 | DOCTXT-01 | P1: Extrair e reprocessar texto nativo | T1–T4, T10–T15, T25–T26, T30, T32, T37 | Implementing — T1–T4, T10–T15 complete |
 | DOCCTX-01 | P1: Entregar o corpus elegível ao agente | T4, T12, T20–T22, T28, T33, T35–T37 | Implementing — T4, T12, T20–T22 complete |
 | DOCLIM-01 | P1: Aplicar o teto seguro sem truncamento silencioso | T3–T4, T12–T13, T20, T24–T25, T27, T32, T34, T37 | Implementing — T3–T4, T12–T13 complete |
-| DOCVIEW-01 | P1: Visualizar e baixar com o mesmo isolamento | T6–T7, T15–T18, T23–T25, T27, T29, T32, T37 | Implementing — T6–T7, T15–T18 complete |
+| DOCVIEW-01 | P1: Visualizar e baixar com o mesmo isolamento | T6–T7, T15–T18, T23–T25, T27, T29, T32, T37 | Implementing — T6–T7, T15–T18 complete; T23–T24 implementados, evidência visual em T32 |
 | DOCLIFE-01 | P1: Excluir linha, texto e arquivo como uma unidade | T3–T8, T13, T15, T17–T19, T23, T25, T27, T31–T32, T37 | Implementing — T3–T8, T13, T15, T17–T19 complete; T23 implementado, evidência visual em T32 |
 | DOCPROVA-01 | P1: Provar o percurso real até a resposta do agente | T21, T28, T33, T35–T37 | Implementing — T21 complete |
 

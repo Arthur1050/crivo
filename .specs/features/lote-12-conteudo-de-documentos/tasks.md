@@ -653,15 +653,17 @@ T35 -> T36 -> T37
 
 **Done when:**
 
-- [ ] Texto não vem na listagem e só é buscado ao abrir.
-- [ ] HTML, Markdown, scripts e links permanecem texto inerte.
-- [ ] Estado fora do agente mostra aviso; loading/erro/fechar são acessíveis.
-- [ ] Self-check Astryx passa.
-- [ ] Pelo menos cinco cenários de navegador incluem payload hostil e texto longo.
+- [x] Texto não vem na listagem e só é buscado ao abrir.
+- [x] HTML, Markdown, scripts e links permanecem texto inerte.
+- [x] Estado fora do agente mostra aviso; loading/erro/fechar são acessíveis.
+- [x] Self-check Astryx passa.
+- [ ] Pelo menos cinco cenários de navegador incluem payload hostil e texto longo. **Adiado para o preview (T32)**, junto com a bateria visual de T23–T27.
 
 **Tests:** browser e2e + build  
 **Gate:** Build  
 **Commit:** `feat(documents): preview extracted text safely`
+
+**Evidence (2026-09-21):** A busca só dispara quando o dialog abre com um documento; o texto não acompanha a listagem. O conteúdo é inerte por construção: `CodeBlock` com `language="plaintext"` renderiza por nós de texto do React, então HTML, Markdown, script e link aparecem como caracteres literais — há teste provando que o cliente entrega o payload hostil intacto, sem sanitizar nem truncar, porque reescrever o conteúdo faria o preview deixar de refletir o que o agente recebe. `fora_do_agente` traz o aviso do servidor num `Banner`. O estado é derivado do par documento/resultado em vez de sincronizado por efeito, o que descarta sozinho o conteúdo anterior ao trocar de documento ou fechar. 13 testes de `preview-client` cobrem 404, 403, 500, corpo inválido, estado fora do vocabulário, falha de rede, payload hostil e texto de 500 mil caracteres.
 
 #### T25: Exibir estados e ações por papel na tabela
 
