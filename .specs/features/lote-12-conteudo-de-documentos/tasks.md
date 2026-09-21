@@ -701,14 +701,18 @@ T35 -> T36 -> T37
 
 **Done when:**
 
-- [ ] Intervalo aproximado de 3 s existe apenas com `hasProcessingDocuments`.
-- [ ] Aba oculta pausa; unmount/estado terminal limpam timer; não há polling duplicado.
-- [ ] Quatro cenários de navegador provam start/pause/resume/stop.
-- [ ] Gate Build e self-check React passam.
+- [x] Intervalo aproximado de 3 s existe apenas com `hasProcessingDocuments`.
+- [x] Aba oculta pausa; unmount/estado terminal limpam timer; não há polling duplicado.
+- [ ] Quatro cenários de navegador provam start/pause/resume/stop. **Adiado para o preview (T32)**, junto com a bateria visual de T23–T27.
+- [x] Gate Build e self-check React passam.
 
 **Tests:** browser e2e + build  
 **Gate:** Build  
 **Commit:** `feat(documents): refresh processing document states`
+
+**Evidence (2026-09-21):** A decisão de quando atualizar saiu para `processing-refresh-policy.ts`, pura e testável sem navegador: o refresh só existe com documento `processando` **e** aba visível, e 8 testes cobrem as quatro combinações, a sequência visível→oculta→visível e o encerramento no estado terminal. O componente aplica a decisão e não a toma. Um único intervalo vive por vez: `sync` sempre limpa antes de reagendar, então nem um `visibilitychange` repetido duplica o polling. Desmontar ou sair de `processando` limpa o timer pela dependência do efeito.
+
+**Consumidor:** o componente ainda não está montado — quem o monta é a T27, próxima tarefa. Registrado aqui porque L-021 trata exatamente disso: código sem consumidor de produção não é feature entregue.
 
 #### T27: Integrar permissões, banner e novos componentes na página
 
