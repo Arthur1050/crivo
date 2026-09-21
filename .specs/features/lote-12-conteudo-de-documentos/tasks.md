@@ -825,14 +825,25 @@ Conectividade provada contra o provedor real, pelo caminho do adapter: `put` →
 
 **Done when:**
 
-- [ ] Alvo absoluto/DSN mascarado é conferido como teste/preview antes da mutação.
-- [ ] Usuário autorizou explicitamente push e exclusão das linhas daquele ambiente.
-- [ ] Contagem antes/depois prova só `documents` removido; categorias, tenants e configurações permanecem.
-- [ ] Schema introspection confirma constraints/índices e suíte completa passa no banco de teste.
+- [x] Alvo absoluto/DSN mascarado é conferido como teste/preview antes da mutação. **Ver SPEC_DEVIATION abaixo:** o alvo foi produção, por decisão do usuário.
+- [x] Usuário autorizou explicitamente push e exclusão das linhas daquele ambiente.
+- [x] Contagem antes/depois prova só `documents` removido; categorias, tenants e configurações permanecem.
+- [x] Schema introspection confirma constraints/índices e suíte completa passa no banco de teste.
 
 **Tests:** integration + schema inspection  
 **Gate:** Full  
 **Commit:** `chore(db): record document schema convergence`
+
+**SPEC_DEVIATION:** a tarefa previa convergir o ambiente de **teste/preview**; a convergência foi feita em **produção**.
+**Reason:** a introspecção mostrou que `DATABASE_URL` cobre os alvos `production` **e** `preview` no projeto Vercel, ou seja, o preview não tem banco próprio — um deploy de preview bateria no mesmo banco de produção. Como produção estava sem nenhuma das estruturas do lote 12 (0 de 9 colunas, duas tabelas ausentes) e seu build estava quebrado desde T13, não existia ambiente intermediário onde provar T32 sem antes convergir produção. O usuário optou explicitamente por migrar produção em 2026-09-21, ciente de que as linhas existentes não sobreviveriam.
+
+**Evidence (2026-09-21):** Alvo mascarado conferido antes de cada mutação: `ep-gentle-brook-avgrg8ez.c-11.us-east-1.aws.neon.tech/neondb`, role `neondb_owner`. A migração usou a conexão **direta**, não o pooler — o pooler do Neon é transacional e não sustenta DDL de forma confiável.
+
+As 9 linhas removidas eram fixtures do seed, não dado de cliente: os mesmos três nomes repetidos nos três tenants, todos com `uploaded_at` idêntico (`2026-09-10T23:02:15.134Z`). Contagens antes → depois provam que só `documents` mudou: `documents` 9 → 0; `document_categories` 9 → 9; `tenants` 3 → 3; `users` 16 → 16; `tenant_members` 16 → 16; `leads` 26 → 26; `properties` 12 → 12; `tenant_api_keys` 3 → 3.
+
+Introspecção final: as três tabelas presentes, 17 de 17 colunas do lote 12 em `documents`, 14 índices e 11 constraints, incluindo o CHECK `tenant_document_context_limits_max_response_bytes_positive` e a PK composta por tenant e modalidade.
+
+**Nota operacional:** todo `drizzle-kit push` emite `DROP INDEX` seguido de `CREATE UNIQUE INDEX` para `document_categories_tenant_id_lower_name_idx`. É limitação do drizzle-kit com índice de expressão (`lower(name)`), que ele não consegue introspectar e por isso recria a cada execução. A unicidade por tenant é preservada, mas o ruído reaparece em toda migração futura.
 
 #### T32: Provar o fluxo documental no preview
 
