@@ -6,6 +6,8 @@ import { DocumentsTable } from "@/src/components/documents/documents-table";
 import { DocumentsToolbar } from "@/src/components/documents/documents-toolbar";
 import { UploadDialog } from "@/src/components/documents/upload-dialog";
 import { NavLink } from "@/src/components/shared/nav-link";
+import { can } from "@/src/lib/permissions";
+import { verifySession } from "@/src/server/auth/session";
 import {
   getDocumentCategories,
   getDocuments,
@@ -39,6 +41,9 @@ export default async function DocumentosPage({
 }: DocumentosPageProps) {
   const params = await searchParams;
   const tenantId = await getActiveTenantId();
+  // Visibilidade de escrita na interface; a autoridade segue nas actions e
+  // rotas, que revalidam permissão e tenant por conta própria.
+  const canWrite = can((await verifySession()).roles, "documentos", "escrever");
 
   const modality = asModality(params.modalidade);
   const categoryId = params.categoria || undefined;
@@ -92,7 +97,7 @@ export default async function DocumentosPage({
           }
         />
       ) : (
-        <DocumentsTable documents={filteredDocuments} categories={categories} />
+        <DocumentsTable documents={filteredDocuments} categories={categories} canWrite={canWrite} />
       )}
     </VStack>
   );

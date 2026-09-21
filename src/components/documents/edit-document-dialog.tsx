@@ -26,7 +26,7 @@ interface FieldErrors {
 }
 
 interface EditDocumentDialogProps {
-  document: Document | null;
+  document: Omit<Document, "extractedText"> | null;
   categories: DocumentCategory[];
   onClose: () => void;
 }
@@ -65,7 +65,8 @@ export function EditDocumentDialog({
 }
 
 interface EditDocumentFormProps {
-  document: Document;
+  // Metadados apenas: o texto extraído nunca chega ao cliente pela listagem.
+  document: Omit<Document, "extractedText">;
   categories: DocumentCategory[];
   onClose: () => void;
 }

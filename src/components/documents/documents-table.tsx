@@ -2,22 +2,34 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { SquarePenIcon, Trash2Icon } from "lucide-react";
+import { DownloadIcon, EyeIcon, RefreshCwIcon, SquarePenIcon, Trash2Icon } from "lucide-react";
 import { AlertDialog } from "@astryxdesign/core/AlertDialog";
 import { Badge } from "@astryxdesign/core/Badge";
+import { Banner } from "@astryxdesign/core/Banner";
 import { Card } from "@astryxdesign/core/Card";
 import { DropdownMenu } from "@astryxdesign/core/DropdownMenu";
-import { HStack } from "@astryxdesign/core/Stack";
+import { HStack, VStack } from "@astryxdesign/core/Stack";
+import { StatusDot } from "@astryxdesign/core/StatusDot";
 import { Table, pixel, proportional } from "@astryxdesign/core/Table";
 import type { TableColumn } from "@astryxdesign/core/Table";
 import { Text } from "@astryxdesign/core/Text";
 import { Timestamp } from "@astryxdesign/core/Timestamp";
 import { Token } from "@astryxdesign/core/Token";
+import { DocumentPreviewDialog } from "@/src/components/documents/document-preview-dialog";
+import {
+  deriveDocumentState,
+  deriveRowActions,
+  describeFailure,
+  documentDownloadPath,
+} from "@/src/components/documents/document-row-state";
 import { EditDocumentDialog } from "@/src/components/documents/edit-document-dialog";
 import { FileTypeIcon } from "@/src/components/documents/file-type-icon";
 import { formatFileSize } from "@/src/lib/format";
-import { deleteDocumentAction } from "@/src/server/actions/documents";
+import { deleteDocumentAction, retryDocumentAction } from "@/src/server/actions/documents";
 import type { Document, DocumentCategory, Modality } from "@/src/server/data";
+
+/** O texto extraído nunca chega ao cliente pela listagem (T27, DOCVIEW-01). */
+export type DocumentTableItem = Omit<Document, "extractedText">;
 
 const MODALITY_LABELS: Record<Modality, string> = {
   novo: "Novo",
@@ -43,12 +55,18 @@ interface DocumentRow extends Record<string, unknown> {
   sizeBytes: bigint;
   uploadedAt: string;
   expiresAt: string | null;
-  document: Document;
+  document: DocumentTableItem;
 }
 
 interface DocumentsTableProps {
-  documents: Document[];
+  documents: DocumentTableItem[];
   categories: DocumentCategory[];
+  /**
+   * Reflete `documentos:escrever`. Esconder um botão é conveniência de
+   * interface: cada rota e action revalida permissão e tenant por conta
+   * própria, então a API segue sendo a autoridade.
+   */
+  canWrite: boolean;
 }
 
 /**
@@ -63,12 +81,14 @@ interface DocumentsTableProps {
  * Validade, Tamanho e Ações, em densidade compacta dentro de um card único.
  * Nenhuma ação muda — só a composição (RD-05 AC3).
  */
-export function DocumentsTable({ documents, categories }: DocumentsTableProps) {
+export function DocumentsTable({ documents, categories, canWrite }: DocumentsTableProps) {
   const router = useRouter();
-  const [editingDocument, setEditingDocument] = useState<Document | null>(null);
-  const [deletingDocument, setDeletingDocument] = useState<Document | null>(null);
+  const [editingDocument, setEditingDocument] = useState<DocumentTableItem | null>(null);
+  const [deletingDocument, setDeletingDocument] = useState<DocumentTableItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [previewDocument, setPreviewDocument] = useState<DocumentTableItem | null>(null);
+  const [retryError, setRetryError] = useState<string | null>(null);
 
   const categoryById = new Map(
     categories.map((category) => [category.id, category])
@@ -104,6 +124,16 @@ export function DocumentsTable({ documents, categories }: DocumentsTableProps) {
     }
 
     setDeletingDocument(null);
+    router.refresh();
+  }
+
+  async function handleRetry(document: DocumentTableItem) {
+    setRetryError(null);
+    const result = await retryDocumentAction({ documentId: document.id });
+    if (!result.ok) {
+      setRetryError(result.error);
+      return;
+    }
     router.refresh();
   }
 
@@ -146,6 +176,29 @@ export function DocumentsTable({ documents, categories }: DocumentsTableProps) {
         ),
     },
     {
+      key: "status",
+      header: "Estado",
+      width: pixel(170),
+      renderCell: (row) => {
+        const presentation = deriveDocumentState(row.document);
+        return (
+          <HStack gap={2} vAlign="center">
+            <StatusDot
+              variant={presentation.variant}
+              label={presentation.label}
+              tooltip={
+                presentation.state === "falha"
+                  ? describeFailure(row.document.failureCode)
+                  : presentation.description
+              }
+              isPulsing={presentation.state === "processando"}
+            />
+            <Text type="body">{presentation.label}</Text>
+          </HStack>
+        );
+      },
+    },
+    {
       key: "uploadedAt",
       header: "Enviado em",
       width: pixel(160),
@@ -157,7 +210,7 @@ export function DocumentsTable({ documents, categories }: DocumentsTableProps) {
       width: pixel(160),
       renderCell: (row) =>
         row.expiresAt ? (
-          <Timestamp value={row.expiresAt} format="date" />
+          <Timestamp value={row.expiresAt} format="date_time" />
         ) : (
           <Text type="supporting" color="secondary">
             {NO_EXPIRY_LABEL}
@@ -178,27 +231,62 @@ export function DocumentsTable({ documents, categories }: DocumentsTableProps) {
       // da área de conteúdo (lote-3 — UI-01); a largura extra também garante
       // o respiro visível pedido no AC.
       width: pixel(140),
-      renderCell: (row) => (
-        <DropdownMenu
-          button={{ label: "Ações", variant: "ghost", size: "sm" }}
-          items={[
-            {
-              label: "Editar",
-              icon: <SquarePenIcon size={16} />,
-              onClick: () => setEditingDocument(row.document),
+      renderCell: (row) => {
+        const { state } = deriveDocumentState(row.document);
+        const actions = deriveRowActions(state, canWrite);
+        const items = [];
+
+        if (actions.canPreview) {
+          items.push({
+            label: "Visualizar texto",
+            icon: <EyeIcon size={16} />,
+            onClick: () => setPreviewDocument(row.document),
+          });
+        }
+        if (actions.canDownload) {
+          items.push({
+            label: "Baixar original",
+            icon: <DownloadIcon size={16} />,
+            // A rota autenticada responde com Content-Disposition: attachment,
+            // então a navegação vira download sem sair da página.
+            onClick: () => window.location.assign(documentDownloadPath(row.id)),
+          });
+        }
+        if (actions.canRetry) {
+          items.push({
+            label: "Reprocessar",
+            icon: <RefreshCwIcon size={16} />,
+            onClick: () => void handleRetry(row.document),
+          });
+        }
+        if (actions.canEdit) {
+          items.push({
+            label: "Editar",
+            icon: <SquarePenIcon size={16} />,
+            onClick: () => setEditingDocument(row.document),
+          });
+        }
+        if (actions.canDelete) {
+          if (items.length > 0) items.push({ type: "divider" as const });
+          items.push({
+            label: "Excluir",
+            icon: <Trash2Icon size={16} />,
+            onClick: () => {
+              setDeleteError(null);
+              setDeletingDocument(row.document);
             },
-            { type: "divider" },
-            {
-              label: "Excluir",
-              icon: <Trash2Icon size={16} />,
-              onClick: () => {
-                setDeleteError(null);
-                setDeletingDocument(row.document);
-              },
-            },
-          ]}
-        />
-      ),
+          });
+        }
+
+        if (items.length === 0) {
+          return (
+            <Text type="supporting" color="secondary">
+              Sem ações
+            </Text>
+          );
+        }
+        return <DropdownMenu button={{ label: "Ações", variant: "ghost", size: "sm" }} items={items} />;
+      },
     },
   ];
 
@@ -209,7 +297,9 @@ export function DocumentsTable({ documents, categories }: DocumentsTableProps) {
         `padding={0}` para que as linhas encostem na borda do card — o card é
         só o contêiner da tabela, nunca um invólucro por linha.
       */}
-      <Card padding={0}>
+      <VStack gap={3}>
+        {retryError && <Banner status="error" title={retryError} />}
+        <Card padding={0}>
         <Table
           data={rows}
           columns={columns}
@@ -217,8 +307,18 @@ export function DocumentsTable({ documents, categories }: DocumentsTableProps) {
           density="compact"
           dividers="rows"
           hasHover
-        />
-      </Card>
+          />
+        </Card>
+      </VStack>
+
+      <DocumentPreviewDialog
+        documentId={previewDocument?.id ?? null}
+        documentName={previewDocument?.name ?? ""}
+        isOpen={previewDocument !== null}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setPreviewDocument(null);
+        }}
+      />
 
       <EditDocumentDialog
         document={editingDocument}

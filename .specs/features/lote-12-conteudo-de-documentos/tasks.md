@@ -676,15 +676,19 @@ T35 -> T36 -> T37
 
 **Done when:**
 
-- [ ] Todos os estados têm texto e semântica, com expirado derivado pelo instante.
-- [ ] Corretor só vê leitura; admin/gestor veem escrita; APIs continuam sendo autoridade.
-- [ ] Preview fica oculto em processando/falha; download fica disponível quando permitido.
-- [ ] Exclusão mantém confirmação permanente e retry explica erro seguro.
-- [ ] Oito cenários de navegador e screenshots cobrem estados e papéis.
+- [x] Todos os estados têm texto e semântica, com expirado derivado pelo instante.
+- [x] Corretor só vê leitura; admin/gestor veem escrita; APIs continuam sendo autoridade.
+- [x] Preview fica oculto em processando/falha; download fica disponível quando permitido.
+- [x] Exclusão mantém confirmação permanente e retry explica erro seguro.
+- [ ] Oito cenários de navegador e screenshots cobrem estados e papéis. **Adiado para o preview (T32)**, junto com a bateria visual de T23–T27.
 
 **Tests:** browser e2e + build  
 **Gate:** Build  
 **Commit:** `feat(documents): show document states and actions`
+
+**Evidence (2026-09-21):** Estado e permissão saíram para `document-row-state.ts`, puro e testável sem navegador — são exatamente os critérios desta tarefa, e 33 testes os cobrem. `expirado` não existe no banco: é derivado do instante, com asserção no boundary exato `expiresAt == now` e em ±1 ms (L-023), e prevalece sobre qualquer estado de processamento. Cada estado tem rótulo, variante e descrição próprios, com teste provando que nenhum rótulo se repete. Corretor não vê editar, reprocessar nem excluir em nenhum estado; preview aparece só onde existe texto (`pronto`, `fora_do_agente`) e download continua em `falha`, que é quando recuperar o original importa. Expirado bloqueia preview e download mas preserva excluir para quem escreve. `describeFailure` traduz o código para frase de produto e nunca exibe código desconhecido cru, com teste varrendo vazamento de provedor, caminho e credencial. O download passa pela rota autenticada, nunca por URL do provedor.
+
+**Nota:** a página recebeu a ligação mínima de `canWrite` para compilar. A integração completa de permissões, banner de benchmark e projeção leve é a T27.
 
 #### T26: Criar refresh limitado para processamento
 
