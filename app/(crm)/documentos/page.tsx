@@ -1,19 +1,23 @@
+import { Banner } from "@astryxdesign/core/Banner";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Heading, Text } from "@astryxdesign/core/Text";
+import { describeBenchmarkNotice } from "@/src/components/documents/benchmark-notice";
 import { CategoryManagerDialog } from "@/src/components/documents/category-manager-dialog";
+import { DocumentProcessingRefresh } from "@/src/components/documents/document-processing-refresh";
 import { DocumentsTable } from "@/src/components/documents/documents-table";
 import { DocumentsToolbar } from "@/src/components/documents/documents-toolbar";
 import { UploadDialog } from "@/src/components/documents/upload-dialog";
 import { NavLink } from "@/src/components/shared/nav-link";
 import { can } from "@/src/lib/permissions";
-import { verifySession } from "@/src/server/auth/session";
+import { requirePermission } from "@/src/server/auth/session";
 import {
   getDocumentCategories,
   getDocuments,
   getTenant,
   type Modality,
 } from "@/src/server/data";
+import { getTenantContextLimitSummary } from "@/src/server/documents/repository";
 import { getActiveTenantId } from "@/src/server/tenant";
 
 const VALID_MODALITIES: readonly string[] = ["novo", "usado", "ambos"];
@@ -41,23 +45,33 @@ export default async function DocumentosPage({
 }: DocumentosPageProps) {
   const params = await searchParams;
   const tenantId = await getActiveTenantId();
-  // Visibilidade de escrita na interface; a autoridade segue nas actions e
-  // rotas, que revalidam permissão e tenant por conta própria.
-  const canWrite = can((await verifySession()).roles, "documentos", "escrever");
+  // A leitura da página é exigida de fato; a visibilidade de escrita é só
+  // conveniência de interface — cada action e rota revalida permissão e tenant
+  // por conta própria, e segue sendo a autoridade.
+  const { roles } = await requirePermission("documentos", "ler");
+  const canWrite = can(roles, "documentos", "escrever");
 
   const modality = asModality(params.modalidade);
   const categoryId = params.categoria || undefined;
   const search = params.q?.trim() || undefined;
   const hasActiveFilters = Boolean(modality || categoryId || search);
 
-  const [allDocuments, filteredDocuments, categories, tenant] = await Promise.all([
-    getDocuments(tenantId),
-    getDocuments(tenantId, { modality, categoryId, search }),
-    getDocumentCategories(tenantId),
-    getTenant(tenantId),
-  ]);
+  const [allDocuments, filteredDocuments, categories, tenant, limitSummary] =
+    await Promise.all([
+      getDocuments(tenantId),
+      getDocuments(tenantId, { modality, categoryId, search }),
+      getDocumentCategories(tenantId),
+      getTenant(tenantId),
+      getTenantContextLimitSummary(tenantId),
+    ]);
 
   const hasAnyDocuments = allDocuments.length > 0;
+  // O polling só existe enquanto alguma extração está em curso, e a decisão é
+  // do servidor: a ilha cliente nem monta quando não há o que observar.
+  const hasProcessingDocuments = allDocuments.some(
+    (document) => document.status === "processando"
+  );
+  const benchmarkNotice = describeBenchmarkNotice(limitSummary, canWrite);
 
   return (
     <VStack gap={6}>
@@ -71,11 +85,25 @@ export default async function DocumentosPage({
             </Text>
           </VStack>
         </StackItem>
-        <HStack gap={2}>
-          <CategoryManagerDialog categories={categories} />
-          <UploadDialog categories={categories} />
-        </HStack>
+        {canWrite && (
+          <HStack gap={2}>
+            <CategoryManagerDialog categories={categories} />
+            <UploadDialog categories={categories} />
+          </HStack>
+        )}
       </HStack>
+
+      {benchmarkNotice && (
+        <Banner
+          status={benchmarkNotice.status}
+          title={benchmarkNotice.title}
+          description={benchmarkNotice.description}
+        />
+      )}
+
+      {hasProcessingDocuments && (
+        <DocumentProcessingRefresh hasProcessingDocuments={hasProcessingDocuments} />
+      )}
 
       {hasAnyDocuments && <DocumentsToolbar categories={categories} />}
 

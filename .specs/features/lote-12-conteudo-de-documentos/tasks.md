@@ -725,15 +725,17 @@ T35 -> T36 -> T37
 
 **Done when:**
 
-- [ ] RSC não serializa `extractedText` e passa somente dados necessários.
-- [ ] Upload/gestão aparecem conforme `documentos:escrever`; leitura conforme `documentos:ler`.
-- [ ] Benchmark stale/ausente aparece somente a admin/gestor sem ampliar teto.
-- [ ] Empty/filter states continuam corretos e polling só monta quando necessário.
-- [ ] Seis cenários visuais desktop cobrem vazio, filtros, papéis, stale e todos os estados.
+- [x] RSC não serializa `extractedText` e passa somente dados necessários.
+- [x] Upload/gestão aparecem conforme `documentos:escrever`; leitura conforme `documentos:ler`.
+- [x] Benchmark stale/ausente aparece somente a admin/gestor sem ampliar teto.
+- [x] Empty/filter states continuam corretos e polling só monta quando necessário.
+- [ ] Seis cenários visuais desktop cobrem vazio, filtros, papéis, stale e todos os estados. **Adiado para o preview (T32)**, junto com a bateria visual de T23–T27.
 
 **Tests:** browser e2e + build  
 **Gate:** Build  
 **Commit:** `feat(documents): integrate document management page`
+
+**Evidence (2026-09-21):** `extractedText` saiu da projeção de `getDocuments`, então o texto não é carregado do banco para listar e não pode ser serializado por descuido — garantia estrutural, não filtragem no componente. A página passou a exigir `documentos:ler` por `requirePermission`; upload e gestão de categorias só renderizam com `documentos:escrever`. O aviso de benchmark tem 11 testes: ausente e obsoleto têm títulos distintos, parcial conta como ausente porque as três modalidades são necessárias, ausente prevalece sobre obsoleto quando ambos valem, quem não opera o benchmark nunca vê o aviso, e nenhum texto carrega valor de teto — o aviso informa, nunca amplia limite. O refresh só monta quando o servidor já sabe que há documento `processando`, o que fecha o consumidor pendente de T26 (L-021). Os dois estados de vazio seguem distintos: tenant sem documentos e filtro sem resultado.
 
 ### Phase 5: Integração conectada e benchmark
 

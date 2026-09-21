@@ -547,12 +547,49 @@ export interface DocumentFilters {
   search?: string;
 }
 
+/**
+ * Listagem do CRM. Desde o lote-12 a projeção exclui `extractedText`: o texto
+ * de um documento pode ter megabytes e nunca é necessário para listar, então
+ * ele não sai do banco aqui nem pode ser serializado para o cliente por
+ * descuido (DOCVIEW-01). O preview o busca sob demanda, por documento.
+ */
+/** Projeção de listagem: todas as colunas, menos o texto extraído. */
+const DOCUMENT_LIST_COLUMNS = {
+  id: documents.id,
+  tenantId: documents.tenantId,
+  name: documents.name,
+  modality: documents.modality,
+  mimeType: documents.mimeType,
+  sizeBytes: documents.sizeBytes,
+  categoryId: documents.categoryId,
+  uploadedAt: documents.uploadedAt,
+  expiresAt: documents.expiresAt,
+  storageProvider: documents.storageProvider,
+  storageKey: documents.storageKey,
+  storageEtag: documents.storageEtag,
+  contentSha256: documents.contentSha256,
+  status: documents.status,
+  extractedBytes: documents.extractedBytes,
+  extractorVersion: documents.extractorVersion,
+  failureCode: documents.failureCode,
+  failureMessage: documents.failureMessage,
+  processingAttempt: documents.processingAttempt,
+  workflowRunId: documents.workflowRunId,
+  processingStartedAt: documents.processingStartedAt,
+  processedAt: documents.processedAt,
+  deletedAt: documents.deletedAt,
+  deletionAttempts: documents.deletionAttempts,
+  deletionLastErrorCode: documents.deletionLastErrorCode,
+} as const;
+
+export type DocumentListRow = Omit<Document, "extractedText">;
+
 export async function getDocuments(
   tenantId: string,
   filters?: DocumentFilters
-): Promise<Document[]> {
+): Promise<DocumentListRow[]> {
   return db
-    .select()
+    .select(DOCUMENT_LIST_COLUMNS)
     .from(documents)
     .where(
       and(

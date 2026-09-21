@@ -642,3 +642,29 @@ export async function upsertDocumentContextLimit(
     .returning();
   return limit;
 }
+
+export interface TenantContextLimitSummary {
+  /** Quantas das três modalidades têm teto publicado. */
+  published: number;
+  /** Quantas foram marcadas obsoletas por mudança de modelo, workflow ou prompt. */
+  stale: number;
+}
+
+/**
+ * Estado do benchmark de teto do tenant (lote-12 — T27, DOCLIM-01). Só conta
+ * linhas; nunca devolve o teto em si, porque a página apenas avisa e jamais
+ * amplia limite.
+ */
+export async function getTenantContextLimitSummary(
+  tenantId: string
+): Promise<TenantContextLimitSummary> {
+  const rows = await db
+    .select({ staleAt: tenantDocumentContextLimits.staleAt })
+    .from(tenantDocumentContextLimits)
+    .where(eq(tenantDocumentContextLimits.tenantId, tenantId));
+
+  return {
+    published: rows.length,
+    stale: rows.filter((row) => row.staleAt !== null).length,
+  };
+}
