@@ -270,7 +270,7 @@ export function UploadDialog({ categories }: UploadDialogProps) {
         icon={<UploadIcon size={16} />}
         onClick={() => setIsOpen(true)}
       />
-      <Dialog isOpen={isOpen} onOpenChange={handleOpenChange} purpose="form" width={480}>
+      <Dialog isOpen={isOpen} onOpenChange={handleOpenChange} purpose="form" width={560}>
         {/*
           O conteúdo só monta com o dialog aberto, mesmo padrão do
           `EditDocumentDialog`. Além de evitar montar um formulário que
@@ -307,6 +307,8 @@ export function UploadDialog({ categories }: UploadDialogProps) {
                   value={file}
                   onChange={handleFileChange}
                   accept={ACCEPTED_EXTENSIONS}
+                  // O default da lib é "Choose file", em inglês.
+                  placeholder="Escolher arquivo"
                   description="PDF, DOCX, TXT, MD ou CSV, até 10MB"
                   maxSize={MAX_FILE_SIZE_BYTES}
                   status={errors.file ? { type: "error", message: errors.file } : undefined}
@@ -344,6 +346,8 @@ export function UploadDialog({ categories }: UploadDialogProps) {
                   label="Validade"
                   description="Depois desse instante o documento deixa de ser usado pelo agente."
                   placeholder="Sem validade"
+                  // O default da lib é "Select a time", em inglês.
+                  timePlaceholder="Selecione a hora"
                   hourFormat="24h"
                   hasClear
                   isOptional
