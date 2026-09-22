@@ -883,15 +883,26 @@ Introspecção final: as três tabelas presentes, 17 de 17 colunas do lote 12 em
 
 **Done when:**
 
-- [ ] Usuário autorizou explicitamente publicação e mudança de configuração do n8n.
-- [ ] Versão ativa casa com fonte/generated e preserva modelo/memória/tools não relacionadas.
-- [ ] Sucessos/progresso/manuais não persistem; erros têm retenção máxima de 24 h.
-- [ ] Execução sintética POST usa pergunta/modalidade corretas e retorna conteúdo antes da resposta.
-- [ ] IDs/status são conferidos ao vivo antes de serem citados, conforme L-011.
+- [x] Usuário autorizou explicitamente publicação e mudança de configuração do n8n.
+- [x] Versão ativa casa com fonte/generated e preserva modelo/memória/tools não relacionadas.
+- [x] Sucessos/progresso/manuais não persistem; erros têm retenção máxima de 24 h. **Parcial** — as três primeiras aplicadas; a janela de 24 h é configuração de instância, fora desta API.
+- [ ] Execução sintética POST usa pergunta/modalidade corretas e retorna conteúdo antes da resposta. **Bloqueado** — produção tem zero documentos desde a convergência de T31.
+- [x] IDs/status são conferidos ao vivo antes de serem citados, conforme L-011.
 
 **Tests:** n8n live e2e  
 **Gate:** Full  
 **Commit:** `chore(agent): publish context tool and retention policy`
+
+**SPEC_DEVIATION:** T33 depende de T28 **e T32**; foi executada com T32 ainda pendente, a pedido do usuário.
+**Reason:** o risco é contido. O endpoint POST já está em produção com 23 testes de rota, e o GET legado continua exposto como caminho de rollback — se o POST falhar, a tool recebe erro em vez de dado silenciosamente errado.
+
+**Evidence (2026-09-22):** Workflow `crivo-agente-principal` (`0B1nqjODu7xuYYKF`). A publicação exigiu dois passos, e o segundo quase passou despercebido: `update_workflow` cria uma **versão rascunho**, não ativa. Antes do `publish_workflow`, `versionId` (`9a73c823`) diferia de `activeVersionId` (`538b04fd`) e o agente ao vivo seguia no contrato GET. Depois da publicação os dois casam em `9a73c823`, conferido ao vivo conforme L-011.
+
+Estado verificado na instância: `method: POST`, nenhum resquício de `sendQuery`/`queryParameters`, `retryOnFail`/`maxTries` preservados, `neverError` preservado, nenhum `fromAI` no nó, 62 nós, workflow ativo, snapshot do modelo e memória intactos, e as outras três tools presentes. A credencial não aparece nesta visão da API para nenhuma tool, inclusive as que funcionam — não é ausência.
+
+Retenção aplicada: `saveDataSuccessExecution: none`, `saveExecutionProgress: false`, `saveManualExecutions: false`, `saveDataErrorExecution: all`, com `errorWorkflow` preservado. A motivação é concreta: a tool passou a devolver o conteúdo integral dos documentos, então o dado de execução guardaria o corpus da imobiliária.
+
+**Por que a execução sintética não foi feita:** produção ficou com zero documentos depois da convergência de T31, que removeu as 9 linhas metadata-only. Uma chamada da tool retornaria corpus vazio e não provaria entrega de conteúdo. Fica para T32, junto com o documento real.
 
 #### T34: Medir e persistir os tetos diretos
 
