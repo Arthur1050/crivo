@@ -280,18 +280,19 @@
 ## Handoff
 
 - **Feature**: Lote 12 — `.specs/features/lote-12-conteudo-de-documentos/`.
-- **Phase / Task**: Execute / Phase 5, T30. Parado na fronteira de decisão sobre ambiente.
+- **Phase / Task**: Execute / Phase 5. T30 e T32 pendentes de ambiente; verificação visual de T23–T27 parcialmente concluída.
 - **Completed**: T1–T28 e T31. T29 parcial. Gate final: 113 arquivos, 1.770 testes, 0 falhas; lint 0 erros; build aprovado.
-- **Publicado**: `origin/main` em `d92b430` (17 commits enviados com autorização explícita em 2026-09-21). Deploy de produção `dpl_ECFMHDC5dX7Hdp5hySJoJadYVdEn` está **READY** — produção voltou a buildar depois de ~9 dias quebrada pelo erro de tipagem de T13. Aliases: `crivo-plum.vercel.app`, `crivo-arthur1050s-projects.vercel.app`.
-- **Schema de produção**: convergido em T31 (`d92b430`). Três tabelas, 17/17 colunas, 14 índices, 11 constraints. As 9 linhas removidas eram fixtures do seed.
-- **Saúde verificada pós-deploy** (somente leitura): `/login` 200; `/api/v1/context` 401 sem credencial; rotas do Workflow presentes no build (`ƒ /.well-known/workflow/v1/flow`, `/step`, `/webhook/[token]`) — um GET nelas responde 404 porque são endpoints RPC só-POST, não health checks.
-- **Next step**: decidir onde provar T30 e T32. Não existe ambiente de preview separado: `DATABASE_URL` cobre `production` e `preview`, então hoje qualquer preview bate no banco de produção. As opções são criar um ambiente de preview de verdade ou rodar a prova em produção, que agora tem schema e código corretos e zero documentos.
+- **Publicado**: `origin/main` em `d92b430`; deploy de produção `READY`. Commits posteriores (`7c9a3c5`, `dd4a8db`, `93740be`) ainda **não publicados**.
+- **Verificação visual (2026-09-21)**: sessão real no Chrome contra o banco descartável, com documentos semeados nos cinco estados. Encontrou e corrigiu cinco defeitos que 1.770 testes não pegaram — hidratação quebrada pelo calendário renderizado com o dialog fechado, label de carregamento duplicado, dois textos da lib em inglês e scroll horizontal no dialog. Confirma a lição L-009 de forma literal.
+- **Next step**: publicar a tool no n8n (T33) e decidir onde provar T30/T32. Os cenários de papel corretor exigem uma segunda sessão autenticada.
 - **Blockers**:
-  - **Região e acesso do store de Blob não verificados.** O conector não expõe listagem de stores e `get_storage_stores_by_id` responde 404 para `store_xXA4ym7GOmCThAyT`. Conferir `fra1` e `private` no dashboard. A região não muda depois da criação.
-  - **Tool do n8n não publicada (T33).** `n8n/generated/principal.ts` já tem o contrato POST, mas a instância ainda roda `GET ?modality=`. O GET legado foi mantido de propósito como rollback, então o agente continua funcionando até a publicação.
-  - **Evidência visual de T23–T27 concentrada em T32.** Cinco critérios de navegador seguem desmarcados no `tasks.md`. O login é do usuário: o agente não digita senha em formulário.
-  - **T30 exige um run sintético do Workflow.** Em produção isso criaria execução real e precisaria de um documento — hoje há zero. Entangla com T32; precisa de decisão e autorização.
-- **Nota operacional**: todo `drizzle-kit push` emite `DROP INDEX` + `CREATE UNIQUE INDEX` para `document_categories_tenant_id_lower_name_idx`. Limitação do drizzle-kit com índice de expressão; a unicidade é preservada, mas o ruído reaparece em toda migração.
-- **Backlog levantado, aguardando decisão**: paralelizar gates com branch Neon por worker (o usuário adiou explicitamente em 2026-09-21).
+  - **Papel corretor sem evidência.** Exige um segundo login com esse papel no banco descartável; o agente não digita senha em formulário.
+  - **Caminho de sucesso do upload só existe no preview.** `onUploadCompleted` parte da infraestrutura da Vercel e é verificado por HMAC; em localhost a finalização nunca roda.
+  - **Região e acesso do store de Blob não verificados.** O conector não expõe listagem de stores; conferir `fra1` e `private` no dashboard.
+  - **Tool do n8n não publicada (T33).** `n8n/generated/principal.ts` já tem o contrato POST; a instância ainda roda o GET legado, mantido de propósito como rollback.
+- **Defeito de produto aberto, fora do escopo**: o `Timestamp` da Astryx quebra a hidratação em todo o produto — servidor emite `Sep 21, 2026`, cliente `21 de set. de 2026`. Não é alcançável pelo `InternationalizationProvider` (já documentado em `src/lib/relative-time.ts` para as strings relativas). Toda página que usa `Timestamp` é regenerada no cliente. Saídas: `swizzle` do componente ou formatação local. Decisão do usuário.
+- **Segundo item de i18n**: os indicadores `Required`/`Optional` dos formulários vêm do catálogo interno da Astryx, que só tem inglês. Resolvível com um catálogo pt-BR passado ao provider; afeta todas as telas.
+- **Armadilha operacional confirmada na prática**: `npm test` apaga e repovoa o banco descartável, incluindo `users` e `accounts`. Rodar a suíte durante uma sessão de captura destrói o login e os documentos semeados. Regra: gate primeiro, captura depois, nunca intercalados.
+- **Ferramenta nova**: `npm run dev:test` (`93740be`) sobe o Next contra o banco descartável e imprime o host de destino na primeira linha. `npm run dev` continua falando com o banco real.
 - **Uncommitted files**: `.specs/STATE.md` (este handoff) e `.env.example` (do usuário).
-- **Branch**: `main`, sincronizado com `origin/main` em `d92b430`.
+- **Branch**: `main`, 3 commits à frente de `origin/main`.

@@ -663,6 +663,12 @@ T35 -> T36 -> T37
 **Gate:** Build  
 **Commit:** `feat(documents): preview extracted text safely`
 
+**Verificação visual parcial (2026-09-21):** sessão real no Chrome, contra o banco descartável, com documentos semeados nos cinco estados. Confirmado na tela: os cinco estados com rótulo e semântica distintos, `expirado` derivado do instante, validade com data e hora, menu de ações completo para administrador (visualizar, baixar, editar, excluir), preview abrindo sob demanda com texto inerte e numeração de linhas, banner de benchmark ausente visível só para quem escreve, e o dialog de upload montando apenas quando aberto.
+
+A verificação encontrou cinco defeitos que os 1.770 testes não pegaram, todos corrigidos: hidratação quebrada pelo calendário do `DateTimeInput` renderizado com o dialog fechado (`7c9a3c5`); label de carregamento duplicado no preview (`7c9a3c5`); `Choose file` e `Select a time` em inglês, e dialog com scroll horizontal porque data e hora não cabiam em 480px (`dd4a8db`).
+
+**Ainda sem evidência:** cenários de papel corretor (exigem segunda sessão autenticada, ação do usuário) e o caminho de sucesso do upload (só existe no preview — T32).
+
 **Evidence (2026-09-21):** A busca só dispara quando o dialog abre com um documento; o texto não acompanha a listagem. O conteúdo é inerte por construção: `CodeBlock` com `language="plaintext"` renderiza por nós de texto do React, então HTML, Markdown, script e link aparecem como caracteres literais — há teste provando que o cliente entrega o payload hostil intacto, sem sanitizar nem truncar, porque reescrever o conteúdo faria o preview deixar de refletir o que o agente recebe. `fora_do_agente` traz o aviso do servidor num `Banner`. O estado é derivado do par documento/resultado em vez de sincronizado por efeito, o que descarta sozinho o conteúdo anterior ao trocar de documento ou fechar. 13 testes de `preview-client` cobrem 404, 403, 500, corpo inválido, estado fora do vocabulário, falha de rede, payload hostil e texto de 500 mil caracteres.
 
 #### T25: Exibir estados e ações por papel na tabela
