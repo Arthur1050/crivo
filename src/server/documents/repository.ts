@@ -575,15 +575,37 @@ export async function recordDocumentDeletionFailure(
 
 /** CAS hard-delete: a row may disappear only after the private object was confirmed absent. */
 export async function hardDeleteTombstonedDocument(tenantId: string, documentId: string): Promise<boolean> {
-  const rows = await db
-    .delete(documents)
-    .where(and(
-      eq(documents.tenantId, tenantId),
-      eq(documents.id, documentId),
-      sql`${documents.deletedAt} is not null`
-    ))
-    .returning({ id: documents.id });
-  return rows.length === 1;
+  // Todo documento que chegou por upload tem a intenção apontando para ele por
+  // FK. Sem apagá-la junto, o DELETE viola a FK e nenhum documento enviado
+  // pela interface sai do banco — ficaria tombstone para sempre. A intenção
+  // também guarda nome e chave do arquivo: remover o registro inclui ela.
+  return db.transaction(async (tx) => {
+    const [tombstone] = await tx
+      .select({ id: documents.id })
+      .from(documents)
+      .where(and(
+        eq(documents.tenantId, tenantId),
+        eq(documents.id, documentId),
+        sql`${documents.deletedAt} is not null`
+      ));
+    if (!tombstone) return false;
+
+    await tx
+      .delete(documentUploadIntents)
+      .where(and(
+        eq(documentUploadIntents.tenantId, tenantId),
+        eq(documentUploadIntents.documentId, documentId)
+      ));
+    const rows = await tx
+      .delete(documents)
+      .where(and(
+        eq(documents.tenantId, tenantId),
+        eq(documents.id, documentId),
+        sql`${documents.deletedAt} is not null`
+      ))
+      .returning({ id: documents.id });
+    return rows.length === 1;
+  });
 }
 
 export interface TenantScopedDocument {

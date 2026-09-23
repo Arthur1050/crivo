@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { eq, inArray } from "drizzle-orm";
 import { db } from "../../../db";
-import { documents, tenants, users } from "../../../db/schema";
+import { documentUploadIntents, documents, tenants, users } from "../../../db/schema";
 import { createDocumentLifecycle } from "../lifecycle";
 import { completeDocumentProcessing, tombstoneDocument } from "../repository";
 import { DocumentStorageError, type DocumentStorage } from "../storage";
@@ -60,6 +60,22 @@ describe("document lifecycle integration (lote-12 T18)", () => {
     const s = storage({ delete: vi.fn(async () => { expect(await row(d.id)).toMatchObject({ deletedAt: NOW, extractedText: null, extractedBytes: null, failureCode: null, failureMessage: null }); }) });
     await expect(lifecycle(s).remove({ tenantId: TENANT_A, documentId: d.id })).resolves.toEqual({ kind: "removed" });
   });
+  // Em produção todo documento nasce de uma intenção de upload que aponta para
+  // ele por FK. Os testes acima criam o documento direto e nunca viam a FK: o
+  // DELETE físico falhava em produção e o documento ficava tombstone para sempre.
+  it("remove documento que nasceu de upload, junto com a intenção que o referencia", async () => {
+    const d = await createDocument("with-intent");
+    const [intent] = await db.insert(documentUploadIntents).values({
+      tenantId: TENANT_A, requestedByUserId: USER_A, clientSha256: d.contentSha256, name: d.name,
+      mimeType: d.mimeType, sizeBytes: d.sizeBytes, modality: d.modality, storageKey: d.storageKey,
+      expiresAtIntent: NOW, state: "committed", documentId: d.id, storageEtag: d.storageEtag,
+    }).returning();
+
+    await expect(lifecycle(storage()).remove({ tenantId: TENANT_A, documentId: d.id })).resolves.toEqual({ kind: "removed" });
+    expect(await row(d.id)).toBeUndefined();
+    expect(await db.select().from(documentUploadIntents).where(eq(documentUploadIntents.id, intent.id))).toHaveLength(0);
+  });
+
   it("remove a linha apenas depois de delete e head confirmarem ausência", async () => { const d = await createDocument("order"); const s = storage(); await lifecycle(s).remove({ tenantId: TENANT_A, documentId: d.id }); expect(s.delete).toHaveBeenCalledWith(d.storageKey); expect(s.head).toHaveBeenCalledWith(d.storageKey); expect(await row(d.id)).toBeUndefined(); });
   it("trata ausência já existente como remoção idempotente", async () => { const d = await createDocument("absent"); const s = storage({ delete: vi.fn(async () => { throw new DocumentStorageError("absent"); }) }); await expect(lifecycle(s).remove({ tenantId: TENANT_A, documentId: d.id })).resolves.toEqual({ kind: "removed" }); expect(await row(d.id)).toBeUndefined(); });
   it("não remove a linha quando head ainda encontra o objeto", async () => { const d = await createDocument("head-present"); const s = storage({ head: vi.fn(async (key) => ({ key, etag: "etag", contentType: "text/plain", size: 12 })) }); await expect(lifecycle(s).remove({ tenantId: TENANT_A, documentId: d.id })).resolves.toEqual({ kind: "retryable", code: "STORAGE_PERMANENT_FAILURE" }); expect(await row(d.id)).toMatchObject({ deletedAt: NOW, deletionAttempts: 1, deletionLastErrorCode: "STORAGE_PERMANENT_FAILURE" }); });
