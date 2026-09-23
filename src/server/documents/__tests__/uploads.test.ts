@@ -408,22 +408,44 @@ describe("document upload intake (lote-12 T8)", () => {
     expect(await db.select().from(documents).where(eq(documents.storageKey, started.grant.key))).toHaveLength(0);
   });
 
-  it("retorna o documento existente e compensa o objeto de hash duplicado", async () => {
-    const bytes = encoder.encode(`conteúdo-existente-${randomUUID()}`);
+  it("preflight recusa hash de documento já confirmado antes de emitir token", async () => {
+    const bytes = encoder.encode(`já-confirmado-${randomUUID()}`);
     const first = intake(storageFixture(bytes));
     const firstIntent = await first.begin(inputFor(bytes), actorA);
     if (firstIntent.kind !== "ready") throw new Error("first intent was not ready");
-    const firstResult = await first.finalize(firstIntent.intentId);
-    if (firstResult.kind !== "committed") throw new Error("first document was not committed");
+    expect((await first.finalize(firstIntent.intentId)).kind).toBe("committed");
 
+    const againStorage = storageFixture(bytes);
+    await expect(intake(againStorage).begin(inputFor(bytes), actorA)).resolves.toEqual({ kind: "duplicate_upload" });
+    expect(againStorage.authorizeClientUpload).not.toHaveBeenCalled();
+  });
+
+  it("retorna o documento existente e compensa o objeto quando outro commit vence a corrida", async () => {
+    const bytes = encoder.encode(`conteúdo-existente-${randomUUID()}`);
     const duplicateStorage = storageFixture(bytes);
     const duplicateDispatch = vi.fn(async () => undefined);
     const duplicate = intake(duplicateStorage, { dispatch: duplicateDispatch });
     const duplicateIntent = await duplicate.begin(inputFor(bytes), actorA);
     if (duplicateIntent.kind !== "ready") throw new Error("duplicate intent was not ready");
+
+    // Um documento com o mesmo conteúdo é confirmado depois da reserva: só o
+    // índice único do commit pode perceber, e o objeto tem de ser compensado.
+    const [winner] = await db.insert(documents).values({
+      tenantId: TENANT_A,
+      name: `vencedor-${randomUUID()}.txt`,
+      mimeType: "text/plain",
+      sizeBytes: BigInt(bytes.byteLength),
+      modality: "novo",
+      storageProvider: "vercel_blob",
+      storageKey: `documents/v1/${TENANT_A}/vencedor-${randomUUID()}`,
+      storageEtag: "etag-vencedor",
+      contentSha256: sha256(bytes),
+      status: "processando",
+    }).returning({ id: documents.id });
+
     await expect(duplicate.finalize(duplicateIntent.intentId)).resolves.toEqual({
       kind: "duplicate_content",
-      documentId: firstResult.documentId,
+      documentId: winner.id,
     });
     expect(duplicateStorage.delete).toHaveBeenCalledTimes(1);
     expect(duplicateDispatch).not.toHaveBeenCalled();

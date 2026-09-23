@@ -216,6 +216,22 @@ export async function createUploadIntent(
         )
       );
 
+    // O preflight também olha documentos já confirmados: sem isso um arquivo
+    // repetido sobe inteiro e só é recusado no commit, depois de gastar o
+    // upload e sem que a mensagem chegue a tempo ao usuário.
+    const [existing] = await tx
+      .select({ id: documents.id })
+      .from(documents)
+      .where(
+        and(
+          eq(documents.tenantId, tenantId),
+          eq(documents.contentSha256, input.clientSha256),
+          isNull(documents.deletedAt)
+        )
+      )
+      .limit(1);
+    if (existing) return { kind: "active_duplicate" };
+
     try {
       const [intent] = await tx
         .insert(documentUploadIntents)
