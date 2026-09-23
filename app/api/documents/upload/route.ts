@@ -156,8 +156,13 @@ export function createDocumentUploadPostHandler(
         // adivinhá-la, e o token só autoriza esse caminho. Sem isso o upload
         // apontaria para o pathname escolhido pelo navegador e o provedor o
         // recusaria por divergência. Não é vazamento: o objeto é privado e o
-        // cliente precisa da chave para subir.
-        return Response.json({ ...generated, pathname: reserved.storageKey });
+        // cliente precisa da chave para subir. O `intentId` volta para o
+        // cliente pedir a finalização sem depender do callback do provedor.
+        return Response.json({
+          ...generated,
+          pathname: reserved.storageKey,
+          intentId: reserved.intentId,
+        });
       } catch (error) {
         if (error instanceof PermissionDeniedError) return safeError(403, "upload_forbidden");
         return safeError(500, "upload_unavailable");

@@ -16,7 +16,10 @@ import { Selector, SelectorOption } from "@astryxdesign/core/Selector";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { Token } from "@astryxdesign/core/Token";
-import { createDocumentCategoryAction } from "@/src/server/actions/documents";
+import {
+  createDocumentCategoryAction,
+  finalizeDocumentUploadAction,
+} from "@/src/server/actions/documents";
 import type { CategoryColor, DocumentCategory, Modality } from "@/src/server/data";
 import {
   CATEGORY_COLOR_PALETTE,
@@ -222,10 +225,17 @@ export function UploadDialog({ categories }: UploadDialogProps) {
           setProgress({ phase: "uploading", percentage }),
       });
 
-      // O provedor confirma a conclusão ao servidor por callback assinado; o
-      // documento aparece na lista quando o processamento começa.
+      // O provedor também confirma por callback assinado, mas ele é
+      // assíncrono: sem pedir a finalização aqui, a lista poderia recarregar
+      // antes do documento existir e ele só apareceria num reload manual.
       setProgress({ phase: "finalizing", percentage: 100 });
+      const finalized = await finalizeDocumentUploadAction({ intentId: ticket.intentId });
       router.refresh();
+      if (!finalized.ok) {
+        setProgress({ phase: "idle", percentage: 0 });
+        setBanner(finalized.error);
+        return;
+      }
       handleOpenChange(false);
     } catch {
       setProgress({ phase: "idle", percentage: 0 });

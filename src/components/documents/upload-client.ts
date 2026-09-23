@@ -44,7 +44,7 @@ export const UPLOAD_FAILURE_MESSAGES: Record<UploadFailureCode, string> = {
 };
 
 export type UploadTicket =
-  | { ok: true; clientToken: string; pathname: string }
+  | { ok: true; clientToken: string; pathname: string; intentId: string }
   | { ok: false; code: UploadFailureCode; message: string };
 
 function failure(code: UploadFailureCode): UploadTicket {
@@ -111,11 +111,20 @@ export async function requestUploadTicket(
 
   if (!response.ok) return failure(codeFromBody(body, response.status));
 
-  const record = body as { clientToken?: unknown; pathname?: unknown } | null;
-  if (typeof record?.clientToken !== "string" || typeof record?.pathname !== "string") {
+  const record = body as { clientToken?: unknown; pathname?: unknown; intentId?: unknown } | null;
+  if (
+    typeof record?.clientToken !== "string" ||
+    typeof record?.pathname !== "string" ||
+    typeof record?.intentId !== "string"
+  ) {
     return failure("upload_unavailable");
   }
-  return { ok: true, clientToken: record.clientToken, pathname: record.pathname };
+  return {
+    ok: true,
+    clientToken: record.clientToken,
+    pathname: record.pathname,
+    intentId: record.intentId,
+  };
 }
 
 /** SHA-256 do arquivo, em hex — a mesma identidade que o servidor reconfere. */

@@ -23,6 +23,7 @@ import { createDocumentProcessingService } from "../documents/processing";
 import { reconcileTenantDocumentAdmission, tombstoneDocument } from "../documents/repository";
 import { VercelBlobDocumentStorage } from "../documents/vercel-blob-storage";
 import { startDocumentProcessingRun } from "../documents/workflow-start";
+import { createDocumentUploadIntake } from "../documents/uploads";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -146,6 +147,46 @@ export async function deleteDocumentAction(
   await reconcileTenantDocumentAdmission(tenantId);
   revalidatePath("/documentos");
   return { ok: true };
+}
+
+export interface FinalizeDocumentUploadInput {
+  intentId: string;
+}
+
+/**
+ * Finaliza pelo navegador o upload que o provedor também confirma por
+ * callback. Os dois caminhos chamam o mesmo serviço idempotente; o que chegar
+ * primeiro grava o documento e o outro devolve o mesmo resultado.
+ */
+export async function finalizeDocumentUploadAction(
+  input: FinalizeDocumentUploadInput
+): Promise<ActionResult> {
+  const denied = await denyIfForbidden("documentos", "escrever");
+  if (denied) return denied;
+
+  const result = await createDocumentUploadIntake().finalizeForActor(input.intentId);
+  revalidatePath("/documentos");
+
+  if (result.kind === "committed" || result.kind === "not_finalizable") {
+    // `not_finalizable` aqui é o callback finalizando em paralelo: o documento
+    // aparece assim que ele concluir.
+    return { ok: true };
+  }
+  if (result.kind === "duplicate_content") {
+    return {
+      ok: false,
+      error:
+        "Este arquivo já foi enviado nesta imobiliária. Abra o documento existente na lista para editar nome, modalidade, categoria ou validade.",
+    };
+  }
+  if (result.kind === "rejected") {
+    return {
+      ok: false,
+      error:
+        "O arquivo não passou na verificação do servidor: o conteúdo não corresponde ao tipo informado. Confira o arquivo e envie novamente.",
+    };
+  }
+  return { ok: false, error: "Não foi possível concluir o envio. Tente novamente." };
 }
 
 export interface RetryDocumentInput {

@@ -33,17 +33,23 @@ describe("upload-client (lote-12 T23)", () => {
     it("devolve token e a chave reservada pelo servidor", async () => {
       const result = await requestUploadTicket(
         input,
-        respond(200, { clientToken: "vercel_blob_client_x", pathname: "documents/v1/t/opaca" })
+        respond(200, { clientToken: "vercel_blob_client_x", pathname: "documents/v1/t/opaca", intentId: "intent-1" })
       );
       expect(result).toEqual({
         ok: true,
         clientToken: "vercel_blob_client_x",
         pathname: "documents/v1/t/opaca",
+        intentId: "intent-1",
       });
     });
 
+    it("resposta 200 sem intentId é indisponibilidade, não ticket parcial", async () => {
+      const result = await requestUploadTicket(input, respond(200, { clientToken: "t", pathname: "p" }));
+      expect(result).toMatchObject({ ok: false, code: "upload_unavailable" });
+    });
+
     it("envia o payload do cliente serializado para a rota de upload", async () => {
-      const fetchImpl = respond(200, { clientToken: "t", pathname: "p" });
+      const fetchImpl = respond(200, { clientToken: "t", pathname: "p", intentId: "i" });
       await requestUploadTicket(input, fetchImpl);
 
       const [url, init] = vi.mocked(fetchImpl).mock.calls[0] as [string, RequestInit];
@@ -59,7 +65,7 @@ describe("upload-client (lote-12 T23)", () => {
     });
 
     it("o binário nunca é enviado nessa requisição", async () => {
-      const fetchImpl = respond(200, { clientToken: "t", pathname: "p" });
+      const fetchImpl = respond(200, { clientToken: "t", pathname: "p", intentId: "i" });
       await requestUploadTicket(input, fetchImpl);
       const [, init] = vi.mocked(fetchImpl).mock.calls[0] as [string, RequestInit];
       expect(typeof init.body).toBe("string");

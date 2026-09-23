@@ -295,6 +295,48 @@ describe("document upload intake (lote-12 T8)", () => {
     expect(document).toMatchObject({ status: "processando", deletedAt: null });
   });
 
+  it("finalização pelo navegador grava o documento no tenant de quem pediu", async () => {
+    const bytes = encoder.encode(`cliente-${randomUUID()}`);
+    const dispatch = vi.fn(async () => undefined);
+    const service = intake(storageFixture(bytes), { dispatch });
+    const started = await service.begin(inputFor(bytes), actorA);
+    if (started.kind !== "ready") throw new Error("intent was not ready");
+
+    const finished = await service.finalizeForActor(started.intentId, actorA);
+
+    expect(finished.kind).toBe("committed");
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    // O callback do provedor chegando depois não cria segundo documento nem run.
+    await expect(service.finalize(started.intentId)).resolves.toEqual(finished);
+    expect(dispatch).toHaveBeenCalledTimes(1);
+  });
+
+  it("finalização pelo navegador de outro tenant responde como inexistente", async () => {
+    const bytes = encoder.encode(`cruzado-${randomUUID()}`);
+    const storage = storageFixture(bytes);
+    const service = intake(storage);
+    const started = await service.begin(inputFor(bytes), actorA);
+    if (started.kind !== "ready") throw new Error("intent was not ready");
+
+    await expect(service.finalizeForActor(started.intentId, actorB)).resolves.toEqual({ kind: "not_found" });
+    expect(storage.head).not.toHaveBeenCalled();
+    const [intent] = await db.select().from(documentUploadIntents).where(eq(documentUploadIntents.id, started.intentId));
+    expect(intent.state).toBe("pending");
+  });
+
+  it("finalização pelo navegador recusa papel sem escrita", async () => {
+    const bytes = encoder.encode(`corretor-final-${randomUUID()}`);
+    const storage = storageFixture(bytes);
+    const service = intake(storage);
+    const started = await service.begin(inputFor(bytes), actorA);
+    if (started.kind !== "ready") throw new Error("intent was not ready");
+
+    await expect(
+      service.finalizeForActor(started.intentId, { ...actorA, roles: ["corretor"] })
+    ).rejects.toMatchObject({ name: "PermissionDeniedError" });
+    expect(storage.head).not.toHaveBeenCalled();
+  });
+
   it("recusa metadata divergente e remove o objeto sem criar documento", async () => {
     const bytes = encoder.encode(`mime-divergente-${randomUUID()}`);
     const storage = storageFixture(bytes, { contentType: "text/csv" });

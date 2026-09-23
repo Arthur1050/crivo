@@ -106,9 +106,11 @@ describe("document upload route (lote-12 T9)", () => {
     const { handler } = fixture();
     const response = await handler(request(generateEvent(JSON.stringify(input), "nome-do-usuario.txt")));
 
-    const body = (await response.json()) as { pathname: string; clientToken: string };
+    const body = (await response.json()) as { pathname: string; clientToken: string; intentId: string };
     expect(body.pathname).toBe(KEY);
     expect(body.clientToken).toBeDefined();
+    // O cliente usa o intentId para pedir a finalização sem esperar o callback.
+    expect(body.intentId).toBe(INTENT_ID);
   });
 
   it("a chave devolvida nunca é o pathname que o navegador mandou", async () => {

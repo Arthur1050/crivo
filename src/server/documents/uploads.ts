@@ -282,6 +282,25 @@ export function createDocumentUploadIntake(
       }
     },
 
+    /**
+     * Finalização pedida pelo navegador logo depois do upload. O callback do
+     * provedor é assíncrono e pode chegar depois que a lista recarregou; sem
+     * este caminho o documento só apareceria num reload manual. A intenção só
+     * é finalizada no tenant de quem pede, e `finalize` re-verifica o objeto.
+     */
+    async finalizeForActor(
+      intentId: string,
+      suppliedActor?: AuthContext
+    ): Promise<FinalizeDocumentUploadResult> {
+      const actor = suppliedActor ?? (await verifySession());
+      authorizeOrThrow(actor, "documentos", "escrever");
+      const intent = await repository.findUploadIntentById(intentId);
+      // Intenção de outro tenant responde igual à inexistente: não confirma
+      // que o identificador existe.
+      if (!intent || intent.tenantId !== actor.tenantId) return { kind: "not_found" };
+      return this.finalize(intentId);
+    },
+
     async finalize(intentId: string): Promise<FinalizeDocumentUploadResult> {
       const initialIntent = await repository.findUploadIntentById(intentId);
       if (!initialIntent) return { kind: "not_found" };
