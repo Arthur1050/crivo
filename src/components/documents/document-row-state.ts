@@ -8,6 +8,8 @@
  * tenant por conta própria.
  */
 
+import type { DocumentFailureCode } from "@/src/server/documents/processing";
+
 export type DocumentStatus = "processando" | "pronto" | "falha" | "fora_do_agente";
 
 /**
@@ -126,14 +128,22 @@ export function documentDownloadPath(documentId: string) {
   return `/api/documents/${encodeURIComponent(documentId)}/download`;
 }
 
-const SAFE_FAILURE_MESSAGES: Record<string, string> = {
-  EXTRACTION_NO_TEXT: "O arquivo não tem texto nativo que possa ser extraído.",
-  EXTRACTION_UNSUPPORTED: "O formato do arquivo não permite extração de texto.",
-  EXTRACTION_TOO_LARGE: "O arquivo tem estrutura grande demais para ser extraída com segurança.",
-  STORAGE_OBJECT_ABSENT: "O original não foi encontrado no armazenamento.",
-  STORAGE_TRANSIENT_FAILURE: "O armazenamento esteve indisponível. Tente reprocessar.",
-  STORAGE_PERMANENT_FAILURE: "O armazenamento recusou a leitura do original.",
+// Chaveado pelo tipo que o backend grava. Só as falhas que um reprocesso pode
+// resolver sugerem reprocessar: para um PDF escaneado, repetir é inútil.
+const SAFE_FAILURE_MESSAGES: Record<DocumentFailureCode, string> = {
+  nenhum_texto_extraivel:
+    "O arquivo não tem texto nativo que possa ser extraído, como um PDF escaneado. Envie uma versão com texto selecionável.",
+  extracao_invalida: "O arquivo está corrompido ou não pôde ser lido. Envie uma cópia íntegra.",
+  limite_estrutural:
+    "O arquivo excede os limites de páginas, imagens ou volume de texto para extração segura.",
+  original_ausente: "O original não foi encontrado no armazenamento. Envie o arquivo novamente.",
+  storage_invalido: "O armazenamento recusou a leitura do original. Tente reprocessar.",
+  processamento_indisponivel: "Não foi possível processar agora. Tente reprocessar.",
 };
+
+function isKnownFailure(code: string): code is DocumentFailureCode {
+  return Object.hasOwn(SAFE_FAILURE_MESSAGES, code);
+}
 
 /**
  * Traduz o código de falha para uma frase de produto. Um código desconhecido
@@ -141,8 +151,7 @@ const SAFE_FAILURE_MESSAGES: Record<string, string> = {
  */
 export function describeFailure(failureCode: string | null | undefined): string {
   if (!failureCode) return "A extração falhou por um motivo não registrado.";
-  return (
-    SAFE_FAILURE_MESSAGES[failureCode] ??
-    "A extração falhou. Tente reprocessar; se persistir, envie o arquivo novamente."
-  );
+  return isKnownFailure(failureCode)
+    ? SAFE_FAILURE_MESSAGES[failureCode]
+    : "A extração falhou. Tente reprocessar; se persistir, envie o arquivo novamente.";
 }

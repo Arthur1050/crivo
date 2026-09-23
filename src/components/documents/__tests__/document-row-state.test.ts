@@ -131,7 +131,32 @@ describe("estado da linha de documento (lote-12 T25)", () => {
 
   describe("mensagem de falha é segura", () => {
     it("código conhecido vira frase de produto", () => {
-      expect(describeFailure("EXTRACTION_NO_TEXT")).toContain("texto nativo");
+      expect(describeFailure("nenhum_texto_extraivel")).toContain("texto nativo");
+    });
+
+    // Os códigos abaixo são os que o backend grava de fato. Antes a tabela usava
+    // um vocabulário que nenhum caminho emitia, e toda falha caía na genérica.
+    it.each([
+      ["nenhum_texto_extraivel", /escaneado/],
+      ["extracao_invalida", /corrompido/],
+      ["limite_estrutural", /limites/],
+      ["original_ausente", /não foi encontrado/],
+      ["storage_invalido", /reprocessar/],
+      ["processamento_indisponivel", /reprocessar/],
+    ])("%s tem frase própria, não a genérica", (code, pattern) => {
+      const message = describeFailure(code);
+      expect(message).toMatch(pattern);
+      expect(message).not.toBe(describeFailure("DESCONHECIDO"));
+    });
+
+    it("falha permanente de conteúdo não manda reprocessar", () => {
+      for (const code of ["nenhum_texto_extraivel", "extracao_invalida", "limite_estrutural"]) {
+        expect(describeFailure(code)).not.toMatch(/reprocessar/i);
+      }
+    });
+
+    it("nome de propriedade herdada não passa por código conhecido", () => {
+      expect(describeFailure("toString")).toBe(describeFailure("DESCONHECIDO"));
     });
 
     it("código desconhecido nunca é exibido cru", () => {
@@ -146,12 +171,12 @@ describe("estado da linha de documento (lote-12 T25)", () => {
 
     it("nenhuma mensagem vaza provedor, caminho ou credencial", () => {
       const codes = [
-        "EXTRACTION_NO_TEXT",
-        "EXTRACTION_UNSUPPORTED",
-        "EXTRACTION_TOO_LARGE",
-        "STORAGE_OBJECT_ABSENT",
-        "STORAGE_TRANSIENT_FAILURE",
-        "STORAGE_PERMANENT_FAILURE",
+        "nenhum_texto_extraivel",
+        "extracao_invalida",
+        "limite_estrutural",
+        "original_ausente",
+        "storage_invalido",
+        "processamento_indisponivel",
         null,
         "DESCONHECIDO",
       ];

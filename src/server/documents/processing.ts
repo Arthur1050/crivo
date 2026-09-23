@@ -37,6 +37,17 @@ export interface ProcessingRepository {
   claimRetry(tenantId: string, documentId: string, now: Date): Promise<{ kind: "claimed" | "active"; attempt: number } | { kind: "stale" }>;
 }
 
+/**
+ * Vocabulário persistido em `documents.failureCode`. A interface traduz cada
+ * código exaustivamente a partir deste tipo: um código novo ou renomeado aqui
+ * quebra a compilação de lá, em vez de cair numa mensagem genérica.
+ */
+export type DocumentFailureCode =
+  | Exclude<Extract<ExtractionResult, { ok: false }>["code"], "extracao_transitoria">
+  | "original_ausente"
+  | "storage_invalido"
+  | "processamento_indisponivel";
+
 export interface ProcessingStart {
   (input: { tenantId: string; documentId: string; attempt: number }): Promise<{ id: string }>;
 }
@@ -77,7 +88,7 @@ export function createDocumentProcessingService(input: {
     tenantId: string,
     documentId: string,
     attempt: number,
-    code: string,
+    code: DocumentFailureCode,
     at: Date
   ) {
     const completion = await repository.complete(tenantId, {
