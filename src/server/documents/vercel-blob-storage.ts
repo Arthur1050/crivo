@@ -72,6 +72,19 @@ function ensureUploadIsWithinDocumentContract(input: AuthorizedUpload) {
   }
 }
 
+/**
+ * A CDN do Blob comprime a resposta de `get` para texto acima de ~1 KB: o
+ * ETag volta fraco (`W/"…"`) e o tamanho volta 0, embora o stream entregue os
+ * bytes originais. O `head` devolve o ETag forte do mesmo objeto. Sem
+ * normalizar, a comparação head × get da finalização falhava e todo TXT, MD
+ * ou CSV com mais de ~1 KB era recusado e apagado no upload (lote-12 T35).
+ * O ETag fraco carrega o mesmo identificador: é a mesma representação,
+ * transformada só no transporte.
+ */
+function strongEtag(etag: string): string {
+  return etag.startsWith("W/") ? etag.slice(2) : etag;
+}
+
 function toStoredObject(blob: {
   pathname: string;
   etag: string;
@@ -80,7 +93,7 @@ function toStoredObject(blob: {
 }): StoredObject {
   return {
     key: blob.pathname,
-    etag: blob.etag,
+    etag: strongEtag(blob.etag),
     contentType: blob.contentType,
     size: blob.size,
   };

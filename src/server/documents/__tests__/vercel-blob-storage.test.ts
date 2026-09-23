@@ -170,6 +170,29 @@ describe("VercelBlobDocumentStorage", () => {
     expect(sdk.get).toHaveBeenCalledWith(KEY, { access: "private" });
   });
 
+  // Reproduzido contra o Blob real: para texto acima de ~1 KB o `get` volta
+  // comprimido, com ETag fraco e tamanho 0, e o `head` com o ETag forte.
+  it("open devolve o ETag forte quando a CDN responde comprimido", async () => {
+    sdk.head.mockResolvedValue(blob({ etag: '"abc123"', contentType: "text/plain", size: 140_000 }));
+    sdk.get.mockResolvedValue({
+      statusCode: 200,
+      blob: blob({ etag: 'W/"abc123"', contentType: "text/plain", size: 0 }),
+      stream: STREAM,
+    });
+
+    const storage = new VercelBlobDocumentStorage();
+    const [metadata, opened] = await Promise.all([storage.head(KEY), storage.open(KEY)]);
+    expect(opened?.etag).toBe('"abc123"');
+    expect(opened?.etag).toBe(metadata?.etag);
+  });
+
+  it("ETag forte continua igual e ETag diferente continua diferente", async () => {
+    sdk.get.mockResolvedValue({ statusCode: 200, blob: blob({ etag: 'W/"outro"' }), stream: STREAM });
+    await expect(new VercelBlobDocumentStorage().open(KEY)).resolves.toMatchObject({ etag: '"outro"' });
+    sdk.head.mockResolvedValue(blob({ etag: '"forte"' }));
+    await expect(new VercelBlobDocumentStorage().head(KEY)).resolves.toMatchObject({ etag: '"forte"' });
+  });
+
   it("retorna null quando open não encontra objeto", async () => {
     sdk.get.mockResolvedValue(null);
 
