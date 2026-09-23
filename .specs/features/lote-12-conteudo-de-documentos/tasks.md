@@ -881,15 +881,74 @@ Introspecção final: as três tabelas presentes, 17 de 17 colunas do lote 12 em
 
 **Done when:**
 
-- [ ] PDF/DOCX/TXT/MD/CSV válidos percorrem o fluxo; PDF imagem e arquivos inválidos falham corretamente.
-- [ ] Cross-tenant, concorrência, retry e resultado tardio não vazam/corrompem.
-- [ ] Download é byte a byte idêntico; preview é inerte; expiração boundary bloqueia imediatamente.
-- [ ] Tombstone e limpeza removem Blob/linha; nenhum conteúdo aparece em logs.
-- [ ] IDs, estados e screenshots sanitizados ficam registrados; objetos scratch são removidos.
+- [x] PDF/DOCX/TXT/MD/CSV válidos percorrem o fluxo; PDF imagem e arquivos inválidos falham corretamente.
+- [x] Cross-tenant, concorrência, retry e resultado tardio não vazam/corrompem. **Parcial** — cross-tenant e retry provados em produção; concorrência e resultado tardio ficam na cobertura de integração (ver abaixo).
+- [x] Download é byte a byte idêntico; preview é inerte; expiração boundary bloqueia imediatamente.
+- [x] Tombstone e limpeza removem Blob/linha; nenhum conteúdo aparece em logs.
+- [x] IDs, estados e screenshots sanitizados ficam registrados; objetos scratch são removidos. **Parcial** — os descartáveis saíram; o corpus e os controles ficam até T37 porque T33–T35 dependem deles.
 
 **Tests:** connected e2e  
 **Gate:** Build  
 **Commit:** `test(documents): verify connected document flow`
+
+**SPEC_DEVIATION:** prova em **produção**, não em preview — mesmo motivo de T30/T31 (`DATABASE_URL` cobre os dois alvos). O usuário autorizou em 2026-09-23 e confirmou que todos os tenants são fictícios. Arquivos sintéticos, todos marcados "DOCUMENTO DE TESTE", no tenant Triângulo Imóveis (`7c6882c6…`).
+
+**Cinco defeitos de produção encontrados e corrigidos nesta tarefa.** Nenhum era alcançável pelos testes existentes; todos apareceram no primeiro uso real. Cada correção tem teste novo e mutação que o derruba.
+
+| Commit | Defeito | Como apareceu |
+| --- | --- | --- |
+| `46fc9ba` | O navegador não pedia a finalização prevista no design; o callback do Blob é assíncrono e, quando chegava depois do `router.refresh()`, o documento só aparecia num reload manual. | O CSV sumiu da lista até recarregar. |
+| `d81a337` | Quando o callback recusava o arquivo primeiro, a finalização do navegador recebia `not_claimable` e a action tratava como sucesso: o dialog fechava em silêncio. | PDF falso e CSV duplicado sumiam sem aviso. |
+| `6a363dc` | O preflight da reserva só comparava o hash com intenções ativas, não com documentos confirmados: um duplicado subia inteiro e só era recusado no commit. | O CSV repetido chegou ao Blob. |
+| `bd6bb8f` | A tabela traduzia códigos (`EXTRACTION_NO_TEXT`…) que o backend nunca emite; toda falha mostrava a genérica "tente reprocessar", inútil para PDF escaneado. O vocabulário agora é um tipo exportado, e a tabela é um `Record` dele. | Tooltip do PDF só com imagem. |
+| `18e9eca` | `document_upload_intents.document_id` tem FK sem `onDelete`: o DELETE físico violava a FK (`23503`) e **nenhum documento enviado por upload saía do banco** — o arquivo saía do Blob, a linha ficava tombstone para sempre, rotulada `STORAGE_PERMANENT_FAILURE`. | Os dois tombstones do teste não sumiam após o cron. Confirmado por DELETE desfeito em transação. |
+
+A lacuna comum: os testes de cada peça criavam o estado direto no banco (documento sem intenção, código de falha inventado, finalização sem corrida). Nenhum exercitava a costura real. Suíte completa após as correções: 113 arquivos, 1.792 testes.
+
+**Evidence (2026-09-23), deployments `dpl_6LGE7AgLpuFKUamrNhC3ArF9io4y` e `dpl_Htbe5R4vh21L9bLXmCeXRZye7czR`:**
+
+*Formatos.* Extração conferida localmente com o extrator do projeto antes do envio, para que falha em produção fosse atribuível ao ambiente. Em produção:
+
+| Arquivo | Documento | Estado final | Bytes extraídos |
+| --- | --- | --- | --- |
+| TXT (canário T30) | `c04b3db4` | `pronto` | 214 |
+| PDF com texto nativo | `7c1c1380` | `pronto` | 177 |
+| DOCX | `e97ed339` | `pronto` | 213 |
+| MD (com `<script>`, link e instrução hostil) | `ddb30e00` | `pronto` | 375 |
+| CSV | `30b6aed7` | `pronto` | 141 |
+| PDF só com imagem | `28562533` | `falha` / `nenhum_texto_extraivel` | — |
+| PDF com cabeçalho válido e corpo corrompido | `176afa8d` | `falha` / `extracao_invalida` | — |
+| Texto com extensão `.pdf` | — | recusado pelo servidor na assinatura; objeto compensado | — |
+| Arquivo vazio | — | recusado antes de qualquer token | — |
+| PNG | — | barrado pelo filtro do seletor no navegador | — |
+| CSV repetido | — | recusado no preflight, antes do upload | — |
+
+Os `content_sha256` gravados em produção coincidem com os SHA-256 locais dos cinco válidos.
+
+*Download.* Os cinco válidos baixados dentro da sessão: SHA-256 idêntico ao original, `Cache-Control: private, no-store`, `X-Content-Type-Options: nosniff`, `Content-Disposition: attachment`.
+
+*Preview inerte.* O MD hostil aparece com `<script>`, `<a href>` e "IGNORE AS INSTRUÇÕES ANTERIORES…" como texto literal; o DOM do dialog tem zero `<script>` e zero `<a>`. A API de preview responde `no-store`.
+
+*Cross-tenant.* Com o tenant ativo trocado para Crivo Demo, download e preview de documentos do Triângulo respondem `404 {"error":"Documento não encontrado."}` — idêntico a um UUID inexistente — e a listagem do Crivo Demo fica vazia.
+
+*Retry.* `28562533` (PDF só com imagem) reprocessado pela UI: `Falha → Processando → Falha`, `processing_attempt` 1 → 2, mesmo código. O menu de uma falha oferece baixar, reprocessar, editar e excluir, sem "Visualizar texto".
+
+*Validade.* Documento `401c6ac3` com validade 15:34:00 UTC. Validade no passado foi recusada no formulário ("A validade precisa ser uma data futura."). Log do servidor: preview `200` às 15:33:45, `404` a partir de 15:34:01 — bloqueio no instante, sem esperar o cron.
+
+*Exclusão e limpeza física.* `c1202e9a` excluído pela UI: download/preview `404` imediato, `deleted_at` preenchido, texto e bytes extraídos nulos, objeto ainda no Blob (remoção enfileirada, como AC6 permite). O cron real rodou pelo painel da Vercel às 15:35:24 (`GET /api/cron/expire-documents 200`) e tombstonou o documento vencido; a remoção física falhou pela FK acima. Depois da correção, a mesma rotina `runDailyMaintenance` executada contra produção retornou `tombstonesRemoved: 2`: linhas, intenções e objetos ausentes. O botão `Run` do painel não é confiável (disparou uma vez em várias tentativas, sem retorno visual).
+
+*Logs.* Nenhum conteúdo de documento nos logs de runtime; o único ruído é o aviso de SSL do `pg` e "Indexing all PDF objects" do leitor de PDF.
+
+*Não provado por conexão real:* concorrência de finalização e resultado tardio de workflow. Os dois dependem de controlar a ordem de eventos, o que produção não permite; estão cobertos por `uploads.test.ts` (finalizações concorrentes, callback depois do navegador) e `lifecycle.integration.test.ts` (conclusão tardia não reativa tombstone).
+
+*Limpeza.* Removidos: os dois objetos órfãos da verificação visual (`politica-*`, tenant Crivo Demo), os documentos de validade e exclusão, e os objetos recusados (compensados pelo próprio fluxo). Ficam até T37: os cinco válidos (corpus de T33–T35) e os dois em `falha` (controles de T35). O Blob tem exatamente 7 objetos, um por documento existente.
+
+**Achados para o backlog:**
+
+- **Sem benchmark, o contexto não tem limite.** Sem os três tetos, `reconcileTenantDocumentAdmission` sai cedo e `getDirectDocumentContext` entrega todo documento `pronto` ao agente. O banner do T27 afirma o contrário ("novos documentos não entram no contexto"). T34 fecha a janela para os tenants existentes; um tenant criado depois voltaria ao modo sem limite. A decidir em T34.
+- O PNG é barrado com "Selecione um arquivo.", que confunde: o usuário selecionou, só que um tipo não aceito.
+- Os dias da semana do calendário aparecem em inglês (Su, Mo, Tu…) — mesma família de L-010.
+- O `catch` do lifecycle rotula qualquer erro, inclusive de banco, como erro de storage. Foi o que escondeu a FK por trás de `STORAGE_PERMANENT_FAILURE`.
 
 #### T33: Publicar a tool e configurar retenção do n8n
 
