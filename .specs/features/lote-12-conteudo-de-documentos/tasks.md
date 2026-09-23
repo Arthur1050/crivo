@@ -993,15 +993,42 @@ Retenção aplicada: `saveDataSuccessExecution: none`, `saveExecutionProgress: f
 
 **Done when:**
 
-- [ ] Dataset põe fatos no início/meio/fim, histórico de 50 mensagens, tools/prompt completos e segunda observação.
-- [ ] Registra bytes, tokens, latência, custo, qualidade e fórmula/margem por faixa/modalidade.
-- [ ] Persiste o menor teto aprovado para cada tenant/modalidade com hashes e timestamps.
-- [ ] Alteração simulada de modelo/workflow/prompt/tools marca stale sem ampliar teto.
-- [ ] Testes unitários do cálculo e execução conectada das três modalidades passam sem guardar corpus na evidência.
+- [x] Dataset põe fatos no início/meio/fim, histórico de 50 mensagens, tools/prompt completos e segunda observação.
+- [x] Registra bytes, tokens, latência, custo, qualidade e fórmula/margem por faixa/modalidade. **Ressalva:** tokens são a estimativa do n8n, não o uso informado pela OpenAI (ver abaixo).
+- [x] Persiste o menor teto aprovado para cada tenant/modalidade com hashes e timestamps.
+- [x] Alteração simulada de modelo/workflow/prompt/tools marca stale sem ampliar teto.
+- [x] Testes unitários do cálculo e execução conectada das três modalidades passam sem guardar corpus na evidência.
 
 **Tests:** unit + connected e2e  
 **Gate:** Full  
 **Commit:** `test(context): benchmark direct document limits`
+
+**Como foi medido.** Workflow `crivo-benchmark-contexto` (`xpsD2PZQ1KoE2sA5`, fonte `n8n/workflows/benchmark-contexto.ts`) replica o agente publicado (`crivo-agente-principal`, versão ativa `9a73c823-3679-45fd-a38b-36d0c03c0157`): mesmo nó de modelo (`gpt-5.4-nano-2026-03-17`, `reasoningEffort: low`, timeout 120 s, mesma credencial), o mesmo system message (mesmos módulos inlined na mesma ordem, com as configurações reais do tenant `triangulo` lidas de `GET /settings`), as seis tools com nome e descrição byte a byte iguais, `maxIterations: 8` e 50 mensagens de histórico numa memória real do n8n. As tools são stubs — nenhum lead, WhatsApp ou memória Postgres real foi tocado. A fidelidade foi conferida, não suposta: os dois nós de código publicados têm o mesmo SHA-256 do arquivo gerado local, e o envelope que o gerador produz é provado byte a byte igual ao `buildCanonicalContext` do CRM (`n8n/src/__tests__/benchmark-corpus.test.ts`).
+
+Cada faixa põe três fatos com valores derivados da seed (início do primeiro documento, meio do documento central, fim do último) e pergunta os três. Aprovação = os três valores na resposta enviada por `responder_lead` **e** a tool de documentos consultada. "Segunda observação" = o envelope devolvido duas vezes na mesma observação (custo em tokens de consultar duas vezes no turno, sem depender de o modelo decidir repetir).
+
+**Resultados** (18 rodadas, métricas em `benchmark-contexto-2026-09-23.json`, sem corpus): todas as faixas com fatos foram aprovadas — `ambos` de 16 KB a 512 KB com uma observação e 64/128 KB com duas; `novo` e `usado` em 64/128 KB com uma e duas. Latência do turno entre 5,0 s e 11,0 s. Custo fixo (system message, histórico, pergunta) ≈ 4,6 mil tokens; ~0,20 token por byte de corpus. Custo total do benchmark ≤ US$ 0,45 (US$ 0,20/M tokens de entrada, fonte oficial da OpenAI).
+
+**Achado que mudou a fórmula: limite de 200 mil tokens por minuto da organização na OpenAI, compartilhado por todos os tenants.** Duas rodadas receberam 429: a de 512 KB (107.882 tokens numa chamada, quando o minuto já tinha 99.866 usados; repetida com sucesso depois) e a de 256 KB com duas observações (três chamadas de ~106 mil no mesmo turno — estruturalmente impossível). O design não previa esse componente; ele entrou na fórmula como **vazão**: tokens por chamada com corpus = limite ÷ (turnos simultâneos × chamadas com corpus por turno), com política de 2 turnos simultâneos e 2 chamadas.
+
+**Fórmula** (`src/server/documents/context-ceiling.ts`, 19 testes): teto = 0,8 × o menor entre (1) qualidade — maior faixa aprovada, contígua, e **só conta faixa verificada também com duas observações**; (2) latência ≤ 30 s, mesma regra; (3) janela de 400 mil tokens menos custo fixo, folga de 2 mil para os schemas das tools e 16 mil de saída, dividida por dois (corpus duas vezes no turno); (4) transporte de 4,5 MB da Vercel; (5) vazão.
+
+| Modalidade | Teto gravado | Limitado por | Qualidade | Vazão | Janela |
+| --- | --- | --- | --- | --- | --- |
+| `novo` | 106.468 B | qualidade | 133.086 | 219.271 | 954.602 |
+| `usado` | 119.265 B | qualidade | 149.082 | 219.035 | 953.709 |
+| `ambos` | 106.338 B | qualidade | 132.923 | 215.409 | 936.526 |
+
+O teto fica na maior faixa **provada** com duas observações, não numa extrapolação: 256 KB com duas observações não cabe no limite por minuto, então não há prova acima de 128 KB. O corpus real hoje tem ~1,3 KB.
+
+**Identidade e desatualização.** `src/server/documents/benchmark-identity.ts` deriva modelo, janela de memória, hash dos módulos do system message e hash do catálogo de tools (nome, descrição e parâmetros `$fromAI`) das fontes versionadas; a versão do workflow vem do n8n. `scripts/document-context-benchmark.ts check --workflow-version <id>` marca `stale` o que mudou — protocolo documentado em `n8n/README.md` §13. Coberto por 7 testes de identidade (cada campo alterado é detectado sozinho) e por testes de integração no banco.
+
+**Defeito corrigido junto: sem teto, o contexto não tinha limite nenhum.** Sem os três tetos atuais, `reconcileTenantDocumentAdmission` saía cedo, e `getDirectDocumentContext` entregava todo documento `pronto` ao agente — o banner afirmava o contrário. O mesmo valia para teto `stale`: um documento novo ficava `pronto` acima do teto antigo. Agora teto `stale` continua limitando com o valor medido, e modalidade sem teto vale zero (falha fechada). Mutação que restaura o comportamento antigo derruba os dois testes novos. O texto dos dois avisos do banner foi ajustado ao comportamento real.
+
+**Limitações registradas:**
+
+- Tokens vêm de `estimatedTokens` do n8n, não do uso informado pela OpenAI: o nó não expõe o uso real para este modelo. A estimativa não conta os schemas JSON das tools; a folga de 2 mil tokens cobre essa diferença.
+- A política de vazão (2 turnos simultâneos) é uma escolha para o piloto. Com mais tenants ativos ao mesmo tempo, ela deve subir e o teto cai proporcionalmente — ou o tier da OpenAI sobe.
 
 ### Phase 6: Prova e liberação
 

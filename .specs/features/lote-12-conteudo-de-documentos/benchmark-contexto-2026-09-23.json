@@ -1,0 +1,308 @@
+{
+  "benchmarkedAt": "2026-09-23T21:44:20.000Z",
+  "benchmarkWorkflowId": "xpsD2PZQ1KoE2sA5",
+  "agentWorkflowVersion": "9a73c823-3679-45fd-a38b-36d0c03c0157",
+  "modelId": "gpt-5.4-nano-2026-03-17",
+  "tokenSource": "n8n estimatedTokens do nó lmChatOpenAi (estimativa do n8n, não uso informado pelo provedor; exclui as definições JSON das tools)",
+  "notes": [
+    "Rodadas de duas observações devolvem o envelope duas vezes numa só observação da tool.",
+    "Latência = da primeira chamada ao modelo até o início do nó de pontuação (modelo + tools).",
+    "Nenhum corpus neste arquivo: só métricas, fatos recuperados e ids de execução."
+  ],
+  "rateLimited": [
+    {
+      "executionId": "2425",
+      "modality": "ambos",
+      "bandBytes": 512000,
+      "observations": 1,
+      "requestedTokens": 107882,
+      "note": "429 TPM 200.000 da organização; repetida com sucesso na 2426 após o minuto zerar"
+    },
+    {
+      "executionId": "2428",
+      "modality": "ambos",
+      "bandBytes": 256000,
+      "observations": 2,
+      "requestedTokens": 106546,
+      "note": "429 TPM: três chamadas de ~106 mil tokens no mesmo turno não cabem em 200.000 por minuto"
+    }
+  ],
+  "runs": [
+    {
+      "executionId": "2421",
+      "modality": "ambos",
+      "bandBytes": 0,
+      "envelopeBytes": 41,
+      "observations": 1,
+      "inputTokens": 4597,
+      "latencyMs": 9068,
+      "approved": false,
+      "modelCalls": 3,
+      "factsFound": []
+    },
+    {
+      "executionId": "2422",
+      "modality": "ambos",
+      "bandBytes": 16000,
+      "envelopeBytes": 16904,
+      "observations": 1,
+      "inputTokens": 8003,
+      "latencyMs": 7746,
+      "approved": true,
+      "modelCalls": 3,
+      "factsFound": [
+        "inicio",
+        "meio",
+        "fim"
+      ]
+    },
+    {
+      "executionId": "2423",
+      "modality": "ambos",
+      "bandBytes": 64000,
+      "envelopeBytes": 67482,
+      "observations": 1,
+      "inputTokens": 17840,
+      "latencyMs": 8606,
+      "approved": true,
+      "modelCalls": 3,
+      "factsFound": [
+        "inicio",
+        "meio",
+        "fim"
+      ]
+    },
+    {
+      "executionId": "2424",
+      "modality": "ambos",
+      "bandBytes": 256000,
+      "envelopeBytes": 258737,
+      "observations": 1,
+      "inputTokens": 55567,
+      "latencyMs": 7583,
+      "approved": true,
+      "modelCalls": 3,
+      "factsFound": [
+        "inicio",
+        "meio",
+        "fim"
+      ]
+    },
+    {
+      "executionId": "2426",
+      "modality": "ambos",
+      "bandBytes": 512000,
+      "envelopeBytes": 515902,
+      "observations": 1,
+      "inputTokens": 106360,
+      "latencyMs": 10991,
+      "approved": true,
+      "modelCalls": 3,
+      "factsFound": [
+        "inicio",
+        "meio",
+        "fim"
+      ]
+    },
+    {
+      "executionId": "2427",
+      "modality": "ambos",
+      "bandBytes": 64000,
+      "envelopeBytes": 67092,
+      "observations": 2,
+      "inputTokens": 30840,
+      "latencyMs": 5023,
+      "approved": true,
+      "modelCalls": 2,
+      "factsFound": [
+        "inicio",
+        "meio",
+        "fim"
+      ]
+    },
+    {
+      "executionId": "2429",
+      "modality": "ambos",
+      "bandBytes": 128000,
+      "envelopeBytes": 132923,
+      "observations": 1,
+      "inputTokens": 30898,
+      "latencyMs": 8435,
+      "approved": true,
+      "modelCalls": 3,
+      "factsFound": [
+        "inicio",
+        "meio",
+        "fim"
+      ]
+    },
+    {
+      "executionId": "2430",
+      "modality": "ambos",
+      "bandBytes": 128000,
+      "envelopeBytes": 132955,
+      "observations": 2,
+      "inputTokens": 57019,
+      "latencyMs": 9029,
+      "approved": true,
+      "modelCalls": 3,
+      "factsFound": [
+        "inicio",
+        "meio",
+        "fim"
+      ]
+    },
+    {
+      "executionId": "2431",
+      "modality": "novo",
+      "bandBytes": 0,
+      "envelopeBytes": 41,
+      "observations": 1,
+      "inputTokens": 4663,
+      "latencyMs": 8174,
+      "approved": false,
+      "modelCalls": 4,
+      "factsFound": []
+    },
+    {
+      "executionId": "2432",
+      "modality": "novo",
+      "bandBytes": 64000,
+      "envelopeBytes": 66703,
+      "observations": 1,
+      "inputTokens": 17591,
+      "latencyMs": 5518,
+      "approved": true,
+      "modelCalls": 2,
+      "factsFound": [
+        "inicio",
+        "meio",
+        "fim"
+      ]
+    },
+    {
+      "executionId": "2433",
+      "modality": "novo",
+      "bandBytes": 64000,
+      "envelopeBytes": 67010,
+      "observations": 2,
+      "inputTokens": 31153,
+      "latencyMs": 6686,
+      "approved": true,
+      "modelCalls": 3,
+      "factsFound": [
+        "inicio",
+        "meio",
+        "fim"
+      ]
+    },
+    {
+      "executionId": "2434",
+      "modality": "novo",
+      "bandBytes": 128000,
+      "envelopeBytes": 134208,
+      "observations": 1,
+      "inputTokens": 31188,
+      "latencyMs": 6831,
+      "approved": true,
+      "modelCalls": 3,
+      "factsFound": [
+        "inicio",
+        "meio",
+        "fim"
+      ]
+    },
+    {
+      "executionId": "2435",
+      "modality": "novo",
+      "bandBytes": 128000,
+      "envelopeBytes": 133086,
+      "observations": 2,
+      "inputTokens": 56980,
+      "latencyMs": 6818,
+      "approved": true,
+      "modelCalls": 3,
+      "factsFound": [
+        "inicio",
+        "meio",
+        "fim"
+      ]
+    },
+    {
+      "executionId": "2436",
+      "modality": "usado",
+      "bandBytes": 0,
+      "envelopeBytes": 41,
+      "observations": 1,
+      "inputTokens": 4670,
+      "latencyMs": 6429,
+      "approved": false,
+      "modelCalls": 4,
+      "factsFound": []
+    },
+    {
+      "executionId": "2437",
+      "modality": "usado",
+      "bandBytes": 64000,
+      "envelopeBytes": 83479,
+      "observations": 1,
+      "inputTokens": 21184,
+      "latencyMs": 5364,
+      "approved": true,
+      "modelCalls": 3,
+      "factsFound": [
+        "inicio",
+        "meio",
+        "fim"
+      ]
+    },
+    {
+      "executionId": "2438",
+      "modality": "usado",
+      "bandBytes": 64000,
+      "envelopeBytes": 83525,
+      "observations": 2,
+      "inputTokens": 37572,
+      "latencyMs": 5632,
+      "approved": true,
+      "modelCalls": 3,
+      "factsFound": [
+        "inicio",
+        "meio",
+        "fim"
+      ]
+    },
+    {
+      "executionId": "2439",
+      "modality": "usado",
+      "bandBytes": 128000,
+      "envelopeBytes": 149082,
+      "observations": 1,
+      "inputTokens": 34114,
+      "latencyMs": 6482,
+      "approved": true,
+      "modelCalls": 3,
+      "factsFound": [
+        "inicio",
+        "meio",
+        "fim"
+      ]
+    },
+    {
+      "executionId": "2440",
+      "modality": "usado",
+      "bandBytes": 128000,
+      "envelopeBytes": 149316,
+      "observations": 2,
+      "inputTokens": 63560,
+      "latencyMs": 7410,
+      "approved": true,
+      "modelCalls": 3,
+      "factsFound": [
+        "inicio",
+        "meio",
+        "fim"
+      ]
+    }
+  ]
+}

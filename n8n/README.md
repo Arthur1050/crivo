@@ -330,3 +330,25 @@ Se a ordem for invertida (revogar antes de confirmar a chave nova), toda chamada
 ### 12.4 `tenant_config` não guarda mais nenhuma chave
 
 Confirmado por `search_data_tables` após a remoção da coluna: `tenant_config` tem hoje só `phoneNumberId`, `tenantSlug`, `calendarId` — nenhum segredo em texto claro na Data Table, e nenhum valor de autenticação aparece mais no log de execução de nenhum nó (era o gap que o `design.md` — Pesquisa — tinha exposto: a chave por expressão vazava também em log, não só na Data Table).
+
+---
+
+## 13. Teto de contexto documental (lote-12 — T34): benchmark e desatualização
+
+O teto de bytes que a admissão de documentos aplica (`tenant_document_context_limits`) foi medido contra **este** agente: modelo, system message, catálogo de tools e janela de memória. Mudar qualquer um invalida a medição (DOCLIM-01 AC11).
+
+**Depois de toda publicação do `crivo-agente-principal`**, com o `activeVersionId` que a publicação devolveu:
+
+```bash
+npx tsx --conditions=react-server scripts/document-context-benchmark.ts check --workflow-version <activeVersionId>
+```
+
+O `check` compara a identidade atual (derivada de `principal.ts` e dos módulos do system message) com a gravada e marca `stale` o que mudou. Um teto `stale` continua limitando com o valor antigo, nunca amplia; o banner da página de documentos avisa o gestor.
+
+**Para medir de novo**: o workflow `crivo-benchmark-contexto` (`n8n/workflows/benchmark-contexto.ts`, id `xpsD2PZQ1KoE2sA5`) roda uma faixa por execução, disparado por `execute_workflow` com `{ faixaBytes, modalidade, observacoes, seed }`. Ele replica o agente publicado com tools stub e corpus sintético — nenhum lead, WhatsApp ou memória real é tocado. Registrar as métricas num arquivo como `.specs/features/lote-12-conteudo-de-documentos/benchmark-contexto-2026-09-23.json` e gravar com `persist <arquivo>`.
+
+Cuidados que o benchmark de 2026-09-23 revelou:
+
+- **Limite de 200 mil tokens por minuto da organização na OpenAI**, compartilhado por todos os tenants. Espaçar as faixas grandes em ~1 minuto; faixas acima de ~500 KB estouram o limite numa única chamada.
+- A contagem de tokens é a **estimativa do n8n** (`estimatedTokens`), não o uso informado pela OpenAI, e não inclui as definições JSON das tools — a política soma uma folga de 2.000 tokens.
+- O workflow de benchmark salva execuções bem-sucedidas (precisa dos dados de tokens); o corpus é sintético.
