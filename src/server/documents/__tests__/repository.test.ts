@@ -18,6 +18,8 @@ import {
   createUploadIntent,
   expireDueDocuments,
   listTenantDocuments,
+  markDocumentContextLimitStale,
+  reconcileTenantDocumentAdmission,
   retryDocumentProcessing,
   tombstoneDocument,
   upsertDocumentContextLimit,
@@ -25,6 +27,8 @@ import {
 
 const TENANT_A = randomUUID();
 const TENANT_B = randomUUID();
+// Tenant só dos testes de admissão: os outros testes gravam tetos em A e B.
+const TENANT_C = randomUUID();
 const USER_ID = randomUUID();
 const NOW = new Date("2030-01-10T12:00:00.000Z");
 const HOUR = 60 * 60 * 1000;
@@ -71,24 +75,25 @@ async function committedDocument(seed: string, tenantId = TENANT_A) {
 
 describe("documents repository (lote-12 T4)", () => {
   beforeAll(async () => {
-    await db.delete(documentUploadIntents).where(inArray(documentUploadIntents.tenantId, [TENANT_A, TENANT_B]));
-    await db.delete(documents).where(inArray(documents.tenantId, [TENANT_A, TENANT_B]));
-    await db.delete(tenantDocumentContextLimits).where(inArray(tenantDocumentContextLimits.tenantId, [TENANT_A, TENANT_B]));
+    await db.delete(documentUploadIntents).where(inArray(documentUploadIntents.tenantId, [TENANT_A, TENANT_B, TENANT_C]));
+    await db.delete(documents).where(inArray(documents.tenantId, [TENANT_A, TENANT_B, TENANT_C]));
+    await db.delete(tenantDocumentContextLimits).where(inArray(tenantDocumentContextLimits.tenantId, [TENANT_A, TENANT_B, TENANT_C]));
     await db.delete(users).where(eq(users.id, USER_ID));
-    await db.delete(tenants).where(inArray(tenants.id, [TENANT_A, TENANT_B]));
+    await db.delete(tenants).where(inArray(tenants.id, [TENANT_A, TENANT_B, TENANT_C]));
     await db.insert(tenants).values([
       { id: TENANT_A, name: "Repository A", agentName: "A", supportedModality: "ambos", slug: `repository-a-${TENANT_A}` },
       { id: TENANT_B, name: "Repository B", agentName: "B", supportedModality: "ambos", slug: `repository-b-${TENANT_B}` },
+      { id: TENANT_C, name: "Repository C", agentName: "C", supportedModality: "ambos", slug: `repository-c-${TENANT_C}` },
     ]);
     await db.insert(users).values({ id: USER_ID, name: "Repository user", email: `repository-${USER_ID}@example.test` });
   });
 
   afterAll(async () => {
-    await db.delete(documentUploadIntents).where(inArray(documentUploadIntents.tenantId, [TENANT_A, TENANT_B]));
-    await db.delete(documents).where(inArray(documents.tenantId, [TENANT_A, TENANT_B]));
-    await db.delete(tenantDocumentContextLimits).where(inArray(tenantDocumentContextLimits.tenantId, [TENANT_A, TENANT_B]));
+    await db.delete(documentUploadIntents).where(inArray(documentUploadIntents.tenantId, [TENANT_A, TENANT_B, TENANT_C]));
+    await db.delete(documents).where(inArray(documents.tenantId, [TENANT_A, TENANT_B, TENANT_C]));
+    await db.delete(tenantDocumentContextLimits).where(inArray(tenantDocumentContextLimits.tenantId, [TENANT_A, TENANT_B, TENANT_C]));
     await db.delete(users).where(eq(users.id, USER_ID));
-    await db.delete(tenants).where(inArray(tenants.id, [TENANT_A, TENANT_B]));
+    await db.delete(tenants).where(inArray(tenants.id, [TENANT_A, TENANT_B, TENANT_C]));
     await db.$client.end();
   });
 
@@ -239,10 +244,78 @@ describe("documents repository (lote-12 T4)", () => {
     await upsertDocumentContextLimit(TENANT_A, base);
     await upsertDocumentContextLimit(TENANT_A, { ...base, maxResponseBytes: 80, metrics: { bytes: 80 } });
     await upsertDocumentContextLimit(TENANT_B, base);
-    const rows = await db.select().from(tenantDocumentContextLimits).where(and(eq(tenantDocumentContextLimits.queryModality, "novo"), inArray(tenantDocumentContextLimits.tenantId, [TENANT_A, TENANT_B])));
+    const rows = await db.select().from(tenantDocumentContextLimits).where(and(eq(tenantDocumentContextLimits.queryModality, "novo"), inArray(tenantDocumentContextLimits.tenantId, [TENANT_A, TENANT_B, TENANT_C])));
     expect(rows).toHaveLength(2);
     expect(rows.find((row) => row.tenantId === TENANT_A)?.maxResponseBytes).toBe(80);
     expect(rows.find((row) => row.tenantId === TENANT_B)?.maxResponseBytes).toBe(100);
+  });
+
+  describe("admissão ao contexto sem teto e com teto desatualizado (lote-12 T34)", () => {
+    async function readyDocument(seed: string, text: string) {
+      const document = await committedDocument(seed, TENANT_C);
+      await db
+        .update(documents)
+        .set({ status: "pronto", modality: "ambos", extractedText: text, extractedBytes: text.length })
+        .where(eq(documents.id, document.id));
+      return document;
+    }
+
+    async function statusOf(id: string) {
+      const [row] = await db.select({ status: documents.status }).from(documents).where(eq(documents.id, id));
+      return row.status;
+    }
+
+    async function setLimits(maxResponseBytes: number) {
+      for (const queryModality of ["novo", "usado", "ambos"] as const) {
+        await upsertDocumentContextLimit(TENANT_C, {
+          queryModality, maxResponseBytes, modelId: "m", workflowVersion: "v", systemMessageHash: "s",
+          toolsHash: "t", memoryWindow: 50, benchmarkedAt: NOW, metrics: {},
+        });
+      }
+    }
+
+    // Antes, sem os três tetos a reconciliação saía cedo e todo documento
+    // `pronto` ia ao agente sem limite — o oposto do que o banner avisa.
+    it("sem nenhum teto publicado, nada fica no contexto", async () => {
+      await db.delete(tenantDocumentContextLimits).where(eq(tenantDocumentContextLimits.tenantId, TENANT_C));
+      const document = await readyDocument("sem-teto", "texto qualquer");
+      await reconcileTenantDocumentAdmission(TENANT_C, NOW);
+      expect(await statusOf(document.id)).toBe("fora_do_agente");
+    });
+
+    it("teto publicado e atual admite o documento que cabe", async () => {
+      await setLimits(10_000);
+      const document = await readyDocument("cabe", "texto curto");
+      await db.update(documents).set({ status: "fora_do_agente" }).where(eq(documents.id, document.id));
+      await reconcileTenantDocumentAdmission(TENANT_C, NOW);
+      expect(await statusOf(document.id)).toBe("pronto");
+    });
+
+    // Um teto desatualizado não pode ampliar nem deixar de limitar: continua
+    // valendo com o valor medido até uma nova medição.
+    it("teto desatualizado continua limitando com o valor antigo", async () => {
+      // Intenções antes dos documentos: a FK de intenção para documento.
+      await db.delete(documentUploadIntents).where(eq(documentUploadIntents.tenantId, TENANT_C));
+      await db.delete(documents).where(eq(documents.tenantId, TENANT_C));
+      await setLimits(300);
+      for (const queryModality of ["novo", "usado", "ambos"] as const) {
+        expect(await markDocumentContextLimitStale(TENANT_C, queryModality, "mudou: modelId", NOW)).toBe(true);
+      }
+      const small = await readyDocument("pequeno", "curto");
+      const big = await readyDocument("grande", "x".repeat(2_000));
+      await reconcileTenantDocumentAdmission(TENANT_C, NOW);
+      expect(await statusOf(small.id)).toBe("pronto");
+      expect(await statusOf(big.id)).toBe("fora_do_agente");
+    });
+
+    it("marcar como desatualizado preserva o primeiro motivo", async () => {
+      expect(await markDocumentContextLimitStale(TENANT_C, "novo", "mudou: toolsHash", NOW)).toBe(false);
+      const [row] = await db
+        .select({ staleReason: tenantDocumentContextLimits.staleReason, maxResponseBytes: tenantDocumentContextLimits.maxResponseBytes })
+        .from(tenantDocumentContextLimits)
+        .where(and(eq(tenantDocumentContextLimits.tenantId, TENANT_C), eq(tenantDocumentContextLimits.queryModality, "novo")));
+      expect(row).toEqual({ staleReason: "mudou: modelId", maxResponseBytes: 300 });
+    });
   });
 
   it("tombstone de outro tenant é indistinguível de documento inexistente", async () => {

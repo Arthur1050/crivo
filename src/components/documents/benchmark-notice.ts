@@ -32,7 +32,7 @@ export function describeBenchmarkNotice(
       status: "warning",
       title: "Teto de contexto ainda não medido",
       description:
-        "Enquanto o benchmark não é publicado para as três modalidades, novos documentos não entram no contexto do agente.",
+        "Enquanto o benchmark não é publicado para as três modalidades, nenhum documento entra no contexto do agente.",
     };
   }
 
@@ -41,7 +41,7 @@ export function describeBenchmarkNotice(
       status: "warning",
       title: "Teto de contexto desatualizado",
       description:
-        "O modelo, o workflow ou o prompt mudaram desde a última medição. Refaça o benchmark para voltar a admitir documentos com segurança.",
+        "O modelo, o workflow ou o prompt mudaram desde a última medição. O teto anterior continua valendo, mas não é ampliado até o benchmark ser refeito.",
     };
   }
 

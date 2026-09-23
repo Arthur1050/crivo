@@ -19,6 +19,15 @@ function stream() { return new ReadableStream<Uint8Array>({ start(controller) { 
 function storage(open: DocumentStorage["open"] = vi.fn(async (key) => ({ key, etag: "etag", contentType: "text/plain", size: bytes.byteLength, stream: stream() }))) {
   return { authorizeClientUpload: vi.fn(), head: vi.fn(), delete: vi.fn(), open } as DocumentStorage;
 }
+async function publishLimits(maxResponseBytes: number) {
+  for (const queryModality of ["novo", "usado", "ambos"] as const) {
+    await db
+      .insert(tenantDocumentContextLimits)
+      .values({ tenantId: TENANT_A, queryModality, maxResponseBytes, modelId: "model", workflowVersion: "workflow", systemMessageHash: "system", toolsHash: "tools", memoryWindow: 50, benchmarkedAt: NOW, metrics: {} })
+      .onConflictDoUpdate({ target: [tenantDocumentContextLimits.tenantId, tenantDocumentContextLimits.queryModality], set: { maxResponseBytes } });
+  }
+}
+
 async function createDocument(seed: string, overrides: Partial<typeof documents.$inferInsert> = {}, tenantId = TENANT_A) {
   const [row] = await db.insert(documents).values({
     tenantId, name: `${seed}.txt`, modality: "novo", mimeType: "text/plain", sizeBytes: BigInt(bytes.byteLength),
@@ -49,6 +58,9 @@ describe("document processing integration (lote-12 T13)", () => {
       { id: TENANT_B, name: "Processing B", agentName: "B", supportedModality: "ambos", slug: `processing-b-${TENANT_B}` },
     ]);
     await db.insert(users).values([{ id: USER_A, name: "Processing A", email: `processing-a-${USER_A}@example.test` }, { id: USER_B, name: "Processing B", email: `processing-b-${USER_B}@example.test` }]);
+    // Sem teto publicado nada entra no contexto (lote-12 T34): o tenant dos
+    // testes tem um benchmark, como qualquer tenant em produção.
+    await publishLimits(1_000_000);
   });
   afterAll(async () => {
     await db.delete(documentUploadIntents).where(inArray(documentUploadIntents.tenantId, [TENANT_A, TENANT_B]));
@@ -61,11 +73,11 @@ describe("document processing integration (lote-12 T13)", () => {
 
   it("persiste texto integral e status pronto", async () => { const d = await createDocument("success"); await expect(service().process({ tenantId: TENANT_A, documentId: d.id, attempt: 1 })).resolves.toEqual({ kind: "completed", status: "pronto" }); expect(await row(d.id)).toMatchObject({ status: "pronto", extractedText: "texto integral", extractedBytes: bytes.byteLength, failureCode: null }); });
   it("marca sucesso que não cabe no teto como fora_do_agente sem cortar texto", async () => {
-    await db.insert(tenantDocumentContextLimits).values(["novo", "usado", "ambos"].map((queryModality) => ({ tenantId: TENANT_A, queryModality: queryModality as "novo" | "usado" | "ambos", maxResponseBytes: 1, modelId: "model", workflowVersion: "workflow", systemMessageHash: "system", toolsHash: "tools", memoryWindow: 50, benchmarkedAt: NOW, metrics: {} })));
+    await publishLimits(1);
     const d = await createDocument("outside-budget");
     await service().process({ tenantId: TENANT_A, documentId: d.id, attempt: 1 });
     expect(await row(d.id)).toMatchObject({ status: "fora_do_agente", extractedText: "texto integral" });
-    await db.delete(tenantDocumentContextLimits).where(eq(tenantDocumentContextLimits.tenantId, TENANT_A));
+    await publishLimits(1_000_000);
   });
   it("não lê nem altera resultado de attempt antigo", async () => { const d = await createDocument("late", { processingAttempt: 2 }); const s = storage(); await expect(service({ storage: s }).process({ tenantId: TENANT_A, documentId: d.id, attempt: 1 })).resolves.toEqual({ kind: "stale" }); expect(s.open).not.toHaveBeenCalled(); expect(await row(d.id)).toMatchObject({ status: "processando", processingAttempt: 2, extractedText: null }); });
   it("não reativa tombstone", async () => { const d = await createDocument("deleted", { deletedAt: NOW }); await expect(service().process({ tenantId: TENANT_A, documentId: d.id, attempt: 1 })).resolves.toEqual({ kind: "stale" }); expect(await row(d.id)).toMatchObject({ deletedAt: NOW, extractedText: null }); });

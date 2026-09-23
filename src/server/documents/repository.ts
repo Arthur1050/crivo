@@ -445,12 +445,18 @@ export async function getDocumentForProcessing(
 
 /** Reapplies the published direct-context limits after text becomes available. */
 export async function reconcileTenantDocumentAdmission(tenantId: string, now = new Date()): Promise<void> {
+  // Um teto `stale` continua valendo com o valor medido: desatualizado impede
+  // AMPLIAR (design — "mantém teto anterior sem expansão"), nunca desliga o
+  // limite. Modalidade sem teto nenhum vale zero: sem benchmark, nada entra no
+  // contexto (design — "não existe limite implícito"). Antes, qualquer um dos
+  // dois casos fazia esta função sair cedo, e todo documento `pronto` chegava
+  // ao agente sem limite algum.
   const limitsRows = await db
     .select({ queryModality: tenantDocumentContextLimits.queryModality, maxResponseBytes: tenantDocumentContextLimits.maxResponseBytes })
     .from(tenantDocumentContextLimits)
-    .where(and(eq(tenantDocumentContextLimits.tenantId, tenantId), isNull(tenantDocumentContextLimits.staleAt)));
-  if (limitsRows.length !== 3) return;
-  const limits = Object.fromEntries(limitsRows.map((row) => [row.queryModality, row.maxResponseBytes])) as ContextLimits;
+    .where(eq(tenantDocumentContextLimits.tenantId, tenantId));
+  const limits: ContextLimits = { novo: 0, usado: 0, ambos: 0 };
+  for (const row of limitsRows) limits[row.queryModality] = row.maxResponseBytes;
   const rows = await db
     .select({ id: documents.id, name: documents.name, modality: documents.modality, extractedText: documents.extractedText, uploadedAt: documents.uploadedAt, status: documents.status })
     .from(documents)
@@ -684,6 +690,45 @@ export async function upsertDocumentContextLimit(
     })
     .returning();
   return limit;
+}
+
+/** Todos os tetos publicados, com a identidade da medição (lote-12 — T34). */
+export async function listDocumentContextLimits() {
+  return db
+    .select({
+      tenantId: tenantDocumentContextLimits.tenantId,
+      queryModality: tenantDocumentContextLimits.queryModality,
+      modelId: tenantDocumentContextLimits.modelId,
+      workflowVersion: tenantDocumentContextLimits.workflowVersion,
+      systemMessageHash: tenantDocumentContextLimits.systemMessageHash,
+      toolsHash: tenantDocumentContextLimits.toolsHash,
+      memoryWindow: tenantDocumentContextLimits.memoryWindow,
+      staleAt: tenantDocumentContextLimits.staleAt,
+    })
+    .from(tenantDocumentContextLimits);
+}
+
+/**
+ * Marca um teto como desatualizado sem mexer no valor (DOCLIM-01 AC11): ele
+ * continua limitando a admissão, mas não pode ser tratado como medição atual.
+ * Um teto já marcado conserva o primeiro motivo e o primeiro instante.
+ */
+export async function markDocumentContextLimitStale(
+  tenantId: string,
+  queryModality: "novo" | "usado" | "ambos",
+  reason: string,
+  now = new Date()
+): Promise<boolean> {
+  const rows = await db
+    .update(tenantDocumentContextLimits)
+    .set({ staleAt: now, staleReason: reason })
+    .where(and(
+      eq(tenantDocumentContextLimits.tenantId, tenantId),
+      eq(tenantDocumentContextLimits.queryModality, queryModality),
+      isNull(tenantDocumentContextLimits.staleAt)
+    ))
+    .returning({ tenantId: tenantDocumentContextLimits.tenantId });
+  return rows.length === 1;
 }
 
 export interface TenantContextLimitSummary {

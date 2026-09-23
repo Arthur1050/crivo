@@ -11,10 +11,10 @@ describe("aviso de benchmark de teto (lote-12 T27)", () => {
     expect(describeBenchmarkNotice(COMPLETE, true)).toBeNull();
   });
 
-  it("benchmark ausente avisa que documentos novos não entram no contexto", () => {
+  it("benchmark ausente avisa que nenhum documento entra no contexto", () => {
     const notice = describeBenchmarkNotice({ published: 0, stale: 0 }, true);
     expect(notice?.title).toContain("não medido");
-    expect(notice?.description).toContain("não entram no contexto");
+    expect(notice?.description).toContain("nenhum documento entra no contexto");
   });
 
   it("benchmark parcial conta como ausente, porque as três modalidades são necessárias", () => {
