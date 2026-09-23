@@ -48,6 +48,8 @@ const defaultRepository: ProcessingRepository = {
   claimRetry: claimDocumentProcessingRetry,
 };
 
+const INITIAL_DISPATCH_TRIES = 3;
+
 async function readAll(stream: ReadableStream<Uint8Array>) {
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }
@@ -125,6 +127,24 @@ export function createDocumentProcessingService(input: {
       if (completion !== "applied") return { kind: "stale" as const };
       await repository.reconcile(job.tenantId, at);
       return { kind: "completed" as const, status: "pronto" as const };
+    },
+
+    /**
+     * Primeiro despacho de um documento recém-confirmado. O attempt já nasce
+     * reservado pelo commit, então aqui só se insiste no `start()`: três
+     * tentativas imediatas e, se todas falharem, `falha` condicional — nenhum
+     * erro de despacho pode deixar o documento em `processando` sem run.
+     */
+    async dispatch(job: { tenantId: string; documentId: string; attempt: number }) {
+      for (let tentativa = 1; tentativa <= INITIAL_DISPATCH_TRIES; tentativa += 1) {
+        try {
+          const run = await input.start(job);
+          return { kind: "scheduled" as const, attempt: job.attempt, runId: run.id };
+        } catch {
+          // A causa não é persistida nem devolvida: pode conter detalhe interno.
+        }
+      }
+      return fail(job.tenantId, job.documentId, job.attempt, "processamento_indisponivel", now());
     },
 
     async retry(job: { tenantId: string; documentId: string }) {

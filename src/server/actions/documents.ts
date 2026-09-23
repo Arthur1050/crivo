@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { start } from "workflow/api";
 import { getActiveTenantId } from "../tenant";
 import { denyIfForbidden } from "./permission";
 import {
@@ -23,7 +22,7 @@ import {
 import { createDocumentProcessingService } from "../documents/processing";
 import { reconcileTenantDocumentAdmission, tombstoneDocument } from "../documents/repository";
 import { VercelBlobDocumentStorage } from "../documents/vercel-blob-storage";
-import { processDocumentWorkflow } from "../../../workflows/process-document";
+import { startDocumentProcessingRun } from "../documents/workflow-start";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -163,10 +162,7 @@ export async function retryDocumentAction(
   const tenantId = await getActiveTenantId();
   const service = createDocumentProcessingService({
     storage: new VercelBlobDocumentStorage(),
-    start: async (job) => {
-      const run = await start(processDocumentWorkflow, [job]);
-      return { id: run.runId };
-    },
+    start: startDocumentProcessingRun,
   });
   const result = await service.retry({ tenantId, documentId: input.documentId });
   if (result.kind === "stale") return { ok: false, error: "Documento não encontrado." };

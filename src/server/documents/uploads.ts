@@ -27,6 +27,8 @@ import {
   MAX_DOCUMENT_UPLOAD_BYTES,
   VercelBlobDocumentStorage,
 } from "./vercel-blob-storage";
+import { createDocumentProcessingService } from "./processing";
+import { startDocumentProcessingRun } from "./workflow-start";
 
 const UPLOAD_INTENT_TTL_MS = 60 * 60 * 1000;
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
@@ -85,10 +87,22 @@ const defaultRepository: DocumentUploadRepository = {
   findUploadIntentById,
 };
 
+export interface DocumentProcessingJob {
+  tenantId: string;
+  documentId: string;
+  attempt: number;
+}
+
 export interface DocumentUploadIntakeDependencies {
   storage?: DocumentStorage;
   repository?: DocumentUploadRepository;
   now?: () => Date;
+  /**
+   * Dispara o processamento de um documento recém-confirmado. O padrão é o
+   * Workflow real: um consumidor novo não pode esquecê-lo e deixar documentos
+   * presos em `processando`. Testes injetam um dublê.
+   */
+  dispatch?: (job: DocumentProcessingJob) => Promise<unknown>;
 }
 
 function validInput(input: CreateDocumentUploadInput, now: Date) {
@@ -187,6 +201,23 @@ export function createDocumentUploadIntake(
   const storage = dependencies.storage ?? new VercelBlobDocumentStorage();
   const repository = dependencies.repository ?? defaultRepository;
   const now = dependencies.now ?? (() => new Date());
+  const dispatch =
+    dependencies.dispatch ??
+    ((job: DocumentProcessingJob) =>
+      createDocumentProcessingService({ storage, start: startDocumentProcessingRun }).dispatch(job));
+
+  /**
+   * Nunca lança. Ela roda dentro do bloco que compensa o upload, e o documento
+   * já está confirmado: um erro aqui (inclusive ao gravar a própria `falha`)
+   * não pode apagar o objeto de um documento válido.
+   */
+  async function dispatchCommitted(job: DocumentProcessingJob) {
+    try {
+      await dispatch(job);
+    } catch {
+      // Sem run e sem `falha` gravada: só uma queda do banco chega aqui.
+    }
+  }
 
   return {
     async reserve(
@@ -302,6 +333,13 @@ export function createDocumentUploadIntake(
           }
         );
         if (committed.kind === "committed") {
+          // Só o commit novo despacha: callback repetido e finalização
+          // concorrente caem em `already_committed` e não criam segundo run.
+          await dispatchCommitted({
+            tenantId: committed.document.tenantId,
+            documentId: committed.document.id,
+            attempt: committed.document.processingAttempt,
+          });
           return { kind: "committed", documentId: committed.document.id };
         }
         if (committed.kind === "already_committed") {

@@ -140,6 +140,36 @@ describe("document processing service (lote-12 T13)", () => {
     expect(deps.repository.complete).toHaveBeenCalledWith("tenant-1", expect.objectContaining({ processingAttempt: 3, status: "falha", failureCode: "processamento_indisponivel" }));
   });
 
+  it("despacho inicial agenda o attempt reservado sem tocar o repositório", async () => {
+    const deps = dependencies();
+    const result = await createDocumentProcessingService({ ...deps, now: () => NOW }).dispatch({ tenantId: "tenant-1", documentId: "document-1", attempt: 1 });
+    expect(result).toEqual({ kind: "scheduled", attempt: 1, runId: "run-1" });
+    expect(deps.start).toHaveBeenCalledTimes(1);
+    expect(deps.start).toHaveBeenCalledWith({ tenantId: "tenant-1", documentId: "document-1", attempt: 1 });
+    expect(deps.repository.complete).not.toHaveBeenCalled();
+  });
+
+  it("despacho inicial insiste até a terceira tentativa imediata", async () => {
+    const deps = dependencies();
+    deps.start.mockRejectedValueOnce(new Error("offline")).mockRejectedValueOnce(new Error("offline"));
+    const result = await createDocumentProcessingService({ ...deps, now: () => NOW }).dispatch({ tenantId: "tenant-1", documentId: "document-1", attempt: 1 });
+    expect(result).toEqual({ kind: "scheduled", attempt: 1, runId: "run-1" });
+    expect(deps.start).toHaveBeenCalledTimes(3);
+    expect(deps.repository.complete).not.toHaveBeenCalled();
+  });
+
+  it("três falhas de despacho inicial gravam falha segura no mesmo attempt", async () => {
+    const deps = dependencies();
+    deps.start.mockRejectedValue(new Error("token privado em /caminho"));
+    const result = await createDocumentProcessingService({ ...deps, now: () => NOW }).dispatch({ tenantId: "tenant-1", documentId: "document-1", attempt: 1 });
+    expect(result).toEqual({ kind: "failed", code: "processamento_indisponivel" });
+    expect(deps.start).toHaveBeenCalledTimes(3);
+    expect(deps.repository.complete).toHaveBeenCalledWith("tenant-1", expect.objectContaining({
+      processingAttempt: 1, status: "falha", failureCode: "processamento_indisponivel",
+      failureMessage: "Não foi possível processar agora. Tente novamente.",
+    }));
+  });
+
   it("não expõe mensagem interna de dispatch na falha persistida", async () => {
     const deps = dependencies({ claimRetry: vi.fn(async () => ({ kind: "claimed" as const, attempt: 3 })) });
     deps.start.mockRejectedValue(new Error("token privado em /caminho"));

@@ -95,7 +95,13 @@ function inputFor(
 }
 
 function intake(storage: DocumentStorage, overrides: Parameters<typeof createDocumentUploadIntake>[0] = {}) {
-  return createDocumentUploadIntake({ storage, now: () => NOW, ...overrides });
+  // O padrão real dispara o Workflow; aqui um dublê isola o intake do runtime.
+  return createDocumentUploadIntake({
+    storage,
+    now: () => NOW,
+    dispatch: vi.fn(async () => undefined),
+    ...overrides,
+  });
 }
 
 async function documentCount(tenantId: string) {
@@ -246,6 +252,49 @@ describe("document upload intake (lote-12 T8)", () => {
     expect(rows).toHaveLength(1);
   });
 
+  it("commit novo despacha o processamento uma vez com o attempt reservado", async () => {
+    const bytes = encoder.encode(`despacho-${randomUUID()}`);
+    const dispatch = vi.fn(async () => undefined);
+    const service = intake(storageFixture(bytes), { dispatch });
+    const started = await service.begin(inputFor(bytes), actorA);
+    if (started.kind !== "ready") throw new Error("intent was not ready");
+
+    const finished = await service.finalize(started.intentId);
+
+    if (finished.kind !== "committed") throw new Error("document was not committed");
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    expect(dispatch).toHaveBeenCalledWith({ tenantId: TENANT_A, documentId: finished.documentId, attempt: 1 });
+  });
+
+  it("callback repetido e finalização concorrente não criam segundo despacho", async () => {
+    const bytes = encoder.encode(`despacho-unico-${randomUUID()}`);
+    const dispatch = vi.fn(async () => undefined);
+    const service = intake(storageFixture(bytes), { dispatch });
+    const started = await service.begin(inputFor(bytes), actorA);
+    if (started.kind !== "ready") throw new Error("intent was not ready");
+
+    await Promise.all([service.finalize(started.intentId), service.finalize(started.intentId)]);
+    await service.finalize(started.intentId);
+
+    expect(dispatch).toHaveBeenCalledTimes(1);
+  });
+
+  it("despacho que lança mantém o documento e o objeto confirmados", async () => {
+    const bytes = encoder.encode(`despacho-quebrado-${randomUUID()}`);
+    const storage = storageFixture(bytes);
+    const service = intake(storage, { dispatch: vi.fn(async () => { throw new Error("banco fora"); }) });
+    const started = await service.begin(inputFor(bytes), actorA);
+    if (started.kind !== "ready") throw new Error("intent was not ready");
+
+    const finished = await service.finalize(started.intentId);
+
+    expect(finished.kind).toBe("committed");
+    if (finished.kind !== "committed") throw new Error("document was not committed");
+    expect(storage.delete).not.toHaveBeenCalled();
+    const [document] = await db.select().from(documents).where(eq(documents.id, finished.documentId));
+    expect(document).toMatchObject({ status: "processando", deletedAt: null });
+  });
+
   it("recusa metadata divergente e remove o objeto sem criar documento", async () => {
     const bytes = encoder.encode(`mime-divergente-${randomUUID()}`);
     const storage = storageFixture(bytes, { contentType: "text/csv" });
@@ -312,7 +361,8 @@ describe("document upload intake (lote-12 T8)", () => {
     if (firstResult.kind !== "committed") throw new Error("first document was not committed");
 
     const duplicateStorage = storageFixture(bytes);
-    const duplicate = intake(duplicateStorage);
+    const duplicateDispatch = vi.fn(async () => undefined);
+    const duplicate = intake(duplicateStorage, { dispatch: duplicateDispatch });
     const duplicateIntent = await duplicate.begin(inputFor(bytes), actorA);
     if (duplicateIntent.kind !== "ready") throw new Error("duplicate intent was not ready");
     await expect(duplicate.finalize(duplicateIntent.intentId)).resolves.toEqual({
@@ -320,6 +370,7 @@ describe("document upload intake (lote-12 T8)", () => {
       documentId: firstResult.documentId,
     });
     expect(duplicateStorage.delete).toHaveBeenCalledTimes(1);
+    expect(duplicateDispatch).not.toHaveBeenCalled();
   });
 
   it("compensa objeto quando o insert no banco falha", async () => {
