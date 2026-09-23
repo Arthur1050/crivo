@@ -12,6 +12,7 @@ import {
 } from "../../../db/schema";
 import {
   claimUploadIntentForFinalization,
+  failUploadIntent,
   commitUploadIntent,
   completeDocumentProcessing,
   createUploadIntent,
@@ -137,6 +138,13 @@ describe("documents repository (lote-12 T4)", () => {
     if (created.kind !== "created") throw new Error("fixture intent was not created");
     expect((await claimUploadIntentForFinalization(TENANT_A, created.intent.id, NOW)).kind).toBe("claimed");
     expect((await claimUploadIntentForFinalization(TENANT_A, created.intent.id, NOW)).kind).toBe("not_claimable");
+  });
+
+  it("intent já recusada responde failed, não not_claimable", async () => {
+    const created = await createUploadIntent(TENANT_A, intentInput("claim-failed"), NOW);
+    if (created.kind !== "created") throw new Error("fixture intent was not created");
+    await failUploadIntent(TENANT_A, created.intent.id);
+    expect((await claimUploadIntentForFinalization(TENANT_A, created.intent.id, NOW)).kind).toBe("failed");
   });
 
   it("não reivindica intent expirada", async () => {

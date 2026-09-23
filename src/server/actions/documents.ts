@@ -149,6 +149,9 @@ export async function deleteDocumentAction(
   return { ok: true };
 }
 
+const FINALIZE_WAIT_TRIES = 8;
+const FINALIZE_WAIT_MS = 500;
+
 export interface FinalizeDocumentUploadInput {
   intentId: string;
 }
@@ -164,12 +167,20 @@ export async function finalizeDocumentUploadAction(
   const denied = await denyIfForbidden("documentos", "escrever");
   if (denied) return denied;
 
-  const result = await createDocumentUploadIntake().finalizeForActor(input.intentId);
+  const intake = createDocumentUploadIntake();
+  let result = await intake.finalizeForActor(input.intentId);
+  // `not_finalizable` é o callback do provedor verificando o mesmo upload em
+  // paralelo. A verificação leva poucos segundos; esperar aqui é o que permite
+  // contar ao usuário se o arquivo entrou ou foi recusado.
+  for (let tentativa = 0; result.kind === "not_finalizable" && tentativa < FINALIZE_WAIT_TRIES; tentativa += 1) {
+    await new Promise((resolve) => setTimeout(resolve, FINALIZE_WAIT_MS));
+    result = await intake.finalizeForActor(input.intentId);
+  }
   revalidatePath("/documentos");
 
   if (result.kind === "committed" || result.kind === "not_finalizable") {
-    // `not_finalizable` aqui é o callback finalizando em paralelo: o documento
-    // aparece assim que ele concluir.
+    // Se o callback ainda não concluiu depois da espera, o documento aparece
+    // quando ele terminar; não há recusa conhecida para mostrar.
     return { ok: true };
   }
   if (result.kind === "duplicate_content") {

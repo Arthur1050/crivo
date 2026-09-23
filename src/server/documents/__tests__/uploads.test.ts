@@ -311,6 +311,20 @@ describe("document upload intake (lote-12 T8)", () => {
     expect(dispatch).toHaveBeenCalledTimes(1);
   });
 
+  it("navegador que chega depois de uma recusa do callback recebe a recusa", async () => {
+    const bytes = encoder.encode(`recusado-antes-${randomUUID()}`);
+    const storage = storageFixture(bytes, { contentType: "text/csv" });
+    const service = intake(storage);
+    const started = await service.begin(inputFor(bytes), actorA);
+    if (started.kind !== "ready") throw new Error("intent was not ready");
+
+    await expect(service.finalize(started.intentId)).resolves.toMatchObject({ kind: "rejected" });
+    await expect(service.finalizeForActor(started.intentId, actorA)).resolves.toEqual({
+      kind: "rejected",
+      code: "upload_validation_failed",
+    });
+  });
+
   it("finalização pelo navegador de outro tenant responde como inexistente", async () => {
     const bytes = encoder.encode(`cruzado-${randomUUID()}`);
     const storage = storageFixture(bytes);

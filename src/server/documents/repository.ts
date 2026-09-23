@@ -117,6 +117,7 @@ export type ClaimUploadIntentResult =
   | { kind: "already_committed"; documentId: string }
   | { kind: "expired" }
   | { kind: "not_found" }
+  | { kind: "failed" }
   | { kind: "not_claimable" };
 
 export interface CompleteProcessingInput {
@@ -264,6 +265,10 @@ export async function claimUploadIntentForFinalization(
   if (intent.state === "committed" && intent.documentId) {
     return { kind: "already_committed", documentId: intent.documentId };
   }
+  // Uma recusa já gravada é resposta definitiva: quem chega depois (o
+  // navegador, quando o callback venceu a corrida) precisa saber que o arquivo
+  // foi recusado, não que a finalização "ainda não pôde" acontecer.
+  if (intent.state === "failed") return { kind: "failed" };
   if (intent.expiresAtIntent <= now) return { kind: "expired" };
   return { kind: "not_claimable" };
 }

@@ -313,6 +313,7 @@ export function createDocumentUploadIntake(
       if (claim.kind === "already_committed") {
         return { kind: "committed", documentId: claim.documentId };
       }
+      if (claim.kind === "failed") return { kind: "rejected", code: "upload_validation_failed" };
       if (claim.kind === "expired") return { kind: "expired" };
       if (claim.kind !== "claimed") return { kind: "not_finalizable" };
 
