@@ -784,7 +784,7 @@ A verificação encontrou cinco defeitos que os 1.770 testes não pegaram, todos
 **Done when:**
 
 - [x] Usuário autorizou explicitamente a criação/conexão externa nesta tarefa.
-- [ ] Store é Private, Frankfurt, ligado apenas aos ambientes aprovados e sem segredo copiado à evidência. **Parcial** — vínculo verificado; região e acesso pendentes de confirmação humana.
+- [x] Store é Private, Frankfurt, ligado apenas aos ambientes aprovados e sem segredo copiado à evidência. Região `FRA1` e acesso `Private` confirmados no dashboard em 2026-09-23 (ver T30).
 - [x] Upload/read/delete sintético mínimo confirma conectividade; objeto scratch é removido.
 - [x] Evidência registra projeto/store por identificador não secreto e resultado.
 
@@ -798,7 +798,7 @@ Conectividade provada contra o provedor real, pelo caminho do adapter: `put` →
 
 **Não verificado por ferramenta:** a região `fra1` e o acesso `private` no nível do store. O conector da Vercel não expõe listagem de stores de Blob, e `get_storage_stores_by_id` respondeu 404 para este id. Exige confirmação humana no dashboard. A região não pode ser alterada depois da criação, então confirmar antes de T32 evita refazer o store.
 
-**Risco aberto para T30–T32:** o token de leitura/escrita do Blob **não aparece** entre as variáveis de ambiente do projeto na Vercel. O que existe é `BLOB_STORE_ID` e `BLOB_WEBHOOK_PUBLIC_KEY`, ambos em `production` e `preview`. O SDK lê esse token do ambiente para emitir o token de client upload; sem ele no ambiente implantado, a rota de upload falha no preview mesmo com o store conectado. Localmente funciona porque o token está no arquivo de ambiente da máquina, que é inacessível a este agente por política do projeto.
+**Risco resolvido em 2026-09-23:** o usuário configurou o token no ambiente implantado e o upload real de T30 passou pela rota de client upload em produção. Registro original: **Risco aberto para T30–T32:** o token de leitura/escrita do Blob **não aparece** entre as variáveis de ambiente do projeto na Vercel. O que existe é `BLOB_STORE_ID` e `BLOB_WEBHOOK_PUBLIC_KEY`, ambos em `production` e `preview`. O SDK lê esse token do ambiente para emitir o token de client upload; sem ele no ambiente implantado, a rota de upload falha no preview mesmo com o store conectado. Localmente funciona porque o token está no arquivo de ambiente da máquina, que é inacessível a este agente por política do projeto.
 
 #### T30: Habilitar Workflow no ambiente de preview
 
@@ -811,14 +811,33 @@ Conectividade provada contra o provedor real, pelo caminho do adapter: `put` →
 
 **Done when:**
 
-- [ ] Usuário autorizou deploy/configuração externa desta tarefa.
-- [ ] Preview build expõe health correto e um run sintético conclui.
-- [ ] Inspeção confirma inputs/outputs sem binário/texto.
-- [ ] Run ID e status são registrados sem payload sensível.
+- [x] Usuário autorizou deploy/configuração externa desta tarefa.
+- [x] Preview build expõe health correto e um run sintético conclui. **Ver SPEC_DEVIATION abaixo:** provado em produção.
+- [x] Inspeção confirma inputs/outputs sem binário/texto.
+- [x] Run ID e status são registrados sem payload sensível.
 
 **Tests:** workflow connected e2e  
 **Gate:** Build  
 **Commit:** `chore(workflow): record preview workflow readiness`
+
+**SPEC_DEVIATION:** a tarefa previa o ambiente de **preview**; a prova foi feita em **produção**.
+**Reason:** o mesmo motivo de T31 — `DATABASE_URL` cobre `production` e `preview`, então não existe preview com banco próprio. O usuário autorizou em 2026-09-23 e indicou que todos os tenants existentes são fictícios; o app ainda não tem uso real.
+
+**Defeito encontrado e corrigido antes da prova (`5ba0fdf`):** o design prevê `start(documentId, attempt)` logo depois do commit do upload, mas só a action de retry chamava o Workflow — e o retry só aceita documentos em `falha`. Todo upload confirmado ficaria em `processando` para sempre, sem run. O painel de Workflows da Vercel confirmava: **nenhum run jamais tinha sido criado em produção**. A lacuna passou por T9, T14 e T19 porque cada peça tinha teste próprio (intake, workflow, retry), mas nenhum teste cobria a costura entre commit e despacho — o mesmo padrão de L-021. A correção despacha no commit novo com três tentativas imediatas e grava `falha`/`processamento_indisponivel` se todas falharem; callback repetido e finalização concorrente não criam segundo run; erro de despacho nunca chega ao `catch` que compensa o upload. Seis testes novos; a mutação que remove o despacho derruba dois deles. Suíte completa: 113 arquivos, 1.776 testes.
+
+**Evidence (2026-09-23):** Deployment `dpl_7AzkmFC37JXieagytRdsx4hrj5oK` (commit `5ba0fdf`), `iad1`, Fluid Compute ativo. O build registrou `workflows build complete (5 steps, 1 workflow)` e expôs `/.well-known/workflow/v1/{flow,step,webhook/[token]}`.
+
+O `healthCheck()` do SDK precisa rodar dentro do deployment com OIDC, então o canário foi um run real: upload de `teste-t30-canario.txt` (215 B, TXT sintético marcado como teste) no tenant Triângulo Imóveis (`7c6882c6-18da-4ce9-8724-c2236a15fe08`), documento `c04b3db4-7478-4099-b640-6ef54c5c85cf`. Estado na UI: `Processando` → `Pronto` em cerca de 15 s.
+
+Run `wrun_01M3791NRDK3XQN5WDWRQMZC1R` — `processDocumentWorkflow`, `Completed`, 3,47 s, um step (`processDocumentStep`, 1 tentativa), retenção de 24 h, **527 bytes** de armazenamento. O input durável é criptografado em repouso; decriptado, contém só `{tenantId, documentId, attempt: 1}`. O output é `{kind: "completed", status: "pronto"}`. Nenhum texto nem binário no event log.
+
+Logs de runtime do deployment no intervalo: token de upload 13:59:51 UTC → callback 13:59:53 → `flow` 13:59:54 → `step` 13:59:55 → `flow` 13:59:57, todos 200. Nenhum conteúdo do documento aparece; o único ruído é o aviso de SSL do `pg`, que a Vercel marca como `error` em toda rota com banco e que antecede este lote.
+
+**Achados laterais:**
+
+- **Região e acesso do Blob confirmados** no dashboard: store `crivo-documentos`, `Private`, região `FRA1`. Fecha a pendência de T29.
+- **`npm run dev:test` troca o banco, mas não o Blob.** O token local aponta para o mesmo store de produção. Os dois uploads da verificação visual (`politica-*`, 571 B cada, tenant `a0744420…`) ficaram no store depois que a suíte apagou as linhas do banco de teste. Nenhuma rotina limpa objeto sem linha — a manutenção só trata tombstones. Remoção fica na limpeza de T32; o isolamento de Blob para o ambiente de teste vai ao backlog.
+- O documento aparece como `Pronto` enquanto o banner avisa que nenhum documento entra no contexto antes do benchmark. Os dois estados são coerentes com o design (extração ≠ admissão), mas a UI não deixa isso claro para o usuário. A tratar em T34, quando os tetos existirem.
 
 #### T31: Aplicar schema e descarte aprovado no ambiente de teste/preview
 
