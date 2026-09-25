@@ -169,7 +169,10 @@ export function UploadDialog({ categories }: UploadDialogProps) {
     setBanner(null);
 
     if (!file) {
-      setErrors((prev) => ({ ...prev, file: "Selecione um arquivo." }));
+      // O FileInput descarta em silêncio um arquivo fora de `accept`: sem
+      // arquivo aqui pode ser tanto "não escolheu" quanto "escolheu um tipo
+      // não aceito". A mensagem cobre os dois dizendo o que é aceito.
+      setErrors((prev) => ({ ...prev, file: "Selecione um arquivo PDF, DOCX, TXT, MD ou CSV." }));
       return;
     }
 
