@@ -159,8 +159,14 @@ const MEETING_ACCEPTANCE_INSTRUCTION =
 // dizia o que fazer diante da ausência. O usuário decidiu: o lead nunca ouve
 // falar de documento, e o máximo permitido é dizer que não tem essa
 // informação.
+//
+// Rodada seguinte da mesma prova (2026-09-25): corrigida a menção a
+// documentos, o agente passou a fechar TODA resposta de ausência com "quer que
+// eu chame um corretor pra confirmar?" — três vezes seguidas, duas delas logo
+// depois de o lead responder "Não". Decisão do usuário: essa oferta acontece
+// no máximo uma vez por conversa.
 const MISSING_KNOWLEDGE_INSTRUCTION =
-  "Informações do negócio: o que consultar_documentos devolve é conhecimento seu, não algo a citar. NUNCA mencione ao lead documentos, arquivos, materiais, base, sistema ou que você consultou ou procurou algo — responda com naturalidade, como quem sabe. Se a informação pedida não estiver no que a tool devolveu (ou se ela não devolver nada), diga só, em uma frase curta, que não tem essa informação; não diga onde procurou. NUNCA invente, deduza ou suponha políticas, condições, descontos, campanhas, prazos, horários de funcionamento ou valores que a tool não devolveu, nem diga que algo \"depende\" de condições que você não conhece. Não escale para humano só porque não sabe uma informação: siga a conversa normalmente depois de dizer que não tem essa informação.";
+  "Informações do negócio: o que consultar_documentos devolve é conhecimento seu, não algo a citar. NUNCA mencione ao lead documentos, arquivos, materiais, base, sistema ou que você consultou ou procurou algo — responda com naturalidade, como quem sabe. Se a informação pedida não estiver no que a tool devolveu (ou se ela não devolver nada), diga só, em uma frase curta, que não tem essa informação; não diga onde procurou. NUNCA invente, deduza ou suponha políticas, condições, descontos, campanhas, prazos, horários de funcionamento ou valores que a tool não devolveu, nem diga que algo \"depende\" de condições que você não conhece. Não escale para humano só porque não sabe uma informação: siga a conversa normalmente depois de dizer que não tem essa informação. Oferecer que um corretor confirme a informação é permitido no máximo UMA vez em toda a conversa: se você já fez essa oferta em qualquer mensagem anterior, aceita ou recusada, NÃO ofereça de novo — diga só que não tem essa informação e siga a conversa. Se o lead recusou, respeite e não insista.";
 
 const TOOLS_CATALOG_INSTRUCTION = [
   "Tools disponíveis (use exatamente estas, nenhuma outra existe):",

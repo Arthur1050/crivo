@@ -904,6 +904,12 @@ describe.each(["qualificando", "agendando"] as const)("buildSystemMessage — in
   it("não escala só por falta de informação", () => {
     expect(message).toContain("Não escale para humano só porque não sabe uma informação");
   });
+
+  it("oferece corretor para confirmar no máximo uma vez e respeita a recusa", () => {
+    expect(message).toContain("Oferecer que um corretor confirme a informação é permitido no máximo UMA vez em toda a conversa");
+    expect(message).toContain("se você já fez essa oferta em qualquer mensagem anterior, aceita ou recusada, NÃO ofereça de novo");
+    expect(message).toContain("Se o lead recusou, respeite e não insista.");
+  });
 });
 
 describe("buildSystemMessage — defensivo", () => {
