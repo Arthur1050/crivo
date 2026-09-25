@@ -150,6 +150,18 @@ const TERMINAL_QUESTION_INSTRUCTION =
 const MEETING_ACCEPTANCE_INSTRUCTION =
   "Regra de aceite para qualquer fase: interesse por um imóvel, dúvida ou agradecimento NÃO é aceite de horário. Dizer que gostou de uma opção não autoriza marcar reunião. Nunca exija escolha de imóvel para receber esse aceite. NUNCA chame a tool agendar_reuniao no mesmo turno em que você propõe o horário: só chame depois que o lead ACEITAR explicitamente um horário, e sempre para o horário que ele aceitou. Num mesmo turno, ou você PERGUNTA se um horário serve, ou você CHAMA a tool — nunca as duas coisas: se perguntou, encerre o turno e espere a resposta. Quando o próprio lead disser um horário concreto, isso JÁ é o aceite: chame a tool para esse horário e confirme, sem perguntar de novo. Se ele recusar sem dizer outro horário, proponha um novo e espere o aceite. Agendar antes do aceite ocupa a agenda do corretor com um horário que o lead não confirmou.";
 
+// ACHADO REAL (prova conversacional do lote-12, T35, 2026-09-25): quando a
+// informação pedida não estava no que `consultar_documentos` devolveu, o
+// agente fez três coisas erradas em três turnos: escalou para humano só por
+// isso; disse "não consegui achar [...] nos documentos aqui", expondo a
+// consulta interna; e, sobre um desconto que não existe, inventou que
+// "depende da campanha do empreendimento e do lote/unidade". Nada no prompt
+// dizia o que fazer diante da ausência. O usuário decidiu: o lead nunca ouve
+// falar de documento, e o máximo permitido é dizer que não tem essa
+// informação.
+const MISSING_KNOWLEDGE_INSTRUCTION =
+  "Informações do negócio: o que consultar_documentos devolve é conhecimento seu, não algo a citar. NUNCA mencione ao lead documentos, arquivos, materiais, base, sistema ou que você consultou ou procurou algo — responda com naturalidade, como quem sabe. Se a informação pedida não estiver no que a tool devolveu (ou se ela não devolver nada), diga só, em uma frase curta, que não tem essa informação; não diga onde procurou. NUNCA invente, deduza ou suponha políticas, condições, descontos, campanhas, prazos, horários de funcionamento ou valores que a tool não devolveu, nem diga que algo \"depende\" de condições que você não conhece. Não escale para humano só porque não sabe uma informação: siga a conversa normalmente depois de dizer que não tem essa informação.";
+
 const TOOLS_CATALOG_INSTRUCTION = [
   "Tools disponíveis (use exatamente estas, nenhuma outra existe):",
   "- responder_lead: ÚNICA forma de enviar mensagem ao lead. Toda resposta sua passa por ela, mesmo que seja só uma reação.",
@@ -298,7 +310,7 @@ function buildPhaseInstruction(phase, perguntados, meetingAt) {
  * (delimitado + reafirmação) → persona consultiva → postura na conversa →
  * abertura de sessão
  * (só no primeiro turno) → fronteira de capacidade → canal da reunião →
- * aceite de horário → entrega ao humano → orientação de opt-out → transparência (AD-016)
+ * aceite de horário → informações do negócio → entrega ao humano → orientação de opt-out → transparência (AD-016)
  * → âncora de data → instrução por fase → horário comercial → catálogo de
  * tools → instrução de falha de tool.
  *
@@ -336,6 +348,7 @@ export function buildSystemMessage({ settings, phase, perguntados, businessHours
     TERMINAL_QUESTION_INSTRUCTION,
     MEETING_CHANNEL_INSTRUCTION,
     meetingAt && formatMeetingLabel(meetingAt) ? null : MEETING_ACCEPTANCE_INSTRUCTION,
+    MISSING_KNOWLEDGE_INSTRUCTION,
     ESCALATION_HANDOFF_INSTRUCTION,
     OPT_OUT_GUIDANCE_INSTRUCTION,
     AI_TRANSPARENCY_INSTRUCTION,

@@ -884,6 +884,28 @@ describe.each(["qualificando", "agendando"] as const)("buildSystemMessage — en
   });
 });
 
+describe.each(["qualificando", "agendando"] as const)("buildSystemMessage — informação ausente, fase %s (T35)", (phase) => {
+  const message = buildSystemMessage({ settings: BASE_SETTINGS, phase });
+
+  it("proíbe mencionar documentos ou a consulta ao lead", () => {
+    expect(message).toContain("NUNCA mencione ao lead documentos, arquivos, materiais, base, sistema ou que você consultou ou procurou algo");
+    expect(message).toContain("não diga onde procurou");
+  });
+
+  it("permite no máximo dizer que não tem a informação", () => {
+    expect(message).toContain("diga só, em uma frase curta, que não tem essa informação");
+  });
+
+  it("proíbe inventar política comercial ausente", () => {
+    expect(message).toContain("NUNCA invente, deduza ou suponha políticas, condições, descontos, campanhas");
+    expect(message).toContain('nem diga que algo "depende" de condições que você não conhece');
+  });
+
+  it("não escala só por falta de informação", () => {
+    expect(message).toContain("Não escale para humano só porque não sabe uma informação");
+  });
+});
+
 describe("buildSystemMessage — defensivo", () => {
   it("funciona sem settings/perguntados/businessHours", () => {
     const message = buildSystemMessage({ phase: "qualificando" });
