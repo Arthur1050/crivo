@@ -2,7 +2,7 @@
 
 > Machine-owned. Do NOT hand-edit. Changes are overwritten on the next `lessons.py` write.
 > Canonical state lives in `.specs/lessons.json`. Edit lessons only via the script.
-> promote_threshold=2 distinct features · window_days=365 · quarantine_threshold=2
+> promote_threshold=2 distinct features · window_days=45 · quarantine_threshold=2
 
 ## Confirmed (load these at Specify/Design)
 
@@ -161,6 +161,54 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - features: lote-8-usuarios-papeis-atribuicao
 - evidence: src/server/data/__tests__/broker-assignment.test.ts:153 (tests)
 - last seen: 2026-08-28T00:13:20Z
+
+### L-026 - Quando cada peça de um fluxo tem teste próprio (intake, workflow, retry), escrever também o teste da costura que prova a passagem real entre elas; peças verdes não provam que uma chama a outra.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `testing` · harmful: 0
+- features: lote-12-conteudo-de-documentos
+- evidence: tasks.md T30 (5ba0fdf) (testing)
+- last seen: 2026-09-25T01:16:14Z
+
+### L-027 - Fixture criada direto no banco pula as linhas que o caminho de produção cria junto (ex.: a intenção que referencia o documento por FK); para testar remoção, criar a fixture pelo caminho real ou com todas as linhas dependentes.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `testing` · harmful: 0
+- features: lote-12-conteudo-de-documentos
+- evidence: tasks.md T32 (18e9eca) (testing)
+- last seen: 2026-09-25T01:16:14Z
+
+### L-028 - Fixtures de prova conectada precisam atravessar os limiares do transporte (compressão, chunking, tamanho): arquivos todos abaixo de 1 KB esconderam que o Blob devolve ETag fraco para texto comprimido.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `connected-e2e` · harmful: 0
+- features: lote-12-conteudo-de-documentos
+- evidence: tasks.md T35 (4879205) (connected-e2e)
+- last seen: 2026-09-25T01:16:15Z
+
+### L-029 - Quando a interface traduz códigos gravados pelo backend, tipar a tabela de tradução pelo tipo exportado do backend (Record<Codigo, string>), para que código novo ou renomeado quebre a compilação em vez de cair na mensagem genérica.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `ui-contract` · harmful: 0
+- features: lote-12-conteudo-de-documentos
+- evidence: tasks.md T32 (bd6bb8f) (ui-contract)
+- last seen: 2026-09-25T01:16:15Z
+
+### L-030 - Todo limite configurável precisa de teste para o caso sem configuração e para o caso desatualizado: um return antecipado quando o limite falta vira ausência total de limite (falha aberta).
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `limits` · harmful: 0
+- features: lote-12-conteudo-de-documentos
+- evidence: tasks.md T34 (90c4258) (limits)
+- last seen: 2026-09-25T01:16:15Z
+
+### L-031 - Antes de desenhar uma fórmula de capacidade sobre um provedor externo, levantar os limites compartilhados da conta (tokens por minuto, requisições por minuto) e tratá-los como componente da fórmula, não só a janela do modelo.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `capacity` · harmful: 0
+- features: lote-12-conteudo-de-documentos
+- evidence: tasks.md T34, AD-031 (capacity)
+- last seen: 2026-09-25T01:16:16Z
+
+### L-032 - update_workflow via MCP grava uma versão rascunho: publicar com publish_workflow e conferir que versionId e activeVersionId coincidem antes de declarar a mudança em produção.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `n8n` · harmful: 0
+- features: lote-12-conteudo-de-documentos
+- evidence: tasks.md T33 (n8n)
+- last seen: 2026-09-25T01:16:16Z
+
+### L-033 - Nunca rodar dois processos de teste contra o mesmo banco descartável ao mesmo tempo; falhas de uma suíte rodando em paralelo com testes isolados não são evidência de defeito.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `testing` · harmful: 0
+- features: lote-12-conteudo-de-documentos
+- evidence: tasks.md T32 (suíte com 3 falhas espúrias) (testing)
+- last seen: 2026-09-25T01:16:16Z
 
 ## Quarantined (failed when applied - ignore)
 

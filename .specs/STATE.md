@@ -277,22 +277,26 @@
 - **Date**: 2026-09-15
 - **Status**: active
 
+### AD-031
+- **Decision**: O teto de contexto documental é o menor entre qualidade, latência, janela do modelo, transporte da Vercel e **vazão** (limite de tokens por minuto da organização na OpenAI, dividido pelos turnos simultâneos e pelas chamadas com corpus por turno), com margem de 0,8. Uma faixa só conta para qualidade e latência se também for verificada com o corpus observado duas vezes no mesmo turno. A admissão é **falha fechada**: modalidade sem teto medido vale zero, e um teto `stale` continua limitando com o valor antigo até nova medição. A política inicial é de 2 turnos simultâneos e 2 chamadas com corpus por turno.
+- **Reason**: O benchmark de 2026-09-23 (lote-12 T34) esbarrou no limite de 200 mil tokens por minuto, compartilhado por todos os tenants: a faixa de 256 KB com duas observações é estruturalmente impossível nele, e a de 512 KB estoura numa só chamada. O design não previa esse componente. Na mesma tarefa apareceu que, sem teto ou com teto `stale`, a reconciliação saía cedo e o agente recebia todo documento `pronto` sem limite — o oposto do que o banner e o design ("não existe limite implícito", "mantém teto anterior sem expansão") prometiam.
+- **Trade-off**: O teto sai conservador (~106 KB para `novo` e `ambos`, ~119 KB para `usado`), limitado pela maior faixa provada, não por uma extrapolação. A vazão é uma política, não uma medição: com mais tenants conversando ao mesmo tempo, `concurrentTurnsPerMinute` precisa subir e o teto cai na mesma proporção, a menos que o tier da OpenAI suba. Sem benchmark, um tenant novo não tem documento nenhum no contexto até o `persist` rodar para ele. A contagem de tokens é a estimativa do n8n, não o uso informado pela OpenAI.
+- **Scope**: Admissão de documentos ao contexto do agente e todo benchmark futuro de teto, a partir do lote-12 (`src/server/documents/context-ceiling.ts`, `scripts/document-context-benchmark.ts`, `n8n/README.md` §13).
+- **Date**: 2026-09-24
+- **Status**: active
+
 ## Handoff
 
 - **Feature**: Lote 12 — `.specs/features/lote-12-conteudo-de-documentos/`.
-- **Phase / Task**: Execute / Phase 5. T30 e T32 pendentes de ambiente; verificação visual de T23–T27 parcialmente concluída.
-- **Completed**: T1–T28 e T31. T29 parcial. Gate final: 113 arquivos, 1.770 testes, 0 falhas; lint 0 erros; build aprovado.
-- **Publicado**: `origin/main` em `d92b430`; deploy de produção `READY`. Commits posteriores (`7c9a3c5`, `dd4a8db`, `93740be`) ainda **não publicados**.
-- **Verificação visual (2026-09-21)**: sessão real no Chrome contra o banco descartável, com documentos semeados nos cinco estados. Encontrou e corrigiu cinco defeitos que 1.770 testes não pegaram — hidratação quebrada pelo calendário renderizado com o dialog fechado, label de carregamento duplicado, dois textos da lib em inglês e scroll horizontal no dialog. Confirma a lição L-009 de forma literal.
-- **Next step**: publicar a tool no n8n (T33) e decidir onde provar T30/T32. Os cenários de papel corretor exigem uma segunda sessão autenticada.
+- **Phase / Task**: Execute / Phase 6. Falta a prova conversacional (T35), depois T36 publicado e T37.
+- **Completed**: T1–T34, com T30–T32 e T34 provados em produção (sem ambiente de preview com banco próprio — SPEC_DEVIATION registrado em cada task). T36 implementado e testado no branch local `t36-remover-get` (`7bb230c`), **não publicado de propósito**: o GET legado é o rollback do agente até a prova passar.
+- **Publicado**: `origin/main` em `166d224`; deploy de produção `READY`.
+- **Tetos em produção**: gravados para os três tenants com a identidade do agente `9a73c823-3679-45fd-a38b-36d0c03c0157`; `check` sem nenhum `stale`. Ver AD-031.
+- **Defeitos de produção corrigidos nesta fase** (todos com teste e mutação conferida): Workflow nunca despachado no upload; finalização pelo navegador ausente; recusa silenciosa quando o callback vencia a corrida; duplicata sem preflight; mensagens de falha com vocabulário que o backend não emite; FK que impedia apagar documentos enviados; contexto sem limite quando não havia teto; **todo texto acima de ~1 KB recusado no upload** (a CDN do Blob comprime a resposta e o ETag vira fraco).
+- **Next step**: T35 — o usuário conduz a conversa pelo WhatsApp (AD-027). Roteiro e controles já preparados em produção: fatos exclusivos nos documentos `pronto`, controle com valor conflitante no Crivo Demo, um documento `fora_do_agente` e um expirado, cada um com fato próprio. Lead de teste e memória já limpos. Depois: rodar `crivo-smoke-memoria` (`MRJFDlwEM2T4KH3n`), coletar `POST /api/v1/context` nos logs da Vercel (fecha também a execução sintética de T33), publicar o branch do T36 e seguir para T37.
 - **Blockers**:
-  - **Papel corretor sem evidência.** Exige um segundo login com esse papel no banco descartável; o agente não digita senha em formulário.
-  - **Caminho de sucesso do upload só existe no preview.** `onUploadCompleted` parte da infraestrutura da Vercel e é verificado por HMAC; em localhost a finalização nunca roda.
-  - **Região e acesso do store de Blob não verificados.** O conector não expõe listagem de stores; conferir `fra1` e `private` no dashboard.
-  - **Tool do n8n não publicada (T33).** `n8n/generated/principal.ts` já tem o contrato POST; a instância ainda roda o GET legado, mantido de propósito como rollback.
-- **Defeito de produto aberto, fora do escopo**: o `Timestamp` da Astryx quebra a hidratação em todo o produto — servidor emite `Sep 21, 2026`, cliente `21 de set. de 2026`. Não é alcançável pelo `InternationalizationProvider` (já documentado em `src/lib/relative-time.ts` para as strings relativas). Toda página que usa `Timestamp` é regenerada no cliente. Saídas: `swizzle` do componente ou formatação local. Decisão do usuário.
-- **Segundo item de i18n**: os indicadores `Required`/`Optional` dos formulários vêm do catálogo interno da Astryx, que só tem inglês. Resolvível com um catálogo pt-BR passado ao provider; afeta todas as telas.
-- **Armadilha operacional confirmada na prática**: `npm test` apaga e repovoa o banco descartável, incluindo `users` e `accounts`. Rodar a suíte durante uma sessão de captura destrói o login e os documentos semeados. Regra: gate primeiro, captura depois, nunca intercalados.
-- **Ferramenta nova**: `npm run dev:test` (`93740be`) sobe o Next contra o banco descartável e imprime o host de destino na primeira linha. `npm run dev` continua falando com o banco real.
-- **Uncommitted files**: `.specs/STATE.md` (este handoff) e `.env.example` (do usuário).
-- **Branch**: `main`, 3 commits à frente de `origin/main`.
+  - **Papel corretor sem evidência visual (T25).** Exige um segundo login com esse papel.
+- **Backlog a registrar no fechamento** (ver `tasks.md` T30–T34): isolar o Blob no `dev:test` (hoje troca o banco mas não o store); rever a política de vazão quando houver mais tenants ativos; o `catch` do lifecycle rotula erro de banco como erro de storage; dias da semana e indicadores `Required`/`Optional` em inglês (catálogo da Astryx); `Timestamp` quebrando a hidratação em todo o produto.
+- **Armadilha operacional**: `npm test` apaga e repovoa o banco descartável. Rodar suítes em paralelo também interfere entre si — rodar a completa sozinha.
+- **Uncommitted files**: `.env.example` (do usuário).
+- **Branch**: `main` sincronizado com `origin/main`; `t36-remover-get` local, 1 commit à frente.

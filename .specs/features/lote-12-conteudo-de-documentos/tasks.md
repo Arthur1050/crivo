@@ -1073,6 +1073,8 @@ O teto fica na maior faixa **provada** com duas observações, não numa extrapo
 **Gate:** Full  
 **Commit:** `refactor(api): remove legacy context get`
 
+**Estado (2026-09-24): implementado e testado no branch local `t36-remover-get` (`7bb230c`), não publicado de propósito.** A task depende de T35: o GET legado é o caminho de rollback do agente até a prova conversacional passar. O que o branch já comprova: GET, PUT, PATCH e DELETE respondem 405 com `Allow: POST`; o GET com `?modality=novo` e credencial válida não devolve documento nem o shape antigo; o POST segue respondendo o envelope `direct` (5 testes em `context-get-removed.test.ts`). O `getContext` legado e seu teste saíram por não ter consumidor; o OpenAPI perdeu o `get` e os schemas `ContextModality` e `ContextDocument`. `grep` confirma que nenhum consumidor em `n8n/workflows` ou `n8n/generated` usa GET ou query string no contexto. A mutação que volta a anunciar GET derruba o teste. Suíte completa no branch: 115 arquivos, 1.833 testes. Depois da prova: `git merge t36-remover-get`, rodar a suíte de novo e publicar.
+
 #### T37: Liberar e reverificar o lote completo
 
 **What:** Aplicar gates finais, deploy autorizado, schema aprovado no alvo final e smoke pós-release sem ampliar o escopo.  

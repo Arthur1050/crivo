@@ -4,7 +4,7 @@
   "window_days": 45,
   "quarantine_threshold": 2,
   "prune_requires_confirmation": true,
-  "next_id": 26,
+  "next_id": 34,
   "lessons": [
     {
       "id": "L-001",
@@ -455,6 +455,150 @@
       ],
       "created": "2026-09-09T20:13:02Z",
       "last_seen": "2026-09-09T20:13:02Z"
+    },
+    {
+      "id": "L-026",
+      "key": "ac_gap::quando cada peca de um fluxo tem teste proprio intake workflow retry escrever tambem o teste da costura que prova a passagem real entre elas pecas verdes nao provam que uma chama a outra",
+      "text": "Quando cada peça de um fluxo tem teste próprio (intake, workflow, retry), escrever também o teste da costura que prova a passagem real entre elas; peças verdes não provam que uma chama a outra.",
+      "signal": "ac_gap",
+      "scope": "testing",
+      "status": "candidate",
+      "features": [
+        "lote-12-conteudo-de-documentos"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "tasks.md T30 (5ba0fdf) (testing)"
+      ],
+      "created": "2026-09-25T01:16:14Z",
+      "last_seen": "2026-09-25T01:16:14Z"
+    },
+    {
+      "id": "L-027",
+      "key": "gate_fail::fixture criada direto no banco pula as linhas que o caminho de producao cria junto ex a intencao que referencia o documento por fk para testar remocao criar a fixture pelo caminho real ou com todas as linhas dependentes",
+      "text": "Fixture criada direto no banco pula as linhas que o caminho de produção cria junto (ex.: a intenção que referencia o documento por FK); para testar remoção, criar a fixture pelo caminho real ou com todas as linhas dependentes.",
+      "signal": "gate_fail",
+      "scope": "testing",
+      "status": "candidate",
+      "features": [
+        "lote-12-conteudo-de-documentos"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "tasks.md T32 (18e9eca) (testing)"
+      ],
+      "created": "2026-09-25T01:16:14Z",
+      "last_seen": "2026-09-25T01:16:14Z"
+    },
+    {
+      "id": "L-028",
+      "key": "gate_fail::fixtures de prova conectada precisam atravessar os limiares do transporte compressao chunking tamanho arquivos todos abaixo de 1 kb esconderam que o blob devolve etag fraco para texto comprimido",
+      "text": "Fixtures de prova conectada precisam atravessar os limiares do transporte (compressão, chunking, tamanho): arquivos todos abaixo de 1 KB esconderam que o Blob devolve ETag fraco para texto comprimido.",
+      "signal": "gate_fail",
+      "scope": "connected-e2e",
+      "status": "candidate",
+      "features": [
+        "lote-12-conteudo-de-documentos"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "tasks.md T35 (4879205) (connected-e2e)"
+      ],
+      "created": "2026-09-25T01:16:15Z",
+      "last_seen": "2026-09-25T01:16:15Z"
+    },
+    {
+      "id": "L-029",
+      "key": "spec_precision_gap::quando a interface traduz codigos gravados pelo backend tipar a tabela de traducao pelo tipo exportado do backend record codigo string para que codigo novo ou renomeado quebre a compilacao em vez de cair na mensagem generica",
+      "text": "Quando a interface traduz códigos gravados pelo backend, tipar a tabela de tradução pelo tipo exportado do backend (Record<Codigo, string>), para que código novo ou renomeado quebre a compilação em vez de cair na mensagem genérica.",
+      "signal": "spec_precision_gap",
+      "scope": "ui-contract",
+      "status": "candidate",
+      "features": [
+        "lote-12-conteudo-de-documentos"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "tasks.md T32 (bd6bb8f) (ui-contract)"
+      ],
+      "created": "2026-09-25T01:16:15Z",
+      "last_seen": "2026-09-25T01:16:15Z"
+    },
+    {
+      "id": "L-030",
+      "key": "ac_gap::todo limite configuravel precisa de teste para o caso sem configuracao e para o caso desatualizado um return antecipado quando o limite falta vira ausencia total de limite falha aberta",
+      "text": "Todo limite configurável precisa de teste para o caso sem configuração e para o caso desatualizado: um return antecipado quando o limite falta vira ausência total de limite (falha aberta).",
+      "signal": "ac_gap",
+      "scope": "limits",
+      "status": "candidate",
+      "features": [
+        "lote-12-conteudo-de-documentos"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "tasks.md T34 (90c4258) (limits)"
+      ],
+      "created": "2026-09-25T01:16:15Z",
+      "last_seen": "2026-09-25T01:16:15Z"
+    },
+    {
+      "id": "L-031",
+      "key": "spec_precision_gap::antes de desenhar uma formula de capacidade sobre um provedor externo levantar os limites compartilhados da conta tokens por minuto requisicoes por minuto e trata los como componente da formula nao so a janela do modelo",
+      "text": "Antes de desenhar uma fórmula de capacidade sobre um provedor externo, levantar os limites compartilhados da conta (tokens por minuto, requisições por minuto) e tratá-los como componente da fórmula, não só a janela do modelo.",
+      "signal": "spec_precision_gap",
+      "scope": "capacity",
+      "status": "candidate",
+      "features": [
+        "lote-12-conteudo-de-documentos"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "tasks.md T34, AD-031 (capacity)"
+      ],
+      "created": "2026-09-25T01:16:16Z",
+      "last_seen": "2026-09-25T01:16:16Z"
+    },
+    {
+      "id": "L-032",
+      "key": "gate_fail::update workflow via mcp grava uma versao rascunho publicar com publish workflow e conferir que versionid e activeversionid coincidem antes de declarar a mudanca em producao",
+      "text": "update_workflow via MCP grava uma versão rascunho: publicar com publish_workflow e conferir que versionId e activeVersionId coincidem antes de declarar a mudança em produção.",
+      "signal": "gate_fail",
+      "scope": "n8n",
+      "status": "candidate",
+      "features": [
+        "lote-12-conteudo-de-documentos"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "tasks.md T33 (n8n)"
+      ],
+      "created": "2026-09-25T01:16:16Z",
+      "last_seen": "2026-09-25T01:16:16Z"
+    },
+    {
+      "id": "L-033",
+      "key": "gate_fail::nunca rodar dois processos de teste contra o mesmo banco descartavel ao mesmo tempo falhas de uma suite rodando em paralelo com testes isolados nao sao evidencia de defeito",
+      "text": "Nunca rodar dois processos de teste contra o mesmo banco descartável ao mesmo tempo; falhas de uma suíte rodando em paralelo com testes isolados não são evidência de defeito.",
+      "signal": "gate_fail",
+      "scope": "testing",
+      "status": "candidate",
+      "features": [
+        "lote-12-conteudo-de-documentos"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "tasks.md T32 (suíte com 3 falhas espúrias) (testing)"
+      ],
+      "created": "2026-09-25T01:16:16Z",
+      "last_seen": "2026-09-25T01:16:16Z"
     }
   ]
 }
