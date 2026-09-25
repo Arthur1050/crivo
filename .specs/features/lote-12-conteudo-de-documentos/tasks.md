@@ -1093,6 +1093,8 @@ O teto fica na maior faixa **provada** com duas observações, não numa extrapo
 
 **Publicado (2026-09-25).** Depois da prova de T35, `t36-remover-get` foi mesclado em `main` (`dde2770`); suíte completa rodada sozinha: 115 arquivos, 1.841 testes. Em produção (`dpl_JJBctaCzUyJ9CD2Ac4T6RE5EYGmw`), `GET /api/v1/context` responde `405 Method Not Allowed` com `Allow: POST`, e o POST sem credencial segue em 401.
 
+**Re-benchmark (2026-09-25, preparação de T37).** As publicações de T35 mudaram o system message e o `check` marcou os 9 tetos como desatualizados. O gerador `crivo-benchmark-contexto` foi republicado com o system message atual (versão `09934c27…`; sha256 do `Code: gerar faixa` = gerado, `c970a3a9…`) e as faixas foram medidas de novo contra o agente `73788130…`: 17 execuções (2609–2627) em `benchmark-contexto-2026-09-25.json`, todas as faixas com conteúdo aprovadas com os três fatos; 512 KB deu 429 de TPM duas vezes (2616, 2617), porque um turno exige duas chamadas de ~108 mil tokens em segundos. `persist` gravou para os 3 tenants: novo 106.702 B, usado 119.265 B, ambos 106.805 B, todos limitados por qualidade (a maior faixa aprovada com duas observações é 128 KB). Contra 2026-09-23 (106.468 / 119.265 / 106.338 B), variação máxima de 0,4%. `check` em seguida: 0 desatualizados. Admissão sem mudança: triangulo segue com 5 `pronto`, 2 `falha` e 1 `fora_do_agente` (o controle de T35).
+
 #### T37: Liberar e reverificar o lote completo
 
 **What:** Aplicar gates finais, deploy autorizado, schema aprovado no alvo final e smoke pós-release sem ampliar o escopo.  
