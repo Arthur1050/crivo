@@ -8,10 +8,15 @@ import {
   DELETE,
   GET,
   PATCH,
+  POST,
   PUT,
 } from "../../../../../app/api/v1/context/route";
 
-describe("routes: GET /api/v1/context", () => {
+// lote-12 — T36: o GET legado (`?modality=`, shape com `content: null`) era o
+// caminho de rollback enquanto o agente publicado migrava para o POST. Depois
+// da prova conversacional ele sai: estes testes provam a remoção e a ausência
+// de qualquer fallback para o contrato antigo.
+describe("routes: GET /api/v1/context removido (lote-12 T36)", () => {
   let tenantAId: string;
   let apiKeyA: string;
   let tenantBId: string;
@@ -92,51 +97,54 @@ describe("routes: GET /api/v1/context", () => {
     await db.$client.end();
   });
 
-  function makeRequest(query: string, apiKey?: string): Request {
+  function makeRequest(query: string, apiKey?: string, init: RequestInit = {}): Request {
     return new Request(`http://local/api/v1/context${query}`, {
-      headers: apiKey !== undefined ? { Authorization: `Bearer ${apiKey}` } : {},
+      ...init,
+      headers: {
+        ...(apiKey !== undefined ? { Authorization: `Bearer ${apiKey}` } : {}),
+        ...(init.headers ?? {}),
+      },
     });
   }
 
-  it("modality=novo responde 200 com os documentos do tenant, isolado de outros tenants (INT-01 AC2/INT-06 AC1)", async () => {
-    const response = await GET(makeRequest("?modality=novo", apiKeyA));
-    expect(response.status).toBe(200);
-    const body = await response.json();
-    expect(Array.isArray(body)).toBe(true);
-    const ids = body.map((d: { id: string }) => d.id);
-    expect(ids).toContain(docNovoAId);
-    expect(ids).not.toContain(docOfBId);
+  it("GET autenticado com modalidade válida responde 405 e anuncia só POST", async () => {
+    const response = GET(makeRequest("?modality=novo", apiKeyA));
+    expect(response.status).toBe(405);
+    expect(response.headers.get("Allow")).toBe("POST");
+    expect(response.headers.get("content-type")).toBe("application/problem+json");
+    expect((await response.json()).code).toBe("metodo-nao-suportado");
   });
 
-  it("modality ausente responde 400 payload-invalido (INT-06 AC3)", async () => {
-    const response = await GET(makeRequest("", apiKeyA));
-    expect(response.status).toBe(400);
-    const body = await response.json();
-    expect(body.code).toBe("payload-invalido");
+  it("não há fallback: o GET não devolve documento nenhum, nem o shape antigo", async () => {
+    const response = GET(makeRequest("?modality=novo", apiKeyA));
+    const text = await response.text();
+    expect(text).not.toContain(docNovoAId);
+    expect(text).not.toContain(docOfBId);
+    expect(Array.isArray(JSON.parse(text))).toBe(false);
   });
 
-  it("modality inválida responde 400 payload-invalido (INT-06 AC3)", async () => {
-    const response = await GET(makeRequest("?modality=comercial", apiKeyA));
-    expect(response.status).toBe(400);
-    const body = await response.json();
-    expect(body.code).toBe("payload-invalido");
+  it("GET sem modalidade também é 405, não mais o 400 de validação do contrato antigo", async () => {
+    const response = GET(makeRequest("", apiKeyA));
+    expect(response.status).toBe(405);
   });
 
-  it("sem header Authorization responde 401 (INT-01 AC1)", async () => {
-    const response = await GET(makeRequest("?modality=novo"));
-    expect(response.status).toBe(401);
-  });
-
-  // `POST` saiu desta lista no lote-12 (T21): deixou de ser verbo recusado e
-  // passou a ser o contrato de contexto. Sua cobertura vive em
-  // `context-post.test.ts`; aqui restam os verbos que seguem sem suporte.
-  it("verbo não suportado (PUT/PATCH/DELETE) responde 405 problem+json", async () => {
+  it("PUT, PATCH e DELETE anunciam só POST como método permitido", async () => {
     for (const handler of [PUT, PATCH, DELETE]) {
       const response = handler();
       expect(response.status).toBe(405);
-      expect(response.headers.get("content-type")).toBe("application/problem+json");
-      const body = await response.json();
-      expect(body.code).toBe("metodo-nao-suportado");
+      expect(response.headers.get("Allow")).toBe("POST");
     }
+  });
+
+  it("o POST segue sendo o contrato: responde 200 com o envelope direct", async () => {
+    const response = await POST(
+      makeRequest("", apiKeyA, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ modality: "ambos", question: "Quais são as regras?" }),
+      })
+    );
+    expect(response.status).toBe(200);
+    expect((await response.json()).retrievalMode).toBe("direct");
   });
 });

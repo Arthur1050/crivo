@@ -52,7 +52,7 @@ describe("docs/integration/openapi.yaml — SwaggerParser.validate()", () => {
     expect(api.paths["/leads/{id}/messages"].post).toBeDefined();
     expect(api.paths["/leads/{id}/messages"].get).toBeDefined();
     expect(api.paths["/leads/{id}/opt-out"].post).toBeDefined();
-    expect(api.paths["/context"].get).toBeDefined();
+    expect(api.paths["/context"].post).toBeDefined();
     expect(api.paths["/properties"].get).toBeDefined();
   });
 
@@ -155,10 +155,9 @@ describe("docs/integration/openapi.yaml — SwaggerParser.validate()", () => {
       expect(question.maxLength).toBe(MAX_CONTEXT_QUESTION_LENGTH);
     });
 
-    it("a modalidade do POST aceita as três, ao contrário do filtro do GET legado", async () => {
+    it("a modalidade do POST aceita as três", async () => {
       const { api } = await contextPath();
       expect(api.components.schemas.Modality.enum).toEqual(["novo", "usado", "ambos"]);
-      expect(api.components.schemas.ContextModality.enum).toEqual(["novo", "usado"]);
     });
 
     it("a resposta 200 é o envelope direct, com conteúdo integral e sem truncamento", async () => {
@@ -186,10 +185,12 @@ describe("docs/integration/openapi.yaml — SwaggerParser.validate()", () => {
       expect(post.responses["200"].headers["Cache-Control"]).toBeDefined();
     });
 
-    it("o GET legado segue documentado, marcado como descontinuado", async () => {
-      const { get } = await contextPath();
-      expect(get).toBeDefined();
-      expect(get.deprecated).toBe(true);
+    // lote-12 — T36: o GET legado saiu do contrato junto com o handler.
+    it("o GET legado não é mais documentado, nem seus schemas", async () => {
+      const { get, api } = await contextPath();
+      expect(get).toBeUndefined();
+      expect(api.components.schemas.ContextModality).toBeUndefined();
+      expect(api.components.schemas.ContextDocument).toBeUndefined();
     });
   });
 });

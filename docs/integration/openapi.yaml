@@ -281,42 +281,6 @@ paths:
       security:
         - bearerAuth: []
         - serviceAuth: []
-    get:
-      operationId: getContext
-      deprecated: true
-      tags: [context]
-      summary: "[Descontinuado] Documentos de contexto do tenant, filtrados por modalidade"
-      description: >-
-        Contrato anterior, mantido apenas como caminho de rollback enquanto o
-        workflow publicado migra para `POST /context`. Continua devolvendo o
-        shape antigo, com `content` sempre `null`, e será removido.
-
-        Retorna documentos cuja modalidade é a pedida ou `ambos`, excluindo
-        expirados mesmo que o job de TTL ainda não tenha rodado (INT-06,
-        LGPD-02).
-      parameters:
-        - name: modality
-          in: query
-          required: true
-          schema:
-            $ref: "#/components/schemas/ContextModality"
-        - $ref: "#/components/parameters/XCrivoTenant"
-      responses:
-        "200":
-          description: Documentos de contexto do tenant.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/ContextDocument"
-        "400":
-          $ref: "#/components/responses/PayloadInvalido"
-        "401":
-          $ref: "#/components/responses/NaoAutenticado"
-      security:
-        - bearerAuth: []
-        - serviceAuth: []
   /settings:
     get:
       operationId: getSettings
@@ -529,10 +493,6 @@ components:
     Modality:
       type: string
       enum: [novo, usado, ambos]
-    ContextModality:
-      type: string
-      description: Modalidades válidas para o filtro de contexto — `ambos` não é um filtro válido aqui (é resolvido automaticamente junto de `novo`/`usado`).
-      enum: [novo, usado]
     PropertyType:
       type: string
       enum: [casa, apartamento]
@@ -788,8 +748,8 @@ components:
       properties:
         modality:
           description: >-
-            Modalidade da consulta. Diferente de `ContextModality` (o filtro
-            do GET descontinuado), aqui `ambos` é um valor pedível.
+            Modalidade da consulta. `ambos` é um valor pedível e devolve o
+            corpus das duas modalidades.
           $ref: "#/components/schemas/Modality"
         question:
           type: string
@@ -838,25 +798,6 @@ components:
           description: Corpus ordenado do upload mais antigo para o mais recente.
           items:
             $ref: "#/components/schemas/DocumentContextEntry"
-    ContextDocument:
-      type: object
-      description: "[Descontinuado] Shape do GET legado; substituído por DocumentContextEntry."
-      required: [id, name, modality, category, content]
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
-        modality:
-          $ref: "#/components/schemas/Modality"
-        category:
-          oneOf:
-            - $ref: "#/components/schemas/ContextDocumentCategory"
-            - type: "null"
-        content:
-          description: Sempre `null` no v1 (mock-first — AD-004); reservado para a Fase 9.
-          type: "null"
     SettingsResponse:
       type: object
       description: >-
