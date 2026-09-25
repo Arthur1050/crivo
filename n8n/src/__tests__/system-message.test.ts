@@ -905,10 +905,19 @@ describe.each(["qualificando", "agendando"] as const)("buildSystemMessage — in
     expect(message).toContain("Não escale para humano só porque não sabe uma informação");
   });
 
-  it("oferece corretor para confirmar no máximo uma vez e respeita a recusa", () => {
-    expect(message).toContain("Oferecer que um corretor confirme a informação é permitido no máximo UMA vez em toda a conversa");
-    expect(message).toContain("se você já fez essa oferta em qualquer mensagem anterior, aceita ou recusada, NÃO ofereça de novo");
-    expect(message).toContain("Se o lead recusou, respeite e não insista.");
+  it("envolve o corretor no máximo uma vez, em qualquer forma de oferta", () => {
+    expect(message).toContain("envolver o corretor é permitido no máximo UMA vez em toda a conversa");
+    expect(message).toContain("propor ligação, chamada de vídeo ou reunião com ele por esse motivo, ou pedir horário para isso");
+    expect(message).toContain("Se você já fez uma oferta dessas em qualquer mensagem anterior, aceita ou recusada, NÃO faça outra");
+  });
+
+  it("depois da recusa não volta a propor corretor, chamada ou reunião sem o lead pedir", () => {
+    expect(message).toContain("não proponha corretor, ligação, chamada ou reunião nos turnos seguintes, a menos que o próprio lead peça");
+  });
+
+  it("não promete verificar depois nem sonda a origem da informação", () => {
+    expect(message).toContain("NUNCA prometa que vai verificar, consultar o corretor ou voltar depois com a informação");
+    expect(message).toContain("não peça ao lead de onde ele tirou a informação");
   });
 });
 
