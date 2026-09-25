@@ -75,7 +75,7 @@ Qualquer combinação marcada ❌ responde `409` `transicao-invalida`.
 - **Esse endpoint fica fora de `/api/v1`** e usa autenticação própria: header `Authorization: Bearer <CRON_SECRET>` (variável de ambiente do projeto), não a API key de tenant. O agente n8n nunca precisa chamá-lo.
 - **`GET /api/cron/expire-documents` também é aceito, com a mesma autenticação** — a Vercel invoca Cron Jobs sempre via `GET` (e injeta automaticamente `Authorization: Bearer $CRON_SECRET` quando a variável está configurada no projeto), então o handler responde aos dois verbos para funcionar de fato quando implantado.
 - Sem secret ou com secret errado → `401`, nada é deletado.
-- **`GET /api/v1/context` nunca depende do job já ter rodado**: a leitura de contexto filtra `expiresAt IS NULL OR expiresAt > now()` na própria query, então um documento vencido some da resposta imediatamente ao expirar, mesmo que o cron ainda não tenha passado.
+- **`POST /api/v1/context` nunca depende do job já ter rodado**: a leitura de contexto filtra `expiresAt IS NULL OR expiresAt > now()` na própria query, então um documento vencido some da resposta imediatamente ao expirar, mesmo que o cron ainda não tenha passado.
 
 ## 6. Limites do v1
 

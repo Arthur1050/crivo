@@ -1,21 +1,11 @@
 import { Buffer } from "node:buffer";
-import {
-  getContext,
-  getDirectDocumentContext,
-  type ContextModality,
-} from "../../../../src/server/integration/context";
+import { getDirectDocumentContext } from "../../../../src/server/integration/context";
 import {
   MAX_BODY_BYTES,
   parseContextQuery,
 } from "../../../../src/server/integration/parsers";
 import { methodNotAllowed, problem } from "../../../../src/server/integration/problem";
 import { withIntegrationRoute } from "../../../../src/server/integration/route";
-
-const VALID_MODALITIES: ContextModality[] = ["novo", "usado"];
-
-function isValidModality(value: string | null): value is ContextModality {
-  return value !== null && (VALID_MODALITIES as string[]).includes(value);
-}
 
 /** O corpus é sempre fresco e nunca pode ficar em cache intermediário. */
 const NO_STORE = { "Cache-Control": "no-store" };
@@ -59,24 +49,12 @@ export const POST = withIntegrationRoute(async (request, auth) => {
 });
 
 /**
- * `GET /api/v1/context?modality={novo|usado}` — contrato anterior, mantido
- * apenas como caminho de rollback enquanto o workflow publicado migra para o
- * POST. Continua devolvendo o shape antigo (`content: null`); T36 o remove.
+ * O GET legado (`?modality=`, shape com `content: null`) foi o caminho de
+ * rollback enquanto o agente publicado migrava para o POST. Removido no
+ * lote-12 (T36) depois da prova conversacional: responde 405 como qualquer
+ * verbo sem suporte, sem nenhum fallback para o contrato antigo.
  */
-export const GET = withIntegrationRoute(async (request, auth) => {
-  const modality = new URL(request.url).searchParams.get("modality");
-  if (!isValidModality(modality)) {
-    return problem(
-      400,
-      "payload-invalido",
-      "Parâmetro 'modality' é obrigatório e deve ser 'novo' ou 'usado'."
-    );
-  }
-
-  const documents = await getContext(auth.tenantId, modality);
-  return Response.json(documents);
-});
-
-export const PUT = methodNotAllowed(["GET", "POST"]);
-export const PATCH = methodNotAllowed(["GET", "POST"]);
-export const DELETE = methodNotAllowed(["GET", "POST"]);
+export const GET = methodNotAllowed(["POST"]);
+export const PUT = methodNotAllowed(["POST"]);
+export const PATCH = methodNotAllowed(["POST"]);
+export const DELETE = methodNotAllowed(["POST"]);
