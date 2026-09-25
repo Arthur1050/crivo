@@ -134,3 +134,4 @@ O conteúdo deste lote cobre políticas de financiamento, documentação exigida
 - OCR para PDFs escaneados.
 - Busca vetorial/RAG, condicionada ao teto medido neste lote.
 - Vitrine pública do catálogo, mantida no lote 16.
+- Barreira determinística para a oferta de corretor diante de informação ausente (T35, rodadas 3–5): o prompt limita a oferta a uma vez por conversa, mas o modelo repetiu em outra forma ("eu direciono pro corretor conferir") depois de recusa. Garantia real pede checagem em `responder_lead`/`voice.mjs`, com o histórico de ofertas guardado em `aberturasJson`, sem bloquear a proposta de reunião legítima da fase de agendamento.

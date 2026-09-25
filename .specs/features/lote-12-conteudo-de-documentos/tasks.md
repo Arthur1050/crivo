@@ -1061,6 +1061,10 @@ O teto fica na maior faixa **provada** com duas observações, não numa extrapo
 
 *Achado menor, não bloqueante.* Nas três respostas de ausência o agente ofereceu "quer que eu chame um corretor pra confirmar?", repetindo a oferta depois de o lead recusar duas vezes. Não viola a regra aprovada, mas é repetição insistente.
 
+*Rodadas 4 e 5 — oferta de corretor.* Decisão do usuário: a oferta de corretor diante de informação ausente acontece no máximo uma vez. Duas versões da regra no prompt: `44b879e` (publicada como `52637d52…`) limitava "oferecer que o corretor confirme"; `4f9661e` (publicada como `73788130…`, sha256 do `jsCode` = gerado, `e40331e2…`) cobre qualquer forma de envolver o corretor, proíbe nova proposta depois de recusa e proíbe prometer verificar depois. Rodada 4 (lead `8d7c49c9…`): o agente contornou a primeira versão trocando a forma — chamada de vídeo com o corretor pedindo horário logo depois do "Não", e "eu verifico com o corretor" no turno seguinte. Logs da Vercel dessa janela indisponíveis (`ExceedsBillingLimitError` na consulta, ~9 h depois). Rodada 5 (lead `44b62e30…`, 22:25–22:27, quatro `POST /api/v1/context 200` em `dpl_JJBctaCzUyJ9CD2Ac4T6RE5EYGmw`): primeira oferta no salão de festas, portaria sem oferta, mas no desconto "eu direciono pro corretor conferir certinho" depois de o lead recusar — segunda oferta. Nas duas rodadas: nenhum vazamento (R$ 275, 22h45, desconto), nenhuma menção a documento, nenhuma condição inventada, controle R$ 385,00 correto, memória sem envelope (execs 2575 e 2604).
+
+**Aceito com ressalva (decisão do usuário, 2026-09-25):** a oferta repetida de corretor não é bloqueante para o lote. A regra de prompt reduz a repetição mas não a garante; a garantia exige barreira determinística em `responder_lead` e foi para as ideias adiadas de `context.md`.
+
 **Tests:** conversational connected e2e  
 **Gate:** Full  
 **Commit:** `test(agent): verify document grounded conversation`
