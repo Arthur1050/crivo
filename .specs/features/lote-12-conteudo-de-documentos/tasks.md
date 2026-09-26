@@ -1106,15 +1106,25 @@ O teto fica na maior faixa **provada** com duas observações, não numa extrapo
 
 **Done when:**
 
-- [ ] Full/Build passam do zero; contagem final e delta são registrados.
-- [ ] Usuário autorizou cada deploy/push/schema externo; nenhum force-push foi usado.
-- [ ] Ambiente final repete upload → Workflow → preview/download → contexto → resposta → delete.
-- [ ] Plano Vercel comercial é gate obrigatório antes de clientes pagantes; ausência bloqueia somente uso comercial, não validação não comercial.
+- [x] Full/Build passam do zero; contagem final e delta são registrados.
+- [x] Usuário autorizou cada deploy/push/schema externo; nenhum force-push foi usado.
+- [x] Ambiente final repete upload → Workflow → preview/download → contexto → resposta → delete.
+- [x] Plano Vercel comercial é gate obrigatório antes de clientes pagantes; ausência bloqueia somente uso comercial, não validação não comercial.
 - [ ] Traceability sobe para Implementing; Verifier independente roda depois do commit final, gera `validation.md`, executa sensor e só então pode marcar Verified.
 
 **Tests:** full regression + connected smoke  
 **Gate:** Build  
 **Commit:** `chore(release): release document content flow`
+
+**Evidence (2026-09-25/26).**
+
+*Gates do zero.* `.next` apagado; `npm run build` passou (inclui a checagem de TypeScript do Next). `eslint .`: 0 erros, 7 avisos. Suíte completa rodada sozinha: **115 arquivos, 1.847 testes** — delta desde o início da Phase 6: +14 (8 + 2 + 6 das regras de ausência de informação e oferta de corretor em `system-message.test.ts`) e −8 líquidos do T36 (`context.test.ts` removido, `context-get-removed.test.ts` com 5). Achado não bloqueante: `tsc --noEmit` acusa 59 erros de tipo, todos em arquivos de teste (31 em testes do lote 12 — sobretudo handlers de rota chamados sem o segundo argumento —, 28 de lotes anteriores); eram 62 em `58b5136`. Vitest e build não são afetados; vai para o backlog.
+
+*Autorização e histórico.* Pushes feitos com autorização do usuário nesta execução; nenhum force-push; nenhum trailer de coautoria em `origin/main`. Schema de produção conferido coluna a coluna contra `src/db/schema.ts` para `documents`, `document_upload_intents`, `tenant_document_context_limits` e `document_categories` (nada faltando ou sobrando) e os dois enums completos; nenhum push de schema foi necessário nesta etapa.
+
+*Smoke final em produção* (`crivo-plum.vercel.app`, deployment `dpl_B6bijbPPoydCnkWaTcoxjHAL6WWD`, tenant `triangulo`). Documento `teste-t37-smoke.txt` (203 B, modalidade `ambos`, fato exclusivo sintético): upload pela UI aparece como "Processando" sem reload e vira "Pronto" em segundos (`POST /.well-known/workflow/v1/step 200` às 00:55:22); prévia mostra as 3 linhas íntegras; download `200`, `attachment`, 203 bytes, SHA-256 igual ao arquivo local; pergunta no WhatsApp às 01:01:18 respondida às 01:01:36 com o valor exato, com um `POST /api/v1/context 200` às 01:01:34; memória (exec 2633) sem envelope da tool. Exclusão pela UI às 01:03:09: prévia e download `404` imediatos, `deleted_at` preenchido e texto extraído nulo; `runDailyMaintenance` com o storage real, contra produção, devolveu `tombstonesRemoved: 1` e nenhuma falha de grupo — linha, intenção e objeto do Blob ausentes. Logs de runtime da janela: só o aviso de SSL do `pg` e `403 Invalid origin` de tentativas de login pelo alias `crivo-arthur1050s-projects.vercel.app` (o domínio de login é `crivo-plum.vercel.app`); nenhum conteúdo de documento.
+
+*Plano Vercel.* O time continua no Hobby (a consulta de logs devolveu `ExceedsBillingLimitError` fora da janela curta). Serve para esta validação não comercial; plano compatível com uso comercial segue como pré-requisito antes de clientes pagantes (spec.md, context.md).
 
 ---
 
