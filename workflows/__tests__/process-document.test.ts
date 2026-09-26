@@ -1,7 +1,8 @@
 import "dotenv/config";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { start } from "workflow/api";
-import { vi } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import {
   abandonDocumentStep,
   processDocumentStep,
@@ -22,6 +23,20 @@ describe("retries esgotados (lote-12 T38 — DOCTXT-01 AC4)", () => {
     const abandon = vi.fn(async () => ({ kind: "failed" as const, code: "processamento_indisponivel" }));
     await expect(processWithTerminalFailure(JOB, process, abandon)).resolves.toEqual({ kind: "failed", code: "processamento_indisponivel" });
     expect(abandon).toHaveBeenCalledWith(JOB);
+  });
+
+  // Teste de delegação (T46). Forçar a exaustão real pelo harness exigiria o
+  // Blob devolver erro transitório — só uma indisponibilidade real produz
+  // isso, e erro desconhecido é classificado como permanente. Então o que se
+  // prova aqui é a costura: o corpo do workflow passa pelo orquestrador com
+  // os dois steps, e o orquestrador está coberto pelos testes acima.
+  it("o workflow durável delega ao orquestrador com os steps de processar e abandonar", () => {
+    const source = readFileSync(join(__dirname, "..", "process-document.ts"), "utf8");
+    const body = source.slice(source.indexOf("export async function processDocumentWorkflow"));
+    const workflowBody = body.slice(0, body.indexOf("\n}\n"));
+    expect(workflowBody).toContain('"use workflow"');
+    expect(workflowBody).toContain("return processWithTerminalFailure(input, processDocumentStep, abandonDocumentStep);");
+    expect(workflowBody).not.toMatch(/return processDocumentStep\(/);
   });
 
   it("resultado do step não aciona o abandono", async () => {
