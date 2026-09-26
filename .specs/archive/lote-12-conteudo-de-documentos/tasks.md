@@ -1110,7 +1110,9 @@ O teto fica na maior faixa **provada** com duas observações, não numa extrapo
 - [x] Usuário autorizou cada deploy/push/schema externo; nenhum force-push foi usado.
 - [x] Ambiente final repete upload → Workflow → preview/download → contexto → resposta → delete.
 - [x] Plano Vercel comercial é gate obrigatório antes de clientes pagantes; ausência bloqueia somente uso comercial, não validação não comercial.
-- [ ] Traceability sobe para Implementing; Verifier independente roda depois do commit final, gera `validation.md`, executa sensor e só então pode marcar Verified.
+- [x] Traceability sobe para Implementing; Verifier independente roda depois do commit final, gera `validation.md`, executa sensor e só então pode marcar Verified.
+
+*Verifier:* três ciclos independentes. Ciclo 1 (`c9c55b0`) FAIL com cinco gaps e três decisões, corrigidos em T38–T45; ciclo 2 (`356c954`) FAIL por dois mutantes sobreviventes, cobertos em T46–T47; ciclo 3 (`4137660`) **PASS**: 64/71 ACs ✅, 7 ⚠️ herdados e não bloqueantes, 0 ❌; sensor 7/7; `validate_state.py` exit 0. Gate final: 116 arquivos / 1.872 testes, 21 do Workflow, lint 0 erros, build verde.
 
 **Tests:** full regression + connected smoke  
 **Gate:** Build  
@@ -1134,52 +1136,76 @@ O teto fica na maior faixa **provada** com duas observações, não numa extrapo
 O Verifier independente de T37 devolveu FAIL (`validation.md`, commit `c9c55b0`). Decisões do usuário em 2026-09-26: garantir uma única execução no reprocesso concorrente (DOCTXT-01 AC7), registrar o gatilho mensurável de RAG (DOCLIM-01 AC12) e implementar o log estruturado mínimo de processamento (DOCTXT-01 AC10). Execução nesta janela, uma task e um commit por correção, e novo Verifier ao final (máximo de 3 ciclos).
 
 #### T38: Estado terminal quando os retries do Workflow se esgotam
-**Requirement:** DOCTXT-01 AC4 · **Where:** `workflows/process-document.ts`, `src/server/documents/processing.ts` · **Gate:** Full + workflow
+**Requirement:** DOCTXT-01 AC4  
+**Where:** `workflows/process-document.ts`, `src/server/documents/processing.ts`  
+**Tests:** unit + workflow  
+**Gate:** Full + workflow
 - [x] Esgotados os retries do step, o workflow grava `falha`/`processamento_indisponivel` no mesmo attempt por CAS; attempt obsoleto fica `stale`.
 - [x] Teste do orquestrador (falha final → abandono) e do serviço (CAS no mesmo attempt); mutação que remove o abandono derruba o teste.
 
 *Evidence:* `processWithTerminalFailure` captura a falha final do step e chama o step `abandonDocumentStep`, que usa `service.abandon` (CAS no mesmo attempt). Testes: `workflows/__tests__/process-document.test.ts` (20 no config do Workflow) e `processing.test.ts` (21). Mutação que relança o erro em vez de abandonar: 1 teste falha. A ligação `processDocumentWorkflow → processWithTerminalFailure` não tem teste de harness, porque forçar falha real do step exigiria storage transitório; a função do workflow só delega.
 
 #### T39: Guarda automatizada do isolamento de preview e download
-**Requirement:** DOCVIEW-01 AC3, AC5, AC7 · **Where:** testes de integração do repositório · **Gate:** Full
+**Requirement:** DOCVIEW-01 AC3, AC5, AC7  
+**Where:** testes de integração do repositório  
+**Tests:** integration  
+**Gate:** Full
 - [x] `findDocumentForDownload` e `findDocumentTextPreview` testados no banco com outro tenant, excluído, expirado no boundary, `processando` e `falha`; remover o predicado de tenant derruba os testes (M5/M6).
 
 *Evidence:* `access-finders.integration.test.ts`, 7 testes no banco de teste. Mutação que remove o filtro de tenant de `findDocumentForDownload`: 1 falha; a mesma em `findDocumentTextPreview`: 1 falha (M5/M6 mortas).
 
 #### T40: Reconciliar a admissão na expiração e cobrir a fiação da exclusão
-**Requirement:** DOCLIM-01 AC8 · **Where:** `src/server/integration/lgpd.ts`, `src/server/actions/documents.ts` · **Gate:** Full
+**Requirement:** DOCLIM-01 AC8  
+**Where:** `src/server/integration/lgpd.ts`, `src/server/actions/documents.ts`  
+**Tests:** integration  
+**Gate:** Full
 - [x] A rotina de expiração reconcilia cada tenant afetado; um `fora_do_agente` que passa a caber vira `pronto`.
 - [x] Remover a reconciliação da exclusão derruba um teste (M9).
 
 *Evidence:* `expireDocuments` reconcilia cada tenant com documento expirado (`lgpd.ts`). Teste em `maintenance.integration.test.ts` (20 passam): com teto para um documento só, o vencido sai e o `fora_do_agente` vira `pronto`; tirar a reconciliação derruba o teste. Teste em `actions.test.ts` (80 passam): a exclusão promove o `fora_do_agente`; tirar a chamada da exclusão derruba o teste (M9 morta). O teste restaura tetos e estados anteriores do tenant ativo.
 
 #### T41: Fixar a política de produção do teto
-**Requirement:** DOCLIM-01 AC2 · **Where:** `context-ceiling.test.ts` · **Gate:** Quick
+**Requirement:** DOCLIM-01 AC2  
+**Where:** `context-ceiling.test.ts`  
+**Tests:** unit  
+**Gate:** Quick
 - [x] Teste fixa `DEFAULT_CEILING_POLICY` (fator 0,8, janela, reserva, TPM, chamadas e turnos); mutar o fator derruba o teste (M3).
 
 *Evidence:* teste novo em `context-ceiling.test.ts` (20 passam) fixa a política inteira; `safetyFactor` 0,8 → 0,9 derruba o teste (M3 morta).
 
 #### T42: Identificar o documento já existente na recusa de duplicata
-**Requirement:** DOCBIN-01 AC4 · **Where:** `uploads.ts`, `actions/documents.ts`, diálogo de upload · **Gate:** Full
+**Requirement:** DOCBIN-01 AC4  
+**Where:** `uploads.ts`, `actions/documents.ts`, diálogo de upload  
+**Tests:** unit + integration  
+**Gate:** Full
 - [x] Preflight e recusa por duplicata devolvem o nome do documento existente do mesmo tenant, e a mensagem o mostra; nunca de outro tenant.
 
 *Evidence:* preflight devolve o nome do documento confirmado ou do envio em curso (lido antes do insert); commit concorrente devolve `documentName`; rota 409 leva `existingName`; mensagem única em `src/lib/duplicate-document.ts`. Testes: `uploads.test.ts`, `upload-route.test.ts`, `upload-client.test.ts` (91 passam no conjunto); outro tenant continua `ready`. Mutação que zera o nome no preflight derruba 1 teste.
 
 #### T43: Uma única execução no reprocesso concorrente
-**Requirement:** DOCTXT-01 AC7 · **Where:** `src/server/documents/processing.ts`, action de retry · **Gate:** Full
+**Requirement:** DOCTXT-01 AC7  
+**Where:** `src/server/documents/processing.ts`, action de retry  
+**Tests:** unit + integration  
+**Gate:** Full
 - [x] Só quem reserva a tentativa despacha; o concorrente recebe o mesmo estado sem `start()`.
 - [x] Falha de despacho no retry insiste três vezes e então grava `falha` segura — nunca deixa `processando` sem execução.
 
 *Evidence:* `retry` devolve `active` sem `start()` para o pedido que encontra a tentativa já reservada, e o despacho do retry reusa `dispatchReserved` (três tentativas e `falha`). O estado `dispatch_failed`, que deixava o documento em `processando` sem execução, deixou de existir. Testes: `processing.test.ts` e `processing.integration.test.ts` (38 passam; no banco, dois retries simultâneos chamam `start` uma vez), e a action de retry (2 passam). Mutação que volta a despachar no ramo `active`: 3 testes falham.
 
 #### T44: Gatilho mensurável de RAG
-**Requirement:** DOCLIM-01 AC12 · **Where:** reconciliação da admissão · **Gate:** Full
+**Requirement:** DOCLIM-01 AC12  
+**Where:** reconciliação da admissão  
+**Tests:** unit + integration  
+**Gate:** Full
 - [x] Quando a reconciliação deixa documento `fora_do_agente` por teto, registra evento estruturado com tenant, modalidade, bytes do corpus e teto, sem conteúdo.
 
 *Evidence:* `findCorpusOverflow` (pura, `context-budget.ts`) aponta cada modalidade cujo corpus elegível inteiro passa do teto medido; teto zero (sem benchmark) não conta. `reconcileTenantDocumentAdmission` emite uma linha `{"event":"document_corpus_over_ceiling", tenantId, modality, corpusBytes, ceilingBytes, excludedDocuments}` por modalidade, contável nos logs de runtime. Testes: 4 em `context-budget.test.ts` (inclui ausência de nome e conteúdo) e 1 em `repository.test.ts` (24 passam). Mutação que tira a emissão: 1 falha.
 
 #### T45: Log estruturado de processamento
-**Requirement:** DOCTXT-01 AC10 · **Where:** `src/server/documents/processing.ts` · **Gate:** Full
+**Requirement:** DOCTXT-01 AC10  
+**Where:** `src/server/documents/processing.ts`  
+**Tests:** unit  
+**Gate:** Full
 - [x] Cada processamento registra etapa, duração, identificadores e código de erro sanitizado; teste prova ausência de texto extraído e bytes.
 
 *Evidence:* `process` emite uma linha `document_processing` por processamento com `tenantId`, `documentId`, `attempt`, etapa alcançada (`carregar`, `abrir_original`, `extrair`, `concluir`), resultado, código e duração; erro inesperado vira `erro_inesperado`, sem a mensagem, e é propagado para o retry do Workflow. Logger injetável, com padrão `console.info` em JSON. Testes: 5 novos em `processing.test.ts` (26 passam), incluindo ausência do texto, da chave do storage e de mensagem interna. Mutações: tirar a marca da etapa `extrair` derruba 2 testes; tirar a emissão derruba 3.
@@ -1189,13 +1215,19 @@ O Verifier independente de T37 devolveu FAIL (`validation.md`, commit `c9c55b0`)
 O ciclo 2 (`validation.md`, commit `356c954`) fechou os gaps de comportamento do ciclo 1 e manteve FAIL por duas costuras sem teste (mutantes sobreviventes MA2 e M22).
 
 #### T46: Cobrir a delegação do workflow ao orquestrador
-**Requirement:** DOCTXT-01 AC4 · **Where:** `workflows/__tests__/process-document.test.ts` · **Gate:** workflow
+**Requirement:** DOCTXT-01 AC4  
+**Where:** `workflows/__tests__/process-document.test.ts`  
+**Tests:** workflow (delegação estrutural)  
+**Gate:** workflow
 - [x] Trocar o corpo do workflow para chamar o step direto (MA2) derruba um teste.
 
 *Evidence:* teste de delegação lê o corpo de `processDocumentWorkflow` e exige `"use workflow"` e `return processWithTerminalFailure(input, processDocumentStep, abandonDocumentStep);`. Justificativa registrada no teste: forçar a exaustão real pelo harness exige erro transitório do Blob, que só uma indisponibilidade real produz (erro desconhecido é classificado como permanente). 21 testes do Workflow passam; MA2 derruba 1.
 
 #### T47: Cobrir a reconciliação na mudança de modalidade
-**Requirement:** DOCLIM-01 AC8 · **Where:** `src/server/__tests__/actions.test.ts` · **Gate:** Full
+**Requirement:** DOCLIM-01 AC8  
+**Where:** `src/server/__tests__/actions.test.ts`  
+**Tests:** integration  
+**Gate:** Full
 - [x] Tirar a reconciliação de `updateDocumentAction` (M22) derruba um teste.
 
 *Evidence:* o preparo de teto folgado e a restauração de tetos e estados viraram o helper `withGenerousCeiling`, compartilhado com o teste da exclusão. Teste novo: mudar a modalidade de um `fora_do_agente` para `ambos` o promove a `pronto`. M22 derruba 1.

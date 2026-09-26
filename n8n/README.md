@@ -345,7 +345,7 @@ npx tsx --conditions=react-server scripts/document-context-benchmark.ts check --
 
 O `check` compara a identidade atual (derivada de `principal.ts` e dos módulos do system message) com a gravada e marca `stale` o que mudou. Um teto `stale` continua limitando com o valor antigo, nunca amplia; o banner da página de documentos avisa o gestor.
 
-**Para medir de novo**: o workflow `crivo-benchmark-contexto` (`n8n/workflows/benchmark-contexto.ts`, id `xpsD2PZQ1KoE2sA5`) roda uma faixa por execução, disparado por `execute_workflow` com `{ faixaBytes, modalidade, observacoes, seed }`. Ele replica o agente publicado com tools stub e corpus sintético — nenhum lead, WhatsApp ou memória real é tocado. Registrar as métricas num arquivo como `.specs/features/lote-12-conteudo-de-documentos/benchmark-contexto-2026-09-23.json` e gravar com `persist <arquivo>`.
+**Para medir de novo**: o workflow `crivo-benchmark-contexto` (`n8n/workflows/benchmark-contexto.ts`, id `xpsD2PZQ1KoE2sA5`) roda uma faixa por execução, disparado por `execute_workflow` com `{ faixaBytes, modalidade, observacoes, seed }`. Ele replica o agente publicado com tools stub e corpus sintético — nenhum lead, WhatsApp ou memória real é tocado. Registrar as métricas num arquivo como `.specs/archive/lote-12-conteudo-de-documentos/benchmark-contexto-2026-09-25.json` (medição vigente; a de 2026-09-23 fica ao lado) e gravar com `persist <arquivo>`.
 
 Cuidados que o benchmark de 2026-09-23 revelou:
 

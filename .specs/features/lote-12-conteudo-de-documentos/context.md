@@ -134,4 +134,11 @@ O conteúdo deste lote cobre políticas de financiamento, documentação exigida
 - OCR para PDFs escaneados.
 - Busca vetorial/RAG, condicionada ao teto medido neste lote.
 - Vitrine pública do catálogo, mantida no lote 16.
+- Teste de harness da exaustão real dos retries do Workflow (Verifier ciclo 3, B1): `start(processDocumentWorkflow)` sobre um documento `processando` real, com storage ou extrator transitório injetável só no ambiente de teste. Hoje a costura é provada por teste de delegação (T46), que não detecta um desvio inserido antes da linha fixada.
+- Isolar o Blob no `npm run dev:test`: hoje ele troca o banco, mas o token continua apontando para o store de produção (T32).
+- Rever a política de vazão do teto (`tokensPerMinuteLimit`, turnos concorrentes) quando houver mais tenants ativos; o limite de 200 mil tokens por minuto da OpenAI é compartilhado pela organização (T34).
+- O `catch` do lifecycle rotula erro de banco como erro de storage (`STORAGE_PERMANENT_FAILURE`), o que mascarou a FK de T32.
+- Dias da semana e os indicadores `Required`/`Optional` aparecem em inglês: vêm do catálogo da Astryx, que só tem inglês.
+- `Timestamp` quebra a hidratação em todo o produto (diferença de fuso entre servidor e navegador).
+- 59 erros de `tsc --noEmit` em arquivos de teste (31 do lote 12, 28 anteriores), sobretudo handlers de rota chamados sem o segundo argumento; vitest e `next build` não são afetados (T37).
 - Barreira determinística para a oferta de corretor diante de informação ausente (T35, rodadas 3–5): o prompt limita a oferta a uma vez por conversa, mas o modelo repetiu em outra forma ("eu direciono pro corretor conferir") depois de recusa. Garantia real pede checagem em `responder_lead`/`voice.mjs`, com o histórico de ofertas guardado em `aberturasJson`, sem bloquear a proposta de reunião legítima da fase de agendamento.

@@ -287,16 +287,12 @@
 
 ## Handoff
 
-- **Feature**: Lote 12 — `.specs/features/lote-12-conteudo-de-documentos/`.
-- **Phase / Task**: Execute / Phase 6. Falta a prova conversacional (T35), depois T36 publicado e T37.
-- **Completed**: T1–T34, com T30–T32 e T34 provados em produção (sem ambiente de preview com banco próprio — SPEC_DEVIATION registrado em cada task). T36 implementado e testado no branch local `t36-remover-get` (`7bb230c`), **não publicado de propósito**: o GET legado é o rollback do agente até a prova passar.
-- **Publicado**: `origin/main` em `166d224`; deploy de produção `READY`.
-- **Tetos em produção**: gravados para os três tenants com a identidade do agente `9a73c823-3679-45fd-a38b-36d0c03c0157`; `check` sem nenhum `stale`. Ver AD-031.
-- **Defeitos de produção corrigidos nesta fase** (todos com teste e mutação conferida): Workflow nunca despachado no upload; finalização pelo navegador ausente; recusa silenciosa quando o callback vencia a corrida; duplicata sem preflight; mensagens de falha com vocabulário que o backend não emite; FK que impedia apagar documentos enviados; contexto sem limite quando não havia teto; **todo texto acima de ~1 KB recusado no upload** (a CDN do Blob comprime a resposta e o ETag vira fraco).
-- **Next step**: T35 — o usuário conduz a conversa pelo WhatsApp (AD-027). Roteiro e controles já preparados em produção: fatos exclusivos nos documentos `pronto`, controle com valor conflitante no Crivo Demo, um documento `fora_do_agente` e um expirado, cada um com fato próprio. Lead de teste e memória já limpos. Depois: rodar `crivo-smoke-memoria` (`MRJFDlwEM2T4KH3n`), coletar `POST /api/v1/context` nos logs da Vercel (fecha também a execução sintética de T33), publicar o branch do T36 e seguir para T37.
-- **Blockers**:
-  - **Papel corretor sem evidência visual (T25).** Exige um segundo login com esse papel.
-- **Backlog a registrar no fechamento** (ver `tasks.md` T30–T34): isolar o Blob no `dev:test` (hoje troca o banco mas não o store); rever a política de vazão quando houver mais tenants ativos; o `catch` do lifecycle rotula erro de banco como erro de storage; dias da semana e indicadores `Required`/`Optional` em inglês (catálogo da Astryx); `Timestamp` quebrando a hidratação em todo o produto.
-- **Armadilha operacional**: `npm test` apaga e repovoa o banco descartável. Rodar suítes em paralelo também interfere entre si — rodar a completa sozinha.
+- **Feature**: Lote 12 — `.specs/features/lote-12-conteudo-de-documentos/` — **encerrado em 2026-09-26**. Verifier independente PASS no ciclo 3 (`validation.md`); traceability `✅ Verified` nos 7 requisitos; `tasks.md`, `EXECUTE-PROMPT.md` e os benchmarks arquivados em `.specs/archive/lote-12-conteudo-de-documentos/` (AD-029); linha no `features/INDEX.md`.
+- **Publicado**: `origin/main` com o lote inteiro; deploy de produção a partir do `main`. Agente `crivo-agente-principal` na versão `73788130-1789-46a8-8a41-61c33860224c`; benchmark `crivo-benchmark-contexto` em `09934c27-941f-4b60-98c0-6fb56bd79b34`; tetos regravados em 2026-09-25 para os três tenants (novo 106.702 B, usado 119.265 B, ambos 106.805 B) e `check` sem `stale`.
+- **Gate final**: 116 arquivos / 1.872 testes (suíte rodada sozinha), 21 testes do Workflow, lint 0 erros, build verde.
+- **Aberto, decisão do usuário**: revisar as lições candidatas L-026 a L-040 e a penalização sugerida para a L-013 (AD-028); capturas visuais do papel corretor (T23–T27), que exigem um segundo login com esse papel.
+- **Backlog do lote**: `lote-12-conteudo-de-documentos/context.md` § Ideias adiadas (barreira determinística da oferta de corretor, teste de harness da exaustão do Workflow, Blob isolado no `dev:test`, política de vazão, rótulo do `catch` do lifecycle, i18n da Astryx, hidratação do `Timestamp`, erros de `tsc` em testes). Plano Vercel compatível com uso comercial é pré-requisito antes de clientes pagantes (AD-030).
+- **Armadilhas operacionais**: `npm test` apaga e repovoa o banco descartável, e suítes em paralelo interferem entre si — rodar a completa sozinha. Toda publicação do `crivo-agente-principal` exige `document-context-benchmark.ts check` (n8n/README §13). Regenerar os workflows agora normaliza CRLF (antes o `autocrlf` do Windows mudava o `jsCode`). O domínio de login do CRM é `crivo-plum.vercel.app`; o alias `crivo-arthur1050s-projects.vercel.app` recusa login (`Invalid origin`), embora seja a base da API usada pelo n8n.
+- **Next step**: escolher o próximo lote do `ROADMAP-POS-PILOTO.md` (L13–L16) ou puxar itens do backlog.
 - **Uncommitted files**: `.env.example` (do usuário).
-- **Branch**: `main` sincronizado com `origin/main`; `t36-remover-get` local, 1 commit à frente.
+- **Branch**: `main` sincronizado com `origin/main`; o branch `t36-remover-get` já foi mesclado e pode ser apagado.

@@ -9,11 +9,11 @@ O CRM aceita documentos de contexto, mas hoje descarta o binário e guarda somen
 
 ## Goals
 
-- [ ] Fazer um arquivo suportado de até 10 MB percorrer upload, armazenamento, extração e uso pelo agente sem perder isolamento por imobiliária.
-- [ ] Tornar visível o estado real de processamento e permitir recuperar falhas de extração sem reenviar o arquivo.
-- [ ] Entregar ao agente todo o corpus elegível sem truncamento silencioso e aplicar um teto seguro, medido e reproduzível.
-- [ ] Permitir que usuários autorizados visualizem o texto extraído e baixem o original intacto.
-- [ ] Remover metadado, conteúdo extraído e binário de forma coerente na exclusão manual e na expiração LGPD.
+- [x] Fazer um arquivo suportado de até 10 MB percorrer upload, armazenamento, extração e uso pelo agente sem perder isolamento por imobiliária.
+- [x] Tornar visível o estado real de processamento e permitir recuperar falhas de extração sem reenviar o arquivo.
+- [x] Entregar ao agente todo o corpus elegível sem truncamento silencioso e aplicar um teto seguro, medido e reproduzível.
+- [x] Permitir que usuários autorizados visualizem o texto extraído e baixem o original intacto.
+- [x] Remover metadado, conteúdo extraído e binário de forma coerente na exclusão manual e na expiração LGPD.
 
 ## Out of Scope
 
@@ -243,21 +243,21 @@ Every ambiguity is resolved or recorded here; nothing remains silently unclear.
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| DOCBIN-01 | P1: Armazenar o arquivo real com segurança | T1, T3–T9, T17, T23, T29, T31–T32, T37 | Implementing — T1–T37 concluídos; aguarda o Verifier independente |
-| DOCTXT-01 | P1: Extrair e reprocessar texto nativo | T1–T4, T10–T15, T25–T26, T30, T32, T37 | Implementing — T1–T37 concluídos; aguarda o Verifier independente |
-| DOCCTX-01 | P1: Entregar o corpus elegível ao agente | T4, T12, T20–T22, T28, T33, T35–T37 | Implementing — T1–T37 concluídos; aguarda o Verifier independente |
-| DOCLIM-01 | P1: Aplicar o teto seguro sem truncamento silencioso | T3–T4, T12–T13, T20, T24–T25, T27, T32, T34, T37 | Implementing — T1–T37 concluídos; aguarda o Verifier independente |
-| DOCVIEW-01 | P1: Visualizar e baixar com o mesmo isolamento | T6–T7, T15–T18, T23–T25, T27, T29, T32, T37 | Implementing — T1–T37 concluídos; aguarda o Verifier independente |
-| DOCLIFE-01 | P1: Excluir linha, texto e arquivo como uma unidade | T3–T8, T13, T15, T17–T19, T23, T25, T27, T31–T32, T37 | Implementing — T1–T37 concluídos; aguarda o Verifier independente |
-| DOCPROVA-01 | P1: Provar o percurso real até a resposta do agente | T21, T28, T33, T35–T37 | Implementing — T1–T37 concluídos; aguarda o Verifier independente |
+| DOCBIN-01 | P1: Armazenar o arquivo real com segurança | T1, T3–T9, T17, T23, T29, T31–T32, T37 | ✅ Verified — Verifier ciclo 3 PASS (2026-09-26) |
+| DOCTXT-01 | P1: Extrair e reprocessar texto nativo | T1–T4, T10–T15, T25–T26, T30, T32, T37 | ✅ Verified — Verifier ciclo 3 PASS (2026-09-26) |
+| DOCCTX-01 | P1: Entregar o corpus elegível ao agente | T4, T12, T20–T22, T28, T33, T35–T37 | ✅ Verified — Verifier ciclo 3 PASS (2026-09-26) |
+| DOCLIM-01 | P1: Aplicar o teto seguro sem truncamento silencioso | T3–T4, T12–T13, T20, T24–T25, T27, T32, T34, T37 | ✅ Verified — Verifier ciclo 3 PASS (2026-09-26) |
+| DOCVIEW-01 | P1: Visualizar e baixar com o mesmo isolamento | T6–T7, T15–T18, T23–T25, T27, T29, T32, T37 | ✅ Verified — Verifier ciclo 3 PASS (2026-09-26) |
+| DOCLIFE-01 | P1: Excluir linha, texto e arquivo como uma unidade | T3–T8, T13, T15, T17–T19, T23, T25, T27, T31–T32, T37 | ✅ Verified — Verifier ciclo 3 PASS (2026-09-26) |
+| DOCPROVA-01 | P1: Provar o percurso real até a resposta do agente | T21, T28, T33, T35–T37 | ✅ Verified — Verifier ciclo 3 PASS (2026-09-26) |
 
-**Coverage:** 7 requisitos, 7 mapeados para tasks, 0 sem cobertura; T1–T37 concluídos (2026-09-26), Verifier independente pendente.
+**Coverage:** 7 requisitos, 7 mapeados para tasks, 0 sem cobertura; T1–T47 concluídos; Verifier independente PASS no ciclo 3 (2026-09-26), com 64/71 ACs ✅ e 7 ⚠️ não bloqueantes registrados em `validation.md`.
 
 ## Success Criteria
 
-- [ ] Um arquivo textual de cada formato suportado chega ao estado final esperado e pode ser baixado byte a byte igual ao original.
-- [ ] Um fato existente somente em documento `pronto` aparece numa resposta real do agente do tenant correto e não aparece nos controles inelegível e cross-tenant.
-- [ ] O benchmark publica um teto reproduzível com tokens, latência, custo estimado, margem e identidade do modelo/workflow.
-- [ ] Nenhum cenário de upload, retry, expiração ou exclusão deixa conteúdo acessível sem registro autorizado ou objeto permanente sem compensação.
-- [ ] Preview e download obedecem à matriz de papéis e retornam inexistente para tentativas cross-tenant.
-- [ ] O gate automatizado, a prova conversacional e o Verifier independente encerram o lote com PASS.
+- [x] Um arquivo textual de cada formato suportado chega ao estado final esperado e pode ser baixado byte a byte igual ao original.
+- [x] Um fato existente somente em documento `pronto` aparece numa resposta real do agente do tenant correto e não aparece nos controles inelegível e cross-tenant.
+- [x] O benchmark publica um teto reproduzível com tokens, latência, custo estimado, margem e identidade do modelo/workflow.
+- [x] Nenhum cenário de upload, retry, expiração ou exclusão deixa conteúdo acessível sem registro autorizado ou objeto permanente sem compensação.
+- [x] Preview e download obedecem à matriz de papéis e retornam inexistente para tentativas cross-tenant.
+- [x] O gate automatizado, a prova conversacional e o Verifier independente encerram o lote com PASS.

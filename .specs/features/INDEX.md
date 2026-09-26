@@ -9,8 +9,8 @@ Roadmap original (`../Roadmap - Fases Epicas.md`): 10 fases, executadas em 9 lot
 interstitiais. **100% executado** em 2026-08-30 (`STATE.md` § Handoff).
 
 Trabalho futuro: `../ROADMAP-POS-PILOTO.md` — lotes 10 a 16 a partir do backlog deferido e das
-frentes novas (catálogo de imóveis, vitrine pública), com o que foi descartado e por quê. **L10 e
-L11 já foram executados** (linhas abaixo); L12–L16 seguem propostos.
+frentes novas (catálogo de imóveis, vitrine pública), com o que foi descartado e por quê. **L10,
+L11 e L12 já foram executados** (linhas abaixo); L13–L16 seguem propostos.
 
 ---
 
@@ -49,6 +49,7 @@ fechamento segue a AD-029 e reconcilia todas as referências depois da movimenta
 | `lote-9-metricas-piloto` | F10 | 08-30 | ✅ Ready | BASE-01/02, SAUDE-01…03, PRES-01/02, REL-01, PERF-01, SCOPE-01/02 | Baseline por imobiliária (AD-024), saúde da integração via `integration_refusals` (AD-023), rota `/relatorio` | Alerta ativo (#23), log de sucesso com latência (#25), export CSV (#22) |
 | `lote-10-modelo-alvo-e-prova-conversacional` | — (novo, pós-piloto, `ROADMAP-POS-PILOTO.md` L10) | 09-09 | ✅ PASS | MOD-01…03, SMK-01…06, DOC-01/02, MTN-01 | Modelo trocado para `gpt-5.4-nano-2026-03-17` confinado a um nó (AD-026), bateria de tool calling APROVADA, os três desfechos da AD-015 provados por conversa real (AGT-04/AGT-05/LGPD-03 fechados no lote-6), protocolo de prova conversacional (AD-027), AD-015 encerrada (`superseded by AD-027`), Finding 1 do lote-6c fechado, `n8n/README.md §4` corrigido | MTN-01 **não verificado, sem caminho disponível** — `vale-uberaba` é tenant fictício, sem número para homologar (não é pendência temporária); limpeza manual não verificável por ferramenta; dívidas herdadas listadas em `STATE.md` § Handoff |
 | `lote-11-catalogo-de-imoveis` | — (novo, pós-piloto, `ROADMAP-POS-PILOTO.md` L11) | 09-14 | ✅ PASS | IMOV-01…07, BUSCA-01…05, PROVA-01/02, SEEDIM-01 | Catálogo multi-tenant no CRM, CRUD e permissões por papel, seed determinístico, `GET /api/v1/properties`, tool `buscar_imoveis` publicada e validada por conversa real; agente busca alternativas com iniciativa, apresenta opções legíveis e convida para reunião sem exigir escolha prévia | Storage/conteúdo/preview de documentos continuam no L12; vitrine pública continua no L16; switch de exibição do catálogo e antecedência mínima do agendamento permanecem deferidos em `context.md` |
+| `lote-12-conteudo-de-documentos` | — (novo, pós-piloto, `ROADMAP-POS-PILOTO.md` L12) | 09-26 | ✅ PASS (ciclo 3) | DOCBIN-01, DOCTXT-01, DOCCTX-01, DOCLIM-01, DOCVIEW-01, DOCLIFE-01, DOCPROVA-01 | Binário real em Vercel Private Blob (AD-030), extração de PDF/DOCX/TXT/MD/CSV por Vercel Workflow com estado terminal, prévia e download isolados por tenant, exclusão e expiração com remoção física, contexto integral via `POST /api/v1/context` (GET removido), teto de contexto medido por benchmark e admissão fail-closed (AD-031), gatilho mensurável de RAG, log de processamento sem conteúdo; agente responde com fatos dos documentos sem citá-los e sem inventar política (prova por WhatsApp) | Oferta de corretor repetida após recusa (barreira determinística adiada); teste de harness da exaustão real do Workflow; capturas do papel corretor (T23–T27); 59 erros de `tsc` em testes; plano Vercel comercial antes de clientes pagantes; demais itens em `context.md` § Ideias adiadas |
 
 ---
 
