@@ -29,6 +29,18 @@ afterEach(() => {
 });
 
 describe("readInlinedModule (T9 — AGT-09)", () => {
+  it("gera o mesmo texto para fonte com CRLF e com LF (checkout Windows com autocrlf)", () => {
+    const srcDir = makeTempDir("n8n-inline-src-");
+    const lf = 'import { x } from "./y.mjs";\nexport function sample(a) {\n  return a + 1;\n}\n';
+    writeFileSync(join(srcDir, "lf.mjs"), lf);
+    writeFileSync(join(srcDir, "crlf.mjs"), lf.replace(/\n/g, "\r\n"));
+
+    const fromCrlf = readInlinedModule("crlf.mjs", srcDir);
+
+    expect(fromCrlf).toBe(readInlinedModule("lf.mjs", srcDir));
+    expect(fromCrlf).not.toContain("\r");
+  });
+
   it("remove o prefixo `export ` de `export function`, preservando o corpo", () => {
     const srcDir = makeTempDir("n8n-inline-src-");
     writeFileSync(

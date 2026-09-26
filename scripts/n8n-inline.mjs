@@ -86,7 +86,10 @@ export function readInlinedModule(filename, srcDir = DEFAULT_SRC_DIR) {
       `n8n-inline: marcador referencia arquivo inexistente n8n/src/${filename}`
     );
   }
-  const raw = readFileSync(filePath, "utf8");
+  // Com `core.autocrlf=true` (Windows) o checkout grava as fontes com CRLF.
+  // Sem normalizar, o CR entra no código inlined e o mesmo commit gera um
+  // workflow diferente conforme a máquina — o hash publicado deixa de bater.
+  const raw = readFileSync(filePath, "utf8").replace(/\r\n/g, "\n");
   return raw
     .replace(IMPORT_LINE_PATTERN, "")
     .replace(EXPORT_DECLARATION_PATTERN, "$1")
