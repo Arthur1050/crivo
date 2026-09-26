@@ -243,15 +243,15 @@ Every ambiguity is resolved or recorded here; nothing remains silently unclear.
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| DOCBIN-01 | P1: Armazenar o arquivo real com segurança | T1, T3–T9, T17, T23, T29, T31–T32, T37 | Implementing — tudo concluído exceto T37 (liberação final); T29–T32 provados em produção em 2026-09-23 |
-| DOCTXT-01 | P1: Extrair e reprocessar texto nativo | T1–T4, T10–T15, T25–T26, T30, T32, T37 | Implementing — tudo concluído exceto T37; T30 (run real do Workflow) e T32 provados em produção |
-| DOCCTX-01 | P1: Entregar o corpus elegível ao agente | T4, T12, T20–T22, T28, T33, T35–T37 | Implementing — T4, T12, T20–T22, T28, T33 (publicação) concluídos; T36 pronto em branch local; aguarda T35 (prova conversacional) e T37 |
-| DOCLIM-01 | P1: Aplicar o teto seguro sem truncamento silencioso | T3–T4, T12–T13, T20, T24–T25, T27, T32, T34, T37 | Implementing — tudo concluído exceto T37; T34 mediu e gravou os tetos em produção |
-| DOCVIEW-01 | P1: Visualizar e baixar com o mesmo isolamento | T6–T7, T15–T18, T23–T25, T27, T29, T32, T37 | Implementing — tudo concluído exceto T37; download byte a byte, preview inerte e isolamento provados em T32 |
-| DOCLIFE-01 | P1: Excluir linha, texto e arquivo como uma unidade | T3–T8, T13, T15, T17–T19, T23, T25, T27, T31–T32, T37 | Implementing — tudo concluído exceto T37; bloqueio no instante da validade e remoção física provados em T32 |
-| DOCPROVA-01 | P1: Provar o percurso real até a resposta do agente | T21, T28, T33, T35–T37 | Implementing — T21, T28, T33 (publicação) concluídos; aguarda T35, conduzida pelo usuário por AD-027, e T36–T37 |
+| DOCBIN-01 | P1: Armazenar o arquivo real com segurança | T1, T3–T9, T17, T23, T29, T31–T32, T37 | Implementing — T1–T37 concluídos; aguarda o Verifier independente |
+| DOCTXT-01 | P1: Extrair e reprocessar texto nativo | T1–T4, T10–T15, T25–T26, T30, T32, T37 | Implementing — T1–T37 concluídos; aguarda o Verifier independente |
+| DOCCTX-01 | P1: Entregar o corpus elegível ao agente | T4, T12, T20–T22, T28, T33, T35–T37 | Implementing — T1–T37 concluídos; aguarda o Verifier independente |
+| DOCLIM-01 | P1: Aplicar o teto seguro sem truncamento silencioso | T3–T4, T12–T13, T20, T24–T25, T27, T32, T34, T37 | Implementing — T1–T37 concluídos; aguarda o Verifier independente |
+| DOCVIEW-01 | P1: Visualizar e baixar com o mesmo isolamento | T6–T7, T15–T18, T23–T25, T27, T29, T32, T37 | Implementing — T1–T37 concluídos; aguarda o Verifier independente |
+| DOCLIFE-01 | P1: Excluir linha, texto e arquivo como uma unidade | T3–T8, T13, T15, T17–T19, T23, T25, T27, T31–T32, T37 | Implementing — T1–T37 concluídos; aguarda o Verifier independente |
+| DOCPROVA-01 | P1: Provar o percurso real até a resposta do agente | T21, T28, T33, T35–T37 | Implementing — T1–T37 concluídos; aguarda o Verifier independente |
 
-**Coverage:** 7 requisitos, 7 mapeados para tasks, 0 sem cobertura; T1–T34 concluídos, T36 pronto em branch local, T35 e T37 pendentes (2026-09-24).
+**Coverage:** 7 requisitos, 7 mapeados para tasks, 0 sem cobertura; T1–T37 concluídos (2026-09-26), Verifier independente pendente.
 
 ## Success Criteria
 
