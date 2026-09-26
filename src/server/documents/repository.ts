@@ -7,7 +7,7 @@ import {
   documents,
   tenantDocumentContextLimits,
 } from "../../db/schema";
-import { reconcileDocumentAdmission, type ContextBudgetDocument, type ContextLimits } from "./context-budget";
+import { findCorpusOverflow, reconcileDocumentAdmission, type ContextBudgetDocument, type ContextLimits } from "./context-budget";
 
 export type DocumentListItem = Omit<
   typeof documents.$inferSelect,
@@ -501,6 +501,11 @@ export async function reconcileTenantDocumentAdmission(tenantId: string, now = n
       await tx.update(documents).set({ status }).where(and(eq(documents.tenantId, tenantId), eq(documents.id, id), isNull(documents.deletedAt)));
     }
   });
+  // Gatilho do lote condicional de RAG (DOCLIM-01 AC12): uma linha por
+  // modalidade estourada, contável nos logs de runtime, sem conteúdo.
+  for (const overflow of findCorpusOverflow(candidates, limits, result)) {
+    console.info(JSON.stringify({ event: "document_corpus_over_ceiling", tenantId, ...overflow }));
+  }
 }
 
 export async function completeDocumentProcessing(

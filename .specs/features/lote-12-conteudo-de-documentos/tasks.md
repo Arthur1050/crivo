@@ -1174,7 +1174,9 @@ O Verifier independente de T37 devolveu FAIL (`validation.md`, commit `c9c55b0`)
 
 #### T44: Gatilho mensurável de RAG
 **Requirement:** DOCLIM-01 AC12 · **Where:** reconciliação da admissão · **Gate:** Full
-- [ ] Quando a reconciliação deixa documento `fora_do_agente` por teto, registra evento estruturado com tenant, modalidade, bytes do corpus e teto, sem conteúdo.
+- [x] Quando a reconciliação deixa documento `fora_do_agente` por teto, registra evento estruturado com tenant, modalidade, bytes do corpus e teto, sem conteúdo.
+
+*Evidence:* `findCorpusOverflow` (pura, `context-budget.ts`) aponta cada modalidade cujo corpus elegível inteiro passa do teto medido; teto zero (sem benchmark) não conta. `reconcileTenantDocumentAdmission` emite uma linha `{"event":"document_corpus_over_ceiling", tenantId, modality, corpusBytes, ceilingBytes, excludedDocuments}` por modalidade, contável nos logs de runtime. Testes: 4 em `context-budget.test.ts` (inclui ausência de nome e conteúdo) e 1 em `repository.test.ts` (24 passam). Mutação que tira a emissão: 1 falha.
 
 #### T45: Log estruturado de processamento
 **Requirement:** DOCTXT-01 AC10 · **Where:** `src/server/documents/processing.ts` · **Gate:** Full

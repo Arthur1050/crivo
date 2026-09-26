@@ -55,6 +55,36 @@ export interface AdmissionResult {
   contexts: Record<DocumentModality, DocumentContextEnvelope>;
 }
 
+export interface CorpusOverflow {
+  modality: DocumentModality;
+  corpusBytes: number;
+  ceilingBytes: number;
+  excludedDocuments: number;
+}
+
+/**
+ * Modalidades cujo corpus elegível inteiro não cabe no teto medido — o gatilho
+ * mensurável do lote condicional de RAG (DOCLIM-01 AC12). Só números: nenhum
+ * nome, id ou conteúdo. Teto zero (sem benchmark) não é gatilho: ali nada é
+ * medido, não é o corpus que cresceu.
+ */
+export function findCorpusOverflow(
+  documents: ContextBudgetDocument[],
+  limits: ContextLimits,
+  result: AdmissionResult
+): CorpusOverflow[] {
+  return (["novo", "usado", "ambos"] as const).flatMap((modality) => {
+    const ceilingBytes = limits[modality];
+    if (ceilingBytes <= 0) return [];
+    const corpusBytes = measureCanonicalContext(buildCanonicalContext(documents, modality));
+    if (corpusBytes <= ceilingBytes) return [];
+    const excludedDocuments = documents.filter(
+      (document) => applies(document, modality) && result.statusByDocumentId.get(document.id) === "fora_do_agente"
+    ).length;
+    return [{ modality, corpusBytes, ceilingBytes, excludedDocuments }];
+  });
+}
+
 /**
  * Preserves admitted documents, then evaluates outsiders by age. A rejected
  * older outsider never prevents a later one from being considered.

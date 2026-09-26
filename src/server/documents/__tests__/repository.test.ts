@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { randomUUID } from "node:crypto";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "../../../db";
 import {
@@ -306,6 +306,20 @@ describe("documents repository (lote-12 T4)", () => {
       await reconcileTenantDocumentAdmission(TENANT_C, NOW);
       expect(await statusOf(small.id)).toBe("pronto");
       expect(await statusOf(big.id)).toBe("fora_do_agente");
+    });
+
+    it("corpus acima do teto emite o gatilho de RAG sem conteúdo (DOCLIM-01 AC12)", async () => {
+      const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
+      try {
+        await reconcileTenantDocumentAdmission(TENANT_C, NOW);
+        const events = info.mock.calls.map(([line]) => JSON.parse(String(line)));
+        expect(events).toContainEqual(expect.objectContaining({
+          event: "document_corpus_over_ceiling", tenantId: TENANT_C, modality: "ambos", ceilingBytes: 300, excludedDocuments: 1,
+        }));
+        expect(info.mock.calls.join("")).not.toContain("x".repeat(100));
+      } finally {
+        info.mockRestore();
+      }
     });
 
     it("marcar como desatualizado preserva o primeiro motivo", async () => {
