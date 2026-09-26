@@ -1142,7 +1142,9 @@ O Verifier independente de T37 devolveu FAIL (`validation.md`, commit `c9c55b0`)
 
 #### T39: Guarda automatizada do isolamento de preview e download
 **Requirement:** DOCVIEW-01 AC3, AC5, AC7 · **Where:** testes de integração do repositório · **Gate:** Full
-- [ ] `findDocumentForDownload` e `findDocumentTextPreview` testados no banco com outro tenant, excluído, expirado no boundary, `processando` e `falha`; remover o predicado de tenant derruba os testes (M5/M6).
+- [x] `findDocumentForDownload` e `findDocumentTextPreview` testados no banco com outro tenant, excluído, expirado no boundary, `processando` e `falha`; remover o predicado de tenant derruba os testes (M5/M6).
+
+*Evidence:* `access-finders.integration.test.ts`, 7 testes no banco de teste. Mutação que remove o filtro de tenant de `findDocumentForDownload`: 1 falha; a mesma em `findDocumentTextPreview`: 1 falha (M5/M6 mortas).
 
 #### T40: Reconciliar a admissão na expiração e cobrir a fiação da exclusão
 **Requirement:** DOCLIM-01 AC8 · **Where:** `src/server/integration/lgpd.ts`, `src/server/actions/documents.ts` · **Gate:** Full
