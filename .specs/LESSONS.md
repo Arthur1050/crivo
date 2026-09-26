@@ -246,6 +246,12 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: DOCBIN-01 AC4; src/server/actions/documents.ts:186 (ui/errors)
 - last seen: 2026-09-26T02:11:12Z
 
+### L-040 - Quando a correção extrai a lógica para um helper testável com dependências injetadas, teste também o entrypoint real chamando o helper; o teste do helper sozinho não impede o entrypoint de voltar ao caminho antigo.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `workflow/testing` · harmful: 0
+- features: lote-12-conteudo-de-documentos
+- evidence: validation.md ciclo 2 MA2 workflows/process-document.ts:53 (workflow/testing)
+- last seen: 2026-09-26T20:54:32Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
