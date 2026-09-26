@@ -1128,6 +1128,48 @@ O teto fica na maior faixa **provada** com duas observações, não numa extrapo
 
 *Plano Vercel.* O time continua no Hobby (a consulta de logs devolveu `ExceedsBillingLimitError` fora da janela curta). Serve para esta validação não comercial; plano compatível com uso comercial segue como pré-requisito antes de clientes pagantes (spec.md, context.md).
 
+
+### Phase 7 — Correções do Verifier (2026-09-26)
+
+O Verifier independente de T37 devolveu FAIL (`validation.md`, commit `c9c55b0`). Decisões do usuário em 2026-09-26: garantir uma única execução no reprocesso concorrente (DOCTXT-01 AC7), registrar o gatilho mensurável de RAG (DOCLIM-01 AC12) e implementar o log estruturado mínimo de processamento (DOCTXT-01 AC10). Execução nesta janela, uma task e um commit por correção, e novo Verifier ao final (máximo de 3 ciclos).
+
+#### T38: Estado terminal quando os retries do Workflow se esgotam
+**Requirement:** DOCTXT-01 AC4 · **Where:** `workflows/process-document.ts`, `src/server/documents/processing.ts` · **Gate:** Full + workflow
+- [x] Esgotados os retries do step, o workflow grava `falha`/`processamento_indisponivel` no mesmo attempt por CAS; attempt obsoleto fica `stale`.
+- [x] Teste do orquestrador (falha final → abandono) e do serviço (CAS no mesmo attempt); mutação que remove o abandono derruba o teste.
+
+*Evidence:* `processWithTerminalFailure` captura a falha final do step e chama o step `abandonDocumentStep`, que usa `service.abandon` (CAS no mesmo attempt). Testes: `workflows/__tests__/process-document.test.ts` (20 no config do Workflow) e `processing.test.ts` (21). Mutação que relança o erro em vez de abandonar: 1 teste falha. A ligação `processDocumentWorkflow → processWithTerminalFailure` não tem teste de harness, porque forçar falha real do step exigiria storage transitório; a função do workflow só delega.
+
+#### T39: Guarda automatizada do isolamento de preview e download
+**Requirement:** DOCVIEW-01 AC3, AC5, AC7 · **Where:** testes de integração do repositório · **Gate:** Full
+- [ ] `findDocumentForDownload` e `findDocumentTextPreview` testados no banco com outro tenant, excluído, expirado no boundary, `processando` e `falha`; remover o predicado de tenant derruba os testes (M5/M6).
+
+#### T40: Reconciliar a admissão na expiração e cobrir a fiação da exclusão
+**Requirement:** DOCLIM-01 AC8 · **Where:** `src/server/integration/lgpd.ts`, `src/server/actions/documents.ts` · **Gate:** Full
+- [ ] A rotina de expiração reconcilia cada tenant afetado; um `fora_do_agente` que passa a caber vira `pronto`.
+- [ ] Remover a reconciliação da exclusão derruba um teste (M9).
+
+#### T41: Fixar a política de produção do teto
+**Requirement:** DOCLIM-01 AC2 · **Where:** `context-ceiling.test.ts` · **Gate:** Quick
+- [ ] Teste fixa `DEFAULT_CEILING_POLICY` (fator 0,8, janela, reserva, TPM, chamadas e turnos); mutar o fator derruba o teste (M3).
+
+#### T42: Identificar o documento já existente na recusa de duplicata
+**Requirement:** DOCBIN-01 AC4 · **Where:** `uploads.ts`, `actions/documents.ts`, diálogo de upload · **Gate:** Full
+- [ ] Preflight e recusa por duplicata devolvem o nome do documento existente do mesmo tenant, e a mensagem o mostra; nunca de outro tenant.
+
+#### T43: Uma única execução no reprocesso concorrente
+**Requirement:** DOCTXT-01 AC7 · **Where:** `src/server/documents/processing.ts`, action de retry · **Gate:** Full
+- [ ] Só quem reserva a tentativa despacha; o concorrente recebe o mesmo estado sem `start()`.
+- [ ] Falha de despacho no retry insiste três vezes e então grava `falha` segura — nunca deixa `processando` sem execução.
+
+#### T44: Gatilho mensurável de RAG
+**Requirement:** DOCLIM-01 AC12 · **Where:** reconciliação da admissão · **Gate:** Full
+- [ ] Quando a reconciliação deixa documento `fora_do_agente` por teto, registra evento estruturado com tenant, modalidade, bytes do corpus e teto, sem conteúdo.
+
+#### T45: Log estruturado de processamento
+**Requirement:** DOCTXT-01 AC10 · **Where:** `src/server/documents/processing.ts` · **Gate:** Full
+- [ ] Cada processamento registra etapa, duração, identificadores e código de erro sanitizado; teste prova ausência de texto extraído e bytes.
+
 ---
 
 ## Phase Execution Map

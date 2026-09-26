@@ -170,6 +170,21 @@ describe("document processing service (lote-12 T13)", () => {
     }));
   });
 
+  it("abandono depois dos retries grava falha segura no mesmo attempt", async () => {
+    const deps = dependencies();
+    const result = await createDocumentProcessingService({ ...deps, now: () => NOW }).abandon({ tenantId: "tenant-1", documentId: "document-1", attempt: 4 });
+    expect(result).toEqual({ kind: "failed", code: "processamento_indisponivel" });
+    expect(deps.repository.complete).toHaveBeenCalledWith("tenant-1", expect.objectContaining({
+      documentId: "document-1", processingAttempt: 4, status: "falha", failureCode: "processamento_indisponivel",
+      failureMessage: "Não foi possível processar agora. Tente novamente.", now: NOW,
+    }));
+  });
+
+  it("abandono de attempt já substituído fica stale", async () => {
+    const deps = dependencies({ complete: vi.fn(async () => "stale" as const) });
+    await expect(createDocumentProcessingService({ ...deps, now: () => NOW }).abandon({ tenantId: "tenant-1", documentId: "document-1", attempt: 1 })).resolves.toEqual({ kind: "stale" });
+  });
+
   it("não expõe mensagem interna de dispatch na falha persistida", async () => {
     const deps = dependencies({ claimRetry: vi.fn(async () => ({ kind: "claimed" as const, attempt: 3 })) });
     deps.start.mockRejectedValue(new Error("token privado em /caminho"));

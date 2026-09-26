@@ -158,6 +158,15 @@ export function createDocumentProcessingService(input: {
       return fail(job.tenantId, job.documentId, job.attempt, "processamento_indisponivel", now());
     },
 
+    /**
+     * Retries do Workflow esgotados: o documento sai de `processando` para
+     * `falha` no mesmo attempt, e o retry da interface volta a existir. O CAS
+     * mantém `stale` se outra tentativa já assumiu o documento.
+     */
+    async abandon(job: { tenantId: string; documentId: string; attempt: number }) {
+      return fail(job.tenantId, job.documentId, job.attempt, "processamento_indisponivel", now());
+    },
+
     async retry(job: { tenantId: string; documentId: string }) {
       const at = now();
       const claimed = await repository.claimRetry(job.tenantId, job.documentId, at);

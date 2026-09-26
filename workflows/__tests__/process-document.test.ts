@@ -1,7 +1,36 @@
 import "dotenv/config";
 import { describe, expect, it } from "vitest";
 import { start } from "workflow/api";
-import { processDocumentStep, processDocumentWorkflow, toProcessDocumentOutput } from "../process-document";
+import { vi } from "vitest";
+import {
+  abandonDocumentStep,
+  processDocumentStep,
+  processDocumentWorkflow,
+  processWithTerminalFailure,
+  toProcessDocumentOutput,
+} from "../process-document";
+
+const JOB = { tenantId: "tenant", documentId: "document", attempt: 2 };
+
+describe("retries esgotados (lote-12 T38 — DOCTXT-01 AC4)", () => {
+  it("exports the terminal abandon step", () => {
+    expect(abandonDocumentStep).toBeTypeOf("function");
+  });
+
+  it("falha final do step vira falha terminal no mesmo attempt", async () => {
+    const process = vi.fn(async () => { throw new Error("retries esgotados"); });
+    const abandon = vi.fn(async () => ({ kind: "failed" as const, code: "processamento_indisponivel" }));
+    await expect(processWithTerminalFailure(JOB, process, abandon)).resolves.toEqual({ kind: "failed", code: "processamento_indisponivel" });
+    expect(abandon).toHaveBeenCalledWith(JOB);
+  });
+
+  it("resultado do step não aciona o abandono", async () => {
+    const process = vi.fn(async () => ({ kind: "completed" as const, status: "pronto" as const }));
+    const abandon = vi.fn();
+    await expect(processWithTerminalFailure(JOB, process, abandon)).resolves.toEqual({ kind: "completed", status: "pronto" });
+    expect(abandon).not.toHaveBeenCalled();
+  });
+});
 
 async function expectFatal(input: Parameters<typeof processDocumentWorkflow>[0]) {
   const run = await start(processDocumentWorkflow, [input]);
