@@ -4,7 +4,7 @@
   "window_days": 45,
   "quarantine_threshold": 2,
   "prune_requires_confirmation": true,
-  "next_id": 34,
+  "next_id": 40,
   "lessons": [
     {
       "id": "L-001",
@@ -599,6 +599,114 @@
       ],
       "created": "2026-09-25T01:16:16Z",
       "last_seen": "2026-09-25T01:16:16Z"
+    },
+    {
+      "id": "L-034",
+      "key": "ac_gap::every durable job that throws a retryable error needs an explicit terminal state after retries are exhausted written by the workflow itself with a test that drives retries to exhaustion",
+      "text": "Every durable job that throws a retryable error needs an explicit terminal state after retries are exhausted, written by the workflow itself, with a test that drives retries to exhaustion.",
+      "signal": "ac_gap",
+      "scope": "workflow/processing",
+      "status": "candidate",
+      "features": [
+        "lote-12-conteudo-de-documentos"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "DOCTXT-01 AC4; workflows/process-document.ts:22 (workflow/processing)"
+      ],
+      "created": "2026-09-26T02:11:10Z",
+      "last_seen": "2026-09-26T02:11:10Z"
+    },
+    {
+      "id": "L-035",
+      "key": "surviving_mutant::route tests that inject a mocked finder cannot prove tenant state or expiry filtering every tenant scoped finder needs its own database test with a foreign tenant row",
+      "text": "Route tests that inject a mocked finder cannot prove tenant, state or expiry filtering; every tenant-scoped finder needs its own database test with a foreign-tenant row.",
+      "signal": "surviving_mutant",
+      "scope": "routes,tenant-isolation",
+      "status": "candidate",
+      "features": [
+        "lote-12-conteudo-de-documentos"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "M5/M6 src/server/documents/repository.ts:32,45 (routes,tenant-isolation)"
+      ],
+      "created": "2026-09-26T02:11:11Z",
+      "last_seen": "2026-09-26T02:11:11Z"
+    },
+    {
+      "id": "L-036",
+      "key": "surviving_mutant::when a spec lists several triggers for the same recomputation test each trigger s call site end to end not only the pure recomputation function",
+      "text": "When a spec lists several triggers for the same recomputation, test each trigger's call site end to end, not only the pure recomputation function.",
+      "signal": "surviving_mutant",
+      "scope": "server-actions",
+      "status": "candidate",
+      "features": [
+        "lote-12-conteudo-de-documentos"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "M9 src/server/actions/documents.ts:147; DOCLIM-01 AC8 (server-actions)"
+      ],
+      "created": "2026-09-26T02:11:11Z",
+      "last_seen": "2026-09-26T02:11:11Z"
+    },
+    {
+      "id": "L-037",
+      "key": "surviving_mutant::assert the production default of a safety relevant policy constant tests that build their own policy copy leave the shipped value unguarded",
+      "text": "Assert the production default of a safety-relevant policy constant; tests that build their own policy copy leave the shipped value unguarded.",
+      "signal": "surviving_mutant",
+      "scope": "config/policy",
+      "status": "candidate",
+      "features": [
+        "lote-12-conteudo-de-documentos"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "M3 src/server/documents/context-ceiling.ts:70 (config/policy)"
+      ],
+      "created": "2026-09-26T02:11:11Z",
+      "last_seen": "2026-09-26T02:11:11Z"
+    },
+    {
+      "id": "L-038",
+      "key": "spec_precision_gap::when design narrows a spec term execution vs logical attempt record it as spec deviation or amend the spec and assert the chosen semantics explicitly",
+      "text": "When design narrows a spec term (execution vs logical attempt), record it as SPEC_DEVIATION or amend the spec, and assert the chosen semantics explicitly.",
+      "signal": "spec_precision_gap",
+      "scope": "spec/acceptance-criteria",
+      "status": "candidate",
+      "features": [
+        "lote-12-conteudo-de-documentos"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "DOCTXT-01 AC7; design.md:119 (spec/acceptance-criteria)"
+      ],
+      "created": "2026-09-26T02:11:12Z",
+      "last_seen": "2026-09-26T02:11:12Z"
+    },
+    {
+      "id": "L-039",
+      "key": "ac_gap::when a spec requires a refusal to identify an existing resource assert the identifier reaches the user facing response not only the service result",
+      "text": "When a spec requires a refusal to identify an existing resource, assert the identifier reaches the user-facing response, not only the service result.",
+      "signal": "ac_gap",
+      "scope": "ui/errors",
+      "status": "candidate",
+      "features": [
+        "lote-12-conteudo-de-documentos"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "DOCBIN-01 AC4; src/server/actions/documents.ts:186 (ui/errors)"
+      ],
+      "created": "2026-09-26T02:11:12Z",
+      "last_seen": "2026-09-26T02:11:12Z"
     }
   ]
 }

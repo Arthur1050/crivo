@@ -210,6 +210,42 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: tasks.md T32 (suíte com 3 falhas espúrias) (testing)
 - last seen: 2026-09-25T01:16:16Z
 
+### L-034 - Every durable job that throws a retryable error needs an explicit terminal state after retries are exhausted, written by the workflow itself, with a test that drives retries to exhaustion.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `workflow/processing` · harmful: 0
+- features: lote-12-conteudo-de-documentos
+- evidence: DOCTXT-01 AC4; workflows/process-document.ts:22 (workflow/processing)
+- last seen: 2026-09-26T02:11:10Z
+
+### L-035 - Route tests that inject a mocked finder cannot prove tenant, state or expiry filtering; every tenant-scoped finder needs its own database test with a foreign-tenant row.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `routes,tenant-isolation` · harmful: 0
+- features: lote-12-conteudo-de-documentos
+- evidence: M5/M6 src/server/documents/repository.ts:32,45 (routes,tenant-isolation)
+- last seen: 2026-09-26T02:11:11Z
+
+### L-036 - When a spec lists several triggers for the same recomputation, test each trigger's call site end to end, not only the pure recomputation function.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `server-actions` · harmful: 0
+- features: lote-12-conteudo-de-documentos
+- evidence: M9 src/server/actions/documents.ts:147; DOCLIM-01 AC8 (server-actions)
+- last seen: 2026-09-26T02:11:11Z
+
+### L-037 - Assert the production default of a safety-relevant policy constant; tests that build their own policy copy leave the shipped value unguarded.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `config/policy` · harmful: 0
+- features: lote-12-conteudo-de-documentos
+- evidence: M3 src/server/documents/context-ceiling.ts:70 (config/policy)
+- last seen: 2026-09-26T02:11:11Z
+
+### L-038 - When design narrows a spec term (execution vs logical attempt), record it as SPEC_DEVIATION or amend the spec, and assert the chosen semantics explicitly.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `spec/acceptance-criteria` · harmful: 0
+- features: lote-12-conteudo-de-documentos
+- evidence: DOCTXT-01 AC7; design.md:119 (spec/acceptance-criteria)
+- last seen: 2026-09-26T02:11:12Z
+
+### L-039 - When a spec requires a refusal to identify an existing resource, assert the identifier reaches the user-facing response, not only the service result.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `ui/errors` · harmful: 0
+- features: lote-12-conteudo-de-documentos
+- evidence: DOCBIN-01 AC4; src/server/actions/documents.ts:186 (ui/errors)
+- last seen: 2026-09-26T02:11:12Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
