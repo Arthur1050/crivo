@@ -179,6 +179,53 @@ describe("document processing service (lote-12 T13)", () => {
     }));
   });
 
+  describe("log estruturado de processamento (lote-12 T45, DOCTXT-01 AC10)", () => {
+    it("sucesso registra etapa final, identificadores e duração", async () => {
+      const deps = dependencies();
+      const log = vi.fn();
+      await createDocumentProcessingService({ ...deps, now: () => NOW, log }).process({ tenantId: "tenant-1", documentId: "document-1", attempt: 1 });
+      expect(log).toHaveBeenCalledTimes(1);
+      expect(log).toHaveBeenCalledWith({
+        event: "document_processing", tenantId: "tenant-1", documentId: "document-1", attempt: 1,
+        stage: "concluir", outcome: "completed", code: null, durationMs: expect.any(Number),
+      });
+    });
+
+    it("falha registra a etapa em que parou e o código sanitizado", async () => {
+      const deps = dependencies();
+      deps.extract.mockResolvedValue({ ok: false, code: "nenhum_texto_extraivel" });
+      const log = vi.fn();
+      await createDocumentProcessingService({ ...deps, now: () => NOW, log }).process({ tenantId: "tenant-1", documentId: "document-1", attempt: 1 });
+      expect(log).toHaveBeenCalledWith(expect.objectContaining({ stage: "extrair", outcome: "failed", code: "nenhum_texto_extraivel" }));
+    });
+
+    it("original ausente para na etapa de abrir o original", async () => {
+      const deps = dependencies();
+      (deps.storage.open as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      const log = vi.fn();
+      await createDocumentProcessingService({ ...deps, now: () => NOW, log }).process({ tenantId: "tenant-1", documentId: "document-1", attempt: 1 });
+      expect(log).toHaveBeenCalledWith(expect.objectContaining({ stage: "abrir_original", outcome: "failed", code: "original_ausente" }));
+    });
+
+    it("erro inesperado registra só o fato, sem a mensagem, e propaga", async () => {
+      const deps = dependencies();
+      deps.extract.mockRejectedValue(new Error("token secreto em /var/private"));
+      const log = vi.fn();
+      await expect(createDocumentProcessingService({ ...deps, now: () => NOW, log }).process({ tenantId: "tenant-1", documentId: "document-1", attempt: 1 })).rejects.toThrow();
+      expect(log).toHaveBeenCalledWith(expect.objectContaining({ stage: "extrair", outcome: "error", code: "erro_inesperado" }));
+      expect(JSON.stringify(log.mock.calls)).not.toContain("secreto");
+    });
+
+    it("nunca registra o texto extraído nem o binário", async () => {
+      const deps = dependencies();
+      const log = vi.fn();
+      await createDocumentProcessingService({ ...deps, now: () => NOW, log }).process({ tenantId: "tenant-1", documentId: "document-1", attempt: 1 });
+      const serialized = JSON.stringify(log.mock.calls);
+      expect(serialized).not.toContain("conteúdo canônico");
+      expect(serialized).not.toContain("documents/v1/object-1");
+    });
+  });
+
   it("abandono depois dos retries grava falha segura no mesmo attempt", async () => {
     const deps = dependencies();
     const result = await createDocumentProcessingService({ ...deps, now: () => NOW }).abandon({ tenantId: "tenant-1", documentId: "document-1", attempt: 4 });

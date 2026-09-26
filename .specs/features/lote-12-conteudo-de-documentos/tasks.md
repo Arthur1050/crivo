@@ -1180,7 +1180,9 @@ O Verifier independente de T37 devolveu FAIL (`validation.md`, commit `c9c55b0`)
 
 #### T45: Log estruturado de processamento
 **Requirement:** DOCTXT-01 AC10 · **Where:** `src/server/documents/processing.ts` · **Gate:** Full
-- [ ] Cada processamento registra etapa, duração, identificadores e código de erro sanitizado; teste prova ausência de texto extraído e bytes.
+- [x] Cada processamento registra etapa, duração, identificadores e código de erro sanitizado; teste prova ausência de texto extraído e bytes.
+
+*Evidence:* `process` emite uma linha `document_processing` por processamento com `tenantId`, `documentId`, `attempt`, etapa alcançada (`carregar`, `abrir_original`, `extrair`, `concluir`), resultado, código e duração; erro inesperado vira `erro_inesperado`, sem a mensagem, e é propagado para o retry do Workflow. Logger injetável, com padrão `console.info` em JSON. Testes: 5 novos em `processing.test.ts` (26 passam), incluindo ausência do texto, da chave do storage e de mensagem interna. Mutações: tirar a marca da etapa `extrair` derruba 2 testes; tirar a emissão derruba 3.
 
 ---
 

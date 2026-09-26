@@ -61,6 +61,28 @@ const defaultRepository: ProcessingRepository = {
 
 const INITIAL_DISPATCH_TRIES = 3;
 
+/** Etapas de um processamento, na ordem em que acontecem. */
+export type ProcessingStage = "carregar" | "abrir_original" | "extrair" | "concluir";
+
+/**
+ * Uma linha por processamento (DOCTXT-01 AC10): etapa alcançada, duração,
+ * identificadores e código sanitizado. Nunca o binário nem o texto extraído.
+ */
+export interface ProcessingLogEntry {
+  event: "document_processing";
+  tenantId: string;
+  documentId: string;
+  attempt: number;
+  stage: ProcessingStage;
+  outcome: "completed" | "failed" | "retryable" | "stale" | "error";
+  code: string | null;
+  durationMs: number;
+}
+
+function logToRuntime(entry: ProcessingLogEntry) {
+  console.info(JSON.stringify(entry));
+}
+
 async function readAll(stream: ReadableStream<Uint8Array>) {
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }
@@ -78,8 +100,10 @@ export function createDocumentProcessingService(input: {
   repository?: ProcessingRepository;
   now?: () => Date;
   extractorVersion?: string;
+  log?: (entry: ProcessingLogEntry) => void;
 }) {
   const repository = input.repository ?? defaultRepository;
+  const log = input.log ?? logToRuntime;
   const extract = input.extract ?? extractDocument;
   const now = input.now ?? (() => new Date());
   const extractorVersion = input.extractorVersion ?? "native-v1";
@@ -121,40 +145,64 @@ export function createDocumentProcessingService(input: {
     return fail(job.tenantId, job.documentId, job.attempt, "processamento_indisponivel", now());
   }
 
+  async function processAttempt(
+    job: { tenantId: string; documentId: string; attempt: number },
+    reach: (stage: ProcessingStage) => void
+  ) {
+    const at = now();
+    const document = await repository.getForProcessing(job.tenantId, job.documentId, job.attempt, at);
+    if (!document || document.deletedAt || (document.expiresAt && document.expiresAt <= at)) return { kind: "stale" as const };
+
+    reach("abrir_original");
+    let opened;
+    try {
+      opened = await input.storage.open(document.storageKey);
+    } catch (error) {
+      if (error instanceof DocumentStorageError && error.kind === "transient") return { kind: "retryable" as const, code: "storage_indisponivel" };
+      return fail(job.tenantId, job.documentId, job.attempt, "storage_invalido", at);
+    }
+    if (!opened) return fail(job.tenantId, job.documentId, job.attempt, "original_ausente", at);
+
+    reach("extrair");
+    const extracted = await extract({ mimeType: document.mimeType, bytes: await readAll(opened.stream) });
+    if (!extracted.ok) {
+      const failure = extractionFailure(extracted);
+      if (failure.kind === "retryable") return failure;
+      return fail(job.tenantId, job.documentId, job.attempt, failure.code, at);
+    }
+
+    reach("concluir");
+    const completion = await repository.complete(job.tenantId, {
+      documentId: job.documentId,
+      processingAttempt: job.attempt,
+      status: "pronto",
+      extractedText: extracted.text,
+      extractedBytes: extracted.extractedBytes,
+      extractorVersion,
+      now: at,
+    });
+    if (completion !== "applied") return { kind: "stale" as const };
+    await repository.reconcile(job.tenantId, at);
+    return { kind: "completed" as const, status: "pronto" as const };
+  }
+
   return {
     async process(job: { tenantId: string; documentId: string; attempt: number }) {
-      const at = now();
-      const document = await repository.getForProcessing(job.tenantId, job.documentId, job.attempt, at);
-      if (!document || document.deletedAt || (document.expiresAt && document.expiresAt <= at)) return { kind: "stale" as const };
-
-      let opened;
-      try {
-        opened = await input.storage.open(document.storageKey);
-      } catch (error) {
-        if (error instanceof DocumentStorageError && error.kind === "transient") return { kind: "retryable" as const, code: "storage_indisponivel" };
-        return fail(job.tenantId, job.documentId, job.attempt, "storage_invalido", at);
-      }
-      if (!opened) return fail(job.tenantId, job.documentId, job.attempt, "original_ausente", at);
-
-      const extracted = await extract({ mimeType: document.mimeType, bytes: await readAll(opened.stream) });
-      if (!extracted.ok) {
-        const failure = extractionFailure(extracted);
-        if (failure.kind === "retryable") return failure;
-        return fail(job.tenantId, job.documentId, job.attempt, failure.code, at);
-      }
-
-      const completion = await repository.complete(job.tenantId, {
-        documentId: job.documentId,
-        processingAttempt: job.attempt,
-        status: "pronto",
-        extractedText: extracted.text,
-        extractedBytes: extracted.extractedBytes,
-        extractorVersion,
-        now: at,
+      const startedAt = Date.now();
+      let stage: ProcessingStage = "carregar";
+      const entry = (outcome: ProcessingLogEntry["outcome"], code: string | null): ProcessingLogEntry => ({
+        event: "document_processing", tenantId: job.tenantId, documentId: job.documentId, attempt: job.attempt,
+        stage, outcome, code, durationMs: Date.now() - startedAt,
       });
-      if (completion !== "applied") return { kind: "stale" as const };
-      await repository.reconcile(job.tenantId, at);
-      return { kind: "completed" as const, status: "pronto" as const };
+      try {
+        const result = await processAttempt(job, (next) => { stage = next; });
+        log(entry(result.kind, "code" in result ? result.code ?? null : null));
+        return result;
+      } catch (error) {
+        // A mensagem pode carregar caminho ou credencial: só o fato vai ao log.
+        log(entry("error", "erro_inesperado"));
+        throw error;
+      }
     },
 
     /**
