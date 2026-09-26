@@ -1,9 +1,9 @@
 import "dotenv/config";
 import { randomUUID } from "node:crypto";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "../../db";
-import { documents, leads, tenant_members, users } from "../../db/schema";
+import { documents, leads, tenantDocumentContextLimits, tenant_members, users } from "../../db/schema";
 import type { Action, Resource, Role } from "../../lib/permissions";
 import type { AuthContext } from "../auth/session";
 import {
@@ -104,6 +104,7 @@ vi.mock("workflow/api", () => ({
 }));
 
 import { revalidatePath } from "next/cache";
+import { upsertDocumentContextLimit } from "../documents/repository";
 import {
   createDocumentAction,
   createDocumentCategoryAction,
@@ -1300,6 +1301,38 @@ describe("server actions", () => {
       const document = await createLifecycleDocument("Exclusão concorrente");
       await expect(Promise.all([deleteDocumentAction({ documentId: document.id }), deleteDocumentAction({ documentId: document.id })])).resolves.toEqual([{ ok: true }, { ok: true }]);
       expect((await lifecycleRow(document.id)).deletedAt).toEqual(expect.any(Date));
+    });
+
+    // DOCLIM-01 AC8 — a fiação: a exclusão chama a reconciliação. Teto folgado
+    // para qualquer corpus do tenant, então só a reconciliação promove o
+    // `fora_do_agente`; tetos e estados anteriores do tenant são restaurados.
+    it("exclusão reconcilia a admissão do tenant (DOCLIM-01 AC8)", async () => {
+      const priorLimits = await db.select().from(tenantDocumentContextLimits).where(eq(tenantDocumentContextLimits.tenantId, activeTenantId));
+      const priorStatuses = await db.select({ id: documents.id, status: documents.status }).from(documents)
+        .where(and(eq(documents.tenantId, activeTenantId), isNull(documents.deletedAt)));
+      try {
+        await db.delete(tenantDocumentContextLimits).where(eq(tenantDocumentContextLimits.tenantId, activeTenantId));
+        for (const queryModality of ["novo", "usado", "ambos"] as const) {
+          await upsertDocumentContextLimit(activeTenantId, {
+            queryModality, maxResponseBytes: 10_000_000, modelId: "m", workflowVersion: "v", systemMessageHash: "s",
+            toolsHash: "t", memoryWindow: 50, benchmarkedAt: new Date(), metrics: {},
+          });
+        }
+        const excluido = await createLifecycleDocument("Sai do corpus");
+        const deFora = await createLifecycleDocument("Espera o teto");
+        await db.update(documents).set({ status: "fora_do_agente", extractedText: "cabe no teto", extractedBytes: 12 }).where(eq(documents.id, deFora.id));
+
+        await expect(deleteDocumentAction({ documentId: excluido.id })).resolves.toEqual({ ok: true });
+
+        await expect(lifecycleRow(deFora.id)).resolves.toMatchObject({ status: "pronto" });
+        await deleteDocumentAction({ documentId: deFora.id });
+      } finally {
+        await db.delete(tenantDocumentContextLimits).where(eq(tenantDocumentContextLimits.tenantId, activeTenantId));
+        if (priorLimits.length > 0) await db.insert(tenantDocumentContextLimits).values(priorLimits);
+        for (const { id, status } of priorStatuses) {
+          await db.update(documents).set({ status }).where(eq(documents.id, id));
+        }
+      }
     });
 
     it("retry de falha cria tentativa processando e conserva o original", async () => {

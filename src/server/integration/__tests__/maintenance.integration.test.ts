@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { eq, inArray } from "drizzle-orm";
 import { db } from "../../../db";
-import { documentUploadIntents, documents, tenants, users } from "../../../db/schema";
+import { documentUploadIntents, documents, tenantDocumentContextLimits, tenants, users } from "../../../db/schema";
 import { DocumentStorageError, type DocumentStorage } from "../../documents/storage";
 
 // Espiões sobre o repositório e a purga: os quatro grupos da rotina diária só
@@ -28,6 +28,7 @@ import {
   expireDueDocuments,
   expireStaleUploadIntents,
   listTombstonedDocuments,
+  upsertDocumentContextLimit,
 } from "../../documents/repository";
 import { runDailyMaintenance } from "../lgpd";
 
@@ -106,6 +107,7 @@ async function intentRow(id: string) {
 async function clearFixtures() {
   await db.delete(documentUploadIntents).where(inArray(documentUploadIntents.tenantId, [TENANT_A, TENANT_B]));
   await db.delete(documents).where(inArray(documents.tenantId, [TENANT_A, TENANT_B]));
+  await db.delete(tenantDocumentContextLimits).where(inArray(tenantDocumentContextLimits.tenantId, [TENANT_A, TENANT_B]));
 }
 
 describe("rotina diária de manutenção documental (lote-12 T19)", () => {
@@ -350,5 +352,24 @@ describe("rotina diária de manutenção documental (lote-12 T19)", () => {
     expect(result.deletedByTenant[TENANT_B]).toBeUndefined();
     expect(await documentRow(expiredA.id)).toBeUndefined();
     expect(await documentRow(activeB.id)).toMatchObject({ deletedAt: null, extractedText: "conteúdo sensível" });
+  });
+  // DOCLIM-01 AC8: a expiração libera espaço no corpus. Com teto para um
+  // documento só, o vencido sai e o `fora_do_agente` que agora cabe volta ao
+  // agente — antes a rotina diária não reconciliava e ele ficava de fora.
+  it("expiração reconcilia a admissão: o fora_do_agente que passa a caber volta a pronto (DOCLIM-01 AC8)", async () => {
+    for (const queryModality of ["novo", "usado", "ambos"] as const) {
+      await upsertDocumentContextLimit(TENANT_A, {
+        queryModality, maxResponseBytes: 400, modelId: "m", workflowVersion: "v", systemMessageHash: "s",
+        toolsHash: "t", memoryWindow: 50, benchmarkedAt: NOW, metrics: {},
+      });
+    }
+    const texto = "x".repeat(150);
+    const vencido = await createDocument({ modality: "ambos", extractedText: texto, extractedBytes: 150, expiresAt: NOW });
+    const deFora = await createDocument({ modality: "ambos", status: "fora_do_agente", extractedText: texto, extractedBytes: 150 });
+
+    await runDailyMaintenance(NOW, { storage: storage() });
+
+    expect(await documentRow(vencido.id)).toBeUndefined();
+    expect(await documentRow(deFora.id)).toMatchObject({ status: "pronto" });
   });
 });

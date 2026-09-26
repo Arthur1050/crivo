@@ -8,6 +8,7 @@ import {
   expireDueDocuments,
   expireStaleUploadIntents,
   listTombstonedDocuments,
+  reconcileTenantDocumentAdmission,
 } from "../documents/repository";
 import { toDocumentStorageError, type DocumentStorage } from "../documents/storage";
 
@@ -81,6 +82,12 @@ export async function expireDocuments(
   for (const document of expired) {
     const result = await lifecycle.retry({ tenantId: document.tenantId, documentId: document.id });
     (result.kind === "removed" ? removed : pending).push(document.tenantId);
+  }
+
+  // Um expirado sai do corpus e libera espaço: um `fora_do_agente` que agora
+  // cabe volta ao agente (DOCLIM-01 AC8), como já acontece na exclusão manual.
+  for (const tenantId of new Set(expired.map((document) => document.tenantId))) {
+    await reconcileTenantDocumentAdmission(tenantId, now);
   }
 
   return {

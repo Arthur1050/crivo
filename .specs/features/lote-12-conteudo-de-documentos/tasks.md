@@ -1148,8 +1148,10 @@ O Verifier independente de T37 devolveu FAIL (`validation.md`, commit `c9c55b0`)
 
 #### T40: Reconciliar a admissão na expiração e cobrir a fiação da exclusão
 **Requirement:** DOCLIM-01 AC8 · **Where:** `src/server/integration/lgpd.ts`, `src/server/actions/documents.ts` · **Gate:** Full
-- [ ] A rotina de expiração reconcilia cada tenant afetado; um `fora_do_agente` que passa a caber vira `pronto`.
-- [ ] Remover a reconciliação da exclusão derruba um teste (M9).
+- [x] A rotina de expiração reconcilia cada tenant afetado; um `fora_do_agente` que passa a caber vira `pronto`.
+- [x] Remover a reconciliação da exclusão derruba um teste (M9).
+
+*Evidence:* `expireDocuments` reconcilia cada tenant com documento expirado (`lgpd.ts`). Teste em `maintenance.integration.test.ts` (20 passam): com teto para um documento só, o vencido sai e o `fora_do_agente` vira `pronto`; tirar a reconciliação derruba o teste. Teste em `actions.test.ts` (80 passam): a exclusão promove o `fora_do_agente`; tirar a chamada da exclusão derruba o teste (M9 morta). O teste restaura tetos e estados anteriores do tenant ativo.
 
 #### T41: Fixar a política de produção do teto
 **Requirement:** DOCLIM-01 AC2 · **Where:** `context-ceiling.test.ts` · **Gate:** Quick
