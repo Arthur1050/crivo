@@ -105,19 +105,24 @@ describe("document processing service (lote-12 T13)", () => {
     expect(deps.repository.complete).toHaveBeenCalledWith("tenant-1", expect.objectContaining({ processingAttempt: 1, extractedText: "conteúdo canônico" }));
   });
 
-  it("retry concorrente reutiliza o attempt lógico existente", async () => {
+  // DOCTXT-01 AC7: o pedido que chega depois não inicia outra execução.
+  it("retry concorrente recebe a tentativa ativa sem iniciar execução", async () => {
     const deps = dependencies({ claimRetry: vi.fn(async () => ({ kind: "active" as const, attempt: 2 })) });
     const result = await createDocumentProcessingService({ ...deps, now: () => NOW }).retry({ tenantId: "tenant-1", documentId: "document-1" });
-    expect(result).toEqual({ kind: "scheduled", attempt: 2, runId: "run-1" });
-    expect(deps.start).toHaveBeenCalledWith({ tenantId: "tenant-1", documentId: "document-1", attempt: 2 });
+    expect(result).toEqual({ kind: "active", attempt: 2 });
+    expect(deps.start).not.toHaveBeenCalled();
   });
 
-  it("retry cria apenas um novo attempt lógico", async () => {
-    const deps = dependencies();
+  it("dois pedidos simultâneos iniciam no máximo uma execução (DOCTXT-01 AC7)", async () => {
+    const claimRetry = vi.fn()
+      .mockResolvedValueOnce({ kind: "claimed" as const, attempt: 2 })
+      .mockResolvedValueOnce({ kind: "active" as const, attempt: 2 });
+    const deps = dependencies({ claimRetry });
     const service = createDocumentProcessingService({ ...deps, now: () => NOW });
-    await Promise.all([service.retry({ tenantId: "tenant-1", documentId: "document-1" }), service.retry({ tenantId: "tenant-1", documentId: "document-1" })]);
-    expect(deps.repository.claimRetry).toHaveBeenCalledTimes(2);
+    const results = await Promise.all([service.retry({ tenantId: "tenant-1", documentId: "document-1" }), service.retry({ tenantId: "tenant-1", documentId: "document-1" })]);
+    expect(deps.start).toHaveBeenCalledTimes(1);
     expect(deps.start).toHaveBeenCalledWith({ tenantId: "tenant-1", documentId: "document-1", attempt: 2 });
+    expect(results).toEqual([{ kind: "scheduled", attempt: 2, runId: "run-1" }, { kind: "active", attempt: 2 }]);
   });
 
   it("recusa retry de documento inexistente sem iniciar workflow", async () => {
@@ -126,18 +131,22 @@ describe("document processing service (lote-12 T13)", () => {
     expect(deps.start).not.toHaveBeenCalled();
   });
 
-  it("falha de dispatch é retomável até a terceira tentativa", async () => {
+  it("despacho do retry insiste até a terceira tentativa imediata", async () => {
     const deps = dependencies();
-    deps.start.mockRejectedValue(new Error("offline"));
-    await expect(createDocumentProcessingService({ ...deps, now: () => NOW }).retry({ tenantId: "tenant-1", documentId: "document-1" })).resolves.toEqual({ kind: "dispatch_failed", attempt: 2 });
+    deps.start.mockRejectedValueOnce(new Error("offline")).mockRejectedValueOnce(new Error("offline"));
+    await expect(createDocumentProcessingService({ ...deps, now: () => NOW }).retry({ tenantId: "tenant-1", documentId: "document-1" })).resolves.toEqual({ kind: "scheduled", attempt: 2, runId: "run-1" });
+    expect(deps.start).toHaveBeenCalledTimes(3);
     expect(deps.repository.complete).not.toHaveBeenCalled();
   });
 
-  it("terceira falha de dispatch encerra o processamento", async () => {
-    const deps = dependencies({ claimRetry: vi.fn(async () => ({ kind: "claimed" as const, attempt: 3 })) });
+  // Antes, a primeira falha de despacho devolvia `dispatch_failed` e deixava o
+  // documento em `processando` sem execução — estado sem retry na interface.
+  it("três falhas de despacho no retry gravam falha segura em vez de deixar processando", async () => {
+    const deps = dependencies();
     deps.start.mockRejectedValue(new Error("offline"));
     await expect(createDocumentProcessingService({ ...deps, now: () => NOW }).retry({ tenantId: "tenant-1", documentId: "document-1" })).resolves.toEqual({ kind: "failed", code: "processamento_indisponivel" });
-    expect(deps.repository.complete).toHaveBeenCalledWith("tenant-1", expect.objectContaining({ processingAttempt: 3, status: "falha", failureCode: "processamento_indisponivel" }));
+    expect(deps.start).toHaveBeenCalledTimes(3);
+    expect(deps.repository.complete).toHaveBeenCalledWith("tenant-1", expect.objectContaining({ processingAttempt: 2, status: "falha", failureCode: "processamento_indisponivel" }));
   });
 
   it("despacho inicial agenda o attempt reservado sem tocar o repositório", async () => {

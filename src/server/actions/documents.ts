@@ -215,7 +215,7 @@ export async function retryDocumentAction(
   });
   const result = await service.retry({ tenantId, documentId: input.documentId });
   if (result.kind === "stale") return { ok: false, error: "Documento não encontrado." };
-  if (result.kind === "dispatch_failed" || result.kind === "failed") {
+  if (result.kind === "failed") {
     return { ok: false, error: "Não foi possível processar agora. Tente novamente." };
   }
 

@@ -1167,8 +1167,10 @@ O Verifier independente de T37 devolveu FAIL (`validation.md`, commit `c9c55b0`)
 
 #### T43: Uma única execução no reprocesso concorrente
 **Requirement:** DOCTXT-01 AC7 · **Where:** `src/server/documents/processing.ts`, action de retry · **Gate:** Full
-- [ ] Só quem reserva a tentativa despacha; o concorrente recebe o mesmo estado sem `start()`.
-- [ ] Falha de despacho no retry insiste três vezes e então grava `falha` segura — nunca deixa `processando` sem execução.
+- [x] Só quem reserva a tentativa despacha; o concorrente recebe o mesmo estado sem `start()`.
+- [x] Falha de despacho no retry insiste três vezes e então grava `falha` segura — nunca deixa `processando` sem execução.
+
+*Evidence:* `retry` devolve `active` sem `start()` para o pedido que encontra a tentativa já reservada, e o despacho do retry reusa `dispatchReserved` (três tentativas e `falha`). O estado `dispatch_failed`, que deixava o documento em `processando` sem execução, deixou de existir. Testes: `processing.test.ts` e `processing.integration.test.ts` (38 passam; no banco, dois retries simultâneos chamam `start` uma vez), e a action de retry (2 passam). Mutação que volta a despachar no ramo `active`: 3 testes falham.
 
 #### T44: Gatilho mensurável de RAG
 **Requirement:** DOCLIM-01 AC12 · **Where:** reconciliação da admissão · **Gate:** Full

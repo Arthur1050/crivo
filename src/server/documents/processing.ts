@@ -104,6 +104,23 @@ export function createDocumentProcessingService(input: {
     return completion === "applied" ? { kind: "failed" as const, code } : { kind: "stale" as const };
   }
 
+  /**
+   * Despacho de um attempt já reservado: três tentativas imediatas e, se todas
+   * falharem, `falha` condicional — nenhum erro de despacho pode deixar o
+   * documento em `processando` sem run.
+   */
+  async function dispatchReserved(job: { tenantId: string; documentId: string; attempt: number }) {
+    for (let tentativa = 1; tentativa <= INITIAL_DISPATCH_TRIES; tentativa += 1) {
+      try {
+        const run = await input.start(job);
+        return { kind: "scheduled" as const, attempt: job.attempt, runId: run.id };
+      } catch {
+        // A causa não é persistida nem devolvida: pode conter detalhe interno.
+      }
+    }
+    return fail(job.tenantId, job.documentId, job.attempt, "processamento_indisponivel", now());
+  }
+
   return {
     async process(job: { tenantId: string; documentId: string; attempt: number }) {
       const at = now();
@@ -142,21 +159,9 @@ export function createDocumentProcessingService(input: {
 
     /**
      * Primeiro despacho de um documento recém-confirmado. O attempt já nasce
-     * reservado pelo commit, então aqui só se insiste no `start()`: três
-     * tentativas imediatas e, se todas falharem, `falha` condicional — nenhum
-     * erro de despacho pode deixar o documento em `processando` sem run.
+     * reservado pelo commit, então aqui só se insiste no `start()`.
      */
-    async dispatch(job: { tenantId: string; documentId: string; attempt: number }) {
-      for (let tentativa = 1; tentativa <= INITIAL_DISPATCH_TRIES; tentativa += 1) {
-        try {
-          const run = await input.start(job);
-          return { kind: "scheduled" as const, attempt: job.attempt, runId: run.id };
-        } catch {
-          // A causa não é persistida nem devolvida: pode conter detalhe interno.
-        }
-      }
-      return fail(job.tenantId, job.documentId, job.attempt, "processamento_indisponivel", now());
-    },
+    dispatch: dispatchReserved,
 
     /**
      * Retries do Workflow esgotados: o documento sai de `processando` para
@@ -167,17 +172,19 @@ export function createDocumentProcessingService(input: {
       return fail(job.tenantId, job.documentId, job.attempt, "processamento_indisponivel", now());
     },
 
+    /**
+     * Só quem reserva a nova tentativa despacha (DOCTXT-01 AC7): o pedido
+     * concorrente encontra a tentativa `active` e recebe o mesmo estado sem
+     * iniciar outra execução. O despacho segue a regra do primeiro envio —
+     * três tentativas imediatas e então `falha` segura —, então nenhum pedido
+     * deixa o documento em `processando` sem execução.
+     */
     async retry(job: { tenantId: string; documentId: string }) {
       const at = now();
       const claimed = await repository.claimRetry(job.tenantId, job.documentId, at);
       if (claimed.kind === "stale") return { kind: "stale" as const };
-      try {
-        const run = await input.start({ tenantId: job.tenantId, documentId: job.documentId, attempt: claimed.attempt });
-        return { kind: "scheduled" as const, attempt: claimed.attempt, runId: run.id };
-      } catch {
-        if (claimed.attempt < 3) return { kind: "dispatch_failed" as const, attempt: claimed.attempt };
-        return fail(job.tenantId, job.documentId, claimed.attempt, "processamento_indisponivel", at);
-      }
+      if (claimed.kind === "active") return { kind: "active" as const, attempt: claimed.attempt };
+      return dispatchReserved({ tenantId: job.tenantId, documentId: job.documentId, attempt: claimed.attempt });
     },
   };
 }
