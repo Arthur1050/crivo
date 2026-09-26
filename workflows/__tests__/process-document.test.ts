@@ -25,11 +25,14 @@ describe("retries esgotados (lote-12 T38 — DOCTXT-01 AC4)", () => {
     expect(abandon).toHaveBeenCalledWith(JOB);
   });
 
-  // Teste de delegação (T46). Forçar a exaustão real pelo harness exigiria o
-  // Blob devolver erro transitório — só uma indisponibilidade real produz
-  // isso, e erro desconhecido é classificado como permanente. Então o que se
-  // prova aqui é a costura: o corpo do workflow passa pelo orquestrador com
-  // os dois steps, e o orquestrador está coberto pelos testes acima.
+  // Teste de delegação (T46). A exaustão real dos retries vem de erro
+  // transitório do Blob, de extrator transitório ou em timeout, ou de exceção
+  // inesperada relançada pelo step; nenhum desses se força pelo harness sem
+  // injetar storage ou extrator no ambiente de teste (backlog), e erro
+  // desconhecido do Blob é classificado como permanente. Então o que se prova
+  // aqui é a costura: o corpo do workflow passa pelo orquestrador com os dois
+  // steps, e o orquestrador está coberto pelos testes acima. Limite conhecido:
+  // um desvio inserido antes dessa linha não é detectado por leitura de texto.
   it("o workflow durável delega ao orquestrador com os steps de processar e abandonar", () => {
     const source = readFileSync(join(__dirname, "..", "process-document.ts"), "utf8");
     const body = source.slice(source.indexOf("export async function processDocumentWorkflow"));
