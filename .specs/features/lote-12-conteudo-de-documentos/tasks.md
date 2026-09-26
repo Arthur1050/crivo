@@ -1155,7 +1155,9 @@ O Verifier independente de T37 devolveu FAIL (`validation.md`, commit `c9c55b0`)
 
 #### T41: Fixar a política de produção do teto
 **Requirement:** DOCLIM-01 AC2 · **Where:** `context-ceiling.test.ts` · **Gate:** Quick
-- [ ] Teste fixa `DEFAULT_CEILING_POLICY` (fator 0,8, janela, reserva, TPM, chamadas e turnos); mutar o fator derruba o teste (M3).
+- [x] Teste fixa `DEFAULT_CEILING_POLICY` (fator 0,8, janela, reserva, TPM, chamadas e turnos); mutar o fator derruba o teste (M3).
+
+*Evidence:* teste novo em `context-ceiling.test.ts` (20 passam) fixa a política inteira; `safetyFactor` 0,8 → 0,9 derruba o teste (M3 morta).
 
 #### T42: Identificar o documento já existente na recusa de duplicata
 **Requirement:** DOCBIN-01 AC4 · **Where:** `uploads.ts`, `actions/documents.ts`, diálogo de upload · **Gate:** Full

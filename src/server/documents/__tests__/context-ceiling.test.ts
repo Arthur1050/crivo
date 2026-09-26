@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   computeContextCeiling,
+  DEFAULT_CEILING_POLICY,
   diffBenchmarkIdentity,
   type BenchmarkRun,
   type CeilingPolicy,
@@ -119,6 +120,24 @@ describe("computeContextCeiling (lote-12 T34)", () => {
 
   it("sem faixa zero o custo fixo é desconhecido e o cálculo recusa", () => {
     expect(() => computeContextCeiling(BASE.slice(1), "ambos", POLICY)).toThrow(/faixa zero/);
+  });
+});
+
+// DOCLIM-01 AC2 — a política que `persist` grava em produção. Os testes acima
+// usam uma política local; sem este, mudar a margem de 0,8 passava calado.
+describe("DEFAULT_CEILING_POLICY (lote-12 T41)", () => {
+  it("fixa margem, janela, reservas e vazão medidas para o modelo atual", () => {
+    expect(DEFAULT_CEILING_POLICY).toEqual({
+      modelWindowTokens: 400_000,
+      outputReserveTokens: 16_000,
+      toolSchemaAllowanceTokens: 2_000,
+      latencyBudgetMs: 30_000,
+      transportLimitBytes: 4_500_000,
+      safetyFactor: 0.8,
+      tokensPerMinuteLimit: 200_000,
+      corpusCallsPerTurn: 2,
+      concurrentTurnsPerMinute: 2,
+    });
   });
 });
 
