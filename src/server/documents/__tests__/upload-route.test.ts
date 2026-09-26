@@ -203,11 +203,13 @@ describe("document upload route (lote-12 T9)", () => {
 
   it("não emite segundo token para hash com intenção ativa", async () => {
     const { handler, handle } = fixture({
-      intake: { reserve: async () => ({ kind: "duplicate_upload" }), finalize: async () => ({ kind: "not_found" }) },
+      intake: { reserve: async () => ({ kind: "duplicate_upload", existingName: "politica.pdf" }), finalize: async () => ({ kind: "not_found" }) },
     });
     const response = await handler(request(generateEvent()));
 
     expect(response.status).toBe(409);
+    // DOCBIN-01 AC4: a recusa identifica o documento existente do tenant.
+    await expect(response.json()).resolves.toEqual({ error: "duplicate_upload", existingName: "politica.pdf" });
     expect(handle).not.toHaveBeenCalled();
   });
 

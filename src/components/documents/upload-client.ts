@@ -1,3 +1,5 @@
+import { duplicateDocumentMessage } from "../../lib/duplicate-document";
+
 /**
  * Lógica de upload do navegador, isolada do componente para ser testável sem
  * DOM (lote-12 — T23). O binário nunca passa por server action: o hash é
@@ -30,8 +32,7 @@ export type UploadFailureCode =
  * ação concreta, porque é a única em que já existe um documento a editar.
  */
 export const UPLOAD_FAILURE_MESSAGES: Record<UploadFailureCode, string> = {
-  duplicate_upload:
-    "Este arquivo já foi enviado nesta imobiliária. Abra o documento existente na lista para editar nome, modalidade, categoria ou validade.",
+  duplicate_upload: duplicateDocumentMessage(),
   upload_forbidden: "Você não tem permissão para enviar documentos.",
   upload_input_invalid:
     "O arquivo não passou na validação do servidor. Confira tipo, tamanho e validade.",
@@ -109,7 +110,14 @@ export async function requestUploadTicket(
     body = null;
   }
 
-  if (!response.ok) return failure(codeFromBody(body, response.status));
+  if (!response.ok) {
+    const code = codeFromBody(body, response.status);
+    if (code === "duplicate_upload") {
+      const existingName = (body as { existingName?: unknown } | null)?.existingName;
+      return { ok: false, code, message: duplicateDocumentMessage(typeof existingName === "string" ? existingName : null) };
+    }
+    return failure(code);
+  }
 
   const record = body as { clientToken?: unknown; pathname?: unknown; intentId?: unknown } | null;
   if (

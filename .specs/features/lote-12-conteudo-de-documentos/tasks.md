@@ -1161,7 +1161,9 @@ O Verifier independente de T37 devolveu FAIL (`validation.md`, commit `c9c55b0`)
 
 #### T42: Identificar o documento já existente na recusa de duplicata
 **Requirement:** DOCBIN-01 AC4 · **Where:** `uploads.ts`, `actions/documents.ts`, diálogo de upload · **Gate:** Full
-- [ ] Preflight e recusa por duplicata devolvem o nome do documento existente do mesmo tenant, e a mensagem o mostra; nunca de outro tenant.
+- [x] Preflight e recusa por duplicata devolvem o nome do documento existente do mesmo tenant, e a mensagem o mostra; nunca de outro tenant.
+
+*Evidence:* preflight devolve o nome do documento confirmado ou do envio em curso (lido antes do insert); commit concorrente devolve `documentName`; rota 409 leva `existingName`; mensagem única em `src/lib/duplicate-document.ts`. Testes: `uploads.test.ts`, `upload-route.test.ts`, `upload-client.test.ts` (91 passam no conjunto); outro tenant continua `ready`. Mutação que zera o nome no preflight derruba 1 teste.
 
 #### T43: Uma única execução no reprocesso concorrente
 **Requirement:** DOCTXT-01 AC7 · **Where:** `src/server/documents/processing.ts`, action de retry · **Gate:** Full

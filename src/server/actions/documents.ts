@@ -24,6 +24,7 @@ import { reconcileTenantDocumentAdmission, tombstoneDocument } from "../document
 import { VercelBlobDocumentStorage } from "../documents/vercel-blob-storage";
 import { startDocumentProcessingRun } from "../documents/workflow-start";
 import { createDocumentUploadIntake } from "../documents/uploads";
+import { duplicateDocumentMessage } from "../../lib/duplicate-document";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -184,11 +185,7 @@ export async function finalizeDocumentUploadAction(
     return { ok: true };
   }
   if (result.kind === "duplicate_content") {
-    return {
-      ok: false,
-      error:
-        "Este arquivo já foi enviado nesta imobiliária. Abra o documento existente na lista para editar nome, modalidade, categoria ou validade.",
-    };
+    return { ok: false, error: duplicateDocumentMessage(result.documentName) };
   }
   if (result.kind === "rejected") {
     return {

@@ -79,6 +79,15 @@ describe("upload-client (lote-12 T23)", () => {
       expect((result as { message: string }).message).toContain("Abra o documento existente");
     });
 
+    it("409 com o nome do existente identifica o documento na mensagem (DOCBIN-01 AC4)", async () => {
+      const result = await requestUploadTicket(input, respond(409, { error: "duplicate_upload", existingName: "politica-de-locacao.pdf" }));
+      expect(result).toEqual({
+        ok: false,
+        code: "duplicate_upload",
+        message: "Este arquivo já está cadastrado nesta imobiliária como “politica-de-locacao.pdf”. Abra esse documento na lista para editar nome, modalidade, categoria ou validade.",
+      });
+    });
+
     it("403 vira permissão negada, não duplicata", async () => {
       const result = await requestUploadTicket(input, respond(403, { error: "upload_forbidden" }));
       expect(result).toMatchObject({ ok: false, code: "upload_forbidden" });

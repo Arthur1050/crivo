@@ -181,8 +181,10 @@ describe("document upload intake (lote-12 T8)", () => {
     const storage = storageFixture(bytes);
     const service = intake(storage);
 
-    expect((await service.begin(inputFor(bytes), actorA)).kind).toBe("ready");
-    expect(await service.begin(inputFor(bytes), actorA)).toEqual({ kind: "duplicate_upload" });
+    const first = inputFor(bytes, { name: "contrato-em-envio.txt" });
+    expect((await service.begin(first, actorA)).kind).toBe("ready");
+    // DOCBIN-01 AC4: a outra resposta identifica o envio que já ocupa o hash.
+    expect(await service.begin(inputFor(bytes), actorA)).toEqual({ kind: "duplicate_upload", existingName: "contrato-em-envio.txt" });
     expect(storage.authorizeClientUpload).toHaveBeenCalledTimes(1);
   });
 
@@ -411,12 +413,12 @@ describe("document upload intake (lote-12 T8)", () => {
   it("preflight recusa hash de documento já confirmado antes de emitir token", async () => {
     const bytes = encoder.encode(`já-confirmado-${randomUUID()}`);
     const first = intake(storageFixture(bytes));
-    const firstIntent = await first.begin(inputFor(bytes), actorA);
+    const firstIntent = await first.begin(inputFor(bytes, { name: "politica-confirmada.txt" }), actorA);
     if (firstIntent.kind !== "ready") throw new Error("first intent was not ready");
     expect((await first.finalize(firstIntent.intentId)).kind).toBe("committed");
 
     const againStorage = storageFixture(bytes);
-    await expect(intake(againStorage).begin(inputFor(bytes), actorA)).resolves.toEqual({ kind: "duplicate_upload" });
+    await expect(intake(againStorage).begin(inputFor(bytes), actorA)).resolves.toEqual({ kind: "duplicate_upload", existingName: "politica-confirmada.txt" });
     expect(againStorage.authorizeClientUpload).not.toHaveBeenCalled();
   });
 
@@ -430,9 +432,10 @@ describe("document upload intake (lote-12 T8)", () => {
 
     // Um documento com o mesmo conteúdo é confirmado depois da reserva: só o
     // índice único do commit pode perceber, e o objeto tem de ser compensado.
+    const winnerName = `vencedor-${randomUUID()}.txt`;
     const [winner] = await db.insert(documents).values({
       tenantId: TENANT_A,
-      name: `vencedor-${randomUUID()}.txt`,
+      name: winnerName,
       mimeType: "text/plain",
       sizeBytes: BigInt(bytes.byteLength),
       modality: "novo",
@@ -446,6 +449,7 @@ describe("document upload intake (lote-12 T8)", () => {
     await expect(duplicate.finalize(duplicateIntent.intentId)).resolves.toEqual({
       kind: "duplicate_content",
       documentId: winner.id,
+      documentName: winnerName,
     });
     expect(duplicateStorage.delete).toHaveBeenCalledTimes(1);
     expect(duplicateDispatch).not.toHaveBeenCalled();

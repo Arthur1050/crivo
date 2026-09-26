@@ -127,7 +127,10 @@ export function createDocumentUploadPostHandler(
       try {
         const reserved = await intake.reserve(input);
         if (reserved.kind === "invalid") return safeError(400, reserved.code);
-        if (reserved.kind === "duplicate_upload") return safeError(409, "duplicate_upload");
+        if (reserved.kind === "duplicate_upload") {
+          // O nome é do próprio tenant do ator (a reserva é tenant-scoped).
+          return Response.json({ error: "duplicate_upload", existingName: reserved.existingName }, { status: 409 });
+        }
 
         const generated = await handle({
           request,

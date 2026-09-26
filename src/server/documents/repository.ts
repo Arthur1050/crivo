@@ -95,7 +95,10 @@ export async function failUploadIntent(
 
 export type CreateUploadIntentResult =
   | { kind: "created"; intent: typeof documentUploadIntents.$inferSelect }
-  | { kind: "active_duplicate" };
+  // `existingName` identifica, dentro do mesmo tenant, o documento ou o envio
+  // em andamento com os mesmos bytes (DOCBIN-01 AC4). `null` só na corrida
+  // fina resolvida pelo índice único, quando nenhum dos dois é legível.
+  | { kind: "active_duplicate"; existingName: string | null };
 
 export interface CommitUploadIntentInput {
   storageProvider: string;
@@ -107,7 +110,7 @@ export interface CommitUploadIntentInput {
 export type CommitUploadIntentResult =
   | { kind: "committed"; document: typeof documents.$inferSelect }
   | { kind: "already_committed"; documentId: string }
-  | { kind: "duplicate_content"; documentId: string }
+  | { kind: "duplicate_content"; documentId: string; documentName: string }
   | { kind: "expired" }
   | { kind: "not_finalizing" }
   | { kind: "not_found" };
@@ -220,7 +223,7 @@ export async function createUploadIntent(
     // repetido sobe inteiro e só é recusado no commit, depois de gastar o
     // upload e sem que a mensagem chegue a tempo ao usuário.
     const [existing] = await tx
-      .select({ id: documents.id })
+      .select({ name: documents.name })
       .from(documents)
       .where(
         and(
@@ -230,7 +233,22 @@ export async function createUploadIntent(
         )
       )
       .limit(1);
-    if (existing) return { kind: "active_duplicate" };
+    if (existing) return { kind: "active_duplicate", existingName: existing.name };
+
+    // Envio concorrente do mesmo arquivo ainda em curso: lido antes do insert
+    // porque, depois de uma violação do índice único, a transação aborta.
+    const [inFlight] = await tx
+      .select({ name: documentUploadIntents.name })
+      .from(documentUploadIntents)
+      .where(
+        and(
+          eq(documentUploadIntents.tenantId, tenantId),
+          eq(documentUploadIntents.clientSha256, input.clientSha256),
+          sql`${documentUploadIntents.state} in ('pending', 'finalizing')`
+        )
+      )
+      .limit(1);
+    if (inFlight) return { kind: "active_duplicate", existingName: inFlight.name };
 
     try {
       const [intent] = await tx
@@ -243,7 +261,7 @@ export async function createUploadIntent(
         .returning();
       return { kind: "created", intent };
     } catch (error) {
-      if (isUniqueViolation(error)) return { kind: "active_duplicate" };
+      if (isUniqueViolation(error)) return { kind: "active_duplicate", existingName: null };
       throw error;
     }
   });
@@ -338,7 +356,7 @@ export async function commitUploadIntent(
       return { kind: "committed", document };
     }
     const [existing] = await tx
-      .select({ id: documents.id })
+      .select({ id: documents.id, name: documents.name })
       .from(documents)
       .where(
         and(
@@ -352,7 +370,7 @@ export async function commitUploadIntent(
       .update(documentUploadIntents)
       .set({ state: "committed", documentId: existing.id, storageEtag: input.storageEtag })
       .where(and(eq(documentUploadIntents.tenantId, tenantId), eq(documentUploadIntents.id, intentId)));
-    return { kind: "duplicate_content", documentId: existing.id };
+    return { kind: "duplicate_content", documentId: existing.id, documentName: existing.name };
   });
 }
 

@@ -46,7 +46,7 @@ export interface CreateDocumentUploadInput {
 
 export type BeginDocumentUploadResult =
   | { kind: "ready"; intentId: string; grant: ClientUploadGrant }
-  | { kind: "duplicate_upload" }
+  | { kind: "duplicate_upload"; existingName: string | null }
   | { kind: "invalid"; code: "upload_input_invalid" }
   | { kind: "storage_failure" };
 
@@ -60,12 +60,12 @@ export type ReserveDocumentUploadResult =
       contentLength: number;
       expiresAt: Date;
     }
-  | { kind: "duplicate_upload" }
+  | { kind: "duplicate_upload"; existingName: string | null }
   | { kind: "invalid"; code: "upload_input_invalid" };
 
 export type FinalizeDocumentUploadResult =
   | { kind: "committed"; documentId: string }
-  | { kind: "duplicate_content"; documentId: string }
+  | { kind: "duplicate_content"; documentId: string; documentName: string }
   | { kind: "not_found" | "expired" | "not_finalizable" }
   | { kind: "rejected"; code: string }
   | { kind: "compensation_pending" };
@@ -249,7 +249,7 @@ export function createDocumentUploadIntake(
         },
         startedAt
       );
-      if (created.kind === "active_duplicate") return { kind: "duplicate_upload" };
+      if (created.kind === "active_duplicate") return { kind: "duplicate_upload", existingName: created.existingName };
       return {
         kind: "reserved",
         intentId: created.intent.id,
@@ -369,7 +369,7 @@ export function createDocumentUploadIntake(
           const compensation = await compensateUpload(repository, storage, claim.intent);
           return compensation.kind === "compensation_pending"
             ? compensation
-            : { kind: "duplicate_content", documentId: committed.documentId };
+            : { kind: "duplicate_content", documentId: committed.documentId, documentName: committed.documentName };
         }
         if (committed.kind === "expired") return { kind: "expired" };
         return { kind: "not_finalizable" };
