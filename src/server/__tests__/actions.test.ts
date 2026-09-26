@@ -1303,10 +1303,10 @@ describe("server actions", () => {
       expect((await lifecycleRow(document.id)).deletedAt).toEqual(expect.any(Date));
     });
 
-    // DOCLIM-01 AC8 — a fiação: a exclusão chama a reconciliação. Teto folgado
-    // para qualquer corpus do tenant, então só a reconciliação promove o
-    // `fora_do_agente`; tetos e estados anteriores do tenant são restaurados.
-    it("exclusão reconcilia a admissão do tenant (DOCLIM-01 AC8)", async () => {
+    // DOCLIM-01 AC8 — a fiação: exclusão e edição chamam a reconciliação. Teto
+    // folgado para qualquer corpus do tenant, então só a reconciliação promove
+    // o `fora_do_agente`; tetos e estados anteriores do tenant são restaurados.
+    async function withGenerousCeiling(run: () => Promise<void>) {
       const priorLimits = await db.select().from(tenantDocumentContextLimits).where(eq(tenantDocumentContextLimits.tenantId, activeTenantId));
       const priorStatuses = await db.select({ id: documents.id, status: documents.status }).from(documents)
         .where(and(eq(documents.tenantId, activeTenantId), isNull(documents.deletedAt)));
@@ -1318,14 +1318,7 @@ describe("server actions", () => {
             toolsHash: "t", memoryWindow: 50, benchmarkedAt: new Date(), metrics: {},
           });
         }
-        const excluido = await createLifecycleDocument("Sai do corpus");
-        const deFora = await createLifecycleDocument("Espera o teto");
-        await db.update(documents).set({ status: "fora_do_agente", extractedText: "cabe no teto", extractedBytes: 12 }).where(eq(documents.id, deFora.id));
-
-        await expect(deleteDocumentAction({ documentId: excluido.id })).resolves.toEqual({ ok: true });
-
-        await expect(lifecycleRow(deFora.id)).resolves.toMatchObject({ status: "pronto" });
-        await deleteDocumentAction({ documentId: deFora.id });
+        await run();
       } finally {
         await db.delete(tenantDocumentContextLimits).where(eq(tenantDocumentContextLimits.tenantId, activeTenantId));
         if (priorLimits.length > 0) await db.insert(tenantDocumentContextLimits).values(priorLimits);
@@ -1333,6 +1326,35 @@ describe("server actions", () => {
           await db.update(documents).set({ status }).where(eq(documents.id, id));
         }
       }
+    }
+
+    async function waitingOutsider() {
+      const deFora = await createLifecycleDocument("Espera o teto");
+      await db.update(documents).set({ status: "fora_do_agente", extractedText: "cabe no teto", extractedBytes: 12 }).where(eq(documents.id, deFora.id));
+      return deFora;
+    }
+
+    it("exclusão reconcilia a admissão do tenant (DOCLIM-01 AC8)", async () => {
+      await withGenerousCeiling(async () => {
+        const excluido = await createLifecycleDocument("Sai do corpus");
+        const deFora = await waitingOutsider();
+
+        await expect(deleteDocumentAction({ documentId: excluido.id })).resolves.toEqual({ ok: true });
+
+        await expect(lifecycleRow(deFora.id)).resolves.toMatchObject({ status: "pronto" });
+        await deleteDocumentAction({ documentId: deFora.id });
+      });
+    });
+
+    it("mudança de modalidade reconcilia a admissão do tenant (DOCLIM-01 AC8)", async () => {
+      await withGenerousCeiling(async () => {
+        const deFora = await waitingOutsider();
+
+        await expect(updateDocumentAction({ documentId: deFora.id, name: deFora.name, modality: "ambos", expiresAt: "" })).resolves.toEqual({ ok: true });
+
+        await expect(lifecycleRow(deFora.id)).resolves.toMatchObject({ modality: "ambos", status: "pronto" });
+        await deleteDocumentAction({ documentId: deFora.id });
+      });
     });
 
     it("retry de falha cria tentativa processando e conserva o original", async () => {

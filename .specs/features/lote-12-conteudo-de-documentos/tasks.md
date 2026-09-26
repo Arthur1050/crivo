@@ -1184,6 +1184,22 @@ O Verifier independente de T37 devolveu FAIL (`validation.md`, commit `c9c55b0`)
 
 *Evidence:* `process` emite uma linha `document_processing` por processamento com `tenantId`, `documentId`, `attempt`, etapa alcançada (`carregar`, `abrir_original`, `extrair`, `concluir`), resultado, código e duração; erro inesperado vira `erro_inesperado`, sem a mensagem, e é propagado para o retry do Workflow. Logger injetável, com padrão `console.info` em JSON. Testes: 5 novos em `processing.test.ts` (26 passam), incluindo ausência do texto, da chave do storage e de mensagem interna. Mutações: tirar a marca da etapa `extrair` derruba 2 testes; tirar a emissão derruba 3.
 
+### Phase 8 — Correções do Verifier, ciclo 2 (2026-09-26)
+
+O ciclo 2 (`validation.md`, commit `356c954`) fechou os gaps de comportamento do ciclo 1 e manteve FAIL por duas costuras sem teste (mutantes sobreviventes MA2 e M22).
+
+#### T46: Cobrir a delegação do workflow ao orquestrador
+**Requirement:** DOCTXT-01 AC4 · **Where:** `workflows/__tests__/process-document.test.ts` · **Gate:** workflow
+- [x] Trocar o corpo do workflow para chamar o step direto (MA2) derruba um teste.
+
+*Evidence:* teste de delegação lê o corpo de `processDocumentWorkflow` e exige `"use workflow"` e `return processWithTerminalFailure(input, processDocumentStep, abandonDocumentStep);`. Justificativa registrada no teste: forçar a exaustão real pelo harness exige erro transitório do Blob, que só uma indisponibilidade real produz (erro desconhecido é classificado como permanente). 21 testes do Workflow passam; MA2 derruba 1.
+
+#### T47: Cobrir a reconciliação na mudança de modalidade
+**Requirement:** DOCLIM-01 AC8 · **Where:** `src/server/__tests__/actions.test.ts` · **Gate:** Full
+- [x] Tirar a reconciliação de `updateDocumentAction` (M22) derruba um teste.
+
+*Evidence:* o preparo de teto folgado e a restauração de tetos e estados viraram o helper `withGenerousCeiling`, compartilhado com o teste da exclusão. Teste novo: mudar a modalidade de um `fora_do_agente` para `ambos` o promove a `pronto`. M22 derruba 1.
+
 ---
 
 ## Phase Execution Map
