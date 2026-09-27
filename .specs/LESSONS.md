@@ -140,32 +140,10 @@ Corroborated across multiple features. Safe to apply as guidance.
 - evidence: n8n/smoke/evidencia.md §16.4 (T15 SPEC_DEVIATION) (compliance,gate)
 - last seen: 2026-09-09T20:13:02Z
 
-## Candidates (under observation - do NOT load as guidance yet)
-
-Seen once or not yet corroborated. Tracked, not trusted.
-
-### L-007 - Self-check de design que so roda nos arquivos tocados pela feature nunca alcanca o globals.css — boilerplate de scaffold sobrevive ali e vence o tema inteiro; audite a folha de entrada uma vez por projeto, nao por feature.
-- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `app/globals.css` · harmful: 0
-- features: polimento-visual-astryx
-- evidence: app/globals.css:28 (app/globals.css)
-- last seen: 2026-08-03T06:15:03Z
-
-### L-017 - Confirmar a chave do rate limit nativo da biblioteca antes de escrever a AC: better-auth conta por IP e rota, nunca por identidade.
-- signal: `spec_deviation` · recurrence: 1 feature(s) · scope: `auth` · harmful: 0
-- features: lote-8-usuarios-papeis-atribuicao
-- evidence: src/server/auth/config.ts:86 (auth)
-- last seen: 2026-08-28T00:13:19Z
-
-### L-022 - Edge case da spec com duas metades exige assercao para cada metade, nunca so para a mais facil de testar.
-- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `tests` · harmful: 0
-- features: lote-8-usuarios-papeis-atribuicao
-- evidence: src/server/data/__tests__/broker-assignment.test.ts:153 (tests)
-- last seen: 2026-08-28T00:13:20Z
-
-### L-026 - Quando cada peça de um fluxo tem teste próprio (intake, workflow, retry), escrever também o teste da costura que prova a passagem real entre elas; peças verdes não provam que uma chama a outra.
+### L-026 - Para cada ligação entre peças testadas isoladamente — disparo entre etapas de um fluxo, cada gatilho de uma recomputação, o ponto de entrada que chama uma função extraída — escrever um teste que falhe se a chamada for removida; peças verdes não provam que uma chama a outra.
 - signal: `ac_gap` · recurrence: 1 feature(s) · scope: `testing` · harmful: 0
 - features: lote-12-conteudo-de-documentos
-- evidence: tasks.md T30 (5ba0fdf) (testing)
+- evidence: tasks.md T30 (5ba0fdf) (testing) (+3 more)
 - last seen: 2026-09-25T01:16:14Z
 
 ### L-027 - Fixture criada direto no banco pula as linhas que o caminho de produção cria junto (ex.: a intenção que referencia o documento por FK); para testar remoção, criar a fixture pelo caminho real ou com todas as linhas dependentes.
@@ -222,35 +200,27 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: M5/M6 src/server/documents/repository.ts:32,45 (routes,tenant-isolation)
 - last seen: 2026-09-26T02:11:11Z
 
-### L-036 - When a spec lists several triggers for the same recomputation, test each trigger's call site end to end, not only the pure recomputation function.
-- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `server-actions` · harmful: 0
-- features: lote-12-conteudo-de-documentos
-- evidence: M9 src/server/actions/documents.ts:147; DOCLIM-01 AC8 (server-actions)
-- last seen: 2026-09-26T02:11:11Z
-
 ### L-037 - Assert the production default of a safety-relevant policy constant; tests that build their own policy copy leave the shipped value unguarded.
 - signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `config/policy` · harmful: 0
 - features: lote-12-conteudo-de-documentos
 - evidence: M3 src/server/documents/context-ceiling.ts:70 (config/policy)
 - last seen: 2026-09-26T02:11:11Z
 
-### L-038 - When design narrows a spec term (execution vs logical attempt), record it as SPEC_DEVIATION or amend the spec, and assert the chosen semantics explicitly.
-- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `spec/acceptance-criteria` · harmful: 0
-- features: lote-12-conteudo-de-documentos
-- evidence: DOCTXT-01 AC7; design.md:119 (spec/acceptance-criteria)
-- last seen: 2026-09-26T02:11:12Z
+## Candidates (under observation - do NOT load as guidance yet)
+
+Seen once or not yet corroborated. Tracked, not trusted.
+
+### L-017 - Confirmar a chave do rate limit nativo da biblioteca antes de escrever a AC: better-auth conta por IP e rota, nunca por identidade.
+- signal: `spec_deviation` · recurrence: 1 feature(s) · scope: `auth` · harmful: 0
+- features: lote-8-usuarios-papeis-atribuicao
+- evidence: src/server/auth/config.ts:86 (auth)
+- last seen: 2026-08-28T00:13:19Z
 
 ### L-039 - When a spec requires a refusal to identify an existing resource, assert the identifier reaches the user-facing response, not only the service result.
 - signal: `ac_gap` · recurrence: 1 feature(s) · scope: `ui/errors` · harmful: 0
 - features: lote-12-conteudo-de-documentos
 - evidence: DOCBIN-01 AC4; src/server/actions/documents.ts:186 (ui/errors)
 - last seen: 2026-09-26T02:11:12Z
-
-### L-040 - Quando a correção extrai a lógica para um helper testável com dependências injetadas, teste também o entrypoint real chamando o helper; o teste do helper sozinho não impede o entrypoint de voltar ao caminho antigo.
-- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `workflow/testing` · harmful: 0
-- features: lote-12-conteudo-de-documentos
-- evidence: validation.md ciclo 2 MA2 workflows/process-document.ts:53 (workflow/testing)
-- last seen: 2026-09-26T20:54:32Z
 
 ## Quarantined (failed when applied - ignore)
 

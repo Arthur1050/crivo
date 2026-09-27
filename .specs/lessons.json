@@ -115,24 +115,6 @@
       "last_seen": "2026-08-03T03:56:06Z"
     },
     {
-      "id": "L-007",
-      "key": "ac_gap::self check de design que so roda nos arquivos tocados pela feature nunca alcanca o globals css boilerplate de scaffold sobrevive ali e vence o tema inteiro audite a folha de entrada uma vez por projeto nao por feature",
-      "text": "Self-check de design que so roda nos arquivos tocados pela feature nunca alcanca o globals.css — boilerplate de scaffold sobrevive ali e vence o tema inteiro; audite a folha de entrada uma vez por projeto, nao por feature.",
-      "signal": "ac_gap",
-      "scope": "app/globals.css",
-      "status": "candidate",
-      "features": [
-        "polimento-visual-astryx"
-      ],
-      "recurrence": 1,
-      "harmful": 0,
-      "evidence": [
-        "app/globals.css:28 (app/globals.css)"
-      ],
-      "created": "2026-08-03T06:15:03Z",
-      "last_seen": "2026-08-03T06:15:03Z"
-    },
-    {
       "id": "L-008",
       "key": "ac_gap::componente de lib de terceiro recharts embutido numa design system nao herda o tema sem props de estilo explicitas ele renderiza no default claro trate cada ponto de integracao como superficie a tematizar nao como caixa preta",
       "text": "Componente de lib de terceiro (Recharts) embutido numa design system nao herda o tema: sem props de estilo explicitas ele renderiza no default claro. Trate cada ponto de integracao como superficie a tematizar, nao como caixa-preta.",
@@ -385,24 +367,6 @@
       "last_seen": "2026-08-28T00:13:20Z"
     },
     {
-      "id": "L-022",
-      "key": "ac_gap::edge case da spec com duas metades exige assercao para cada metade nunca so para a mais facil de testar",
-      "text": "Edge case da spec com duas metades exige assercao para cada metade, nunca so para a mais facil de testar.",
-      "signal": "ac_gap",
-      "scope": "tests",
-      "status": "candidate",
-      "features": [
-        "lote-8-usuarios-papeis-atribuicao"
-      ],
-      "recurrence": 1,
-      "harmful": 0,
-      "evidence": [
-        "src/server/data/__tests__/broker-assignment.test.ts:153 (tests)"
-      ],
-      "created": "2026-08-28T00:13:20Z",
-      "last_seen": "2026-08-28T00:13:20Z"
-    },
-    {
       "id": "L-023",
       "key": "surviving_mutant::when testing a retention expiry cutoff assert a fixture aged exactly at the boundary itself not only one unit inside and one unit outside a fence post regression that shortens the window can leave both off boundary assertions unchanged",
       "text": "When testing a retention/expiry cutoff, assert a fixture aged exactly at the boundary itself, not only one unit inside and one unit outside — a fence-post regression that shortens the window can leave both off-boundary assertions unchanged.",
@@ -458,18 +422,21 @@
     },
     {
       "id": "L-026",
-      "key": "ac_gap::quando cada peca de um fluxo tem teste proprio intake workflow retry escrever tambem o teste da costura que prova a passagem real entre elas pecas verdes nao provam que uma chama a outra",
-      "text": "Quando cada peça de um fluxo tem teste próprio (intake, workflow, retry), escrever também o teste da costura que prova a passagem real entre elas; peças verdes não provam que uma chama a outra.",
+      "key": "ac_gap::para cada ligacao entre pecas testadas isoladamente disparo entre etapas de um fluxo cada gatilho de uma recomputacao o ponto de entrada que chama uma funcao extraida escrever um teste que falhe se a chamada for removida pecas verdes nao provam que uma chama a outra",
+      "text": "Para cada ligação entre peças testadas isoladamente — disparo entre etapas de um fluxo, cada gatilho de uma recomputação, o ponto de entrada que chama uma função extraída — escrever um teste que falhe se a chamada for removida; peças verdes não provam que uma chama a outra.",
       "signal": "ac_gap",
       "scope": "testing",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-12-conteudo-de-documentos"
       ],
       "recurrence": 1,
       "harmful": 0,
       "evidence": [
-        "tasks.md T30 (5ba0fdf) (testing)"
+        "tasks.md T30 (5ba0fdf) (testing)",
+        "M9 src/server/actions/documents.ts:147; DOCLIM-01 AC8 (server-actions)",
+        "validation.md ciclo 2 MA2 workflows/process-document.ts:53 (workflow/testing)",
+        "validation.md ciclo 2 M22 src/server/actions/documents.ts:126 (server-actions)"
       ],
       "created": "2026-09-25T01:16:14Z",
       "last_seen": "2026-09-25T01:16:14Z"
@@ -480,7 +447,7 @@
       "text": "Fixture criada direto no banco pula as linhas que o caminho de produção cria junto (ex.: a intenção que referencia o documento por FK); para testar remoção, criar a fixture pelo caminho real ou com todas as linhas dependentes.",
       "signal": "gate_fail",
       "scope": "testing",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-12-conteudo-de-documentos"
       ],
@@ -498,7 +465,7 @@
       "text": "Fixtures de prova conectada precisam atravessar os limiares do transporte (compressão, chunking, tamanho): arquivos todos abaixo de 1 KB esconderam que o Blob devolve ETag fraco para texto comprimido.",
       "signal": "gate_fail",
       "scope": "connected-e2e",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-12-conteudo-de-documentos"
       ],
@@ -516,7 +483,7 @@
       "text": "Quando a interface traduz códigos gravados pelo backend, tipar a tabela de tradução pelo tipo exportado do backend (Record<Codigo, string>), para que código novo ou renomeado quebre a compilação em vez de cair na mensagem genérica.",
       "signal": "spec_precision_gap",
       "scope": "ui-contract",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-12-conteudo-de-documentos"
       ],
@@ -534,7 +501,7 @@
       "text": "Todo limite configurável precisa de teste para o caso sem configuração e para o caso desatualizado: um return antecipado quando o limite falta vira ausência total de limite (falha aberta).",
       "signal": "ac_gap",
       "scope": "limits",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-12-conteudo-de-documentos"
       ],
@@ -552,7 +519,7 @@
       "text": "Antes de desenhar uma fórmula de capacidade sobre um provedor externo, levantar os limites compartilhados da conta (tokens por minuto, requisições por minuto) e tratá-los como componente da fórmula, não só a janela do modelo.",
       "signal": "spec_precision_gap",
       "scope": "capacity",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-12-conteudo-de-documentos"
       ],
@@ -570,7 +537,7 @@
       "text": "update_workflow via MCP grava uma versão rascunho: publicar com publish_workflow e conferir que versionId e activeVersionId coincidem antes de declarar a mudança em produção.",
       "signal": "gate_fail",
       "scope": "n8n",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-12-conteudo-de-documentos"
       ],
@@ -588,7 +555,7 @@
       "text": "Nunca rodar dois processos de teste contra o mesmo banco descartável ao mesmo tempo; falhas de uma suíte rodando em paralelo com testes isolados não são evidência de defeito.",
       "signal": "gate_fail",
       "scope": "testing",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-12-conteudo-de-documentos"
       ],
@@ -606,7 +573,7 @@
       "text": "Every durable job that throws a retryable error needs an explicit terminal state after retries are exhausted, written by the workflow itself, with a test that drives retries to exhaustion.",
       "signal": "ac_gap",
       "scope": "workflow/processing",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-12-conteudo-de-documentos"
       ],
@@ -624,7 +591,7 @@
       "text": "Route tests that inject a mocked finder cannot prove tenant, state or expiry filtering; every tenant-scoped finder needs its own database test with a foreign-tenant row.",
       "signal": "surviving_mutant",
       "scope": "routes,tenant-isolation",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-12-conteudo-de-documentos"
       ],
@@ -637,30 +604,12 @@
       "last_seen": "2026-09-26T02:11:11Z"
     },
     {
-      "id": "L-036",
-      "key": "surviving_mutant::when a spec lists several triggers for the same recomputation test each trigger s call site end to end not only the pure recomputation function",
-      "text": "When a spec lists several triggers for the same recomputation, test each trigger's call site end to end, not only the pure recomputation function.",
-      "signal": "surviving_mutant",
-      "scope": "server-actions",
-      "status": "candidate",
-      "features": [
-        "lote-12-conteudo-de-documentos"
-      ],
-      "recurrence": 1,
-      "harmful": 0,
-      "evidence": [
-        "M9 src/server/actions/documents.ts:147; DOCLIM-01 AC8 (server-actions)"
-      ],
-      "created": "2026-09-26T02:11:11Z",
-      "last_seen": "2026-09-26T02:11:11Z"
-    },
-    {
       "id": "L-037",
       "key": "surviving_mutant::assert the production default of a safety relevant policy constant tests that build their own policy copy leave the shipped value unguarded",
       "text": "Assert the production default of a safety-relevant policy constant; tests that build their own policy copy leave the shipped value unguarded.",
       "signal": "surviving_mutant",
       "scope": "config/policy",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-12-conteudo-de-documentos"
       ],
@@ -671,24 +620,6 @@
       ],
       "created": "2026-09-26T02:11:11Z",
       "last_seen": "2026-09-26T02:11:11Z"
-    },
-    {
-      "id": "L-038",
-      "key": "spec_precision_gap::when design narrows a spec term execution vs logical attempt record it as spec deviation or amend the spec and assert the chosen semantics explicitly",
-      "text": "When design narrows a spec term (execution vs logical attempt), record it as SPEC_DEVIATION or amend the spec, and assert the chosen semantics explicitly.",
-      "signal": "spec_precision_gap",
-      "scope": "spec/acceptance-criteria",
-      "status": "candidate",
-      "features": [
-        "lote-12-conteudo-de-documentos"
-      ],
-      "recurrence": 1,
-      "harmful": 0,
-      "evidence": [
-        "DOCTXT-01 AC7; design.md:119 (spec/acceptance-criteria)"
-      ],
-      "created": "2026-09-26T02:11:12Z",
-      "last_seen": "2026-09-26T02:11:12Z"
     },
     {
       "id": "L-039",
@@ -707,24 +638,6 @@
       ],
       "created": "2026-09-26T02:11:12Z",
       "last_seen": "2026-09-26T02:11:12Z"
-    },
-    {
-      "id": "L-040",
-      "key": "surviving_mutant::quando a correcao extrai a logica para um helper testavel com dependencias injetadas teste tambem o entrypoint real chamando o helper o teste do helper sozinho nao impede o entrypoint de voltar ao caminho antigo",
-      "text": "Quando a correção extrai a lógica para um helper testável com dependências injetadas, teste também o entrypoint real chamando o helper; o teste do helper sozinho não impede o entrypoint de voltar ao caminho antigo.",
-      "signal": "surviving_mutant",
-      "scope": "workflow/testing",
-      "status": "candidate",
-      "features": [
-        "lote-12-conteudo-de-documentos"
-      ],
-      "recurrence": 1,
-      "harmful": 0,
-      "evidence": [
-        "validation.md ciclo 2 MA2 workflows/process-document.ts:53 (workflow/testing)"
-      ],
-      "created": "2026-09-26T20:54:32Z",
-      "last_seen": "2026-09-26T20:54:32Z"
     }
   ]
 }
