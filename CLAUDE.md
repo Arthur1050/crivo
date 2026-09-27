@@ -1,8 +1,8 @@
 @AGENTS.md
 
 HISTÓRICO DE DECISÃO — leia antes de planejar qualquer feature nova:
-- `.specs/STATE.md` — decisões arquiteturais (AD-001…024), com `superseded by` quando mudaram. Uma decisão nova não pode contradizer uma ativa sem emendá-la explicitamente.
-- `.specs/features/INDEX.md` — mapa dos 12 lotes executados: o que cada um entregou, requisitos, e o backlog de 29 itens deferidos durante as execuções. Entre por aqui, não pelos arquivos de lote.
+- `.specs/STATE.md` — decisões arquiteturais (AD-001…031), com `superseded by` quando mudaram. Uma decisão nova não pode contradizer uma ativa sem emendá-la explicitamente.
+- `.specs/features/INDEX.md` — mapa dos 15 lotes executados: o que cada um entregou, requisitos, veredito do Verifier e onde está o backlog deferido durante as execuções. Entre por aqui, não pelos arquivos de lote.
 
 <!-- ASTRYX:START -->
 Astryx v0.2.0 · 154 components

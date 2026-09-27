@@ -94,7 +94,16 @@ confunde a atribuição do smoke. Ou entra depois do L10, ou o Specify separa o 
 
 ---
 
-## L12 — Conteúdo de documento chega ao agente
+## L12 — Conteúdo de documento chega ao agente — ✅ EXECUTADO (2026-09-26)
+
+**Status final**: PASS do Verifier independente no ciclo 3 — 64/71 critérios ✅, 7 ⚠️ não
+bloqueantes, 0 ❌; gate com 1.872 testes. O lote entregou o binário em Vercel Private Blob
+(AD-030), extração por Vercel Workflow com estado terminal, prévia e download isolados por tenant,
+exclusão e expiração com remoção física, contexto integral via `POST /api/v1/context` com
+`question` (o GET foi removido), teto de contexto medido por benchmark com admissão fail-closed
+(AD-031) e o evento `document_corpus_over_ceiling` como gatilho mensurável do L-RAG. Prova por
+WhatsApp: o agente responde com os fatos dos documentos, sem citá-los e sem inventar política.
+Backlog em `features/lote-12-conteudo-de-documentos/context.md` § Ideias adiadas.
 
 **Fecha**: #9, e a lacuna estrutural descoberta em 2026-09-04. **Escopo reduzido pelo L11**: com o
 inventário estruturado no catálogo, este lote passa a servir o conhecimento **não-inventário** —
@@ -132,6 +141,12 @@ agente recebe **o título do arquivo**.
 "não me mande mais mensagens" e depois "eu só quero que você pare de me mandar mensagens" — o
 agente entendeu e parou de puxar assunto, mas `opted_out_at` ficou nulo e ele continuou
 respondendo. Pedido explícito de parar, entendido pelo modelo, que não virou registro.
+
+**Estado atual (2026-09-27)**: desde o lote-10 o agente reconhece o pedido em linguagem natural e
+orienta o lead a responder com a palavra `sair` (`OPT_OUT_GUIDANCE_INSTRUCTION` em
+`n8n/src/system-message.mjs`), sem prometer que vai parar. O efeito continua dependendo do lead
+digitar a palavra exata (`detectOptOut` em `n8n/src/gate.mjs`): um pedido natural ainda não grava
+`opted_out_at`. É isso que o L13 fecha.
 
 ---
 
@@ -253,12 +268,15 @@ vez.
 **O que continua valendo**: RAG não é a resposta para "o agente conhece os imóveis" — o catálogo
 (L11) é, e melhor. E construir embeddings antes de existir corpus é otimizar o vazio.
 
-**Gatilho**: corpus de algum tenant acima do teto de injeção direta medido no L12 item 4.
+**Gatilho**: corpus de algum tenant acima do teto de injeção direta medido no L12 item 4. Desde o
+L12 isso é contável nos logs de runtime: a reconciliação da admissão emite
+`{"event":"document_corpus_over_ceiling", tenantId, modality, corpusBytes, ceilingBytes, excludedDocuments}`.
 
 **Por que a espera é barata**: o PRD §7.6 já comprou essa opção — "acesso ao contexto atrás de uma
 interface única (`getContext(tenant_id, modalidade, pergunta)`), permitindo trocar a implementação
-por busca vetorial no futuro sem alterar quem consome". A interface já existe em
-`src/server/integration/context.ts`; o L12 item 3 adiciona o parâmetro que falta.
+por busca vetorial no futuro sem alterar quem consome". Desde o L12 essa interface é
+`getDirectDocumentContext` em `src/server/integration/context.ts`, exposta por
+`POST /api/v1/context` com `{modality, question}`; a busca vetorial entra atrás dela.
 
 **Nota comercial**: o cliente não compra "RAG", compra "ele sabe responder sobre a minha
 imobiliária". Catálogo estruturado + documentos legíveis já entregam essa frase.

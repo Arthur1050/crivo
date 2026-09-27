@@ -64,6 +64,11 @@ Os **28 itens deferidos** durante as execuções estão nas seções `## Deferre
 - **Agente/n8n**: `lote-6c`, `lote-7` (RAG, queue mode, opt-out natural, troca de modelo)
 - **Métricas**: `lote-9` (alerta ativo, baseline versionado, ranking por corretor)
 
+Lotes pós-piloto: `lote-10` e `lote-11` em `## Deferred Ideas`; `lote-12` em `## Ideias adiadas`
+(barreira da oferta de corretor, teste de harness do Workflow, Blob isolado no `dev:test`, vazão do
+teto, i18n da Astryx, hidratação do `Timestamp`, erros de `tsc` em testes). Esses itens não entram
+na contagem de 28 acima, que é a consolidação de 2026-08-30.
+
 Dívidas técnicas menores (linhas inertes em `conversa_estado`, `openapi.yaml` desatualizado,
 `n8n/README.md §4` obsoleto, `RESEND_FROM`) estão em `STATE.md` § Handoff, não aqui.
 
