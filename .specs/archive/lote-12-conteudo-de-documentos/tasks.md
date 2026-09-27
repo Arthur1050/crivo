@@ -964,7 +964,7 @@ Os `content_sha256` gravados em produção coincidem com os SHA-256 locais dos c
 - [x] Usuário autorizou explicitamente publicação e mudança de configuração do n8n.
 - [x] Versão ativa casa com fonte/generated e preserva modelo/memória/tools não relacionadas.
 - [x] Sucessos/progresso/manuais não persistem; erros têm retenção máxima de 24 h. **Parcial** — as três primeiras aplicadas; a janela de 24 h é configuração de instância, fora desta API.
-- [ ] Execução sintética POST usa pergunta/modalidade corretas e retorna conteúdo antes da resposta. **Bloqueado** — produção tem zero documentos desde a convergência de T31.
+- [x] Execução sintética POST usa pergunta/modalidade corretas e retorna conteúdo antes da resposta. ~~**Bloqueado** — produção tem zero documentos desde a convergência de T31.~~ Suprida pela execução real: nas rodadas 1, 3 e 5 de T35 e no smoke de T37, cada pergunta do lead gerou `POST /api/v1/context 200` antes da resposta, e as respostas trouxeram os fatos exclusivos dos documentos (R$ 385,00; 4%/10 dias; 15 kg; R$ 212,40; R$ 47,90).
 - [x] IDs/status são conferidos ao vivo antes de serem citados, conforme L-011.
 
 **Tests:** n8n live e2e  
