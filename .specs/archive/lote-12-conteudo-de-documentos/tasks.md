@@ -686,7 +686,7 @@ A verificação encontrou cinco defeitos que os 1.770 testes não pegaram, todos
 - [x] Corretor só vê leitura; admin/gestor veem escrita; APIs continuam sendo autoridade.
 - [x] Preview fica oculto em processando/falha; download fica disponível quando permitido.
 - [x] Exclusão mantém confirmação permanente e retry explica erro seguro.
-- [ ] Oito cenários de navegador e screenshots cobrem estados e papéis. **Adiado para o preview (T32)**, junto com a bateria visual de T23–T27.
+- [ ] Oito cenários de navegador e screenshots cobrem estados e papéis. **Adiado para o preview (T32)**, junto com a bateria visual de T23–T27. **Papel corretor capturado em 2026-09-27** (produção, `crivo-plum.vercel.app`, tenant Triângulo, conta de corretor criada pelo usuário): página sem "Novo documento" e sem "Gerenciar categorias"; menu lateral sem Configurações e Usuários; documento `pronto` oferece só "Visualizar texto" e "Baixar original" (sem Editar e Excluir); documento em `falha` oferece só "Baixar original" (sem Reprocessar); prévia do `fora_do_agente` abre com o aviso "Este documento está fora do contexto do agente por limite de conteúdo."; `/usuarios` e `/configuracoes` respondem 404. Faltam os cenários de gestor desta bateria que T32 não cobriu.
 
 **Tests:** browser e2e + build  
 **Gate:** Build  
