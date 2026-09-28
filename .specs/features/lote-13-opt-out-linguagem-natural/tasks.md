@@ -233,15 +233,17 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 **Done when:**
 
-- [ ] Com `optOutAmbiguo: true`, o system message contém a instrução nova; com `false` e com o parâmetro ausente, não contém (dois testes separados; L-005).
-- [ ] Com o parâmetro ausente, o system message é byte a byte igual ao de antes desta tarefa, para um conjunto fixo de entradas (protege `benchmark-contexto.ts`).
-- [ ] `OPT_OUT_GUIDANCE_INSTRUCTION` continua presente nos dois casos (OPTDOC-01 AC2).
-- [ ] Cada subcláusula da instrução (uma frase, perguntar se quer parar por este número, não insistir, não prometer parar) tem asserção própria (L-012).
-- [ ] Gate Quick passa; os testes existentes de `system-message.test.ts` continuam passando sem alteração.
+- [x] Com `optOutAmbiguo: true`, o system message contém a instrução nova; com `false` e com o parâmetro ausente, não contém (dois testes separados; L-005).
+- [x] Com o parâmetro ausente, o system message é byte a byte igual ao de antes desta tarefa, para um conjunto fixo de entradas (protege `benchmark-contexto.ts`).
+- [x] `OPT_OUT_GUIDANCE_INSTRUCTION` continua presente nos dois casos (OPTDOC-01 AC2).
+- [x] Cada subcláusula da instrução (uma frase, perguntar se quer parar por este número, não insistir, não prometer parar) tem asserção própria (L-012).
+- [x] Gate Quick passa; os testes existentes de `system-message.test.ts` continuam passando sem alteração.
 
 **Tests:** unit
 **Gate:** Quick
 **Commit:** `feat(n8n): ask ambiguous opt-out leads before registering`
+**Status:** ✅ Concluída (2026-09-27)
+**Gate:** Quick — `npx vitest run n8n/src/__tests__/system-message-opt-out-ambiguo.test.ts n8n/src/__tests__/system-message.test.ts`: 2 arquivos / 199 testes (177 existentes, sem alteração, + 22 novos), 0 falhas. Baseline byte a byte em `n8n/fixtures/system-message-baseline.json`, gerado da revisão 0a5cb47 antes da edição.
 
 #### T6: Ancorar a extração do modelo do benchmark no nó do agente
 
