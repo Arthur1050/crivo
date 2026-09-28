@@ -351,17 +351,19 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 **Done when:**
 
-- [ ] Teste de paridade: `classifierIdentity(principal)` é igual a `classifierIdentity(medicaoOptOut)` (arquivo `n8n/workflows/__tests__/principal-classificador.test.ts`).
-- [ ] Testes de aresta: `memória pronta → entrada → classificador`; `fora`, `other` e erro → `Code: rota fora`; `ambigua` → `Code: rota ambígua`; as duas rotas → `Code: montar system message…` — um teste por aresta (L-026).
-- [ ] Teste: `Code: montar system message…` passa `optOutAmbiguo: $json.optOutAmbiguo === true`, e `Code: rota ambígua` emite `true` e `Code: rota fora` emite `false`.
-- [ ] Teste: a entrada do classificador não contém `$fromAI`, e o lead/tenant de nenhum nó novo vem do modelo (OPTREG-01 AC2).
-- [ ] `principal-modelo.test.ts` atualizado com as contagens de nós e conexões **medidas** por `principal.toJSON()`, com a conta no comentário; o nó `OpenAI Chat Model` do agente continua com o mesmo modelo e parâmetros; o nó do classificador tem o mesmo modelo.
-- [ ] `node scripts/n8n-inline.mjs` roda e `validate_workflow` sem erro sobre o gerado.
-- [ ] Gate Full passa.
+- [x] Teste de paridade: `classifierIdentity(principal)` é igual a `classifierIdentity(medicaoOptOut)` (arquivo `n8n/workflows/__tests__/principal-classificador.test.ts`).
+- [x] Testes de aresta: `memória pronta → entrada → classificador`; `fora`, `other` e erro → `Code: rota fora`; `ambigua` → `Code: rota ambígua`; as duas rotas → `Code: montar system message…` — um teste por aresta (L-026).
+- [x] Teste: `Code: montar system message…` passa `optOutAmbiguo: $json.optOutAmbiguo === true`, e `Code: rota ambígua` emite `true` e `Code: rota fora` emite `false`.
+- [x] Teste: a entrada do classificador não contém `$fromAI`, e o lead/tenant de nenhum nó novo vem do modelo (OPTREG-01 AC2).
+- [x] `principal-modelo.test.ts` atualizado com as contagens de nós e conexões **medidas** por `principal.toJSON()`, com a conta no comentário; o nó `OpenAI Chat Model` do agente continua com o mesmo modelo e parâmetros; o nó do classificador tem o mesmo modelo.
+- [x] `node scripts/n8n-inline.mjs` roda e `validate_workflow` sem erro sobre o gerado.
+- [x] Gate Full passa.
 
 **Tests:** unit
 **Gate:** Full
 **Commit:** `feat(n8n): route conversation turns through the opt-out classifier`
+**Status:** ✅ Concluída (2026-09-28)
+**Gate:** Full — `node scripts/n8n-inline.mjs` + `npm test` em 3 rodadas: 124 arquivos / 2.032 testes, 2 falhas em cada, sempre só `DOCLIM-01 AC8` de `actions.test.ts` (timeout de 30 s na suíte paralela; o arquivo passa isolado, 81/81, ~15 s por teste; a T10 não toca `src/`). `principal-classificador.test.ts`: 22 testes. Contagens medidas 62/76 → 67/84. `validate_workflow` do gerado: válido, 67 nós (só os avisos `SUBNODE_NOT_CONNECTED` conhecidos dos `memoryManager`). Identidade do classificador: `07f33701ce001b073d584bdf636f910be91fc3e8119dda324542d3e2c2be5953`.
 
 #### T11: Ligar a faixa explícita ao ramo de opt-out existente
 

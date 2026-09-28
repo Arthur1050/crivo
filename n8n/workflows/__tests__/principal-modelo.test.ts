@@ -26,9 +26,16 @@ const MODEL_NODE = "OpenAI Chat Model";
 const MODEL_ID = "gpt-5.4-nano-2026-03-17";
 const MEMORY_NODE = "Postgres Chat Memory";
 
-/** lote-10 (T2): 61/75. lote-11 (T22): +1 tool (`buscar_imoveis`) → 62/76. */
-const NOS_ESPERADOS = 62;
-const CONEXOES_ESPERADAS = 76;
+/**
+ * lote-10 (T2): 61/75. lote-11 (T22): +1 tool (`buscar_imoveis`) → 62/76.
+ * lote-13 (T10): +5 nós (entrada do classificador, classificador, modelo do
+ * classificador, rota fora, rota ambígua) e +8 conexões (entrada →
+ * classificador, modelo → classificador, saídas 0/1/3/4, as duas rotas →
+ * system message; memória pronta → system message virou memória pronta →
+ * entrada) → 67/84, medido por `principal.toJSON()` nesta janela.
+ */
+const NOS_ESPERADOS = 67;
+const CONEXOES_ESPERADAS = 84;
 
 const TOOLS = [
   "registrar_qualificacao",
@@ -131,7 +138,7 @@ describe("a troca de modelo não mexeu em mais nada do grafo (MOD-01 AC2)", () =
     );
   });
 
-  it("o grafo continua com 62 nós e 76 conexões — as contagens medidas nesta janela (T22 do lote-11)", () => {
+  it("o grafo continua com 67 nós e 84 conexões — as contagens medidas nesta janela (T10 do lote-13)", () => {
     expect(workflow.nodes).toHaveLength(NOS_ESPERADOS);
     expect(contarConexoes()).toBe(CONEXOES_ESPERADAS);
   });

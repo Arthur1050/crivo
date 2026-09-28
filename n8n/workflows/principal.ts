@@ -942,6 +942,138 @@ const memoryReadyCheckpoint = node({
 });
 
 // ---------------------------------------------------------------------
+// 10b. Classificador de opt-out (lote-13 — T10; design.md). Decide a ROTA do
+//      turno antes do agente: `explicita` entra no ramo de opt-out (T11),
+//      `ambigua` liga a pergunta no system message, e `fora`, `other`
+//      (categoria não reconhecida) e erro seguem para o agente como antes
+//      (OPTREG-01 AC8: na dúvida, não descadastrar). O classificador só lê a
+//      mensagem do turno e a última fala do agente na sessão corrente; lead e
+//      tenant nunca passam por ele (OPTREG-01 AC2).
+// ---------------------------------------------------------------------
+
+// A sessão corrente é a carga da memória; a semeadura só roda em cold start
+// (`isExecuted` evita ler um nó que não executou neste turno). O texto do lead
+// é o mesmo buffer que vira `userMessage` do agente.
+const buildClassifierInputNode = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: entrada do classificador",
+    position: [7430, 300],
+    parameters: {
+      mode: "runOnceForAllItems",
+      language: "javaScript",
+      jsCode:
+        '__INLINE(opt-out-intent.mjs)__' +
+        "\n\n" +
+        "const loaded = $('Chat Memory Manager: carregar sessão').first().json;\n" +
+        "const seedNode = $('Code: selecionar mensagens de semeadura');\n" +
+        "const seeded = seedNode.isExecuted ? seedNode.all().map((item) => item.json) : [];\n" +
+        "const buffer = $('Code: contexto do lead').first().json.bufferArray || [];\n" +
+        "const classifierInput = buildClassifierInput({ lastAgentMessage: lastAgentMessage({ loaded, seeded }), userMessage: buffer.map((m) => m.text) });\n" +
+        "return [{ json: { classifierInput } }];\n",
+    },
+  },
+  output: [{ classifierInput: "Última mensagem enviada ao lead: (nenhuma)\nMensagem do lead: Oi, vi o anúncio do apartamento" }],
+});
+
+// Parâmetros congelados na T2 (design.md, Tech Decisions), idênticos aos de
+// `medicao-opt-out.ts` byte a byte: a medição aprovada vale para este nó só
+// enquanto a identidade dos dois for a mesma (`principal-classificador.test.ts`).
+// Nó de modelo próprio, com o mesmo snapshot do agente (AD-026); o
+// `OpenAI Chat Model` do agente não muda.
+const classifierModel = languageModel({
+  type: "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+  version: 1.3,
+  config: {
+    name: "OpenAI Chat Model (classificador)",
+    position: [7560, 100],
+    parameters: {
+      model: {
+        __rl: true,
+        mode: "list",
+        value: "gpt-5.4-nano-2026-03-17",
+        cachedResultName: "gpt-5.4-nano-2026-03-17",
+      },
+      options: { reasoningEffort: "low", timeout: 20000 },
+    },
+    credentials: { openAiApi: newCredential("OpenAI account") },
+  },
+});
+
+const optOutClassifier = node({
+  type: "@n8n/n8n-nodes-langchain.textClassifier",
+  version: 1.1,
+  config: {
+    name: "Classificador: opt-out",
+    position: [7560, 300],
+    onError: "continueErrorOutput",
+    parameters: {
+      inputText: "={{ $json.classifierInput }}",
+      categories: {
+        categories: [
+          {
+            category: "fora",
+            description:
+              'A mensagem não pede para parar de receber mensagens. Inclui desinteresse num imóvel específico e usos de "parar" ou "sair" que se referem a outra coisa (fotos, áudios, o aluguel atual, o apartamento, a enrolação).',
+          },
+          {
+            category: "ambigua",
+            description:
+              'Desinteresse geral sem pedido de parar de receber mensagens (por exemplo, "não tenho interesse, obrigado"), ou aviso de número errado ou pessoa errada. Também vale para uma resposta ambígua quando a última mensagem enviada perguntou se o lead quer parar de receber mensagens.',
+          },
+          {
+            category: "explicita",
+            description:
+              "O lead pede para parar de receber mensagens, para não ser mais contatado, para sair da lista ou para não mandarem mais nada. Também vale para uma resposta afirmativa quando a última mensagem enviada perguntou se ele quer parar de receber mensagens.",
+          },
+        ],
+      },
+      options: {
+        multiClass: false,
+        fallback: "other",
+        systemPromptTemplate:
+          'Você classifica a mensagem de um lead de imobiliária no WhatsApp quanto a um pedido para parar de receber mensagens. Classifique o texto do usuário em uma destas categorias: {categories}. Use a última mensagem enviada ao lead só para entender respostas curtas, como "sim" ou "não". Regra de desempate: na dúvida entre explicita e ambigua, escolha ambigua; na dúvida entre ambigua e fora, escolha fora. Não explique e responda somente o JSON, seguindo as instruções de formato abaixo.',
+        enableAutoFixing: true,
+      },
+    },
+    subnodes: { model: classifierModel },
+  },
+  output: [{ classifierInput: "..." }],
+});
+
+// Recebe `fora` (saída 0), `other` (3) e erro (4). Um item por turno.
+const routeFora = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: rota fora",
+    position: [7690, 200],
+    parameters: {
+      mode: "runOnceForAllItems",
+      language: "javaScript",
+      jsCode: "return [{ json: { optOutAmbiguo: false } }];\n",
+    },
+  },
+  output: [{ optOutAmbiguo: false }],
+});
+
+const routeAmbigua = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: rota ambígua",
+    position: [7690, 400],
+    parameters: {
+      mode: "runOnceForAllItems",
+      language: "javaScript",
+      jsCode: "return [{ json: { optOutAmbiguo: true } }];\n",
+    },
+  },
+  output: [{ optOutAmbiguo: true }],
+});
+
+// ---------------------------------------------------------------------
 // 11. Nó AI Agent (T11) — modelo, memória (T10) e as 5 tools. QLF-02 (não
 //     atribuída a nenhuma task deste lote — gap real do tasks.md, ver nota
 //     do Handoff) é fechada aqui, no único ponto do fluxo onde "qual campo
@@ -993,7 +1125,10 @@ const buildAgentSystemMessage = node({
         // quando `wasExpired` já zera a lista. É o sinal que faltava para o
         // agente cumprimentar e dizer quem é antes de perguntar.
         "const firstTurn = perguntados.length === 0;\n" +
-        "const systemMessage = buildSystemMessage({ settings, phase, perguntados: updatedPerguntados, businessHours, now, meetingAt, firstTurn });\n" +
+        // lote-13 (T10): o único campo que chega por `$json` é a rota do
+        // classificador (`Code: rota fora` ou `Code: rota ambígua`); todo o
+        // resto continua lido dos ancestrais pelo nome.
+        "const systemMessage = buildSystemMessage({ settings, phase, perguntados: updatedPerguntados, businessHours, now, meetingAt, firstTurn, optOutAmbiguo: $json.optOutAmbiguo === true });\n" +
         "const buffer = $('Code: contexto do lead').first().json.bufferArray || [];\n" +
         "const userMessage = buffer.map((m) => m.text).join('\\n');\n" +
         "return [{ json: { systemMessage, userMessage, phase, perguntadosJson: JSON.stringify(updatedPerguntados) } }];\n",
@@ -1889,8 +2024,20 @@ const afterLoadMemory = loadMemory.to(
 // T11: `memoryReadyCheckpoint` (T10's dangling tail) agora se estende até o
 // nó AI Agent e a convergência final — única extensão feita aqui, nunca
 // uma reconexão do zero (mesma disciplina de T9/T10).
-memoryReadyCheckpoint.to(
-  buildAgentSystemMessage.to(
+//
+// lote-13 (T10): entre o checkpoint e o system message entra o classificador
+// de opt-out. `agentTurnWired` é o alvo único das duas rotas que seguem para o
+// agente (fan-in, mesma regra do topo desta seção). A saída de erro do
+// classificador é a de índice 4 e é ligada com `.output(4)`, nunca com
+// `.onError()`: o SDK liga `.onError()` à saída 1, que aqui é `ambigua`
+// (achado da T2). A saída 2 (`explicita`) entra no ramo de opt-out na T11.
+memoryReadyCheckpoint.to(buildClassifierInputNode.to(optOutClassifier));
+optOutClassifier.output(0).to(routeFora);
+optOutClassifier.output(1).to(routeAmbigua);
+optOutClassifier.output(3).to(routeFora);
+optOutClassifier.output(4).to(routeFora);
+
+const agentTurnWired = buildAgentSystemMessage.to(
     persistPerguntados.to(
       aiAgent.to(
         // `clearAfterAgentTurnWired` é o alvo ÚNICO das duas saídas do IF
@@ -1916,8 +2063,9 @@ memoryReadyCheckpoint.to(
         )
       )
     )
-  )
-);
+  );
+routeFora.to(agentTurnWired);
+routeAmbigua.to(agentTurnWired);
 
 const conversaBranch = getSettings.to(
   checkSessionExpired.to(

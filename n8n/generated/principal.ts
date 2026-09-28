@@ -942,6 +942,138 @@ const memoryReadyCheckpoint = node({
 });
 
 // ---------------------------------------------------------------------
+// 10b. Classificador de opt-out (lote-13 — T10; design.md). Decide a ROTA do
+//      turno antes do agente: `explicita` entra no ramo de opt-out (T11),
+//      `ambigua` liga a pergunta no system message, e `fora`, `other`
+//      (categoria não reconhecida) e erro seguem para o agente como antes
+//      (OPTREG-01 AC8: na dúvida, não descadastrar). O classificador só lê a
+//      mensagem do turno e a última fala do agente na sessão corrente; lead e
+//      tenant nunca passam por ele (OPTREG-01 AC2).
+// ---------------------------------------------------------------------
+
+// A sessão corrente é a carga da memória; a semeadura só roda em cold start
+// (`isExecuted` evita ler um nó que não executou neste turno). O texto do lead
+// é o mesmo buffer que vira `userMessage` do agente.
+const buildClassifierInputNode = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: entrada do classificador",
+    position: [7430, 300],
+    parameters: {
+      mode: "runOnceForAllItems",
+      language: "javaScript",
+      jsCode:
+        "/**\n * Opt-out em linguagem natural (lote-13 — design.md, módulo\n * `n8n/src/opt-out-intent.mjs`; spec.md OPTMSG-01, OPTREG-01, OPTAMB-01).\n * Funções puras, sem I/O, sem dependências — rodam dentro de um Code node do\n * n8n. Este arquivo inteiro entra na identidade do classificador\n * (`scripts/opt-out-measurement.ts`): mudar qualquer texto daqui exige nova\n * medição aprovada.\n */\n\n/** Confirmação única dos dois caminhos de opt-out (OPTMSG-01 AC1, AC2). */\nconst OPT_OUT_CONFIRMATION =\n  \"Pronto, registramos seu pedido. Você não vai mais receber mensagens nossas por este número. Até mais!\";\n\n/**\n * Falha do registro por linguagem natural (OPTREG-01 AC7): orienta a palavra\n * exata sem afirmar que as mensagens pararam (AC10).\n */\nconst OPT_OUT_REGISTRATION_FAILED =\n  \"Não consegui registrar seu pedido agora. Para encerrar, responda com a palavra sair, sozinha.\";\n\n/**\n * @param {unknown} value\n * @returns {value is string}\n */\nfunction isNonEmptyText(value) {\n  return typeof value === \"string\" && value.trim() !== \"\";\n}\n\n/**\n * Última mensagem de autoria do agente na sessão corrente.\n *\n * `loaded` é a saída de `Chat Memory Manager: carregar sessão`\n * (`{ messages, messagesCount }`, formato registrado na T1, execução 2598):\n * cada elemento agrupa mensagens consecutivas por autoria; `ai` string é a\n * fala do agente, `ai: []` é uma chamada de tool sem texto (ignorada),\n * `human` é o lead e `tool` é o resultado de tool.\n *\n * `seeded` são os itens de `Code: selecionar mensagens de semeadura`:\n * `{ type: 'user'|'ai', message, nadaParaSemear: false }` ou o sentinela\n * `{ nadaParaSemear: true }`.\n *\n * Precedência: uma carga não vazia É a sessão corrente, e a semeadura é\n * ignorada (mesmo que a carga não tenha fala do agente). A semeadura só vale\n * quando a carga veio vazia. Ausente (undefined/null) conta como vazio.\n * Sessão vazia → `null` (é o caso do \"sim\" depois do corte de 12h).\n *\n * @param {{ loaded?: { messages?: unknown } | null, seeded?: unknown }} input\n * @returns {string | null}\n */\nfunction lastAgentMessage({ loaded, seeded } = {}) {\n  const messages = Array.isArray(loaded?.messages) ? loaded.messages : [];\n  if (messages.length > 0) {\n    for (let i = messages.length - 1; i >= 0; i--) {\n      const ai = messages[i]?.ai;\n      if (isNonEmptyText(ai)) return ai;\n    }\n    return null;\n  }\n\n  const items = Array.isArray(seeded) ? seeded : [];\n  for (let i = items.length - 1; i >= 0; i--) {\n    const item = items[i];\n    if (item?.nadaParaSemear === true) continue;\n    if (item?.type === \"ai\" && isNonEmptyText(item.message)) return item.message;\n  }\n  return null;\n}\n\n/**\n * Texto que o classificador lê (OPTREG-01 AC2: só a mensagem do turno e a\n * última mensagem enviada). `userMessage` aceita o texto pronto ou a lista de\n * textos do buffer do turno, unida por quebra de linha, como o `userMessage`\n * do agente (`principal.ts`, `buffer.map((m) => m.text).join('\\n')`).\n *\n * @param {{ lastAgentMessage?: string | null, userMessage?: string | string[] | null }} input\n * @returns {string}\n */\nfunction buildClassifierInput({ lastAgentMessage, userMessage } = {}) {\n  const last = isNonEmptyText(lastAgentMessage) ? lastAgentMessage : \"(nenhuma)\";\n  const text = Array.isArray(userMessage) ? userMessage.join(\"\\n\") : (userMessage ?? \"\");\n  return `Última mensagem enviada ao lead: ${last}\\nMensagem do lead: ${text}`;\n}" +
+        "\n\n" +
+        "const loaded = $('Chat Memory Manager: carregar sessão').first().json;\n" +
+        "const seedNode = $('Code: selecionar mensagens de semeadura');\n" +
+        "const seeded = seedNode.isExecuted ? seedNode.all().map((item) => item.json) : [];\n" +
+        "const buffer = $('Code: contexto do lead').first().json.bufferArray || [];\n" +
+        "const classifierInput = buildClassifierInput({ lastAgentMessage: lastAgentMessage({ loaded, seeded }), userMessage: buffer.map((m) => m.text) });\n" +
+        "return [{ json: { classifierInput } }];\n",
+    },
+  },
+  output: [{ classifierInput: "Última mensagem enviada ao lead: (nenhuma)\nMensagem do lead: Oi, vi o anúncio do apartamento" }],
+});
+
+// Parâmetros congelados na T2 (design.md, Tech Decisions), idênticos aos de
+// `medicao-opt-out.ts` byte a byte: a medição aprovada vale para este nó só
+// enquanto a identidade dos dois for a mesma (`principal-classificador.test.ts`).
+// Nó de modelo próprio, com o mesmo snapshot do agente (AD-026); o
+// `OpenAI Chat Model` do agente não muda.
+const classifierModel = languageModel({
+  type: "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+  version: 1.3,
+  config: {
+    name: "OpenAI Chat Model (classificador)",
+    position: [7560, 100],
+    parameters: {
+      model: {
+        __rl: true,
+        mode: "list",
+        value: "gpt-5.4-nano-2026-03-17",
+        cachedResultName: "gpt-5.4-nano-2026-03-17",
+      },
+      options: { reasoningEffort: "low", timeout: 20000 },
+    },
+    credentials: { openAiApi: newCredential("OpenAI account") },
+  },
+});
+
+const optOutClassifier = node({
+  type: "@n8n/n8n-nodes-langchain.textClassifier",
+  version: 1.1,
+  config: {
+    name: "Classificador: opt-out",
+    position: [7560, 300],
+    onError: "continueErrorOutput",
+    parameters: {
+      inputText: "={{ $json.classifierInput }}",
+      categories: {
+        categories: [
+          {
+            category: "fora",
+            description:
+              'A mensagem não pede para parar de receber mensagens. Inclui desinteresse num imóvel específico e usos de "parar" ou "sair" que se referem a outra coisa (fotos, áudios, o aluguel atual, o apartamento, a enrolação).',
+          },
+          {
+            category: "ambigua",
+            description:
+              'Desinteresse geral sem pedido de parar de receber mensagens (por exemplo, "não tenho interesse, obrigado"), ou aviso de número errado ou pessoa errada. Também vale para uma resposta ambígua quando a última mensagem enviada perguntou se o lead quer parar de receber mensagens.',
+          },
+          {
+            category: "explicita",
+            description:
+              "O lead pede para parar de receber mensagens, para não ser mais contatado, para sair da lista ou para não mandarem mais nada. Também vale para uma resposta afirmativa quando a última mensagem enviada perguntou se ele quer parar de receber mensagens.",
+          },
+        ],
+      },
+      options: {
+        multiClass: false,
+        fallback: "other",
+        systemPromptTemplate:
+          'Você classifica a mensagem de um lead de imobiliária no WhatsApp quanto a um pedido para parar de receber mensagens. Classifique o texto do usuário em uma destas categorias: {categories}. Use a última mensagem enviada ao lead só para entender respostas curtas, como "sim" ou "não". Regra de desempate: na dúvida entre explicita e ambigua, escolha ambigua; na dúvida entre ambigua e fora, escolha fora. Não explique e responda somente o JSON, seguindo as instruções de formato abaixo.',
+        enableAutoFixing: true,
+      },
+    },
+    subnodes: { model: classifierModel },
+  },
+  output: [{ classifierInput: "..." }],
+});
+
+// Recebe `fora` (saída 0), `other` (3) e erro (4). Um item por turno.
+const routeFora = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: rota fora",
+    position: [7690, 200],
+    parameters: {
+      mode: "runOnceForAllItems",
+      language: "javaScript",
+      jsCode: "return [{ json: { optOutAmbiguo: false } }];\n",
+    },
+  },
+  output: [{ optOutAmbiguo: false }],
+});
+
+const routeAmbigua = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: rota ambígua",
+    position: [7690, 400],
+    parameters: {
+      mode: "runOnceForAllItems",
+      language: "javaScript",
+      jsCode: "return [{ json: { optOutAmbiguo: true } }];\n",
+    },
+  },
+  output: [{ optOutAmbiguo: true }],
+});
+
+// ---------------------------------------------------------------------
 // 11. Nó AI Agent (T11) — modelo, memória (T10) e as 5 tools. QLF-02 (não
 //     atribuída a nenhuma task deste lote — gap real do tasks.md, ver nota
 //     do Handoff) é fechada aqui, no único ponto do fluxo onde "qual campo
@@ -993,7 +1125,10 @@ const buildAgentSystemMessage = node({
         // quando `wasExpired` já zera a lista. É o sinal que faltava para o
         // agente cumprimentar e dizer quem é antes de perguntar.
         "const firstTurn = perguntados.length === 0;\n" +
-        "const systemMessage = buildSystemMessage({ settings, phase, perguntados: updatedPerguntados, businessHours, now, meetingAt, firstTurn });\n" +
+        // lote-13 (T10): o único campo que chega por `$json` é a rota do
+        // classificador (`Code: rota fora` ou `Code: rota ambígua`); todo o
+        // resto continua lido dos ancestrais pelo nome.
+        "const systemMessage = buildSystemMessage({ settings, phase, perguntados: updatedPerguntados, businessHours, now, meetingAt, firstTurn, optOutAmbiguo: $json.optOutAmbiguo === true });\n" +
         "const buffer = $('Code: contexto do lead').first().json.bufferArray || [];\n" +
         "const userMessage = buffer.map((m) => m.text).join('\\n');\n" +
         "return [{ json: { systemMessage, userMessage, phase, perguntadosJson: JSON.stringify(updatedPerguntados) } }];\n",
@@ -1889,8 +2024,20 @@ const afterLoadMemory = loadMemory.to(
 // T11: `memoryReadyCheckpoint` (T10's dangling tail) agora se estende até o
 // nó AI Agent e a convergência final — única extensão feita aqui, nunca
 // uma reconexão do zero (mesma disciplina de T9/T10).
-memoryReadyCheckpoint.to(
-  buildAgentSystemMessage.to(
+//
+// lote-13 (T10): entre o checkpoint e o system message entra o classificador
+// de opt-out. `agentTurnWired` é o alvo único das duas rotas que seguem para o
+// agente (fan-in, mesma regra do topo desta seção). A saída de erro do
+// classificador é a de índice 4 e é ligada com `.output(4)`, nunca com
+// `.onError()`: o SDK liga `.onError()` à saída 1, que aqui é `ambigua`
+// (achado da T2). A saída 2 (`explicita`) entra no ramo de opt-out na T11.
+memoryReadyCheckpoint.to(buildClassifierInputNode.to(optOutClassifier));
+optOutClassifier.output(0).to(routeFora);
+optOutClassifier.output(1).to(routeAmbigua);
+optOutClassifier.output(3).to(routeFora);
+optOutClassifier.output(4).to(routeFora);
+
+const agentTurnWired = buildAgentSystemMessage.to(
     persistPerguntados.to(
       aiAgent.to(
         // `clearAfterAgentTurnWired` é o alvo ÚNICO das duas saídas do IF
@@ -1916,8 +2063,9 @@ memoryReadyCheckpoint.to(
         )
       )
     )
-  )
-);
+  );
+routeFora.to(agentTurnWired);
+routeAmbigua.to(agentTurnWired);
 
 const conversaBranch = getSettings.to(
   checkSessionExpired.to(
