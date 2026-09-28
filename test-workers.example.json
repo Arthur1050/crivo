@@ -1,0 +1,6 @@
+{
+  "endpoints": [
+    "ep-exemplo-worker-1",
+    "ep-exemplo-worker-2"
+  ]
+}

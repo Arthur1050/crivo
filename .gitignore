@@ -50,3 +50,6 @@ next-env.d.ts
 .claude
 .agents
 /.swc
+
+# endpoints das branches do Neon por worker de teste (modelo: test-workers.example.json)
+test-workers.local.json
