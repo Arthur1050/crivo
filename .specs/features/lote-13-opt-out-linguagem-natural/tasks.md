@@ -327,16 +327,18 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 **Done when:**
 
-- [ ] Teste estrutural: nenhum nó HTTP para o CRM, nenhum nó WhatsApp, nenhuma memória Postgres (OPTMED-01 AC4).
-- [ ] Teste estrutural: cada saída do classificador (as três categorias, `other` e erro) chega ao Merge — um teste por aresta (L-026).
-- [ ] Teste estrutural: o modelo do nó é `gpt-5.4-nano-2026-03-17`, com `reasoningEffort: "low"`.
-- [ ] `validate_workflow` do MCP sem erro sobre `n8n/generated/medicao-opt-out.ts`.
-- [ ] `node scripts/n8n-inline.mjs` roda e o arquivo gerado entra no mesmo commit.
-- [ ] Gate Full passa.
+- [x] Teste estrutural: nenhum nó HTTP para o CRM, nenhum nó WhatsApp, nenhuma memória Postgres (OPTMED-01 AC4).
+- [x] Teste estrutural: cada saída do classificador (as três categorias, `other` e erro) chega ao Merge — um teste por aresta (L-026).
+- [x] Teste estrutural: o modelo do nó é `gpt-5.4-nano-2026-03-17`, com `reasoningEffort: "low"`.
+- [x] `validate_workflow` do MCP sem erro sobre `n8n/generated/medicao-opt-out.ts`.
+- [x] `node scripts/n8n-inline.mjs` roda e o arquivo gerado entra no mesmo commit.
+- [x] Gate Full passa.
 
 **Tests:** unit
 **Gate:** Full
 **Commit:** `feat(n8n): add opt-out classifier measurement workflow`
+**Status:** ✅ Concluída (2026-09-28)
+**Gate:** Full — `node scripts/n8n-inline.mjs` + `npm test`: 1ª rodada 123 arquivos / 2.010 testes, 1 falha (timeout conhecido de `cron-expire-documents`, verde isolado: 9/9); 2ª rodada 123 / 2.010, 0 falhas. `medicao-opt-out.test.ts`: 34 testes. `validate_workflow` do gerado: válido, 11 nós. Entrada do webhook: `{ corpus: <opt-out-corpus.json>, repeticoes?: 3 }`; resposta: relatório de `scoreMeasurement` + `repeticoes`, `execucoes`, `categorias`. `n8n/generated/principal.ts` e `benchmark-contexto.ts` regenerados (defasados desde a T5).
 
 #### T10: Inserir o classificador na rota conversa do agente
 
