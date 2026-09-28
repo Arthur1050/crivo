@@ -278,15 +278,17 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 **Done when:**
 
-- [ ] O hash é o mesmo para fonte com CRLF e com LF.
-- [ ] O hash muda quando muda, cada um com asserção própria: uma categoria, uma descrição, o `systemPromptTemplate`, o modelo, as `options` do nó de modelo e o fonte de `opt-out-intent.mjs` (OPTMED-01 AC8).
-- [ ] O hash não muda com a posição do nó no canvas.
-- [ ] Sem nó `Classificador: opt-out` no JSON, a função lança erro.
-- [ ] Gate Quick passa.
+- [x] O hash é o mesmo para fonte com CRLF e com LF.
+- [x] O hash muda quando muda, cada um com asserção própria: uma categoria, uma descrição, o `systemPromptTemplate`, o modelo, as `options` do nó de modelo e o fonte de `opt-out-intent.mjs` (OPTMED-01 AC8).
+- [x] O hash não muda com a posição do nó no canvas.
+- [x] Sem nó `Classificador: opt-out` no JSON, a função lança erro.
+- [x] Gate Quick passa.
 
 **Tests:** unit
 **Gate:** Quick
 **Commit:** `feat(scripts): add opt-out classifier identity and measurement stamp`
+**Status:** ✅ Concluída (2026-09-27)
+**Gate:** Quick — `npx vitest run scripts/__tests__/opt-out-measurement.test.ts`: 1 arquivo / 21 testes, 0 falhas. `identity` sobre o `principal.ts` atual recusa com "Nó \"Classificador: opt-out\" não encontrado" (o nó entra na T10). Inclui a correção da anotação de tipo `Case` em `system-message-opt-out-ambiguo.test.ts` (T5), sem mudar asserção, para não somar erros de `tsc`.
 
 ### Phase 3: Workflows como código
 

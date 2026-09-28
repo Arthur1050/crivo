@@ -11,7 +11,7 @@ import { OPT_OUT_AMBIGUOUS_INSTRUCTION, buildSystemMessage } from "../system-mes
  * fixas. Com `optOutAmbiguo` ausente o texto tem de ser byte a byte o mesmo:
  * `benchmark-contexto.ts` inlina este módulo sem o parâmetro novo.
  */
-type Case = { nome: string; input: Parameters<typeof buildSystemMessage>[0]; esperado: string };
+type Case = { nome: string; input: NonNullable<Parameters<typeof buildSystemMessage>[0]>; esperado: string };
 const baseline: { casos: Case[] } = JSON.parse(readFileSync("n8n/fixtures/system-message-baseline.json", "utf8"));
 
 const GUIDANCE = /basta ele responder com a palavra sair — sozinha, sem mais nada/;
