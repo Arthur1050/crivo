@@ -115,15 +115,27 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 **Done when:**
 
-- [ ] O id da execução lida foi conferido por `get_execution` e registrado na seção Evidence desta tarefa (L-011).
-- [ ] A fixture reproduz exatamente as chaves e a estrutura observadas (incluindo como uma mensagem de agente e uma de lead aparecem) e troca todo texto por conteúdo sintético; nenhum telefone, nome ou texto real.
-- [ ] A fixture também inclui um exemplo dos itens de `Code: selecionar mensagens de semeadura` (`{ type, message, nadaParaSemear }`), lido do código em `principal.ts:837-883`.
-- [ ] Se o formato contradisser o `design.md` (por exemplo, sem autoria distinguível), a execução para e o desvio vai ao usuário antes da T3.
-- [ ] Gate Build passa sem mudança na contagem de testes.
+- [x] O id da execução lida foi conferido por `get_execution` e registrado na seção Evidence desta tarefa (L-011).
+- [x] A fixture reproduz exatamente as chaves e a estrutura observadas (incluindo como uma mensagem de agente e uma de lead aparecem) e troca todo texto por conteúdo sintético; nenhum telefone, nome ou texto real.
+- [x] A fixture também inclui um exemplo dos itens de `Code: selecionar mensagens de semeadura` (`{ type, message, nadaParaSemear }`), lido do código em `principal.ts:837-883`.
+- [x] Se o formato contradisser o `design.md` (por exemplo, sem autoria distinguível), a execução para e o desvio vai ao usuário antes da T3.
+- [x] Gate Build passa sem mudança na contagem de testes.
 
 **Tests:** none
 **Gate:** Build
 **Commit:** `test(n8n): capture memory session load shape fixture`
+
+**Status:** ✅ Concluída (2026-09-27)
+
+**Evidence:**
+
+- Execução **2598** do `crivo-agente-principal` (`0B1nqjODu7xuYYKF`), `status: success`, modo `webhook`, 2026-09-25T22:27:28Z, conferida por `get_execution` com `includeData` restrito a `Chat Memory Manager: carregar sessão`. Saída: `{ messages: [...8 elementos], messagesCount: 8 }`.
+- Formato observado: cada elemento de `messages` agrupa mensagens consecutivas **por autoria**, com as chaves na ordem de inserção. `human` (string) é o lead; `ai` string é a fala do agente; `ai: []` é a mensagem do agente que só chamou tool (sem texto); `tool` é o resultado da tool serializado como string. Exemplos reais de chaves: `{human, ai: [], tool}`, `{ai: "<texto>", human}`, `{ai: [], tool}`, `{ai: "<texto>"}` (último elemento, agente por último).
+- **Autoria distinguível**: sim. Não contradiz o `design.md`. `lastAgentMessage` deve percorrer os elementos do fim para o começo e devolver o primeiro `ai` que seja string não vazia, ignorando `ai: []`.
+- `messagesCount` conta elementos agrupados, não mensagens individuais.
+- Observação (não bloqueante): o `ai` gravado na memória é a saída final do agente; o texto efetivamente enviado ao lead sai pela tool `responder_lead`. Nesta execução a memória guarda a fala do agente como texto, que é o que o classificador vai ler.
+- Fixture: `n8n/fixtures/memory-load-sample.json` (`loaded`, `loadedEmpty`, `seeded`, `seededNothing`), textos sintéticos, sem telefone, nome real ou id real (o `leadId` foi trocado por um UUID fictício). Os itens de semeadura seguem `principal.ts` (`{ type: 'user'|'ai', message, nadaParaSemear: false }` e o sentinela `{ nadaParaSemear: true }`).
+- Gate Build: `npm test` 117 arquivos / 1.878 testes, 0 falhas, 0 skips (igual ao baseline); `npm run lint` 0 erros (7 avisos preexistentes); `npm run build` ok.
 
 #### T2: Confirmar roteamento de erro e formato do Text Classifier
 

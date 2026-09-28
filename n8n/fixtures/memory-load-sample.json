@@ -1,0 +1,44 @@
+{
+  "_origem": "Formato real de 'Chat Memory Manager: carregar sessão' (mode load, simplifyOutput, groupMessages: true) lido da execução 2598 do crivo-agente-principal (0B1nqjODu7xuYYKF), conferida por get_execution em 2026-09-27. Chaves, tipos e ordem das chaves reproduzidos; todo texto trocado por conteúdo sintético. Cada elemento agrupa mensagens consecutivas por autoria na ordem de inserção: 'human' é o lead, 'ai' string é a fala do agente, 'ai' [] é a chamada de tool do agente (sem texto) e 'tool' é o resultado da tool serializado como string. Os itens de semeadura vêm do código de 'Code: selecionar mensagens de semeadura' (principal.ts).",
+  "loaded": {
+    "messages": [
+      {
+        "human": "oi, tudo bem?",
+        "ai": [],
+        "tool": "[{\"ok\":true,\"leadId\":\"00000000-0000-4000-8000-000000000001\"}]"
+      },
+      {
+        "ai": "Oi! Tudo bem sim. Eu sou o Lucas, da imobiliária. Me conta qual imóvel você procura.",
+        "human": "Qual é a taxa do salão de festas do Residencial Exemplo?"
+      },
+      {
+        "ai": [],
+        "tool": "[{\"ok\":true,\"leadId\":\"00000000-0000-4000-8000-000000000001\"}]"
+      },
+      {
+        "ai": "Não tenho essa taxa aqui. Se quiser, eu passo pro corretor confirmar com o condomínio.",
+        "human": "Vocês estão com desconto?"
+      },
+      {
+        "ai": [],
+        "tool": "[{\"ok\":true,\"leadId\":\"00000000-0000-4000-8000-000000000001\"}]"
+      },
+      {
+        "ai": "Não tenho essa informação de desconto por aqui. Qual imóvel você viu com esse desconto?"
+      }
+    ],
+    "messagesCount": 6
+  },
+  "loadedEmpty": {
+    "messages": [],
+    "messagesCount": 0
+  },
+  "seeded": [
+    { "type": "user", "message": "Oi, vi o anúncio do apartamento", "nadaParaSemear": false },
+    { "type": "ai", "message": "Oi! Eu sou o Lucas, da imobiliária. Qual região você procura?", "nadaParaSemear": false },
+    { "type": "user", "message": "Centro", "nadaParaSemear": false }
+  ],
+  "seededNothing": [
+    { "nadaParaSemear": true }
+  ]
+}
