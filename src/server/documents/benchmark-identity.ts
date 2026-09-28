@@ -27,11 +27,16 @@ function sha256(text: string) {
   return createHash("sha256").update(lf(text)).digest("hex");
 }
 
-/** Id do modelo do nó `lmChatOpenAi` do agente: o snapshot datado. */
+/**
+ * Id do modelo do nó do agente (`name: "OpenAI Chat Model"`): o snapshot
+ * datado. Ancorado no nome, não no primeiro `lmChatOpenAi` do arquivo: desde o
+ * lote-13 o classificador de opt-out tem o seu próprio nó de modelo.
+ */
 export function extractModelId(principalSource: string): string {
-  const at = principalSource.indexOf("@n8n/n8n-nodes-langchain.lmChatOpenAi");
-  const match = principalSource.slice(at).match(/value:\s*"([^"]+)"/);
-  if (at < 0 || !match) throw new Error("Modelo do agente não encontrado em principal.ts.");
+  const at = principalSource.indexOf('name: "OpenAI Chat Model"');
+  const end = at < 0 ? -1 : principalSource.indexOf("\n});", at);
+  const match = at < 0 ? null : principalSource.slice(at, end < 0 ? undefined : end).match(/value:\s*"([^"]+)"/);
+  if (!match) throw new Error("Modelo do agente não encontrado em principal.ts.");
   return match[1];
 }
 

@@ -256,14 +256,16 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 **Done when:**
 
-- [ ] Com uma fonte que tem um `lmChatOpenAi` de outro modelo **antes** do nó do agente, `extractModelId` devolve o modelo do agente (teste de regressão que falha na implementação antiga).
-- [ ] Sem o nó `OpenAI Chat Model`, a função lança erro.
-- [ ] A identidade derivada do `principal.ts` atual não muda (mesmo `modelId`).
-- [ ] Gate Quick passa com os testes existentes intactos.
+- [x] Com uma fonte que tem um `lmChatOpenAi` de outro modelo **antes** do nó do agente, `extractModelId` devolve o modelo do agente (teste de regressão que falha na implementação antiga).
+- [x] Sem o nó `OpenAI Chat Model`, a função lança erro.
+- [x] A identidade derivada do `principal.ts` atual não muda (mesmo `modelId`).
+- [x] Gate Quick passa com os testes existentes intactos.
 
 **Tests:** unit
 **Gate:** Quick
 **Commit:** `fix(documents): anchor benchmark model id on the agent node`
+**Status:** ✅ Concluída (2026-09-27)
+**Gate:** Quick — `npx vitest run src/server/documents/__tests__/benchmark-identity.test.ts`: 1 arquivo / 10 testes (7 existentes, sem alteração, + 3 novos), 0 falhas. Os 2 testes de regressão falharam na implementação antiga antes da correção.
 
 #### T7: Criar a identidade do classificador e o script de medição
 

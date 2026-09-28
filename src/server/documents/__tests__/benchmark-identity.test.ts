@@ -71,3 +71,38 @@ describe("benchmark identity (lote-12 T34)", () => {
     expect(() => extractModelId("export default {}")).toThrow(/Modelo/);
   });
 });
+
+describe("extractModelId ancorado no nó do agente (lote-13 T6)", () => {
+  // Um segundo `lmChatOpenAi` (o do classificador de opt-out) entra no mesmo
+  // arquivo. O modelo que conta para o teto de contexto é o do agente.
+  const classifierModel = [
+    "const classifierModel = languageModel({",
+    '  type: "@n8n/n8n-nodes-langchain.lmChatOpenAi",',
+    "  version: 1.3,",
+    "  config: {",
+    '    name: "OpenAI Chat Model (classificador)",',
+    "    parameters: {",
+    '      model: { __rl: true, mode: "list", value: "gpt-outro-modelo", cachedResultName: "gpt-outro-modelo" },',
+    "    },",
+    "  },",
+    "});",
+    "",
+  ].join("\n");
+
+  it("com outro lmChatOpenAi ANTES do nó do agente, devolve o modelo do agente", () => {
+    const anchor = "const agentModel = languageModel({";
+    expect(principal).toContain(anchor);
+    const source = principal.replace(anchor, `${classifierModel}${anchor}`);
+    expect(source.indexOf("gpt-outro-modelo")).toBeLessThan(source.indexOf('name: "OpenAI Chat Model"'));
+    expect(extractModelId(source)).toBe("gpt-5.4-nano-2026-03-17");
+  });
+
+  it("sem o nó OpenAI Chat Model, lança erro mesmo havendo outro lmChatOpenAi", () => {
+    expect(() => extractModelId(classifierModel)).toThrow(/Modelo/);
+  });
+
+  it("a identidade derivada do principal.ts atual mantém o mesmo modelId", () => {
+    const identity = deriveBenchmarkIdentity({ principalSource: principal, systemMessageSources: modules, workflowVersion: "v1" });
+    expect(identity.modelId).toBe("gpt-5.4-nano-2026-03-17");
+  });
+});
