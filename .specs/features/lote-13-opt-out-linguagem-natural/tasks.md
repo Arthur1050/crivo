@@ -186,16 +186,18 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 **Done when:**
 
-- [ ] `OPT_OUT_CONFIRMATION` é afirmado byte a byte igual a "Pronto, registramos seu pedido. Você não vai mais receber mensagens nossas por este número. Até mais!" (OPTMSG-01 AC2, L-037).
-- [ ] Um teste afirma que a confirmação não contém "chamar novamente" nem "mudar de ideia".
-- [ ] `OPT_OUT_REGISTRATION_FAILED` é afirmado igual ao texto do design e contém a palavra `sair`; um teste afirma que ele não contém afirmação de que as mensagens pararam (OPTREG-01 AC10).
-- [ ] `lastAgentMessage` usa a fixture da T1 e cobre: sessão carregada com agente por último; lead por último depois de mensagem do agente; só semeadura; sessão vazia → `null` (edge case do "sim" pós-12h).
-- [ ] `buildClassifierInput` cobre: com e sem última mensagem (`(nenhuma)`), e várias mensagens do buffer unidas por quebra de linha.
-- [ ] Gate Quick passa; contagem registrada.
+- [x] `OPT_OUT_CONFIRMATION` é afirmado byte a byte igual a "Pronto, registramos seu pedido. Você não vai mais receber mensagens nossas por este número. Até mais!" (OPTMSG-01 AC2, L-037).
+- [x] Um teste afirma que a confirmação não contém "chamar novamente" nem "mudar de ideia".
+- [x] `OPT_OUT_REGISTRATION_FAILED` é afirmado igual ao texto do design e contém a palavra `sair`; um teste afirma que ele não contém afirmação de que as mensagens pararam (OPTREG-01 AC10).
+- [x] `lastAgentMessage` usa a fixture da T1 e cobre: sessão carregada com agente por último; lead por último depois de mensagem do agente; só semeadura; sessão vazia → `null` (edge case do "sim" pós-12h).
+- [x] `buildClassifierInput` cobre: com e sem última mensagem (`(nenhuma)`), e várias mensagens do buffer unidas por quebra de linha.
+- [x] Gate Quick passa; contagem registrada.
 
 **Tests:** unit
 **Gate:** Quick
 **Commit:** `feat(n8n): add natural language opt-out intent module`
+**Status:** ✅ Concluída (2026-09-27)
+**Gate:** Quick — `npx vitest run n8n/src/__tests__/opt-out-intent.test.ts`: 1 arquivo / 23 testes, 0 falhas (arquivo novo; nenhum teste existente tocado).
 
 #### T4: Criar a pontuação da medição
 
