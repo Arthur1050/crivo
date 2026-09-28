@@ -578,15 +578,74 @@ const finalizeOptOut = node({
     parameters: {
       mode: "runOnceForAllItems",
       language: "javaScript",
+      // lote-13 (T11, OPTMSG-01): este nó serve os DOIS caminhos de opt-out
+      // (palavra-chave e linguagem natural), por isso lê só `$('Code: gate')`.
+      // O texto vem de `opt-out-intent.mjs` e não promete retomada: nenhum
+      // caminho do sistema reativa um lead descadastrado.
       jsCode:
+        '__INLINE(opt-out-intent.mjs)__' +
+        "\n\n" +
         "const ctx = $('Code: gate').first().json;\n" +
         // PER-02 AC4: rota de resposta fixa usa o mesmo caminho de envio das
         // demais — sempre `mensagens` (array de 1 item aqui).
-        "const mensagens = ['Você pediu para não receber mais mensagens automáticas. A partir de agora, não vamos mais te contatar por aqui. Se mudar de ideia, é só nos chamar novamente. Até mais!'];\n" +
+        "const mensagens = [OPT_OUT_CONFIRMATION];\n" +
         "return [{ json: { mensagens, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, tenantSlug: ctx.tenantSlug, leadId: ctx.id, fase: 'encerrada' } }];\n",
     },
   },
   output: [{ mensagens: ["confirmação de opt-out"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "encerrada" }],
+});
+
+// lote-13 (T11, OPTREG-01): registro do opt-out pedido em linguagem natural
+// (saída `explicita` do classificador). Mesmos parâmetros do nó da
+// palavra-chave (lead e tenant de `Code: gate`, nunca do modelo), mais uma
+// saída de erro: depois das 3 tentativas, a falha orienta a palavra `sair` em
+// vez de parar o turno (AC7). O nó da palavra-chave fica como estava
+// (OPTKEY-01 AC2): a falha dele continua indo para `crivo-agente-erros`.
+const postOptOutNatural = node({
+  type: "n8n-nodes-base.httpRequest",
+  version: 4.4,
+  config: {
+    name: "HTTP: POST /leads/{id}/opt-out (linguagem natural)",
+    position: [7820, 100],
+    retryOnFail: true,
+    maxTries: 3,
+    waitBetweenTries: 2000,
+    onError: "continueErrorOutput",
+    parameters: {
+      method: "POST",
+      url: expr(`${CRM_BASE_URL}/leads/{{ $('Code: gate').first().json.id }}/opt-out`),
+      authentication: "genericCredentialType",
+      genericAuthType: "httpHeaderAuth",
+      sendHeaders: true,
+      headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }] },
+    },
+    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
+  },
+  output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", optedOutAt: "2026-08-05T12:11:00.000Z" }],
+});
+
+// Falha do registro natural (OPTREG-01 AC7, AC10): `optedOutAt` segue nulo e
+// o lead recebe UMA mensagem pedindo a palavra `sair`, sem afirmar que as
+// mensagens pararam. Mesmo formato que `Code: destinatário do envio fixo`
+// espera das outras rotas fixas; a fase segue a regra da rota de mídia.
+const guideSairOnFailure = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: orientar sair (falha do registro)",
+    position: [8080, 100],
+    parameters: {
+      mode: "runOnceForAllItems",
+      language: "javaScript",
+      jsCode:
+        '__INLINE(opt-out-intent.mjs)__' +
+        "\n\n" +
+        "const ctx = $('Code: gate').first().json;\n" +
+        "const mensagens = [OPT_OUT_REGISTRATION_FAILED];\n" +
+        "return [{ json: { mensagens, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, tenantSlug: ctx.tenantSlug, leadId: ctx.id, fase: ctx.fase || 'qualificando' } }];\n",
+    },
+  },
+  output: [{ mensagens: ["orientação para responder sair"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
 });
 
 // ---------------------------------------------------------------------
@@ -1982,13 +2041,16 @@ const fixedReplyWired = normalizeFixedReplyRecipient.to(
 
 const clearAfterAgentTurnWired = prepClearAfterAgentTurn.to(clearBufferAndFinalize);
 
-const optOutBranch = postOptOut.to(
-  finalizeOptOut.to(
-    purgeMemoryOnOptOut.to(
-      purgeConversaEstadoOnOptOut.to(restoreOptOutPayload.to(fixedReplyWired))
-    )
+// lote-13 (T11): `optOutTailWired` é o alvo ÚNICO dos dois registros de
+// opt-out (palavra-chave e linguagem natural) — fan-in, mesma regra do topo
+// desta seção. Por isso a confirmação, as purgas e o envio são os mesmos nós
+// nos dois caminhos (OPTMSG-01 AC1, OPTREG-01 AC3-AC5).
+const optOutTailWired = finalizeOptOut.to(
+  purgeMemoryOnOptOut.to(
+    purgeConversaEstadoOnOptOut.to(restoreOptOutPayload.to(fixedReplyWired))
   )
 );
+const optOutBranch = postOptOut.to(optOutTailWired);
 const somenteRegistrarBranch = finalizeSomenteRegistrar.to(clearBufferAndFinalize);
 const midiaBranch = finalizeMedia.to(fixedReplyWired);
 
@@ -2030,10 +2092,16 @@ const afterLoadMemory = loadMemory.to(
 // agente (fan-in, mesma regra do topo desta seção). A saída de erro do
 // classificador é a de índice 4 e é ligada com `.output(4)`, nunca com
 // `.onError()`: o SDK liga `.onError()` à saída 1, que aqui é `ambigua`
-// (achado da T2). A saída 2 (`explicita`) entra no ramo de opt-out na T11.
+// (achado da T2). A saída 2 (`explicita`) entra no ramo de opt-out (T11): o
+// sucesso do HTTP natural cai na mesma cauda da palavra-chave, e o erro (saída
+// 1 do HTTP, nó de duas saídas, onde `.onError()` é correto) orienta `sair`
+// pelo envio fixo.
 memoryReadyCheckpoint.to(buildClassifierInputNode.to(optOutClassifier));
 optOutClassifier.output(0).to(routeFora);
 optOutClassifier.output(1).to(routeAmbigua);
+optOutClassifier.output(2).to(postOptOutNatural);
+postOptOutNatural.to(optOutTailWired);
+postOptOutNatural.onError(guideSairOnFailure.to(fixedReplyWired));
 optOutClassifier.output(3).to(routeFora);
 optOutClassifier.output(4).to(routeFora);
 

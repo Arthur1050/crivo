@@ -33,9 +33,13 @@ const MEMORY_NODE = "Postgres Chat Memory";
  * classificador, modelo → classificador, saídas 0/1/3/4, as duas rotas →
  * system message; memória pronta → system message virou memória pronta →
  * entrada) → 67/84, medido por `principal.toJSON()` nesta janela.
+ * lote-13 (T11): +2 nós (HTTP de opt-out em linguagem natural, orientar sair)
+ * e +4 conexões (saída 2 do classificador → HTTP natural, HTTP natural →
+ * finalizar opt-out, erro do HTTP natural → orientar sair, orientar sair →
+ * destinatário do envio fixo) → 69/88, medido por `principal.toJSON()`.
  */
-const NOS_ESPERADOS = 67;
-const CONEXOES_ESPERADAS = 84;
+const NOS_ESPERADOS = 69;
+const CONEXOES_ESPERADAS = 88;
 
 const TOOLS = [
   "registrar_qualificacao",
@@ -138,7 +142,7 @@ describe("a troca de modelo não mexeu em mais nada do grafo (MOD-01 AC2)", () =
     );
   });
 
-  it("o grafo continua com 67 nós e 84 conexões — as contagens medidas nesta janela (T10 do lote-13)", () => {
+  it("o grafo continua com 69 nós e 88 conexões — as contagens medidas nesta janela (T11 do lote-13)", () => {
     expect(workflow.nodes).toHaveLength(NOS_ESPERADOS);
     expect(contarConexoes()).toBe(CONEXOES_ESPERADAS);
   });

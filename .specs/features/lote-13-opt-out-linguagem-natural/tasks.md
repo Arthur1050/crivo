@@ -376,17 +376,19 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 **Done when:**
 
-- [ ] Testes de aresta, um por aresta (L-026): `explicita` → HTTP natural; sucesso do HTTP natural → `Code: finalizar opt-out`; erro → `Code: orientar sair` → `Code: destinatário do envio fixo`.
-- [ ] Teste: a URL e o `X-Crivo-Tenant` do HTTP natural vêm de `$('Code: gate')`, iguais aos do nó da palavra-chave (OPTREG-01 AC1, AC2).
-- [ ] Teste: `Code: finalizar opt-out` tem exatamente dois predecessores (os dois HTTP de opt-out) e só ele produz a confirmação; o texto antigo não aparece em nenhum nó (OPTMSG-01 AC1).
-- [ ] Teste: as arestas do caminho da palavra-chave (`Switch: rota (gate)` saída 0 → HTTP da palavra-chave → finalizar → purgas → envio fixo) continuam idênticas, e o nó HTTP da palavra-chave não ganhou `onError` (OPTKEY-01 AC1, AC4).
-- [ ] `git diff` não toca `n8n/src/gate.mjs` nem `n8n/src/__tests__/gate.test.ts` (OPTKEY-01 AC2).
-- [ ] Contagens de `principal-modelo.test.ts` atualizadas pela medida; `node scripts/n8n-inline.mjs` roda; `validate_workflow` sem erro.
-- [ ] Gate Full passa.
+- [x] Testes de aresta, um por aresta (L-026): `explicita` → HTTP natural; sucesso do HTTP natural → `Code: finalizar opt-out`; erro → `Code: orientar sair` → `Code: destinatário do envio fixo`.
+- [x] Teste: a URL e o `X-Crivo-Tenant` do HTTP natural vêm de `$('Code: gate')`, iguais aos do nó da palavra-chave (OPTREG-01 AC1, AC2).
+- [x] Teste: `Code: finalizar opt-out` tem exatamente dois predecessores (os dois HTTP de opt-out) e só ele produz a confirmação; o texto antigo não aparece em nenhum nó (OPTMSG-01 AC1).
+- [x] Teste: as arestas do caminho da palavra-chave (`Switch: rota (gate)` saída 0 → HTTP da palavra-chave → finalizar → purgas → envio fixo) continuam idênticas, e o nó HTTP da palavra-chave não ganhou `onError` (OPTKEY-01 AC1, AC4).
+- [x] `git diff` não toca `n8n/src/gate.mjs` nem `n8n/src/__tests__/gate.test.ts` (OPTKEY-01 AC2).
+- [x] Contagens de `principal-modelo.test.ts` atualizadas pela medida; `node scripts/n8n-inline.mjs` roda; `validate_workflow` sem erro.
+- [x] Gate Full passa.
 
 **Tests:** unit
 **Gate:** Full
 **Commit:** `feat(n8n): register explicit natural language opt-out requests`
+**Status:** ✅ Concluída (2026-09-28)
+**Gate:** Full — `node scripts/n8n-inline.mjs` + `npm test`: 125 arquivos / 2.051 testes, 0 falhas. `principal-opt-out-natural.test.ts`: 19 testes. Contagens medidas 67/84 → 69/88. `validate_workflow` do gerado: válido, 69 nós (só os avisos `SUBNODE_NOT_CONNECTED` conhecidos). `gate.mjs` e `gate.test.ts` sem diff. Identidade do classificador inalterada.
 
 ### Phase 4: Medição conectada (portão de publicação)
 

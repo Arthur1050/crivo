@@ -578,15 +578,74 @@ const finalizeOptOut = node({
     parameters: {
       mode: "runOnceForAllItems",
       language: "javaScript",
+      // lote-13 (T11, OPTMSG-01): este nó serve os DOIS caminhos de opt-out
+      // (palavra-chave e linguagem natural), por isso lê só `$('Code: gate')`.
+      // O texto vem de `opt-out-intent.mjs` e não promete retomada: nenhum
+      // caminho do sistema reativa um lead descadastrado.
       jsCode:
+        "/**\n * Opt-out em linguagem natural (lote-13 — design.md, módulo\n * `n8n/src/opt-out-intent.mjs`; spec.md OPTMSG-01, OPTREG-01, OPTAMB-01).\n * Funções puras, sem I/O, sem dependências — rodam dentro de um Code node do\n * n8n. Este arquivo inteiro entra na identidade do classificador\n * (`scripts/opt-out-measurement.ts`): mudar qualquer texto daqui exige nova\n * medição aprovada.\n */\n\n/** Confirmação única dos dois caminhos de opt-out (OPTMSG-01 AC1, AC2). */\nconst OPT_OUT_CONFIRMATION =\n  \"Pronto, registramos seu pedido. Você não vai mais receber mensagens nossas por este número. Até mais!\";\n\n/**\n * Falha do registro por linguagem natural (OPTREG-01 AC7): orienta a palavra\n * exata sem afirmar que as mensagens pararam (AC10).\n */\nconst OPT_OUT_REGISTRATION_FAILED =\n  \"Não consegui registrar seu pedido agora. Para encerrar, responda com a palavra sair, sozinha.\";\n\n/**\n * @param {unknown} value\n * @returns {value is string}\n */\nfunction isNonEmptyText(value) {\n  return typeof value === \"string\" && value.trim() !== \"\";\n}\n\n/**\n * Última mensagem de autoria do agente na sessão corrente.\n *\n * `loaded` é a saída de `Chat Memory Manager: carregar sessão`\n * (`{ messages, messagesCount }`, formato registrado na T1, execução 2598):\n * cada elemento agrupa mensagens consecutivas por autoria; `ai` string é a\n * fala do agente, `ai: []` é uma chamada de tool sem texto (ignorada),\n * `human` é o lead e `tool` é o resultado de tool.\n *\n * `seeded` são os itens de `Code: selecionar mensagens de semeadura`:\n * `{ type: 'user'|'ai', message, nadaParaSemear: false }` ou o sentinela\n * `{ nadaParaSemear: true }`.\n *\n * Precedência: uma carga não vazia É a sessão corrente, e a semeadura é\n * ignorada (mesmo que a carga não tenha fala do agente). A semeadura só vale\n * quando a carga veio vazia. Ausente (undefined/null) conta como vazio.\n * Sessão vazia → `null` (é o caso do \"sim\" depois do corte de 12h).\n *\n * @param {{ loaded?: { messages?: unknown } | null, seeded?: unknown }} input\n * @returns {string | null}\n */\nfunction lastAgentMessage({ loaded, seeded } = {}) {\n  const messages = Array.isArray(loaded?.messages) ? loaded.messages : [];\n  if (messages.length > 0) {\n    for (let i = messages.length - 1; i >= 0; i--) {\n      const ai = messages[i]?.ai;\n      if (isNonEmptyText(ai)) return ai;\n    }\n    return null;\n  }\n\n  const items = Array.isArray(seeded) ? seeded : [];\n  for (let i = items.length - 1; i >= 0; i--) {\n    const item = items[i];\n    if (item?.nadaParaSemear === true) continue;\n    if (item?.type === \"ai\" && isNonEmptyText(item.message)) return item.message;\n  }\n  return null;\n}\n\n/**\n * Texto que o classificador lê (OPTREG-01 AC2: só a mensagem do turno e a\n * última mensagem enviada). `userMessage` aceita o texto pronto ou a lista de\n * textos do buffer do turno, unida por quebra de linha, como o `userMessage`\n * do agente (`principal.ts`, `buffer.map((m) => m.text).join('\\n')`).\n *\n * @param {{ lastAgentMessage?: string | null, userMessage?: string | string[] | null }} input\n * @returns {string}\n */\nfunction buildClassifierInput({ lastAgentMessage, userMessage } = {}) {\n  const last = isNonEmptyText(lastAgentMessage) ? lastAgentMessage : \"(nenhuma)\";\n  const text = Array.isArray(userMessage) ? userMessage.join(\"\\n\") : (userMessage ?? \"\");\n  return `Última mensagem enviada ao lead: ${last}\\nMensagem do lead: ${text}`;\n}" +
+        "\n\n" +
         "const ctx = $('Code: gate').first().json;\n" +
         // PER-02 AC4: rota de resposta fixa usa o mesmo caminho de envio das
         // demais — sempre `mensagens` (array de 1 item aqui).
-        "const mensagens = ['Você pediu para não receber mais mensagens automáticas. A partir de agora, não vamos mais te contatar por aqui. Se mudar de ideia, é só nos chamar novamente. Até mais!'];\n" +
+        "const mensagens = [OPT_OUT_CONFIRMATION];\n" +
         "return [{ json: { mensagens, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, tenantSlug: ctx.tenantSlug, leadId: ctx.id, fase: 'encerrada' } }];\n",
     },
   },
   output: [{ mensagens: ["confirmação de opt-out"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "encerrada" }],
+});
+
+// lote-13 (T11, OPTREG-01): registro do opt-out pedido em linguagem natural
+// (saída `explicita` do classificador). Mesmos parâmetros do nó da
+// palavra-chave (lead e tenant de `Code: gate`, nunca do modelo), mais uma
+// saída de erro: depois das 3 tentativas, a falha orienta a palavra `sair` em
+// vez de parar o turno (AC7). O nó da palavra-chave fica como estava
+// (OPTKEY-01 AC2): a falha dele continua indo para `crivo-agente-erros`.
+const postOptOutNatural = node({
+  type: "n8n-nodes-base.httpRequest",
+  version: 4.4,
+  config: {
+    name: "HTTP: POST /leads/{id}/opt-out (linguagem natural)",
+    position: [7820, 100],
+    retryOnFail: true,
+    maxTries: 3,
+    waitBetweenTries: 2000,
+    onError: "continueErrorOutput",
+    parameters: {
+      method: "POST",
+      url: expr(`${CRM_BASE_URL}/leads/{{ $('Code: gate').first().json.id }}/opt-out`),
+      authentication: "genericCredentialType",
+      genericAuthType: "httpHeaderAuth",
+      sendHeaders: true,
+      headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }] },
+    },
+    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
+  },
+  output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", optedOutAt: "2026-08-05T12:11:00.000Z" }],
+});
+
+// Falha do registro natural (OPTREG-01 AC7, AC10): `optedOutAt` segue nulo e
+// o lead recebe UMA mensagem pedindo a palavra `sair`, sem afirmar que as
+// mensagens pararam. Mesmo formato que `Code: destinatário do envio fixo`
+// espera das outras rotas fixas; a fase segue a regra da rota de mídia.
+const guideSairOnFailure = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: orientar sair (falha do registro)",
+    position: [8080, 100],
+    parameters: {
+      mode: "runOnceForAllItems",
+      language: "javaScript",
+      jsCode:
+        "/**\n * Opt-out em linguagem natural (lote-13 — design.md, módulo\n * `n8n/src/opt-out-intent.mjs`; spec.md OPTMSG-01, OPTREG-01, OPTAMB-01).\n * Funções puras, sem I/O, sem dependências — rodam dentro de um Code node do\n * n8n. Este arquivo inteiro entra na identidade do classificador\n * (`scripts/opt-out-measurement.ts`): mudar qualquer texto daqui exige nova\n * medição aprovada.\n */\n\n/** Confirmação única dos dois caminhos de opt-out (OPTMSG-01 AC1, AC2). */\nconst OPT_OUT_CONFIRMATION =\n  \"Pronto, registramos seu pedido. Você não vai mais receber mensagens nossas por este número. Até mais!\";\n\n/**\n * Falha do registro por linguagem natural (OPTREG-01 AC7): orienta a palavra\n * exata sem afirmar que as mensagens pararam (AC10).\n */\nconst OPT_OUT_REGISTRATION_FAILED =\n  \"Não consegui registrar seu pedido agora. Para encerrar, responda com a palavra sair, sozinha.\";\n\n/**\n * @param {unknown} value\n * @returns {value is string}\n */\nfunction isNonEmptyText(value) {\n  return typeof value === \"string\" && value.trim() !== \"\";\n}\n\n/**\n * Última mensagem de autoria do agente na sessão corrente.\n *\n * `loaded` é a saída de `Chat Memory Manager: carregar sessão`\n * (`{ messages, messagesCount }`, formato registrado na T1, execução 2598):\n * cada elemento agrupa mensagens consecutivas por autoria; `ai` string é a\n * fala do agente, `ai: []` é uma chamada de tool sem texto (ignorada),\n * `human` é o lead e `tool` é o resultado de tool.\n *\n * `seeded` são os itens de `Code: selecionar mensagens de semeadura`:\n * `{ type: 'user'|'ai', message, nadaParaSemear: false }` ou o sentinela\n * `{ nadaParaSemear: true }`.\n *\n * Precedência: uma carga não vazia É a sessão corrente, e a semeadura é\n * ignorada (mesmo que a carga não tenha fala do agente). A semeadura só vale\n * quando a carga veio vazia. Ausente (undefined/null) conta como vazio.\n * Sessão vazia → `null` (é o caso do \"sim\" depois do corte de 12h).\n *\n * @param {{ loaded?: { messages?: unknown } | null, seeded?: unknown }} input\n * @returns {string | null}\n */\nfunction lastAgentMessage({ loaded, seeded } = {}) {\n  const messages = Array.isArray(loaded?.messages) ? loaded.messages : [];\n  if (messages.length > 0) {\n    for (let i = messages.length - 1; i >= 0; i--) {\n      const ai = messages[i]?.ai;\n      if (isNonEmptyText(ai)) return ai;\n    }\n    return null;\n  }\n\n  const items = Array.isArray(seeded) ? seeded : [];\n  for (let i = items.length - 1; i >= 0; i--) {\n    const item = items[i];\n    if (item?.nadaParaSemear === true) continue;\n    if (item?.type === \"ai\" && isNonEmptyText(item.message)) return item.message;\n  }\n  return null;\n}\n\n/**\n * Texto que o classificador lê (OPTREG-01 AC2: só a mensagem do turno e a\n * última mensagem enviada). `userMessage` aceita o texto pronto ou a lista de\n * textos do buffer do turno, unida por quebra de linha, como o `userMessage`\n * do agente (`principal.ts`, `buffer.map((m) => m.text).join('\\n')`).\n *\n * @param {{ lastAgentMessage?: string | null, userMessage?: string | string[] | null }} input\n * @returns {string}\n */\nfunction buildClassifierInput({ lastAgentMessage, userMessage } = {}) {\n  const last = isNonEmptyText(lastAgentMessage) ? lastAgentMessage : \"(nenhuma)\";\n  const text = Array.isArray(userMessage) ? userMessage.join(\"\\n\") : (userMessage ?? \"\");\n  return `Última mensagem enviada ao lead: ${last}\\nMensagem do lead: ${text}`;\n}" +
+        "\n\n" +
+        "const ctx = $('Code: gate').first().json;\n" +
+        "const mensagens = [OPT_OUT_REGISTRATION_FAILED];\n" +
+        "return [{ json: { mensagens, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, tenantSlug: ctx.tenantSlug, leadId: ctx.id, fase: ctx.fase || 'qualificando' } }];\n",
+    },
+  },
+  output: [{ mensagens: ["orientação para responder sair"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
 });
 
 // ---------------------------------------------------------------------
@@ -1982,13 +2041,16 @@ const fixedReplyWired = normalizeFixedReplyRecipient.to(
 
 const clearAfterAgentTurnWired = prepClearAfterAgentTurn.to(clearBufferAndFinalize);
 
-const optOutBranch = postOptOut.to(
-  finalizeOptOut.to(
-    purgeMemoryOnOptOut.to(
-      purgeConversaEstadoOnOptOut.to(restoreOptOutPayload.to(fixedReplyWired))
-    )
+// lote-13 (T11): `optOutTailWired` é o alvo ÚNICO dos dois registros de
+// opt-out (palavra-chave e linguagem natural) — fan-in, mesma regra do topo
+// desta seção. Por isso a confirmação, as purgas e o envio são os mesmos nós
+// nos dois caminhos (OPTMSG-01 AC1, OPTREG-01 AC3-AC5).
+const optOutTailWired = finalizeOptOut.to(
+  purgeMemoryOnOptOut.to(
+    purgeConversaEstadoOnOptOut.to(restoreOptOutPayload.to(fixedReplyWired))
   )
 );
+const optOutBranch = postOptOut.to(optOutTailWired);
 const somenteRegistrarBranch = finalizeSomenteRegistrar.to(clearBufferAndFinalize);
 const midiaBranch = finalizeMedia.to(fixedReplyWired);
 
@@ -2030,10 +2092,16 @@ const afterLoadMemory = loadMemory.to(
 // agente (fan-in, mesma regra do topo desta seção). A saída de erro do
 // classificador é a de índice 4 e é ligada com `.output(4)`, nunca com
 // `.onError()`: o SDK liga `.onError()` à saída 1, que aqui é `ambigua`
-// (achado da T2). A saída 2 (`explicita`) entra no ramo de opt-out na T11.
+// (achado da T2). A saída 2 (`explicita`) entra no ramo de opt-out (T11): o
+// sucesso do HTTP natural cai na mesma cauda da palavra-chave, e o erro (saída
+// 1 do HTTP, nó de duas saídas, onde `.onError()` é correto) orienta `sair`
+// pelo envio fixo.
 memoryReadyCheckpoint.to(buildClassifierInputNode.to(optOutClassifier));
 optOutClassifier.output(0).to(routeFora);
 optOutClassifier.output(1).to(routeAmbigua);
+optOutClassifier.output(2).to(postOptOutNatural);
+postOptOutNatural.to(optOutTailWired);
+postOptOutNatural.onError(guideSairOnFailure.to(fixedReplyWired));
 optOutClassifier.output(3).to(routeFora);
 optOutClassifier.output(4).to(routeFora);
 
