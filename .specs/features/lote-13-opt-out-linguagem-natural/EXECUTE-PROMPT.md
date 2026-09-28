@@ -23,7 +23,7 @@ Nenhum commit pode conter `Co-Authored-By`, "Generated with Claude Code" ou qual
 5. Reconcilie o Handoff com a evidência real antes de editar: branch, `git status --porcelain`, últimos commits e marcações em `tasks.md`. Preserve qualquer mudança inesperada e pare se ela não puder ser atribuída ao planejamento deste lote.
 6. Rode o validador de tarefas da skill (tente `python3`, `python` e `py -3`, nessa ordem).
 7. O baseline documental já foi commitado na janela de planejamento (`docs(specs): approve lote 13 execution plan`, com os artefatos do Lote 13 e a AD-032 no `.specs/STATE.md`). Confirme que esse commit existe e que o working tree está limpo. Se houver qualquer mudança não commitada, não inclua nem descarte: investigue e peça orientação.
-8. Obtenha o baseline de testes antes da T1, com a suíte completa rodando **sozinha** (`npm test` apaga e repovoa o banco descartável; L-033), e registre arquivos, testes, falhas e skips. Referência do Handoff: 116 arquivos / 1.872 testes.
+8. Obtenha o baseline de testes antes da T1 com `npm test` (suíte completa em paralelo nas branches de worker do Neon, ~4,5 min; AD-033), sem outra suíte completa rodando ao mesmo tempo (L-033), e registre arquivos, testes, falhas e skips. Testes pontuais (`npx vitest run <arquivo>`) podem rodar enquanto a suíte roda. Referência: 117 arquivos / 1.878 testes.
 
 ## Estratégia de execução aprovada
 

@@ -17,7 +17,7 @@ Implemente estas tarefas com a skill `tlc-spec-driven`: **ative-a pelo nome e si
 ## Preconditions for Execute
 
 - Confirmar `git status`, branch e baseline de testes antes da T1; preservar mudanças alheias.
-- `npm test` apaga e repovoa o banco descartável: rodar a suíte completa sozinha, nunca em paralelo com outra (L-033). Confirmar que `TEST_DATABASE_URL` é descartável.
+- `npm test` roda a suíte completa em paralelo nas branches de worker do Neon (AD-033); nunca duas suítes completas ao mesmo tempo (L-033). Testes pontuais de uma tarefa (`npx vitest run <arquivo>`) usam a branch base e podem rodar enquanto a suíte roda. Depois de qualquer mudança de schema, `npm run db:push:test`. Confirmar que `TEST_DATABASE_URL` é descartável.
 - Toda alteração em `n8n/workflows/*.ts` termina com `node scripts/n8n-inline.mjs` e com o `n8n/generated/` correspondente no mesmo commit.
 - **Efeitos externos exigem autorização específica do usuário imediatamente antes**: T2 (workflow de rascunho no n8n), T12 (publicar e executar `crivo-medicao-opt-out`), T16 (publicar `crivo-agente-principal`), T17 (benchmark conectado e `persist`) e T18 (conversa real no WhatsApp). Aprovar este `tasks.md` não autoriza nenhuma delas. T1 e as leituras de T12 são somente leitura.
 - Evidência nunca contém texto de mensagem de lead real, telefone completo, token ou chave. Ids de execução só entram depois de conferidos por `get_execution` (L-011).
@@ -60,7 +60,7 @@ Os perfis são uma proposta. O usuário pode trocar ou restringir ferramentas an
 | Full | Tarefa que muda workflow publicável ou identidade do benchmark | `node scripts/n8n-inline.mjs`<br>`npm test` |
 | Build | Fechamento de fase, documentação e tarefas conectadas | `npm test`<br>`npm run lint`<br>`npm run build` |
 
-Em todo gate, registrar total de arquivos e de testes antes e depois, e provar que nenhum teste foi removido em silêncio. Baseline de referência (Handoff 2026-09-26): 116 arquivos / 1.872 testes.
+Em todo gate, registrar total de arquivos e de testes antes e depois, e provar que nenhum teste foi removido em silêncio. Baseline de referência (AD-033, 2026-09-27): 117 arquivos / 1.878 testes.
 
 ---
 
