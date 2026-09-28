@@ -210,15 +210,17 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 **Done when:**
 
-- [ ] Contagens por frase e por faixa conferidas contra um conjunto de resultados sintéticos escrito à mão (OPTMED-01 AC5).
-- [ ] APROVADO com 0 falso positivo e taxa exatamente 0,9 (fronteira, L-023); REPROVADO com taxa logo abaixo de 0,9; REPROVADO com 1 falso positivo vindo de frase **ambígua**; REPROVADO com 1 falso positivo vindo de frase **fora** — cada condição com asserção própria (OPTMED-01 AC6, L-012).
-- [ ] `other` e `erro` contam como `fora` (nunca como explícita).
-- [ ] O default de `minExplicitRate` é afirmado como 0,9 (L-037).
-- [ ] Gate Quick passa; contagem registrada.
+- [x] Contagens por frase e por faixa conferidas contra um conjunto de resultados sintéticos escrito à mão (OPTMED-01 AC5).
+- [x] APROVADO com 0 falso positivo e taxa exatamente 0,9 (fronteira, L-023); REPROVADO com taxa logo abaixo de 0,9; REPROVADO com 1 falso positivo vindo de frase **ambígua**; REPROVADO com 1 falso positivo vindo de frase **fora** — cada condição com asserção própria (OPTMED-01 AC6, L-012).
+- [x] `other` e `erro` contam como `fora` (nunca como explícita).
+- [x] O default de `minExplicitRate` é afirmado como 0,9 (L-037).
+- [x] Gate Quick passa; contagem registrada.
 
 **Tests:** unit
 **Gate:** Quick
 **Commit:** `feat(n8n): add opt-out measurement scoring`
+**Status:** ✅ Concluída (2026-09-27)
+**Gate:** Quick — `npx vitest run n8n/src/__tests__/opt-out-score.test.ts`: 1 arquivo / 13 testes, 0 falhas (arquivo novo; nenhum teste existente tocado).
 
 #### T5: Instrução de pergunta para a faixa ambígua no system message
 
