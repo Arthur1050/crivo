@@ -303,16 +303,18 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 **Done when:**
 
-- [ ] ≥ 20 explícitas, ≥ 15 ambíguas e ≥ 20 fora, afirmadas por teste (OPTMED-01 AC1).
-- [ ] As três frases reais estão na faixa explícita e "pode parar de mandar foto" está na faixa fora, cada uma com asserção própria (AC2, AC3).
-- [ ] Pares de confirmação presentes: pergunta de confirmação + "sim" (explícita) e + "não" (fora).
-- [ ] Near-misses com "parar"/"sair" sobre outra coisa: pelo menos 8 na faixa fora.
-- [ ] Ids únicos; nenhum texto contém telefone, e-mail ou nome real.
-- [ ] Gate Quick passa.
+- [x] ≥ 20 explícitas, ≥ 15 ambíguas e ≥ 20 fora, afirmadas por teste (OPTMED-01 AC1).
+- [x] As três frases reais estão na faixa explícita e "pode parar de mandar foto" está na faixa fora, cada uma com asserção própria (AC2, AC3).
+- [x] Pares de confirmação presentes: pergunta de confirmação + "sim" (explícita) e + "não" (fora).
+- [x] Near-misses com "parar"/"sair" sobre outra coisa: pelo menos 8 na faixa fora.
+- [x] Ids únicos; nenhum texto contém telefone, e-mail ou nome real.
+- [x] Gate Quick passa.
 
 **Tests:** unit
 **Gate:** Quick
 **Commit:** `test(n8n): add natural language opt-out measurement corpus`
+**Status:** ✅ Concluída (2026-09-27)
+**Gate:** Quick — `npx vitest run n8n/src/__tests__/opt-out-corpus.test.ts`: 1 arquivo / 16 testes, 0 falhas (arquivo novo). Corpus: 24 explícitas, 17 ambíguas, 21 fora (11 near-misses), abertura fixa em `abertura`.
 
 #### T9: Criar o workflow de medição
 
