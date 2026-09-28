@@ -148,15 +148,30 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 **Done when:**
 
-- [ ] Três execuções no rascunho: (a) frase explícita com template customizado; (b) a mesma frase com o template padrão; (c) falha forçada (modelo inexistente num segundo nó de modelo, ou entrada vazia, o que provocar erro). Ids conferidos por `get_execution`.
-- [ ] O índice de saída do item de erro e a presença ou ausência de auto-fix em (a) e (b) estão escritos na seção Evidence desta tarefa **antes** de arquivar o rascunho (L-016).
-- [ ] O `design.md` (Tech Decisions e Risks & Concerns) registra a escolha final do template e a confirmação (ou correção) do roteamento de erro. Se o erro não sair por uma saída própria nem pela saída 0 (`fora`), a execução para e o desvio vai ao usuário.
-- [ ] Rascunho arquivado com `archive_workflow` depois do registro.
-- [ ] Gate Build passa.
+- [x] Três execuções no rascunho: (a) frase explícita com template customizado; (b) a mesma frase com o template padrão; (c) falha forçada (modelo inexistente num segundo nó de modelo, ou entrada vazia, o que provocar erro). Ids conferidos por `get_execution`.
+- [x] O índice de saída do item de erro e a presença ou ausência de auto-fix em (a) e (b) estão escritos na seção Evidence desta tarefa **antes** de arquivar o rascunho (L-016).
+- [x] O `design.md` (Tech Decisions e Risks & Concerns) registra a escolha final do template e a confirmação (ou correção) do roteamento de erro. Se o erro não sair por uma saída própria nem pela saída 0 (`fora`), a execução para e o desvio vai ao usuário.
+- [x] Rascunho arquivado com `archive_workflow` depois do registro.
+- [x] Gate Build passa.
 
 **Tests:** none
 **Gate:** Build
 **Commit:** `docs(specs): confirm text classifier routing for lote 13`
+
+**Status:** ✅ Concluída (2026-09-27)
+
+**Evidence** (registrada antes de arquivar o rascunho, L-016):
+
+- Rascunho `crivo-rascunho-t2-classificador`, id `hsYF9VXAbGKLCkIc`, projeto pessoal, criado por `create_workflow_from_code` com autorização do usuário. Webhook → Switch por `body.caso` → três `textClassifier` v1.1 (categorias `fora`, `ambigua`, `explicita`; `multiClass: false`; `fallback: other`; `enableAutoFixing: true`; `onError: continueErrorOutput`) com `lmChatOpenAi` v1.3 `gpt-5.4-nano-2026-03-17`, `reasoningEffort: low`, `timeout: 20000`. Entrada sintética: `Última mensagem enviada ao lead: <abertura fixa>\nMensagem do lead: não me mande mais mensagens`. Executado em modo `manual`, sem CRM, WhatsApp ou memória.
+- **(a) template customizado** — execução **2634**, conferida por `get_execution`. O classificador devolveu `main: [[],[],[item],[],[]]`: **5 saídas**, item na saída **2 (`explicita`)**. O prompt enviado ao modelo é o template customizado com `{categories}` substituído por `fora, ambigua, explicita`, **seguido das instruções de formato que o nó anexa sozinho** (JSON Schema com uma propriedade booleana por categoria mais `fallback`, e as linhas "Categories are mutually exclusive" / "If no categories apply, select the fallback option"). Resposta do modelo: `{"fora":false,"ambigua":false,"explicita":true,"fallback":false}` em bloco de código. **Uma única chamada ao modelo** (`Modelo a` runIndex 0 apenas): **sem auto-fix**. 739 tokens de entrada estimados, 24 de saída.
+- **(b) template padrão** — execução **2635**, conferida por `get_execution`. Mesmo resultado: `main: [[],[],[item],[],[]]`, saída 2, uma chamada, **sem auto-fix**. 667 tokens de entrada, 24 de saída.
+- **(c) falha forçada** (modelo `gpt-modelo-inexistente-lote13`) — execução **2636**, conferida por `get_execution`. O modelo falhou com `NodeApiError` ("The model ... does not exist"); o classificador terminou `success` com `main: [[],[],[],[],[item]]`: o item saiu pela **saída 4, a saída de erro própria**, com o JSON de entrada preservado e um campo `error`. Nenhum item saiu por uma categoria. Não é o desvio de parada do `EXECUTE-PROMPT.md`.
+- **Mapa de saídas confirmado**: 0 `fora`, 1 `ambigua`, 2 `explicita`, 3 `other` (fallback), 4 erro.
+- **Achado do SDK (corrige o design)**: `get_workflow_details` do rascunho mostra que `.onError(handler)` do `@n8n/workflow-sdk` liga o handler à **saída 1** do nó (supõe nó de duas saídas). No classificador, isso pôs o handler de erro em `ambigua` e deixou a saída 4 sem conexão, por isso a execução (c) parou no classificador. Toda ligação de erro do classificador precisa usar **`.output(4)`**, e os testes de aresta precisam afirmar a conexão no índice 4 do `toJSON()`. O `.onError()` continua correto em nós de duas saídas, como o HTTP da T11 (a confirmar pelo teste de aresta da própria T11).
+- Os Code nodes marcadores do rascunho falharam com `Referenced node doesn't exist` por usarem `$node.name`; foi só no rascunho, depois do classificador, e não afeta nenhuma conclusão acima.
+- **Template escolhido**: o customizado (com a regra de desempate). Ele mantém as instruções de formato e não disparou auto-fix. Custa ~72 tokens a mais por chamada.
+- Rascunho arquivado com `archive_workflow` depois deste registro.
+- Gate Build: `npm test` 117 arquivos / 1.878 testes, 0 falhas; `npm run lint` 0 erros; `npm run build` ok.
 
 ### Phase 2: Módulos puros e identidade
 
