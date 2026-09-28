@@ -72,6 +72,8 @@ Depois do commit da T18:
 1. Despache um subagente Verifier novo, que não tenha escrito a implementação.
 2. Dê a ele `spec.md`, o intervalo real de commits e diff da feature, os testes em escopo e `validate.md`.
 3. Exija checagem spec-anchored evidence-or-zero e sensor de discriminação em scratch isolado (cópia ou worktree temporário, nunca `git stash`). Os mutantes devem incluir, no mínimo: a saída `explicita` ligada ao nó errado, a confirmação antiga de volta, `optOutAmbiguo` sempre `false`, a barra de 90% trocada por `>` e um falso positivo ignorado na pontuação.
+   - Enquanto o Verifier trabalha, o orquestrador não roda nenhum teste: a suíte completa do Verifier (`npm test`) usa as branches de worker e o sensor usa a branch base (AD-033), então qualquer execução paralela do orquestrador disputaria um dos dois (L-033).
+   - Sensor no worktree: criar uma junction de `node_modules` para o do repositório e rodar o vitest **a partir do diretório do repositório** com `--root <worktree>`, para o dotenv achar o `.env` sem que ele seja lido ou copiado (um hook bloqueia). Sem `test-workers.local.json` no worktree, esses testes rodam em série na branch base, que é o esperado. Remover a junction antes do worktree e conferir o `git status --porcelain` da árvore real antes e depois.
 4. O Verifier escreve `.specs/features/lote-13-opt-out-linguagem-natural/validation.md` com PASS/FAIL, evidências `file:line`, resultados dos gates, mutações e intervalo de commits.
 5. Em FAIL, transforme as lacunas em tarefas de correção e repita fix → reverify no máximo três vezes.
 6. Rode `validate_state.py`. Não declare o lote concluído sem PASS verificável.
