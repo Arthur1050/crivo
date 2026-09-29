@@ -468,6 +468,10 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 **Evidence (código):** `npx vitest run n8n/workflows/__tests__ n8n/src/__tests__ scripts/__tests__`: 24 arquivos / 576 testes, 0 falhas. Hash v3 (`identity`): `8be0d889c925d9fc6a301525bd8c0c1f1655692e8f221d81df572c8feb8ec822`.
 
+**Status:** ✅ Concluída (2026-09-29) — veredito **REPROVADO** (v3).
+
+**Evidence (medição):** `update_workflow` + `publish_workflow`; `versionId == activeVersionId == 4d11bbc3-1c37-4fcd-8be1-ea7b6fba581c`; parâmetros publicados iguais ao gerado. Execução **2687** (conferida por `get_execution`, `success`, 118 s): 77 × 3 = 231 classificações, 231 chamadas (sem auto-fix), `erro` 0, `other` 2. Explícitas 84/84; ambíguas sem falso positivo; **2 falsos positivos**, cada um 1 de 3: `fora-08` "para de mandar casa, eu quero apartamento" e `fora-25` "para de mandar imóvel na zona norte". As negativas à pergunta de confirmação (`fora-19`, `fora-20`, `fora-31`, `fora-32`) saíram `fora` 3/3. Relatório: `medicao-opt-out-2026-09-29-v3.json`. Decisão D3: trava determinística depois do classificador (T12d), em vez de uma quarta versão de prompt.
+
 #### T13: Travar a publicação na medição aprovada
 
 **What:** Acrescentar a `principal-classificador.test.ts` a asserção de que a identidade do classificador em `principal.ts` é igual ao `classifierHash` do relatório aprovado mais recente em `.specs/features/lote-13-opt-out-linguagem-natural/`, e que o veredito dele é `APROVADO`.
