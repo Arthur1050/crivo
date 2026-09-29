@@ -1,5 +1,5 @@
 {
-  "_origem": "Corpus da medição do classificador de opt-out (lote-13 T8, OPTMED-01). Entrada do crivo-medicao-opt-out: cada item vira `buildClassifierInput({ lastAgentMessage: ultimaMensagem ?? abertura, userMessage: texto })`, rodado 3 vezes. Faixas de context.md: explicita registra, ambigua pergunta, fora segue. As frases reais vêm da T21 do lote-7 (.specs/features/lote-7-dado-real-ponta-a-ponta/context.md:79) e da Fase 5 do lote-10 (n8n/smoke/evidencia.md:1494); o resto é sintético, sem telefone, e-mail ou nome real. Quebra de linha em `texto` representa um buffer com várias mensagens do mesmo turno. Controle (depois da medição reprovada de 2026-09-29): exp-25 a exp-27 e fora-22 a fora-28 entraram sem participar da redação da versão 2 do prompt, com outros objetos (vídeo, plantas, mensagem de voz, simulação), para a nova medição não avaliar só o material usado para calibrar.",
+  "_origem": "Corpus da medição do classificador de opt-out (lote-13 T8, OPTMED-01). Entrada do crivo-medicao-opt-out: cada item vira `buildClassifierInput({ lastAgentMessage: ultimaMensagem ?? abertura, userMessage: texto })`, rodado 3 vezes. Faixas de context.md: explicita registra, ambigua pergunta, fora segue. As frases reais vêm da T21 do lote-7 (.specs/features/lote-7-dado-real-ponta-a-ponta/context.md:79) e da Fase 5 do lote-10 (n8n/smoke/evidencia.md:1494); o resto é sintético, sem telefone, e-mail ou nome real. Quebra de linha em `texto` representa um buffer com várias mensagens do mesmo turno. Controle (depois da medição reprovada de 2026-09-29): exp-25 a exp-27 e fora-22 a fora-28 entraram sem participar da redação da versão 2 do prompt, com outros objetos (vídeo, plantas, mensagem de voz, simulação), para a nova medição não avaliar só o material usado para calibrar. exp-28 e fora-29 a fora-32 entraram do mesmo jeito depois da medição v2 reprovada.",
   "abertura": "Oi! Aqui é da imobiliária. Vi que você se interessou por um dos nossos imóveis. Qual região você procura?",
   "itens": [
     { "id": "exp-01", "faixa": "explicita", "texto": "não me mande mais mensagens" },
@@ -29,6 +29,7 @@
     { "id": "exp-25", "faixa": "explicita", "texto": "não quero que me mandem mais nada, obrigado" },
     { "id": "exp-26", "faixa": "explicita", "texto": "parem de me mandar mensagens, por favor" },
     { "id": "exp-27", "faixa": "explicita", "texto": "quero parar de receber essas mensagens" },
+    { "id": "exp-28", "faixa": "explicita", "texto": "não quero mais conversar com vocês, não mandem mais nada" },
 
     { "id": "amb-01", "faixa": "ambigua", "texto": "não tenho interesse, obrigado" },
     { "id": "amb-02", "faixa": "ambigua", "texto": "foi engano, não sou essa pessoa" },
@@ -75,6 +76,10 @@
     { "id": "fora-25", "faixa": "fora", "texto": "para de mandar imóvel na zona norte" },
     { "id": "fora-26", "faixa": "fora", "texto": "não precisa mandar mais simulação, já fiz no banco" },
     { "id": "fora-27", "faixa": "fora", "texto": "para de me mandar mensagem de voz, só texto" },
-    { "id": "fora-28", "faixa": "fora", "texto": "pode parar com as fotos por hoje, depois vejo" }
+    { "id": "fora-28", "faixa": "fora", "texto": "pode parar com as fotos por hoje, depois vejo" },
+    { "id": "fora-29", "faixa": "fora", "texto": "para de mandar anúncio de lançamento, só quero usado" },
+    { "id": "fora-30", "faixa": "fora", "texto": "pode parar de me mandar opção com condomínio caro" },
+    { "id": "fora-31", "faixa": "fora", "texto": "não, quero continuar conversando", "ultimaMensagem": "Entendi. Você quer parar de receber mensagens nossas por este número?" },
+    { "id": "fora-32", "faixa": "fora", "texto": "não quero parar não, pode mandar", "ultimaMensagem": "Entendi. Você quer parar de receber mensagens nossas por este número?" }
   ]
 }

@@ -459,6 +459,15 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 **Evidence:** `update_workflow` + `publish_workflow` no `yTgE1WKY8BPOCuDl`; `versionId == activeVersionId == 0b0d58fd-9227-4168-9d88-82610f54cb2d`; hash dos nós publicados `c1faee65…` igual ao `identity`. Execução **2686** (conferida por `get_execution`, `success`, 100 s): 72 frases × 3 = 216 classificações, 216 chamadas ao modelo (sem auto-fix), `erro` 0, `other` 4. Explícitas 81/81; ambíguas sem falso positivo; **5 falsos positivos**: `fora-20` "não, pode continuar me mandando" (resposta à pergunta de confirmação) 3/3, regressão causada pela cláusula nova de resposta negativa; `fora-25` "para de mandar imóvel na zona norte" (controle) 2/3. Os três casos da v1 (foto, áudio, casa) saíram `fora` 3/3, e 6 das 7 frases de controle `fora` também. Relatório: `medicao-opt-out-2026-09-29-v2.json`. Decisão D2: iteração v3 (2ª de no máximo 3).
 
+#### T12c: Versão 3 do classificador e nova medição
+
+**What:** Decisão D2: segunda iteração (de no máximo 3). Regra de sim/não explícita no template, "filtro de busca" entre os conteúdos que não contam como opt-out, e 5 frases de controle novas (exp-28, fora-29 a fora-32), 77 no total.
+**Depends on:** T12b
+**Requirement:** OPTMED-01
+**Commits:** `fix(n8n): make opt-out confirmation answers explicit in the classifier` e `test(n8n): record opt-out classifier measurement v3`
+
+**Evidence (código):** `npx vitest run n8n/workflows/__tests__ n8n/src/__tests__ scripts/__tests__`: 24 arquivos / 576 testes, 0 falhas. Hash v3 (`identity`): `8be0d889c925d9fc6a301525bd8c0c1f1655692e8f221d81df572c8feb8ec822`.
+
 #### T13: Travar a publicação na medição aprovada
 
 **What:** Acrescentar a `principal-classificador.test.ts` a asserção de que a identidade do classificador em `principal.ts` é igual ao `classifierHash` do relatório aprovado mais recente em `.specs/features/lote-13-opt-out-linguagem-natural/`, e que o veredito dele é `APROVADO`.

@@ -1074,7 +1074,7 @@ const optOutClassifier = node({
           {
             category: "fora",
             description:
-              'A mensagem não pede para parar de receber mensagens nem para encerrar o contato. Inclui desinteresse num imóvel específico, pedido para parar de mandar só um tipo de conteúdo ou mudar o formato (fotos, áudios, links, um tipo de imóvel), e usos de "parar" ou "sair" que se referem a outra coisa (o aluguel atual, o apartamento, a enrolação). Também vale para uma resposta negativa quando a última mensagem enviada perguntou se o lead quer parar de receber mensagens.',
+              'A mensagem não pede para parar de receber mensagens nem para encerrar o contato. Inclui desinteresse num imóvel específico; pedido para parar de mandar só um tipo de conteúdo, formato ou filtro de busca (fotos, áudios, links, um tipo de imóvel, uma região, um número de quartos); usos de "parar" ou "sair" que se referem a outra coisa (o aluguel atual, o apartamento, a enrolação); e resposta negativa, como "não" ou "pode continuar", quando a última mensagem enviada perguntou se o lead quer parar de receber mensagens.',
           },
           {
             category: "ambigua",
@@ -1084,7 +1084,7 @@ const optOutClassifier = node({
           {
             category: "explicita",
             description:
-              "O lead pede para parar de receber mensagens desta imobiliária como um todo: parar de receber mensagens, não ser mais contatado, sair da lista ou não mandarem mais nada. Também vale para uma resposta afirmativa quando a última mensagem enviada perguntou se ele quer parar de receber mensagens. Não vale quando o que deve parar é só um tipo de conteúdo ou formato.",
+              "O lead pede para parar de receber mensagens desta imobiliária como um todo: parar de receber mensagens, não ser mais contatado, sair da lista ou não mandarem mais nada. Também vale para uma resposta afirmativa quando a última mensagem enviada perguntou se ele quer parar de receber mensagens. Não vale quando o que deve parar é só um tipo de conteúdo, formato ou filtro de busca.",
           },
         ],
       },
@@ -1092,7 +1092,7 @@ const optOutClassifier = node({
         multiClass: false,
         fallback: "other",
         systemPromptTemplate:
-          'Você classifica a mensagem de um lead de imobiliária no WhatsApp quanto a um pedido para parar de receber mensagens. Classifique o texto do usuário em uma destas categorias: {categories}. Use a última mensagem enviada ao lead só para entender respostas curtas, como "sim" ou "não". "Parar de mandar" seguido de um tipo de conteúdo ou formato é fora; só é explicita quando o lead quer parar de receber as mensagens ou o contato em si. Regra de desempate: na dúvida entre explicita e ambigua, escolha ambigua; na dúvida entre ambigua e fora, escolha fora. Não explique e responda somente o JSON, seguindo as instruções de formato abaixo.',
+          'Você classifica a mensagem de um lead de imobiliária no WhatsApp quanto a um pedido para parar de receber mensagens. Classifique o texto do usuário em uma destas categorias: {categories}. Use a última mensagem enviada ao lead só para entender respostas curtas, como "sim" ou "não". "Parar de mandar" seguido de um tipo de conteúdo, formato ou filtro de busca é fora; só é explicita quando o lead quer parar de receber as mensagens ou o contato em si. Se a última mensagem enviada perguntou se o lead quer parar de receber mensagens, "sim" é explicita e "não" ou um pedido para continuar é fora. Regra de desempate: na dúvida entre explicita e ambigua, escolha ambigua; na dúvida entre ambigua e fora, escolha fora. Não explique e responda somente o JSON, seguindo as instruções de formato abaixo.',
         enableAutoFixing: true,
       },
     },
