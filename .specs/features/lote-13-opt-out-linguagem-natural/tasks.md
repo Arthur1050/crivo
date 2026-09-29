@@ -495,6 +495,13 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 **Ajuste do orquestrador (depois do Worker C):** na medição, a saída falsa da trava ganhou marcador próprio (`Code: marcar ambigua (trava)`) e a entrada 5 do Merge (6 entradas), para `Code: marcar ambigua` não ter dois predecessores e o Merge não disparar duas vezes com relatório parcial. Testes de aresta novos em `medicao-opt-out.test.ts`; gate pontual 24 arquivos / 629 testes, 0 falhas. Commit `fix(n8n): give the measurement guard its own merge input`.
 
+#### T12e: Medição da versão 3 com a trava (aprovada)
+
+**Status:** ✅ Concluída (2026-09-29) — veredito **APROVADO**.
+**Commit:** `test(n8n): record approved opt-out classifier measurement`
+
+**Evidence:** o workflow de medição anterior (`yTgE1WKY8BPOCuDl`) foi arquivado depois de os relatórios v1–v3 estarem gravados (L-016); o novo `crivo-medicao-opt-out` (`n5iAMCl5nSM6jA6U`) foi criado de `n8n/generated/medicao-opt-out.ts` e publicado; `versionId == activeVersionId == 2b494521-0815-44b7-bd77-5d4e19da667c`, 14 nós, conexões com a trava (saída 2 → `Code: conferir pedido explícito` → IF → marcar explicita / marcar ambigua (trava) → Merge 6 entradas). Diferenças conhecidas em relação ao gerado: o `Code: pontuar` publicado não tem o bloco de comentário do módulo inlinado (a lógica é a mesma; a pontuação fica fora do hash). Execução **2688** (conferida por `get_execution`, `success`, 102 s): 77 × 3 = 231 classificações, `execucoes` 231 (Merge disparou uma vez), 231 chamadas ao modelo (sem auto-fix), `erro` 0, `other` 1. **Explícitas 84/84 (1,0); falsos positivos 0** (ambíguas 0/51, fora 0/96). A trava não precisou atuar nesta rodada (o marcador da trava não executou); a cobertura dela sobre o corpus vem de `opt-out-intent.test.ts`. Relatório: `medicao-opt-out-2026-09-29-v4.json`, `classifierHash` `1547f0ae…` igual ao `identity` do `principal.ts`.
+
 #### T13: Travar a publicação na medição aprovada
 
 **What:** Acrescentar a `principal-classificador.test.ts` a asserção de que a identidade do classificador em `principal.ts` é igual ao `classifierHash` do relatório aprovado mais recente em `.specs/features/lote-13-opt-out-linguagem-natural/`, e que o veredito dele é `APROVADO`.

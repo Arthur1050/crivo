@@ -1,0 +1,584 @@
+{
+  "versao": "3 + trava determinística (T12d)",
+  "veredito": "APROVADO",
+  "falsosPositivos": 0,
+  "taxaExplicita": 1,
+  "porFaixa": {
+    "explicita": {
+      "explicita": 84,
+      "ambigua": 0,
+      "fora": 0,
+      "total": 84
+    },
+    "ambigua": {
+      "explicita": 0,
+      "ambigua": 49,
+      "fora": 2,
+      "total": 51
+    },
+    "fora": {
+      "explicita": 0,
+      "ambigua": 0,
+      "fora": 96,
+      "total": 96
+    }
+  },
+  "repeticoes": 3,
+  "execucoes": 231,
+  "categorias": {
+    "fora": 97,
+    "ambigua": 49,
+    "explicita": 84,
+    "other": 1
+  },
+  "execucoesComAutoFix": 0,
+  "travaAcionada": 0,
+  "execucaoN8n": "2688",
+  "workflowId": "n5iAMCl5nSM6jA6U",
+  "workflowVersion": "2b494521-0815-44b7-bd77-5d4e19da667c",
+  "corpus": "n8n/fixtures/opt-out-corpus.json",
+  "porFrase": [
+    {
+      "id": "amb-04",
+      "faixa": "ambigua",
+      "explicita": 0,
+      "ambigua": 1,
+      "fora": 2
+    },
+    {
+      "id": "fora-01",
+      "faixa": "fora",
+      "explicita": 0,
+      "ambigua": 0,
+      "fora": 3
+    },
+    {
+      "id": "fora-02",
+      "faixa": "fora",
+      "explicita": 0,
+      "ambigua": 0,
+      "fora": 3
+    },
+    {
+      "id": "fora-03",
+      "faixa": "fora",
+      "explicita": 0,
+      "ambigua": 0,
+      "fora": 3
+    },
+    {
+      "id": "fora-04",
+      "faixa": "fora",
+      "explicita": 0,
+      "ambigua": 0,
+      "fora": 3
+    },
+    {
+      "id": "fora-05",
+      "faixa": "fora",
+      "explicita": 0,
+      "ambigua": 0,
+      "fora": 3
+    },
+    {
+      "id": "fora-06",
+      "faixa": "fora",
+      "explicita": 0,
+      "ambigua": 0,
+      "fora": 3
+    },
+    {
+      "id": "fora-07",
+      "faixa": "fora",
+      "explicita": 0,
+      "ambigua": 0,
+      "fora": 3
+    },
+    {
+      "id": "fora-08",
+      "faixa": "fora",
+      "explicita": 0,
+      "ambigua": 0,
+      "fora": 3
+    },
+    {
+      "id": "fora-09",
+      "faixa": "fora",
+      "explicita": 0,
+      "ambigua": 0,
+      "fora": 3
+    },
+    {
+      "id": "fora-10",
+      "faixa": "fora",
+      "explicita": 0,
+      "ambigua": 0,
+      "fora": 3
+    },
+    {
+      "id": "fora-11",
+      "faixa": "fora",
+      "explicita": 0,
+      "ambigua": 0,
+      "fora": 3
+    },
+    {
+      "id": "fora-12",
+      "faixa": "fora",
+      "explicita": 0,
+      "ambigua": 0,
+      "fora": 3
+    },
+    {
+      "id": "fora-13",
+      "faixa": "fora",
+      "explicita": 0,
+      "ambigua": 0,
+      "fora": 3
+    },
+    {
+      "id": "fora-14",
+      "faixa": "fora",
+      "explicita": 0,
+      "ambigua": 0,
+      "fora": 3
+    },
+    {
+      "id": "fora-15",
+      "faixa": "fora",
+      "explicita": 0,
+      "ambigua": 0,
+      "fora": 3
+    },
+    {
+      "id": "fora-16",
+      "faixa": "fora",
+      "explicita": 0,
+      "ambigua": 0,
+      "fora": 3
+    },
+    {
+      "id": "fora-17",
+      "faixa": "fora",
+      "explicita": 0,
+      "ambigua": 0,
+      "fora": 3
+    },
+    {
+      "id": "fora-18",
+      "faixa": "fora",
+      "explicita": 0,
+      "ambigua": 0,
+      "fora": 3
+    },
+    {
+      "id": "fora-19",
+      "faixa": "fora",
+      "explicita": 0,
+      "ambigua": 0,
+      "fora": 3
+    },
+    {
+      "id": "fora-20",
+      "faixa": "fora",
+      "explicita": 0,
+      "ambigua": 0,
+      "fora": 3
+    },
+    {
+      "id": "fora-21",
+      "faixa": "fora",
+      "explicita": 0,
+      "ambigua": 0,
+      "fora": 3
+    },
+    {
+      "id": "fora-22",
+      "faixa": "fora",
+      "explicita": 0,
+      "ambigua": 0,
+      "fora": 3
+    },
+    {
+      "id": "fora-23",
+      "faixa": "fora",
+      "explicita": 0,
+      "ambigua": 0,
+      "fora": 3
+    },
+    {
+      "id": "fora-24",
+      "faixa": "fora",
+      "explicita": 0,
+      "ambigua": 0,
+      "fora": 3
+    },
+    {
+      "id": "fora-25",
+      "faixa": "fora",
+      "explicita": 0,
+      "ambigua": 0,
+      "fora": 3
+    },
+    {
+      "id": "fora-26",
+      "faixa": "fora",
+      "explicita": 0,
+      "ambigua": 0,
+      "fora": 3
+    },
+    {
+      "id": "fora-27",
+      "faixa": "fora",
+      "explicita": 0,
+      "ambigua": 0,
+      "fora": 3
+    },
+    {
+      "id": "fora-28",
+      "faixa": "fora",
+      "explicita": 0,
+      "ambigua": 0,
+      "fora": 3
+    },
+    {
+      "id": "fora-29",
+      "faixa": "fora",
+      "explicita": 0,
+      "ambigua": 0,
+      "fora": 3
+    },
+    {
+      "id": "fora-30",
+      "faixa": "fora",
+      "explicita": 0,
+      "ambigua": 0,
+      "fora": 3
+    },
+    {
+      "id": "fora-31",
+      "faixa": "fora",
+      "explicita": 0,
+      "ambigua": 0,
+      "fora": 3
+    },
+    {
+      "id": "fora-32",
+      "faixa": "fora",
+      "explicita": 0,
+      "ambigua": 0,
+      "fora": 3
+    },
+    {
+      "id": "amb-01",
+      "faixa": "ambigua",
+      "explicita": 0,
+      "ambigua": 3,
+      "fora": 0
+    },
+    {
+      "id": "amb-02",
+      "faixa": "ambigua",
+      "explicita": 0,
+      "ambigua": 3,
+      "fora": 0
+    },
+    {
+      "id": "amb-03",
+      "faixa": "ambigua",
+      "explicita": 0,
+      "ambigua": 3,
+      "fora": 0
+    },
+    {
+      "id": "amb-05",
+      "faixa": "ambigua",
+      "explicita": 0,
+      "ambigua": 3,
+      "fora": 0
+    },
+    {
+      "id": "amb-06",
+      "faixa": "ambigua",
+      "explicita": 0,
+      "ambigua": 3,
+      "fora": 0
+    },
+    {
+      "id": "amb-07",
+      "faixa": "ambigua",
+      "explicita": 0,
+      "ambigua": 3,
+      "fora": 0
+    },
+    {
+      "id": "amb-08",
+      "faixa": "ambigua",
+      "explicita": 0,
+      "ambigua": 3,
+      "fora": 0
+    },
+    {
+      "id": "amb-09",
+      "faixa": "ambigua",
+      "explicita": 0,
+      "ambigua": 3,
+      "fora": 0
+    },
+    {
+      "id": "amb-10",
+      "faixa": "ambigua",
+      "explicita": 0,
+      "ambigua": 3,
+      "fora": 0
+    },
+    {
+      "id": "amb-11",
+      "faixa": "ambigua",
+      "explicita": 0,
+      "ambigua": 3,
+      "fora": 0
+    },
+    {
+      "id": "amb-12",
+      "faixa": "ambigua",
+      "explicita": 0,
+      "ambigua": 3,
+      "fora": 0
+    },
+    {
+      "id": "amb-13",
+      "faixa": "ambigua",
+      "explicita": 0,
+      "ambigua": 3,
+      "fora": 0
+    },
+    {
+      "id": "amb-14",
+      "faixa": "ambigua",
+      "explicita": 0,
+      "ambigua": 3,
+      "fora": 0
+    },
+    {
+      "id": "amb-15",
+      "faixa": "ambigua",
+      "explicita": 0,
+      "ambigua": 3,
+      "fora": 0
+    },
+    {
+      "id": "amb-16",
+      "faixa": "ambigua",
+      "explicita": 0,
+      "ambigua": 3,
+      "fora": 0
+    },
+    {
+      "id": "amb-17",
+      "faixa": "ambigua",
+      "explicita": 0,
+      "ambigua": 3,
+      "fora": 0
+    },
+    {
+      "id": "exp-01",
+      "faixa": "explicita",
+      "explicita": 3,
+      "ambigua": 0,
+      "fora": 0
+    },
+    {
+      "id": "exp-02",
+      "faixa": "explicita",
+      "explicita": 3,
+      "ambigua": 0,
+      "fora": 0
+    },
+    {
+      "id": "exp-03",
+      "faixa": "explicita",
+      "explicita": 3,
+      "ambigua": 0,
+      "fora": 0
+    },
+    {
+      "id": "exp-04",
+      "faixa": "explicita",
+      "explicita": 3,
+      "ambigua": 0,
+      "fora": 0
+    },
+    {
+      "id": "exp-05",
+      "faixa": "explicita",
+      "explicita": 3,
+      "ambigua": 0,
+      "fora": 0
+    },
+    {
+      "id": "exp-06",
+      "faixa": "explicita",
+      "explicita": 3,
+      "ambigua": 0,
+      "fora": 0
+    },
+    {
+      "id": "exp-07",
+      "faixa": "explicita",
+      "explicita": 3,
+      "ambigua": 0,
+      "fora": 0
+    },
+    {
+      "id": "exp-08",
+      "faixa": "explicita",
+      "explicita": 3,
+      "ambigua": 0,
+      "fora": 0
+    },
+    {
+      "id": "exp-09",
+      "faixa": "explicita",
+      "explicita": 3,
+      "ambigua": 0,
+      "fora": 0
+    },
+    {
+      "id": "exp-10",
+      "faixa": "explicita",
+      "explicita": 3,
+      "ambigua": 0,
+      "fora": 0
+    },
+    {
+      "id": "exp-11",
+      "faixa": "explicita",
+      "explicita": 3,
+      "ambigua": 0,
+      "fora": 0
+    },
+    {
+      "id": "exp-12",
+      "faixa": "explicita",
+      "explicita": 3,
+      "ambigua": 0,
+      "fora": 0
+    },
+    {
+      "id": "exp-13",
+      "faixa": "explicita",
+      "explicita": 3,
+      "ambigua": 0,
+      "fora": 0
+    },
+    {
+      "id": "exp-14",
+      "faixa": "explicita",
+      "explicita": 3,
+      "ambigua": 0,
+      "fora": 0
+    },
+    {
+      "id": "exp-15",
+      "faixa": "explicita",
+      "explicita": 3,
+      "ambigua": 0,
+      "fora": 0
+    },
+    {
+      "id": "exp-16",
+      "faixa": "explicita",
+      "explicita": 3,
+      "ambigua": 0,
+      "fora": 0
+    },
+    {
+      "id": "exp-17",
+      "faixa": "explicita",
+      "explicita": 3,
+      "ambigua": 0,
+      "fora": 0
+    },
+    {
+      "id": "exp-18",
+      "faixa": "explicita",
+      "explicita": 3,
+      "ambigua": 0,
+      "fora": 0
+    },
+    {
+      "id": "exp-19",
+      "faixa": "explicita",
+      "explicita": 3,
+      "ambigua": 0,
+      "fora": 0
+    },
+    {
+      "id": "exp-20",
+      "faixa": "explicita",
+      "explicita": 3,
+      "ambigua": 0,
+      "fora": 0
+    },
+    {
+      "id": "exp-21",
+      "faixa": "explicita",
+      "explicita": 3,
+      "ambigua": 0,
+      "fora": 0
+    },
+    {
+      "id": "exp-22",
+      "faixa": "explicita",
+      "explicita": 3,
+      "ambigua": 0,
+      "fora": 0
+    },
+    {
+      "id": "exp-23",
+      "faixa": "explicita",
+      "explicita": 3,
+      "ambigua": 0,
+      "fora": 0
+    },
+    {
+      "id": "exp-24",
+      "faixa": "explicita",
+      "explicita": 3,
+      "ambigua": 0,
+      "fora": 0
+    },
+    {
+      "id": "exp-25",
+      "faixa": "explicita",
+      "explicita": 3,
+      "ambigua": 0,
+      "fora": 0
+    },
+    {
+      "id": "exp-26",
+      "faixa": "explicita",
+      "explicita": 3,
+      "ambigua": 0,
+      "fora": 0
+    },
+    {
+      "id": "exp-27",
+      "faixa": "explicita",
+      "explicita": 3,
+      "ambigua": 0,
+      "fora": 0
+    },
+    {
+      "id": "exp-28",
+      "faixa": "explicita",
+      "explicita": 3,
+      "ambigua": 0,
+      "fora": 0
+    }
+  ],
+  "classifierHash": "1547f0ae6ee31640db62b432a36e1e5d6c77fd92467a18f9f42034ba088f6b29",
+  "modelId": "gpt-5.4-nano-2026-03-17",
+  "date": "2026-09-29T23:36:38.318Z"
+}
