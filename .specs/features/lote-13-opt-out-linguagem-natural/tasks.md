@@ -403,15 +403,30 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 **Done when:**
 
-- [ ] `get_workflow_details` confirma que o publicado é igual ao gerado; `versionId == activeVersionId` (L-032); id do workflow registrado.
-- [ ] Execução conferida por `get_execution`, com id na Evidence; 3 execuções por item do corpus.
-- [ ] Relatório gravado com contagens por frase e por faixa, `falsosPositivos`, `taxaExplicita`, `veredito`, `classifierHash` (igual ao `identity` do `principal.ts` atual), `modelId`, `workflowVersion` e a contagem de execuções com auto-fix.
-- [ ] **Se `REPROVADO`**: nenhuma tarefa seguinte roda; o relatório é commitado assim mesmo e a execução para com o resultado para o usuário (OPTMED-01 AC7, AD-032).
-- [ ] Gate Build passa.
+- [x] `get_workflow_details` confirma que o publicado é igual ao gerado; `versionId == activeVersionId` (L-032); id do workflow registrado.
+- [x] Execução conferida por `get_execution`, com id na Evidence; 3 execuções por item do corpus.
+- [x] Relatório gravado com contagens por frase e por faixa, `falsosPositivos`, `taxaExplicita`, `veredito`, `classifierHash` (igual ao `identity` do `principal.ts` atual), `modelId`, `workflowVersion` e a contagem de execuções com auto-fix.
+- [x] **Se `REPROVADO`**: nenhuma tarefa seguinte roda; o relatório é commitado assim mesmo e a execução para com o resultado para o usuário (OPTMED-01 AC7, AD-032).
+- [x] Gate Build passa.
 
 **Tests:** none
 **Gate:** Build
 **Commit:** `test(n8n): record opt-out classifier measurement`
+
+**Status:** ✅ Concluída (2026-09-29) — veredito **REPROVADO**. Parada obrigatória (AD-032, OPTMED-01 AC7): nada da Phase 5 roda; o lote volta ao usuário. T13 também não roda (depende de uma medição aprovada).
+
+**Evidence:**
+
+- Workflow `crivo-medicao-opt-out`, id **`yTgE1WKY8BPOCuDl`** (projeto pessoal), criado por `create_workflow_from_code` a partir de `n8n/generated/medicao-opt-out.ts` e publicado com autorização do usuário. `get_workflow_details`: `versionId == activeVersionId == 3630cd81-921b-4ba9-abb4-912f1c5bed3e` (L-032); 11 nós; conexões iguais às do gerado (5 saídas do classificador → 5 marcadores → Merge entradas 0–4 → `Code: pontuar`). Paridade conferida por hash: `classifierIdentity` sobre os nós publicados do classificador e do modelo = `07f33701ce001b073d584bdf636f910be91fc3e8119dda324542d3e2c2be5953`, igual ao `identity` do `principal.ts`.
+- Execução **2685** (modo webhook, produção), conferida por `get_execution`: `status: success`, 2026-09-29T05:11:31Z → 05:12:31Z (60 s). Entrada: `n8n/fixtures/opt-out-corpus.json` (62 frases) com `repeticoes: 3` → **186 classificações**. O modelo do classificador rodou **186 vezes** (subRuns 0–185): **nenhum auto-fix**. Categorias brutas: `explicita` 79, `ambigua` 58, `fora` 48, `other` 1, `erro` 0. O Merge de 5 entradas disparou mesmo com a saída de erro vazia.
+- Relatório: `.specs/features/lote-13-opt-out-linguagem-natural/medicao-opt-out-2026-09-29.json`, carimbado por `scripts/opt-out-measurement.ts stamp` (`classifierHash` acima, `modelId` `gpt-5.4-nano-2026-03-17`), com `workflowVersion`, `execucaoN8n` e `execucoesComAutoFix: 0`.
+- **Resultado pela barra (OPTMED-01 AC6)**: `taxaExplicita` = 72/72 = **1,0** (passa); `falsosPositivos` = **7** (reprova). Os 7 vêm de três near-misses de "parar de mandar <coisa>", todos da faixa `fora`:
+  - `fora-04` "pode parar de mandar áudio, prefiro texto": explícita 3/3;
+  - `fora-01` "pode parar de mandar foto" (a frase que o backlog nomeou): explícita 2/3, ambígua 1/3;
+  - `fora-08` "para de mandar casa, eu quero apartamento": explícita 2/3, `other` 1/3.
+  Nenhuma frase ambígua virou explícita (51/51 ambíguas).
+- Observação sem barra própria: `fora-19` ("não") e `fora-20` ("não, pode continuar me mandando") como resposta à pergunta de confirmação saíram `ambigua` 3/3, e não `fora`. Não descadastram, mas fariam o agente perguntar de novo.
+- Gate Build: `npm test` 125 arquivos / 2.051 testes, só as 2 falhas preexistentes aceitas (`DOCLIM-01 AC8`, `actions.test.ts`); `npm run lint` 0 erros; `npm run build` ok.
 
 #### T13: Travar a publicação na medição aprovada
 
