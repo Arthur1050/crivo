@@ -994,14 +994,25 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 **Done when:**
 
-- [ ] `principal-classificador.test.ts` verde imediatamente antes da publicação (a medição aprovada corresponde ao que vai ser publicado).
-- [ ] Saída do `check` antes da publicação registrada na Evidence.
-- [ ] `get_workflow_details` confirma nós e conexões iguais ao gerado; `versionId == activeVersionId` (L-032); novo `activeVersionId` registrado na Evidence.
-- [ ] Gate Build passa.
+- [x] `principal-classificador.test.ts` verde imediatamente antes da publicação (a medição aprovada corresponde ao que vai ser publicado).
+- [x] Saída do `check` antes da publicação registrada na Evidence.
+- [x] `get_workflow_details` confirma nós e conexões iguais ao gerado; `versionId == activeVersionId` (L-032); novo `activeVersionId` registrado na Evidence.
+- [x] Gate Build passa.
 
 **Tests:** none
 **Gate:** Build
 **Commit:** `chore(n8n): publish opt-out classifier to the agent`
+
+**Status:** ✅ Concluída (2026-09-29)
+
+**Evidence:**
+- `principal-classificador.test.ts` verde imediatamente antes (gate da T13, trava de identidade `1547f0ae…` = medição aprovada v4).
+- `check` antes da publicação (versão ativa anterior `73788130-1789-46a8-8a41-61c33860224c`): "9 teto(s) conferido(s); 9 marcado(s) como desatualizado(s)" — o system message local mudou (instrução ambígua), então os tetos ficaram `stale` e seguem limitando com o valor antigo (AD-031).
+- Publicação por `update_workflow` em lotes (decisão D5): 9 nós novos (`Code: entrada do classificador`, `Classificador: opt-out`, `OpenAI Chat Model (classificador)` com a credencial `OpenAI account` `bGnmNn5iFH4sBCoo`, `Code: rota fora`, `Code: rota ambígua`, `Code: conferir pedido explícito`, `Pedido explícito confirmado?`, `HTTP: POST /leads/{id}/opt-out (linguagem natural)` com `Crivo - chave de servico` `YhGcdfGtdEBBU9YP`, retry 3×, `continueErrorOutput`, e `Code: orientar sair (falha do registro)`), `jsCode` novo em `Code: finalizar opt-out` e `Code: montar system message e marcar campo perguntado`, 1 conexão removida e 16 adicionadas; depois `publish_workflow`.
+- `get_workflow_details` (saída salva em arquivo e comparada por script com `principal.toJSON()`): **`versionId == activeVersionId == 3e20756c-45d2-430d-8106-e4204abf6045`**, ativo; 71 nós; **91 conexões, 0 diferença**; 19 nós de código com `jsCode` idêntico byte a byte (inclusive o `montar system message`, 46 KB); parâmetros do classificador, do modelo, do HTTP natural (URL, autenticação, `X-Crivo-Tenant`, retry, `onError`) e do IF idênticos; o HTTP da palavra-chave segue sem `onError` e com a mesma URL.
+- **Diferença conhecida (decisão D6)**: nos 4 nós que inlinam `opt-out-intent.mjs`, o regex de `normalizeUserMessage` ficou publicado com os caracteres literais U+0300 a U+036F em vez do escape de seis caracteres do fonte — o transporte do MCP converte qualquer sequência de escape unicode em caractere, com qualquer número de barras (testado três vezes em `Code: rota fora`, restaurado depois). O texto antes e depois do regex é idêntico ao gerado, e a classe de caracteres é a mesma (conferido em Node: mesma saída para texto acentuado). Dois nós que o lote não tocou (`Code: preparar clear de buffer (turno do agente)`, `Code: preparar turno para memória`) já estavam publicados sem a quebra de linha final antes deste lote.
+- Avisos do `update_workflow` que restaram são os já conhecidos: `SUBNODE_NOT_CONNECTED` dos `memoryManager` (falso positivo do lote-6c) e `builtInTools` do `OpenAI Chat Model` do agente, preexistente.
+- Gate Build: sem mudança de código nesta tarefa; os gates da T13 (2.111 testes) e da T15 (build ok) valem para o estado publicado.
 
 #### T17: Rerodar o benchmark de teto depois da publicação
 
