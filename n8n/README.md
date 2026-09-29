@@ -352,3 +352,31 @@ Cuidados que o benchmark de 2026-09-23 revelou:
 - **Limite de 200 mil tokens por minuto da organização na OpenAI**, compartilhado por todos os tenants. Espaçar as faixas grandes em ~1 minuto; faixas acima de ~500 KB estouram o limite numa única chamada.
 - A contagem de tokens é a **estimativa do n8n** (`estimatedTokens`), não o uso informado pela OpenAI, e não inclui as definições JSON das tools — a política soma uma folga de 2.000 tokens.
 - O workflow de benchmark salva execuções bem-sucedidas (precisa dos dados de tokens); o corpus é sintético.
+
+---
+
+## 14. Opt-out: palavra exata e linguagem natural (lote-13)
+
+Há dois caminhos até `POST /leads/{id}/opt-out`, e os dois terminam na **mesma cauda** (`Code: finalizar opt-out` → purga da memória → purga de `conversa_estado` → envio fixo). A confirmação é única e diz só o que o sistema cumpre: "Pronto, registramos seu pedido. Você não vai mais receber mensagens nossas por este número. Até mais!" (`n8n/src/opt-out-intent.mjs`, `OPT_OUT_CONFIRMATION`).
+
+1. **Palavra exata (gate, antes de qualquer modelo).** A mensagem inteira normalizada é `sair` ou `parar` → `gate.mjs` roteia `opt-out`. Funciona com o modelo fora do ar e também para lead em `escalado_humano`. Não mudou no lote-13.
+2. **Linguagem natural (rota `conversa`).** Depois do bloco de memória, `Code: entrada do classificador` monta o texto (última fala do agente na sessão + mensagem do turno) e o `Classificador: opt-out` (`textClassifier` v1.1, modelo próprio `gpt-5.4-nano-2026-03-17`) decide a rota. Saídas: 0 `fora` → agente normal; 1 `ambigua` → o system message liga a pergunta "quer parar de receber mensagens?"; 2 `explicita` → `Code: conferir pedido explícito` (trava determinística: "parar de mandar <conteúdo>" sem menção ao contato vira `ambigua`) → `HTTP: POST /leads/{id}/opt-out (linguagem natural)`; 3 `other` e 4 erro → agente normal. Se o registro falhar depois de 3 tentativas, o lead recebe uma única orientação para responder `sair`, sem afirmar que as mensagens pararam. Lead e tenant vêm sempre de `$('Code: gate')`, nunca do modelo.
+
+**Armadilha do SDK**: `.onError()` liga à saída 1 de um nó. No classificador (5 saídas) a de erro é a 4, ligada com `.output(4)`.
+
+### Medição e trava de publicação
+
+O classificador só vai para o agente com medição de falso positivo aprovada (AD-032): zero `explicita` em frases ambíguas ou fora de escopo e ≥ 90% nas explícitas.
+
+- Workflow `crivo-medicao-opt-out` (`n8n/workflows/medicao-opt-out.ts`, id `n5iAMCl5nSM6jA6U`): webhook com `{ corpus: <n8n/fixtures/opt-out-corpus.json>, repeticoes: 3 }`, roda só o classificador e a trava, sem CRM, WhatsApp ou memória, e devolve o relatório.
+- Gravar o relatório em `.specs/features/lote-13-opt-out-linguagem-natural/medicao-opt-out-<data>.json` e carimbar com `npx tsx scripts/opt-out-measurement.ts stamp <arquivo>`.
+- A suíte falha (`principal-classificador.test.ts`) se a identidade do classificador em `principal.ts` (parâmetros do nó, do modelo e o fonte de `opt-out-intent.mjs`) não for a do relatório `APROVADO` mais recente. **Remedir sempre que mudar** categoria, descrição, template, modelo, `options` do modelo ou `opt-out-intent.mjs`.
+- Histórico (2026-09-29): v1 reprovou com 7 falsos positivos ("parar de mandar foto/áudio/casa"), v2 com 5, v3 com 2; v3 + trava aprovou (execução 2688, 231 classificações, 0 falso positivo, 84/84 explícitas).
+
+### Vazão (AD-031)
+
+Cada turno de conversa faz **uma** chamada extra ao modelo: cerca de 800 tokens de entrada e 24 de saída (medido na T2, execuções 2634/2635, template customizado: 739 + 24; a v3 do template é um pouco maior). Contra o limite de 200 mil tokens por minuto da organização, com a margem de 0,8 da AD-031 (40 mil de folga), isso dá espaço para ~50 turnos de conversa por minuto só no classificador. A fórmula do teto de contexto não muda.
+
+### Depois de publicar
+
+A publicação muda o system message (instrução da faixa ambígua) e a versão do workflow: rodar o `check` do §13 e remedir o teto de contexto.

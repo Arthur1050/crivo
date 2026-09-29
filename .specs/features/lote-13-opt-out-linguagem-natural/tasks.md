@@ -970,14 +970,18 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 **Done when:**
 
-- [ ] Seção nova descreve palavra exata (gate, antes do modelo) e classificador (rota `conversa`), com a regra de quando remedir.
-- [ ] A conta de tokens por minuto do classificador aparece com a fonte dos números (relatório da T12).
-- [ ] Nenhuma afirmação de que opt-out natural está fora do escopo permanece (OPTDOC-01 AC3).
-- [ ] Gate Build passa.
+- [x] Seção nova descreve palavra exata (gate, antes do modelo) e classificador (rota `conversa`), com a regra de quando remedir.
+- [x] A conta de tokens por minuto do classificador aparece com a fonte dos números (relatório da T12).
+- [x] Nenhuma afirmação de que opt-out natural está fora do escopo permanece (OPTDOC-01 AC3).
+- [x] Gate Build passa.
 
 **Tests:** none
 **Gate:** Build
 **Commit:** `docs(n8n): document natural language opt-out`
+
+**Status:** ✅ Concluída (2026-09-29)
+
+**Evidence:** `n8n/README.md` §14 (dois caminhos, trava, medição e trava de publicação, regra de quando remedir, histórico das medições, conta de vazão com a fonte dos números na T2, lembrete do §13). Nenhuma afirmação de opt-out natural fora do escopo (`grep` sem ocorrência no README e no roteiro).
 
 #### T16: Publicar o agente com o classificador
 
