@@ -176,9 +176,9 @@ isso o lead ainda está `escalado_humano` e o gate nunca chega a avaliar o texto
 
 > **A palavra-chave é a mensagem inteira.** `detectOptOut` normaliza (minúsculas, sem acento, sem
 > espaços nas bordas) e compara com `sair`/`parar` **por igualdade** — "quero sair do apartamento"
-> **não** dispara opt-out, e isso é deliberado (`gate.mjs:24-38`). Opt-out por linguagem natural é
-> L13, fora deste lote. Se o turno 2 for escrito como frase, o cenário não falhou: ele não foi
-> executado — repita com a palavra isolada.
+> **não** dispara o opt-out do gate, e isso é deliberado (`gate.mjs:24-38`). Frases passam pelo
+> classificador de opt-out do lote-13 e são provadas no cenário 5 (§6.1). Este cenário exige a
+> palavra isolada: se o turno 2 for escrito como frase, ele não foi executado — repita com `sair`.
 
 > **A confirmação única não é "resposta", é o contrato.** LGPD-03 AC1 exige exatamente uma mensagem
 > de descadastro. O silêncio exigido pelo desfecho começa **a partir do turno 3**, não no turno 2.
@@ -191,6 +191,10 @@ isso o lead ainda está `escalado_humano` e o gate nunca chega a avaliar o texto
    perde.
 3. Exatamente **uma** mensagem enviada ao lead depois da palavra-chave (a confirmação), e **nenhuma**
    depois disso — a mensagem do turno 3 fica gravada e sem resposta.
+4. **(lote-13, regressão obrigatória — OPTKEY-01 AC4, OPTPROVA-01 AC4)** A confirmação tem
+   exatamente o texto "Pronto, registramos seu pedido. Você não vai mais receber mensagens nossas por
+   este número. Até mais!" — a mesma do caminho em linguagem natural (OPTMSG-01). Nenhuma promessa de
+   retomada.
 
 **Evidência a coletar**: id da execução do opt-out; id da execução do turno 3
 (`somente-registrar`); captura do CRM com `optedOutAt`; confirmação da sessão de memória vazia.
@@ -234,6 +238,54 @@ dentro do próprio lote (risco nomeado no `design.md`); captura da conversa.
 
 ---
 
+## 6.1 Cenário 5 — opt-out por linguagem natural (lote-13, OPTPROVA-01)
+
+**Objetivo**: provar os três caminhos do classificador de opt-out com conversa real: pedido explícito
+registra no mesmo turno; pedido ambíguo gera uma pergunta e só registra com "sim"; pedido fora de
+escopo não registra e a conversa segue.
+
+**Estado inicial exigido**: os três alvos do checklist (§9) limpos. Os três casos usam o mesmo
+número de teste, **em sequência, com `npm run smoke:reset` + `crivo-smoke-reset` e a confirmação do
+checklist entre um caso e outro** — cada reset apaga o lead, e o caso seguinte nasce com um lead novo.
+
+### Caso 5a — explícito (registra)
+
+| Turno | Intenção do lead | O que precisa acontecer no sistema |
+| --- | --- | --- |
+| 1 | Interesse inicial qualquer | Lead criado; agente responde normalmente; memória com conteúdo |
+| 2 | Pedido explícito em linguagem natural para parar de receber mensagens (ex.: "quero que você pare de me mandar mensagens") | Classificador: `explicita`; trava confirma; `POST /leads/{id}/opt-out` (linguagem natural) grava `optedOutAt`; memória e `conversa_estado` purgadas; **uma** confirmação com o texto de OPTMSG-01 |
+| 3 | Qualquer mensagem depois | `gate` roteia `somente-registrar`: gravada, **sem resposta** |
+
+### Caso 5b — ambíguo seguido de "sim" (registra na confirmação)
+
+| Turno | Intenção do lead | O que precisa acontecer no sistema |
+| --- | --- | --- |
+| 1 | Interesse inicial qualquer | Lead criado; agente responde normalmente |
+| 2 | Desinteresse geral, sem pedir para parar (ex.: "não tenho interesse, obrigado") | Classificador: `ambigua`; o agente pergunta, em uma frase, se o lead quer parar de receber mensagens por este número; **`optedOutAt` continua nulo** |
+| 3 | Resposta afirmativa curta ("sim") | Classificador: `explicita` (a última mensagem enviada é a pergunta); registro igual ao caso 5a, com a mesma confirmação |
+
+### Caso 5c — fora de escopo (não registra)
+
+| Turno | Intenção do lead | O que precisa acontecer no sistema |
+| --- | --- | --- |
+| 1 | Interesse inicial qualquer | Lead criado; agente responde normalmente |
+| 2 | "pode parar de mandar foto" | Classificador: `fora` (ou trava rebaixando para `ambigua`); **`optedOutAt` continua nulo**; resposta normal do agente (ou a pergunta, se a trava atuar) |
+
+**Desfecho exigido — é isto que aprova ou reprova (OPTPROVA-01 AC2, AC3):**
+
+1. 5a: `optedOutAt` preenchido; sessão `"triangulo:553499532444"` em `n8n_chat_histories` vazia
+   **antes** da limpeza manual; exatamente uma mensagem depois do pedido (a confirmação); turno 3 sem
+   resposta.
+2. 5b: `optedOutAt` nulo depois do turno 2 e preenchido depois do "sim"; sessão de memória vazia antes
+   da limpeza manual.
+3. 5c: `optedOutAt` nulo.
+
+**Evidência a coletar**: id da execução de cada turno relevante, conferido por `get_execution` antes
+de citado (L-011), mostrando a saída do classificador; `optedOutAt` por lead; estado da sessão de
+memória. Nenhum telefone completo nem texto real além das frases roteirizadas.
+
+---
+
 ## 7. Barra de aprovação — desfecho, nunca estilo
 
 **A regra**: cada cenário é aprovado **exclusivamente** pelo estado final no CRM (mais o evento no
@@ -246,6 +298,7 @@ Calendar, no cenário 1). Nada que dependa de achar a conversa boa entra no vere
 | 2 — escalar | `status = escalado_humano` **e** responsável atribuído **e** a mensagem seguinte gravada sem nenhuma resposta do agente |
 | 3 — opt-out | `optedOutAt` preenchido **e** sessão de memória purgada pelo fluxo **e** exatamente uma confirmação enviada, com silêncio depois |
 | 4 — consulta de inventário | Turno 2 cita imóvel real (referência + preço batendo com o banco) **e** turno 3 declara ausência sem citar nenhum imóvel **e** nenhum dos dois cita endereço exato nem nome de captador |
+| 5 — opt-out por linguagem natural | 5a: `optedOutAt` preenchido, memória vazia, uma confirmação, silêncio depois **e** 5b: nulo após a pergunta e preenchido após o "sim" **e** 5c: `optedOutAt` nulo |
 
 **Quantos turnos o cenário pode gastar**: o roteiro sugere a quantidade mínima, não um teto. Turnos a
 mais — porque o agente perguntou de novo, porque um turno saiu mudo por `maxIterations`, porque a

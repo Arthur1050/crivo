@@ -945,15 +945,19 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 **Done when:**
 
-- [ ] Casos descritos como intenção de turno, com o estado final exigido no CRM: explícito → `optedOutAt` preenchido; ambíguo → pergunta, "sim" → preenchido; fora de escopo → nulo e resposta normal (OPTPROVA-01 AC1, AC2).
-- [ ] Cada caso que registra exige confirmar a sessão de memória vazia antes da limpeza manual (AC3).
-- [ ] O cenário 3 exige o texto de OPTMSG-01 e é marcado como regressão obrigatória deste lote (AC4).
-- [ ] Grep por `Opt-out por linguagem natural é L13` sem ocorrência.
-- [ ] Gate Build passa.
+- [x] Casos descritos como intenção de turno, com o estado final exigido no CRM: explícito → `optedOutAt` preenchido; ambíguo → pergunta, "sim" → preenchido; fora de escopo → nulo e resposta normal (OPTPROVA-01 AC1, AC2).
+- [x] Cada caso que registra exige confirmar a sessão de memória vazia antes da limpeza manual (AC3).
+- [x] O cenário 3 exige o texto de OPTMSG-01 e é marcado como regressão obrigatória deste lote (AC4).
+- [x] Grep por `Opt-out por linguagem natural é L13` sem ocorrência.
+- [x] Gate Build passa.
 
 **Tests:** none
 **Gate:** Build
 **Commit:** `docs(n8n): add natural language opt-out smoke scenario`
+
+**Status:** ✅ Concluída (2026-09-29)
+
+**Evidence:** `n8n/smoke/roteiro.md` §6.1 "Cenário 5 — opt-out por linguagem natural" com os casos 5a (explícito), 5b (ambíguo + "sim") e 5c ("pode parar de mandar foto"), reset entre os casos, desfecho por estado final no CRM e memória vazia antes da limpeza manual; linha nova na barra de aprovação (§7); cenário 3 com o item 4 (texto de OPTMSG-01, regressão obrigatória). `grep "Opt-out por linguagem natural é L13"` sem ocorrência. Documento sem teste; gate Build rodado junto com a T15.
 
 #### T15: Documentar os dois caminhos de opt-out no README do n8n
 
