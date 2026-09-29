@@ -502,6 +502,416 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 **Evidence:** o workflow de medição anterior (`yTgE1WKY8BPOCuDl`) foi arquivado depois de os relatórios v1–v3 estarem gravados (L-016); o novo `crivo-medicao-opt-out` (`n5iAMCl5nSM6jA6U`) foi criado de `n8n/generated/medicao-opt-out.ts` e publicado; `versionId == activeVersionId == 2b494521-0815-44b7-bd77-5d4e19da667c`, 14 nós, conexões com a trava (saída 2 → `Code: conferir pedido explícito` → IF → marcar explicita / marcar ambigua (trava) → Merge 6 entradas). Diferenças conhecidas em relação ao gerado: o `Code: pontuar` publicado não tem o bloco de comentário do módulo inlinado (a lógica é a mesma; a pontuação fica fora do hash). Execução **2688** (conferida por `get_execution`, `success`, 102 s): 77 × 3 = 231 classificações, `execucoes` 231 (Merge disparou uma vez), 231 chamadas ao modelo (sem auto-fix), `erro` 0, `other` 1. **Explícitas 84/84 (1,0); falsos positivos 0** (ambíguas 0/51, fora 0/96). A trava não precisou atuar nesta rodada (o marcador da trava não executou); a cobertura dela sobre o corpus vem de `opt-out-intent.test.ts`. Relatório: `medicao-opt-out-2026-09-29-v4.json`, `classifierHash` `1547f0ae…` igual ao `identity` do `principal.ts`.
 
+### Phase 5: Documentação, publicação e prova
+
+```text
+T14 -> T15 -> T16 -> T17 -> T18
+```
+
+---
+
+## Task Breakdown
+
+### Phase 1: Espinha — confirmar o que o design não pôde confirmar
+
+#### T1: Registrar o formato real da sessão carregada pela memória
+
+**What:** Ler uma execução real recente do `crivo-agente-principal` com sessão não vazia e registrar o formato dos elementos de `messages` que `Chat Memory Manager: carregar sessão` devolve com `groupMessages: true`, gerando uma fixture sanitizada com esse formato.
+**Where:** `n8n/fixtures/memory-load-sample.json`
+**Depends on:** None
+**Reuses:** `principal.ts:771-784` (comentário do shape conhecido), MCP `search_executions`/`get_execution`
+**Requirement:** OPTREG-01, OPTAMB-01
+**Tools:** n8n leitura (somente leitura; sem autorização extra)
+
+**Done when:**
+
+- [x] O id da execução lida foi conferido por `get_execution` e registrado na seção Evidence desta tarefa (L-011).
+- [x] A fixture reproduz exatamente as chaves e a estrutura observadas (incluindo como uma mensagem de agente e uma de lead aparecem) e troca todo texto por conteúdo sintético; nenhum telefone, nome ou texto real.
+- [x] A fixture também inclui um exemplo dos itens de `Code: selecionar mensagens de semeadura` (`{ type, message, nadaParaSemear }`), lido do código em `principal.ts:837-883`.
+- [x] Se o formato contradisser o `design.md` (por exemplo, sem autoria distinguível), a execução para e o desvio vai ao usuário antes da T3.
+- [x] Gate Build passa sem mudança na contagem de testes.
+
+**Tests:** none
+**Gate:** Build
+**Commit:** `test(n8n): capture memory session load shape fixture`
+
+**Status:** ✅ Concluída (2026-09-27)
+
+**Evidence:**
+
+- Execução **2598** do `crivo-agente-principal` (`0B1nqjODu7xuYYKF`), `status: success`, modo `webhook`, 2026-09-25T22:27:28Z, conferida por `get_execution` com `includeData` restrito a `Chat Memory Manager: carregar sessão`. Saída: `{ messages: [...8 elementos], messagesCount: 8 }`.
+- Formato observado: cada elemento de `messages` agrupa mensagens consecutivas **por autoria**, com as chaves na ordem de inserção. `human` (string) é o lead; `ai` string é a fala do agente; `ai: []` é a mensagem do agente que só chamou tool (sem texto); `tool` é o resultado da tool serializado como string. Exemplos reais de chaves: `{human, ai: [], tool}`, `{ai: "<texto>", human}`, `{ai: [], tool}`, `{ai: "<texto>"}` (último elemento, agente por último).
+- **Autoria distinguível**: sim. Não contradiz o `design.md`. `lastAgentMessage` deve percorrer os elementos do fim para o começo e devolver o primeiro `ai` que seja string não vazia, ignorando `ai: []`.
+- `messagesCount` conta elementos agrupados, não mensagens individuais.
+- Observação (não bloqueante): o `ai` gravado na memória é a saída final do agente; o texto efetivamente enviado ao lead sai pela tool `responder_lead`. Nesta execução a memória guarda a fala do agente como texto, que é o que o classificador vai ler.
+- Fixture: `n8n/fixtures/memory-load-sample.json` (`loaded`, `loadedEmpty`, `seeded`, `seededNothing`), textos sintéticos, sem telefone, nome real ou id real (o `leadId` foi trocado por um UUID fictício). Os itens de semeadura seguem `principal.ts` (`{ type: 'user'|'ai', message, nadaParaSemear: false }` e o sentinela `{ nadaParaSemear: true }`).
+- Gate Build: `npm test` 117 arquivos / 1.878 testes, 0 falhas, 0 skips (igual ao baseline); `npm run lint` 0 erros (7 avisos preexistentes); `npm run build` ok.
+
+#### T2: Confirmar roteamento de erro e formato do Text Classifier
+
+**What:** Criar um workflow de rascunho no n8n com `textClassifier` v1.1 (categorias `fora`, `ambigua`, `explicita`; `fallback: other`; `onError: continueErrorOutput`) e um `lmChatOpenAi` com o snapshot da AD-026, e registrar no `design.md`: por qual saída sai um item com erro, se o `systemPromptTemplate` customizado mantém as instruções de formato, e se o auto-fix dispara.
+**Where:** `.specs/features/lote-13-opt-out-linguagem-natural/design.md`
+**Depends on:** T1
+**Reuses:** `get_sdk_reference`, `get_node_types` (já consultado no Design), credencial OpenAI existente
+**Requirement:** OPTREG-01, OPTMED-01
+**Tools:** n8n escrita — **autorização específica antes de criar o rascunho**
+
+**Done when:**
+
+- [x] Três execuções no rascunho: (a) frase explícita com template customizado; (b) a mesma frase com o template padrão; (c) falha forçada (modelo inexistente num segundo nó de modelo, ou entrada vazia, o que provocar erro). Ids conferidos por `get_execution`.
+- [x] O índice de saída do item de erro e a presença ou ausência de auto-fix em (a) e (b) estão escritos na seção Evidence desta tarefa **antes** de arquivar o rascunho (L-016).
+- [x] O `design.md` (Tech Decisions e Risks & Concerns) registra a escolha final do template e a confirmação (ou correção) do roteamento de erro. Se o erro não sair por uma saída própria nem pela saída 0 (`fora`), a execução para e o desvio vai ao usuário.
+- [x] Rascunho arquivado com `archive_workflow` depois do registro.
+- [x] Gate Build passa.
+
+**Tests:** none
+**Gate:** Build
+**Commit:** `docs(specs): confirm text classifier routing for lote 13`
+
+**Status:** ✅ Concluída (2026-09-27)
+
+**Evidence** (registrada antes de arquivar o rascunho, L-016):
+
+- Rascunho `crivo-rascunho-t2-classificador`, id `hsYF9VXAbGKLCkIc`, projeto pessoal, criado por `create_workflow_from_code` com autorização do usuário. Webhook → Switch por `body.caso` → três `textClassifier` v1.1 (categorias `fora`, `ambigua`, `explicita`; `multiClass: false`; `fallback: other`; `enableAutoFixing: true`; `onError: continueErrorOutput`) com `lmChatOpenAi` v1.3 `gpt-5.4-nano-2026-03-17`, `reasoningEffort: low`, `timeout: 20000`. Entrada sintética: `Última mensagem enviada ao lead: <abertura fixa>\nMensagem do lead: não me mande mais mensagens`. Executado em modo `manual`, sem CRM, WhatsApp ou memória.
+- **(a) template customizado** — execução **2634**, conferida por `get_execution`. O classificador devolveu `main: [[],[],[item],[],[]]`: **5 saídas**, item na saída **2 (`explicita`)**. O prompt enviado ao modelo é o template customizado com `{categories}` substituído por `fora, ambigua, explicita`, **seguido das instruções de formato que o nó anexa sozinho** (JSON Schema com uma propriedade booleana por categoria mais `fallback`, e as linhas "Categories are mutually exclusive" / "If no categories apply, select the fallback option"). Resposta do modelo: `{"fora":false,"ambigua":false,"explicita":true,"fallback":false}` em bloco de código. **Uma única chamada ao modelo** (`Modelo a` runIndex 0 apenas): **sem auto-fix**. 739 tokens de entrada estimados, 24 de saída.
+- **(b) template padrão** — execução **2635**, conferida por `get_execution`. Mesmo resultado: `main: [[],[],[item],[],[]]`, saída 2, uma chamada, **sem auto-fix**. 667 tokens de entrada, 24 de saída.
+- **(c) falha forçada** (modelo `gpt-modelo-inexistente-lote13`) — execução **2636**, conferida por `get_execution`. O modelo falhou com `NodeApiError` ("The model ... does not exist"); o classificador terminou `success` com `main: [[],[],[],[],[item]]`: o item saiu pela **saída 4, a saída de erro própria**, com o JSON de entrada preservado e um campo `error`. Nenhum item saiu por uma categoria. Não é o desvio de parada do `EXECUTE-PROMPT.md`.
+- **Mapa de saídas confirmado**: 0 `fora`, 1 `ambigua`, 2 `explicita`, 3 `other` (fallback), 4 erro.
+- **Achado do SDK (corrige o design)**: `get_workflow_details` do rascunho mostra que `.onError(handler)` do `@n8n/workflow-sdk` liga o handler à **saída 1** do nó (supõe nó de duas saídas). No classificador, isso pôs o handler de erro em `ambigua` e deixou a saída 4 sem conexão, por isso a execução (c) parou no classificador. Toda ligação de erro do classificador precisa usar **`.output(4)`**, e os testes de aresta precisam afirmar a conexão no índice 4 do `toJSON()`. O `.onError()` continua correto em nós de duas saídas, como o HTTP da T11 (a confirmar pelo teste de aresta da própria T11).
+- Os Code nodes marcadores do rascunho falharam com `Referenced node doesn't exist` por usarem `$node.name`; foi só no rascunho, depois do classificador, e não afeta nenhuma conclusão acima.
+- **Template escolhido**: o customizado (com a regra de desempate). Ele mantém as instruções de formato e não disparou auto-fix. Custa ~72 tokens a mais por chamada.
+- Rascunho arquivado com `archive_workflow` depois deste registro.
+- Gate Build: `npm test` 117 arquivos / 1.878 testes, 0 falhas; `npm run lint` 0 erros; `npm run build` ok.
+
+### Phase 2: Módulos puros e identidade
+
+#### T3: Criar o módulo de entrada e textos do opt-out natural
+
+**What:** Criar `n8n/src/opt-out-intent.mjs` com `OPT_OUT_CONFIRMATION`, `OPT_OUT_REGISTRATION_FAILED`, `lastAgentMessage({ loaded, seeded })` e `buildClassifierInput({ lastAgentMessage, userMessage })`, conforme o design.
+**Where:** `n8n/src/opt-out-intent.mjs`
+**Depends on:** T2
+**Reuses:** convenção de `n8n/src/gate.mjs` e `session.mjs` (puro, sem import); fixture da T1
+**Requirement:** OPTMSG-01, OPTREG-01, OPTAMB-01
+**Tools:** Local Core
+
+**Done when:**
+
+- [x] `OPT_OUT_CONFIRMATION` é afirmado byte a byte igual a "Pronto, registramos seu pedido. Você não vai mais receber mensagens nossas por este número. Até mais!" (OPTMSG-01 AC2, L-037).
+- [x] Um teste afirma que a confirmação não contém "chamar novamente" nem "mudar de ideia".
+- [x] `OPT_OUT_REGISTRATION_FAILED` é afirmado igual ao texto do design e contém a palavra `sair`; um teste afirma que ele não contém afirmação de que as mensagens pararam (OPTREG-01 AC10).
+- [x] `lastAgentMessage` usa a fixture da T1 e cobre: sessão carregada com agente por último; lead por último depois de mensagem do agente; só semeadura; sessão vazia → `null` (edge case do "sim" pós-12h).
+- [x] `buildClassifierInput` cobre: com e sem última mensagem (`(nenhuma)`), e várias mensagens do buffer unidas por quebra de linha.
+- [x] Gate Quick passa; contagem registrada.
+
+**Tests:** unit
+**Gate:** Quick
+**Commit:** `feat(n8n): add natural language opt-out intent module`
+**Status:** ✅ Concluída (2026-09-27)
+**Gate:** Quick — `npx vitest run n8n/src/__tests__/opt-out-intent.test.ts`: 1 arquivo / 23 testes, 0 falhas (arquivo novo; nenhum teste existente tocado).
+
+#### T4: Criar a pontuação da medição
+
+**What:** Criar `n8n/src/opt-out-score.mjs` com `scoreMeasurement(results, { minExplicitRate = 0.9 })`.
+**Where:** `n8n/src/opt-out-score.mjs`
+**Depends on:** T3
+**Reuses:** convenção dos módulos puros
+**Requirement:** OPTMED-01
+**Tools:** Local Core
+
+**Done when:**
+
+- [x] Contagens por frase e por faixa conferidas contra um conjunto de resultados sintéticos escrito à mão (OPTMED-01 AC5).
+- [x] APROVADO com 0 falso positivo e taxa exatamente 0,9 (fronteira, L-023); REPROVADO com taxa logo abaixo de 0,9; REPROVADO com 1 falso positivo vindo de frase **ambígua**; REPROVADO com 1 falso positivo vindo de frase **fora** — cada condição com asserção própria (OPTMED-01 AC6, L-012).
+- [x] `other` e `erro` contam como `fora` (nunca como explícita).
+- [x] O default de `minExplicitRate` é afirmado como 0,9 (L-037).
+- [x] Gate Quick passa; contagem registrada.
+
+**Tests:** unit
+**Gate:** Quick
+**Commit:** `feat(n8n): add opt-out measurement scoring`
+**Status:** ✅ Concluída (2026-09-27)
+**Gate:** Quick — `npx vitest run n8n/src/__tests__/opt-out-score.test.ts`: 1 arquivo / 13 testes, 0 falhas (arquivo novo; nenhum teste existente tocado).
+
+#### T5: Instrução de pergunta para a faixa ambígua no system message
+
+**What:** Adicionar `OPT_OUT_AMBIGUOUS_INSTRUCTION` e o parâmetro `optOutAmbiguo = false` em `buildSystemMessage`, incluindo a instrução só quando `true` e mantendo `OPT_OUT_GUIDANCE_INSTRUCTION`.
+**Where:** `n8n/src/system-message.mjs`
+**Depends on:** T4
+**Reuses:** padrão das instruções condicionais existentes (`firstTurn`, `meetingAt`)
+**Requirement:** OPTAMB-01, OPTDOC-01
+**Tools:** Local Core
+
+**Done when:**
+
+- [x] Com `optOutAmbiguo: true`, o system message contém a instrução nova; com `false` e com o parâmetro ausente, não contém (dois testes separados; L-005).
+- [x] Com o parâmetro ausente, o system message é byte a byte igual ao de antes desta tarefa, para um conjunto fixo de entradas (protege `benchmark-contexto.ts`).
+- [x] `OPT_OUT_GUIDANCE_INSTRUCTION` continua presente nos dois casos (OPTDOC-01 AC2).
+- [x] Cada subcláusula da instrução (uma frase, perguntar se quer parar por este número, não insistir, não prometer parar) tem asserção própria (L-012).
+- [x] Gate Quick passa; os testes existentes de `system-message.test.ts` continuam passando sem alteração.
+
+**Tests:** unit
+**Gate:** Quick
+**Commit:** `feat(n8n): ask ambiguous opt-out leads before registering`
+**Status:** ✅ Concluída (2026-09-27)
+**Gate:** Quick — `npx vitest run n8n/src/__tests__/system-message-opt-out-ambiguo.test.ts n8n/src/__tests__/system-message.test.ts`: 2 arquivos / 199 testes (177 existentes, sem alteração, + 22 novos), 0 falhas. Baseline byte a byte em `n8n/fixtures/system-message-baseline.json`, gerado da revisão 0a5cb47 antes da edição.
+
+#### T6: Ancorar a extração do modelo do benchmark no nó do agente
+
+**What:** Fazer `extractModelId` localizar o nó `name: "OpenAI Chat Model"` em vez do primeiro `lmChatOpenAi` do arquivo.
+**Where:** `src/server/documents/benchmark-identity.ts`
+**Depends on:** T5
+**Reuses:** testes existentes de `benchmark-identity`
+**Requirement:** OPTDOC-01
+**Tools:** Local Core
+
+**Done when:**
+
+- [x] Com uma fonte que tem um `lmChatOpenAi` de outro modelo **antes** do nó do agente, `extractModelId` devolve o modelo do agente (teste de regressão que falha na implementação antiga).
+- [x] Sem o nó `OpenAI Chat Model`, a função lança erro.
+- [x] A identidade derivada do `principal.ts` atual não muda (mesmo `modelId`).
+- [x] Gate Quick passa com os testes existentes intactos.
+
+**Tests:** unit
+**Gate:** Quick
+**Commit:** `fix(documents): anchor benchmark model id on the agent node`
+**Status:** ✅ Concluída (2026-09-27)
+**Gate:** Quick — `npx vitest run src/server/documents/__tests__/benchmark-identity.test.ts`: 1 arquivo / 10 testes (7 existentes, sem alteração, + 3 novos), 0 falhas. Os 2 testes de regressão falharam na implementação antiga antes da correção.
+
+#### T7: Criar a identidade do classificador e o script de medição
+
+**What:** Criar `scripts/opt-out-measurement.ts` com `classifierIdentity(workflowJson, intentSource)` e os subcomandos `identity` (imprime o hash do `principal.ts` atual) e `stamp <relatorio.json>` (grava `classifierHash`, `modelId` e a data no relatório devolvido pelo workflow).
+**Where:** `scripts/opt-out-measurement.ts`
+**Depends on:** T6
+**Reuses:** padrão de `scripts/document-context-benchmark.ts` e `benchmark-identity.ts` (sha256, normalização de CRLF)
+**Requirement:** OPTMED-01
+**Tools:** Local Core
+
+**Done when:**
+
+- [x] O hash é o mesmo para fonte com CRLF e com LF.
+- [x] O hash muda quando muda, cada um com asserção própria: uma categoria, uma descrição, o `systemPromptTemplate`, o modelo, as `options` do nó de modelo e o fonte de `opt-out-intent.mjs` (OPTMED-01 AC8).
+- [x] O hash não muda com a posição do nó no canvas.
+- [x] Sem nó `Classificador: opt-out` no JSON, a função lança erro.
+- [x] Gate Quick passa.
+
+**Tests:** unit
+**Gate:** Quick
+**Commit:** `feat(scripts): add opt-out classifier identity and measurement stamp`
+**Status:** ✅ Concluída (2026-09-27)
+**Gate:** Quick — `npx vitest run scripts/__tests__/opt-out-measurement.test.ts`: 1 arquivo / 21 testes, 0 falhas. `identity` sobre o `principal.ts` atual recusa com "Nó \"Classificador: opt-out\" não encontrado" (o nó entra na T10). Inclui a correção da anotação de tipo `Case` em `system-message-opt-out-ambiguo.test.ts` (T5), sem mudar asserção, para não somar erros de `tsc`.
+
+### Phase 3: Workflows como código
+
+#### T8: Criar o corpus da medição
+
+**What:** Criar `n8n/fixtures/opt-out-corpus.json` com a abertura fixa e os itens `{ id, faixa, texto, ultimaMensagem? }`, com teste estrutural.
+**Where:** `n8n/fixtures/opt-out-corpus.json`
+**Depends on:** T7
+**Reuses:** frases reais de `lote-7/context.md:79` e `n8n/smoke/evidencia.md:1494`; faixas de `context.md`
+**Requirement:** OPTMED-01
+**Tools:** Local Core
+
+**Done when:**
+
+- [x] ≥ 20 explícitas, ≥ 15 ambíguas e ≥ 20 fora, afirmadas por teste (OPTMED-01 AC1).
+- [x] As três frases reais estão na faixa explícita e "pode parar de mandar foto" está na faixa fora, cada uma com asserção própria (AC2, AC3).
+- [x] Pares de confirmação presentes: pergunta de confirmação + "sim" (explícita) e + "não" (fora).
+- [x] Near-misses com "parar"/"sair" sobre outra coisa: pelo menos 8 na faixa fora.
+- [x] Ids únicos; nenhum texto contém telefone, e-mail ou nome real.
+- [x] Gate Quick passa.
+
+**Tests:** unit
+**Gate:** Quick
+**Commit:** `test(n8n): add natural language opt-out measurement corpus`
+**Status:** ✅ Concluída (2026-09-27)
+**Gate:** Quick — `npx vitest run n8n/src/__tests__/opt-out-corpus.test.ts`: 1 arquivo / 16 testes, 0 falhas (arquivo novo). Corpus: 24 explícitas, 17 ambíguas, 21 fora (11 near-misses), abertura fixa em `abertura`.
+
+#### T9: Criar o workflow de medição
+
+**What:** Criar `n8n/workflows/medicao-opt-out.ts` (`crivo-medicao-opt-out`): webhook → expandir corpus × 3 com `buildClassifierInput` → classificador + modelo com os parâmetros finais da T2 → marcar categoria por saída (incluindo `other` e erro) → Merge → `scoreMeasurement` → resposta; gerar `n8n/generated/medicao-opt-out.ts`.
+**Where:** `n8n/workflows/medicao-opt-out.ts`
+**Depends on:** T8
+**Reuses:** `n8n/workflows/benchmark-contexto.ts` (webhook, estrutura, cabeçalho de propósito), inliner
+**Requirement:** OPTMED-01
+**Tools:** Local Core + n8n leitura (`validate_workflow`, `get_node_types`)
+
+**Done when:**
+
+- [x] Teste estrutural: nenhum nó HTTP para o CRM, nenhum nó WhatsApp, nenhuma memória Postgres (OPTMED-01 AC4).
+- [x] Teste estrutural: cada saída do classificador (as três categorias, `other` e erro) chega ao Merge — um teste por aresta (L-026).
+- [x] Teste estrutural: o modelo do nó é `gpt-5.4-nano-2026-03-17`, com `reasoningEffort: "low"`.
+- [x] `validate_workflow` do MCP sem erro sobre `n8n/generated/medicao-opt-out.ts`.
+- [x] `node scripts/n8n-inline.mjs` roda e o arquivo gerado entra no mesmo commit.
+- [x] Gate Full passa.
+
+**Tests:** unit
+**Gate:** Full
+**Commit:** `feat(n8n): add opt-out classifier measurement workflow`
+**Status:** ✅ Concluída (2026-09-28)
+**Gate:** Full — `node scripts/n8n-inline.mjs` + `npm test`: 1ª rodada 123 arquivos / 2.010 testes, 1 falha (timeout conhecido de `cron-expire-documents`, verde isolado: 9/9); 2ª rodada 123 / 2.010, 0 falhas. `medicao-opt-out.test.ts`: 34 testes. `validate_workflow` do gerado: válido, 11 nós. Entrada do webhook: `{ corpus: <opt-out-corpus.json>, repeticoes?: 3 }`; resposta: relatório de `scoreMeasurement` + `repeticoes`, `execucoes`, `categorias`. `n8n/generated/principal.ts` e `benchmark-contexto.ts` regenerados (defasados desde a T5).
+
+#### T10: Inserir o classificador na rota conversa do agente
+
+**What:** Em `principal.ts`, adicionar `Code: entrada do classificador`, `Classificador: opt-out`, `OpenAI Chat Model (classificador)`, `Code: rota fora` e `Code: rota ambígua`, religar `Code: memória pronta` → entrada → classificador, levar `fora`/`other`/erro e `ambigua` até `Code: montar system message…` e passar `optOutAmbiguo` a `buildSystemMessage`. A saída `explicita` fica para a T11.
+**Where:** `n8n/workflows/principal.ts`
+**Depends on:** T9
+**Reuses:** parâmetros do classificador da T9 (byte a byte), módulo da T3, T5
+**Requirement:** OPTREG-01, OPTAMB-01, OPTSEG-01, OPTMED-01
+**Tools:** Local Core + n8n leitura
+
+**Done when:**
+
+- [x] Teste de paridade: `classifierIdentity(principal)` é igual a `classifierIdentity(medicaoOptOut)` (arquivo `n8n/workflows/__tests__/principal-classificador.test.ts`).
+- [x] Testes de aresta: `memória pronta → entrada → classificador`; `fora`, `other` e erro → `Code: rota fora`; `ambigua` → `Code: rota ambígua`; as duas rotas → `Code: montar system message…` — um teste por aresta (L-026).
+- [x] Teste: `Code: montar system message…` passa `optOutAmbiguo: $json.optOutAmbiguo === true`, e `Code: rota ambígua` emite `true` e `Code: rota fora` emite `false`.
+- [x] Teste: a entrada do classificador não contém `$fromAI`, e o lead/tenant de nenhum nó novo vem do modelo (OPTREG-01 AC2).
+- [x] `principal-modelo.test.ts` atualizado com as contagens de nós e conexões **medidas** por `principal.toJSON()`, com a conta no comentário; o nó `OpenAI Chat Model` do agente continua com o mesmo modelo e parâmetros; o nó do classificador tem o mesmo modelo.
+- [x] `node scripts/n8n-inline.mjs` roda e `validate_workflow` sem erro sobre o gerado.
+- [x] Gate Full passa.
+
+**Tests:** unit
+**Gate:** Full
+**Commit:** `feat(n8n): route conversation turns through the opt-out classifier`
+**Status:** ✅ Concluída (2026-09-28)
+**Gate:** Full — `node scripts/n8n-inline.mjs` + `npm test` em 3 rodadas: 124 arquivos / 2.032 testes, 2 falhas em cada, sempre só `DOCLIM-01 AC8` de `actions.test.ts` (timeout de 30 s na suíte paralela; o arquivo passa isolado, 81/81, ~15 s por teste; a T10 não toca `src/`). `principal-classificador.test.ts`: 22 testes. Contagens medidas 62/76 → 67/84. `validate_workflow` do gerado: válido, 67 nós (só os avisos `SUBNODE_NOT_CONNECTED` conhecidos dos `memoryManager`). Identidade do classificador: `07f33701ce001b073d584bdf636f910be91fc3e8119dda324542d3e2c2be5953`.
+
+#### T11: Ligar a faixa explícita ao ramo de opt-out existente
+
+**What:** Em `principal.ts`, adicionar `HTTP: POST /leads/{id}/opt-out (linguagem natural)` (retry 3×, `onError: continueErrorOutput`) na saída `explicita`, com sucesso → `Code: finalizar opt-out` e erro → `Code: orientar sair (falha do registro)` → `fixedReplyWired`; trocar o texto de `Code: finalizar opt-out` por `OPT_OUT_CONFIRMATION` via inline.
+**Where:** `n8n/workflows/principal.ts`
+**Depends on:** T10
+**Reuses:** nó `HTTP: POST /leads/{id}/opt-out` (parâmetros), ramo `optOutBranch`, `fixedReplyWired`, módulo da T3
+**Requirement:** OPTREG-01, OPTKEY-01, OPTMSG-01
+**Tools:** Local Core + n8n leitura
+
+**Done when:**
+
+- [x] Testes de aresta, um por aresta (L-026): `explicita` → HTTP natural; sucesso do HTTP natural → `Code: finalizar opt-out`; erro → `Code: orientar sair` → `Code: destinatário do envio fixo`.
+- [x] Teste: a URL e o `X-Crivo-Tenant` do HTTP natural vêm de `$('Code: gate')`, iguais aos do nó da palavra-chave (OPTREG-01 AC1, AC2).
+- [x] Teste: `Code: finalizar opt-out` tem exatamente dois predecessores (os dois HTTP de opt-out) e só ele produz a confirmação; o texto antigo não aparece em nenhum nó (OPTMSG-01 AC1).
+- [x] Teste: as arestas do caminho da palavra-chave (`Switch: rota (gate)` saída 0 → HTTP da palavra-chave → finalizar → purgas → envio fixo) continuam idênticas, e o nó HTTP da palavra-chave não ganhou `onError` (OPTKEY-01 AC1, AC4).
+- [x] `git diff` não toca `n8n/src/gate.mjs` nem `n8n/src/__tests__/gate.test.ts` (OPTKEY-01 AC2).
+- [x] Contagens de `principal-modelo.test.ts` atualizadas pela medida; `node scripts/n8n-inline.mjs` roda; `validate_workflow` sem erro.
+- [x] Gate Full passa.
+
+**Tests:** unit
+**Gate:** Full
+**Commit:** `feat(n8n): register explicit natural language opt-out requests`
+**Status:** ✅ Concluída (2026-09-28)
+**Gate:** Full — `node scripts/n8n-inline.mjs` + `npm test`: 125 arquivos / 2.051 testes, 0 falhas. `principal-opt-out-natural.test.ts`: 19 testes. Contagens medidas 67/84 → 69/88. `validate_workflow` do gerado: válido, 69 nós (só os avisos `SUBNODE_NOT_CONNECTED` conhecidos). `gate.mjs` e `gate.test.ts` sem diff. Identidade do classificador inalterada.
+
+### Phase 4: Medição conectada (portão de publicação)
+
+#### T12: Publicar e rodar a medição de falso positivo
+
+**What:** Publicar `crivo-medicao-opt-out` a partir de `n8n/generated/medicao-opt-out.ts`, executá-lo com o corpus da T8, gravar o relatório com `scripts/opt-out-measurement.ts stamp` e decidir pela barra.
+**Where:** `.specs/features/lote-13-opt-out-linguagem-natural/medicao-opt-out-<AAAA-MM-DD>.json`
+**Depends on:** T11
+**Reuses:** fluxo de publicação do `n8n/README.md`; T4, T7, T9
+**Requirement:** OPTMED-01
+**Tools:** n8n escrita — **autorização específica antes de publicar e antes de executar**
+
+**Done when:**
+
+- [x] `get_workflow_details` confirma que o publicado é igual ao gerado; `versionId == activeVersionId` (L-032); id do workflow registrado.
+- [x] Execução conferida por `get_execution`, com id na Evidence; 3 execuções por item do corpus.
+- [x] Relatório gravado com contagens por frase e por faixa, `falsosPositivos`, `taxaExplicita`, `veredito`, `classifierHash` (igual ao `identity` do `principal.ts` atual), `modelId`, `workflowVersion` e a contagem de execuções com auto-fix.
+- [x] **Se `REPROVADO`**: nenhuma tarefa seguinte roda; o relatório é commitado assim mesmo e a execução para com o resultado para o usuário (OPTMED-01 AC7, AD-032).
+- [x] Gate Build passa.
+
+**Tests:** none
+**Gate:** Build
+**Commit:** `test(n8n): record opt-out classifier measurement`
+
+**Status:** ✅ Concluída (2026-09-29) — veredito **REPROVADO**. Parada obrigatória (AD-032, OPTMED-01 AC7): nada da Phase 5 roda; o lote volta ao usuário. T13 também não roda (depende de uma medição aprovada).
+
+**Evidence:**
+
+- Workflow `crivo-medicao-opt-out`, id **`yTgE1WKY8BPOCuDl`** (projeto pessoal), criado por `create_workflow_from_code` a partir de `n8n/generated/medicao-opt-out.ts` e publicado com autorização do usuário. `get_workflow_details`: `versionId == activeVersionId == 3630cd81-921b-4ba9-abb4-912f1c5bed3e` (L-032); 11 nós; conexões iguais às do gerado (5 saídas do classificador → 5 marcadores → Merge entradas 0–4 → `Code: pontuar`). Paridade conferida por hash: `classifierIdentity` sobre os nós publicados do classificador e do modelo = `07f33701ce001b073d584bdf636f910be91fc3e8119dda324542d3e2c2be5953`, igual ao `identity` do `principal.ts`.
+- Execução **2685** (modo webhook, produção), conferida por `get_execution`: `status: success`, 2026-09-29T05:11:31Z → 05:12:31Z (60 s). Entrada: `n8n/fixtures/opt-out-corpus.json` (62 frases) com `repeticoes: 3` → **186 classificações**. O modelo do classificador rodou **186 vezes** (subRuns 0–185): **nenhum auto-fix**. Categorias brutas: `explicita` 79, `ambigua` 58, `fora` 48, `other` 1, `erro` 0. O Merge de 5 entradas disparou mesmo com a saída de erro vazia.
+- Relatório: `.specs/features/lote-13-opt-out-linguagem-natural/medicao-opt-out-2026-09-29.json`, carimbado por `scripts/opt-out-measurement.ts stamp` (`classifierHash` acima, `modelId` `gpt-5.4-nano-2026-03-17`), com `workflowVersion`, `execucaoN8n` e `execucoesComAutoFix: 0`.
+- **Resultado pela barra (OPTMED-01 AC6)**: `taxaExplicita` = 72/72 = **1,0** (passa); `falsosPositivos` = **7** (reprova). Os 7 vêm de três near-misses de "parar de mandar <coisa>", todos da faixa `fora`:
+  - `fora-04` "pode parar de mandar áudio, prefiro texto": explícita 3/3;
+  - `fora-01` "pode parar de mandar foto" (a frase que o backlog nomeou): explícita 2/3, ambígua 1/3;
+  - `fora-08` "para de mandar casa, eu quero apartamento": explícita 2/3, `other` 1/3.
+  Nenhuma frase ambígua virou explícita (51/51 ambíguas).
+- Observação sem barra própria: `fora-19` ("não") e `fora-20` ("não, pode continuar me mandando") como resposta à pergunta de confirmação saíram `ambigua` 3/3, e não `fora`. Não descadastram, mas fariam o agente perguntar de novo.
+- Gate Build: `npm test` 125 arquivos / 2.051 testes, só as 2 falhas preexistentes aceitas (`DOCLIM-01 AC8`, `actions.test.ts`); `npm run lint` 0 erros; `npm run build` ok.
+
+#### T12a: Versão 2 do classificador depois da medição reprovada
+
+**What:** Decisão D1 (tomada sob a delegação do usuário de 2026-09-29): em vez de parar o lote, ajustar as descrições de `fora` e `explicita` e o template para o padrão que falhou ("parar de mandar <tipo de conteúdo>" é `fora`; resposta negativa à pergunta de confirmação é `fora`), com os mesmos parâmetros nos dois workflows, e acrescentar ao corpus frases de controle que não participaram da redação.
+**Where:** `n8n/workflows/principal.ts`, `n8n/workflows/medicao-opt-out.ts`, `n8n/generated/`, `n8n/fixtures/opt-out-corpus.json`, `n8n/workflows/__tests__/medicao-opt-out.test.ts`, `design.md`
+**Depends on:** T12
+**Requirement:** OPTMED-01
+
+**Done when:**
+
+- [x] Textos v2 idênticos em `principal.ts` e `medicao-opt-out.ts`; teste de paridade verde.
+- [x] O teste que fixa o texto congelado (`medicao-opt-out.test.ts`) passa a fixar a v2 (mudança de spec decidida, não enfraquecimento: a asserção continua de igualdade exata).
+- [x] Corpus com 10 frases novas de controle (exp-25 a exp-27, fora-22 a fora-28), outros objetos (vídeo, plantas, mensagem de voz, simulação); 72 frases no total.
+- [x] `node scripts/n8n-inline.mjs`; gate Quick dos diretórios afetados.
+
+**Commit:** `fix(n8n): keep content near-misses out of the opt-out classifier`
+
+**Status:** ✅ Concluída (2026-09-29)
+
+**Evidence:** `npx vitest run n8n/workflows/__tests__ n8n/src/__tests__ scripts/__tests__`: 24 arquivos / 576 testes, 0 falhas. Novo hash do classificador (`identity`): `c1faee65a297714e7f2b8e9640081c8c2924a03ea4389067a46c9591442fc4c1`.
+
+#### T12b: Nova medição da versão 2
+
+**What:** Atualizar e publicar `crivo-medicao-opt-out` com o gerado da v2, rodar o corpus de 72 frases × 3 e aplicar a barra.
+**Depends on:** T12a
+**Requirement:** OPTMED-01
+**Commit:** `test(n8n): record opt-out classifier measurement v2`
+
+**Status:** ✅ Concluída (2026-09-29) — veredito **REPROVADO** (v2).
+
+**Evidence:** `update_workflow` + `publish_workflow` no `yTgE1WKY8BPOCuDl`; `versionId == activeVersionId == 0b0d58fd-9227-4168-9d88-82610f54cb2d`; hash dos nós publicados `c1faee65…` igual ao `identity`. Execução **2686** (conferida por `get_execution`, `success`, 100 s): 72 frases × 3 = 216 classificações, 216 chamadas ao modelo (sem auto-fix), `erro` 0, `other` 4. Explícitas 81/81; ambíguas sem falso positivo; **5 falsos positivos**: `fora-20` "não, pode continuar me mandando" (resposta à pergunta de confirmação) 3/3, regressão causada pela cláusula nova de resposta negativa; `fora-25` "para de mandar imóvel na zona norte" (controle) 2/3. Os três casos da v1 (foto, áudio, casa) saíram `fora` 3/3, e 6 das 7 frases de controle `fora` também. Relatório: `medicao-opt-out-2026-09-29-v2.json`. Decisão D2: iteração v3 (2ª de no máximo 3).
+
+#### T12c: Versão 3 do classificador e nova medição
+
+**What:** Decisão D2: segunda iteração (de no máximo 3). Regra de sim/não explícita no template, "filtro de busca" entre os conteúdos que não contam como opt-out, e 5 frases de controle novas (exp-28, fora-29 a fora-32), 77 no total.
+**Depends on:** T12b
+**Requirement:** OPTMED-01
+**Commits:** `fix(n8n): make opt-out confirmation answers explicit in the classifier` e `test(n8n): record opt-out classifier measurement v3`
+
+**Evidence (código):** `npx vitest run n8n/workflows/__tests__ n8n/src/__tests__ scripts/__tests__`: 24 arquivos / 576 testes, 0 falhas. Hash v3 (`identity`): `8be0d889c925d9fc6a301525bd8c0c1f1655692e8f221d81df572c8feb8ec822`.
+
+**Status:** ✅ Concluída (2026-09-29) — veredito **REPROVADO** (v3).
+
+**Evidence (medição):** `update_workflow` + `publish_workflow`; `versionId == activeVersionId == 4d11bbc3-1c37-4fcd-8be1-ea7b6fba581c`; parâmetros publicados iguais ao gerado. Execução **2687** (conferida por `get_execution`, `success`, 118 s): 77 × 3 = 231 classificações, 231 chamadas (sem auto-fix), `erro` 0, `other` 2. Explícitas 84/84; ambíguas sem falso positivo; **2 falsos positivos**, cada um 1 de 3: `fora-08` "para de mandar casa, eu quero apartamento" e `fora-25` "para de mandar imóvel na zona norte". As negativas à pergunta de confirmação (`fora-19`, `fora-20`, `fora-31`, `fora-32`) saíram `fora` 3/3. Relatório: `medicao-opt-out-2026-09-29-v3.json`. Decisão D3: trava determinística depois do classificador (T12d), em vez de uma quarta versão de prompt.
+
+#### T12d: Trava determinística depois do classificador
+
+**What:** Decisão D3: em vez de uma quarta versão do prompt, acrescentar depois do classificador uma trava determinística, igual no agente e na medição. `refineOptOutCategory` rebaixa `explicita` para `ambigua` quando a mensagem é "parar/para/pare/parem de [me/nos] mandar|enviar <objeto>" sem menção ao contato em si. Prompt e categorias da v3 não mudam.
+**Where:** `n8n/src/opt-out-intent.mjs`, `n8n/src/__tests__/opt-out-intent.test.ts`, `n8n/workflows/principal.ts`, `n8n/workflows/medicao-opt-out.ts`, `n8n/generated/`, `n8n/workflows/__tests__/` (`principal-opt-out-natural`, `medicao-opt-out`, `principal-classificador`, `principal-modelo`), `design.md`
+**Depends on:** T12c
+**Requirement:** OPTREG-01, OPTMED-01
+
+**Done when:**
+
+- [x] `isContentOnlyStop` e `refineOptOutCategory` em `opt-out-intent.mjs`, puros; todas as `explicita` do corpus continuam `explicita`; as 11 frases `fora` de "parar de mandar <coisa>" viram `ambigua`; mista continua `explicita`; demais categorias inalteradas; string[], vazio e ausente cobertos (L-005).
+- [x] Agente: saída 2 do classificador → `Code: conferir pedido explícito` → `Pedido explícito confirmado?`; verdadeiro → HTTP natural, falso → `Code: rota ambígua`. Lead e tenant seguem só de `$('Code: gate')`.
+- [x] Medição: `Code: expandir corpus` leva `userMessage`; saída 2 → trava equivalente → verdadeiro `Code: marcar explicita`, falso `Code: marcar ambigua`.
+- [x] Um teste por aresta nos dois workflows (L-026); arestas antigas `explicita → HTTP natural` (T11) e `explicita → marcar explicita` (T9) atualizadas para a nova cadeia, com igualdade exata; teste de paridade da trava; contagens de `principal-modelo.test.ts` 69/88 → 71/91.
+- [x] `node scripts/n8n-inline.mjs`; `validate_workflow` do MCP sem erro na medição; principal validado pelo validador local do SDK (ver Evidence).
+
+**Commit:** `feat(n8n): downgrade content-only stop requests before opt-out registration`
+
+**Status:** ✅ Concluída (2026-09-29). Pendente fora deste worker: republicar `crivo-medicao-opt-out` e medir (a trava muda o hash).
+
+**Evidence:** `npx vitest run n8n/workflows/__tests__ n8n/src/__tests__ scripts/__tests__`: 24 arquivos / 626 testes, 0 falhas (576 → 626). Por arquivo: `opt-out-intent.test.ts` 57, `principal-opt-out-natural.test.ts` 28, `medicao-opt-out.test.ts` 40, `principal-classificador.test.ts` 23, `principal-modelo.test.ts` 12. Contagens do agente 69/88 → 71/91; medição 11/14 → 13/17 nós/conexões. `validate_workflow` do MCP: medição válida, 13 nós. O principal gerado (190 KB, ~70 mil tokens) não foi enviado ao MCP: o arquivo inteiro não cabe num único argumento de chamada deste worker. No lugar, o mesmo parser e validador do SDK (`parseWorkflowCodeToBuilder` + `validateWorkflow` de `@n8n/workflow-sdk`) rodou localmente sobre os dois gerados: principal válido, 71 nós, 0 erros, 0 avisos; medição válida, 13 nós (mesmo resultado do MCP). Novo hash (`identity`): `1547f0ae6ee31640db62b432a36e1e5d6c77fd92467a18f9f42034ba088f6b29`. Desvio da regra literal: "mensagem de voz" (`fora-27`) é removida antes de procurar menção ao contato, senão `mensag` manteria a frase `explicita`. `npm run lint` sem erro. `gate.mjs` e `gate.test.ts` sem diff.
+
+**Ajuste do orquestrador (depois do Worker C):** na medição, a saída falsa da trava ganhou marcador próprio (`Code: marcar ambigua (trava)`) e a entrada 5 do Merge (6 entradas), para `Code: marcar ambigua` não ter dois predecessores e o Merge não disparar duas vezes com relatório parcial. Testes de aresta novos em `medicao-opt-out.test.ts`; gate pontual 24 arquivos / 629 testes, 0 falhas. Commit `fix(n8n): give the measurement guard its own merge input`.
+
+#### T12e: Medição da versão 3 com a trava (aprovada)
+
+**Status:** ✅ Concluída (2026-09-29) — veredito **APROVADO**.
+**Commit:** `test(n8n): record approved opt-out classifier measurement`
+
+**Evidence:** o workflow de medição anterior (`yTgE1WKY8BPOCuDl`) foi arquivado depois de os relatórios v1–v3 estarem gravados (L-016); o novo `crivo-medicao-opt-out` (`n5iAMCl5nSM6jA6U`) foi criado de `n8n/generated/medicao-opt-out.ts` e publicado; `versionId == activeVersionId == 2b494521-0815-44b7-bd77-5d4e19da667c`, 14 nós, conexões com a trava (saída 2 → `Code: conferir pedido explícito` → IF → marcar explicita / marcar ambigua (trava) → Merge 6 entradas). Diferenças conhecidas em relação ao gerado: o `Code: pontuar` publicado não tem o bloco de comentário do módulo inlinado (a lógica é a mesma; a pontuação fica fora do hash). Execução **2688** (conferida por `get_execution`, `success`, 102 s): 77 × 3 = 231 classificações, `execucoes` 231 (Merge disparou uma vez), 231 chamadas ao modelo (sem auto-fix), `erro` 0, `other` 1. **Explícitas 84/84 (1,0); falsos positivos 0** (ambíguas 0/51, fora 0/96). A trava não precisou atuar nesta rodada (o marcador da trava não executou); a cobertura dela sobre o corpus vem de `opt-out-intent.test.ts`. Relatório: `medicao-opt-out-2026-09-29-v4.json`, `classifierHash` `1547f0ae…` igual ao `identity` do `principal.ts`.
+
 #### T13: Travar a publicação na medição aprovada
 
 **What:** Acrescentar a `principal-classificador.test.ts` a asserção de que a identidade do classificador em `principal.ts` é igual ao `classifierHash` do relatório aprovado mais recente em `.specs/features/lote-13-opt-out-linguagem-natural/`, e que o veredito dele é `APROVADO`.

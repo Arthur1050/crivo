@@ -25,8 +25,8 @@
  *      npx tsx scripts/opt-out-measurement.ts stamp <relatorio.json>
  */
 import { createHash } from "node:crypto";
-import { readFileSync, writeFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 export const CLASSIFIER_NODE = "Classificador: opt-out";
@@ -109,6 +109,52 @@ export function stampReport<T extends object>(
   stamp: { classifierHash: string; modelId: string; date: string }
 ): T & { classifierHash: string; modelId: string; date: string } {
   return { ...report, ...stamp };
+}
+
+/**
+ * Diretórios onde a medição aprovada pode estar: o da feature e o do arquivo
+ * morto (a higiene documental, AD-029, move os relatórios para `archive/`).
+ */
+export const MEASUREMENT_DIRS = [
+  ".specs/features/lote-13-opt-out-linguagem-natural",
+  ".specs/archive/lote-13-opt-out-linguagem-natural",
+];
+
+type MeasurementSummary = { file: string; veredito: string; classifierHash: string; date: string };
+
+/**
+ * Relatório `medicao-opt-out-*.json` com veredito `APROVADO` e `date` mais
+ * recente entre os diretórios dados; `null` se não houver nenhum.
+ */
+export function latestApprovedMeasurement(dirs: string[]): MeasurementSummary | null {
+  const approved: MeasurementSummary[] = [];
+  for (const dir of dirs) {
+    if (!existsSync(dir)) continue;
+    for (const name of readdirSync(dir)) {
+      if (!/^medicao-opt-out-.*\.json$/.test(name)) continue;
+      const file = join(dir, name);
+      const report = JSON.parse(readFileSync(file, "utf8")) as Partial<MeasurementSummary>;
+      if (report.veredito !== "APROVADO" || typeof report.classifierHash !== "string" || typeof report.date !== "string") continue;
+      approved.push({ file, veredito: report.veredito, classifierHash: report.classifierHash, date: report.date });
+    }
+  }
+  approved.sort((a, b) => b.date.localeCompare(a.date));
+  return approved[0] ?? null;
+}
+
+/**
+ * Trava de publicação (OPTMED-01 AC8, T13): lança erro se não houver medição
+ * aprovada ou se a identidade atual do classificador não for a medida.
+ */
+export function assertApprovedIdentity(currentHash: string, dirs: string[] = MEASUREMENT_DIRS): MeasurementSummary {
+  const latest = latestApprovedMeasurement(dirs);
+  if (latest === null) {
+    throw new Error("Nenhuma medição de opt-out aprovada: rode o crivo-medicao-opt-out e grave o relatório com `scripts/opt-out-measurement.ts stamp`.");
+  }
+  if (latest.classifierHash !== currentHash) {
+    throw new Error(`O classificador mudou desde a medição aprovada (${latest.file}): rode a medição de novo. Atual ${currentHash}, medido ${latest.classifierHash}.`);
+  }
+  return latest;
 }
 
 async function principalJson(): Promise<WorkflowJson> {

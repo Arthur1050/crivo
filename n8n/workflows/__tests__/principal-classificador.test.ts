@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { readInlinedModule } from "../../../scripts/n8n-inline.mjs";
-import { classifierIdentity, type WorkflowJson as IdentityWorkflowJson } from "../../../scripts/opt-out-measurement";
+import { assertApprovedIdentity, classifierIdentity, type WorkflowJson as IdentityWorkflowJson } from "../../../scripts/opt-out-measurement";
 import { buildClassifierInput } from "../../src/opt-out-intent.mjs";
 import medicao from "../medicao-opt-out";
 import principal from "../principal";
@@ -202,5 +202,14 @@ describe("entrada do classificador (OPTREG-01 AC2)", () => {
     for (const name of NEW_NODES) {
       expect(JSON.stringify(nodeByName(name).parameters)).not.toMatch(/tenantSlug|waId|\.json\.id\b/);
     }
+  });
+});
+
+describe("trava da publicação na medição aprovada (OPTMED-01 AC8, T13)", () => {
+  it("a identidade do classificador em principal.ts é a da medição APROVADA mais recente", () => {
+    const current = classifierIdentity(workflow as unknown as IdentityWorkflowJson, INTENT_SOURCE);
+    const approved = assertApprovedIdentity(current);
+    expect(approved.veredito).toBe("APROVADO");
+    expect(approved.classifierHash).toBe(current);
   });
 });

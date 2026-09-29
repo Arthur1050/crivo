@@ -1,5 +1,8 @@
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { classifierIdentity, stampReport, type WorkflowJson } from "../opt-out-measurement";
+import { assertApprovedIdentity, classifierIdentity, latestApprovedMeasurement, stampReport, type WorkflowJson } from "../opt-out-measurement";
 
 /**
  * Identidade do classificador de opt-out (lote-13 T7 — OPTMED-01 AC8). O
@@ -204,5 +207,43 @@ describe("stampReport", () => {
       modelId: "gpt-5.4-nano-2026-03-17",
       date: "2026-09-28T12:00:00.000Z",
     });
+  });
+});
+
+describe("trava de publicação na medição aprovada (OPTMED-01 AC8, T13)", () => {
+  function dirWith(reports: Record<string, object>) {
+    const dir = mkdtempSync(join(tmpdir(), "medicao-"));
+    for (const [name, body] of Object.entries(reports)) writeFileSync(join(dir, name), JSON.stringify(body));
+    return dir;
+  }
+
+  it("sem nenhum relatório, falha dizendo para rodar a medição", () => {
+    expect(() => assertApprovedIdentity("h1", [dirWith({})])).toThrow(/rode o crivo-medicao-opt-out/);
+  });
+
+  it("só com relatório REPROVADO, falha do mesmo jeito", () => {
+    const dir = dirWith({ "medicao-opt-out-a.json": { veredito: "REPROVADO", classifierHash: "h1", date: "2026-09-29T00:00:00Z" } });
+    expect(() => assertApprovedIdentity("h1", [dir])).toThrow(/rode o crivo-medicao-opt-out/);
+  });
+
+  it("com relatório APROVADO do mesmo hash, passa e devolve o relatório", () => {
+    const dir = dirWith({ "medicao-opt-out-a.json": { veredito: "APROVADO", classifierHash: "h1", date: "2026-09-29T00:00:00Z" } });
+    expect(assertApprovedIdentity("h1", [dir]).classifierHash).toBe("h1");
+  });
+
+  it("com hash diferente do aprovado, falha dizendo para medir de novo", () => {
+    const dir = dirWith({ "medicao-opt-out-a.json": { veredito: "APROVADO", classifierHash: "h1", date: "2026-09-29T00:00:00Z" } });
+    expect(() => assertApprovedIdentity("h2", [dir])).toThrow(/rode a medição de novo/);
+  });
+
+  it("vale o APROVADO de data mais recente, em qualquer dos diretórios", () => {
+    const a = dirWith({ "medicao-opt-out-velho.json": { veredito: "APROVADO", classifierHash: "velho", date: "2026-09-28T00:00:00Z" } });
+    const b = dirWith({ "medicao-opt-out-novo.json": { veredito: "APROVADO", classifierHash: "novo", date: "2026-09-29T00:00:00Z" } });
+    expect(latestApprovedMeasurement([a, b])?.classifierHash).toBe("novo");
+  });
+
+  it("ignora diretório inexistente e arquivos que não são relatório de medição", () => {
+    const dir = dirWith({ "outro.json": { veredito: "APROVADO", classifierHash: "x", date: "2026-09-29T00:00:00Z" } });
+    expect(latestApprovedMeasurement([dir, join(dir, "nao-existe")])).toBeNull();
   });
 });
