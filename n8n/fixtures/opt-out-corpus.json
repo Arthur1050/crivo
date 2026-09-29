@@ -1,5 +1,5 @@
 {
-  "_origem": "Corpus da medição do classificador de opt-out (lote-13 T8, OPTMED-01). Entrada do crivo-medicao-opt-out: cada item vira `buildClassifierInput({ lastAgentMessage: ultimaMensagem ?? abertura, userMessage: texto })`, rodado 3 vezes. Faixas de context.md: explicita registra, ambigua pergunta, fora segue. As frases reais vêm da T21 do lote-7 (.specs/features/lote-7-dado-real-ponta-a-ponta/context.md:79) e da Fase 5 do lote-10 (n8n/smoke/evidencia.md:1494); o resto é sintético, sem telefone, e-mail ou nome real. Quebra de linha em `texto` representa um buffer com várias mensagens do mesmo turno.",
+  "_origem": "Corpus da medição do classificador de opt-out (lote-13 T8, OPTMED-01). Entrada do crivo-medicao-opt-out: cada item vira `buildClassifierInput({ lastAgentMessage: ultimaMensagem ?? abertura, userMessage: texto })`, rodado 3 vezes. Faixas de context.md: explicita registra, ambigua pergunta, fora segue. As frases reais vêm da T21 do lote-7 (.specs/features/lote-7-dado-real-ponta-a-ponta/context.md:79) e da Fase 5 do lote-10 (n8n/smoke/evidencia.md:1494); o resto é sintético, sem telefone, e-mail ou nome real. Quebra de linha em `texto` representa um buffer com várias mensagens do mesmo turno. Controle (depois da medição reprovada de 2026-09-29): exp-25 a exp-27 e fora-22 a fora-28 entraram sem participar da redação da versão 2 do prompt, com outros objetos (vídeo, plantas, mensagem de voz, simulação), para a nova medição não avaliar só o material usado para calibrar.",
   "abertura": "Oi! Aqui é da imobiliária. Vi que você se interessou por um dos nossos imóveis. Qual região você procura?",
   "itens": [
     { "id": "exp-01", "faixa": "explicita", "texto": "não me mande mais mensagens" },
@@ -26,6 +26,9 @@
     { "id": "exp-22", "faixa": "explicita", "texto": "sim", "ultimaMensagem": "Entendi. Você quer parar de receber mensagens nossas por este número?" },
     { "id": "exp-23", "faixa": "explicita", "texto": "sim, pode parar", "ultimaMensagem": "Entendi. Você quer parar de receber mensagens nossas por este número?" },
     { "id": "exp-24", "faixa": "explicita", "texto": "pode sim, não quero mais receber", "ultimaMensagem": "Entendi. Você quer parar de receber mensagens nossas por este número?" },
+    { "id": "exp-25", "faixa": "explicita", "texto": "não quero que me mandem mais nada, obrigado" },
+    { "id": "exp-26", "faixa": "explicita", "texto": "parem de me mandar mensagens, por favor" },
+    { "id": "exp-27", "faixa": "explicita", "texto": "quero parar de receber essas mensagens" },
 
     { "id": "amb-01", "faixa": "ambigua", "texto": "não tenho interesse, obrigado" },
     { "id": "amb-02", "faixa": "ambigua", "texto": "foi engano, não sou essa pessoa" },
@@ -65,6 +68,13 @@
     { "id": "fora-18", "faixa": "fora", "texto": "não quero esse de dois quartos, quero três" },
     { "id": "fora-19", "faixa": "fora", "texto": "não", "ultimaMensagem": "Entendi. Você quer parar de receber mensagens nossas por este número?" },
     { "id": "fora-20", "faixa": "fora", "texto": "não, pode continuar me mandando", "ultimaMensagem": "Entendi. Você quer parar de receber mensagens nossas por este número?" },
-    { "id": "fora-21", "faixa": "fora", "texto": "sim, tenho interesse no de três quartos", "ultimaMensagem": "Você ainda tem interesse no apartamento que te mostrei?" }
+    { "id": "fora-21", "faixa": "fora", "texto": "sim, tenho interesse no de três quartos", "ultimaMensagem": "Você ainda tem interesse no apartamento que te mostrei?" },
+    { "id": "fora-22", "faixa": "fora", "texto": "pode parar de mandar vídeo, não abre aqui" },
+    { "id": "fora-23", "faixa": "fora", "texto": "para de mandar essas plantas, já vi todas" },
+    { "id": "fora-24", "faixa": "fora", "texto": "pode parar de me mandar opção fora do meu orçamento" },
+    { "id": "fora-25", "faixa": "fora", "texto": "para de mandar imóvel na zona norte" },
+    { "id": "fora-26", "faixa": "fora", "texto": "não precisa mandar mais simulação, já fiz no banco" },
+    { "id": "fora-27", "faixa": "fora", "texto": "para de me mandar mensagem de voz, só texto" },
+    { "id": "fora-28", "faixa": "fora", "texto": "pode parar com as fotos por hoje, depois vejo" }
   ]
 }

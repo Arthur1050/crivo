@@ -428,6 +428,33 @@ T14 -> T15 -> T16 -> T17 -> T18
 - Observação sem barra própria: `fora-19` ("não") e `fora-20` ("não, pode continuar me mandando") como resposta à pergunta de confirmação saíram `ambigua` 3/3, e não `fora`. Não descadastram, mas fariam o agente perguntar de novo.
 - Gate Build: `npm test` 125 arquivos / 2.051 testes, só as 2 falhas preexistentes aceitas (`DOCLIM-01 AC8`, `actions.test.ts`); `npm run lint` 0 erros; `npm run build` ok.
 
+#### T12a: Versão 2 do classificador depois da medição reprovada
+
+**What:** Decisão D1 (tomada sob a delegação do usuário de 2026-09-29): em vez de parar o lote, ajustar as descrições de `fora` e `explicita` e o template para o padrão que falhou ("parar de mandar <tipo de conteúdo>" é `fora`; resposta negativa à pergunta de confirmação é `fora`), com os mesmos parâmetros nos dois workflows, e acrescentar ao corpus frases de controle que não participaram da redação.
+**Where:** `n8n/workflows/principal.ts`, `n8n/workflows/medicao-opt-out.ts`, `n8n/generated/`, `n8n/fixtures/opt-out-corpus.json`, `n8n/workflows/__tests__/medicao-opt-out.test.ts`, `design.md`
+**Depends on:** T12
+**Requirement:** OPTMED-01
+
+**Done when:**
+
+- [x] Textos v2 idênticos em `principal.ts` e `medicao-opt-out.ts`; teste de paridade verde.
+- [x] O teste que fixa o texto congelado (`medicao-opt-out.test.ts`) passa a fixar a v2 (mudança de spec decidida, não enfraquecimento: a asserção continua de igualdade exata).
+- [x] Corpus com 10 frases novas de controle (exp-25 a exp-27, fora-22 a fora-28), outros objetos (vídeo, plantas, mensagem de voz, simulação); 72 frases no total.
+- [x] `node scripts/n8n-inline.mjs`; gate Quick dos diretórios afetados.
+
+**Commit:** `fix(n8n): keep content near-misses out of the opt-out classifier`
+
+**Status:** ✅ Concluída (2026-09-29)
+
+**Evidence:** `npx vitest run n8n/workflows/__tests__ n8n/src/__tests__ scripts/__tests__`: 24 arquivos / 576 testes, 0 falhas. Novo hash do classificador (`identity`): `c1faee65a297714e7f2b8e9640081c8c2924a03ea4389067a46c9591442fc4c1`.
+
+#### T12b: Nova medição da versão 2
+
+**What:** Atualizar e publicar `crivo-medicao-opt-out` com o gerado da v2, rodar o corpus de 72 frases × 3 e aplicar a barra.
+**Depends on:** T12a
+**Requirement:** OPTMED-01
+**Commit:** `test(n8n): record opt-out classifier measurement v2`
+
 #### T13: Travar a publicação na medição aprovada
 
 **What:** Acrescentar a `principal-classificador.test.ts` a asserção de que a identidade do classificador em `principal.ts` é igual ao `classifierHash` do relatório aprovado mais recente em `.specs/features/lote-13-opt-out-linguagem-natural/`, e que o veredito dele é `APROVADO`.
