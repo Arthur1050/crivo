@@ -183,6 +183,25 @@ const markAmbigua = node({
   output: [{ id: "amb-01", faixa: "ambigua", repeticao: 1, categoria: "ambigua" }],
 });
 
+// A saída falsa da trava tem marcador e entrada de Merge próprios: se
+// dividisse `Code: marcar ambigua` com a saída 1 do classificador, o nó rodaria
+// uma vez por predecessor e o Merge poderia disparar de novo com um relatório
+// parcial. A categoria gravada é a mesma (`ambigua`).
+const markAmbiguaTrava = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: marcar ambigua (trava)",
+    position: [1000, 700],
+    parameters: {
+      mode: "runOnceForAllItems",
+      language: "javaScript",
+      jsCode: "return $input.all().map((item) => ({ json: { id: item.json.id, faixa: item.json.faixa, repeticao: item.json.repeticao, categoria: 'ambigua' } }));\n",
+    },
+  },
+  output: [{ id: "fora-08", faixa: "fora", repeticao: 1, categoria: "ambigua" }],
+});
+
 const markExplicita = node({
   type: "n8n-nodes-base.code",
   version: 2,
@@ -273,7 +292,7 @@ const mergeRuns = merge({
   config: {
     name: "Merge: execuções",
     position: [1000, 300],
-    parameters: { mode: "append", numberInputs: 5 },
+    parameters: { mode: "append", numberInputs: 6 },
   },
 });
 
@@ -308,7 +327,7 @@ optOutClassifier.output(0).to(markFora.to(mergeRuns.input(0)));
 optOutClassifier.output(1).to(markAmbigua.to(mergeRuns.input(1)));
 optOutClassifier
   .output(2)
-  .to(confirmExplicitOptOut.to(isExplicitOptOutIf.onTrue(markExplicita.to(mergeRuns.input(2))).onFalse(markAmbigua)));
+  .to(confirmExplicitOptOut.to(isExplicitOptOutIf.onTrue(markExplicita.to(mergeRuns.input(2))).onFalse(markAmbiguaTrava.to(mergeRuns.input(5)))));
 optOutClassifier.output(3).to(markOther.to(mergeRuns.input(3)));
 optOutClassifier.output(4).to(markErro.to(mergeRuns.input(4)));
 mergeRuns.to(scoreRuns);

@@ -161,8 +161,8 @@ describe("cada saída do classificador chega ao Merge (L-026)", () => {
     expect(workflow.connections[CLASSIFIER]?.main).toHaveLength(5);
   });
 
-  it("o Merge concatena as 5 entradas (append)", () => {
-    expect(nodeByName(MERGE).parameters).toEqual({ mode: "append", numberInputs: 5 });
+  it("o Merge concatena as 6 entradas (append): 5 saídas do classificador e a saída falsa da trava", () => {
+    expect(nodeByName(MERGE).parameters).toEqual({ mode: "append", numberInputs: 6 });
   });
 
   it("Merge → Code: pontuar, último nó (a resposta do webhook é o relatório)", () => {
@@ -188,8 +188,21 @@ describe("trava determinística na saída explicita (T12d, decisão D3; L-026)",
     expect(mainTargets(CONFIRM_IF, 0)).toEqual([{ node: "Code: marcar explicita", type: "main", index: 0 }]);
   });
 
-  it("IF falso (saída 1) → Code: marcar ambigua, e só ele", () => {
-    expect(mainTargets(CONFIRM_IF, 1)).toEqual([{ node: "Code: marcar ambigua", type: "main", index: 0 }]);
+  it("IF falso (saída 1) → Code: marcar ambigua (trava), e só ele", () => {
+    expect(mainTargets(CONFIRM_IF, 1)).toEqual([{ node: "Code: marcar ambigua (trava)", type: "main", index: 0 }]);
+  });
+
+  it("Code: marcar ambigua (trava) → Merge entrada 5, e só ela", () => {
+    expect(mainTargets("Code: marcar ambigua (trava)", 0)).toEqual([{ node: MERGE, type: "main", index: 5 }]);
+  });
+
+  it("Code: marcar ambigua (trava) grava categoria ambigua", () => {
+    expect(String(nodeByName("Code: marcar ambigua (trava)").parameters.jsCode)).toContain("categoria: 'ambigua'");
+  });
+
+  it("Code: marcar ambigua tem um predecessor só (a saída 1 do classificador)", () => {
+    const preds = Object.entries(workflow.connections).filter(([, c]) => (c.main ?? []).some((out) => (out ?? []).some((t) => t.node === "Code: marcar ambigua")));
+    expect(preds.map(([n]) => n)).toEqual([CLASSIFIER]);
   });
 
   it("o IF é v2.3, estrito, e testa `$json.optOutExplicito` como boolean verdadeiro", () => {
