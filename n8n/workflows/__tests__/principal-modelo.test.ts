@@ -37,9 +37,13 @@ const MEMORY_NODE = "Postgres Chat Memory";
  * e +4 conexões (saída 2 do classificador → HTTP natural, HTTP natural →
  * finalizar opt-out, erro do HTTP natural → orientar sair, orientar sair →
  * destinatário do envio fixo) → 69/88, medido por `principal.toJSON()`.
+ * lote-13 (T12d): +2 nós (Code: conferir pedido explícito, IF Pedido
+ * explícito confirmado?) e +3 conexões (−1 saída 2 → HTTP natural; +1 saída 2
+ * → conferir, +1 conferir → IF, +1 IF verdadeiro → HTTP natural, +1 IF falso
+ * → rota ambígua) → 71/91, medido por `principal.toJSON()`.
  */
-const NOS_ESPERADOS = 69;
-const CONEXOES_ESPERADAS = 88;
+const NOS_ESPERADOS = 71;
+const CONEXOES_ESPERADAS = 91;
 
 const TOOLS = [
   "registrar_qualificacao",

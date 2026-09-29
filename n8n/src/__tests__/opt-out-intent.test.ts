@@ -4,7 +4,9 @@ import {
   OPT_OUT_CONFIRMATION,
   OPT_OUT_REGISTRATION_FAILED,
   buildClassifierInput,
+  isContentOnlyStop,
   lastAgentMessage,
+  refineOptOutCategory,
 } from "../opt-out-intent.mjs";
 
 /**
@@ -156,5 +158,142 @@ describe("buildClassifierInput", () => {
     expect(
       buildClassifierInput({ lastAgentMessage: null, userMessage: ["oi", "quero que você pare de me mandar mensagens"] })
     ).toBe("Última mensagem enviada ao lead: (nenhuma)\nMensagem do lead: oi\nquero que você pare de me mandar mensagens");
+  });
+});
+
+/**
+ * Trava determinística depois do classificador (lote-13 T12d, decisão D3). A
+ * regra: "parar/para/pare/parem de [me/nos] mandar|enviar <objeto>" sem
+ * menção ao contato em si (mensag, msg, contat, lista, descadastr, nada,
+ * whatsapp) é pedido só de conteúdo; `explicita` vira `ambigua`. O corpus
+ * versionado é a referência: nenhuma explícita pode cair.
+ */
+type CorpusItem = { id: string; faixa: string; texto: string };
+const corpus = JSON.parse(readFileSync("n8n/fixtures/opt-out-corpus.json", "utf8")) as { itens: CorpusItem[] };
+
+const CONTENT_ONLY_FORA = [
+  "fora-01",
+  "fora-04",
+  "fora-08",
+  "fora-11",
+  "fora-22",
+  "fora-23",
+  "fora-24",
+  "fora-25",
+  "fora-27",
+  "fora-29",
+  "fora-30",
+];
+
+function corpusText(id: string): string {
+  const item = corpus.itens.find((i) => i.id === id);
+  if (item === undefined) throw new Error(`item ausente no corpus: ${id}`);
+  return item.texto;
+}
+
+describe("refineOptOutCategory — corpus versionado (T12d)", () => {
+  it("todas as frases `explicita` do corpus continuam `explicita`", () => {
+    const explicitas = corpus.itens.filter((i) => i.faixa === "explicita");
+    expect(explicitas.length).toBeGreaterThanOrEqual(20);
+    const caidas = explicitas
+      .filter((i) => refineOptOutCategory({ categoria: "explicita", userMessage: i.texto }) !== "explicita")
+      .map((i) => i.id);
+    expect(caidas).toEqual([]);
+  });
+
+  for (const id of CONTENT_ONLY_FORA) {
+    it(`${id} ("${corpusText(id)}") classificada como explicita vira ambigua`, () => {
+      expect(isContentOnlyStop(corpusText(id))).toBe(true);
+      expect(refineOptOutCategory({ categoria: "explicita", userMessage: corpusText(id) })).toBe("ambigua");
+    });
+  }
+
+  it("os dois falsos positivos da medição v3 viram ambigua", () => {
+    expect(refineOptOutCategory({ categoria: "explicita", userMessage: "para de mandar casa, eu quero apartamento" })).toBe("ambigua");
+    expect(refineOptOutCategory({ categoria: "explicita", userMessage: "para de mandar imóvel na zona norte" })).toBe("ambigua");
+  });
+});
+
+describe("isContentOnlyStop — regra", () => {
+  it("mensagem mista (conteúdo e mensagens) continua explicita", () => {
+    const msg = "para de mandar foto e não me mande mais mensagens";
+    expect(isContentOnlyStop(msg)).toBe(false);
+    expect(refineOptOutCategory({ categoria: "explicita", userMessage: msg })).toBe("explicita");
+  });
+
+  for (const [texto, termo] of [
+    ["para de me mandar msg", "msg"],
+    ["pare de me mandar contato de corretor", "contat"],
+    ["parem de me enviar coisa da lista", "lista"],
+    ["para de mandar isso, quero me descadastrar", "descadastr"],
+    ["para de mandar foto, não quero nada", "nada"],
+    ["para de me mandar coisa no WhatsApp", "whatsapp"],
+  ] as const) {
+    it(`menção ao contato (${termo}) desliga a trava`, () => {
+      expect(isContentOnlyStop(texto)).toBe(false);
+    });
+  }
+
+  it("aceita as quatro formas do verbo e o pronome opcional", () => {
+    for (const texto of [
+      "parar de mandar foto",
+      "para de mandar foto",
+      "pare de mandar foto",
+      "parem de mandar foto",
+      "para de me mandar foto",
+      "para de nos enviar foto",
+    ]) {
+      expect(isContentOnlyStop(texto)).toBe(true);
+    }
+  });
+
+  it("ignora maiúsculas e acentos", () => {
+    expect(isContentOnlyStop("PARA DE MANDAR ÁUDIO")).toBe(true);
+    expect(isContentOnlyStop("para de mandar áudio, MENSAGENS também não")).toBe(false);
+  });
+
+  it("sem objeto depois do verbo não é pedido de conteúdo", () => {
+    expect(isContentOnlyStop("pode parar de mandar")).toBe(false);
+  });
+
+  it("sem o padrão parar de mandar/enviar não é pedido de conteúdo", () => {
+    expect(isContentOnlyStop("pode parar com as fotos por hoje")).toBe(false);
+    expect(isContentOnlyStop("não me mande mais fotos")).toBe(false);
+  });
+
+  it("\"mensagem de voz\" é formato, não o contato em si", () => {
+    expect(isContentOnlyStop("para de me mandar mensagem de voz, só texto")).toBe(true);
+    expect(isContentOnlyStop("para de me mandar mensagem de voz e mensagens também")).toBe(false);
+  });
+
+  it("buffer (string[]) é unido por quebra de linha antes da regra", () => {
+    expect(isContentOnlyStop(["oi", "para de mandar casa"])).toBe(true);
+    expect(isContentOnlyStop(["para de mandar casa", "e não me mande mais mensagens"])).toBe(false);
+    expect(refineOptOutCategory({ categoria: "explicita", userMessage: ["oi", "para de mandar casa"] })).toBe("ambigua");
+  });
+
+  it("string vazia: false", () => {
+    expect(isContentOnlyStop("")).toBe(false);
+  });
+
+  it("ausente (undefined/null): false", () => {
+    expect(isContentOnlyStop(undefined)).toBe(false);
+    expect(isContentOnlyStop(null)).toBe(false);
+  });
+});
+
+describe("refineOptOutCategory — só `explicita` é rebaixada", () => {
+  for (const categoria of ["ambigua", "fora", "other", "erro"]) {
+    it(`${categoria} passa inalterada, mesmo com pedido só de conteúdo`, () => {
+      expect(refineOptOutCategory({ categoria, userMessage: "para de mandar casa" })).toBe(categoria);
+    });
+  }
+
+  it("explicita com mensagem vazia continua explicita", () => {
+    expect(refineOptOutCategory({ categoria: "explicita", userMessage: "" })).toBe("explicita");
+  });
+
+  it("explicita com mensagem ausente continua explicita", () => {
+    expect(refineOptOutCategory({ categoria: "explicita" })).toBe("explicita");
   });
 });

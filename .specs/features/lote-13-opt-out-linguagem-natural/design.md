@@ -27,7 +27,10 @@ graph TD
     MEM --> CK[Code: memória pronta]
     CK --> IN[Code: entrada do classificador]
     IN --> TC{Text Classifier}
-    TC -->|explicita| PNL[HTTP: POST opt-out - linguagem natural]
+    TC -->|explicita| CONF[Code: conferir pedido explícito - T12d]
+    CONF --> CIF{Pedido explícito confirmado?}
+    CIF -->|verdadeiro| PNL[HTTP: POST opt-out - linguagem natural]
+    CIF -->|falso: só conteúdo| AMB
     TC -->|ambigua| AMB[Code: rota ambígua]
     TC -->|fora / other / erro| FORA[Code: rota fora]
     AMB --> SM[Code: montar system message]
@@ -107,8 +110,12 @@ de estrutura, não de comportamento do modelo.
 | `Code: rota ambígua` | code | Emite `{ optOutAmbiguo: true }` |
 | `HTTP: POST /leads/{id}/opt-out (linguagem natural)` | httpRequest v4.4 | Cópia dos parâmetros do nó da palavra-chave, com `retryOnFail` 3× e `onError: 'continueErrorOutput'` |
 | `Code: orientar sair (falha do registro)` | code | Monta `mensagens: [OPT_OUT_REGISTRATION_FAILED]` para `fixedReplyWired` |
+| `Code: conferir pedido explícito` (T12d) | code | `__INLINE(opt-out-intent.mjs)__`; lê o buffer do turno (`$('Code: contexto do lead')`) e emite `{ optOutExplicito: refineOptOutCategory({ categoria: 'explicita', userMessage }) === 'explicita' }` |
+| `Pedido explícito confirmado?` (T12d) | if v2.3 | `$json.optOutExplicito` boolean verdadeiro, `typeValidation: "strict"`; verdadeiro → HTTP natural, falso → `Code: rota ambígua` |
 
-A saída `explicita` do classificador vai para o HTTP natural. O sucesso do HTTP natural vai para
+A saída `explicita` do classificador passa pela trava determinística (T12d): `Code: conferir pedido
+explícito` → `Pedido explícito confirmado?`. Verdadeiro vai para o HTTP natural; falso (pedido só
+de conteúdo) vai para `Code: rota ambígua`. O sucesso do HTTP natural vai para
 `Code: finalizar opt-out`, o **mesmo** nó do caminho da palavra-chave; o erro vai para
 `Code: orientar sair`. As rotas `fora` e `ambígua` convergem em
 `Code: montar system message e marcar campo perguntado`, que passa a ler `$json.optOutAmbiguo`.
@@ -155,7 +162,8 @@ medição):
 - **Shape**: webhook (mesmo padrão do benchmark, disparado por `execute_workflow`) →
   `Code: expandir corpus` (itens × 3, `buildClassifierInput` inlined) → **o mesmo** classificador
   e o mesmo nó de modelo, com parâmetros byte a byte iguais aos de `principal.ts` → um `Code` por
-  saída marcando a categoria → `Merge` (append) → `Code: pontuar` (`scoreMeasurement` inlined) →
+  saída marcando a categoria (a saída `explicita` passa antes pela mesma trava do agente, T12d:
+  `Code: conferir pedido explícito` → IF; falso marca `ambigua`) → `Merge` (append) → `Code: pontuar` (`scoreMeasurement` inlined) →
   resposta com o relatório.
 - **Corpus**: `n8n/fixtures/opt-out-corpus.json`, com itens
   `{ id, faixa, texto, ultimaMensagem? }`. Tem ≥ 20 explícitas, ≥ 15 ambíguas e ≥ 20 fora,
@@ -261,4 +269,5 @@ type MeasurementReport = {
 - `systemPromptTemplate`: `Você classifica a mensagem de um lead de imobiliária no WhatsApp quanto a um pedido para parar de receber mensagens. Classifique o texto do usuário em uma destas categorias: {categories}. Use a última mensagem enviada ao lead só para entender respostas curtas, como "sim" ou "não". "Parar de mandar" seguido de um tipo de conteúdo, formato ou filtro de busca é fora; só é explicita quando o lead quer parar de receber as mensagens ou o contato em si. Se a última mensagem enviada perguntou se o lead quer parar de receber mensagens, "sim" é explicita e "não" ou um pedido para continuar é fora. Regra de desempate: na dúvida entre explicita e ambigua, escolha ambigua; na dúvida entre ambigua e fora, escolha fora. Não explique e responda somente o JSON, seguindo as instruções de formato abaixo.`
 - Nó `onError: "continueErrorOutput"`. Modelo: `lmChatOpenAi` v1.3, `model: { __rl: true, mode: "list", value: "gpt-5.4-nano-2026-03-17", cachedResultName: "gpt-5.4-nano-2026-03-17" }`, `options: { reasoningEffort: "low", timeout: 20000 }`, credencial `OpenAI account`.
 | Onde mora a pontuação | `scoreMeasurement` em `n8n/src/opt-out-score.mjs`, puro, inlined só no workflow de medição e testado em vitest | A barra do AC6, incluindo a fronteira exata de 90% (L-023), fica testada fora da instância |
+| Trava determinística (T12d, decisão D3) | Depois do classificador, igual no agente e na medição: `refineOptOutCategory` (`opt-out-intent.mjs`) rebaixa `explicita` para `ambigua` quando a mensagem tem "parar/para/pare/parem de [me/nos] mandar\|enviar <objeto>" e nenhuma menção ao contato em si (`mensag`, `msg`, `contat`, `lista`, `descadastr`, `nada`, `whatsapp`; "mensagem de voz" conta como formato, não como menção) | As medições v1–v3 reprovaram só por falso positivo nesse formato: 7 (v1), 5 (v2), 2 aleatórios de 1 em 3 (v3, `fora-08` e `fora-25`). Um quarto ajuste de prompt não garante zero; a regra é determinística, testada contra o corpus inteiro (nenhuma explícita cai) e, no pior caso, faz o agente perguntar em vez de descadastrar |
 | AD | AD-032 emenda a AD-018 (cláusula de opt-out) e a AD-026 (frase "não há outro" modelo) | O `CLAUDE.md` exige emenda explícita; registrada neste Design |

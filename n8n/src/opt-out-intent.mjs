@@ -80,3 +80,57 @@ export function buildClassifierInput({ lastAgentMessage, userMessage } = {}) {
   const text = Array.isArray(userMessage) ? userMessage.join("\n") : (userMessage ?? "");
   return `Última mensagem enviada ao lead: ${last}\nMensagem do lead: ${text}`;
 }
+
+/**
+ * Minúsculas, sem acento, espaços colapsados. A lista do buffer vira um texto
+ * só, unido por quebra de linha, como em `buildClassifierInput`.
+ *
+ * @param {string | string[] | null | undefined} userMessage
+ * @returns {string}
+ */
+function normalizeUserMessage(userMessage) {
+  const text = Array.isArray(userMessage) ? userMessage.join("\n") : (userMessage ?? "");
+  return String(text)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** "parar/para/pare/parem de [me/nos] mandar|enviar <objeto>". */
+const STOP_SENDING_OBJECT = /\b(?:parar|para|pare|parem) de (?:(?:me|nos) )?(?:mandar|enviar) \S/;
+
+/** Menção ao contato em si: com qualquer uma delas, o pedido não é só de conteúdo. */
+const CONTACT_MENTION = /mensag|msg|contat|lista|descadastr|nada|whatsapp/;
+
+/** "mensagem de voz" é formato (como áudio), não o contato em si. */
+const VOICE_MESSAGE = /mensage(?:m|ns) de (?:voz|audio)/g;
+
+/**
+ * Pedido para parar de mandar só um conteúdo, formato ou filtro de busca
+ * ("para de mandar casa, eu quero apartamento"), sem menção ao contato em si.
+ * Trava determinística depois do classificador (T12d, decisão D3): a medição
+ * v3 deixou falsos positivos aleatórios exatamente nesse formato.
+ *
+ * @param {string | string[] | null | undefined} userMessage
+ * @returns {boolean}
+ */
+export function isContentOnlyStop(userMessage) {
+  const text = normalizeUserMessage(userMessage);
+  if (!STOP_SENDING_OBJECT.test(text)) return false;
+  return !CONTACT_MENTION.test(text.replace(VOICE_MESSAGE, ""));
+}
+
+/**
+ * Categoria final do turno: `explicita` com pedido só de conteúdo vira
+ * `ambigua` (o agente pergunta em vez de descadastrar). Qualquer outra
+ * categoria passa inalterada.
+ *
+ * @param {{ categoria?: string, userMessage?: string | string[] | null }} input
+ * @returns {string | undefined}
+ */
+export function refineOptOutCategory({ categoria, userMessage } = {}) {
+  if (categoria === "explicita" && isContentOnlyStop(userMessage)) return "ambigua";
+  return categoria;
+}

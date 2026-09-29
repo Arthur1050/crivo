@@ -41,7 +41,7 @@
  * Nenhum CRM, WhatsApp ou memória é tocado. Fonte versionada (AD-014); o
  * publicável é `n8n/generated/medicao-opt-out.ts`.
  */
-import { workflow, node, trigger, merge, languageModel, newCredential } from "@n8n/workflow-sdk";
+import { workflow, node, trigger, merge, ifElse, languageModel, newCredential, expr } from "@n8n/workflow-sdk";
 
 const webhookTrigger = trigger({
   type: "n8n-nodes-base.webhook",
@@ -56,7 +56,8 @@ const webhookTrigger = trigger({
 
 // Mesma entrada que `Code: entrada do classificador` monta no agente:
 // `buildClassifierInput` com a última mensagem do item (ou a abertura fixa)
-// e o texto do lead.
+// e o texto do lead. `userMessage` viaja no item (o classificador repassa o
+// JSON) para a trava da saída `explicita` (T12d).
 const expandCorpus = node({
   type: "n8n-nodes-base.code",
   version: 2,
@@ -80,7 +81,7 @@ const expandCorpus = node({
         "for (const item of itens) {\n" +
         "  const classifierInput = buildClassifierInput({ lastAgentMessage: item.ultimaMensagem ?? corpus.abertura, userMessage: item.texto });\n" +
         "  for (let repeticao = 1; repeticao <= repeticoes; repeticao++) {\n" +
-        "    out.push({ json: { id: item.id, faixa: item.faixa, repeticao, repeticoes, classifierInput } });\n" +
+        "    out.push({ json: { id: item.id, faixa: item.faixa, repeticao, repeticoes, classifierInput, userMessage: item.texto } });\n" +
         "  }\n" +
         "}\n" +
         "return out;\n",
@@ -227,6 +228,46 @@ const markErro = node({
   output: [{ id: "fora-01", faixa: "fora", repeticao: 1, categoria: "erro" }],
 });
 
+// Trava determinística da saída `explicita` (T12d, decisão D3), a mesma do
+// agente: `refineOptOutCategory` sobre o texto do lead. Pedido só de conteúdo
+// ("para de mandar casa") é marcado `ambigua`. Preserva o JSON do item para
+// os marcadores.
+const confirmExplicitOptOut = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: conferir pedido explícito",
+    position: [600, 640],
+    parameters: {
+      mode: "runOnceForAllItems",
+      language: "javaScript",
+      jsCode:
+        '__INLINE(opt-out-intent.mjs)__' +
+        "\n\n" +
+        "return $input.all().map((item) => {\n" +
+        "  const categoria = refineOptOutCategory({ categoria: 'explicita', userMessage: item.json.userMessage });\n" +
+        "  return { json: { ...item.json, optOutExplicito: categoria === 'explicita' } };\n" +
+        "});\n",
+    },
+  },
+  output: [{ id: "exp-01", faixa: "explicita", repeticao: 1, repeticoes: 3, classifierInput: "...", userMessage: "não me mande mais mensagens", optOutExplicito: true }],
+});
+
+const isExplicitOptOutIf = ifElse({
+  version: 2.3,
+  config: {
+    name: "Pedido explícito confirmado?",
+    position: [760, 640],
+    parameters: {
+      conditions: {
+        combinator: "and",
+        options: { caseSensitive: true, leftValue: "", typeValidation: "strict" },
+        conditions: [{ leftValue: expr("{{ $json.optOutExplicito }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }],
+      },
+    },
+  },
+});
+
 const mergeRuns = merge({
   version: 3.2,
   config: {
@@ -261,9 +302,13 @@ const scoreRuns = node({
 
 // Saída de erro pelo índice 4, nunca por `.onError()`: o SDK liga
 // `.onError()` à saída 1, que no classificador é `ambigua` (achado da T2).
+// A saída 2 passa pela trava (T12d): verdadeiro marca `explicita`, falso marca
+// `ambigua` (que já segue para a entrada 1 do Merge).
 optOutClassifier.output(0).to(markFora.to(mergeRuns.input(0)));
 optOutClassifier.output(1).to(markAmbigua.to(mergeRuns.input(1)));
-optOutClassifier.output(2).to(markExplicita.to(mergeRuns.input(2)));
+optOutClassifier
+  .output(2)
+  .to(confirmExplicitOptOut.to(isExplicitOptOutIf.onTrue(markExplicita.to(mergeRuns.input(2))).onFalse(markAmbigua)));
 optOutClassifier.output(3).to(markOther.to(mergeRuns.input(3)));
 optOutClassifier.output(4).to(markErro.to(mergeRuns.input(4)));
 mergeRuns.to(scoreRuns);

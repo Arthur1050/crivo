@@ -138,9 +138,12 @@ describe("cada saída do classificador chega ao Merge (L-026)", () => {
   ];
 
   for (const { indice, categoria, marcador } of SAIDAS) {
-    it(`saída ${indice} (${categoria}) → ${marcador}, e só ele`, () => {
-      expect(mainTargets(CLASSIFIER, indice)).toEqual([{ node: marcador, type: "main", index: 0 }]);
-    });
+    // A saída 2 passa pela trava (T12d, decisão D3): arestas no bloco abaixo.
+    if (indice !== 2) {
+      it(`saída ${indice} (${categoria}) → ${marcador}, e só ele`, () => {
+        expect(mainTargets(CLASSIFIER, indice)).toEqual([{ node: marcador, type: "main", index: 0 }]);
+      });
+    }
 
     it(`${marcador} → entrada ${indice} do Merge`, () => {
       expect(mainTargets(marcador, 0)).toEqual([{ node: MERGE, type: "main", index: indice }]);
@@ -169,6 +172,50 @@ describe("cada saída do classificador chega ao Merge (L-026)", () => {
   });
 });
 
+describe("trava determinística na saída explicita (T12d, decisão D3; L-026)", () => {
+  const CONFIRM = "Code: conferir pedido explícito";
+  const CONFIRM_IF = "Pedido explícito confirmado?";
+
+  it("saída 2 (explicita) → Code: conferir pedido explícito, e só ele", () => {
+    expect(mainTargets(CLASSIFIER, 2)).toEqual([{ node: CONFIRM, type: "main", index: 0 }]);
+  });
+
+  it("Code: conferir pedido explícito → IF Pedido explícito confirmado?", () => {
+    expect(mainTargets(CONFIRM, 0)).toEqual([{ node: CONFIRM_IF, type: "main", index: 0 }]);
+  });
+
+  it("IF verdadeiro (saída 0) → Code: marcar explicita, e só ele", () => {
+    expect(mainTargets(CONFIRM_IF, 0)).toEqual([{ node: "Code: marcar explicita", type: "main", index: 0 }]);
+  });
+
+  it("IF falso (saída 1) → Code: marcar ambigua, e só ele", () => {
+    expect(mainTargets(CONFIRM_IF, 1)).toEqual([{ node: "Code: marcar ambigua", type: "main", index: 0 }]);
+  });
+
+  it("o IF é v2.3, estrito, e testa `$json.optOutExplicito` como boolean verdadeiro", () => {
+    const node = nodeByName(CONFIRM_IF);
+    expect(node.type).toBe("n8n-nodes-base.if");
+    expect(node.typeVersion).toBe(2.3);
+    expect(node.parameters.conditions).toEqual({
+      combinator: "and",
+      options: { caseSensitive: true, leftValue: "", typeValidation: "strict" },
+      conditions: [{ leftValue: "={{ $json.optOutExplicito }}", operator: { type: "boolean", operation: "true" }, rightValue: true }],
+    });
+  });
+
+  it("marca `optOutExplicito` pelo `userMessage` do item e preserva o JSON para os marcadores", () => {
+    const itens = [
+      { id: "fora-08", faixa: "fora", repeticao: 1, repeticoes: 3, classifierInput: "x", userMessage: "para de mandar casa, eu quero apartamento" },
+      { id: "exp-01", faixa: "explicita", repeticao: 2, repeticoes: 3, classifierInput: "y", userMessage: "não me mande mais mensagens" },
+    ];
+    const out = runCode(CONFIRM, { $input: { all: () => itens.map((json) => ({ json })) } });
+    expect(out).toEqual([
+      { json: { ...itens[0], optOutExplicito: false } },
+      { json: { ...itens[1], optOutExplicito: true } },
+    ]);
+  });
+});
+
 describe("expansão do corpus (OPTMED-01 AC5)", () => {
   const corpus = {
     abertura: "Abertura fixa.",
@@ -191,6 +238,18 @@ describe("expansão do corpus (OPTMED-01 AC5)", () => {
       ["fora-19", "fora", 1],
       ["fora-19", "fora", 2],
       ["fora-19", "fora", 3],
+    ]);
+  });
+
+  it("cada item leva o texto do lead em `userMessage`, para a trava da saída explicita (T12d)", () => {
+    const out = runCode("Code: expandir corpus", { $: webhook({ corpus }) });
+    expect(out.map((i) => i.json.userMessage)).toEqual([
+      "não me mande mais mensagens",
+      "não me mande mais mensagens",
+      "não me mande mais mensagens",
+      "não",
+      "não",
+      "não",
     ]);
   });
 

@@ -69,6 +69,21 @@ describe("paridade com a medição (OPTMED-01 AC4, AC8)", () => {
   it("o classificador tem saída de erro própria (`continueErrorOutput`)", () => {
     expect(nodeByName(CLASSIFIER).onError).toBe("continueErrorOutput");
   });
+
+  it("a trava da saída explicita (T12d) inlina o mesmo módulo e chama `refineOptOutCategory` nos dois workflows", () => {
+    const medicaoJson = medicao.toJSON() as unknown as WorkflowJson;
+    const trava = (w: WorkflowJson) => {
+      const found = w.nodes.find((n) => n.name === "Code: conferir pedido explícito");
+      if (found === undefined) throw new Error("nó ausente: Code: conferir pedido explícito");
+      return String(found.parameters.jsCode);
+    };
+    for (const code of [trava(workflow), trava(medicaoJson)]) {
+      expect(code.startsWith("__INLINE(opt-out-intent.mjs)__\n\n")).toBe(true);
+      expect(code.match(/__INLINE\(/g)).toEqual(["__INLINE("]);
+      expect(code).toContain("refineOptOutCategory({ categoria: 'explicita', userMessage: ");
+      expect(code).toContain("categoria === 'explicita'");
+    }
+  });
 });
 
 describe("arestas da rota conversa (L-026)", () => {

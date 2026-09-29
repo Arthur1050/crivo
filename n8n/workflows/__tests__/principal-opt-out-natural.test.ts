@@ -33,6 +33,9 @@ const HTTP_KEYWORD = "HTTP: POST /leads/{id}/opt-out";
 const FINALIZE = "Code: finalizar opt-out";
 const GUIDE_SAIR = "Code: orientar sair (falha do registro)";
 const RECIPIENT = "Code: destinatário do envio fixo";
+const CONFIRM = "Code: conferir pedido explícito";
+const CONFIRM_IF = "Pedido explícito confirmado?";
+const ROUTE_AMBIGUA = "Code: rota ambígua";
 
 const CONFIRMATION =
   "Pronto, registramos seu pedido. Você não vai mais receber mensagens nossas por este número. Até mais!";
@@ -86,8 +89,26 @@ function harness(name: string): string {
 }
 
 describe("arestas do caminho natural (L-026)", () => {
-  it("saída 2 (explicita) do classificador → HTTP natural, e só ele", () => {
-    expect(mainTargets(CLASSIFIER, 2)).toEqual([{ node: HTTP_NATURAL, type: "main", index: 0 }]);
+  // T12d (decisão D3): a saída 2 deixou de ir direto ao HTTP natural; passa
+  // pela trava determinística antes do registro.
+  it("saída 2 (explicita) do classificador → Code: conferir pedido explícito, e só ele", () => {
+    expect(mainTargets(CLASSIFIER, 2)).toEqual([{ node: CONFIRM, type: "main", index: 0 }]);
+  });
+
+  it("Code: conferir pedido explícito → IF Pedido explícito confirmado?", () => {
+    expect(mainTargets(CONFIRM, 0)).toEqual([{ node: CONFIRM_IF, type: "main", index: 0 }]);
+  });
+
+  it("IF verdadeiro (saída 0) → HTTP natural, e só ele", () => {
+    expect(mainTargets(CONFIRM_IF, 0)).toEqual([{ node: HTTP_NATURAL, type: "main", index: 0 }]);
+  });
+
+  it("IF falso (saída 1) → Code: rota ambígua, e só ela", () => {
+    expect(mainTargets(CONFIRM_IF, 1)).toEqual([{ node: ROUTE_AMBIGUA, type: "main", index: 0 }]);
+  });
+
+  it("o HTTP natural tem o IF como único predecessor", () => {
+    expect(predecessors(HTTP_NATURAL)).toEqual([CONFIRM_IF]);
   });
 
   it("sucesso do HTTP natural (saída 0) → Code: finalizar opt-out", () => {
@@ -213,5 +234,51 @@ describe("caminho da palavra-chave inalterado (OPTKEY-01 AC1, AC4)", () => {
 
   it("restaurar payload → destinatário do envio fixo", () => {
     expect(mainTargets("Code: restaurar payload do opt-out", 0)).toEqual([{ node: RECIPIENT, type: "main", index: 0 }]);
+  });
+});
+
+describe("trava determinística antes do registro (T12d, decisão D3)", () => {
+  function runConfirm(bufferArray: { text: string }[] | undefined) {
+    const code = String(nodeByName(CONFIRM).parameters.jsCode).replace(
+      /'?__INLINE\(([a-zA-Z0-9_.-]+)\)__'?/g,
+      (_m, file: string) => readInlinedModule(file)
+    );
+    const $ = (node: string) => {
+      if (node !== "Code: contexto do lead") throw new Error(`nó inesperado: ${node}`);
+      return { first: () => ({ json: bufferArray === undefined ? {} : { bufferArray } }) };
+    };
+    return new Function("$", code)($) as { json: Record<string, unknown> }[];
+  }
+
+  it("pedido só de conteúdo no buffer do turno: `optOutExplicito: false`", () => {
+    expect(runConfirm([{ text: "oi" }, { text: "para de mandar casa, eu quero apartamento" }])).toEqual([
+      { json: { optOutExplicito: false } },
+    ]);
+  });
+
+  it("pedido de parar as mensagens: `optOutExplicito: true`", () => {
+    expect(runConfirm([{ text: "não me mande mais mensagens" }])).toEqual([{ json: { optOutExplicito: true } }]);
+  });
+
+  it("buffer ausente: mantém a decisão do classificador (`true`)", () => {
+    expect(runConfirm(undefined)).toEqual([{ json: { optOutExplicito: true } }]);
+  });
+
+  it("lê o texto do lead do mesmo buffer da entrada do classificador, e lead/tenant de lugar nenhum", () => {
+    const code = harness(CONFIRM);
+    expect(code).toContain("$('Code: contexto do lead').first().json.bufferArray");
+    expect(code).toContain("refineOptOutCategory({ categoria: 'explicita'");
+    expect(code).not.toMatch(/tenantSlug|waId|\.json\.id\b|fromAI/i);
+  });
+
+  it("o IF é v2.3, estrito, e testa `$json.optOutExplicito` como boolean verdadeiro", () => {
+    const node = nodeByName(CONFIRM_IF);
+    expect(node.type).toBe("n8n-nodes-base.if");
+    expect(node.typeVersion).toBe(2.3);
+    expect(node.parameters.conditions).toEqual({
+      combinator: "and",
+      options: { caseSensitive: true, leftValue: "", typeValidation: "strict" },
+      conditions: [{ leftValue: "={{ $json.optOutExplicito }}", operator: { type: "boolean", operation: "true" }, rightValue: true }],
+    });
   });
 });

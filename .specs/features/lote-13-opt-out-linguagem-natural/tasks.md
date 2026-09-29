@@ -472,6 +472,27 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 **Evidence (medição):** `update_workflow` + `publish_workflow`; `versionId == activeVersionId == 4d11bbc3-1c37-4fcd-8be1-ea7b6fba581c`; parâmetros publicados iguais ao gerado. Execução **2687** (conferida por `get_execution`, `success`, 118 s): 77 × 3 = 231 classificações, 231 chamadas (sem auto-fix), `erro` 0, `other` 2. Explícitas 84/84; ambíguas sem falso positivo; **2 falsos positivos**, cada um 1 de 3: `fora-08` "para de mandar casa, eu quero apartamento" e `fora-25` "para de mandar imóvel na zona norte". As negativas à pergunta de confirmação (`fora-19`, `fora-20`, `fora-31`, `fora-32`) saíram `fora` 3/3. Relatório: `medicao-opt-out-2026-09-29-v3.json`. Decisão D3: trava determinística depois do classificador (T12d), em vez de uma quarta versão de prompt.
 
+#### T12d: Trava determinística depois do classificador
+
+**What:** Decisão D3: em vez de uma quarta versão do prompt, acrescentar depois do classificador uma trava determinística, igual no agente e na medição. `refineOptOutCategory` rebaixa `explicita` para `ambigua` quando a mensagem é "parar/para/pare/parem de [me/nos] mandar|enviar <objeto>" sem menção ao contato em si. Prompt e categorias da v3 não mudam.
+**Where:** `n8n/src/opt-out-intent.mjs`, `n8n/src/__tests__/opt-out-intent.test.ts`, `n8n/workflows/principal.ts`, `n8n/workflows/medicao-opt-out.ts`, `n8n/generated/`, `n8n/workflows/__tests__/` (`principal-opt-out-natural`, `medicao-opt-out`, `principal-classificador`, `principal-modelo`), `design.md`
+**Depends on:** T12c
+**Requirement:** OPTREG-01, OPTMED-01
+
+**Done when:**
+
+- [x] `isContentOnlyStop` e `refineOptOutCategory` em `opt-out-intent.mjs`, puros; todas as `explicita` do corpus continuam `explicita`; as 11 frases `fora` de "parar de mandar <coisa>" viram `ambigua`; mista continua `explicita`; demais categorias inalteradas; string[], vazio e ausente cobertos (L-005).
+- [x] Agente: saída 2 do classificador → `Code: conferir pedido explícito` → `Pedido explícito confirmado?`; verdadeiro → HTTP natural, falso → `Code: rota ambígua`. Lead e tenant seguem só de `$('Code: gate')`.
+- [x] Medição: `Code: expandir corpus` leva `userMessage`; saída 2 → trava equivalente → verdadeiro `Code: marcar explicita`, falso `Code: marcar ambigua`.
+- [x] Um teste por aresta nos dois workflows (L-026); arestas antigas `explicita → HTTP natural` (T11) e `explicita → marcar explicita` (T9) atualizadas para a nova cadeia, com igualdade exata; teste de paridade da trava; contagens de `principal-modelo.test.ts` 69/88 → 71/91.
+- [x] `node scripts/n8n-inline.mjs`; `validate_workflow` do MCP sem erro na medição; principal validado pelo validador local do SDK (ver Evidence).
+
+**Commit:** `feat(n8n): downgrade content-only stop requests before opt-out registration`
+
+**Status:** ✅ Concluída (2026-09-29). Pendente fora deste worker: republicar `crivo-medicao-opt-out` e medir (a trava muda o hash).
+
+**Evidence:** `npx vitest run n8n/workflows/__tests__ n8n/src/__tests__ scripts/__tests__`: 24 arquivos / 626 testes, 0 falhas (576 → 626). Por arquivo: `opt-out-intent.test.ts` 57, `principal-opt-out-natural.test.ts` 28, `medicao-opt-out.test.ts` 40, `principal-classificador.test.ts` 23, `principal-modelo.test.ts` 12. Contagens do agente 69/88 → 71/91; medição 11/14 → 13/17 nós/conexões. `validate_workflow` do MCP: medição válida, 13 nós. O principal gerado (190 KB, ~70 mil tokens) não foi enviado ao MCP: o arquivo inteiro não cabe num único argumento de chamada deste worker. No lugar, o mesmo parser e validador do SDK (`parseWorkflowCodeToBuilder` + `validateWorkflow` de `@n8n/workflow-sdk`) rodou localmente sobre os dois gerados: principal válido, 71 nós, 0 erros, 0 avisos; medição válida, 13 nós (mesmo resultado do MCP). Novo hash (`identity`): `1547f0ae6ee31640db62b432a36e1e5d6c77fd92467a18f9f42034ba088f6b29`. Desvio da regra literal: "mensagem de voz" (`fora-27`) é removida antes de procurar menção ao contato, senão `mensag` manteria a frase `explicita`. `npm run lint` sem erro. `gate.mjs` e `gate.test.ts` sem diff.
+
 #### T13: Travar a publicação na medição aprovada
 
 **What:** Acrescentar a `principal-classificador.test.ts` a asserção de que a identidade do classificador em `principal.ts` é igual ao `classifierHash` do relatório aprovado mais recente em `.specs/features/lote-13-opt-out-linguagem-natural/`, e que o veredito dele é `APROVADO`.

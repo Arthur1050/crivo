@@ -1101,6 +1101,46 @@ const optOutClassifier = node({
   output: [{ classifierInput: "..." }],
 });
 
+// lote-13 (T12d, decisão D3): trava determinística na saída `explicita`. A
+// medição v3 deixou falsos positivos aleatórios em "para de mandar <conteúdo>"
+// sem menção ao contato em si; `refineOptOutCategory` rebaixa esses turnos para
+// `ambigua` (o agente pergunta) antes do registro. Lê o mesmo buffer do turno
+// que `Code: entrada do classificador`; lead e tenant não passam por aqui.
+const confirmExplicitOptOut = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: conferir pedido explícito",
+    position: [7690, -100],
+    parameters: {
+      mode: "runOnceForAllItems",
+      language: "javaScript",
+      jsCode:
+        '__INLINE(opt-out-intent.mjs)__' +
+        "\n\n" +
+        "const buffer = $('Code: contexto do lead').first().json.bufferArray || [];\n" +
+        "const categoria = refineOptOutCategory({ categoria: 'explicita', userMessage: buffer.map((m) => m.text) });\n" +
+        "return [{ json: { optOutExplicito: categoria === 'explicita' } }];\n",
+    },
+  },
+  output: [{ optOutExplicito: true }],
+});
+
+const isExplicitOptOutIf = ifElse({
+  version: 2.3,
+  config: {
+    name: "Pedido explícito confirmado?",
+    position: [7820, -100],
+    parameters: {
+      conditions: {
+        combinator: "and",
+        options: { caseSensitive: true, leftValue: "", typeValidation: "strict" },
+        conditions: [{ leftValue: expr("{{ $json.optOutExplicito }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }],
+      },
+    },
+  },
+});
+
 // Recebe `fora` (saída 0), `other` (3) e erro (4). Um item por turno.
 const routeFora = node({
   type: "n8n-nodes-base.code",
@@ -2092,14 +2132,15 @@ const afterLoadMemory = loadMemory.to(
 // agente (fan-in, mesma regra do topo desta seção). A saída de erro do
 // classificador é a de índice 4 e é ligada com `.output(4)`, nunca com
 // `.onError()`: o SDK liga `.onError()` à saída 1, que aqui é `ambigua`
-// (achado da T2). A saída 2 (`explicita`) entra no ramo de opt-out (T11): o
-// sucesso do HTTP natural cai na mesma cauda da palavra-chave, e o erro (saída
-// 1 do HTTP, nó de duas saídas, onde `.onError()` é correto) orienta `sair`
-// pelo envio fixo.
+// (achado da T2). A saída 2 (`explicita`) passa pela trava determinística
+// (T12d): pedido só de conteúdo vai para `Code: rota ambígua`; o resto entra no
+// ramo de opt-out (T11). O sucesso do HTTP natural cai na mesma cauda da
+// palavra-chave, e o erro (saída 1 do HTTP, nó de duas saídas, onde
+// `.onError()` é correto) orienta `sair` pelo envio fixo.
 memoryReadyCheckpoint.to(buildClassifierInputNode.to(optOutClassifier));
 optOutClassifier.output(0).to(routeFora);
 optOutClassifier.output(1).to(routeAmbigua);
-optOutClassifier.output(2).to(postOptOutNatural);
+optOutClassifier.output(2).to(confirmExplicitOptOut.to(isExplicitOptOutIf.onTrue(postOptOutNatural).onFalse(routeAmbigua)));
 postOptOutNatural.to(optOutTailWired);
 postOptOutNatural.onError(guideSairOnFailure.to(fixedReplyWired));
 optOutClassifier.output(3).to(routeFora);
