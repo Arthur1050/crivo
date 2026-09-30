@@ -1002,10 +1002,12 @@ const memoryReadyCheckpoint = node({
 
 // ---------------------------------------------------------------------
 // 10b. Classificador de opt-out (lote-13 — T10; design.md). Decide a ROTA do
-//      turno antes do agente: `explicita` entra no ramo de opt-out (T11),
-//      `ambigua` liga a pergunta no system message, e `fora`, `other`
-//      (categoria não reconhecida) e erro seguem para o agente como antes
-//      (OPTREG-01 AC8: na dúvida, não descadastrar). O classificador só lê a
+//      turno antes do agente: `explicita` entra no ramo de opt-out (T11), e
+//      `ambigua`, `fora`, `other` (categoria não reconhecida) e erro seguem
+//      para o agente como antes (OPTREG-01 AC8: na dúvida, não descadastrar).
+//      Decisão D11 (2026-09-30): `ambigua` não gera mais pergunta de
+//      confirmação; o classificador continua com três categorias porque a
+//      identidade aprovada na medição v4 trava a configuração dele. O classificador só lê a
 //      mensagem do turno e a última fala do agente na sessão corrente; lead e
 //      tenant nunca passam por ele (OPTREG-01 AC2).
 // ---------------------------------------------------------------------
@@ -1104,7 +1106,7 @@ const optOutClassifier = node({
 // lote-13 (T12d, decisão D3): trava determinística na saída `explicita`. A
 // medição v3 deixou falsos positivos aleatórios em "para de mandar <conteúdo>"
 // sem menção ao contato em si; `refineOptOutCategory` rebaixa esses turnos para
-// `ambigua` (o agente pergunta) antes do registro. Lê o mesmo buffer do turno
+// `ambigua`, que segue para o agente sem registro (D11). Lê o mesmo buffer do turno
 // que `Code: entrada do classificador`; lead e tenant não passam por aqui.
 const confirmExplicitOptOut = node({
   type: "n8n-nodes-base.code",
@@ -1141,7 +1143,8 @@ const isExplicitOptOutIf = ifElse({
   },
 });
 
-// Recebe `fora` (saída 0), `other` (3) e erro (4). Um item por turno.
+// Recebe `fora` (saída 0), `ambigua` (1), `other` (3), erro (4) e o pedido
+// explícito rebaixado pela trava. Um item por turno.
 const routeFora = node({
   type: "n8n-nodes-base.code",
   version: 2,
@@ -1151,25 +1154,10 @@ const routeFora = node({
     parameters: {
       mode: "runOnceForAllItems",
       language: "javaScript",
-      jsCode: "return [{ json: { optOutAmbiguo: false } }];\n",
+      jsCode: "return [{ json: {} }];\n",
     },
   },
-  output: [{ optOutAmbiguo: false }],
-});
-
-const routeAmbigua = node({
-  type: "n8n-nodes-base.code",
-  version: 2,
-  config: {
-    name: "Code: rota ambígua",
-    position: [7690, 400],
-    parameters: {
-      mode: "runOnceForAllItems",
-      language: "javaScript",
-      jsCode: "return [{ json: { optOutAmbiguo: true } }];\n",
-    },
-  },
-  output: [{ optOutAmbiguo: true }],
+  output: [{}],
 });
 
 // ---------------------------------------------------------------------
@@ -1224,10 +1212,9 @@ const buildAgentSystemMessage = node({
         // quando `wasExpired` já zera a lista. É o sinal que faltava para o
         // agente cumprimentar e dizer quem é antes de perguntar.
         "const firstTurn = perguntados.length === 0;\n" +
-        // lote-13 (T10): o único campo que chega por `$json` é a rota do
-        // classificador (`Code: rota fora` ou `Code: rota ambígua`); todo o
-        // resto continua lido dos ancestrais pelo nome.
-        "const systemMessage = buildSystemMessage({ settings, phase, perguntados: updatedPerguntados, businessHours, now, meetingAt, firstTurn, optOutAmbiguo: $json.optOutAmbiguo === true });\n" +
+        // lote-13 (T10, D11): nada chega por `$json` de `Code: rota fora`;
+        // todo o turno continua lido dos ancestrais pelo nome.
+        "const systemMessage = buildSystemMessage({ settings, phase, perguntados: updatedPerguntados, businessHours, now, meetingAt, firstTurn });\n" +
         "const buffer = $('Code: contexto do lead').first().json.bufferArray || [];\n" +
         "const userMessage = buffer.map((m) => m.text).join('\\n');\n" +
         "return [{ json: { systemMessage, userMessage, phase, perguntadosJson: JSON.stringify(updatedPerguntados) } }];\n",
@@ -2128,19 +2115,19 @@ const afterLoadMemory = loadMemory.to(
 // uma reconexão do zero (mesma disciplina de T9/T10).
 //
 // lote-13 (T10): entre o checkpoint e o system message entra o classificador
-// de opt-out. `agentTurnWired` é o alvo único das duas rotas que seguem para o
-// agente (fan-in, mesma regra do topo desta seção). A saída de erro do
+// de opt-out. `agentTurnWired` é o alvo único de `Code: rota fora`, a
+// única rota que segue para o agente (mesma regra do topo desta seção). A saída de erro do
 // classificador é a de índice 4 e é ligada com `.output(4)`, nunca com
 // `.onError()`: o SDK liga `.onError()` à saída 1, que aqui é `ambigua`
 // (achado da T2). A saída 2 (`explicita`) passa pela trava determinística
-// (T12d): pedido só de conteúdo vai para `Code: rota ambígua`; o resto entra no
+// (T12d): pedido só de conteúdo vai para `Code: rota fora`; o resto entra no
 // ramo de opt-out (T11). O sucesso do HTTP natural cai na mesma cauda da
 // palavra-chave, e o erro (saída 1 do HTTP, nó de duas saídas, onde
 // `.onError()` é correto) orienta `sair` pelo envio fixo.
 memoryReadyCheckpoint.to(buildClassifierInputNode.to(optOutClassifier));
 optOutClassifier.output(0).to(routeFora);
-optOutClassifier.output(1).to(routeAmbigua);
-optOutClassifier.output(2).to(confirmExplicitOptOut.to(isExplicitOptOutIf.onTrue(postOptOutNatural).onFalse(routeAmbigua)));
+optOutClassifier.output(1).to(routeFora);
+optOutClassifier.output(2).to(confirmExplicitOptOut.to(isExplicitOptOutIf.onTrue(postOptOutNatural).onFalse(routeFora)));
 postOptOutNatural.to(optOutTailWired);
 postOptOutNatural.onError(guideSairOnFailure.to(fixedReplyWired));
 optOutClassifier.output(3).to(routeFora);
@@ -2174,7 +2161,6 @@ const agentTurnWired = buildAgentSystemMessage.to(
     )
   );
 routeFora.to(agentTurnWired);
-routeAmbigua.to(agentTurnWired);
 
 const conversaBranch = getSettings.to(
   checkSessionExpired.to(

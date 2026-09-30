@@ -11,8 +11,9 @@ import principal from "../principal";
  * (lote-13 T10 — OPTREG-01, OPTAMB-01, OPTSEG-01, OPTMED-01).
  *
  * Saídas do Text Classifier v1.1 (T2): 0 fora, 1 ambigua, 2 explicita,
- * 3 other, 4 erro. `fora`, `other` e erro seguem para o agente como hoje
- * (OPTREG-01 AC8); `ambigua` liga a instrução de pergunta (OPTAMB-01 AC1).
+ * 3 other, 4 erro. `fora`, `ambigua`, `other` e erro seguem para o agente
+ * como hoje (OPTREG-01 AC8). Desde a decisão D11 (2026-09-30) `ambigua` não
+ * gera pergunta de confirmação: não existe mais `Code: rota ambígua`.
  * Um teste por aresta (L-026).
  */
 
@@ -30,9 +31,8 @@ const INPUT = "Code: entrada do classificador";
 const CLASSIFIER = "Classificador: opt-out";
 const CLASSIFIER_MODEL = "OpenAI Chat Model (classificador)";
 const ROUTE_FORA = "Code: rota fora";
-const ROUTE_AMBIGUA = "Code: rota ambígua";
 const SYSTEM_MESSAGE = "Code: montar system message e marcar campo perguntado";
-const NEW_NODES = [INPUT, CLASSIFIER, CLASSIFIER_MODEL, ROUTE_FORA, ROUTE_AMBIGUA];
+const NEW_NODES = [INPUT, CLASSIFIER, CLASSIFIER_MODEL, ROUTE_FORA];
 
 function nodeByName(name: string) {
   const found = workflow.nodes.find((n) => n.name === name);
@@ -105,8 +105,8 @@ describe("arestas da rota conversa (L-026)", () => {
     expect(mainTargets(CLASSIFIER, 0)).toEqual([{ node: ROUTE_FORA, type: "main", index: 0 }]);
   });
 
-  it("saída 1 (ambigua) → Code: rota ambígua, e só ela", () => {
-    expect(mainTargets(CLASSIFIER, 1)).toEqual([{ node: ROUTE_AMBIGUA, type: "main", index: 0 }]);
+  it("saída 1 (ambigua) → Code: rota fora, e só ela (D11: sem pergunta de confirmação)", () => {
+    expect(mainTargets(CLASSIFIER, 1)).toEqual([{ node: ROUTE_FORA, type: "main", index: 0 }]);
   });
 
   it("saída 3 (other, categoria não reconhecida) → Code: rota fora (OPTREG-01 AC8)", () => {
@@ -121,22 +121,19 @@ describe("arestas da rota conversa (L-026)", () => {
     expect(mainTargets(ROUTE_FORA, 0)).toEqual([{ node: SYSTEM_MESSAGE, type: "main", index: 0 }]);
   });
 
-  it("Code: rota ambígua → system message", () => {
-    expect(mainTargets(ROUTE_AMBIGUA, 0)).toEqual([{ node: SYSTEM_MESSAGE, type: "main", index: 0 }]);
-  });
 });
 
-describe("a rota liga a instrução ambígua só no turno ambíguo (OPTAMB-01 AC1, OPTSEG-01 AC2)", () => {
-  it("Code: rota ambígua emite `optOutAmbiguo: true`", () => {
-    expect(runCode(ROUTE_AMBIGUA, () => undefined)).toEqual([{ json: { optOutAmbiguo: true } }]);
+describe("nenhuma rota liga pergunta de confirmação (D11)", () => {
+  it("não existe `Code: rota ambígua`", () => {
+    expect(workflow.nodes.some((n) => n.name === "Code: rota ambígua")).toBe(false);
   });
 
-  it("Code: rota fora emite `optOutAmbiguo: false`", () => {
-    expect(runCode(ROUTE_FORA, () => undefined)).toEqual([{ json: { optOutAmbiguo: false } }]);
+  it("Code: rota fora emite um item vazio", () => {
+    expect(runCode(ROUTE_FORA, () => undefined)).toEqual([{ json: {} }]);
   });
 
-  it("o system message recebe `optOutAmbiguo: $json.optOutAmbiguo === true`", () => {
-    expect(String(nodeByName(SYSTEM_MESSAGE).parameters.jsCode)).toContain("optOutAmbiguo: $json.optOutAmbiguo === true");
+  it("o system message não recebe mais o flag `optOutAmbiguo`", () => {
+    expect(String(nodeByName(SYSTEM_MESSAGE).parameters.jsCode)).not.toContain("optOutAmbiguo");
   });
 });
 

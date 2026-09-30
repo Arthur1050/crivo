@@ -518,10 +518,10 @@ describe("buildSystemMessage — orientação de opt-out (achado real, cenário 
     expect(message).toMatch(/NUNCA deve prometer que vai parar nem dizer que já parou/i);
   });
 
-  it("cobre a intenção em linguagem natural, não só a palavra exata", () => {
+  it("cobre o pedido explícito em linguagem natural, não só a palavra exata (D11 do lote-13)", () => {
     const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
-    expect(message).toMatch(/der a entender de qualquer forma que não quer mais receber mensagens/i);
-    expect(message).toMatch(/pediu para parar, disse que foi engano/i);
+    expect(message).toMatch(/pedir explicitamente para parar de receber mensagens/i);
+    expect(message).toMatch(/pediu para parar de mandar mensagens, para não ser mais contatado/i);
   });
 
   it("orienta o lead a digitar a palavra que dispara o mecanismo determinístico", () => {

@@ -41,9 +41,12 @@ const MEMORY_NODE = "Postgres Chat Memory";
  * explícito confirmado?) e +3 conexões (−1 saída 2 → HTTP natural; +1 saída 2
  * → conferir, +1 conferir → IF, +1 IF verdadeiro → HTTP natural, +1 IF falso
  * → rota ambígua) → 71/91, medido por `principal.toJSON()`.
+ * lote-13 (D11): −1 nó (`Code: rota ambígua`) e −1 conexão (−3 que tocavam
+ * a rota ambígua; +2: saída 1 do classificador e IF falso → rota fora) →
+ * 70/90, medido por `principal.toJSON()`.
  */
-const NOS_ESPERADOS = 71;
-const CONEXOES_ESPERADAS = 91;
+const NOS_ESPERADOS = 70;
+const CONEXOES_ESPERADAS = 90;
 
 const TOOLS = [
   "registrar_qualificacao",
@@ -146,7 +149,7 @@ describe("a troca de modelo não mexeu em mais nada do grafo (MOD-01 AC2)", () =
     );
   });
 
-  it("o grafo continua com 71 nós e 91 conexões — as contagens medidas depois da trava (T12d do lote-13)", () => {
+  it("o grafo continua com 70 nós e 90 conexões — as contagens medidas depois da D11 do lote-13", () => {
     expect(workflow.nodes).toHaveLength(NOS_ESPERADOS);
     expect(contarConexoes()).toBe(CONEXOES_ESPERADAS);
   });

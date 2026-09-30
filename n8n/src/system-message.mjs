@@ -100,16 +100,15 @@ const MEETING_CHANNEL_INSTRUCTION =
 // consentimento mais forte para LGPD, e um falso positivo custa zero: quem
 // não quer sair simplesmente não digita.
 const OPT_OUT_GUIDANCE_INSTRUCTION =
-  "Pedido para parar de receber mensagens: você NÃO tem como descadastrar ninguém, e NUNCA deve prometer que vai parar nem dizer que já parou — quem encerra é um mecanismo automático que só reconhece uma palavra exata. Se o lead der a entender de qualquer forma que não quer mais receber mensagens (pediu para parar, disse que foi engano, que não tem interesse, que quer sair da lista, que não é para mandar mais nada), reconheça o pedido com respeito e diga em UMA frase curta que, para encerrar de vez, basta ele responder com a palavra sair — sozinha, sem mais nada. Não insista, não tente reverter o pedido, não faça pergunta nova e não puxe assunto depois disso.";
+  "Pedido para parar de receber mensagens: você NÃO tem como descadastrar ninguém, e NUNCA deve prometer que vai parar nem dizer que já parou — quem encerra é um mecanismo automático que só reconhece uma palavra exata. Só trate como pedido quando o lead pedir explicitamente para parar de receber mensagens (pediu para parar de mandar mensagens, para não ser mais contatado, para sair da lista, para não mandarem mais nada): reconheça o pedido com respeito e diga em UMA frase curta que, para encerrar de vez, basta ele responder com a palavra sair — sozinha, sem mais nada. Não insista, não tente reverter o pedido, não faça pergunta nova e não puxe assunto depois disso. Desinteresse, recusa de uma opção, número errado ou pedido para parar de mandar só um tipo de conteúdo NÃO são pedido para parar de receber mensagens: responda normalmente, sem mencionar a palavra sair e sem perguntar se ele quer parar de receber mensagens.";
 
-// lote-13 (OPTAMB-01 AC1): turno que o classificador de opt-out marcou como
-// ambíguo (desinteresse geral, número ou pessoa errada). O registro só
-// acontece se o lead responder que sim, no turno seguinte, e quem decide é o
-// classificador, não o agente. Por isso, neste turno, a pergunta substitui a
-// orientação "responda sair", que continua no prompt como rede para os
-// outros turnos. Entra no system message só com `optOutAmbiguo: true`.
-export const OPT_OUT_AMBIGUOUS_INSTRUCTION =
-  "Neste turno o lead demonstrou desinteresse ou disse que o número está errado, sem pedir claramente para parar de receber mensagens. Em vez de orientar a palavra sair, pergunte em UMA frase curta se ele quer parar de receber mensagens por este número. Não insista, NUNCA prometa que vai parar nem diga que já parou, e não puxe outro assunto nesta mensagem.";
+// lote-13 (decisão D11, 2026-09-30, pedido do usuário depois da prova por
+// conversa real): a pergunta "você quer parar de receber mensagens?" para o
+// lead desinteressado soava como convite para sair e foi removida, junto com
+// a rota ambígua do classificador. Só o pedido explícito descadastra (pelo
+// classificador, antes do agente); a orientação acima é a rede para o pedido
+// explícito que o classificador deixar passar, e por isso também não trata
+// mais desinteresse ou engano como pedido.
 
 // ACHADO REAL (Fase 5 do lote-10, cenário 2, 2026-09-07, conversa real):
 // depois de escalar, o agente disse "vou chamar o Arthur pra cuidar do seu
@@ -332,8 +331,7 @@ function buildPhaseInstruction(phase, perguntados, meetingAt) {
  * (delimitado + reafirmação) → persona consultiva → postura na conversa →
  * abertura de sessão
  * (só no primeiro turno) → fronteira de capacidade → canal da reunião →
- * aceite de horário → informações do negócio → entrega ao humano → orientação de opt-out → pergunta de opt-out ambíguo
- * (só com `optOutAmbiguo: true`, lote-13) → transparência (AD-016)
+ * aceite de horário → informações do negócio → entrega ao humano → orientação de opt-out → transparência (AD-016)
  * → âncora de data → instrução por fase → horário comercial → catálogo de
  * tools → instrução de falha de tool.
  *
@@ -345,11 +343,10 @@ function buildPhaseInstruction(phase, perguntados, meetingAt) {
  *   now?: string | null,
  *   meetingAt?: string | null,
  *   firstTurn?: boolean | null,
- *   optOutAmbiguo?: boolean | null,
  * }} input
  * @returns {string}
  */
-export function buildSystemMessage({ settings, phase, perguntados, businessHours, now, meetingAt, firstTurn, optOutAmbiguo = false } = {}) {
+export function buildSystemMessage({ settings, phase, perguntados, businessHours, now, meetingAt, firstTurn } = {}) {
   const persona = settings ?? {};
 
   const sections = [
@@ -375,7 +372,6 @@ export function buildSystemMessage({ settings, phase, perguntados, businessHours
     MISSING_KNOWLEDGE_INSTRUCTION,
     ESCALATION_HANDOFF_INSTRUCTION,
     OPT_OUT_GUIDANCE_INSTRUCTION,
-    optOutAmbiguo === true ? OPT_OUT_AMBIGUOUS_INSTRUCTION : null,
     AI_TRANSPARENCY_INSTRUCTION,
     buildTodayAnchor(now),
     buildPhaseInstruction(phase, perguntados, meetingAt),

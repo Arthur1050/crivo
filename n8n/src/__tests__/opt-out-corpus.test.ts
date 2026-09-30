@@ -17,7 +17,10 @@ const corpus = JSON.parse(readFileSync("n8n/fixtures/opt-out-corpus.json", "utf8
 const porFaixa = (faixa: Faixa) => corpus.itens.filter((item) => item.faixa === faixa);
 const comTexto = (texto: string) => corpus.itens.filter((item) => item.texto === texto);
 
-/** Pergunta de confirmação da faixa ambígua (OPT_OUT_AMBIGUOUS_INSTRUCTION). */
+/**
+ * Pergunta de confirmação da faixa ambígua. O agente não a faz mais desde a
+ * decisão D11; os pares continuam no corpus porque são os da medição v4.
+ */
 const PERGUNTA_CONFIRMACAO = /parar de receber mensagens/i;
 
 describe("formato do corpus", () => {

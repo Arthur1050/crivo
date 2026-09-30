@@ -35,7 +35,7 @@ const GUIDE_SAIR = "Code: orientar sair (falha do registro)";
 const RECIPIENT = "Code: destinatário do envio fixo";
 const CONFIRM = "Code: conferir pedido explícito";
 const CONFIRM_IF = "Pedido explícito confirmado?";
-const ROUTE_AMBIGUA = "Code: rota ambígua";
+const ROUTE_FORA = "Code: rota fora";
 
 const CONFIRMATION =
   "Pronto, registramos seu pedido. Você não vai mais receber mensagens nossas por este número. Até mais!";
@@ -103,8 +103,8 @@ describe("arestas do caminho natural (L-026)", () => {
     expect(mainTargets(CONFIRM_IF, 0)).toEqual([{ node: HTTP_NATURAL, type: "main", index: 0 }]);
   });
 
-  it("IF falso (saída 1) → Code: rota ambígua, e só ela", () => {
-    expect(mainTargets(CONFIRM_IF, 1)).toEqual([{ node: ROUTE_AMBIGUA, type: "main", index: 0 }]);
+  it("IF falso (saída 1) → Code: rota fora, e só ela (D11)", () => {
+    expect(mainTargets(CONFIRM_IF, 1)).toEqual([{ node: ROUTE_FORA, type: "main", index: 0 }]);
   });
 
   it("o HTTP natural tem o IF como único predecessor", () => {
