@@ -645,7 +645,7 @@
       "text": "Quando um AC fixa a precedência entre duas regras de roteamento, teste a entrada que satisfaz as duas ao mesmo tempo; se a suíte existente estiver congelada por outro AC, crie o teste num arquivo novo.",
       "signal": "surviving_mutant",
       "scope": "n8n/gate,compliance",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-13-opt-out-linguagem-natural"
       ],
@@ -681,7 +681,7 @@
       "text": "Quando uma trava determinística passa a alterar o desfecho de uma decisão do modelo, emende o AC que prometia o desfecho original na mesma decisão, não só o design.",
       "signal": "spec_precision_gap",
       "scope": "spec,llm",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-13-opt-out-linguagem-natural"
       ],
@@ -699,7 +699,7 @@
       "text": "No @n8n/workflow-sdk, .onError() liga o handler à saída 1; em nó de várias saídas (textClassifier, switch) ligue o erro pelo índice real com .output(n) e afirme essa aresta no toJSON().",
       "signal": "spec_deviation",
       "scope": "n8n/sdk",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-13-opt-out-linguagem-natural"
       ],
@@ -717,7 +717,7 @@
       "text": "O transporte do MCP do n8n converte escapes \\uXXXX em caracteres, então update_workflow não grava byte a byte um regex com esse escape; prefira classes sem escape unicode no código inlinado ou registre a diferença como equivalência conferida.",
       "signal": "spec_precision_gap",
       "scope": "n8n/mcp",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-13-opt-out-linguagem-natural"
       ],
@@ -735,7 +735,7 @@
       "text": "Um classificador LLM sozinho não garante zero falso positivo estável em near-misses: meça com frases de controle que não entraram na calibração e trave deterministicamente o padrão residual depois do modelo.",
       "signal": "spec_deviation",
       "scope": "llm,medicao",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-13-opt-out-linguagem-natural"
       ],

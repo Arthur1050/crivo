@@ -206,33 +206,11 @@ Corroborated across multiple features. Safe to apply as guidance.
 - evidence: M3 src/server/documents/context-ceiling.ts:70 (config/policy)
 - last seen: 2026-09-26T02:11:11Z
 
-## Candidates (under observation - do NOT load as guidance yet)
-
-Seen once or not yet corroborated. Tracked, not trusted.
-
-### L-017 - Confirmar a chave do rate limit nativo da biblioteca antes de escrever a AC: better-auth conta por IP e rota, nunca por identidade.
-- signal: `spec_deviation` · recurrence: 1 feature(s) · scope: `auth` · harmful: 0
-- features: lote-8-usuarios-papeis-atribuicao
-- evidence: src/server/auth/config.ts:86 (auth)
-- last seen: 2026-08-28T00:13:19Z
-
-### L-039 - When a spec requires a refusal to identify an existing resource, assert the identifier reaches the user-facing response, not only the service result.
-- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `ui/errors` · harmful: 0
-- features: lote-12-conteudo-de-documentos
-- evidence: DOCBIN-01 AC4; src/server/actions/documents.ts:186 (ui/errors)
-- last seen: 2026-09-26T02:11:12Z
-
 ### L-041 - Quando um AC fixa a precedência entre duas regras de roteamento, teste a entrada que satisfaz as duas ao mesmo tempo; se a suíte existente estiver congelada por outro AC, crie o teste num arquivo novo.
 - signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `n8n/gate,compliance` · harmful: 0
 - features: lote-13-opt-out-linguagem-natural
 - evidence: M8 n8n/src/gate.mjs:69-70; OPTKEY-01 AC3 (n8n/gate,compliance)
 - last seen: 2026-09-30T00:32:10Z
-
-### L-042 - Um AC que só reafirma comportamento preexistente ainda precisa de uma tarefa com asserção própria; 'já funciona' não é evidência.
-- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `spec,tasks` · harmful: 0
-- features: lote-13-opt-out-linguagem-natural
-- evidence: OPTKEY-01 AC3 (sem file:line) (spec,tasks)
-- last seen: 2026-09-30T00:32:11Z
 
 ### L-043 - Quando uma trava determinística passa a alterar o desfecho de uma decisão do modelo, emende o AC que prometia o desfecho original na mesma decisão, não só o design.
 - signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `spec,llm` · harmful: 0
@@ -257,6 +235,28 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - features: lote-13-opt-out-linguagem-natural
 - evidence: T12-T12e: medições 2685, 2686, 2687 reprovadas; 2688 aprovada com trava (D1-D3) (llm,medicao)
 - last seen: 2026-09-30T00:32:12Z
+
+## Candidates (under observation - do NOT load as guidance yet)
+
+Seen once or not yet corroborated. Tracked, not trusted.
+
+### L-017 - Confirmar a chave do rate limit nativo da biblioteca antes de escrever a AC: better-auth conta por IP e rota, nunca por identidade.
+- signal: `spec_deviation` · recurrence: 1 feature(s) · scope: `auth` · harmful: 0
+- features: lote-8-usuarios-papeis-atribuicao
+- evidence: src/server/auth/config.ts:86 (auth)
+- last seen: 2026-08-28T00:13:19Z
+
+### L-039 - When a spec requires a refusal to identify an existing resource, assert the identifier reaches the user-facing response, not only the service result.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `ui/errors` · harmful: 0
+- features: lote-12-conteudo-de-documentos
+- evidence: DOCBIN-01 AC4; src/server/actions/documents.ts:186 (ui/errors)
+- last seen: 2026-09-26T02:11:12Z
+
+### L-042 - Um AC que só reafirma comportamento preexistente ainda precisa de uma tarefa com asserção própria; 'já funciona' não é evidência.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `spec,tasks` · harmful: 0
+- features: lote-13-opt-out-linguagem-natural
+- evidence: OPTKEY-01 AC3 (sem file:line) (spec,tasks)
+- last seen: 2026-09-30T00:32:11Z
 
 ## Quarantined (failed when applied - ignore)
 
