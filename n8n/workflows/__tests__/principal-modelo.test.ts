@@ -146,7 +146,7 @@ describe("a troca de modelo não mexeu em mais nada do grafo (MOD-01 AC2)", () =
     );
   });
 
-  it("o grafo continua com 69 nós e 88 conexões — as contagens medidas nesta janela (T11 do lote-13)", () => {
+  it("o grafo continua com 71 nós e 91 conexões — as contagens medidas depois da trava (T12d do lote-13)", () => {
     expect(workflow.nodes).toHaveLength(NOS_ESPERADOS);
     expect(contarConexoes()).toBe(CONEXOES_ESPERADAS);
   });
