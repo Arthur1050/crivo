@@ -136,8 +136,8 @@ ambígua o pedido explícito sem objeto de contato. A publicação fica travada 
 classificador aprovado. Pedido explícito grava `opted_out_at` pelo mesmo
 `POST /leads/{id}/opt-out` com purga de memória; só o pedido explícito descadastra (a pergunta ao
 lead ambíguo foi removida na decisão D11, depois da prova real); `sair`/`parar` continuam
-determinísticos, inclusive com o lead em `escalado_humano`. **Pendente**: OPTPROVA-01 (5a aprovado;
-faltam 5b novo, 5c e cenário 3), de execução humana. Backlog em
+determinísticos, inclusive com o lead em `escalado_humano`. Prova por WhatsApp (OPTPROVA-01)
+aprovada em 2026-09-30. Backlog em
 `features/lote-13-opt-out-linguagem-natural/context.md` § Deferred Ideas.
 
 **Fecha**: #15.

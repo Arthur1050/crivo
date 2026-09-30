@@ -1742,7 +1742,39 @@ usuário, a pedido dele, via extensão do Chrome.
 | 1 — interesse inicial | 2765 | O agente se apresentou e perguntou a região |
 | 2 — "não tenho interesse, obrigado" | 2771 | Gate `conversa`, `optedOutAt` nulo; classificador saída 1 (`ambigua`) → `Code: rota fora` (item vazio); o HTTP de opt-out e a trava não rodaram. O agente respondeu "Tudo bem, obrigado por avisar. Se mudar de ideia ou quiser que eu te ajude a encontrar outra opção, é só me chamar." — sem pergunta sobre parar de receber mensagens e sem mencionar `sair` |
 
-### Pendente
+### Caso 5c — fora de escopo: **APROVADO** (agente `3be9cfed`)
 
-- Caso 5c ("pode parar de mandar foto" → `optedOutAt` nulo, resposta normal).
-- Regressão do cenário 3 (`sair` → confirmação com o texto de OPTMSG-01).
+Limpeza antes: `crivo-smoke-reset` 2776 e `smoke:reset` (4 mensagens apagadas do 5b: 2 do lead e 2
+do agente). Mensagens enviadas pelo WhatsApp Web do usuário, a pedido dele.
+
+| Turno | Execução | Resultado |
+| --- | --- | --- |
+| 1 — interesse inicial | 2777 | O agente se apresentou e perguntou bairro e faixa de valor |
+| 2 — "pode parar de mandar foto" | 2783 | Classificador saída 0 (`fora`) → `Code: rota fora`; trava e HTTP de opt-out não rodaram; `optedOutAt` nulo. O agente respondeu normalmente (disse que não envia fotos e ofereceu ajuda na busca), sem pergunta sobre parar e sem `sair` |
+
+### Regressão do cenário 3 — palavra exata: **APROVADO** (agente `3be9cfed`)
+
+Limpeza antes: `crivo-smoke-reset` 2789 e `smoke:reset` (4 mensagens apagadas do 5c).
+
+| Turno | Execução | Resultado |
+| --- | --- | --- |
+| 1 — interesse inicial | 2790 | O agente respondeu normalmente |
+| 2 — `sair` | 2796 | Gate `opt-out` (antes de qualquer modelo; o classificador não rodou); `POST /leads/{id}/opt-out` gravou `optedOutAt` 15:56:37Z; `Chat Memory Manager: purgar memória (opt-out)` `success: true`; **uma** mensagem enviada, com o texto exato de OPTMSG-01 |
+| 3 — mensagem qualquer | 2800 | Gate `somente-registrar`; nada enviado |
+
+Limpeza final: `crivo-smoke-reset` 2801 e `smoke:reset`, que apagou exatamente 5 mensagens: 3 do lead,
+a resposta do turno 1 e a confirmação.
+
+### Veredito da T18: **APROVADO**
+
+Os quatro casos do roteiro vigente (5a, 5b novo, 5c e cenário 3) passaram pelo desfecho exigido:
+`optedOutAt` preenchido só nos pedidos explícitos (5a e `sair`), nulo no desinteresse e no pedido de
+conteúdo; exatamente uma confirmação, com o texto de OPTMSG-01, e silêncio depois. A purga da
+memória nos casos que registram está provada pelo nó do próprio fluxo (`success: true` em 2711 e
+2796), antes da limpeza manual; a tabela `n8n_chat_histories` não foi consultada diretamente.
+
+### Qualidade de fala (AD-027, não reprova)
+
+- 5b: resposta cordial e curta, sem insistência e sem convite para sair.
+- 5c: o agente respondeu "Posso sim" a um pedido que era sobre fotos, embora nunca mande fotos; o
+  resto da resposta esclarece. Observação de estilo, sem efeito no desfecho.

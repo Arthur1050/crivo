@@ -658,18 +658,18 @@ T14 -> T15 -> T16 -> T17 -> T18
 **Done when:**
 
 - [x] Caso explícito: `optedOutAt` preenchido, exatamente uma mensagem depois do pedido com o texto de OPTMSG-01, sessão de memória vazia antes da limpeza manual, e uma mensagem seguinte sem resposta (OPTREG-01 AC1, AC3–AC6). *(Execuções 2705, 2711, 2716.)*
-- [ ] ~~Caso ambíguo: a pergunta chega, o "sim" registra~~ — provado nas execuções 2738/2744 e depois removido pela D11 (T20). Substituído por: desinteresse → conversa normal, sem pergunta e sem registro (OPTAMB-01 emendado).
-- [ ] Caso fora de escopo ("pode parar de mandar foto"): `optedOutAt` nulo e resposta normal (OPTSEG-01).
-- [ ] Regressão do cenário 3 (`sair`): confirmação com o texto novo (OPTKEY-01 AC4, OPTPROVA-01 AC4).
-- [ ] Todo id de execução citado foi conferido por `get_execution` (OPTPROVA-01 AC5); evidência sem texto de lead real além das frases roteirizadas e sem telefone completo.
-- [ ] Qualidade de fala registrada numa seção separada, que não reprova sozinha (AD-027).
-- [ ] Gate Build passa.
+- [x] ~~Caso ambíguo: a pergunta chega, o "sim" registra~~ — provado nas execuções 2738/2744 e depois removido pela D11 (T20). Substituído por: desinteresse → conversa normal, sem pergunta e sem registro (OPTAMB-01 emendado). *(Caso novo aprovado: 2765, 2771.)*
+- [x] Caso fora de escopo ("pode parar de mandar foto"): `optedOutAt` nulo e resposta normal (OPTSEG-01). *(2777, 2783.)*
+- [x] Regressão do cenário 3 (`sair`): confirmação com o texto novo (OPTKEY-01 AC4, OPTPROVA-01 AC4). *(2790, 2796, 2800.)*
+- [x] Todo id de execução citado foi conferido por `get_execution` (OPTPROVA-01 AC5); evidência sem texto de lead real além das frases roteirizadas e sem telefone completo.
+- [x] Qualidade de fala registrada numa seção separada, que não reprova sozinha (AD-027).
+- [x] Gate Build passa. *(Sem mudança de código nesta task; suíte completa depois da T20: 126 arquivos / 2.107 testes, só as 2 falhas conhecidas de `DOCLIM-01 AC8`.)*
 
 **Tests:** none
 **Gate:** Build
 **Commit:** `docs(n8n): record natural language opt-out smoke evidence`
 
-**Status:** 🔄 Em andamento (2026-09-30): caso 5a aprovado; 5b original aprovado e removido pela D11; faltam o 5b novo, o 5c e a regressão do cenário 3, contra o agente `3be9cfed`. Evidência em `n8n/smoke/evidencia.md` § Lote 13 — T18. Antes: ⏸️ Pendente de execução humana (decisão D8, 2026-09-29). A prova exige que uma pessoa mande mensagens reais no WhatsApp para o número de teste; nenhuma ferramenta desta execução consegue fazer isso sem enviar mensagens em nome do usuário, e o `crivo-agente-principal` só dispara pelo `whatsAppTrigger` (o `execute_workflow` não aceita esse gatilho e o webhook da Meta exige a assinatura do app). Tudo o que a prova depende já está publicado: agente `3e20756c-45d2-430d-8106-e4204abf6045` com classificador, trava e confirmação nova (T16), tetos de contexto atualizados (T17) e roteiro §6.1 + regressão do cenário 3 (T14). Para fechar: rodar os casos 5a, 5b e 5c e o cenário 3 conforme `n8n/smoke/roteiro.md`, registrar em `n8n/smoke/evidencia.md` com ids conferidos por `get_execution` e commitar com a mensagem desta tarefa.
+**Status:** ✅ Concluída (2026-09-30): 5a, 5b novo, 5c e cenário 3 aprovados (o 5b original foi aprovado e depois removido pela D11). O 5a e o 5b original rodaram com o usuário digitando; o 5b novo, o 5c e o cenário 3 foram enviados pelo WhatsApp Web do usuário via extensão do Chrome, a pedido dele. Evidência em `n8n/smoke/evidencia.md` § Lote 13 — T18. Antes: ⏸️ Pendente de execução humana (decisão D8, 2026-09-29). A prova exige que uma pessoa mande mensagens reais no WhatsApp para o número de teste; nenhuma ferramenta desta execução consegue fazer isso sem enviar mensagens em nome do usuário, e o `crivo-agente-principal` só dispara pelo `whatsAppTrigger` (o `execute_workflow` não aceita esse gatilho e o webhook da Meta exige a assinatura do app). Tudo o que a prova depende já está publicado: agente `3e20756c-45d2-430d-8106-e4204abf6045` com classificador, trava e confirmação nova (T16), tetos de contexto atualizados (T17) e roteiro §6.1 + regressão do cenário 3 (T14). Para fechar: rodar os casos 5a, 5b e 5c e o cenário 3 conforme `n8n/smoke/roteiro.md`, registrar em `n8n/smoke/evidencia.md` com ids conferidos por `get_execution` e commitar com a mensagem desta tarefa.
 
 ---
 
@@ -722,7 +722,7 @@ T14 -> T15 -> T16 -> T17 -> T18
 - `npx vitest run n8n/ scripts/__tests__/opt-out-measurement.test.ts src/server/documents/__tests__/benchmark-identity.test.ts`: 25 arquivos / 629 testes, 0 falhas; `opt-out-measurement.ts identity` = `1547f0ae6ee31640…`.
 - `crivo-agente-principal`: 4 operações (jsCode de `Code: rota fora`, remoção de `Code: rota ambígua`, saída 1 do classificador e falso do IF → rota fora) e o jsCode de `Code: montar system message e marcar campo perguntado`. Rascunho comparado por script com `principal.toJSON()`: 70 nós, 90 conexões, 0 diferença de aresta; os dois nós alterados idênticos byte a byte; nos 4 nós que inlinam `opt-out-intent.mjs` a única diferença é a regex da D6. `versionId` conferido `3be9cfed-e56e-45d6-93a4-74a7910969ef`, publicado com `activeVersionId` igual.
 - `crivo-benchmark-contexto`: `Code: gerar faixa` atualizado, 14 nós com parâmetros idênticos ao gerado, publicado em `b228c3de-5059-4c03-ad62-4b94a2d0e73d`.
-- `check` antes: 9 tetos `stale`. 15 faixas nas execuções 2749–2763, todas `success`; as 10 com corpus aprovaram (3/3 fatos). Tetos iguais aos anteriores (novo 106.898, usado 119.714, ambos 106.720 B; variação 0%). `persist` com `systemMessageHash` `b71ea963…`; `check` seguinte: "9 teto(s) conferido(s); 0 marcado(s) como desatualizado(s)". Métricas em `.specs/features/lote-13-opt-out-linguagem-natural/benchmark-contexto-2026-09-30-d11.json`.
+- `check` antes: 9 tetos `stale`. 15 faixas nas execuções 2749–2763, todas `success`; as 10 com corpus aprovaram (3/3 fatos). Tetos iguais aos anteriores (novo 106.898, usado 119.714, ambos 106.720 B; variação 0%). `persist` com `systemMessageHash` `b71ea963…`; `check` seguinte: "9 teto(s) conferido(s); 0 marcado(s) como desatualizado(s)". Métricas em `benchmark-contexto-2026-09-30-d11.json` (neste diretório de arquivo).
 
 ## Phase Execution Map
 

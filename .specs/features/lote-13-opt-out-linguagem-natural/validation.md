@@ -1,3 +1,10 @@
+> **Fechamento (2026-09-30).** A T18 foi executada e APROVADA contra o agente `3be9cfed`, depois da
+> decisão D11 (remoção da pergunta ao lead ambíguo, T20): 5a (2705/2711/2716), 5b novo (2765/2771),
+> 5c (2777/2783) e cenário 3 (2790/2796/2800). Evidência em `n8n/smoke/evidencia.md` § Lote 13 — T18.
+> OPTPROVA-01 passa a Verificado e OPTAMB-01 fica superseded pela emenda D11. Não houve novo ciclo
+> do Verifier: a T20 removeu uma rota e uma instrução, e foi coberta por testes de aresta, baseline
+> do system message e suíte completa (126 arquivos / 2.107 testes, só as 2 falhas conhecidas).
+
 **Veredito: PASS** ✅ — ciclo 2. Todos os 33 ACs automatizáveis têm evidência que bate com o outcome da spec, e os 13 mutantes morreram. **Pendência aberta explícita:** OPTPROVA-01 / T18 (prova por conversa real) segue pendente de execução humana (decisão D8, precedente AD-015/AD-027). O lote só fecha em definitivo com a evidência da T18.
 
 # Lote 13 — Opt-out por linguagem natural — Validação (ciclo 2)

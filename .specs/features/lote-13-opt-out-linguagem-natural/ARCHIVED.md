@@ -14,8 +14,10 @@ busca ativa porque são registros de execução já encerrada. As menções a `t
   que destrava a publicação: `scripts/opt-out-measurement.ts` procura o relatório aprovado em
   `features/` e em `archive/` (decisão D4 em `design.md`)
 - `benchmark-contexto-2026-09-30.json` — métricas do teto de contexto depois do classificador (só
-  métricas, nenhum corpus). Substituída pela medição da D11, que continua neste diretório
-  (`benchmark-contexto-2026-09-30-d11.json`) até o fechamento da T18
+  métricas, nenhum corpus). Substituída pela medição da D11
+- `benchmark-contexto-2026-09-30-d11.json` — teto de contexto remedido depois da D11 (execuções
+  2749–2763); é a vigente em produção
+- `tasks.md` também traz a T20 (D11) e o fechamento da T18
 
 Nada foi apagado: os relatórios contêm só frases do corpus versionado em
 `n8n/fixtures/opt-out-corpus.json`, sem texto de lead real.
