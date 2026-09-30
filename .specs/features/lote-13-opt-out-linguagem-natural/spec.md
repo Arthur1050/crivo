@@ -108,7 +108,19 @@ Every ambiguity is resolved or recorded here; nothing remains silently unclear.
 
 ---
 
-### P1: Perguntar antes quando o pedido é ambíguo ⭐ MVP
+### P1: Perguntar antes quando o pedido é ambíguo ⭐ MVP — ~~superseded pela emenda D11~~
+
+> **Emenda D11 (2026-09-30, decisão do usuário depois da prova por conversa real).** A pergunta de
+> confirmação funcionou como especificada (execuções 2738 e 2744), mas o usuário não a quis: para o
+> lead desinteressado, "você quer parar de receber mensagens?" soa como convite para deixar de ser
+> lead. **Só o pedido explícito descadastra.** A faixa ambígua passa a seguir a conversa normal,
+> sem pergunta e sem registro. Os ACs abaixo ficam como histórico e são substituídos por:
+>
+> 1. WHEN um lead sem `optedOutAt` e fora de `escalado_humano` envia uma frase da faixa ambígua THEN the system SHALL responder pelo fluxo normal da conversa, sem perguntar se ele quer parar de receber mensagens e sem orientar a palavra `sair`.
+> 2. WHEN um lead envia uma frase da faixa ambígua THEN the system SHALL manter `optedOutAt` nulo nesse turno.
+>
+> O classificador continua com as três categorias, porque a identidade aprovada na medição v4 trava
+> a configuração dele; só a rota `ambigua` deixou de ter efeito próprio.
 
 **User Story**: Como lead que disse "não tenho interesse" ou "foi engano", quero que me perguntem se devo parar de receber mensagens em vez de ser descadastrado sem saber.
 
@@ -134,7 +146,7 @@ Every ambiguity is resolved or recorded here; nothing remains silently unclear.
 **Acceptance Criteria**:
 
 1. WHEN um lead envia uma frase da faixa fora THEN the system SHALL manter `optedOutAt` nulo.
-2. WHEN um lead envia uma frase da faixa fora THEN the system SHALL responder pelo fluxo normal da conversa, ou com a pergunta de confirmação de OPTAMB-01 AC1 quando a trava determinística rebaixar para ambígua uma classificação explícita de "parar de mandar <conteúdo>"; em nenhum dos dois casos registra o opt-out. *(Emenda D9, 2026-09-30: a trava da T12d, decisão D3, faz o erro residual do classificador virar pergunta, nunca registro.)*
+2. WHEN um lead envia uma frase da faixa fora THEN the system SHALL responder pelo fluxo normal da conversa, ou com a pergunta de confirmação de OPTAMB-01 AC1 quando a trava determinística rebaixar para ambígua uma classificação explícita de "parar de mandar <conteúdo>"; em nenhum dos dois casos registra o opt-out. *(Emenda D9, 2026-09-30: a trava da T12d, decisão D3, faz o erro residual do classificador virar pergunta, nunca registro.)* *(Emenda D11, 2026-09-30: sem pergunta de confirmação, o rebaixamento pela trava também segue o fluxo normal da conversa; nunca registra.)*
 
 **Independent Test**: Enviar "pode parar de mandar foto" e "quero sair do aluguel" e comprovar `optedOutAt` nulo e resposta normal nos dois.
 
@@ -234,7 +246,7 @@ Every ambiguity is resolved or recorded here; nothing remains silently unclear.
 | --- | --- | --- | --- |
 | OPTMED-01 | P1: Medir o falso positivo antes de publicar | T2, T4, T7, T8, T9, T10, T12, T13 | Verified (T12e APROVADO; T13 trava) |
 | OPTREG-01 | P1: Registrar o pedido explícito em linguagem natural | T1, T2, T3, T10, T11, T16, T18 | Implemented; prova real pendente (T18) |
-| OPTAMB-01 | P1: Perguntar antes quando o pedido é ambíguo | T1, T3, T5, T10, T16, T18 | Implemented; prova real pendente (T18) |
+| OPTAMB-01 | P1: Perguntar antes quando o pedido é ambíguo | T1, T3, T5, T10, T16, T18 | Superseded pela emenda D11 (ambíguo segue a conversa, sem pergunta); comportamento antigo provado em 2738/2744 |
 | OPTSEG-01 | P1: Não descadastrar o que não é opt-out | T10, T16, T18 | Implemented (emenda D9); prova real pendente (T18) |
 | OPTKEY-01 | P1: Manter a palavra exata como caminho determinístico | T11, T16, T18 | Verified (gate intacto; AC3 coberto no ciclo de correção) |
 | OPTMSG-01 | P1: Confirmar só o que o sistema cumpre | T3, T11, T16, T18 | Verified |

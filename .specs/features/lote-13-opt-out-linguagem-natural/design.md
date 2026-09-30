@@ -107,7 +107,7 @@ de estrutura, não de comportamento do modelo.
 | `Classificador: opt-out` | `@n8n/n8n-nodes-langchain.textClassifier` v1.1 | Categorias `fora`, `ambigua`, `explicita`, nesta ordem, com `fallback: 'other'`, `multiClass: false` e `onError: 'continueErrorOutput'` |
 | `OpenAI Chat Model (classificador)` | `lmChatOpenAi` v1.3 | Mesmo `gpt-5.4-nano-2026-03-17`, `reasoningEffort: "low"`, `timeout: 20000` e a mesma credencial |
 | `Code: rota fora` | code | Emite `{ optOutAmbiguo: false }`. Recebe as saídas `fora`, `other` e erro |
-| `Code: rota ambígua` | code | Emite `{ optOutAmbiguo: true }` |
+| ~~`Code: rota ambígua`~~ | code | ~~Emite `{ optOutAmbiguo: true }`~~ — **removido pela D11** (ver nota abaixo) |
 | `HTTP: POST /leads/{id}/opt-out (linguagem natural)` | httpRequest v4.4 | Cópia dos parâmetros do nó da palavra-chave, com `retryOnFail` 3× e `onError: 'continueErrorOutput'` |
 | `Code: orientar sair (falha do registro)` | code | Monta `mensagens: [OPT_OUT_REGISTRATION_FAILED]` para `fixedReplyWired` |
 | `Code: conferir pedido explícito` (T12d) | code | `__INLINE(opt-out-intent.mjs)__`; lê o buffer do turno (`$('Code: contexto do lead')`) e emite `{ optOutExplicito: refineOptOutCategory({ categoria: 'explicita', userMessage }) === 'explicita' }` |
@@ -119,6 +119,14 @@ de conteúdo) vai para `Code: rota ambígua`. O sucesso do HTTP natural vai para
 `Code: finalizar opt-out`, o **mesmo** nó do caminho da palavra-chave; o erro vai para
 `Code: orientar sair`. As rotas `fora` e `ambígua` convergem em
 `Code: montar system message e marcar campo perguntado`, que passa a ler `$json.optOutAmbiguo`.
+
+> **D11 (2026-09-30, depois da prova por conversa real).** O usuário removeu a pergunta de
+> confirmação da faixa ambígua: ela soava como convite para o lead deixar de ser lead. Hoje a saída
+> 1 (`ambigua`) e o falso do IF `Pedido explícito confirmado?` vão para `Code: rota fora`, que emite
+> um item vazio; `Code: rota ambígua`, `OPT_OUT_AMBIGUOUS_INSTRUCTION` e o parâmetro
+> `optOutAmbiguo` deixaram de existir. `OPT_OUT_GUIDANCE_INSTRUCTION` passou a valer só para pedido
+> explícito. O nó do classificador não mudou, e a medição v4 continua valendo. Grafo: 70 nós / 90
+> conexões. As menções à rota ambígua nesta seção descrevem o desenho original.
 
 **Categorias e prompt** (parâmetros do nó; o texto final é fixado na task e congelado pela
 medição):

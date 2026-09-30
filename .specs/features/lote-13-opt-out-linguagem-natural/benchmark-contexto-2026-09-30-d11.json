@@ -1,0 +1,246 @@
+{
+  "benchmarkedAt": "2026-09-30T15:05:29.000Z",
+  "benchmarkWorkflowId": "xpsD2PZQ1KoE2sA5",
+  "benchmarkWorkflowVersion": "b228c3de-5059-4c03-ad62-4b94a2d0e73d",
+  "agentWorkflowVersion": "3be9cfed-e56e-45d6-93a4-74a7910969ef",
+  "modelId": "gpt-5.4-nano-2026-03-17",
+  "tokenSource": "n8n estimatedTokens do nó lmChatOpenAi (estimativa do n8n, não uso informado pelo provedor; exclui as definições JSON das tools)",
+  "notes": [
+    "Refeito depois da decisão D11 do lote-13 (sem pergunta de opt-out ambíguo; orientação de opt-out só para pedido explícito), agente 3be9cfed; substitui a medição da manhã de 2026-09-30 (benchmark-contexto-2026-09-30.json, arquivado) para a identidade nova.",
+    "Mesmas 15 faixas da decisão D7 (0, 64 KB x1/x2 e 128 KB x1/x2 por modalidade), seed 1.",
+    "O benchmark foi republicado (versão b228c3de) porque inlina o system-message.mjs e o texto da orientação de opt-out mudou.",
+    "Latência = da primeira chamada ao modelo até o início do nó de pontuação (modelo + tools). inputTokens = maior estimatedTokens entre as chamadas do turno.",
+    "Nenhum corpus neste arquivo: só métricas, fatos recuperados e ids de execução."
+  ],
+  "rateLimited": [],
+  "runs": [
+    {
+      "executionId": "2749",
+      "modality": "ambos",
+      "bandBytes": 0,
+      "envelopeBytes": 41,
+      "observations": 1,
+      "inputTokens": 4987,
+      "latencyMs": 9950,
+      "approved": false,
+      "modelCalls": 3,
+      "factsFound": []
+    },
+    {
+      "executionId": "2750",
+      "modality": "ambos",
+      "bandBytes": 64000,
+      "envelopeBytes": 66871,
+      "observations": 1,
+      "inputTokens": 18213,
+      "latencyMs": 7230,
+      "approved": true,
+      "modelCalls": 3,
+      "factsFound": [
+        "inicio",
+        "meio",
+        "fim"
+      ]
+    },
+    {
+      "executionId": "2751",
+      "modality": "ambos",
+      "bandBytes": 64000,
+      "envelopeBytes": 66871,
+      "observations": 2,
+      "inputTokens": 31373,
+      "latencyMs": 10858,
+      "approved": true,
+      "modelCalls": 3,
+      "factsFound": [
+        "inicio",
+        "meio",
+        "fim"
+      ]
+    },
+    {
+      "executionId": "2752",
+      "modality": "ambos",
+      "bandBytes": 128000,
+      "envelopeBytes": 133401,
+      "observations": 1,
+      "inputTokens": 31115,
+      "latencyMs": 4183,
+      "approved": true,
+      "modelCalls": 2,
+      "factsFound": [
+        "inicio",
+        "meio",
+        "fim"
+      ]
+    },
+    {
+      "executionId": "2754",
+      "modality": "ambos",
+      "bandBytes": 128000,
+      "envelopeBytes": 133401,
+      "observations": 2,
+      "inputTokens": 57428,
+      "latencyMs": 14304,
+      "approved": true,
+      "modelCalls": 3,
+      "factsFound": [
+        "inicio",
+        "meio",
+        "fim"
+      ]
+    },
+    {
+      "executionId": "2753",
+      "modality": "novo",
+      "bandBytes": 0,
+      "envelopeBytes": 41,
+      "observations": 1,
+      "inputTokens": 4919,
+      "latencyMs": 5929,
+      "approved": false,
+      "modelCalls": 2,
+      "factsFound": []
+    },
+    {
+      "executionId": "2755",
+      "modality": "novo",
+      "bandBytes": 64000,
+      "envelopeBytes": 67143,
+      "observations": 1,
+      "inputTokens": 18296,
+      "latencyMs": 9799,
+      "approved": true,
+      "modelCalls": 3,
+      "factsFound": [
+        "inicio",
+        "meio",
+        "fim"
+      ]
+    },
+    {
+      "executionId": "2756",
+      "modality": "novo",
+      "bandBytes": 64000,
+      "envelopeBytes": 67143,
+      "observations": 2,
+      "inputTokens": 31554,
+      "latencyMs": 8647,
+      "approved": true,
+      "modelCalls": 3,
+      "factsFound": [
+        "inicio",
+        "meio",
+        "fim"
+      ]
+    },
+    {
+      "executionId": "2757",
+      "modality": "novo",
+      "bandBytes": 128000,
+      "envelopeBytes": 133623,
+      "observations": 1,
+      "inputTokens": 31172,
+      "latencyMs": 4493,
+      "approved": true,
+      "modelCalls": 2,
+      "factsFound": [
+        "inicio",
+        "meio",
+        "fim"
+      ]
+    },
+    {
+      "executionId": "2759",
+      "modality": "novo",
+      "bandBytes": 128000,
+      "envelopeBytes": 133623,
+      "observations": 2,
+      "inputTokens": 57689,
+      "latencyMs": 9482,
+      "approved": true,
+      "modelCalls": 3,
+      "factsFound": [
+        "inicio",
+        "meio",
+        "fim"
+      ]
+    },
+    {
+      "executionId": "2758",
+      "modality": "usado",
+      "bandBytes": 0,
+      "envelopeBytes": 41,
+      "observations": 1,
+      "inputTokens": 4902,
+      "latencyMs": 4406,
+      "approved": false,
+      "modelCalls": 2,
+      "factsFound": []
+    },
+    {
+      "executionId": "2760",
+      "modality": "usado",
+      "bandBytes": 64000,
+      "envelopeBytes": 83531,
+      "observations": 1,
+      "inputTokens": 21502,
+      "latencyMs": 8383,
+      "approved": true,
+      "modelCalls": 3,
+      "factsFound": [
+        "inicio",
+        "meio",
+        "fim"
+      ]
+    },
+    {
+      "executionId": "2761",
+      "modality": "usado",
+      "bandBytes": 64000,
+      "envelopeBytes": 83531,
+      "observations": 2,
+      "inputTokens": 37971,
+      "latencyMs": 6399,
+      "approved": true,
+      "modelCalls": 3,
+      "factsFound": [
+        "inicio",
+        "meio",
+        "fim"
+      ]
+    },
+    {
+      "executionId": "2762",
+      "modality": "usado",
+      "bandBytes": 128000,
+      "envelopeBytes": 149643,
+      "observations": 1,
+      "inputTokens": 34355,
+      "latencyMs": 4123,
+      "approved": true,
+      "modelCalls": 2,
+      "factsFound": [
+        "inicio",
+        "meio",
+        "fim"
+      ]
+    },
+    {
+      "executionId": "2763",
+      "modality": "usado",
+      "bandBytes": 128000,
+      "envelopeBytes": 149643,
+      "observations": 2,
+      "inputTokens": 63880,
+      "latencyMs": 6731,
+      "approved": true,
+      "modelCalls": 3,
+      "factsFound": [
+        "inicio",
+        "meio",
+        "fim"
+      ]
+    }
+  ]
+}

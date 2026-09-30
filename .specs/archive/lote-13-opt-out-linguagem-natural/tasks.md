@@ -657,8 +657,8 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 **Done when:**
 
-- [ ] Caso explícito: `optedOutAt` preenchido, exatamente uma mensagem depois do pedido com o texto de OPTMSG-01, sessão de memória vazia antes da limpeza manual, e uma mensagem seguinte sem resposta (OPTREG-01 AC1, AC3–AC6).
-- [ ] Caso ambíguo: a pergunta chega, o "sim" registra, e `optedOutAt` é nulo depois da pergunta e preenchido depois do "sim" (OPTAMB-01 AC1–AC3).
+- [x] Caso explícito: `optedOutAt` preenchido, exatamente uma mensagem depois do pedido com o texto de OPTMSG-01, sessão de memória vazia antes da limpeza manual, e uma mensagem seguinte sem resposta (OPTREG-01 AC1, AC3–AC6). *(Execuções 2705, 2711, 2716.)*
+- [ ] ~~Caso ambíguo: a pergunta chega, o "sim" registra~~ — provado nas execuções 2738/2744 e depois removido pela D11 (T20). Substituído por: desinteresse → conversa normal, sem pergunta e sem registro (OPTAMB-01 emendado).
 - [ ] Caso fora de escopo ("pode parar de mandar foto"): `optedOutAt` nulo e resposta normal (OPTSEG-01).
 - [ ] Regressão do cenário 3 (`sair`): confirmação com o texto novo (OPTKEY-01 AC4, OPTPROVA-01 AC4).
 - [ ] Todo id de execução citado foi conferido por `get_execution` (OPTPROVA-01 AC5); evidência sem texto de lead real além das frases roteirizadas e sem telefone completo.
@@ -669,7 +669,7 @@ T14 -> T15 -> T16 -> T17 -> T18
 **Gate:** Build
 **Commit:** `docs(n8n): record natural language opt-out smoke evidence`
 
-**Status:** ⏸️ Pendente de execução humana (decisão D8, 2026-09-29). A prova exige que uma pessoa mande mensagens reais no WhatsApp para o número de teste; nenhuma ferramenta desta execução consegue fazer isso sem enviar mensagens em nome do usuário, e o `crivo-agente-principal` só dispara pelo `whatsAppTrigger` (o `execute_workflow` não aceita esse gatilho e o webhook da Meta exige a assinatura do app). Tudo o que a prova depende já está publicado: agente `3e20756c-45d2-430d-8106-e4204abf6045` com classificador, trava e confirmação nova (T16), tetos de contexto atualizados (T17) e roteiro §6.1 + regressão do cenário 3 (T14). Para fechar: rodar os casos 5a, 5b e 5c e o cenário 3 conforme `n8n/smoke/roteiro.md`, registrar em `n8n/smoke/evidencia.md` com ids conferidos por `get_execution` e commitar com a mensagem desta tarefa.
+**Status:** 🔄 Em andamento (2026-09-30): caso 5a aprovado; 5b original aprovado e removido pela D11; faltam o 5b novo, o 5c e a regressão do cenário 3, contra o agente `3be9cfed`. Evidência em `n8n/smoke/evidencia.md` § Lote 13 — T18. Antes: ⏸️ Pendente de execução humana (decisão D8, 2026-09-29). A prova exige que uma pessoa mande mensagens reais no WhatsApp para o número de teste; nenhuma ferramenta desta execução consegue fazer isso sem enviar mensagens em nome do usuário, e o `crivo-agente-principal` só dispara pelo `whatsAppTrigger` (o `execute_workflow` não aceita esse gatilho e o webhook da Meta exige a assinatura do app). Tudo o que a prova depende já está publicado: agente `3e20756c-45d2-430d-8106-e4204abf6045` com classificador, trava e confirmação nova (T16), tetos de contexto atualizados (T17) e roteiro §6.1 + regressão do cenário 3 (T14). Para fechar: rodar os casos 5a, 5b e 5c e o cenário 3 conforme `n8n/smoke/roteiro.md`, registrar em `n8n/smoke/evidencia.md` com ids conferidos por `get_execution` e commitar com a mensagem desta tarefa.
 
 ---
 
@@ -698,6 +698,32 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 **Evidence:** `npx vitest run n8n/workflows/__tests__/principal-modelo.test.ts n8n/src/__tests__`: 16 arquivos / 448 testes, 0 falhas.
 
+#### T20: Remover a pergunta de opt-out ambíguo (decisão D11)
+
+**What:** Durante a T18, o usuário viu a pergunta "você quer parar de receber mensagens?" para o lead desinteressado e decidiu removê-la: soa como convite para deixar de ser lead. Só o pedido explícito descadastra.
+**Where:** `n8n/src/system-message.mjs`, `n8n/workflows/principal.ts`, testes de `n8n/`, `n8n/fixtures/system-message-baseline.json`, docs
+**Depends on:** T19
+**Tests:** unit
+**Gate:** Quick
+
+**Done when:**
+
+- [x] Saída 1 (`ambigua`) do classificador e o falso de `Pedido explícito confirmado?` vão para `Code: rota fora`; `Code: rota ambígua`, `OPT_OUT_AMBIGUOUS_INSTRUCTION` e o flag `optOutAmbiguo` removidos. O nó do classificador não mudou: identidade `1547f0ae…` igual à da medição v4 aprovada, sem remedição.
+- [x] `OPT_OUT_GUIDANCE_INSTRUCTION` vale só para pedido explícito; desinteresse, recusa, número errado e "parar de mandar <conteúdo>" não disparam a orientação `sair`.
+- [x] Baseline do system message regenerado; grafo 70 nós / 90 conexões.
+- [x] Agente publicado e conferido; benchmark republicado; teto remedido e persistido; `check` sem `stale`.
+- [x] Roteiro, README §14, spec (emenda D11 em OPTAMB-01 e OPTSEG-01 AC2), design e AD-032 atualizados.
+
+**Commits:** `feat(n8n): drop the ambiguous opt-out confirmation question` e `docs(specs): record decision D11 and the refreshed context ceiling`
+
+**Status:** ✅ Concluída (2026-09-30)
+
+**Evidence:**
+- `npx vitest run n8n/ scripts/__tests__/opt-out-measurement.test.ts src/server/documents/__tests__/benchmark-identity.test.ts`: 25 arquivos / 629 testes, 0 falhas; `opt-out-measurement.ts identity` = `1547f0ae6ee31640…`.
+- `crivo-agente-principal`: 4 operações (jsCode de `Code: rota fora`, remoção de `Code: rota ambígua`, saída 1 do classificador e falso do IF → rota fora) e o jsCode de `Code: montar system message e marcar campo perguntado`. Rascunho comparado por script com `principal.toJSON()`: 70 nós, 90 conexões, 0 diferença de aresta; os dois nós alterados idênticos byte a byte; nos 4 nós que inlinam `opt-out-intent.mjs` a única diferença é a regex da D6. `versionId` conferido `3be9cfed-e56e-45d6-93a4-74a7910969ef`, publicado com `activeVersionId` igual.
+- `crivo-benchmark-contexto`: `Code: gerar faixa` atualizado, 14 nós com parâmetros idênticos ao gerado, publicado em `b228c3de-5059-4c03-ad62-4b94a2d0e73d`.
+- `check` antes: 9 tetos `stale`. 15 faixas nas execuções 2749–2763, todas `success`; as 10 com corpus aprovaram (3/3 fatos). Tetos iguais aos anteriores (novo 106.898, usado 119.714, ambos 106.720 B; variação 0%). `persist` com `systemMessageHash` `b71ea963…`; `check` seguinte: "9 teto(s) conferido(s); 0 marcado(s) como desatualizado(s)". Métricas em `.specs/features/lote-13-opt-out-linguagem-natural/benchmark-contexto-2026-09-30-d11.json`.
+
 ## Phase Execution Map
 
 ```text
@@ -709,6 +735,7 @@ Phase 3:  T8 -> T9 -> T10 -> T11
 Phase 4:  T12 -> T13
 Phase 5:  T14 -> T15 -> T16 -> T17 -> T18
 Correção: T17 -> T19
+D11: T19 -> T20
 ```
 
 A execução é estritamente sequencial. A Phase 5 só começa com o relatório da T12 `APROVADO`.

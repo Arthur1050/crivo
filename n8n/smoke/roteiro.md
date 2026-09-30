@@ -240,9 +240,14 @@ dentro do próprio lote (risco nomeado no `design.md`); captura da conversa.
 
 ## 6.1 Cenário 5 — opt-out por linguagem natural (lote-13, OPTPROVA-01)
 
-**Objetivo**: provar os três caminhos do classificador de opt-out com conversa real: pedido explícito
-registra no mesmo turno; pedido ambíguo gera uma pergunta e só registra com "sim"; pedido fora de
-escopo não registra e a conversa segue.
+**Objetivo**: provar com conversa real que só o pedido explícito descadastra: pedido explícito
+registra no mesmo turno; desinteresse sem pedido explícito não registra e não gera pergunta sobre
+parar de receber mensagens; pedido fora de escopo não registra e a conversa segue.
+
+> **Decisão D11 (2026-09-30).** Até esta data, o caso 5b provava uma pergunta de confirmação para o
+> lead desinteressado ("você quer parar de receber mensagens?") e o registro no "sim" (execuções 2738
+> e 2744, que passaram). Depois dessa conversa, o usuário decidiu remover a pergunta: ela soava como
+> convite para o lead deixar de ser lead. O caso 5b abaixo prova o comportamento novo.
 
 **Estado inicial exigido**: os três alvos do checklist (§9) limpos. Os três casos usam o mesmo
 número de teste, **em sequência, com `npm run smoke:reset` + `crivo-smoke-reset` e a confirmação do
@@ -256,28 +261,27 @@ checklist entre um caso e outro** — cada reset apaga o lead, e o caso seguinte
 | 2 | Pedido explícito em linguagem natural para parar de receber mensagens (ex.: "quero que você pare de me mandar mensagens") | Classificador: `explicita`; trava confirma; `POST /leads/{id}/opt-out` (linguagem natural) grava `optedOutAt`; memória e `conversa_estado` purgadas; **uma** confirmação com o texto de OPTMSG-01 |
 | 3 | Qualquer mensagem depois | `gate` roteia `somente-registrar`: gravada, **sem resposta** |
 
-### Caso 5b — ambíguo seguido de "sim" (registra na confirmação)
+### Caso 5b — desinteresse sem pedido explícito (não registra, não pergunta)
 
 | Turno | Intenção do lead | O que precisa acontecer no sistema |
 | --- | --- | --- |
 | 1 | Interesse inicial qualquer | Lead criado; agente responde normalmente |
-| 2 | Desinteresse geral, sem pedir para parar (ex.: "não tenho interesse, obrigado") | Classificador: `ambigua`; o agente pergunta, em uma frase, se o lead quer parar de receber mensagens por este número; **`optedOutAt` continua nulo** |
-| 3 | Resposta afirmativa curta ("sim") | Classificador: `explicita` (a última mensagem enviada é a pergunta); registro igual ao caso 5a, com a mesma confirmação |
+| 2 | Desinteresse geral, sem pedir para parar (ex.: "não tenho interesse, obrigado") | Classificador: `ambigua` ou `fora`, e o turno segue pela `Code: rota fora`; **`optedOutAt` continua nulo**; o agente responde normalmente, **sem** perguntar se o lead quer parar de receber mensagens e **sem** mencionar a palavra `sair` |
 
 ### Caso 5c — fora de escopo (não registra)
 
 | Turno | Intenção do lead | O que precisa acontecer no sistema |
 | --- | --- | --- |
 | 1 | Interesse inicial qualquer | Lead criado; agente responde normalmente |
-| 2 | "pode parar de mandar foto" | Classificador: `fora` (ou trava rebaixando para `ambigua`); **`optedOutAt` continua nulo**; resposta normal do agente (ou a pergunta, se a trava atuar) |
+| 2 | "pode parar de mandar foto" | Classificador: `fora` (ou trava rebaixando para `ambigua`); **`optedOutAt` continua nulo**; resposta normal do agente, sem pergunta sobre parar de receber mensagens |
 
 **Desfecho exigido — é isto que aprova ou reprova (OPTPROVA-01 AC2, AC3):**
 
 1. 5a: `optedOutAt` preenchido; sessão `"triangulo:553499532444"` em `n8n_chat_histories` vazia
    **antes** da limpeza manual; exatamente uma mensagem depois do pedido (a confirmação); turno 3 sem
    resposta.
-2. 5b: `optedOutAt` nulo depois do turno 2 e preenchido depois do "sim"; sessão de memória vazia antes
-   da limpeza manual.
+2. 5b: `optedOutAt` nulo depois do turno 2, e nenhuma mensagem do agente pergunta se o lead quer
+   parar de receber mensagens nem menciona a palavra `sair`.
 3. 5c: `optedOutAt` nulo.
 
 **Evidência a coletar**: id da execução de cada turno relevante, conferido por `get_execution` antes

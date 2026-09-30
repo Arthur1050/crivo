@@ -134,9 +134,10 @@ contexto. A medição de falso positivo com barra dura reprovou três vezes; a q
 com 84/84 explícitas e 0 falso positivo, depois de uma trava determinística que rebaixa para
 ambígua o pedido explícito sem objeto de contato. A publicação fica travada pelo hash do
 classificador aprovado. Pedido explícito grava `opted_out_at` pelo mesmo
-`POST /leads/{id}/opt-out` com purga de memória; ambíguo vira pergunta; `sair`/`parar` continuam
-determinísticos, inclusive com o lead em `escalado_humano`. **Pendente**: OPTPROVA-01 (prova por
-WhatsApp, roteiro §6.1 + cenário 3), de execução humana. Backlog em
+`POST /leads/{id}/opt-out` com purga de memória; só o pedido explícito descadastra (a pergunta ao
+lead ambíguo foi removida na decisão D11, depois da prova real); `sair`/`parar` continuam
+determinísticos, inclusive com o lead em `escalado_humano`. **Pendente**: OPTPROVA-01 (5a aprovado;
+faltam 5b novo, 5c e cenário 3), de execução humana. Backlog em
 `features/lote-13-opt-out-linguagem-natural/context.md` § Deferred Ideas.
 
 **Fecha**: #15.

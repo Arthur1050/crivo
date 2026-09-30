@@ -1696,3 +1696,44 @@ campo real. O que este T25 acrescenta é mais específico: para `vale-uberaba`, 
 significa que o segundo cliente-âncora da AD-001 não está mais em pé, ou que `vale-uberaba` sempre foi
 só um tenant de demonstração, é uma pergunta sobre premissa de produto que cabe ao usuário resolver
 numa rodada de Specify futura — não é reescrita aqui, e a AD-001 não é emendada por este lote.
+
+---
+
+## Lote 13 — T18: opt-out por linguagem natural (em andamento, 2026-09-30)
+
+Prova conduzida pelo usuário no WhatsApp do número de teste, com o `crivo-agente-principal`
+(`0B1nqjODu7xuYYKF`). Todo id abaixo foi conferido por `get_execution`. As frases citadas são as do
+roteiro; as demais mensagens do lead não são reproduzidas.
+
+### Caso 5a — explícito: **APROVADO** (agente `3e20756c`)
+
+Limpeza antes: `crivo-smoke-reset` execução 2704 (memória e `conversa_estado` apagadas) e
+`npm run smoke:reset` (lead de teste apagado).
+
+| Turno | Execução | Resultado |
+| --- | --- | --- |
+| 1 | 2705 | Interesse inicial; o agente respondeu e a memória ficou com conteúdo |
+| 2 — "quero que você pare de me mandar mensagens" | 2711 | Gate `conversa`; classificador saída 2 (`explicita`); trava `optOutExplicito: true`; `POST /leads/{id}/opt-out (linguagem natural)` gravou `optedOutAt` 12:23:09Z; `Chat Memory Manager: purgar memória (opt-out)` `success: true` e `conversa_estado` purgada no mesmo ramo; **uma** mensagem enviada, com o texto exato de OPTMSG-01 |
+| 3 | 2716 | Gate `somente-registrar` (`optedOutAt` preenchido); classificador e envio não rodaram |
+
+A limpeza seguinte (`smoke:reset`) apagou exatamente 5 mensagens do lead: 3 do lead, a resposta do
+turno 1 e a confirmação. Nenhuma mensagem depois da confirmação.
+
+### Caso 5b original — ambíguo + "sim": comportamento **aprovado e depois removido** (D11)
+
+Limpeza antes: `crivo-smoke-reset` 2717 e `smoke:reset`. Execuções 2718, 2724 e 2732 (conversa
+normal, classificador `fora`/`other`); 2738 — "não tenho interesse, obrigado" → classificador saída 1
+(`ambigua`), o agente perguntou "Você quer parar de receber mensagens por este número, pra encerrar
+de vez?", `optedOutAt` nulo; 2744 — "Sim" → classificador `explicita` (a última fala era a
+pergunta), opt-out gravado às 14:41:09Z e a confirmação de OPTMSG-01 enviada.
+
+O mecanismo funcionou como especificado, mas o usuário não quis a pergunta: ela soa como convite
+para o lead deixar de ser lead. **Decisão D11**: só o pedido explícito descadastra. A rota ambígua
+foi removida e o agente republicado em `3be9cfed-e56e-45d6-93a4-74a7910969ef`. O caso 5b do roteiro
+agora prova o comportamento novo e precisa ser refeito, junto com o 5c e a regressão do cenário 3.
+
+### Pendente
+
+- Caso 5b novo (desinteresse → conversa normal, sem pergunta, `optedOutAt` nulo).
+- Caso 5c ("pode parar de mandar foto" → `optedOutAt` nulo, resposta normal).
+- Regressão do cenário 3 (`sair` → confirmação com o texto de OPTMSG-01).
