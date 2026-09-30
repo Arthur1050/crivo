@@ -125,7 +125,19 @@ agente recebe **o título do arquivo**.
 
 ---
 
-## L13 — Opt-out por linguagem natural (LGPD)
+## L13 — Opt-out por linguagem natural (LGPD) — ✅ EXECUTADO (2026-09-30)
+
+**Status final**: PASS do Verifier independente no ciclo 2 — os 33 ACs automatizáveis com evidência,
+13/13 mutantes mortos; gate com 2.116 testes (2 falhas conhecidas de `DOCLIM-01 AC8`, por timeout).
+Um Text Classifier de três faixas roda depois da memória, com a última fala do agente como
+contexto. A medição de falso positivo com barra dura reprovou três vezes; a quarta (v4) aprovou
+com 84/84 explícitas e 0 falso positivo, depois de uma trava determinística que rebaixa para
+ambígua o pedido explícito sem objeto de contato. A publicação fica travada pelo hash do
+classificador aprovado. Pedido explícito grava `opted_out_at` pelo mesmo
+`POST /leads/{id}/opt-out` com purga de memória; ambíguo vira pergunta; `sair`/`parar` continuam
+determinísticos, inclusive com o lead em `escalado_humano`. **Pendente**: OPTPROVA-01 (prova por
+WhatsApp, roteiro §6.1 + cenário 3), de execução humana. Backlog em
+`features/lote-13-opt-out-linguagem-natural/context.md` § Deferred Ideas.
 
 **Fecha**: #15.
 
@@ -142,7 +154,7 @@ agente recebe **o título do arquivo**.
 agente entendeu e parou de puxar assunto, mas `opted_out_at` ficou nulo e ele continuou
 respondendo. Pedido explícito de parar, entendido pelo modelo, que não virou registro.
 
-**Estado atual (2026-09-27)**: desde o lote-10 o agente reconhece o pedido em linguagem natural e
+**Estado antes do lote (2026-09-27)**: desde o lote-10 o agente reconhece o pedido em linguagem natural e
 orienta o lead a responder com a palavra `sair` (`OPT_OUT_GUIDANCE_INSTRUCTION` em
 `n8n/src/system-message.mjs`), sem prometer que vai parar. O efeito continua dependendo do lead
 digitar a palavra exata (`detectOptOut` em `n8n/src/gate.mjs`): um pedido natural ainda não grava

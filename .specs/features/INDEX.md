@@ -10,7 +10,7 @@ interstitiais. **100% executado** em 2026-08-30 (`STATE.md` § Handoff).
 
 Trabalho futuro: `../ROADMAP-POS-PILOTO.md` — lotes 10 a 16 a partir do backlog deferido e das
 frentes novas (catálogo de imóveis, vitrine pública), com o que foi descartado e por quê. **L10,
-L11 e L12 já foram executados** (linhas abaixo); L13–L16 seguem propostos.
+L11, L12 e L13 já foram executados** (linhas abaixo); L14–L16 seguem propostos.
 
 ---
 
@@ -50,6 +50,7 @@ fechamento segue a AD-029 e reconcilia todas as referências depois da movimenta
 | `lote-10-modelo-alvo-e-prova-conversacional` | — (novo, pós-piloto, `ROADMAP-POS-PILOTO.md` L10) | 09-09 | ✅ PASS | MOD-01…03, SMK-01…06, DOC-01/02, MTN-01 | Modelo trocado para `gpt-5.4-nano-2026-03-17` confinado a um nó (AD-026), bateria de tool calling APROVADA, os três desfechos da AD-015 provados por conversa real (AGT-04/AGT-05/LGPD-03 fechados no lote-6), protocolo de prova conversacional (AD-027), AD-015 encerrada (`superseded by AD-027`), Finding 1 do lote-6c fechado, `n8n/README.md §4` corrigido | MTN-01 **não verificado, sem caminho disponível** — `vale-uberaba` é tenant fictício, sem número para homologar (não é pendência temporária); limpeza manual não verificável por ferramenta; dívidas herdadas listadas em `STATE.md` § Handoff |
 | `lote-11-catalogo-de-imoveis` | — (novo, pós-piloto, `ROADMAP-POS-PILOTO.md` L11) | 09-14 | ✅ PASS | IMOV-01…07, BUSCA-01…05, PROVA-01/02, SEEDIM-01 | Catálogo multi-tenant no CRM, CRUD e permissões por papel, seed determinístico, `GET /api/v1/properties`, tool `buscar_imoveis` publicada e validada por conversa real; agente busca alternativas com iniciativa, apresenta opções legíveis e convida para reunião sem exigir escolha prévia | Storage/conteúdo/preview de documentos continuam no L12; vitrine pública continua no L16; switch de exibição do catálogo e antecedência mínima do agendamento permanecem deferidos em `context.md` |
 | `lote-12-conteudo-de-documentos` | — (novo, pós-piloto, `ROADMAP-POS-PILOTO.md` L12) | 09-26 | ✅ PASS (ciclo 3) | DOCBIN-01, DOCTXT-01, DOCCTX-01, DOCLIM-01, DOCVIEW-01, DOCLIFE-01, DOCPROVA-01 | Binário real em Vercel Private Blob (AD-030), extração de PDF/DOCX/TXT/MD/CSV por Vercel Workflow com estado terminal, prévia e download isolados por tenant, exclusão e expiração com remoção física, contexto integral via `POST /api/v1/context` (GET removido), teto de contexto medido por benchmark e admissão fail-closed (AD-031), gatilho mensurável de RAG, log de processamento sem conteúdo; agente responde com fatos dos documentos sem citá-los e sem inventar política (prova por WhatsApp) | Oferta de corretor repetida após recusa (barreira determinística adiada); teste de harness da exaustão real do Workflow; capturas do papel corretor (T23–T27); 59 erros de `tsc` em testes; plano Vercel comercial antes de clientes pagantes; demais itens em `context.md` § Ideias adiadas |
+| `lote-13-opt-out-linguagem-natural` | — (novo, pós-piloto, `ROADMAP-POS-PILOTO.md` L13) | 09-30 | ✅ PASS (ciclo 2) | OPTMED-01, OPTREG-01, OPTAMB-01, OPTSEG-01, OPTKEY-01, OPTMSG-01, OPTPROVA-01, OPTDOC-01 | Text Classifier de três faixas (explícita/ambígua/fora) depois da memória, com a última fala do agente como contexto; medição de falso positivo com barra dura antes de publicar (4 rodadas, v4 APROVADA: 84/84 explícitas, 0 falso positivo) e trava determinística que rebaixa explícita para ambígua; publicação travada pelo hash do classificador aprovado; pedido explícito grava `opted_out_at` pelo mesmo `POST /leads/{id}/opt-out` + purga de memória, com confirmação só do que o sistema cumpre; ambíguo vira pergunta; `sair`/`parar` seguem determinísticos, inclusive em `escalado_humano`; teto de contexto remedido | **OPTPROVA-01 / T18** (prova por WhatsApp, roteiro §6.1 + cenário 3) pendente de execução humana; `DOCLIM-01 AC8` intermitente por timeout na suíte paralela; reverter opt-out, opt-out natural em `escalado_humano` e origem do opt-out no CRM em `context.md` § Deferred Ideas |
 
 ---
 
@@ -64,7 +65,7 @@ Os **28 itens deferidos** durante as execuções estão nas seções `## Deferre
 - **Agente/n8n**: `lote-6c`, `lote-7` (RAG, queue mode, opt-out natural, troca de modelo)
 - **Métricas**: `lote-9` (alerta ativo, baseline versionado, ranking por corretor)
 
-Lotes pós-piloto: `lote-10` e `lote-11` em `## Deferred Ideas`; `lote-12` em `## Ideias adiadas`
+Lotes pós-piloto: `lote-10`, `lote-11` e `lote-13` em `## Deferred Ideas`; `lote-12` em `## Ideias adiadas`
 (barreira da oferta de corretor, teste de harness do Workflow, Blob isolado no `dev:test`, vazão do
 teto, i18n da Astryx, hidratação do `Timestamp`, erros de `tsc` em testes). Esses itens não entram
 na contagem de 28 acima, que é a consolidação de 2026-08-30.

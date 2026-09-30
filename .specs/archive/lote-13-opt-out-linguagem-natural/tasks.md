@@ -679,6 +679,9 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 **What:** O Verifier (ciclo 1, `validation.md`) reprovou por OPTKEY-01 AC3 sem teste (mutante M8, ordem opt-out × `escalado_humano` invertida em `gate.mjs`, sobreviveu) e apontou imprecisões e documentação.
 **Where:** `n8n/src/__tests__/gate-opt-out-escalado.test.ts` (novo), `n8n/workflows/__tests__/principal-modelo.test.ts` (só o título), `spec.md`, `tasks.md`
+**Depends on:** T17
+**Tests:** unit
+**Gate:** Quick
 
 **Done when:**
 
@@ -705,6 +708,7 @@ Phase 2:  T3 -> T4 -> T5 -> T6 -> T7
 Phase 3:  T8 -> T9 -> T10 -> T11
 Phase 4:  T12 -> T13
 Phase 5:  T14 -> T15 -> T16 -> T17 -> T18
+Correção: T17 -> T19
 ```
 
 A execução é estritamente sequencial. A Phase 5 só começa com o relatório da T12 `APROVADO`.
