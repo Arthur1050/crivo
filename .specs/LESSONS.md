@@ -222,6 +222,42 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: DOCBIN-01 AC4; src/server/actions/documents.ts:186 (ui/errors)
 - last seen: 2026-09-26T02:11:12Z
 
+### L-041 - Quando um AC fixa a precedência entre duas regras de roteamento, teste a entrada que satisfaz as duas ao mesmo tempo; se a suíte existente estiver congelada por outro AC, crie o teste num arquivo novo.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `n8n/gate,compliance` · harmful: 0
+- features: lote-13-opt-out-linguagem-natural
+- evidence: M8 n8n/src/gate.mjs:69-70; OPTKEY-01 AC3 (n8n/gate,compliance)
+- last seen: 2026-09-30T00:32:10Z
+
+### L-042 - Um AC que só reafirma comportamento preexistente ainda precisa de uma tarefa com asserção própria; 'já funciona' não é evidência.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `spec,tasks` · harmful: 0
+- features: lote-13-opt-out-linguagem-natural
+- evidence: OPTKEY-01 AC3 (sem file:line) (spec,tasks)
+- last seen: 2026-09-30T00:32:11Z
+
+### L-043 - Quando uma trava determinística passa a alterar o desfecho de uma decisão do modelo, emende o AC que prometia o desfecho original na mesma decisão, não só o design.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `spec,llm` · harmful: 0
+- features: lote-13-opt-out-linguagem-natural
+- evidence: OPTSEG-01 AC2 x decisão D3 (trava refineOptOutCategory) (spec,llm)
+- last seen: 2026-09-30T00:32:11Z
+
+### L-044 - No @n8n/workflow-sdk, .onError() liga o handler à saída 1; em nó de várias saídas (textClassifier, switch) ligue o erro pelo índice real com .output(n) e afirme essa aresta no toJSON().
+- signal: `spec_deviation` · recurrence: 1 feature(s) · scope: `n8n/sdk` · harmful: 0
+- features: lote-13-opt-out-linguagem-natural
+- evidence: design.md Risks (T2, rascunho hsYF9VXAbGKLCkIc); mutante M7 (n8n/sdk)
+- last seen: 2026-09-30T00:32:11Z
+
+### L-045 - O transporte do MCP do n8n converte escapes \uXXXX em caracteres, então update_workflow não grava byte a byte um regex com esse escape; prefira classes sem escape unicode no código inlinado ou registre a diferença como equivalência conferida.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `n8n/mcp` · harmful: 0
+- features: lote-13-opt-out-linguagem-natural
+- evidence: T16 decisão D6; validation.md gap 3 (n8n/mcp)
+- last seen: 2026-09-30T00:32:11Z
+
+### L-046 - Um classificador LLM sozinho não garante zero falso positivo estável em near-misses: meça com frases de controle que não entraram na calibração e trave deterministicamente o padrão residual depois do modelo.
+- signal: `spec_deviation` · recurrence: 1 feature(s) · scope: `llm,medicao` · harmful: 0
+- features: lote-13-opt-out-linguagem-natural
+- evidence: T12-T12e: medições 2685, 2686, 2687 reprovadas; 2688 aprovada com trava (D1-D3) (llm,medicao)
+- last seen: 2026-09-30T00:32:12Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

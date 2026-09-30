@@ -4,7 +4,7 @@
   "window_days": 45,
   "quarantine_threshold": 2,
   "prune_requires_confirmation": true,
-  "next_id": 41,
+  "next_id": 47,
   "lessons": [
     {
       "id": "L-001",
@@ -638,6 +638,114 @@
       ],
       "created": "2026-09-26T02:11:12Z",
       "last_seen": "2026-09-26T02:11:12Z"
+    },
+    {
+      "id": "L-041",
+      "key": "surviving_mutant::quando um ac fixa a precedencia entre duas regras de roteamento teste a entrada que satisfaz as duas ao mesmo tempo se a suite existente estiver congelada por outro ac crie o teste num arquivo novo",
+      "text": "Quando um AC fixa a precedência entre duas regras de roteamento, teste a entrada que satisfaz as duas ao mesmo tempo; se a suíte existente estiver congelada por outro AC, crie o teste num arquivo novo.",
+      "signal": "surviving_mutant",
+      "scope": "n8n/gate,compliance",
+      "status": "candidate",
+      "features": [
+        "lote-13-opt-out-linguagem-natural"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "M8 n8n/src/gate.mjs:69-70; OPTKEY-01 AC3 (n8n/gate,compliance)"
+      ],
+      "created": "2026-09-30T00:32:10Z",
+      "last_seen": "2026-09-30T00:32:10Z"
+    },
+    {
+      "id": "L-042",
+      "key": "ac_gap::um ac que so reafirma comportamento preexistente ainda precisa de uma tarefa com assercao propria ja funciona nao e evidencia",
+      "text": "Um AC que só reafirma comportamento preexistente ainda precisa de uma tarefa com asserção própria; 'já funciona' não é evidência.",
+      "signal": "ac_gap",
+      "scope": "spec,tasks",
+      "status": "candidate",
+      "features": [
+        "lote-13-opt-out-linguagem-natural"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "OPTKEY-01 AC3 (sem file:line) (spec,tasks)"
+      ],
+      "created": "2026-09-30T00:32:11Z",
+      "last_seen": "2026-09-30T00:32:11Z"
+    },
+    {
+      "id": "L-043",
+      "key": "spec_precision_gap::quando uma trava deterministica passa a alterar o desfecho de uma decisao do modelo emende o ac que prometia o desfecho original na mesma decisao nao so o design",
+      "text": "Quando uma trava determinística passa a alterar o desfecho de uma decisão do modelo, emende o AC que prometia o desfecho original na mesma decisão, não só o design.",
+      "signal": "spec_precision_gap",
+      "scope": "spec,llm",
+      "status": "candidate",
+      "features": [
+        "lote-13-opt-out-linguagem-natural"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "OPTSEG-01 AC2 x decisão D3 (trava refineOptOutCategory) (spec,llm)"
+      ],
+      "created": "2026-09-30T00:32:11Z",
+      "last_seen": "2026-09-30T00:32:11Z"
+    },
+    {
+      "id": "L-044",
+      "key": "spec_deviation::no n8n workflow sdk onerror liga o handler a saida 1 em no de varias saidas textclassifier switch ligue o erro pelo indice real com output n e afirme essa aresta no tojson",
+      "text": "No @n8n/workflow-sdk, .onError() liga o handler à saída 1; em nó de várias saídas (textClassifier, switch) ligue o erro pelo índice real com .output(n) e afirme essa aresta no toJSON().",
+      "signal": "spec_deviation",
+      "scope": "n8n/sdk",
+      "status": "candidate",
+      "features": [
+        "lote-13-opt-out-linguagem-natural"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "design.md Risks (T2, rascunho hsYF9VXAbGKLCkIc); mutante M7 (n8n/sdk)"
+      ],
+      "created": "2026-09-30T00:32:11Z",
+      "last_seen": "2026-09-30T00:32:11Z"
+    },
+    {
+      "id": "L-045",
+      "key": "spec_precision_gap::o transporte do mcp do n8n converte escapes uxxxx em caracteres entao update workflow nao grava byte a byte um regex com esse escape prefira classes sem escape unicode no codigo inlinado ou registre a diferenca como equivalencia conferida",
+      "text": "O transporte do MCP do n8n converte escapes \\uXXXX em caracteres, então update_workflow não grava byte a byte um regex com esse escape; prefira classes sem escape unicode no código inlinado ou registre a diferença como equivalência conferida.",
+      "signal": "spec_precision_gap",
+      "scope": "n8n/mcp",
+      "status": "candidate",
+      "features": [
+        "lote-13-opt-out-linguagem-natural"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "T16 decisão D6; validation.md gap 3 (n8n/mcp)"
+      ],
+      "created": "2026-09-30T00:32:11Z",
+      "last_seen": "2026-09-30T00:32:11Z"
+    },
+    {
+      "id": "L-046",
+      "key": "spec_deviation::um classificador llm sozinho nao garante zero falso positivo estavel em near misses meca com frases de controle que nao entraram na calibracao e trave deterministicamente o padrao residual depois do modelo",
+      "text": "Um classificador LLM sozinho não garante zero falso positivo estável em near-misses: meça com frases de controle que não entraram na calibração e trave deterministicamente o padrão residual depois do modelo.",
+      "signal": "spec_deviation",
+      "scope": "llm,medicao",
+      "status": "candidate",
+      "features": [
+        "lote-13-opt-out-linguagem-natural"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "T12-T12e: medições 2685, 2686, 2687 reprovadas; 2688 aprovada com trava (D1-D3) (llm,medicao)"
+      ],
+      "created": "2026-09-30T00:32:12Z",
+      "last_seen": "2026-09-30T00:32:12Z"
     }
   ]
 }
