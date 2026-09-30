@@ -1025,14 +1025,31 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 **Done when:**
 
-- [ ] `check` depois da publicação mostra o motivo do `stale` (system message e versão do workflow), registrado na Evidence.
-- [ ] Métricas gravadas no arquivo da tarefa, e `persist` executado; um novo `check` sai sem `stale` para os três tenants.
-- [ ] Os tetos novos e os anteriores (106.702 / 119.265 / 106.805 B) aparecem lado a lado na Evidence; variação maior que 5% vai ao usuário antes do `persist`.
-- [ ] Gate Build passa.
+- [x] `check` depois da publicação mostra o motivo do `stale` (system message e versão do workflow), registrado na Evidence.
+- [x] Métricas gravadas no arquivo da tarefa, e `persist` executado; um novo `check` sai sem `stale` para os três tenants.
+- [x] Os tetos novos e os anteriores (106.702 / 119.265 / 106.805 B) aparecem lado a lado na Evidence; variação maior que 5% vai ao usuário antes do `persist`.
+- [x] Gate Build passa.
 
 **Tests:** none
 **Gate:** Build
 **Commit:** `chore(documents): refresh context ceiling after opt-out classifier`
+
+**Status:** ✅ Concluída (2026-09-29)
+
+**Evidence:**
+- Motivo do `stale`: o `check` da T16 (antes da publicação) marcou os 9 tetos por mudança do system message (`system-message.mjs` com a instrução ambígua); depois da publicação a versão do workflow também mudou (`73788130` → `3e20756c`). O script só imprime contagens; o motivo gravado em cada linha é `mudou: <componentes>`.
+- Decisão D7: 15 faixas repetidas no `crivo-benchmark-contexto` (`xpsD2PZQ1KoE2sA5`, versão publicada `09934c27`), execuções **2689 a 2703**, todas `success` (conferidas por `search_executions`/`get_execution`): 0 B, 64 KB ×1/×2 e 128 KB ×1/×2 para `ambos`, `novo` e `usado`. Todas as faixas com corpus aprovaram (3/3 fatos, `consultar_documentos` chamada); faixas 0 B sem fatos, como esperado. Latência de 4,0 s a 10,4 s. O workflow de benchmark não foi republicado: ele inlina o `system-message.mjs` anterior, e com `optOutAmbiguo` ausente o texto é byte a byte o mesmo (teste da T5).
+- Métricas: `benchmark-contexto-2026-09-30.json` (sem corpus). Tetos calculados antes do `persist` (simulação) e depois gravados:
+
+  | Modalidade | Anterior (2026-09-25) | Novo (2026-09-30) | Variação |
+  | --- | --- | --- | --- |
+  | novo | 106.702 B | 106.898 B | +0,18% |
+  | usado | 119.265 B | 119.714 B | +0,38% |
+  | ambos | 106.805 B | 106.720 B | −0,08% |
+
+  Nenhuma variação passa de 5%, então o `persist` seguiu sem consulta. Todos limitados por qualidade.
+- `persist` gravou para 3 tenants, com a identidade `{ modelId: gpt-5.4-nano-2026-03-17, workflowVersion: 3e20756c-45d2-430d-8106-e4204abf6045, systemMessageHash: b8fbc244…, toolsHash: d1e7aee9…, memoryWindow: 50 }`; a reconciliação reemitiu `document_corpus_over_ceiling` para o tenant de teste (corpus ~142 KB, 1 documento fora por modalidade), o mesmo estado de antes. **`check` seguinte: "9 teto(s) conferido(s); 0 marcado(s) como desatualizado(s)"**.
+- Gate Build: sem mudança de código nesta tarefa; coberto pelo gate de fechamento.
 
 #### T18: Provar o opt-out natural por conversa real
 
