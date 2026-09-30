@@ -1732,8 +1732,17 @@ para o lead deixar de ser lead. **Decisão D11**: só o pedido explícito descad
 foi removida e o agente republicado em `3be9cfed-e56e-45d6-93a4-74a7910969ef`. O caso 5b do roteiro
 agora prova o comportamento novo e precisa ser refeito, junto com o 5c e a regressão do cenário 3.
 
+### Caso 5b novo — desinteresse sem pedido explícito: **APROVADO** (agente `3be9cfed`)
+
+Limpeza antes: `crivo-smoke-reset` 2764 e `smoke:reset`. Mensagens enviadas pelo WhatsApp Web do
+usuário, a pedido dele, via extensão do Chrome.
+
+| Turno | Execução | Resultado |
+| --- | --- | --- |
+| 1 — interesse inicial | 2765 | O agente se apresentou e perguntou a região |
+| 2 — "não tenho interesse, obrigado" | 2771 | Gate `conversa`, `optedOutAt` nulo; classificador saída 1 (`ambigua`) → `Code: rota fora` (item vazio); o HTTP de opt-out e a trava não rodaram. O agente respondeu "Tudo bem, obrigado por avisar. Se mudar de ideia ou quiser que eu te ajude a encontrar outra opção, é só me chamar." — sem pergunta sobre parar de receber mensagens e sem mencionar `sair` |
+
 ### Pendente
 
-- Caso 5b novo (desinteresse → conversa normal, sem pergunta, `optedOutAt` nulo).
 - Caso 5c ("pode parar de mandar foto" → `optedOutAt` nulo, resposta normal).
 - Regressão do cenário 3 (`sair` → confirmação com o texto de OPTMSG-01).
