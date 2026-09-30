@@ -1074,6 +1074,8 @@ T14 -> T15 -> T16 -> T17 -> T18
 **Gate:** Build
 **Commit:** `docs(n8n): record natural language opt-out smoke evidence`
 
+**Status:** ⏸️ Pendente de execução humana (decisão D8, 2026-09-29). A prova exige que uma pessoa mande mensagens reais no WhatsApp para o número de teste; nenhuma ferramenta desta execução consegue fazer isso sem enviar mensagens em nome do usuário, e o `crivo-agente-principal` só dispara pelo `whatsAppTrigger` (o `execute_workflow` não aceita esse gatilho e o webhook da Meta exige a assinatura do app). Tudo o que a prova depende já está publicado: agente `3e20756c-45d2-430d-8106-e4204abf6045` com classificador, trava e confirmação nova (T16), tetos de contexto atualizados (T17) e roteiro §6.1 + regressão do cenário 3 (T14). Para fechar: rodar os casos 5a, 5b e 5c e o cenário 3 conforme `n8n/smoke/roteiro.md`, registrar em `n8n/smoke/evidencia.md` com ids conferidos por `get_execution` e commitar com a mensagem desta tarefa.
+
 ---
 
 ## Phase Execution Map
