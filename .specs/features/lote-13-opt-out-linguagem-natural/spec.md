@@ -134,7 +134,7 @@ Every ambiguity is resolved or recorded here; nothing remains silently unclear.
 **Acceptance Criteria**:
 
 1. WHEN um lead envia uma frase da faixa fora THEN the system SHALL manter `optedOutAt` nulo.
-2. WHEN um lead envia uma frase da faixa fora THEN the system SHALL responder pelo fluxo normal da conversa.
+2. WHEN um lead envia uma frase da faixa fora THEN the system SHALL responder pelo fluxo normal da conversa, ou com a pergunta de confirmação de OPTAMB-01 AC1 quando a trava determinística rebaixar para ambígua uma classificação explícita de "parar de mandar <conteúdo>"; em nenhum dos dois casos registra o opt-out. *(Emenda D9, 2026-09-30: a trava da T12d, decisão D3, faz o erro residual do classificador virar pergunta, nunca registro.)*
 
 **Independent Test**: Enviar "pode parar de mandar foto" e "quero sair do aluguel" e comprovar `optedOutAt` nulo e resposta normal nos dois.
 
@@ -232,14 +232,14 @@ Every ambiguity is resolved or recorded here; nothing remains silently unclear.
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| OPTMED-01 | P1: Medir o falso positivo antes de publicar | T2, T4, T7, T8, T9, T10, T12, T13 | In Tasks |
-| OPTREG-01 | P1: Registrar o pedido explícito em linguagem natural | T1, T2, T3, T10, T11, T16, T18 | In Tasks |
-| OPTAMB-01 | P1: Perguntar antes quando o pedido é ambíguo | T1, T3, T5, T10, T16, T18 | In Tasks |
-| OPTSEG-01 | P1: Não descadastrar o que não é opt-out | T10, T16, T18 | In Tasks |
-| OPTKEY-01 | P1: Manter a palavra exata como caminho determinístico | T11, T16, T18 | In Tasks |
-| OPTMSG-01 | P1: Confirmar só o que o sistema cumpre | T3, T11, T16, T18 | In Tasks |
-| OPTPROVA-01 | P1: Provar por conversa real | T14, T18 | In Tasks |
-| OPTDOC-01 | P1: Registrar a decisão e a documentação | T5, T6, T14, T15, T17 (AC1 cumprido no Design: AD-032) | In Tasks |
+| OPTMED-01 | P1: Medir o falso positivo antes de publicar | T2, T4, T7, T8, T9, T10, T12, T13 | Verified (T12e APROVADO; T13 trava) |
+| OPTREG-01 | P1: Registrar o pedido explícito em linguagem natural | T1, T2, T3, T10, T11, T16, T18 | Implemented; prova real pendente (T18) |
+| OPTAMB-01 | P1: Perguntar antes quando o pedido é ambíguo | T1, T3, T5, T10, T16, T18 | Implemented; prova real pendente (T18) |
+| OPTSEG-01 | P1: Não descadastrar o que não é opt-out | T10, T16, T18 | Implemented (emenda D9); prova real pendente (T18) |
+| OPTKEY-01 | P1: Manter a palavra exata como caminho determinístico | T11, T16, T18 | Verified (gate intacto; AC3 coberto no ciclo de correção) |
+| OPTMSG-01 | P1: Confirmar só o que o sistema cumpre | T3, T11, T16, T18 | Verified |
+| OPTPROVA-01 | P1: Provar por conversa real | T14, T18 | Pendente de execução humana (T18, decisão D8) |
+| OPTDOC-01 | P1: Registrar a decisão e a documentação | T5, T6, T14, T15, T17 (AC1 cumprido no Design: AD-032) | Verified |
 
 **Coverage:** 8 requisitos, 8 mapeados para tasks (T1–T18), 0 sem cobertura.
 
