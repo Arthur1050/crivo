@@ -190,11 +190,11 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] `isHumanConducted`: só marca → `true`; só `escalado_humano` → `true`; os dois → `true`; nenhum → `false`.
-- [ ] `canAgentSendInTurn`: `escalado_humano` sem marca → `true` (mensagem de passagem); marca → `false`; opt-out → `false`; lead limpo → `true`.
-- [ ] `canAgentContactProactively`: `escalado_humano` → `false`; marca → `false`; opt-out → `false`; lead limpo → `true`.
-- [ ] `memoryResetDue`: pedido nulo → `false`; pedido com atendido nulo → `true`; pedido mais novo → `true`; **pedido igual ao atendido → `false`** (fronteira, L-023); pedido mais velho → `false`; data inválida → `false`.
-- [ ] Gate Quick passa (`npx vitest run n8n/src/__tests__/conduction.test.ts`); contagem registrada.
+- [x] `isHumanConducted`: só marca → `true`; só `escalado_humano` → `true`; os dois → `true`; nenhum → `false`. *(`n8n/src/__tests__/conduction.test.ts`, 4 testes.)*
+- [x] `canAgentSendInTurn`: `escalado_humano` sem marca → `true` (mensagem de passagem); marca → `false`; opt-out → `false`; lead limpo → `true`. *(4 testes; a função não lê `status`.)*
+- [x] `canAgentContactProactively`: `escalado_humano` → `false`; marca → `false`; opt-out → `false`; lead limpo → `true`. *(4 testes.)*
+- [x] `memoryResetDue`: pedido nulo → `false`; pedido com atendido nulo → `true`; pedido mais novo → `true`; **pedido igual ao atendido → `false`** (fronteira, L-023); pedido mais velho → `false`; data inválida → `false`. *(8 testes; atendido `""` conta como nunca atendido, como em `isSessionExpired`; data inválida em qualquer dos dois lados → `false`.)*
+- [x] Gate Quick passa (`npx vitest run n8n/src/__tests__/conduction.test.ts`); contagem registrada. *(1 arquivo / 20 testes; suíte acumulada 128 / 2.132.)*
 
 **Tests:** unit
 **Gate:** Quick
