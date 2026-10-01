@@ -28,6 +28,12 @@
  * `POST /leads` — design.md exige explicitamente esse re-check "fresco"
  * (o intervalo entre agendar e a hora da reunião é longo o bastante para o
  * lead ter dado opt-out nesse meio-tempo).
+ *
+ * lote-14 (T26): a marca de condução humana é gravada pelo CRM e não passa
+ * por `fase`, então Reengajamento e Escalonamento passam a reler o lead ao
+ * vivo (`GET /leads/{id}`) depois do filtro de `fase` e só seguem com
+ * `canAgentContactProactively` (`n8n/src/conduction.mjs`). Lembretes não
+ * mudam (SILENCIO-01 AC8).
  */
 import { workflow, trigger, node, ifElse, switchCase, newCredential, expr } from "@n8n/workflow-sdk";
 
@@ -384,6 +390,70 @@ const excludeClosedForReengagement = node({
   output: [{ tenantSlug: "vale-do-uberaba", waId: "5534999990001", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
 });
 
+// lote-14 (T26 — SILENCIO-01 AC6/AC7): relê o lead ao vivo antes do contato
+// proativo. `fase` em `conversa_estado` não sabe da marca de condução humana
+// (gravada pelo CRM), então só o CRM decide. Falha da leitura: saída de erro
+// sem ligação — o item cai sem contato e as outras varreduras do tick seguem.
+const getLeadForReengagement = node({
+  type: "n8n-nodes-base.httpRequest",
+  version: 4.4,
+  config: {
+    name: "HTTP: GET /leads/{id} (reengajamento)",
+    position: [650, -150],
+    retryOnFail: true,
+    maxTries: 3,
+    waitBetweenTries: 2000,
+    onError: "continueErrorOutput",
+    parameters: {
+      method: "GET",
+      url: expr(`${CRM_BASE_URL}/leads/{{ $json.leadId }}`),
+      authentication: "genericCredentialType",
+      genericAuthType: "httpHeaderAuth",
+      sendHeaders: true,
+      headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $json.tenantSlug }}") }] },
+    },
+    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
+  },
+  output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", status: "em_qualificacao", optedOutAt: null, humanTakeoverAt: null, memoryResetRequestedAt: null }],
+});
+
+const conductionForReengagement = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: condução ao vivo (reengajamento)",
+    position: [780, -150],
+    parameters: {
+      mode: "runOnceForEachItem",
+      language: "javaScript",
+      jsCode:
+        '__INLINE(conduction.mjs)__' +
+        "\n\n" +
+        "const conversa = $('Filter: exclui encerradas (reengajamento)').item.json;\n" +
+        "const lead = $json;\n" +
+        "return { json: { ...conversa, podeContatar: canAgentContactProactively({ status: lead.status, humanTakeoverAt: lead.humanTakeoverAt, optedOutAt: lead.optedOutAt }) } };\n",
+    },
+  },
+  output: [{ tenantSlug: "vale-do-uberaba", waId: "5534999990001", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando", podeContatar: true }],
+});
+
+const canContactForReengagement = node({
+  type: "n8n-nodes-base.filter",
+  version: 2.3,
+  config: {
+    name: "Filter: agente pode contatar (reengajamento)",
+    position: [910, -150],
+    parameters: {
+      conditions: {
+        combinator: "and",
+        options: { caseSensitive: true, leftValue: "", typeValidation: "strict" },
+        conditions: [{ leftValue: expr("{{ $json.podeContatar }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }],
+      },
+    },
+  },
+  output: [{ tenantSlug: "vale-do-uberaba", waId: "5534999990001", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando", podeContatar: true }],
+});
+
 const lookupTenantForReengagement = node({
   type: "n8n-nodes-base.dataTable",
   version: 1.1,
@@ -579,6 +649,70 @@ const excludeClosedForEscalation = node({
   output: [{ tenantSlug: "vale-do-uberaba", waId: "5534999990001", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
 });
 
+// lote-14 (T26 — SILENCIO-01 AC6/AC7): relê o lead ao vivo antes do contato
+// proativo. `fase` em `conversa_estado` não sabe da marca de condução humana
+// (gravada pelo CRM), então só o CRM decide. Falha da leitura: saída de erro
+// sem ligação — o item cai sem contato e as outras varreduras do tick seguem.
+const getLeadForEscalation = node({
+  type: "n8n-nodes-base.httpRequest",
+  version: 4.4,
+  config: {
+    name: "HTTP: GET /leads/{id} (escalonamento)",
+    position: [650, 250],
+    retryOnFail: true,
+    maxTries: 3,
+    waitBetweenTries: 2000,
+    onError: "continueErrorOutput",
+    parameters: {
+      method: "GET",
+      url: expr(`${CRM_BASE_URL}/leads/{{ $json.leadId }}`),
+      authentication: "genericCredentialType",
+      genericAuthType: "httpHeaderAuth",
+      sendHeaders: true,
+      headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $json.tenantSlug }}") }] },
+    },
+    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
+  },
+  output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", status: "em_qualificacao", optedOutAt: null, humanTakeoverAt: null, memoryResetRequestedAt: null }],
+});
+
+const conductionForEscalation = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: condução ao vivo (escalonamento)",
+    position: [780, 250],
+    parameters: {
+      mode: "runOnceForEachItem",
+      language: "javaScript",
+      jsCode:
+        '__INLINE(conduction.mjs)__' +
+        "\n\n" +
+        "const conversa = $('Filter: exclui encerradas (escalonamento)').item.json;\n" +
+        "const lead = $json;\n" +
+        "return { json: { ...conversa, podeContatar: canAgentContactProactively({ status: lead.status, humanTakeoverAt: lead.humanTakeoverAt, optedOutAt: lead.optedOutAt }) } };\n",
+    },
+  },
+  output: [{ tenantSlug: "vale-do-uberaba", waId: "5534999990001", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando", podeContatar: true }],
+});
+
+const canContactForEscalation = node({
+  type: "n8n-nodes-base.filter",
+  version: 2.3,
+  config: {
+    name: "Filter: agente pode contatar (escalonamento)",
+    position: [910, 250],
+    parameters: {
+      conditions: {
+        combinator: "and",
+        options: { caseSensitive: true, leftValue: "", typeValidation: "strict" },
+        conditions: [{ leftValue: expr("{{ $json.podeContatar }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }],
+      },
+    },
+  },
+  output: [{ tenantSlug: "vale-do-uberaba", waId: "5534999990001", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando", podeContatar: true }],
+});
+
 const lookupTenantForEscalation = node({
   type: "n8n-nodes-base.dataTable",
   version: 1.1,
@@ -699,11 +833,19 @@ const lembretesChain = getDueReminders.to(
   )
 );
 
+// lote-14 (T26): a saída de erro do GET fica sem ligação de propósito (o item
+// cai sem envio); só a saída 0 segue, e só com `podeContatar`.
 const reengajamentoChain = getStaleConversations.to(
   excludeClosedForReengagement.to(
-    lookupTenantForReengagement.to(
-      mergeReengagementContext.to(
-        getSettingsForReengagement.to(sendReengagementTemplate.to(registerReengagementMessage.to(markReengaged)))
+    getLeadForReengagement.to(
+      conductionForReengagement.to(
+        canContactForReengagement.to(
+          lookupTenantForReengagement.to(
+            mergeReengagementContext.to(
+              getSettingsForReengagement.to(sendReengagementTemplate.to(registerReengagementMessage.to(markReengaged)))
+            )
+          )
+        )
       )
     )
   )
@@ -711,8 +853,14 @@ const reengajamentoChain = getStaleConversations.to(
 
 const escalonamentoChain = getSilentReengaged.to(
   excludeClosedForEscalation.to(
-    lookupTenantForEscalation.to(
-      mergeEscalationContext.to(patchEscalateSilence.to(markEscalatedLocally))
+    getLeadForEscalation.to(
+      conductionForEscalation.to(
+        canContactForEscalation.to(
+          lookupTenantForEscalation.to(
+            mergeEscalationContext.to(patchEscalateSilence.to(markEscalatedLocally))
+          )
+        )
+      )
     )
   )
 );

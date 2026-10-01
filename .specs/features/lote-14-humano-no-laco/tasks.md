@@ -675,11 +675,11 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] Arquivo de teste novo `n8n/workflows/__tests__/scheduler-conducao.test.ts`: `WhatsApp: reengajamento (template)` e `HTTP: PATCH /leads/{id} (silencio 48h)` só são alcançáveis depois do filtro novo (AC6, AC7; L-026).
-- [ ] A cadeia de lembretes tem o mesmo conjunto de nós de antes, e nenhum deles consulta a condução (AC8).
-- [ ] Falha do GET não envia nem escala (erro sem ligação de saída, ou ligado a um fim sem efeito).
-- [ ] `node scripts/n8n-inline.mjs` roda; `validate_workflow` sem erro; gerado no mesmo commit.
-- [ ] Gate Full passa; contagem registrada.
+- [x] Arquivo de teste novo `n8n/workflows/__tests__/scheduler-conducao.test.ts`: `WhatsApp: reengajamento (template)` e `HTTP: PATCH /leads/{id} (silencio 48h)` só são alcançáveis depois do filtro novo (AC6, AC7; L-026). _Evidência: 22 testes (20 falham sem a implementação). Nas duas varreduras: filtro de `fase` → `HTTP: GET /leads/{id} (<varredura>)` → `Code: condução ao vivo` (`canAgentContactProactively` inline, por item) → `Filter: agente pode contatar` → tenant; sem atravessar o filtro novo, o trigger não alcança o template nem o PATCH. Executado: marca, `escalado_humano` e opt-out → `podeContatar: false`; agente sem opt-out → `true`._
+- [x] A cadeia de lembretes tem o mesmo conjunto de nós de antes, e nenhum deles consulta a condução (AC8). _Evidência: alcançáveis a partir de `Data Table: lembretes devidos (agenda_envios)` = os mesmos 11 nós; nenhum parâmetro cita `canAgentContactProactively`, `humanTakeoverAt` ou `conduction.mjs`._
+- [x] Falha do GET não envia nem escala (erro sem ligação de saída, ou ligado a um fim sem efeito). _Evidência: `onError: continueErrorOutput` e saída 1 do GET vazia no `toJSON()`: o item cai sem efeito e as outras varreduras do mesmo tick seguem._
+- [x] `node scripts/n8n-inline.mjs` roda; `validate_workflow` sem erro; gerado no mesmo commit. _Evidência: só `n8n/generated/scheduler.ts` mudou (26/26 → 32/32); SDK local sobre o gerado completo: válido, 0 warnings; `validate_workflow` do MCP sobre o scheduler final registrado na T27._
+- [x] Gate Full passa; contagem registrada. _Evidência: `npm test` 145 arquivos / 2.376 testes; só as 2 falhas conhecidas de DOCLIM-01 AC8._
 
 **Tests:** unit
 **Gate:** Full

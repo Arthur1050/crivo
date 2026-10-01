@@ -28,6 +28,12 @@
  * `POST /leads` — design.md exige explicitamente esse re-check "fresco"
  * (o intervalo entre agendar e a hora da reunião é longo o bastante para o
  * lead ter dado opt-out nesse meio-tempo).
+ *
+ * lote-14 (T26): a marca de condução humana é gravada pelo CRM e não passa
+ * por `fase`, então Reengajamento e Escalonamento passam a reler o lead ao
+ * vivo (`GET /leads/{id}`) depois do filtro de `fase` e só seguem com
+ * `canAgentContactProactively` (`n8n/src/conduction.mjs`). Lembretes não
+ * mudam (SILENCIO-01 AC8).
  */
 import { workflow, trigger, node, ifElse, switchCase, newCredential, expr } from "@n8n/workflow-sdk";
 
@@ -384,6 +390,70 @@ const excludeClosedForReengagement = node({
   output: [{ tenantSlug: "vale-do-uberaba", waId: "5534999990001", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
 });
 
+// lote-14 (T26 — SILENCIO-01 AC6/AC7): relê o lead ao vivo antes do contato
+// proativo. `fase` em `conversa_estado` não sabe da marca de condução humana
+// (gravada pelo CRM), então só o CRM decide. Falha da leitura: saída de erro
+// sem ligação — o item cai sem contato e as outras varreduras do tick seguem.
+const getLeadForReengagement = node({
+  type: "n8n-nodes-base.httpRequest",
+  version: 4.4,
+  config: {
+    name: "HTTP: GET /leads/{id} (reengajamento)",
+    position: [650, -150],
+    retryOnFail: true,
+    maxTries: 3,
+    waitBetweenTries: 2000,
+    onError: "continueErrorOutput",
+    parameters: {
+      method: "GET",
+      url: expr(`${CRM_BASE_URL}/leads/{{ $json.leadId }}`),
+      authentication: "genericCredentialType",
+      genericAuthType: "httpHeaderAuth",
+      sendHeaders: true,
+      headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $json.tenantSlug }}") }] },
+    },
+    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
+  },
+  output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", status: "em_qualificacao", optedOutAt: null, humanTakeoverAt: null, memoryResetRequestedAt: null }],
+});
+
+const conductionForReengagement = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: condução ao vivo (reengajamento)",
+    position: [780, -150],
+    parameters: {
+      mode: "runOnceForEachItem",
+      language: "javaScript",
+      jsCode:
+        "/**\n * Regra única de condução da conversa (lote-14 — design.md C2; AD-034).\n * Funções puras, sem I/O, sem dependências: rodam inline nos Code nodes do\n * n8n e são importadas pelo CRM (`src/lib/conversation-control.ts`), para que\n * a regra \"quem conduz\" tenha uma fonte só.\n */\n\n/**\n * @typedef {{status?: unknown, humanTakeoverAt?: unknown, optedOutAt?: unknown}} ConductionLead\n */\n\n/**\n * Conduzido por humano: tem a marca de condução humana **ou** está em\n * `escalado_humano` (ASSUMIR-01 AC7).\n * @param {ConductionLead} lead\n * @returns {boolean}\n */\nfunction isHumanConducted({ status, humanTakeoverAt }) {\n  return Boolean(humanTakeoverAt) || status === \"escalado_humano\";\n}\n\n/**\n * O agente pode enviar dentro do turno em andamento (SILENCIO-01 AC4)?\n * Olha só a marca e o opt-out. **Nunca** bloqueia por `escalado_humano`: o\n * agente que acabou de escalar ainda precisa enviar a mensagem de passagem\n * (`system-message.mjs`).\n * @param {ConductionLead} lead\n * @returns {boolean}\n */\nfunction canAgentSendInTurn({ optedOutAt, humanTakeoverAt }) {\n  return !optedOutAt && !humanTakeoverAt;\n}\n\n/**\n * O agente pode iniciar contato sem mensagem do lead (reengajamento,\n * escalonamento por silêncio — SILENCIO-01 AC6/AC7)?\n * @param {ConductionLead} lead\n * @returns {boolean}\n */\nfunction canAgentContactProactively(lead) {\n  return !lead.optedOutAt && !isHumanConducted(lead);\n}\n\n/**\n * @param {unknown} value\n * @returns {boolean}\n */\nfunction isAbsent(value) {\n  return value === null || value === undefined || value === \"\";\n}\n\n/**\n * @param {unknown} value\n * @returns {number}\n */\nfunction toTime(value) {\n  if (value instanceof Date) return value.getTime();\n  if (typeof value !== \"string\" && typeof value !== \"number\") return Number.NaN;\n  return new Date(value).getTime();\n}\n\n/**\n * O pedido de reconstrução da memória ainda não foi atendido? Devido só\n * quando o pedido é **estritamente** mais novo que o último atendido: pedido\n * igual ao atendido já foi consumido (DEVOLVER-01 AC7). Data inválida nunca\n * dispara a purga.\n * @param {unknown} requestedAt - `memoryResetRequestedAt` do lead no CRM\n * @param {unknown} honoredAt - `memoryResetAt` de `conversa_estado` no n8n\n * @returns {boolean}\n */\nfunction memoryResetDue(requestedAt, honoredAt) {\n  if (isAbsent(requestedAt)) return false;\n  const requested = toTime(requestedAt);\n  if (Number.isNaN(requested)) return false;\n  if (isAbsent(honoredAt)) return true;\n  const honored = toTime(honoredAt);\n  if (Number.isNaN(honored)) return false;\n  return requested > honored;\n}" +
+        "\n\n" +
+        "const conversa = $('Filter: exclui encerradas (reengajamento)').item.json;\n" +
+        "const lead = $json;\n" +
+        "return { json: { ...conversa, podeContatar: canAgentContactProactively({ status: lead.status, humanTakeoverAt: lead.humanTakeoverAt, optedOutAt: lead.optedOutAt }) } };\n",
+    },
+  },
+  output: [{ tenantSlug: "vale-do-uberaba", waId: "5534999990001", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando", podeContatar: true }],
+});
+
+const canContactForReengagement = node({
+  type: "n8n-nodes-base.filter",
+  version: 2.3,
+  config: {
+    name: "Filter: agente pode contatar (reengajamento)",
+    position: [910, -150],
+    parameters: {
+      conditions: {
+        combinator: "and",
+        options: { caseSensitive: true, leftValue: "", typeValidation: "strict" },
+        conditions: [{ leftValue: expr("{{ $json.podeContatar }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }],
+      },
+    },
+  },
+  output: [{ tenantSlug: "vale-do-uberaba", waId: "5534999990001", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando", podeContatar: true }],
+});
+
 const lookupTenantForReengagement = node({
   type: "n8n-nodes-base.dataTable",
   version: 1.1,
@@ -579,6 +649,70 @@ const excludeClosedForEscalation = node({
   output: [{ tenantSlug: "vale-do-uberaba", waId: "5534999990001", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
 });
 
+// lote-14 (T26 — SILENCIO-01 AC6/AC7): relê o lead ao vivo antes do contato
+// proativo. `fase` em `conversa_estado` não sabe da marca de condução humana
+// (gravada pelo CRM), então só o CRM decide. Falha da leitura: saída de erro
+// sem ligação — o item cai sem contato e as outras varreduras do tick seguem.
+const getLeadForEscalation = node({
+  type: "n8n-nodes-base.httpRequest",
+  version: 4.4,
+  config: {
+    name: "HTTP: GET /leads/{id} (escalonamento)",
+    position: [650, 250],
+    retryOnFail: true,
+    maxTries: 3,
+    waitBetweenTries: 2000,
+    onError: "continueErrorOutput",
+    parameters: {
+      method: "GET",
+      url: expr(`${CRM_BASE_URL}/leads/{{ $json.leadId }}`),
+      authentication: "genericCredentialType",
+      genericAuthType: "httpHeaderAuth",
+      sendHeaders: true,
+      headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $json.tenantSlug }}") }] },
+    },
+    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
+  },
+  output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", status: "em_qualificacao", optedOutAt: null, humanTakeoverAt: null, memoryResetRequestedAt: null }],
+});
+
+const conductionForEscalation = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: condução ao vivo (escalonamento)",
+    position: [780, 250],
+    parameters: {
+      mode: "runOnceForEachItem",
+      language: "javaScript",
+      jsCode:
+        "/**\n * Regra única de condução da conversa (lote-14 — design.md C2; AD-034).\n * Funções puras, sem I/O, sem dependências: rodam inline nos Code nodes do\n * n8n e são importadas pelo CRM (`src/lib/conversation-control.ts`), para que\n * a regra \"quem conduz\" tenha uma fonte só.\n */\n\n/**\n * @typedef {{status?: unknown, humanTakeoverAt?: unknown, optedOutAt?: unknown}} ConductionLead\n */\n\n/**\n * Conduzido por humano: tem a marca de condução humana **ou** está em\n * `escalado_humano` (ASSUMIR-01 AC7).\n * @param {ConductionLead} lead\n * @returns {boolean}\n */\nfunction isHumanConducted({ status, humanTakeoverAt }) {\n  return Boolean(humanTakeoverAt) || status === \"escalado_humano\";\n}\n\n/**\n * O agente pode enviar dentro do turno em andamento (SILENCIO-01 AC4)?\n * Olha só a marca e o opt-out. **Nunca** bloqueia por `escalado_humano`: o\n * agente que acabou de escalar ainda precisa enviar a mensagem de passagem\n * (`system-message.mjs`).\n * @param {ConductionLead} lead\n * @returns {boolean}\n */\nfunction canAgentSendInTurn({ optedOutAt, humanTakeoverAt }) {\n  return !optedOutAt && !humanTakeoverAt;\n}\n\n/**\n * O agente pode iniciar contato sem mensagem do lead (reengajamento,\n * escalonamento por silêncio — SILENCIO-01 AC6/AC7)?\n * @param {ConductionLead} lead\n * @returns {boolean}\n */\nfunction canAgentContactProactively(lead) {\n  return !lead.optedOutAt && !isHumanConducted(lead);\n}\n\n/**\n * @param {unknown} value\n * @returns {boolean}\n */\nfunction isAbsent(value) {\n  return value === null || value === undefined || value === \"\";\n}\n\n/**\n * @param {unknown} value\n * @returns {number}\n */\nfunction toTime(value) {\n  if (value instanceof Date) return value.getTime();\n  if (typeof value !== \"string\" && typeof value !== \"number\") return Number.NaN;\n  return new Date(value).getTime();\n}\n\n/**\n * O pedido de reconstrução da memória ainda não foi atendido? Devido só\n * quando o pedido é **estritamente** mais novo que o último atendido: pedido\n * igual ao atendido já foi consumido (DEVOLVER-01 AC7). Data inválida nunca\n * dispara a purga.\n * @param {unknown} requestedAt - `memoryResetRequestedAt` do lead no CRM\n * @param {unknown} honoredAt - `memoryResetAt` de `conversa_estado` no n8n\n * @returns {boolean}\n */\nfunction memoryResetDue(requestedAt, honoredAt) {\n  if (isAbsent(requestedAt)) return false;\n  const requested = toTime(requestedAt);\n  if (Number.isNaN(requested)) return false;\n  if (isAbsent(honoredAt)) return true;\n  const honored = toTime(honoredAt);\n  if (Number.isNaN(honored)) return false;\n  return requested > honored;\n}" +
+        "\n\n" +
+        "const conversa = $('Filter: exclui encerradas (escalonamento)').item.json;\n" +
+        "const lead = $json;\n" +
+        "return { json: { ...conversa, podeContatar: canAgentContactProactively({ status: lead.status, humanTakeoverAt: lead.humanTakeoverAt, optedOutAt: lead.optedOutAt }) } };\n",
+    },
+  },
+  output: [{ tenantSlug: "vale-do-uberaba", waId: "5534999990001", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando", podeContatar: true }],
+});
+
+const canContactForEscalation = node({
+  type: "n8n-nodes-base.filter",
+  version: 2.3,
+  config: {
+    name: "Filter: agente pode contatar (escalonamento)",
+    position: [910, 250],
+    parameters: {
+      conditions: {
+        combinator: "and",
+        options: { caseSensitive: true, leftValue: "", typeValidation: "strict" },
+        conditions: [{ leftValue: expr("{{ $json.podeContatar }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }],
+      },
+    },
+  },
+  output: [{ tenantSlug: "vale-do-uberaba", waId: "5534999990001", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando", podeContatar: true }],
+});
+
 const lookupTenantForEscalation = node({
   type: "n8n-nodes-base.dataTable",
   version: 1.1,
@@ -699,11 +833,19 @@ const lembretesChain = getDueReminders.to(
   )
 );
 
+// lote-14 (T26): a saída de erro do GET fica sem ligação de propósito (o item
+// cai sem envio); só a saída 0 segue, e só com `podeContatar`.
 const reengajamentoChain = getStaleConversations.to(
   excludeClosedForReengagement.to(
-    lookupTenantForReengagement.to(
-      mergeReengagementContext.to(
-        getSettingsForReengagement.to(sendReengagementTemplate.to(registerReengagementMessage.to(markReengaged)))
+    getLeadForReengagement.to(
+      conductionForReengagement.to(
+        canContactForReengagement.to(
+          lookupTenantForReengagement.to(
+            mergeReengagementContext.to(
+              getSettingsForReengagement.to(sendReengagementTemplate.to(registerReengagementMessage.to(markReengaged)))
+            )
+          )
+        )
       )
     )
   )
@@ -711,8 +853,14 @@ const reengajamentoChain = getStaleConversations.to(
 
 const escalonamentoChain = getSilentReengaged.to(
   excludeClosedForEscalation.to(
-    lookupTenantForEscalation.to(
-      mergeEscalationContext.to(patchEscalateSilence.to(markEscalatedLocally))
+    getLeadForEscalation.to(
+      conductionForEscalation.to(
+        canContactForEscalation.to(
+          lookupTenantForEscalation.to(
+            mergeEscalationContext.to(patchEscalateSilence.to(markEscalatedLocally))
+          )
+        )
+      )
     )
   )
 );
