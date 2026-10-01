@@ -1,7 +1,7 @@
 import "server-only";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, lte, sql } from "drizzle-orm";
 import { db } from "../../db";
-import { leads } from "../../db/schema";
+import { humanMessageSends, leads } from "../../db/schema";
 import { purgeIntegrationRefusals } from "../data";
 import { createDocumentLifecycle } from "../documents/lifecycle";
 import {
@@ -38,6 +38,25 @@ export async function optOutLead(
   if (!row) return null;
   // COALESCE(coluna, now()) nunca é null — now() sempre supre a ausência.
   return { optedOutAt: row.optedOutAt! };
+}
+
+/** Retenção das reservas de envio humano (lote-14 — design.md Data Models). */
+export const HUMAN_SEND_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+
+/**
+ * Apaga as reservas `human_message_sends` com 30 dias ou mais (lote-14 —
+ * ENVIO-01). A reserva só serve à idempotência de um envio em andamento; a
+ * mensagem enviada continua em `messages`. `lte` inclui a fronteira: com
+ * exatamente 30 dias, a reserva sai (L-023). Job de plataforma, sem escopo de
+ * tenant, como a purga de recusas.
+ */
+export async function purgeHumanSendReservations(now: Date): Promise<{ deleted: number }> {
+  const cutoff = new Date(now.getTime() - HUMAN_SEND_RETENTION_MS);
+  const rows = await db
+    .delete(humanMessageSends)
+    .where(lte(humanMessageSends.createdAt, cutoff))
+    .returning({ id: humanMessageSends.id });
+  return { deleted: rows.length };
 }
 
 export interface DocumentMaintenanceDependencies {
@@ -171,6 +190,10 @@ export interface DailyMaintenanceResult extends ExpireDocumentsResult {
   /** `true` quando a purga de recusas falhou nesta execução (SAUDE-03 AC3):
    * a falha é só REPORTADA aqui — nunca impede a expiração de documentos. */
   refusalsPurgeFailed: boolean;
+  /** Reservas de envio humano com 30 dias ou mais removidas (lote-14). */
+  reservationsDeleted: number;
+  /** `true` quando a purga de reservas falhou; os demais grupos seguem. */
+  reservationsPurgeFailed: boolean;
 }
 
 const emptyExpiry: ExpireDocumentsResult = {
@@ -192,10 +215,10 @@ async function runGroup<T>(fallback: T, group: () => Promise<T>): Promise<[T, bo
 }
 
 /**
- * Rotina diária de manutenção (lote-9 — SAUDE-03; lote-12 — DOCLIFE-01). Quatro
- * grupos independentes rodam em sequência, cada um com resultado e `catch`
- * próprios: expiração, retry de tombstones, compensação de intenções vencidas e
- * purga de recusas. Uma falha de storage não impede a purga de recusas, e uma
+ * Rotina diária de manutenção (lote-9 — SAUDE-03; lote-12 — DOCLIFE-01; lote-14).
+ * Cinco grupos independentes rodam em sequência, cada um com resultado e
+ * `catch` próprios: expiração, retry de tombstones, compensação de intenções
+ * vencidas, purga de recusas e purga de reservas de envio humano. Uma falha de storage não impede a purga de recusas, e uma
  * falha da purga não impede a expiração (AC3). Nenhum grupo propaga exceção.
  */
 export async function runDailyMaintenance(
@@ -219,6 +242,11 @@ export async function runDailyMaintenance(
     () => purgeIntegrationRefusals(now)
   );
 
+  const [reservations, reservationsPurgeFailed] = await runGroup(
+    { deleted: 0 },
+    () => purgeHumanSendReservations(now)
+  );
+
   return {
     ...expiry,
     expiryFailed,
@@ -230,5 +258,7 @@ export async function runDailyMaintenance(
     intentCleanupFailed,
     refusalsDeleted: refusals.deleted,
     refusalsPurgeFailed,
+    reservationsDeleted: reservations.deleted,
+    reservationsPurgeFailed,
   };
 }

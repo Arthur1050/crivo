@@ -553,9 +553,9 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] Teste: reserva com **exatamente 30 dias** é apagada (fronteira, L-023), com 29 dias e 23 h permanece, e a de outro tenant segue a mesma regra.
-- [ ] Teste de ligação: a rotina do cron chama a purga nova (L-026).
-- [ ] Gate Full passa (fim da Phase 4); contagem registrada.
+- [x] Teste: reserva com **exatamente 30 dias** é apagada (fronteira, L-023), com 29 dias e 23 h permanece, e a de outro tenant segue a mesma regra. *(human-send-retention.test.ts: nos dois tenants, a reserva com createdAt exatamente 30 dias antes some e a de 29 dias e 23 h fica; trocar lte por < faz o teste falhar)*
+- [x] Teste de ligação: a rotina do cron chama a purga nova (L-026). *(cron-expire-documents.test.ts: POST da rota apaga a reserva de 2020, mantém a recente e devolve reservationsDeleted >= 1 e reservationsPurgeFailed false; sem o grupo novo em runDailyMaintenance o teste falhava)*
+- [x] Gate Full passa (fim da Phase 4); contagem registrada. *(Gate Full: npm test 140 arquivos / 2.287 testes, 2.285 passando e só as 2 falhas conhecidas (DOCLIM-01 AC8, timeout); lint 0 erros (7 avisos preexistentes); build verde. Antes da fase: 135 / 2.233)*
 
 **Tests:** integration
 **Gate:** Full

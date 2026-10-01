@@ -3,7 +3,13 @@ import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
 import { db } from "../../../../db";
-import { documents, integrationRefusals, tenants } from "../../../../db/schema";
+import {
+  documents,
+  humanMessageSends,
+  integrationRefusals,
+  leads,
+  tenants,
+} from "../../../../db/schema";
 
 // Mocka só `purgeIntegrationRefusals` do módulo de dados (SAUDE-03 AC3):
 // o teste de "falha na purga não impede a expiração de documentos" precisa
@@ -100,6 +106,8 @@ describe("routes: /api/cron/expire-documents", () => {
     process.env.CRON_SECRET = originalSecret;
     await db.delete(documents).where(eq(documents.tenantId, tenantId));
     await db.delete(integrationRefusals).where(eq(integrationRefusals.tenantId, tenantId));
+    await db.delete(humanMessageSends).where(eq(humanMessageSends.tenantId, tenantId));
+    await db.delete(leads).where(eq(leads.tenantId, tenantId));
     await db.delete(tenants).where(eq(tenants.id, tenantId));
     await db.$client.end();
   });
@@ -208,6 +216,48 @@ describe("routes: /api/cron/expire-documents", () => {
     expect(recentRows).toHaveLength(1);
 
     await db.delete(integrationRefusals).where(eq(integrationRefusals.route, recentRoute));
+  });
+
+  it("purga as reservas de envio humano vencidas na mesma execução (lote-14 T20, L-026)", async () => {
+    const [lead] = await db
+      .insert(leads)
+      .values({
+        tenantId,
+        name: "Lead do cron",
+        phone: "+55 34 99999-0000",
+        status: "em_qualificacao",
+        firstContactAt: new Date(),
+      })
+      .returning({ id: leads.id });
+    const [old, recent] = await db
+      .insert(humanMessageSends)
+      .values([
+        {
+          tenantId,
+          leadId: lead.id,
+          requestId: randomUUID(),
+          state: "falhou" as const,
+          // Bem além de 30 dias de qualquer "agora" real de execução do teste.
+          createdAt: new Date("2020-01-01T00:00:00.000Z"),
+          updatedAt: new Date("2020-01-01T00:00:00.000Z"),
+        },
+        { tenantId, leadId: lead.id, requestId: randomUUID(), state: "enviando" as const },
+      ])
+      .returning({ id: humanMessageSends.id });
+
+    const response = await POST(makeRequest("POST", testSecret));
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.reservationsDeleted).toBeGreaterThanOrEqual(1);
+    expect(body.reservationsPurgeFailed).toBe(false);
+
+    const oldRows = await db.select().from(humanMessageSends).where(eq(humanMessageSends.id, old.id));
+    expect(oldRows).toHaveLength(0);
+    const recentRows = await db
+      .select()
+      .from(humanMessageSends)
+      .where(eq(humanMessageSends.id, recent.id));
+    expect(recentRows).toHaveLength(1);
   });
 
   it("execução sem nenhuma recusa vencida devolve refusalsDeleted = 0, sem erro", async () => {
