@@ -128,3 +128,61 @@ describe("buildChatThread (RD-06 AC2/AC3)", () => {
     });
   });
 });
+
+// Lote-14, THREAD-01 AC1: a mensagem `humano` forma grupo por autor, e o grupo
+// carrega o nome do autor para a thread exibir.
+describe("buildChatThread com remetente humano (THREAD-01 AC1)", () => {
+  function human(id: string, authorName: string, sentAt: string): ChatThreadMessageInput {
+    return { id, sender: "humano", authorName, sentAt, content: `msg ${id}` };
+  }
+
+  it("junta duas mensagens seguidas do mesmo humano num só grupo", () => {
+    const days = buildChatThread([
+      human("h1", "Ana Souza", "2026-01-05T09:00:00"),
+      human("h2", "Ana Souza", "2026-01-05T09:01:00"),
+    ]);
+
+    expect(days[0].groups).toHaveLength(1);
+    expect(days[0].groups[0].sender).toBe("humano");
+    expect(days[0].groups[0].bubbles.map((bubble) => bubble.id)).toEqual(["h1", "h2"]);
+  });
+
+  it("separa em dois grupos mensagens seguidas de humanos diferentes", () => {
+    const days = buildChatThread([
+      human("h1", "Ana Souza", "2026-01-05T09:00:00"),
+      human("h2", "Bruno Lima", "2026-01-05T09:01:00"),
+    ]);
+
+    expect(days[0].groups.map((group) => group.authorName)).toEqual([
+      "Ana Souza",
+      "Bruno Lima",
+    ]);
+    expect(days[0].groups.map((group) => group.bubbles[0].group)).toEqual([
+      undefined,
+      undefined,
+    ]);
+  });
+
+  it("separa em dois grupos um humano seguido do agente", () => {
+    const days = buildChatThread([
+      human("h1", "Ana Souza", "2026-01-05T09:00:00"),
+      message("m2", "agente", "2026-01-05T09:01:00"),
+    ]);
+
+    expect(days[0].groups.map((group) => group.sender)).toEqual(["humano", "agente"]);
+  });
+
+  it("o grupo humano carrega o nome do autor, e os demais carregam null", () => {
+    const days = buildChatThread([
+      message("m1", "lead", "2026-01-05T09:00:00"),
+      human("h1", "Ana Souza", "2026-01-05T09:01:00"),
+      message("m2", "agente", "2026-01-05T09:02:00"),
+    ]);
+
+    expect(days[0].groups.map((group) => group.authorName)).toEqual([
+      null,
+      "Ana Souza",
+      null,
+    ]);
+  });
+});

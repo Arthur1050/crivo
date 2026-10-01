@@ -18,9 +18,13 @@
  * Um limite de dia SEMPRE encerra o grupo corrente: duas mensagens seguidas do
  * mesmo remetente em dias diferentes ficam em blocos diferentes, porque o
  * divisor de data as separa visualmente.
+ *
+ * Lote-14 (THREAD-01 AC1): o remetente `humano` agrupa por autor. Duas
+ * mensagens seguidas de humanos diferentes formam dois grupos, e o grupo
+ * carrega `authorName` para a thread exibir quem escreveu.
  */
 
-export type ChatSender = "lead" | "agente";
+export type ChatSender = "lead" | "agente" | "humano";
 
 /** Mensagem já serializada para atravessar a fronteira RSC→client (AD-007). */
 export interface ChatThreadMessageInput {
@@ -29,6 +33,8 @@ export interface ChatThreadMessageInput {
   content: string;
   /** ISO 8601. */
   sentAt: string;
+  /** Nome do autor da mensagem `humano`; ausente ou nulo nas demais. */
+  authorName?: string | null;
 }
 
 export type ChatBubbleGroup = "first" | "middle" | "last";
@@ -45,6 +51,8 @@ export interface ChatThreadGroup {
   /** Id da primeira mensagem do grupo — chave estável de render. */
   key: string;
   sender: ChatSender;
+  /** Nome do autor quando o grupo é `humano`; `null` nos demais. */
+  authorName: string | null;
   bubbles: ChatThreadBubble[];
 }
 
@@ -91,6 +99,7 @@ export function buildChatThread(
     days[days.length - 1].groups.push({
       key: pending[0].id,
       sender: pending[0].sender,
+      authorName: pending[0].sender === "humano" ? pending[0].authorName ?? null : null,
       bubbles: withBubbleGroups(pending),
     });
     pending = [];
@@ -103,7 +112,11 @@ export function buildChatThread(
     if (!currentDay || currentDay.key !== dayKey) {
       flushGroup();
       days.push({ key: dayKey, dividerAt: message.sentAt, groups: [] });
-    } else if (pending.length > 0 && pending[0].sender !== message.sender) {
+    } else if (
+      pending.length > 0 &&
+      (pending[0].sender !== message.sender ||
+        (message.sender === "humano" && pending[0].authorName !== message.authorName))
+    ) {
       flushGroup();
     }
 

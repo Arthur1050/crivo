@@ -710,9 +710,11 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] Testes em `src/lib/__tests__/chat-thread.test.ts`: duas mensagens seguidas do mesmo humano formam um grupo; de humanos diferentes formam dois grupos; humano seguido de agente forma dois grupos; o grupo humano carrega `authorName`.
-- [ ] Os testes existentes passam sem alteração.
-- [ ] Gate Quick passa; contagem registrada.
+- [x] Testes em `src/lib/__tests__/chat-thread.test.ts`: duas mensagens seguidas do mesmo humano formam um grupo; de humanos diferentes formam dois grupos; humano seguido de agente forma dois grupos; o grupo humano carrega `authorName`.
+- [x] Os testes existentes passam sem alteração.
+- [x] Gate Quick passa; contagem registrada. *(chat-thread.test.ts: 9 → 13 testes, todos passando. `next build` volta a passar.)*
+
+**Nota de ordem (decisão do usuário, 2026-10-01):** executada antes da Phase 3, logo depois da T7. O enum `sender` ganhou `humano` na T2 e `ChatSender` não, então o `next build` falhava desde a T2 (`message-thread.tsx:48`). A T28 é um módulo puro sem dependência das Phases 3–5; antecipá-la devolve o build verde aos gates seguintes. A renderização continua na T29.
 
 **Tests:** unit
 **Gate:** Quick
