@@ -211,12 +211,12 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] `whatsappWindow`: última mensagem do lead há **exatamente 24 h → fechada**; há 23 h 59 min → aberta com `remainingMinutes = 1`; sem mensagem do lead → fechada; `closesAt` = última + 24 h (JANELA-01 AC1, L-023).
-- [ ] `formatWindowRemaining`: 200 → `"3 h 20 min"`; 1 → `"0 h 1 min"`; menos de 1 min com janela aberta → `"menos de 1 min"`.
-- [ ] `conversationControls`, com uma asserção por linha da tabela: agente conduz → `canAssume`, composer `oculto`; marca → `canReturn`, composer `ativo` com a janela aberta e `bloqueado` com ela fechada; `escalado_humano` sem marca → conductor `escalado`, `canReturn`; opt-out → nada habilitado, composer `oculto`; sem `chats:escrever` → nenhum controle (ASSUMIR-01 AC8, DEVOLVER-01 AC9, OPTHUM-01 AC7).
-- [ ] Teste de ligação: com só a marca, o conductor é `humano`, provando o uso de `isHumanConducted` (L-026).
-- [ ] `CHAT_REFRESH_INTERVAL_MS` afirmado igual a 5.000 e ≤ 10.000 (THREAD-01 AC2, L-037); `shouldPollConversation` falso com aba oculta ou sem conversa aberta (AC3).
-- [ ] Gate Quick passa; contagem registrada.
+- [x] `whatsappWindow`: última mensagem do lead há **exatamente 24 h → fechada**; há 23 h 59 min → aberta com `remainingMinutes = 1`; sem mensagem do lead → fechada; `closesAt` = última + 24 h (JANELA-01 AC1, L-023). *(`src/lib/__tests__/conversation-control.test.ts:32-50`.)*
+- [x] `formatWindowRemaining`: 200 → `"3 h 20 min"`; 1 → `"0 h 1 min"`; menos de 1 min com janela aberta → `"menos de 1 min"`. *(`:56-67`.)*
+- [x] `conversationControls`, com uma asserção por linha da tabela: agente conduz → `canAssume`, composer `oculto`; marca → `canReturn`, composer `ativo` com a janela aberta e `bloqueado` com ela fechada; `escalado_humano` sem marca → conductor `escalado`, `canReturn`; opt-out → nada habilitado, composer `oculto`; sem `chats:escrever` → nenhum controle (ASSUMIR-01 AC8, DEVOLVER-01 AC9, OPTHUM-01 AC7). *(`:80-167`.)*
+- [x] Teste de ligação: com só a marca, o conductor é `humano`, provando o uso de `isHumanConducted` (L-026). *(`:179`, lead em `qualificado_agendado` com marca.)*
+- [x] `CHAT_REFRESH_INTERVAL_MS` afirmado igual a 5.000 e ≤ 10.000 (THREAD-01 AC2, L-037); `shouldPollConversation` falso com aba oculta ou sem conversa aberta (AC3). *(`:186-193`.)*
+- [x] Gate Quick passa; contagem registrada. *(1 arquivo / 16 testes.)*
 
 **Tests:** unit
 **Gate:** Quick
