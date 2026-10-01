@@ -47,6 +47,7 @@ import type { LeadScope } from "../../lib/lead-scope";
 import { normalizeForSearch } from "../../lib/normalize-text";
 import { parseRoles, type Role } from "../../lib/permissions";
 import { isPendingAttendance } from "../../lib/pilot-metrics";
+import { isHumanConducted } from "../../../n8n/src/conduction.mjs";
 
 export type { LeadScope };
 
@@ -443,6 +444,8 @@ export interface ConversationSummary {
   leadId: string;
   leadName: string;
   lastMessage: ConversationSummaryLastMessage | null;
+  /** Lead com a marca de condução humana ou em `escalado_humano` (THREAD-01 AC5). */
+  humanConducted: boolean;
 }
 
 /**
@@ -467,13 +470,20 @@ export async function getConversationSummaries(
         )
       ),
     db
-      .select({ id: leads.id, name: leads.name })
+      .select({
+        id: leads.id,
+        name: leads.name,
+        status: leads.status,
+        humanTakeoverAt: leads.humanTakeoverAt,
+      })
       .from(leads)
       .where(and(eq(leads.tenantId, scope.tenantId), assignedTo(scope))),
-    // Ordenada ASC por sentAt/id: a última iteração do loop abaixo sobrescreve
-    // o Map com a mensagem mais recente de cada conversa.
+    // Só a mensagem mais recente de cada conversa (lote-14 — design.md C1):
+    // `DISTINCT ON (conversation_id)` com `sent_at DESC, id DESC` escolhe a
+    // mesma linha que a última posição da ordem crescente `sent_at, id`, sem
+    // trazer o histórico inteiro do tenant a cada atualização da tela.
     db
-      .select()
+      .selectDistinctOn([messages.conversationId])
       .from(messages)
       .where(
         and(
@@ -494,10 +504,10 @@ export async function getConversationSummaries(
               )
         )
       )
-      .orderBy(asc(messages.sentAt), asc(messages.id)),
+      .orderBy(messages.conversationId, desc(messages.sentAt), desc(messages.id)),
   ]);
 
-  const leadNameById = new Map(leadRows.map((lead) => [lead.id, lead.name]));
+  const leadById = new Map(leadRows.map((lead) => [lead.id, lead]));
 
   const lastMessageByConversation = new Map<string, Message>();
   for (const message of messageRows) {
@@ -506,10 +516,12 @@ export async function getConversationSummaries(
 
   const entries = conversationRows.map((conversation) => {
     const lastMessage = lastMessageByConversation.get(conversation.id) ?? null;
+    const lead = leadById.get(conversation.leadId);
     const summary: ConversationSummary = {
       id: conversation.id,
       leadId: conversation.leadId,
-      leadName: leadNameById.get(conversation.leadId) ?? "",
+      leadName: lead?.name ?? "",
+      humanConducted: lead ? isHumanConducted(lead) : false,
       lastMessage: lastMessage
         ? {
             content: lastMessage.content,

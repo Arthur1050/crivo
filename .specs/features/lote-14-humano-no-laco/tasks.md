@@ -275,10 +275,10 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] Os testes existentes de ordenação e escopo de `getConversationSummaries` e de `getLeadMessages` passam sem alteração.
-- [ ] Testes novos: `humanConducted` é `true` com marca, `true` em `escalado_humano` e `false` sem nenhum dos dois (THREAD-01 AC5); a última mensagem continua correta com várias mensagens por conversa; um corretor puro continua vendo só a própria carteira.
-- [ ] `authorName` vem preenchido em mensagem `humano` e nulo nas demais (THREAD-01 AC1, AC7).
-- [ ] Gate Full passa (fim da Phase 2); contagem registrada.
+- [x] Os testes existentes de ordenação e escopo de `getConversationSummaries` e de `getLeadMessages` passam sem alteração. *(`reads.test.ts`, `isolation.test.ts`, `lead-messages.test.ts` intocados e verdes.)*
+- [x] Testes novos: `humanConducted` é `true` com marca, `true` em `escalado_humano` e `false` sem nenhum dos dois (THREAD-01 AC5); a última mensagem continua correta com várias mensagens por conversa; um corretor puro continua vendo só a própria carteira. *(`src/server/data/__tests__/conversation-reads.test.ts:115-190`; desempate por `id` com `sentAt` igual preservado em `:150`.)*
+- [x] `authorName` vem preenchido em mensagem `humano` e nulo nas demais (THREAD-01 AC1, AC7). *(`:193-223`, por `getMessages` e `getLeadMessages`.)*
+- [x] Gate Full passa (fim da Phase 2); contagem registrada. *(`npm test`: 132 arquivos / 2.189 testes, antes do lote 126 / 2.107; só as 2 falhas conhecidas de `DOCLIM-01 AC8`. Atenção para os gates Build seguintes: desde a T2, `src/components/chats/message-thread.tsx:48` não compila com `sender = humano` até a T28 ampliar `ChatSender`.)*
 
 **Tests:** integration
 **Gate:** Full
