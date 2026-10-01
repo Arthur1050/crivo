@@ -1343,6 +1343,150 @@ export async function setMeetingAttendance(
   return rows[0] ?? null;
 }
 
+// --- Condução humana (lote-14 — ASSUMIR-01, DEVOLVER-01, OPTHUM-01) -------
+//
+// Escritas com escopo de sessão (`assignedTo(scope)`), cada uma numa única
+// instrução SQL: o WHERE decide e grava de uma vez, sem janela entre ler e
+// escrever. Quando nada é gravado, uma leitura no mesmo escopo explica o
+// motivo — e lead fora do escopo é indistinguível de lead inexistente.
+
+export type TakeOverResult =
+  | { outcome: "assumido"; lead: Lead }
+  | { outcome: "ja-humano"; lead: Lead }
+  | { outcome: "fora-do-escopo" }
+  | { outcome: "opt-out" };
+
+/**
+ * Assumir a conversa (ASSUMIR-01 AC1–AC7; design.md C1). Grava a marca só em
+ * lead do escopo, sem opt-out, sem marca e fora de `escalado_humano`. Toca
+ * apenas `human_takeover_at`, `human_takeover_by` e `updated_at`: `status`,
+ * `status_changed_by` e `assigned_user_id` ficam como estavam (AC2). Lead já
+ * conduzido por humano devolve `ja-humano` com a marca original intacta.
+ */
+export async function takeOverConversation(
+  scope: LeadScope,
+  leadId: string,
+  userId: string,
+  now: Date
+): Promise<TakeOverResult> {
+  const rows = await db
+    .update(leads)
+    .set({ humanTakeoverAt: now, humanTakeoverBy: userId, updatedAt: now })
+    .where(
+      and(
+        eq(leads.tenantId, scope.tenantId),
+        eq(leads.id, leadId),
+        assignedTo(scope),
+        isNull(leads.optedOutAt),
+        isNull(leads.humanTakeoverAt),
+        sql`${leads.status} <> 'escalado_humano'`
+      )
+    )
+    .returning();
+  if (rows[0]) return { outcome: "assumido", lead: rows[0] };
+
+  const lead = await getLead(scope, leadId);
+  if (!lead) return { outcome: "fora-do-escopo" };
+  if (lead.optedOutAt) return { outcome: "opt-out" };
+  return { outcome: "ja-humano", lead };
+}
+
+export type ReturnResult =
+  | { outcome: "devolvido"; lead: Lead }
+  | { outcome: "ja-agente"; lead: Lead }
+  | { outcome: "fora-do-escopo" }
+  | { outcome: "opt-out" };
+
+/**
+ * Devolver a conversa ao agente (DEVOLVER-01 AC1–AC4, AC8; design.md C1),
+ * numa única `UPDATE`: limpa a marca, `escalado_humano` passa a
+ * `em_qualificacao` (os outros status ficam), `status_changed_by` vai a nulo
+ * (libera a trava humana para o agente agendar) e grava o pedido de
+ * reconstrução da memória. Só vale para lead conduzido por humano: num lead
+ * do agente não há o que devolver, e zerar `status_changed_by` ali apagaria a
+ * trava de uma mudança humana feita pelo Kanban.
+ */
+export async function returnConversationToAgent(
+  scope: LeadScope,
+  leadId: string,
+  now: Date
+): Promise<ReturnResult> {
+  const rows = await db
+    .update(leads)
+    .set({
+      humanTakeoverAt: null,
+      humanTakeoverBy: null,
+      status: sql`case when ${leads.status} = 'escalado_humano' then 'em_qualificacao'::lead_status else ${leads.status} end`,
+      statusChangedBy: null,
+      memoryResetRequestedAt: now,
+      updatedAt: now,
+    })
+    .where(
+      and(
+        eq(leads.tenantId, scope.tenantId),
+        eq(leads.id, leadId),
+        assignedTo(scope),
+        isNull(leads.optedOutAt),
+        or(isNotNull(leads.humanTakeoverAt), eq(leads.status, "escalado_humano"))
+      )
+    )
+    .returning();
+  if (rows[0]) return { outcome: "devolvido", lead: rows[0] };
+
+  const lead = await getLead(scope, leadId);
+  if (!lead) return { outcome: "fora-do-escopo" };
+  if (lead.optedOutAt) return { outcome: "opt-out" };
+  return { outcome: "ja-agente", lead };
+}
+
+export interface HumanOptOutResult {
+  optedOutAt: Date;
+  /** `false` quando o lead já tinha opt-out: nada mudou nesta chamada. */
+  newlyOptedOut: boolean;
+}
+
+/**
+ * Opt-out registrado pelo CRM (OPTHUM-01 AC1/AC8). Mesma regra de domínio de
+ * `optOutLead` (`lgpd.ts`): `COALESCE(opted_out_at, now)` preserva o instante
+ * original numa segunda chamada. Quando o opt-out é novo, grava também o
+ * pedido de reconstrução da memória, que o n8n consome para purgar a sessão
+ * (OPTHUM-01 AC6). Uma única instrução: a CTE trava a linha e guarda o valor
+ * anterior, para dizer se o opt-out é novo. `null` fora do escopo.
+ */
+export async function optOutLeadByHuman(
+  scope: LeadScope,
+  leadId: string,
+  now: Date
+): Promise<HumanOptOutResult | null> {
+  const scopeFilter =
+    scope.assignedUserId === null
+      ? sql``
+      : sql` and assigned_user_id = ${scope.assignedUserId}`;
+  const result = await db.execute<{ opted_out_at: Date | string; previous: Date | string | null }>(sql`
+    with prev as (
+      select id, opted_out_at as previous
+      from leads
+      where tenant_id = ${scope.tenantId} and id = ${leadId}${scopeFilter}
+      for update
+    )
+    update leads
+    set opted_out_at = coalesce(leads.opted_out_at, ${now}),
+        memory_reset_requested_at = case
+          when leads.opted_out_at is null then ${now}
+          else leads.memory_reset_requested_at
+        end
+    from prev
+    where leads.id = prev.id
+    returning leads.opted_out_at, prev.previous
+  `);
+  const row = result.rows[0];
+  if (!row) return null;
+  return {
+    optedOutAt: new Date(row.opted_out_at),
+    newlyOptedOut: row.previous === null,
+  };
+}
+
 export interface PendingMeeting {
   leadId: string;
   leadName: string;

@@ -233,11 +233,11 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] Teste novo `src/server/data/__tests__/conversation-conduction.test.ts`. Assumir grava marca com usuário e instante (ASSUMIR-01 AC1) e mantém `status`, `statusChangedBy` e `assignedUserId` iguais aos de antes, com asserção de antes/depois (AC2, L-001).
-- [ ] Assumir recusa e não grava: lead de outra carteira para corretor puro; lead de outro tenant (L-035); lead com opt-out (AC3, AC5). Lead já marcado preserva usuário e instante originais (AC6); lead em `escalado_humano` devolve `ja-humano` sem gravar marca (AC7).
-- [ ] Devolver limpa a marca (DEVOLVER-01 AC1); `escalado_humano` vira `em_qualificacao` (AC2); `em_qualificacao` e `qualificado_agendado` mantêm o status (AC3, um teste cada); `statusChangedBy` fica nulo (AC4); `memory_reset_requested_at` é gravado; opt-out e fora de escopo recusam sem mudar nada (AC8).
-- [ ] `optOutLeadByHuman` grava `opted_out_at` e o pedido de reset; uma segunda chamada preserva o instante original; fora de escopo recusa e mantém nulo (OPTHUM-01 AC1, AC8).
-- [ ] Gate Quick passa; contagem registrada.
+- [x] Teste novo `src/server/data/__tests__/conversation-conduction.test.ts`. Assumir grava marca com usuário e instante (ASSUMIR-01 AC1) e mantém `status`, `statusChangedBy` e `assignedUserId` iguais aos de antes, com asserção de antes/depois (AC2, L-001). *(`:93-117`.)*
+- [x] Assumir recusa e não grava: lead de outra carteira para corretor puro; lead de outro tenant (L-035); lead com opt-out (AC3, AC5). Lead já marcado preserva usuário e instante originais (AC6); lead em `escalado_humano` devolve `ja-humano` sem gravar marca (AC7). *(`:120-163`.)*
+- [x] Devolver limpa a marca (DEVOLVER-01 AC1); `escalado_humano` vira `em_qualificacao` (AC2); `em_qualificacao` e `qualificado_agendado` mantêm o status (AC3, um teste cada); `statusChangedBy` fica nulo (AC4); `memory_reset_requested_at` é gravado; opt-out e fora de escopo recusam sem mudar nada (AC8). *(`:178-234`. Lacuna de precisão da spec: devolver lead conduzido pelo agente não está especificado; a DAL recusa com `ja-agente` sem gravar, porque zerar `statusChangedBy` apagaria a trava humana do Kanban — `:237-243`.)*
+- [x] `optOutLeadByHuman` grava `opted_out_at` e o pedido de reset; uma segunda chamada preserva o instante original; fora de escopo recusa e mantém nulo (OPTHUM-01 AC1, AC8). *(`:248-284`; devolve `newlyOptedOut` para a T17.)*
+- [x] Gate Quick passa; contagem registrada. *(1 arquivo / 19 testes.)*
 
 **Tests:** integration
 **Gate:** Quick
