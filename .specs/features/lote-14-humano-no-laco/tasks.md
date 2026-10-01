@@ -535,8 +535,8 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] Teste (existente estendido ou novo em `src/db/__tests__/`): um lead de smoke com reserva e mensagem `humano` é apagado sem violar FK, e as reservas somem junto.
-- [ ] Gate Quick passa; contagem registrada.
+- [x] Teste (existente estendido ou novo em `src/db/__tests__/`): um lead de smoke com reserva e mensagem `humano` é apagado sem violar FK, e as reservas somem junto. *(smoke-reset.test.ts estendido: lead com mensagem humano e duas reservas (enviada com message_id e falhou) é apagado com outcome apagado, deletedMessages 2, zero reservas e zero lead; antes da correção o mesmo teste falhava com violação de human_message_sends_message_id_messages_id_fk)*
+- [x] Gate Quick passa; contagem registrada. *(Gate Quick: 1 arquivo / 5 testes passando (antes 4); eslint limpo)*
 
 **Tests:** integration
 **Gate:** Quick

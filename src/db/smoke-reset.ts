@@ -2,7 +2,7 @@ import "dotenv/config";
 import { pathToFileURL } from "node:url";
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "./index";
-import { conversations, leads, messages, tenants } from "./schema";
+import { conversations, humanMessageSends, leads, messages, tenants } from "./schema";
 
 /**
  * Reset do lead de smoke no CRM — alvo 3 do checklist de limpeza
@@ -18,10 +18,11 @@ import { conversations, leads, messages, tenants } from "./schema";
  * desacoplamento entre CRM e n8n (INT-08) vale nas duas direções — cada
  * sistema limpa o próprio estado.
  *
- * **Ordem obrigatória** `messages` → `conversations` → `leads`: as FKs não têm
- * `onDelete` (`schema.ts` — `conversations.leadId` é a única que aponta para
- * `leads.id`), então apagar fora de ordem é rejeitado pelo banco. Tudo numa
- * transação: metade apagada é estado pior do que não ter apagado nada.
+ * **Ordem obrigatória** `human_message_sends` → `messages` → `conversations` →
+ * `leads`: as FKs não têm `onDelete` (a reserva do envio humano do lote-14
+ * aponta para a mensagem e para o lead), então apagar fora de ordem é
+ * rejeitado pelo banco. Tudo numa transação: metade apagada é estado pior do
+ * que não ter apagado nada.
  *
  * Idempotente: rodar de novo sem lead nenhum não é erro, é `nada-a-apagar`.
  *
@@ -72,6 +73,8 @@ export async function resetSmokeLead(options?: {
   }
 
   return db.transaction(async (tx) => {
+    await tx.delete(humanMessageSends).where(eq(humanMessageSends.leadId, lead.id));
+
     const conversationRows = await tx
       .select({ id: conversations.id })
       .from(conversations)

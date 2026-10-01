@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { db } from "../index";
-import { conversations, leads, messages, tenants } from "../schema";
+import { conversations, humanMessageSends, leads, messages, tenants } from "../schema";
 import { resetSmokeLead } from "../smoke-reset";
 
 /**
@@ -36,6 +36,7 @@ describe("resetSmokeLead", () => {
         and(eq(leads.tenantId, tenantId), eq(leads.externalId, fixtureExternalId))
       );
     if (lead) {
+      await db.delete(humanMessageSends).where(eq(humanMessageSends.leadId, lead.id));
       const convs = await db
         .select({ id: conversations.id })
         .from(conversations)
@@ -102,6 +103,44 @@ describe("resetSmokeLead", () => {
       .from(conversations)
       .where(eq(conversations.leadId, leadId));
     expect(conversationsLeft).toEqual([]);
+  });
+
+  it("apaga também as reservas de envio humano do lead, sem violar FK (lote-14 T19)", async () => {
+    const leadId = await seedFixtureLead(1);
+    const [conversation] = await db
+      .select({ id: conversations.id })
+      .from(conversations)
+      .where(eq(conversations.leadId, leadId));
+    const [humanMessage] = await db
+      .insert(messages)
+      .values({
+        tenantId,
+        conversationId: conversation.id,
+        sender: "humano",
+        content: "mensagem humana de fixture",
+        sentAt: new Date(),
+        externalId: `wamid.fixture-${randomUUID()}`,
+        authorName: "Corretora de fixture",
+      })
+      .returning({ id: messages.id });
+    // Uma reserva `enviada` aponta para a mensagem (FK `message_id`) e outra
+    // `falhou` não aponta para nada; as duas apontam para o lead.
+    await db.insert(humanMessageSends).values([
+      { tenantId, leadId, requestId: randomUUID(), state: "enviada", messageId: humanMessage.id },
+      { tenantId, leadId, requestId: randomUUID(), state: "falhou", failure: "falha-meta" },
+    ]);
+
+    const result = await resetSmokeLead({ tenantSlug, externalId: fixtureExternalId });
+
+    expect(result.outcome).toBe("apagado");
+    expect(result.deletedMessages).toBe(2);
+    const reservationsLeft = await db
+      .select({ id: humanMessageSends.id })
+      .from(humanMessageSends)
+      .where(eq(humanMessageSends.leadId, leadId));
+    expect(reservationsLeft).toEqual([]);
+    const leadsLeft = await db.select({ id: leads.id }).from(leads).where(eq(leads.id, leadId));
+    expect(leadsLeft).toEqual([]);
   });
 
   it("é idempotente: rodar de novo sem lead devolve nada-a-apagar, não erro", async () => {
