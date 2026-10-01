@@ -330,6 +330,28 @@ export function parseMessageCreate(json: unknown): ParseResult<MessageCreateDto>
   return { ok: true, dto: { externalId, sender, content, sentAt } };
 }
 
+// ---- GET /api/v1/memory-resets ------------------------------------------
+
+export type ParseMemoryResetsQueryResult =
+  | { ok: true; since: Date }
+  | { ok: false; detail: string };
+
+/**
+ * Parser puro do query param `?since=` de `GET /memory-resets` (lote-14 —
+ * CONTRATO-01). Obrigatório e ISO-8601 com fuso; ausente, vazio ou
+ * inválido → erro com detalhe, nunca corrigido em silêncio.
+ */
+export function parseMemoryResetsQuery(url: URL): ParseMemoryResetsQueryResult {
+  const since = parseIsoDate(url.searchParams.get("since") ?? undefined);
+  if (!since) {
+    return {
+      ok: false,
+      detail: "Parâmetro 'since' é obrigatório e deve ser uma data ISO-8601 válida.",
+    };
+  }
+  return { ok: true, since };
+}
+
 // ---- GET /api/v1/leads/{id}/messages ------------------------------------
 
 export const DEFAULT_MESSAGES_LIMIT = 50;

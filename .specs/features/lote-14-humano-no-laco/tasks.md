@@ -380,10 +380,12 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] Teste novo `routes/memory-resets-get.test.ts`: devolve o pedido com `requestedAt` **igual** a `since` (fronteira, L-023) e os mais novos; exclui os mais velhos; exclui lead de outro tenant (L-035); exclui lead sem `externalId`.
-- [ ] `since` ausente ou inválido → `400 payload-invalido`; sem credencial → 401; `POST`/`PUT`/`PATCH`/`DELETE` → 405.
-- [ ] Export marcado `INSTRUMENTED`; o teste de varredura passa.
-- [ ] Gate Quick passa; contagem registrada.
+- [x] Teste novo `routes/memory-resets-get.test.ts`: devolve o pedido com `requestedAt` **igual** a `since` (fronteira, L-023) e os mais novos; exclui os mais velhos; exclui lead de outro tenant (L-035); exclui lead sem `externalId`. *(memory-resets-get.test.ts: fronteira igual a since incluída (mutação gte->gt faz falhar), mais novo incluído, mais velho excluído, outro tenant/sem externalId/sem pedido excluídos)*
+- [x] `since` ausente ou inválido → `400 payload-invalido`; sem credencial → 401; `POST`/`PUT`/`PATCH`/`DELETE` → 405. *(since ausente, vazio, não ISO ou só data -> 400; sem credencial 401; POST/PUT/PATCH/DELETE 405 com Allow GET)*
+- [x] Export marcado `INSTRUMENTED`; o teste de varredura passa. *(route-instrumentation passa com o export novo)*
+- [x] Gate Quick passa; contagem registrada. *(memory-resets-get + route-instrumentation + parsers: 3 arquivos / 57 testes)*
+
+**Nota de escopo:** `listMemoryResets` (design C1) não existia na DAL; foi criado aqui, com `parseMemoryResetsQuery` (parsers.ts) e o serviço `src/server/integration/memory-resets.ts`.
 
 **Tests:** integration
 **Gate:** Quick

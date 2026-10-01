@@ -2221,6 +2221,48 @@ export async function setLeadChannel(
     );
 }
 
+export interface MemoryReset {
+  leadId: string;
+  /** `externalId` do lead: o wa_id que compõe a chave da memória no n8n. */
+  waId: string;
+  requestedAt: Date;
+}
+
+/**
+ * Pedidos de reconstrução da memória do agente do tenant com
+ * `memory_reset_requested_at >= since` (lote-14 — DEVOLVER-01/OPTHUM-01;
+ * design.md C1). Fronteira inclusiva: o pedido gravado exatamente em `since`
+ * entra. Lead sem `externalId` não tem sessão no n8n e fica de fora. Ordem
+ * crescente por instante do pedido.
+ */
+export async function listMemoryResets(
+  tenantId: string,
+  since: Date
+): Promise<MemoryReset[]> {
+  const rows = await db
+    .select({
+      leadId: leads.id,
+      waId: leads.externalId,
+      requestedAt: leads.memoryResetRequestedAt,
+    })
+    .from(leads)
+    .where(
+      and(
+        eq(leads.tenantId, tenantId),
+        isNotNull(leads.externalId),
+        isNotNull(leads.memoryResetRequestedAt),
+        gte(leads.memoryResetRequestedAt, since)
+      )
+    )
+    .orderBy(asc(leads.memoryResetRequestedAt), asc(leads.id));
+
+  return rows.map((row) => ({
+    leadId: row.leadId,
+    waId: row.waId as string,
+    requestedAt: row.requestedAt as Date,
+  }));
+}
+
 export interface IngestAgentMessageInput {
   externalId: string;
   sender: Message["sender"];
