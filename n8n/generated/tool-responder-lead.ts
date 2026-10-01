@@ -180,6 +180,90 @@ const rejectResponse = node({
   output: [{ ok: false, reason: "abertura-proibida" }],
 });
 
+// lote-14 (T25 — SILENCIO-01 AC4, AC5): relê o lead antes de cada envio.
+// A marca de condução humana pode ter sido gravada depois do início do turno
+// (debounce + modelo); com a marca ou opt-out, a mensagem não sai. Falha da
+// leitura (saída 1, `continueErrorOutput`) também não envia: na dúvida,
+// calar. Lead e tenant vêm do `Execute Workflow Trigger`, nunca do modelo.
+const getLeadBeforeSend = node({
+  type: "n8n-nodes-base.httpRequest",
+  version: 4.4,
+  config: {
+    name: "HTTP: GET /leads/{id} (antes do envio)",
+    position: [1040, -400],
+    retryOnFail: true,
+    maxTries: 3,
+    waitBetweenTries: 2000,
+    onError: "continueErrorOutput",
+    parameters: {
+      method: "GET",
+      url: expr(`${CRM_BASE_URL}/leads/{{ $('Execute Workflow Trigger').first().json.leadId }}`),
+      authentication: "genericCredentialType",
+      genericAuthType: "httpHeaderAuth",
+      sendHeaders: true,
+      headerParameters: {
+        parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Execute Workflow Trigger').first().json.tenantSlug }}") }],
+      },
+    },
+    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
+  },
+  output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", status: "em_qualificacao", optedOutAt: null, humanTakeoverAt: null, memoryResetRequestedAt: null }],
+});
+
+// Repassa o payload das barreiras (o envio a seguir lê `$json`) com a
+// decisão de condução. `canAgentSendInTurn` não olha `escalado_humano`: o
+// agente que acabou de escalar ainda envia a mensagem de passagem.
+const canSendInTurnCode = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: pode enviar no turno?",
+    position: [1300, -400],
+    parameters: {
+      mode: "runOnceForAllItems",
+      language: "javaScript",
+      jsCode:
+        "/**\n * Regra única de condução da conversa (lote-14 — design.md C2; AD-034).\n * Funções puras, sem I/O, sem dependências: rodam inline nos Code nodes do\n * n8n e são importadas pelo CRM (`src/lib/conversation-control.ts`), para que\n * a regra \"quem conduz\" tenha uma fonte só.\n */\n\n/**\n * @typedef {{status?: unknown, humanTakeoverAt?: unknown, optedOutAt?: unknown}} ConductionLead\n */\n\n/**\n * Conduzido por humano: tem a marca de condução humana **ou** está em\n * `escalado_humano` (ASSUMIR-01 AC7).\n * @param {ConductionLead} lead\n * @returns {boolean}\n */\nfunction isHumanConducted({ status, humanTakeoverAt }) {\n  return Boolean(humanTakeoverAt) || status === \"escalado_humano\";\n}\n\n/**\n * O agente pode enviar dentro do turno em andamento (SILENCIO-01 AC4)?\n * Olha só a marca e o opt-out. **Nunca** bloqueia por `escalado_humano`: o\n * agente que acabou de escalar ainda precisa enviar a mensagem de passagem\n * (`system-message.mjs`).\n * @param {ConductionLead} lead\n * @returns {boolean}\n */\nfunction canAgentSendInTurn({ optedOutAt, humanTakeoverAt }) {\n  return !optedOutAt && !humanTakeoverAt;\n}\n\n/**\n * O agente pode iniciar contato sem mensagem do lead (reengajamento,\n * escalonamento por silêncio — SILENCIO-01 AC6/AC7)?\n * @param {ConductionLead} lead\n * @returns {boolean}\n */\nfunction canAgentContactProactively(lead) {\n  return !lead.optedOutAt && !isHumanConducted(lead);\n}\n\n/**\n * @param {unknown} value\n * @returns {boolean}\n */\nfunction isAbsent(value) {\n  return value === null || value === undefined || value === \"\";\n}\n\n/**\n * @param {unknown} value\n * @returns {number}\n */\nfunction toTime(value) {\n  if (value instanceof Date) return value.getTime();\n  if (typeof value !== \"string\" && typeof value !== \"number\") return Number.NaN;\n  return new Date(value).getTime();\n}\n\n/**\n * O pedido de reconstrução da memória ainda não foi atendido? Devido só\n * quando o pedido é **estritamente** mais novo que o último atendido: pedido\n * igual ao atendido já foi consumido (DEVOLVER-01 AC7). Data inválida nunca\n * dispara a purga.\n * @param {unknown} requestedAt - `memoryResetRequestedAt` do lead no CRM\n * @param {unknown} honoredAt - `memoryResetAt` de `conversa_estado` no n8n\n * @returns {boolean}\n */\nfunction memoryResetDue(requestedAt, honoredAt) {\n  if (isAbsent(requestedAt)) return false;\n  const requested = toTime(requestedAt);\n  if (Number.isNaN(requested)) return false;\n  if (isAbsent(honoredAt)) return true;\n  const honored = toTime(honoredAt);\n  if (Number.isNaN(honored)) return false;\n  return requested > honored;\n}" +
+        "\n\n" +
+        "const lead = $input.first().json;\n" +
+        "const ctx = $('Code: aplicar barreiras de persona').first().json;\n" +
+        "const podeEnviar = canAgentSendInTurn({ optedOutAt: lead.optedOutAt, humanTakeoverAt: lead.humanTakeoverAt });\n" +
+        "return [{ json: { ...ctx, podeEnviar, reason: podeEnviar ? null : 'conversa-com-humano' } }];\n",
+    },
+  },
+  output: [{ accepted: true, reason: null, podeEnviar: true, mensagem: "Show, deixa eu te explicar melhor.", tenantSlug: "imobiliaria-a", waId: "553499532444", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", phoneNumberId: "109876543210001", aberturasJson: "[]" }],
+});
+
+const canSendInTurnIf = ifElse({
+  version: 2.3,
+  config: {
+    name: "Agente pode enviar no turno?",
+    position: [1560, -400],
+    parameters: {
+      conditions: {
+        combinator: "and",
+        options: { caseSensitive: true, leftValue: "", typeValidation: "strict" },
+        conditions: [{ leftValue: expr("{{ $json.podeEnviar }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }],
+      },
+    },
+  },
+});
+
+const conductionUnavailable = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: condução indisponível",
+    position: [1300, 200],
+    parameters: {
+      mode: "runOnceForAllItems",
+      language: "javaScript",
+      jsCode: "return [{ json: { reason: 'conducao-indisponivel' } }];\n",
+    },
+  },
+  output: [{ reason: "conducao-indisponivel" }],
+});
+
 const normalizeRecipientCode = node({
   type: "n8n-nodes-base.code",
   version: 2,
@@ -306,6 +390,14 @@ export default workflow("crivo-tool-responder-lead", "crivo-tool-responder-lead"
   .add(respondTrigger)
   .to(
     conversaEstadoLookup.to(
-      applyVoiceBarriers.to(isAccepted.onTrue(acceptedBranch).onFalse(rejectResponse))
+      applyVoiceBarriers.to(
+        isAccepted
+          .onTrue(
+            getLeadBeforeSend
+              .to(canSendInTurnCode.to(canSendInTurnIf.onTrue(acceptedBranch).onFalse(rejectResponse)))
+              .onError(conductionUnavailable.to(rejectResponse))
+          )
+          .onFalse(rejectResponse)
+      )
     )
   );

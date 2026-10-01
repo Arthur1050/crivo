@@ -655,10 +655,10 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] Arquivo de teste novo `n8n/workflows/__tests__/tool-responder-lead.test.ts`: `WhatsApp: enviar resposta do agente` só é alcançável pela saída verdadeira do IF novo; saída falsa e erro do HTTP chegam à recusa sem envio e sem `persistAbertura` (AC4, AC5; L-026, L-044).
-- [ ] O `leadId` e o `tenantSlug` do GET vêm do `Execute Workflow Trigger`, nunca do modelo.
-- [ ] `node scripts/n8n-inline.mjs` roda; `validate_workflow` sem erro; gerado no mesmo commit.
-- [ ] Gate Full passa; contagem registrada.
+- [x] Arquivo de teste novo `n8n/workflows/__tests__/tool-responder-lead.test.ts`: `WhatsApp: enviar resposta do agente` só é alcançável pela saída verdadeira do IF novo; saída falsa e erro do HTTP chegam à recusa sem envio e sem `persistAbertura` (AC4, AC5; L-026, L-044). _Evidência: 18 testes (16 falham sem a implementação). `toJSON()`: barreiras 0 → GET; GET 0 → `Code: pode enviar no turno?`, GET 1 → `Code: condução indisponível` → recusa; IF 0 → `Code: normalizar destinatario do envio` (único predecessor), IF 1 → recusa; a recusa não alcança `WhatsApp: enviar resposta do agente` nem `Data Table: gravar abertura`. Motivos executados: `conversa-com-humano` e `conducao-indisponivel`._
+- [x] O `leadId` e o `tenantSlug` do GET vêm do `Execute Workflow Trigger`, nunca do modelo. _Evidência: URL e `X-Crivo-Tenant` de `$('Execute Workflow Trigger')`, sem `$fromAI`._
+- [x] `node scripts/n8n-inline.mjs` roda; `validate_workflow` sem erro; gerado no mesmo commit. _Evidência: só `n8n/generated/tool-responder-lead.ts` mudou (10/9 → 14/15); SDK local: válido, 0 warnings; `validate_workflow` do MCP: `valid: true`, 14 nós, sem warnings._
+- [x] Gate Full passa; contagem registrada. _Evidência: `npm test` 144 arquivos / 2.354 testes; só as 2 falhas conhecidas de DOCLIM-01 AC8._
 
 **Tests:** unit
 **Gate:** Full

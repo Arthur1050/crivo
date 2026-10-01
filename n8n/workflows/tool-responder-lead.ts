@@ -180,6 +180,90 @@ const rejectResponse = node({
   output: [{ ok: false, reason: "abertura-proibida" }],
 });
 
+// lote-14 (T25 — SILENCIO-01 AC4, AC5): relê o lead antes de cada envio.
+// A marca de condução humana pode ter sido gravada depois do início do turno
+// (debounce + modelo); com a marca ou opt-out, a mensagem não sai. Falha da
+// leitura (saída 1, `continueErrorOutput`) também não envia: na dúvida,
+// calar. Lead e tenant vêm do `Execute Workflow Trigger`, nunca do modelo.
+const getLeadBeforeSend = node({
+  type: "n8n-nodes-base.httpRequest",
+  version: 4.4,
+  config: {
+    name: "HTTP: GET /leads/{id} (antes do envio)",
+    position: [1040, -400],
+    retryOnFail: true,
+    maxTries: 3,
+    waitBetweenTries: 2000,
+    onError: "continueErrorOutput",
+    parameters: {
+      method: "GET",
+      url: expr(`${CRM_BASE_URL}/leads/{{ $('Execute Workflow Trigger').first().json.leadId }}`),
+      authentication: "genericCredentialType",
+      genericAuthType: "httpHeaderAuth",
+      sendHeaders: true,
+      headerParameters: {
+        parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Execute Workflow Trigger').first().json.tenantSlug }}") }],
+      },
+    },
+    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
+  },
+  output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", status: "em_qualificacao", optedOutAt: null, humanTakeoverAt: null, memoryResetRequestedAt: null }],
+});
+
+// Repassa o payload das barreiras (o envio a seguir lê `$json`) com a
+// decisão de condução. `canAgentSendInTurn` não olha `escalado_humano`: o
+// agente que acabou de escalar ainda envia a mensagem de passagem.
+const canSendInTurnCode = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: pode enviar no turno?",
+    position: [1300, -400],
+    parameters: {
+      mode: "runOnceForAllItems",
+      language: "javaScript",
+      jsCode:
+        '__INLINE(conduction.mjs)__' +
+        "\n\n" +
+        "const lead = $input.first().json;\n" +
+        "const ctx = $('Code: aplicar barreiras de persona').first().json;\n" +
+        "const podeEnviar = canAgentSendInTurn({ optedOutAt: lead.optedOutAt, humanTakeoverAt: lead.humanTakeoverAt });\n" +
+        "return [{ json: { ...ctx, podeEnviar, reason: podeEnviar ? null : 'conversa-com-humano' } }];\n",
+    },
+  },
+  output: [{ accepted: true, reason: null, podeEnviar: true, mensagem: "Show, deixa eu te explicar melhor.", tenantSlug: "imobiliaria-a", waId: "553499532444", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", phoneNumberId: "109876543210001", aberturasJson: "[]" }],
+});
+
+const canSendInTurnIf = ifElse({
+  version: 2.3,
+  config: {
+    name: "Agente pode enviar no turno?",
+    position: [1560, -400],
+    parameters: {
+      conditions: {
+        combinator: "and",
+        options: { caseSensitive: true, leftValue: "", typeValidation: "strict" },
+        conditions: [{ leftValue: expr("{{ $json.podeEnviar }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }],
+      },
+    },
+  },
+});
+
+const conductionUnavailable = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: condução indisponível",
+    position: [1300, 200],
+    parameters: {
+      mode: "runOnceForAllItems",
+      language: "javaScript",
+      jsCode: "return [{ json: { reason: 'conducao-indisponivel' } }];\n",
+    },
+  },
+  output: [{ reason: "conducao-indisponivel" }],
+});
+
 const normalizeRecipientCode = node({
   type: "n8n-nodes-base.code",
   version: 2,
@@ -306,6 +390,14 @@ export default workflow("crivo-tool-responder-lead", "crivo-tool-responder-lead"
   .add(respondTrigger)
   .to(
     conversaEstadoLookup.to(
-      applyVoiceBarriers.to(isAccepted.onTrue(acceptedBranch).onFalse(rejectResponse))
+      applyVoiceBarriers.to(
+        isAccepted
+          .onTrue(
+            getLeadBeforeSend
+              .to(canSendInTurnCode.to(canSendInTurnIf.onTrue(acceptedBranch).onFalse(rejectResponse)))
+              .onError(conductionUnavailable.to(rejectResponse))
+          )
+          .onFalse(rejectResponse)
+      )
     )
   );
