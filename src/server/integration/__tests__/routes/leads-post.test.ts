@@ -13,6 +13,7 @@ import {
 import { getLead, getLeads, serviceScope } from "../../../data";
 import { DELETE, GET, PATCH, POST, PUT } from "../../../../../app/api/v1/leads/route";
 import { GET as unmatchedGet } from "../../../../../app/api/v1/[...unmatched]/route";
+import { MAX_BODY_BYTES } from "../../parsers";
 
 // Tenant + chave de API PRÓPRIOS deste arquivo (nunca reusa os 2 tenants do
 // seed): evita qualquer risco de os leads criados aqui inflarem a contagem
@@ -270,6 +271,42 @@ describe("routes: POST /api/v1/leads", () => {
     const body = await second.json();
     expect(body.humanTakeoverAt).toBe("2026-09-30T12:00:00.000Z");
     expect(body.memoryResetRequestedAt).toBe("2026-09-30T13:30:00.000Z");
+  });
+
+  // lote-14 — CONTRATO-02 (T14, L5 Fix 1): os dois caminhos de erro do corpo,
+  // antes provados só por leitura de código. Molde de leads-patch.test.ts e
+  // leads-messages-post.test.ts.
+  function makeRawRequest(raw: string): Request {
+    return new Request("http://local/api/v1/leads", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: raw,
+    });
+  }
+
+  it("corpo maior que MAX_BODY_BYTES responde 413 corpo-grande-demais e não grava (CONTRATO-02 AC1)", async () => {
+    const externalId = randomUUID();
+    const raw = JSON.stringify({
+      ...validPayload(externalId),
+      name: "x".repeat(MAX_BODY_BYTES + 1),
+    });
+
+    const response = await POST(makeRawRequest(raw));
+
+    expect(response.status).toBe(413);
+    const body = await response.json();
+    expect(body.code).toBe("corpo-grande-demais");
+    const rows = await db.select().from(leads).where(eq(leads.externalId, externalId));
+    expect(rows).toHaveLength(0);
+  });
+
+  it("corpo que não é JSON válido responde 400 payload-invalido (CONTRATO-02 AC2)", async () => {
+    const response = await POST(makeRawRequest("{isto não é json"));
+
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.code).toBe("payload-invalido");
+    expect(body.detail).toBe("Corpo da requisição não é JSON válido.");
   });
 
   it("sem header Authorization responde 401 (INT-01 AC1)", async () => {

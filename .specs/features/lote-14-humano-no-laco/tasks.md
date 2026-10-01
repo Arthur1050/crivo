@@ -425,10 +425,10 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] Corpo maior que `MAX_BODY_BYTES` → `413` com `code: corpo-grande-demais` (AC1).
-- [ ] Corpo que não é JSON → `400` com `code: payload-invalido` (AC2).
-- [ ] Discriminação conferida: remover cada checagem da rota faz o teste correspondente falhar.
-- [ ] Gate Full passa (fim da Phase 3); contagem registrada.
+- [x] Corpo maior que `MAX_BODY_BYTES` → `413` com `code: corpo-grande-demais` (AC1). *(leads-post.test.ts: 413 com corpo-grande-demais e zero linhas gravadas)*
+- [x] Corpo que não é JSON → `400` com `code: payload-invalido` (AC2). *(JSON inválido -> 400 payload-invalido com detail exato)*
+- [x] Discriminação conferida: remover cada checagem da rota faz o teste correspondente falhar. *(mutação 1: checagem de tamanho trocada por false faz o teste do 413 falhar; mutação 2: JSON.parse removido faz o teste do JSON inválido falhar; rota restaurada (cmp idêntico, git diff vazio em app/))*
+- [x] Gate Full passa (fim da Phase 3); contagem registrada. *(Gate Full: npm test 135 arquivos / 2.233 testes, 2.231 passando e 2 falhas conhecidas (DOCLIM-01 AC8, timeout); lint 0 erros (7 avisos preexistentes); build verde. Antes da fase: ~133 / 2.193)*
 
 **Tests:** integration
 **Gate:** Full
