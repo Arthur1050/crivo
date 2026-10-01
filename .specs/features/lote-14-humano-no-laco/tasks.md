@@ -619,6 +619,8 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 - [x] `node scripts/n8n-inline.mjs` roda; `validate_workflow` do gerado sem erro; gerado no mesmo commit. _Evidência: só `n8n/generated/principal.ts` mudou de conteúdo (70/90 → 73/95); `parseWorkflowCodeToBuilder` + `validateWorkflow` do SDK local sobre o gerado completo: válido, 0 erros, 0 warnings. `validate_workflow` do MCP sobre o estado final do principal registrado na T24._
 - [x] Gate Full passa; contagem registrada. _Evidência: `npm test` 142 arquivos / 2.320 testes (base 140/2.287); falhas: as 2 conhecidas de DOCLIM-01 AC8 e o pin de `principal-modelo.test.ts` (70/90), atualizado para a contagem exata nova 73/95 (mesma prática do lote-13 `3a15671`) e reverificado (`n8n/workflows/__tests__` 183/183)._
 
+**Aprovação retroativa (usuário, 2026-10-01):** a atualização da contagem exata do grafo em `n8n/workflows/__tests__/principal-modelo.test.ts` (70/90 → 73/95), feita no commit desta tarefa sem pedido prévio, foi aprovada. A asserção continua exata.
+
 **Tests:** unit
 **Gate:** Full
 **Commit:** `feat(n8n): wire human conduction into the main flow`
