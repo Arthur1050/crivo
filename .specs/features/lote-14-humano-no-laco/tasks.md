@@ -447,11 +447,11 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] Teste novo `src/server/whatsapp/__tests__/cloud-api.test.ts`: sucesso devolve `messages[0].id`; URL `https://graph.facebook.com/v25.0/{phoneNumberId}/messages`, header `Bearer` e corpo exato (`messaging_product`, `recipient_type: individual`, `to`, `type: text`, `text.preview_url: false`, `text.body`).
-- [ ] Mapeamento, uma asserção por código: 131047 → `janela-fechada`; 131030 e 131026 → `destinatario-invalido`; 190, HTTP 401 e 403 → `credencial-invalida`; outro código → `falha-meta` com `metaCode`; erro de rede → `falha-meta`.
-- [ ] Timeout aborta e devolve `tempo-esgotado`; o default de 15.000 ms e a versão `v25.0` são afirmados (L-037).
-- [ ] Token ausente → `nao-configurado`, **sem chamar o `fetch`** (falha fechada, L-030).
-- [ ] Gate Quick passa; contagem registrada.
+- [x] Teste novo `src/server/whatsapp/__tests__/cloud-api.test.ts`: sucesso devolve `messages[0].id`; URL `https://graph.facebook.com/v25.0/{phoneNumberId}/messages`, header `Bearer` e corpo exato (`messaging_product`, `recipient_type: individual`, `to`, `type: text`, `text.preview_url: false`, `text.body`). *(cloud-api.test.ts: wamid devolvido; URL v25.0, Bearer e corpo afirmados por toEqual)*
+- [x] Mapeamento, uma asserção por código: 131047 → `janela-fechada`; 131030 e 131026 → `destinatario-invalido`; 190, HTTP 401 e 403 → `credencial-invalida`; outro código → `falha-meta` com `metaCode`; erro de rede → `falha-meta`. *(uma asserção toEqual por código: 131047, 131030, 131026, 190, 401, 403, 131056 com metaCode e TypeError de rede)*
+- [x] Timeout aborta e devolve `tempo-esgotado`; o default de 15.000 ms e a versão `v25.0` são afirmados (L-037). *(fetch que só termina no abort, timeoutMs 20: tempo-esgotado e abort observado; CLOUD_API_TIMEOUT_MS 15000, GRAPH_API_VERSION v25.0 e spy em AbortSignal.timeout(15000))*
+- [x] Token ausente → `nao-configurado`, **sem chamar o `fetch`** (falha fechada, L-030). *(env vazio: nao-configurado e fetch com 0 chamadas; nao-configurado entrou no union com SPEC_DEVIATION em cloud-api.ts)*
+- [x] Gate Quick passa; contagem registrada. *(Gate Quick: 1 arquivo / 12 testes passando; eslint limpo)*
 
 **Tests:** unit
 **Gate:** Quick
