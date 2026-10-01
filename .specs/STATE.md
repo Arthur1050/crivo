@@ -305,7 +305,7 @@
 
 ## Handoff
 
-- **Feature**: Lote 13 — `.specs/features/lote-13-opt-out-linguagem-natural/` — **fechado em definitivo** em 2026-09-30: PASS do Verifier (ciclo 2) e T18 (prova por WhatsApp) APROVADA. Execução arquivada em `.specs/archive/lote-13-opt-out-linguagem-natural/` (AD-029).
+- **Feature**: Lote 13 — `.specs/features/lote-13-opt-out-linguagem-natural/` — **fechado em definitivo** em 2026-09-30: PASS do Verifier (ciclo 2; ciclo 3 sobre o delta da D11, 8/8 mutantes mortos) e T18 (prova por WhatsApp) APROVADA. Lições L-047, L-048 e L-049 promovidas por delegação do usuário. Execução arquivada em `.specs/archive/lote-13-opt-out-linguagem-natural/` (AD-029).
 - **Decisão D11 (2026-09-30, pedido do usuário durante a T18)**: removida a pergunta "você quer parar de receber mensagens?" ao lead ambíguo — soava como convite para sair. Só o pedido explícito descadastra. Emendas em AD-032, OPTAMB-01, OPTSEG-01 AC2 e OPTPROVA-01 AC1; T20 no `tasks.md` arquivado. O classificador não mudou (identidade `1547f0ae…` = medição v4 aprovada).
 - **T18**: 5a (2705/2711/2716), 5b novo (2765/2771), 5c (2777/2783) e cenário 3 (2790/2796/2800) aprovados; evidência em `n8n/smoke/evidencia.md` § Lote 13 — T18. O 5b novo, o 5c e o cenário 3 foram enviados pelo WhatsApp Web do usuário via extensão do Chrome, a pedido dele. Estado de teste limpo no fim (`crivo-smoke-reset` 2801 e `smoke:reset`).
 - **Estado externo**: `crivo-agente-principal` (`0B1nqjODu7xuYYKF`) em `3be9cfed-e56e-45d6-93a4-74a7910969ef` (70 nós / 90 conexões); `crivo-benchmark-contexto` (`xpsD2PZQ1KoE2sA5`) em `b228c3de-5059-4c03-ad62-4b94a2d0e73d`; `crivo-medicao-opt-out` `n5iAMCl5nSM6jA6U` ativo. Teto de contexto remedido depois da D11 (execuções 2749–2763): novo 106.898, usado 119.714, ambos 106.720 B; `check` sem `stale`.
@@ -313,4 +313,4 @@
 - **Armadilhas operacionais**: `npm test` regrava `n8n/generated/` (diferenças só de fim de linha: `git checkout -- n8n/generated`). Nunca duas suítes completas juntas (L-033). Nenhum commit com trailer de coautoria (AD-014). O Edit tool e o heredoc do Git Bash convertem escapes de barra invertida (unicode e quebra de linha): editar escapes por script com `chr(92)`. Com bloqueio externo, avisar uma vez e não repetir a cada lembrete do `/goal`.
 - **Next step**: o L14 (humano no laço) no `ROADMAP-POS-PILOTO.md`.
 - **Uncommitted files**: nenhum.
-- **Branch**: `main`, commits locais à frente de `origin/main`; sem push.
+- **Branch**: `main`, enviada para `origin/main` em 2026-09-30 a pedido do usuário, depois de auditar os commits sem trailer de coautoria.
