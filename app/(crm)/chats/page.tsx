@@ -9,6 +9,7 @@ import {
 } from "@astryxdesign/core/Layout";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Heading, Text } from "@astryxdesign/core/Text";
+import { ChatRefresh } from "@/src/components/chats/chat-refresh";
 import { ConversationList } from "@/src/components/chats/conversation-list";
 import { MessageThread } from "@/src/components/chats/message-thread";
 import {
@@ -93,6 +94,7 @@ export default async function ChatsPage({ searchParams }: ChatsPageProps) {
           </LayoutContent>
         ) : (
           <LayoutContent isScrollable={false} padding={0}>
+            <ChatRefresh hasOpenConversation />
             <VStack height="100%" gap={0}>
               {/* Cabeçalho da thread (RD-06 AC4, design.md § R5) — estático. */}
               <HStack gap={3} vAlign="center" padding={4}>

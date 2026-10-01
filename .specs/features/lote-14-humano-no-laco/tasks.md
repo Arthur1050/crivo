@@ -782,9 +782,16 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] Evidência por `read_network_requests` (extensão do Chrome): requisições de RSC a cada ~5 s com a conversa aberta e a aba visível, e nenhuma com a aba oculta (AC2, AC3).
-- [ ] Uma mensagem de lead inserida no banco de teste aparece na tela em até 10 s sem recarregar, com captura antes e depois (AC2; JANELA-01 AC5 quando a janela estava fechada).
-- [ ] Gate Build passa; contagem registrada.
+- [x] Evidência por `read_network_requests` (extensão do Chrome): requisições de RSC a cada ~5 s com a conversa aberta e a aba visível, e nenhuma com a aba oculta (AC2, AC3).
+- [x] Uma mensagem de lead inserida no banco de teste aparece na tela em até 10 s sem recarregar, com captura antes e depois (AC2; JANELA-01 AC5 quando a janela estava fechada).
+- [x] Gate Build passa; contagem registrada. *(Suíte: 145 arquivos / 2.391 testes, só as 2 falhas conhecidas de `DOCLIM-01 AC8`; lint 0 erros; build ok.)*
+
+**Evidence** (extensão Claude in Chrome, `dev:test`, conversa sintética "Nathan Ferreira" aberta):
+
+- Aba oculta (`document.visibilityState = "hidden"`, janela do Chrome em segundo plano): 16 s sem nenhuma requisição a `/chats` (AC3).
+- Aba visível (`visibilityState = "visible"`): 4 requisições `GET /chats?conversa=…&_rsc=` com 200 em ~16 s, uma a cada ~5 s (AC2).
+- Mensagem de lead inserida no banco de teste às 19:18:23Z; às 19:18:33Z o texto já estava na thread e no preview da lista ("agora"), no mesmo documento (sem navegação nova). Capturas antes (última mensagem "Perfeito, obrigado!") e depois (mensagem nova abaixo dela).
+- Para a captura, `ChatRefresh` foi montado em `app/(crm)/chats/page.tsx` com a conversa aberta; a composição completa da página continua na T34.
 
 **Tests:** none
 **Gate:** Build
