@@ -318,10 +318,12 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] Teste novo `src/server/integration/__tests__/routes/leads-get.test.ts`: 200 com o lead e os campos de condução; 404 para lead de outro tenant (L-035) e para id inexistente; 401 sem credencial.
-- [ ] Em `leads-patch.test.ts:247`, o `GET` sai da lista de verbos 405 (substituído pelos testes acima, porque a spec passou a exigir a rota — emenda D4); `POST`, `PUT` e `DELETE` continuam 405.
-- [ ] O teste de varredura de instrumentação (`route-instrumentation.test.ts`) passa com o export novo marcado `INSTRUMENTED`.
-- [ ] Gate Quick passa; contagem registrada.
+- [x] Teste novo `src/server/integration/__tests__/routes/leads-get.test.ts`: 200 com o lead e os campos de condução; 404 para lead de outro tenant (L-035) e para id inexistente; 401 sem credencial. *(leads-get.test.ts: 6 testes novos; inclui a recusa em `integration_refusals`.)*
+- [x] Em `leads-patch.test.ts:247`, o `GET` sai da lista de verbos 405 (substituído pelos testes acima, porque a spec passou a exigir a rota — emenda D4); `POST`, `PUT` e `DELETE` continuam 405. *(Única troca de teste existente: título e lista de verbos; `GET` removido do import.)*
+- [x] O teste de varredura de instrumentação (`route-instrumentation.test.ts`) passa com o export novo marcado `INSTRUMENTED`.
+- [x] Gate Quick passa; contagem registrada. *(leads-get + leads-patch + route-instrumentation: 3 arquivos / 16 testes; e2e-smoke e leads-patch-atribuicao passam.)*
+
+**Nota de escopo:** o handler chama `findLead` (novo, em `src/server/integration/leads.ts`, sobre `getLead(serviceScope(...))`) para manter o padrão handler → serviço → DAL.
 
 **Tests:** integration
 **Gate:** Quick

@@ -7,7 +7,6 @@ import { integrationRefusals, leads, tenantApiKeys, tenants } from "../../../../
 import { serviceScope, updateLeadStatus } from "../../../data";
 import {
   DELETE,
-  GET,
   PATCH,
   POST,
   PUT,
@@ -244,8 +243,8 @@ describe("routes: PATCH /api/v1/leads/[id]", () => {
     expect(response.status).toBe(401);
   });
 
-  it("verbo não suportado (GET/POST/PUT/DELETE) responde 405 problem+json", async () => {
-    for (const handler of [GET, POST, PUT, DELETE]) {
+  it("verbo não suportado (POST/PUT/DELETE) responde 405 problem+json", async () => {
+    for (const handler of [POST, PUT, DELETE]) {
       const response = handler();
       expect(response.status).toBe(405);
       expect(response.headers.get("content-type")).toBe("application/problem+json");

@@ -1,4 +1,4 @@
-import { patchLead, serializeLead } from "../../../../../src/server/integration/leads";
+import { findLead, patchLead, serializeLead } from "../../../../../src/server/integration/leads";
 import {
   MAX_BODY_BYTES,
   parseLeadPatch,
@@ -99,7 +99,20 @@ export const PATCH = withIntegrationRoute<{ params: Promise<{ id: string }> }>(
   }
 );
 
-export const GET = methodNotAllowed(["PATCH"]);
-export const POST = methodNotAllowed(["PATCH"]);
-export const PUT = methodNotAllowed(["PATCH"]);
-export const DELETE = methodNotAllowed(["PATCH"]);
+/**
+ * `GET /api/v1/leads/{id}` (lote-14 — SILENCIO-01, CONTRATO-01): devolve o
+ * lead do tenant da credencial, com a condução (`humanTakeoverAt`). O n8n lê
+ * antes de cada envio do agente; lead de outro tenant é 404, nunca 403.
+ */
+export const GET = withIntegrationRoute<{ params: Promise<{ id: string }> }>(
+  async (_request, auth, { params }) => {
+    const { id } = await params;
+    const lead = await findLead(auth.tenantId, id);
+    if (!lead) return problem(404, "recurso-nao-encontrado", "Lead não encontrado.");
+    return Response.json(serializeLead(lead));
+  }
+);
+
+export const POST = methodNotAllowed(["GET", "PATCH"]);
+export const PUT = methodNotAllowed(["GET", "PATCH"]);
+export const DELETE = methodNotAllowed(["GET", "PATCH"]);

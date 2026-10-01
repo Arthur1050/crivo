@@ -47,6 +47,18 @@ export async function deliverLead(
   return result;
 }
 
+/**
+ * Leitura de um lead pelo contrato (lote-14 — `GET /leads/{id}`): credencial
+ * de serviço, imobiliária inteira. Lead de outro tenant é `null`, como em
+ * `getLead`.
+ */
+export async function findLead(
+  tenantId: string,
+  leadId: string
+): Promise<Lead | null> {
+  return getLead(serviceScope(tenantId), leadId);
+}
+
 /** Representação de um lead na API de integração (design.md — Route
  * handlers: "Serialização"). `budgetCents` vira string (bigint não é
  * JSON-safe); datas viram ISO-8601; `optedOutAt`/`externalId` sempre
