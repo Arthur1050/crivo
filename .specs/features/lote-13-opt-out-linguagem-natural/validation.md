@@ -1,9 +1,90 @@
-> **Fechamento (2026-09-30).** A T18 foi executada e APROVADA contra o agente `3be9cfed`, depois da
-> decisão D11 (remoção da pergunta ao lead ambíguo, T20): 5a (2705/2711/2716), 5b novo (2765/2771),
+## Ciclo 3 — delta T20 (decisão D11)
+
+**Data**: 2026-09-30
+**Escopo**: `57de22a..HEAD` (`3a15671` código; `bc8e5cb`, `cd0e5b0`, `1d14034` documentação e evidência). Só o delta da T20: remoção da pergunta de confirmação ao lead "ambíguo".
+**Verifier**: sub-agente independente (autor ≠ verifier). Não escreveu nada deste lote.
+
+**Veredito final: PASS** ✅ — depois das correções documentais do autor (ainda sem commit), conferidas na releitura abaixo. F1, F2 e F3 estão resolvidos. Restam duas frases desatualizadas que não são critério de aprovação (R1 e R2) e não bloqueiam.
+
+**Veredito da primeira passada: FAIL** ❌ — **só documental**. O código, os testes e a identidade do classificador estavam corretos, e os 8 mutantes morreram. O FAIL veio de dois artefatos de aprovação que não tinham recebido a emenda D11 e ainda exigiam o comportamento antigo (achados F1 e F2). Nenhuma mudança de código foi necessária.
+
+### Releitura após as correções
+
+Conferi pelo `git diff` do working tree (spec.md, roteiro.md, evidencia.md e a nota de fechamento deste arquivo). Nenhum código mudou, então não refiz os mutantes.
+
+| Achado | Correção | Status |
+| --- | --- | --- |
+| F1 | `roteiro.md:305` (§7): o 5b agora exige "`optedOutAt` nulo e nenhuma mensagem pergunta se o lead quer parar de receber mensagens nem menciona `sair` (decisão D11)". Bate com o desfecho 2 do §6 e com a 2771 | ✅ Resolvido |
+| F2 | `spec.md:196` (OPTPROVA-01 AC2) ganhou a nota "*(Emenda D11: `optedOutAt` preenchido só no caso explícito, e nulo nos casos ambíguo e fora de escopo.)*". Bate com 2711/2796 (preenchido) e 2771/2783 (nulo) | ✅ Resolvido |
+| F3 | A nota de fechamento separa o 5a (agente `3e20756c`, antes da D11, caminho explícito que a T20 não mudou) dos demais (`3be9cfed`). O título em `evidencia.md:1702` passou a "— APROVADO (2026-09-30)" | ✅ Resolvido |
+
+Varredura de critérios que ainda exijam a pergunta ao ambíguo (em `spec.md`, `roteiro.md`, este arquivo fora do histórico dos ciclos 1 e 2, e `n8n/README.md` §14):
+
+- `n8n/README.md` §14: limpo. Descreve a saída 1 → `Code: rota fora` e a D11.
+- `roteiro.md`: só a nota histórica da D11 (linha 247), que já se apresenta como histórico.
+- `spec.md:133-134` (OPTAMB-01, AC3 e AC4 antigos): ficam abaixo da nota "os ACs abaixo ficam como histórico" da emenda D11. Aceitável.
+- `spec.md:50` (linha da medição): descreve os itens "sim"/"não" do corpus da medição v4, que continuam no corpus. Não é critério de aprovação do comportamento.
+- **R1 (não bloqueia)**: o edge case em `spec.md:225` ("IF o lead responde à pergunta de confirmação depois do corte de sessão de 12h…") cita uma pergunta que não existe mais. O desfecho que ele pede (`optedOutAt` nulo) continua valendo, então não contradiz nada; vale marcá-lo como superseded pela D11 numa próxima edição.
+- **R2 (não bloqueia)**: a nota de fechamento deste arquivo ainda diz "Não houve novo ciclo do Verifier", e este ciclo 3 existe. Vale ajustar a frase quando o autor fizer o commit.
+
+### ACs emendados (primeira passada; status final na coluna da direita)
+
+| AC | Outcome exigido (D11) | Evidência | Status |
+| --- | --- | --- | --- |
+| OPTAMB-01 AC1 (novo) | Faixa ambígua → fluxo normal, sem perguntar se quer parar, sem orientar `sair` | Aresta: `principal-classificador.test.ts` "saída 1 (ambigua) → Code: rota fora, e só ela"; "não existe `Code: rota ambígua`"; "Code: rota fora emite um item vazio"; "o system message não recebe mais o flag `optOutAmbiguo`". Texto: `system-message-opt-out.test.ts` (baseline byte a byte, "não manda perguntar…", "desinteresse… NÃO são pedido", "responde normalmente sem mencionar a palavra sair"). Real: execução 2771 (classificador saída 1 → `Code: rota fora`, resposta sem pergunta e sem `sair`) | ✅ |
+| OPTAMB-01 AC2 (novo) | `optedOutAt` nulo no turno ambíguo | Aresta: saída 1 só para `Code: rota fora`; "o HTTP natural tem o IF como único predecessor" (`principal-opt-out-natural.test.ts`). Real: 2771, HTTP de opt-out e trava não rodaram, `optedOutAt` nulo | ✅ |
+| OPTSEG-01 AC2 (emenda D11) | Rebaixamento da trava → fluxo normal, nunca registra | Aresta: `principal-opt-out-natural.test.ts` "IF falso (saída 1) → Code: rota fora, e só ela (D11)". Real: 2783 ("pode parar de mandar foto", saída 0 `fora`, `optedOutAt` nulo, sem pergunta e sem `sair`). O ramo do rebaixamento em si não foi exercitado em conversa real, só por teste de aresta | ✅ |
+| OPTPROVA-01 AC1 (emenda D11) | Roteiro com caso ambíguo = desinteresse que não registra nem pergunta | `n8n/smoke/roteiro.md` §6 (nota D11, caso 5b novo e desfecho 2) está correto. Mas a barra de aprovação do §7 (`roteiro.md:305`) ainda exigia "5b: nulo após a pergunta e preenchido após o 'sim'" (F1, resolvido na releitura). Evidência real: 2771 | ✅ após F1 (era ⚠️) |
+| OPTPROVA-01 AC2 (emenda D11 adicionada na correção) | Preenchido só no explícito; nulo no ambíguo e no fora de escopo | Na primeira passada ainda exigia "preenchido nos casos explícito e ambíguo-confirmado" (F2, resolvido). Evidência real: 2711 e 2796 preenchidos; 2771 e 2783 nulos | ✅ após F2 (era ❌) |
+
+### Comandos
+
+| Comando | Resultado |
+| --- | --- |
+| `npx tsx scripts/opt-out-measurement.ts identity` | `1547f0ae6ee31640db62b432a36e1e5d6c77fd92467a18f9f42034ba088f6b29`, igual à medição v4 aprovada |
+| `node scripts/n8n-inline.mjs` + `git diff --ignore-cr-at-eol --stat` | Vazio (9 arquivos regenerados, só diferença de fim de linha). Restaurado com `git checkout -- n8n/generated` |
+| `npx vitest run n8n/ scripts/__tests__/opt-out-measurement.test.ts` | **24 arquivos / 619 testes, todos verdes** (inclui `principal-classificador.test.ts`, que trava a identidade ao relatório v4) |
+| `npm run lint` | 0 erros, 7 warnings, todos em arquivos fora do delta (`scheduler.ts`, testes de `src/server`, artefatos de `.workflow-test` e `app/.well-known`) |
+| Suíte completa | Não rodada, por instrução. Referência do autor: 126 arquivos / 2.107 testes, só as 2 falhas conhecidas de `DOCLIM-01 AC8` |
+
+### Sensor de discriminação
+
+Worktree descartável em `scratchpad/wt` (`git worktree add … HEAD`), junction de `node_modules`, testes rodados com cwd no worktree e `npx vitest run --root <wt>` sobre `system-message-opt-out`, `system-message`, `opt-out-corpus`, `principal-classificador`, `principal-opt-out-natural` e `principal-modelo` (**6 arquivos / 270 testes, linha de base verde**). Os testes de workflow importam `n8n/workflows/principal.ts` direto (não leem `n8n/generated`), então não foi preciso regenerar. Cada mutante foi aplicado sozinho, conferido pelo `git diff` e revertido com `git checkout -- .`.
+
+| Id | Mudança | Resultado | Teste que matou |
+| --- | --- | --- | --- |
+| M-A | `optOutClassifier.output(1)` → `postOptOutNatural` | Morto (2 falhas) | `principal-classificador` "saída 1 (ambigua) → Code: rota fora…"; `principal-opt-out-natural` "o HTTP natural tem o IF como único predecessor" |
+| M-B | IF `Pedido explícito confirmado?` falso → `postOptOutNatural` | Morto (2) | `principal-opt-out-natural` "IF falso (saída 1) → Code: rota fora…" e "único predecessor" |
+| M-C | Guidance volta a listar "disse que foi engano, que não tem interesse" | Morto (8) | `system-message-opt-out` (5 baselines, flag legado, "não trata mais engano…"); `system-message` "cobre o pedido explícito…" |
+| M-D | Remove a frase "Desinteresse, recusa de uma opção, número errado… NÃO são pedido…" | Morto (9) | `system-message-opt-out` (baselines, "desinteresse, recusa…", "responde normalmente…", "não manda perguntar…") |
+| M-E | `Code: rota fora` emite `{ optOutAmbiguo: true }` | Morto (1) | `principal-classificador` "Code: rota fora emite um item vazio" |
+| M-F (extra) | Reinsere no system message uma instrução "pergunte… se ele quer parar de receber mensagens" | Morto (7) | `system-message-opt-out` (baselines, "não manda perguntar…") |
+| M-G (extra) | Saída 3 (`other`) → `postOptOutNatural` | Morto (2) | `principal-classificador` "saída 3 (other…) → Code: rota fora"; "único predecessor" |
+| M-H (extra) | `Code: system message` volta a passar `optOutAmbiguo: $json.optOutAmbiguo === true` | Morto (1) | `principal-classificador` "o system message não recebe mais o flag `optOutAmbiguo`" |
+
+**8/8 mortos.** Junction removida com `rmdir` antes do `git worktree remove --force`; `node_modules` real intacto; `git worktree list` só com o checkout principal; `git status --porcelain` do checkout principal vazio antes e depois.
+
+### Achados (primeira passada; os três foram resolvidos, ver "Releitura após as correções")
+
+- **F1 (exigia correção, documental — ✅ resolvido)**: `n8n/smoke/roteiro.md:305` (§7, barra de aprovação do cenário 5) não recebeu a emenda D11 e ainda aprova o 5b por "nulo após a pergunta e preenchido após o 'sim'". O §6 do mesmo arquivo já descreve o 5b novo. Pela regra do próprio roteiro, é essa linha que aprova ou reprova, e hoje ela contradiz a T18 aprovada. Correção: alinhar ao desfecho 2 do §6 ("5b: `optedOutAt` nulo, sem pergunta sobre parar e sem `sair`").
+- **F2 (exigia correção, documental — ✅ resolvido)**: em `spec.md`, OPTPROVA-01 AC2 não recebeu a emenda D11 e exige `optedOutAt` preenchido "nos casos explícito e ambíguo-confirmado". A emenda foi feita só no AC1. Correção: emendar o AC2 (preenchido no explícito; nulo no desinteresse e no fora de escopo), no mesmo formato das emendas do AC1 e de OPTSEG-01 AC2.
+- **F3 (não bloqueava, imprecisão — ✅ resolvido)**: a nota de fechamento deste arquivo diz que a T18 foi executada "contra o agente `3be9cfed`", mas o caso 5a (2705/2711/2716) rodou contra `3e20756c`, antes da D11, como a própria `evidencia.md` registra. O caminho explícito (classificador saída 2 → trava → IF verdadeiro → HTTP) não mudou na T20, então a prova continua válida; só a frase está imprecisa. Na mesma linha, o título da seção em `n8n/smoke/evidencia.md:1702` ainda diz "(em andamento, 2026-09-30)", embora o veredito no fim seja APROVADO.
+
+### Gaps
+
+- O ramo "trava rebaixa o explícito → `Code: rota fora`" (OPTSEG-01 AC2) só tem prova por teste de aresta. Nenhuma execução real passou por ele depois da D11 (a 2783 foi classificada `fora` direto).
+- A coerência da evidência foi avaliada só pelo documento. O Verifier não tem acesso ao n8n para reconferir 2764–2801 por `get_execution`. A seção da T18 não traz telefone completo, e as frases do lead citadas são as do roteiro ("quero que você pare de me mandar mensagens", "não tenho interesse, obrigado", "pode parar de mandar foto", `sair`). As falas citadas em 2738 e 2771 são do agente, não do lead.
+- A remoção de `system-message-opt-out-ambiguo.test.ts` (91 linhas) é coerente com a feature removida. As asserções do comportamento novo estão em `system-message-opt-out.test.ts`.
+
+---
+
+> **Fechamento (2026-09-30).** A T18 foi executada e APROVADA. O 5a (2705/2711/2716) rodou contra o
+> agente `3e20756c`, antes da D11, num caminho (explícito) que a T20 não mudou; os demais rodaram
+> contra `3be9cfed`, depois da decisão D11 (remoção da pergunta ao lead ambíguo, T20): 5b novo (2765/2771),
 > 5c (2777/2783) e cenário 3 (2790/2796/2800). Evidência em `n8n/smoke/evidencia.md` § Lote 13 — T18.
-> OPTPROVA-01 passa a Verificado e OPTAMB-01 fica superseded pela emenda D11. Não houve novo ciclo
-> do Verifier: a T20 removeu uma rota e uma instrução, e foi coberta por testes de aresta, baseline
-> do system message e suíte completa (126 arquivos / 2.107 testes, só as 2 falhas conhecidas).
+> OPTPROVA-01 passa a Verificado e OPTAMB-01 fica superseded pela emenda D11. A T20 foi verificada
+> no ciclo 3 (topo deste arquivo): PASS depois de correções documentais, 8/8 mutantes mortos, além
+> da suíte completa (126 arquivos / 2.107 testes, só as 2 falhas conhecidas).
 
 **Veredito: PASS** ✅ — ciclo 2. Todos os 33 ACs automatizáveis têm evidência que bate com o outcome da spec, e os 13 mutantes morreram. **Pendência aberta explícita:** OPTPROVA-01 / T18 (prova por conversa real) segue pendente de execução humana (decisão D8, precedente AD-015/AD-027). O lote só fecha em definitivo com a evidência da T18.
 

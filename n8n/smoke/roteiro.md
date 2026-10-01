@@ -302,7 +302,7 @@ Calendar, no cenário 1). Nada que dependa de achar a conversa boa entra no vere
 | 2 — escalar | `status = escalado_humano` **e** responsável atribuído **e** a mensagem seguinte gravada sem nenhuma resposta do agente |
 | 3 — opt-out | `optedOutAt` preenchido **e** sessão de memória purgada pelo fluxo **e** exatamente uma confirmação enviada, com silêncio depois |
 | 4 — consulta de inventário | Turno 2 cita imóvel real (referência + preço batendo com o banco) **e** turno 3 declara ausência sem citar nenhum imóvel **e** nenhum dos dois cita endereço exato nem nome de captador |
-| 5 — opt-out por linguagem natural | 5a: `optedOutAt` preenchido, memória vazia, uma confirmação, silêncio depois **e** 5b: nulo após a pergunta e preenchido após o "sim" **e** 5c: `optedOutAt` nulo |
+| 5 — opt-out por linguagem natural | 5a: `optedOutAt` preenchido, memória vazia, uma confirmação, silêncio depois **e** 5b: `optedOutAt` nulo e nenhuma mensagem pergunta se o lead quer parar de receber mensagens nem menciona `sair` (decisão D11) **e** 5c: `optedOutAt` nulo |
 
 **Quantos turnos o cenário pode gastar**: o roteiro sugere a quantidade mínima, não um teto. Turnos a
 mais — porque o agente perguntou de novo, porque um turno saiu mudo por `maxIterations`, porque a

@@ -193,7 +193,7 @@ Every ambiguity is resolved or recorded here; nothing remains silently unclear.
 **Acceptance Criteria**:
 
 1. The `n8n/smoke/roteiro.md` SHALL conter um cenário de opt-out natural com três casos em leads distintos: explícito (registra), ambíguo seguido de resposta afirmativa (registra) e fora de escopo (não registra). *(Emenda D11: o caso ambíguo passa a ser desinteresse sem pedido explícito, que não registra e não gera pergunta.)*
-2. WHEN o cenário de opt-out natural é executado THEN the system SHALL ser aprovado somente pelo estado final no CRM: `optedOutAt` preenchido nos casos explícito e ambíguo-confirmado, e nulo no caso fora de escopo.
+2. WHEN o cenário de opt-out natural é executado THEN the system SHALL ser aprovado somente pelo estado final no CRM: `optedOutAt` preenchido nos casos explícito e ambíguo-confirmado, e nulo no caso fora de escopo. *(Emenda D11: `optedOutAt` preenchido só no caso explícito, e nulo nos casos ambíguo e fora de escopo.)*
 3. WHEN o cenário de opt-out natural é executado THEN the system SHALL comprovar, nos casos que registram, a sessão de memória vazia antes da limpeza manual do checklist.
 4. WHEN a confirmação nova é publicada THEN the system SHALL reexecutar o cenário 3 do roteiro (palavra exata) como regressão, com o texto de OPTMSG-01.
 5. The evidence SHALL citar somente ids de execução confirmados por `get_execution` antes da citação (L-011).
@@ -222,7 +222,7 @@ Every ambiguity is resolved or recorded here; nothing remains silently unclear.
 
 - IF o buffer do turno agrega várias mensagens e uma delas é um pedido explícito THEN the system SHALL registrar o opt-out uma vez e enviar somente a confirmação.
 - WHEN o pedido explícito é a primeira mensagem de um lead novo THEN the system SHALL registrar o opt-out do lead criado nesse mesmo turno.
-- IF o lead responde à pergunta de confirmação depois do corte de sessão de 12h THEN the system SHALL tratar a resposta como mensagem nova e manter `optedOutAt` nulo.
+- IF o lead responde à pergunta de confirmação depois do corte de sessão de 12h THEN the system SHALL tratar a resposta como mensagem nova e manter `optedOutAt` nulo. *(Superseded pela emenda D11: a pergunta de confirmação não existe mais; o desfecho `optedOutAt` nulo continua valendo para qualquer resposta curta sem pedido explícito.)*
 - IF o lead manda `sair` logo depois de um opt-out natural já registrado THEN the system SHALL gravar a mensagem e não enviar uma segunda confirmação.
 - IF o modelo do agente está indisponível THEN the system SHALL continuar registrando o opt-out pela palavra exata.
 

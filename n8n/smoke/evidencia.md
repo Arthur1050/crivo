@@ -1699,7 +1699,7 @@ numa rodada de Specify futura — não é reescrita aqui, e a AD-001 não é eme
 
 ---
 
-## Lote 13 — T18: opt-out por linguagem natural (em andamento, 2026-09-30)
+## Lote 13 — T18: opt-out por linguagem natural — APROVADO (2026-09-30)
 
 Prova conduzida pelo usuário no WhatsApp do número de teste, com o `crivo-agente-principal`
 (`0B1nqjODu7xuYYKF`). Todo id abaixo foi conferido por `get_execution`. As frases citadas são as do
