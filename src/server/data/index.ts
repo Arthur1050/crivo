@@ -25,6 +25,7 @@ import {
   conversations,
   documentCategories,
   documents,
+  humanMessageSends,
   integrationRefusals,
   leads,
   messages,
@@ -1485,6 +1486,238 @@ export async function optOutLeadByHuman(
     optedOutAt: new Date(row.opted_out_at),
     newlyOptedOut: row.previous === null,
   };
+}
+
+// --- Envio humano (lote-14 — ENVIO-01, JANELA-01; design.md C4) ----------
+
+/**
+ * Instante da mensagem mais recente do lead (`sender = 'lead'`), base da
+ * janela de 24h do WhatsApp (JANELA-01 AC1). Mensagens do agente e do humano
+ * não contam. `null` sem mensagem do lead.
+ */
+export async function getLastLeadMessageAt(
+  tenantId: string,
+  leadId: string
+): Promise<Date | null> {
+  const rows = await db
+    .select({ last: max(messages.sentAt) })
+    .from(messages)
+    .innerJoin(conversations, eq(messages.conversationId, conversations.id))
+    .where(
+      and(
+        eq(messages.tenantId, tenantId),
+        eq(conversations.tenantId, tenantId),
+        eq(conversations.leadId, leadId),
+        eq(messages.sender, "lead")
+      )
+    );
+  return rows[0]?.last ?? null;
+}
+
+/**
+ * Uma reserva em `enviando` mais nova que isto é um envio em voo; com esta
+ * idade ou mais, o envio é dado como abandonado e pode ser retomado.
+ */
+export const HUMAN_SEND_STALE_MS = 2 * 60 * 1000;
+
+export type ReserveHumanSendResult =
+  | { outcome: "reservado"; reservationId: string; resumed: boolean }
+  | { outcome: "ja-enviada"; message: Message }
+  | { outcome: "envio-em-andamento" };
+
+/**
+ * Reserva idempotente do envio humano (ENVIO-01 AC11). A chave é
+ * `(tenant_id, request_id)`: a primeira chamada reserva em `enviando`; uma
+ * repetição de envio já `enviada` devolve a mensagem existente, sem nova
+ * chamada à Meta; `enviando` com menos de `HUMAN_SEND_STALE_MS` é um envio em
+ * voo. `falhou`, ou `enviando` com essa idade ou mais, volta a `enviando` por
+ * compare-and-set (`WHERE state = <lido> AND updated_at = <lido>`): de dois
+ * retomadores concorrentes, só um vence.
+ */
+export async function reserveHumanSend(
+  tenantId: string,
+  leadId: string,
+  userId: string,
+  requestId: string,
+  now: Date
+): Promise<ReserveHumanSendResult> {
+  const inserted = await db
+    .insert(humanMessageSends)
+    .values({
+      tenantId,
+      leadId,
+      requestId,
+      userId,
+      state: "enviando",
+      createdAt: now,
+      updatedAt: now,
+    })
+    .onConflictDoNothing({
+      target: [humanMessageSends.tenantId, humanMessageSends.requestId],
+    })
+    .returning({ id: humanMessageSends.id });
+  if (inserted[0]) {
+    return { outcome: "reservado", reservationId: inserted[0].id, resumed: false };
+  }
+
+  const [existing] = await db
+    .select()
+    .from(humanMessageSends)
+    .where(
+      and(
+        eq(humanMessageSends.tenantId, tenantId),
+        eq(humanMessageSends.requestId, requestId)
+      )
+    )
+    .limit(1);
+  if (!existing) {
+    // Inalcançável em teoria: o conflito garante uma linha com a chave.
+    throw new Error("reserveHumanSend: conflito sem reserva existente.");
+  }
+
+  if (existing.state === "enviada") {
+    const [message] = existing.messageId
+      ? await db
+          .select()
+          .from(messages)
+          .where(and(eq(messages.tenantId, tenantId), eq(messages.id, existing.messageId)))
+          .limit(1)
+      : [];
+    if (message) return { outcome: "ja-enviada", message };
+    return { outcome: "envio-em-andamento" };
+  }
+
+  const age = now.getTime() - existing.updatedAt.getTime();
+  if (existing.state === "enviando" && age < HUMAN_SEND_STALE_MS) {
+    return { outcome: "envio-em-andamento" };
+  }
+
+  const resumed = await db
+    .update(humanMessageSends)
+    .set({ state: "enviando", userId, failure: null, updatedAt: now })
+    .where(
+      and(
+        eq(humanMessageSends.id, existing.id),
+        eq(humanMessageSends.state, existing.state),
+        // `timestamptz` guarda microssegundos; `Date` só milissegundos.
+        sql`date_trunc('milliseconds', ${humanMessageSends.updatedAt}) = ${existing.updatedAt}`
+      )
+    )
+    .returning({ id: humanMessageSends.id });
+  if (!resumed[0]) return { outcome: "envio-em-andamento" };
+  return { outcome: "reservado", reservationId: resumed[0].id, resumed: true };
+}
+
+/**
+ * Fecha a reserva como `falhou` (Meta recusou ou não respondeu). Só sai de
+ * `enviando`: uma reserva `enviada` nunca volta atrás.
+ */
+export async function failHumanSend(
+  tenantId: string,
+  requestId: string,
+  failure: string,
+  now: Date
+): Promise<void> {
+  await db
+    .update(humanMessageSends)
+    .set({ state: "falhou", failure, updatedAt: now })
+    .where(
+      and(
+        eq(humanMessageSends.tenantId, tenantId),
+        eq(humanMessageSends.requestId, requestId),
+        eq(humanMessageSends.state, "enviando")
+      )
+    );
+}
+
+export interface RecordHumanMessageInput {
+  tenantId: string;
+  leadId: string;
+  requestId: string;
+  authorUserId: string;
+  authorName: string;
+  content: string;
+  /** Id devolvido pela Meta (`messages[0].id`), gravado como `externalId`. */
+  wamid: string;
+  sentAt: Date;
+}
+
+/**
+ * Registro do envio humano aceito pela Meta (ENVIO-01 AC2), numa transação
+ * só, no padrão de `ingestAgentMessage`: garante a conversa do lead, insere a
+ * mensagem `humano` com autor e `externalId = wamid` e fecha a reserva como
+ * `enviada` com o `message_id`. Qualquer falha desfaz tudo: nem mensagem, nem
+ * conversa nova, nem reserva `enviada`. `null` quando o lead não existe no
+ * tenant.
+ */
+export async function recordHumanMessage(
+  input: RecordHumanMessageInput
+): Promise<Message | null> {
+  const { tenantId, leadId } = input;
+  return db.transaction(async (tx) => {
+    const leadRows = await tx
+      .select({ id: leads.id })
+      .from(leads)
+      .where(and(eq(leads.tenantId, tenantId), eq(leads.id, leadId)))
+      .limit(1);
+    if (!leadRows[0]) return null;
+
+    const conversationRows = await tx
+      .select()
+      .from(conversations)
+      .where(and(eq(conversations.tenantId, tenantId), eq(conversations.leadId, leadId)))
+      .limit(1);
+    const conversation =
+      conversationRows[0] ??
+      (await tx.insert(conversations).values({ tenantId, leadId }).returning())[0];
+
+    const inserted = await tx
+      .insert(messages)
+      .values({
+        tenantId,
+        conversationId: conversation.id,
+        sender: "humano",
+        content: input.content,
+        sentAt: input.sentAt,
+        externalId: input.wamid,
+        authorUserId: input.authorUserId,
+        authorName: input.authorName,
+      })
+      .onConflictDoNothing({
+        target: [messages.tenantId, messages.externalId],
+        where: sql`${messages.externalId} is not null`,
+      })
+      .returning();
+    const message =
+      inserted[0] ??
+      (
+        await tx
+          .select()
+          .from(messages)
+          .where(and(eq(messages.tenantId, tenantId), eq(messages.externalId, input.wamid)))
+          .limit(1)
+      )[0];
+    if (!message) {
+      throw new Error("recordHumanMessage: conflito sem mensagem existente.");
+    }
+
+    await tx
+      .update(humanMessageSends)
+      .set({
+        state: "enviada",
+        wamid: input.wamid,
+        messageId: message.id,
+        failure: null,
+        updatedAt: input.sentAt,
+      })
+      .where(
+        and(
+          eq(humanMessageSends.tenantId, tenantId),
+          eq(humanMessageSends.requestId, input.requestId)
+        )
+      );
+    return message;
+  });
 }
 
 export interface PendingMeeting {

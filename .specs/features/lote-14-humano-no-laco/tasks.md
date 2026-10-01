@@ -254,11 +254,11 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] Teste novo `src/server/data/__tests__/human-send.test.ts`. `getLastLeadMessageAt` ignora mensagens `agente` e `humano` e devolve `null` sem mensagem do lead.
-- [ ] `reserveHumanSend`: chave nova → reserva `enviando`; chave `enviada` → devolve a mensagem existente; `enviando` com 1 min 59 s → `envio-em-andamento`; **`enviando` com exatamente 2 min → retomada** (fronteira, L-023); `falhou` → retomada por compare-and-set.
-- [ ] `recordHumanMessage` grava `sender = humano`, `author_user_id`, `author_name`, `externalId = wamid` e fecha a reserva com `message_id` (ENVIO-01 AC2).
-- [ ] Falha forçada no insert da mensagem (fault injection): nenhuma mensagem fica gravada e a reserva não fica `enviada` (L-002).
-- [ ] Gate Quick passa; contagem registrada.
+- [x] Teste novo `src/server/data/__tests__/human-send.test.ts`. `getLastLeadMessageAt` ignora mensagens `agente` e `humano` e devolve `null` sem mensagem do lead. *(`:118-150`, com linha de outro tenant, L-035.)*
+- [x] `reserveHumanSend`: chave nova → reserva `enviando`; chave `enviada` → devolve a mensagem existente; `enviando` com 1 min 59 s → `envio-em-andamento`; **`enviando` com exatamente 2 min → retomada** (fronteira, L-023); `falhou` → retomada por compare-and-set. *(`:154-243`; `HUMAN_SEND_STALE_MS = 120000` afirmado; dois retomadores concorrentes: só um reserva. Mutante `<` → `<=` na fronteira pego pelo teste `:201`.)*
+- [x] `recordHumanMessage` grava `sender = humano`, `author_user_id`, `author_name`, `externalId = wamid` e fecha a reserva com `message_id` (ENVIO-01 AC2). *(`:246-268`.)*
+- [x] Falha forçada no insert da mensagem (fault injection): nenhuma mensagem fica gravada e a reserva não fica `enviada` (L-002). *(`:271-296`: violação do CHECK de autoria; a conversa criada na mesma transação também some.)*
+- [x] Gate Quick passa; contagem registrada. *(1 arquivo / 13 testes.)*
 
 **Tests:** integration
 **Gate:** Quick
