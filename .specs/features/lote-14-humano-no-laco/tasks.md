@@ -402,11 +402,13 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] `SwaggerParser.validate` passa (teste existente).
-- [ ] Teste de paridade: o enum `ProblemCode` do YAML é **igual** ao conjunto de chaves de `TITLES` em `problem.ts` (AC2); o enum `Sender` é igual a `senderEnum.enumValues` (AC3).
-- [ ] Asserções de presença: `assignedBroker` na resposta do `PATCH` (AC1); campos de condução no `Lead` (AC4); descrição de `humano` como só leitura (AC6); as duas rotas novas e `whatsappPhoneNumberId` (AC7).
-- [ ] Discriminação conferida na própria tarefa: remover `conflito-de-agenda` do YAML faz o teste falhar, e restaurar faz passar (Independent Test).
-- [ ] Gate Quick passa; contagem registrada.
+- [x] `SwaggerParser.validate` passa (teste existente). *(SwaggerParser.validate passa (openapi.test.ts: 11 -> 18 testes))*
+- [x] Teste de paridade: o enum `ProblemCode` do YAML é **igual** ao conjunto de chaves de `TITLES` em `problem.ts` (AC2); o enum `Sender` é igual a `senderEnum.enumValues` (AC3). *(paridade ProblemCode x chaves de TITLES (openapi.test.ts) e Sender x senderEnum.enumValues, ambas por conjunto ordenado)*
+- [x] Asserções de presença: `assignedBroker` na resposta do `PATCH` (AC1); campos de condução no `Lead` (AC4); descrição de `humano` como só leitura (AC6); as duas rotas novas e `whatsappPhoneNumberId` (AC7). *(presença: assignedBroker (allOf), humanTakeoverAt/memoryResetRequestedAt requeridos, Sender com descrição só leitura + AgentWritableSender sem humano, GET /leads/{id}, GET /memory-resets com since obrigatório, whatsappPhoneNumberId opcional)*
+- [x] Discriminação conferida na própria tarefa: remover `conflito-de-agenda` do YAML faz o teste falhar, e restaurar faz passar (Independent Test). *(removendo conflito-de-agenda do YAML, o teste de ProblemCode falhou (1 falha); restaurado (cmp idêntico) e 18/18 passam)*
+- [x] Gate Quick passa; contagem registrada. *(openapi.test.ts: 1 arquivo / 18 testes)*
+
+**Nota de escopo:** `TITLES` passou a ser exportada em `problem.ts` (só `export`, para o teste de paridade); o `Sender` do YAML virou o enum completo (`agente, lead, humano`) e o corpo do POST usa o novo `AgentWritableSender`; `openapi.test.ts` ganhou `import "dotenv/config"` porque importar `problem.ts` carrega a DAL.
 
 **Tests:** unit
 **Gate:** Quick

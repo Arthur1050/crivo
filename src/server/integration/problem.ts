@@ -35,7 +35,8 @@ export type ProblemCode =
   // contrato não muda `status` nem `meetingAt` enquanto um humano conduz.
   | "lead-conduzido-por-humano";
 
-const TITLES: Record<ProblemCode, string> = {
+// Exportada para o teste de paridade com o `ProblemCode` do openapi.yaml.
+export const TITLES: Record<ProblemCode, string> = {
   "nao-autenticado": "Não autenticado",
   "recurso-nao-encontrado": "Recurso não encontrado",
   "payload-invalido": "Payload inválido",

@@ -1,7 +1,10 @@
+import "dotenv/config";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import SwaggerParser from "@apidevtools/swagger-parser";
-import { MAX_CONTEXT_QUESTION_LENGTH } from "../parsers";
+import { senderEnum } from "../../../db/schema";
+import { AGENT_WRITABLE_SENDERS, MAX_CONTEXT_QUESTION_LENGTH } from "../parsers";
+import { TITLES } from "../problem";
 
 const OPENAPI_PATH = path.resolve(
   __dirname,
@@ -192,5 +195,112 @@ describe("docs/integration/openapi.yaml — SwaggerParser.validate()", () => {
       expect(api.components.schemas.ContextModality).toBeUndefined();
       expect(api.components.schemas.ContextDocument).toBeUndefined();
     });
+  });
+});
+
+// lote-14 — CONTRATO-01 (T13): o contrato volta a ser autoridade. Dois testes
+// de paridade com o código (enums) e asserções de presença do que o lote muda.
+describe("docs/integration/openapi.yaml — paridade e presença (lote-14 — CONTRATO-01)", () => {
+  type Schema = {
+    enum?: string[];
+    description?: string;
+    required?: string[];
+    properties?: Record<string, Schema & { $ref?: string }>;
+    allOf?: Schema[];
+    pattern?: string;
+  };
+  type Operation = {
+    parameters?: { name?: string; required?: boolean; in?: string }[];
+    responses: Record<
+      string,
+      { content?: { "application/json"?: { schema?: Schema } } }
+    >;
+  };
+  type Api = {
+    paths: Record<string, Record<string, Operation>>;
+    components: { schemas: Record<string, Schema> };
+  };
+
+  async function load(): Promise<Api> {
+    return (await SwaggerParser.validate(OPENAPI_PATH)) as unknown as Api;
+  }
+
+  const sorted = (values: readonly string[]) => [...values].sort();
+
+  it("o enum ProblemCode do YAML é exatamente o conjunto de chaves de TITLES (AC2)", async () => {
+    const api = await load();
+    expect(sorted(api.components.schemas.ProblemCode.enum ?? [])).toEqual(
+      sorted(Object.keys(TITLES))
+    );
+  });
+
+  it("o enum Sender do YAML é exatamente senderEnum.enumValues (AC3)", async () => {
+    const api = await load();
+    expect(sorted(api.components.schemas.Sender.enum ?? [])).toEqual(
+      sorted(senderEnum.enumValues)
+    );
+  });
+
+  it("o PATCH /leads/{id} documenta assignedBroker na resposta 200 (AC1)", async () => {
+    const api = await load();
+    const schema =
+      api.paths["/leads/{id}"].patch.responses["200"].content?.["application/json"]?.schema;
+    const properties = (schema?.allOf ?? []).flatMap((part) =>
+      Object.keys(part.properties ?? {})
+    );
+    expect(properties).toContain("assignedBroker");
+    expect(Object.keys(api.components.schemas.AssignedBroker.properties ?? {}).sort()).toEqual([
+      "email",
+      "name",
+    ]);
+  });
+
+  it("o Lead documenta humanTakeoverAt e memoryResetRequestedAt, sempre presentes (AC4)", async () => {
+    const api = await load();
+    const lead = api.components.schemas.Lead;
+    expect(Object.keys(lead.properties ?? {})).toEqual(
+      expect.arrayContaining(["humanTakeoverAt", "memoryResetRequestedAt"])
+    );
+    expect(lead.required).toEqual(
+      expect.arrayContaining(["humanTakeoverAt", "memoryResetRequestedAt"])
+    );
+  });
+
+  it("humano é só leitura: descrito no Sender, ausente do sender de POST /messages (AC6)", async () => {
+    const api = await load();
+    expect(api.components.schemas.Sender.description).toMatch(/humano.*só leitura/s);
+    expect(sorted(api.components.schemas.AgentWritableSender.enum ?? [])).toEqual(
+      sorted(AGENT_WRITABLE_SENDERS)
+    );
+    expect(api.components.schemas.AgentWritableSender.enum).not.toContain("humano");
+    // O sender do corpo do POST aponta para o enum de escrita; o da Message lida, para o completo.
+    const request = JSON.stringify(api.components.schemas.MessageCreateRequest.properties?.sender);
+    expect(request).toContain("agente");
+    expect(request).not.toContain("humano");
+    expect(JSON.stringify(api.components.schemas.Message.properties?.sender)).toContain("humano");
+  });
+
+  it("a Message documenta authorName, sempre presente e anulável (T11)", async () => {
+    const api = await load();
+    expect(Object.keys(api.components.schemas.Message.properties ?? {})).toContain("authorName");
+    expect(api.components.schemas.Message.required).toContain("authorName");
+  });
+
+  it("documenta GET /leads/{id}, GET /memory-resets e whatsappPhoneNumberId opcional em POST /leads (AC7)", async () => {
+    const api = await load();
+    expect(api.paths["/leads/{id}"].get).toBeDefined();
+
+    const memoryResets = api.paths["/memory-resets"].get;
+    expect(memoryResets).toBeDefined();
+    const since = (memoryResets.parameters ?? []).find((p) => p.name === "since");
+    expect(since).toEqual(expect.objectContaining({ in: "query", required: true }));
+    expect(Object.keys(memoryResets.responses)).toEqual(
+      expect.arrayContaining(["200", "400", "401"])
+    );
+
+    const create = api.components.schemas.LeadCreateRequest;
+    expect(Object.keys(create.properties ?? {})).toContain("whatsappPhoneNumberId");
+    expect(create.required).not.toContain("whatsappPhoneNumberId");
+    expect(create.properties?.whatsappPhoneNumberId.pattern).toBe("^[0-9]{1,32}$");
   });
 });

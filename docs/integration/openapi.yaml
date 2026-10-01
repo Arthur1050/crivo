@@ -29,6 +29,8 @@ tags:
     description: Leitura de persona, modalidade e horário comercial do tenant (INT-09).
   - name: properties
     description: Busca do catálogo de imóveis visíveis (lote-11 — BUSCA-01).
+  - name: memory-resets
+    description: Pedidos de reconstrução da memória do agente feitos pelo CRM (lote-14).
 paths:
   /leads:
     post:
@@ -38,7 +40,10 @@ paths:
       description: >-
         Cria o lead com status `em_qualificacao` no tenant da chave. Reentrega
         com o mesmo `externalId` no mesmo tenant devolve o lead existente
-        (200), sem duplicar (INT-02).
+        (200), sem duplicar (INT-02). O campo opcional `whatsappPhoneNumberId`
+        ensina ao CRM o número de WhatsApp da imobiliária para o qual o lead
+        escreveu (lote-14): grava quando o valor muda e nunca é apagado por
+        uma entrega que não o envia.
       parameters:
         - $ref: "#/components/parameters/XCrivoTenant"
       requestBody:
@@ -70,6 +75,32 @@ paths:
         - bearerAuth: []
         - serviceAuth: []
   /leads/{id}:
+    get:
+      operationId: getLead
+      tags: [leads]
+      summary: Leitura de um lead, com a condução humana
+      description: >-
+        Devolve o lead do tenant da credencial (lote-14). O agente lê antes de
+        cada envio para conferir `humanTakeoverAt`: com a marca preenchida, um
+        humano conduz a conversa pelo CRM e o agente não envia. Lead de outro
+        tenant ou inexistente responde `404`.
+      parameters:
+        - $ref: "#/components/parameters/LeadId"
+        - $ref: "#/components/parameters/XCrivoTenant"
+      responses:
+        "200":
+          description: Lead do tenant da chave.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "404":
+          $ref: "#/components/responses/RecursoNaoEncontrado"
+      security:
+        - bearerAuth: []
+        - serviceAuth: []
     patch:
       operationId: patchLead
       tags: [leads]
@@ -79,7 +110,12 @@ paths:
         coluna); chave ausente não toca a coluna (INT-03). Quando `status`
         está presente, valida a transição contra a máquina de estados e a
         trava humana antes de gravar qualquer campo (INT-04) — veja a tabela
-        de transições e os códigos 409 no guia de integração.
+        de transições e os códigos 409 no guia de integração. Quando o lead
+        tem a marca de condução humana (`humanTakeoverAt`), um patch com
+        `status` ou `meetingAt` responde `409 lead-conduzido-por-humano` sem
+        gravar nada (lote-14); patch só de qualificação segue aceito.
+        Agendar (`meetingAt`) ou escalar atribui um responsável, devolvido em
+        `assignedBroker` (lote-8).
       parameters:
         - $ref: "#/components/parameters/LeadId"
         - $ref: "#/components/parameters/XCrivoTenant"
@@ -91,11 +127,13 @@ paths:
               $ref: "#/components/schemas/LeadPatchRequest"
       responses:
         "200":
-          description: Lead atualizado.
+          description: >-
+            Lead atualizado. `assignedBroker` aparece só quando esta operação
+            atribuiu um responsável (agendamento ou escalonamento).
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Lead"
+                $ref: "#/components/schemas/LeadPatchResponse"
         "400":
           $ref: "#/components/responses/PayloadInvalido"
         "401":
@@ -104,8 +142,12 @@ paths:
           $ref: "#/components/responses/RecursoNaoEncontrado"
         "409":
           description: >-
-            Transição inválida, lead travado por ação humana, ou motivo de
-            escalonamento ausente — `code` identifica a regra violada. Nenhum
+            Transição inválida (`transicao-invalida`), lead travado por ação
+            humana (`lead-travado-por-humano`), motivo de escalonamento ausente
+            (`motivo-escalonamento-obrigatorio`), lead conduzido por um humano
+            (`lead-conduzido-por-humano`), nenhum corretor disponível no
+            horário (`sem-corretor-disponivel`) ou conflito de agenda
+            (`conflito-de-agenda`) — `code` identifica a regra violada. Nenhum
             campo do payload é gravado (atomicidade).
           content:
             application/json:
@@ -168,7 +210,9 @@ paths:
         primeira mensagem. Reentrega com o mesmo `externalId` no mesmo tenant
         devolve a mensagem existente (200), sem duplicar (INT-05). Mensagens
         fora de ordem cronológica são aceitas — a exibição em Chats ordena por
-        `sentAt`.
+        `sentAt`. Só `agente` e `lead` são aceitos em `sender`: `humano` é
+        autoria do CRM (envio pela tela de Chats) e responde `400
+        payload-invalido`, sem gravar.
       parameters:
         - $ref: "#/components/parameters/LeadId"
         - $ref: "#/components/parameters/XCrivoTenant"
@@ -225,6 +269,42 @@ paths:
           $ref: "#/components/responses/NaoAutenticado"
         "404":
           $ref: "#/components/responses/RecursoNaoEncontrado"
+      security:
+        - bearerAuth: []
+        - serviceAuth: []
+  /memory-resets:
+    get:
+      operationId: listMemoryResets
+      tags: [memory-resets]
+      summary: Pedidos de reconstrução da memória do agente
+      description: >-
+        Lista os leads do tenant da credencial cujo `memory_reset_requested_at`
+        é maior ou igual a `since` (lote-14): devolução da conversa ao agente e
+        opt-out registrado pelo CRM. A fronteira é inclusiva. Lead sem
+        `externalId` não tem sessão no agente e fica de fora. O agente purga a
+        memória da sessão `waId` e reconstrói a partir do histórico do CRM.
+      parameters:
+        - name: since
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+          description: >-
+            Instante inicial, ISO-8601 com fuso. Ausente, vazio ou inválido
+            responde `400` `payload-invalido`.
+        - $ref: "#/components/parameters/XCrivoTenant"
+      responses:
+        "200":
+          description: Pedidos do tenant a partir de `since`, em ordem crescente.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemoryResetList"
+        "400":
+          $ref: "#/components/responses/PayloadInvalido"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
       security:
         - bearerAuth: []
         - serviceAuth: []
@@ -470,6 +550,9 @@ components:
         - rota-inexistente
         - metodo-nao-suportado
         - tenant-nao-identificado
+        - sem-corretor-disponivel
+        - conflito-de-agenda
+        - lead-conduzido-por-humano
     Problem:
       type: object
       description: application/problem+json (RFC 9457).
@@ -576,6 +659,14 @@ components:
       enum: [pre_aprovado, recurso_proprio, fgts]
     Sender:
       type: string
+      description: >-
+        Autor da mensagem. `humano` é só leitura: aparece em `GET
+        /leads/{id}/messages` (fala de um corretor pelo CRM), mas é recusado em
+        `POST /leads/{id}/messages` (`400 payload-invalido`).
+      enum: [agente, lead, humano]
+    AgentWritableSender:
+      type: string
+      description: Autores que o agente pode gravar em `POST /leads/{id}/messages`.
       enum: [agente, lead]
     CategoryColor:
       type: string
@@ -594,6 +685,14 @@ components:
         firstContactAt:
           type: string
           format: date-time
+        whatsappPhoneNumberId:
+          type: string
+          pattern: "^[0-9]{1,32}$"
+          description: >-
+            Opcional (lote-14). Id do número de WhatsApp da imobiliária para o
+            qual o lead escreveu (só dígitos, 1 a 32). Gravado quando muda;
+            ausente nunca apaga o valor existente. Vazio ou não numérico
+            responde `400` `payload-invalido`.
     LeadPatchRequest:
       type: object
       description: >-
@@ -654,6 +753,8 @@ components:
         - meetingAt
         - firstContactAt
         - optedOutAt
+        - humanTakeoverAt
+        - memoryResetRequestedAt
       properties:
         id:
           type: string
@@ -701,6 +802,61 @@ components:
           type: ["string", "null"]
           format: date-time
           description: Presente (não-null) quando o lead deu opt-out (LGPD-01 AC3).
+        humanTakeoverAt:
+          type: ["string", "null"]
+          format: date-time
+          description: >-
+            Marca de condução humana (lote-14). Não-null quando um humano
+            assumiu a conversa pelo CRM: o agente não envia ao lead enquanto
+            ela estiver preenchida, e `PATCH` com `status` ou `meetingAt`
+            responde `409 lead-conduzido-por-humano`.
+        memoryResetRequestedAt:
+          type: ["string", "null"]
+          format: date-time
+          description: >-
+            Instante em que o CRM pediu a reconstrução da memória do agente
+            (devolução ao agente ou opt-out pelo CRM); `null` quando não há
+            pedido. Também listado em `GET /memory-resets`.
+    AssignedBroker:
+      type: object
+      description: Corretor escolhido pelo CRM na operação (nunca a lista de candidatos).
+      required: [name, email]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+    LeadPatchResponse:
+      description: >-
+        `Lead` atualizado, mais `assignedBroker` quando esta operação atribuiu
+        um responsável (agendamento ou escalonamento, lote-8).
+      allOf:
+        - $ref: "#/components/schemas/Lead"
+        - type: object
+          properties:
+            assignedBroker:
+              $ref: "#/components/schemas/AssignedBroker"
+    MemoryReset:
+      type: object
+      required: [leadId, waId, requestedAt]
+      properties:
+        leadId:
+          type: string
+          format: uuid
+        waId:
+          type: string
+          description: "`externalId` do lead (wa_id) — compõe a chave da sessão de memória no agente."
+        requestedAt:
+          type: string
+          format: date-time
+    MemoryResetList:
+      type: object
+      required: [resets]
+      properties:
+        resets:
+          type: array
+          items:
+            $ref: "#/components/schemas/MemoryReset"
     MessageCreateRequest:
       type: object
       required: [externalId, sender, content, sentAt]
@@ -709,7 +865,7 @@ components:
           type: string
           description: Id da mensagem no WhatsApp — chave de idempotência por tenant.
         sender:
-          $ref: "#/components/schemas/Sender"
+          $ref: "#/components/schemas/AgentWritableSender"
         content:
           type: string
         sentAt:
@@ -717,7 +873,7 @@ components:
           format: date-time
     Message:
       type: object
-      required: [id, externalId, sender, content, sentAt]
+      required: [id, externalId, sender, content, sentAt, authorName]
       properties:
         id:
           type: string
@@ -731,6 +887,11 @@ components:
         sentAt:
           type: string
           format: date-time
+        authorName:
+          type: ["string", "null"]
+          description: >-
+            Nome de quem escreveu, só quando `sender` é `humano` (lote-14); `null`
+            nas demais.
     ContextDocumentCategory:
       type: object
       required: [name, color]
