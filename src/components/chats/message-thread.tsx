@@ -21,9 +21,9 @@ interface MessageThreadProps {
 }
 
 /**
- * Thread somente leitura de uma conversa (lote-3 — CHAT-01): `messages` já
- * chega ordenado `sentAt ASC, id` (T3 — ordem cronológica de leitura). Sem
- * `ChatComposer` — a tela nunca oferece campo de envio (spec.md — CHAT-01.6).
+ * Thread de uma conversa (lote-3 — CHAT-01): `messages` já chega ordenado
+ * `sentAt ASC, id` (T3 — ordem cronológica de leitura). O campo de envio do
+ * lote-14 vive fora deste componente (`HumanComposer`).
  *
  * Recomposta em redesign-crm-astryx (RD-06 AC2/AC3, design.md § R5) e
  * invertida em lote-6b (UI-01, design.md § R1): as mensagens do agente
@@ -50,6 +50,7 @@ export function MessageThread({
       sender: message.sender,
       content: message.content,
       sentAt: message.sentAt.toISOString(),
+      authorName: message.authorName,
     }))
   );
 
@@ -65,7 +66,13 @@ export function MessageThread({
             // UI-01 AC1: agente à direita (`user`, filled, sem avatar — já
             // identificado no cabeçalho da conversa); lead à esquerda
             // (`assistant`, ghost, avatar + nome do lead).
+            // Lote-14 (THREAD-01 AC1/AC7): o humano também fica à direita,
+            // com bolha filled, mas com avatar e nome do autor gravados na
+            // mensagem. Avatar e nome são o que distinguem a fala humana da
+            // do agente.
             const isLead = group.sender === "lead";
+            const isHuman = group.sender === "humano";
+            const authorName = group.authorName ?? "Equipe";
             const lastIndex = group.bubbles.length - 1;
 
             return (
@@ -73,7 +80,11 @@ export function MessageThread({
                 key={group.key}
                 sender={isLead ? "assistant" : "user"}
                 avatar={
-                  isLead ? <Avatar name={leadName} size="sm" /> : undefined
+                  isLead ? (
+                    <Avatar name={leadName} size="sm" />
+                  ) : isHuman ? (
+                    <Avatar name={authorName} size="sm" />
+                  ) : undefined
                 }
               >
                 {group.bubbles.map((bubble, index) => (
@@ -81,7 +92,15 @@ export function MessageThread({
                     key={bubble.id}
                     variant={isLead ? "ghost" : "filled"}
                     group={bubble.group}
-                    name={isLead && index === 0 ? leadName : undefined}
+                    name={
+                      index !== 0
+                        ? undefined
+                        : isLead
+                          ? leadName
+                          : isHuman
+                            ? authorName
+                            : undefined
+                    }
                     metadata={
                       index === lastIndex ? (
                         <ChatMessageMetadata

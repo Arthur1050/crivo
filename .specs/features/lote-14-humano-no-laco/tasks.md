@@ -741,9 +741,11 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] Captura real (extensão do Chrome, `npm run dev:test`) de uma thread com lead, agente e dois humanos diferentes, mostrando a distinção (AC1).
-- [ ] Self-check da Astryx: nenhum `<div>`, `style={{}}` ou valor arbitrário.
-- [ ] Gate Build passa; contagem registrada.
+- [x] Captura real (extensão do Chrome, `npm run dev:test`) de uma thread com lead, agente e dois humanos diferentes, mostrando a distinção (AC1).
+- [x] Self-check da Astryx: nenhum `<div>`, `style={{}}` ou valor arbitrário.
+- [x] Gate Build passa; contagem registrada. *(Suíte: 145 arquivos / 2.391 testes, só as 2 falhas conhecidas de `DOCLIM-01 AC8`; lint 0 erros; build ok.)*
+
+**Evidence:** captura pela extensão Claude in Chrome em `http://localhost:3000/chats?conversa=e4965984-…` (`npm run dev:test`, banco descartável conferido no log; porta 3000 conferida por `netstat` + `curl`), logado como o administrador de teste "Ana Teste" de `crivo-demo`. Thread sintética do lead "Nathan Ferreira" com lead, agente e dois humanos: as bolhas de "Ana Teste" e "Bruno Lima" ficam à direita, filled, com avatar de iniciais (AT, BL) e o nome na primeira bolha de cada grupo; duas mensagens seguidas da Ana formam um grupo, e a do Bruno abre outro; as bolhas do agente ficam à direita sem avatar nem nome; as do lead, à esquerda com avatar e nome. O overlay do Next acusou um erro de hidratação no divisor de data (`<Timestamp format="date_weekday">`, `message-thread.tsx:62`), código anterior ao lote, registrado em Deferred Ideas.
 
 **Tests:** none
 **Gate:** Build

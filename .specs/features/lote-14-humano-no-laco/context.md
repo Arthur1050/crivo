@@ -95,3 +95,4 @@ Todas as áreas não discutidas estão na tabela de assunções da spec com defa
 - Classificador de opt-out em linguagem natural nas conversas conduzidas por humano.
 - Histórico de quem assumiu e devolveu cada conversa.
 - Atribuir o lead a quem assume a conversa.
+- Erro de hidratação no divisor de data da thread do Chats (`<Timestamp format="date_weekday">` em `src/components/chats/message-thread.tsx`): o servidor renderiza o dia em inglês ("Sat, Sep 26, 2026") e o cliente em português. Anterior ao lote-14 (mesma família do problema do `Timestamp` do lote-12); visto na captura da T29.
