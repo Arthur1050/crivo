@@ -762,8 +762,10 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] Captura real da lista com uma conversa do agente, uma com marca e uma em `escalado_humano` (AC5).
-- [ ] Self-check da Astryx; gate Build passa; contagem registrada.
+- [x] Captura real da lista com uma conversa do agente, uma com marca e uma em `escalado_humano` (AC5).
+- [x] Self-check da Astryx; gate Build passa; contagem registrada. *(Suíte: 145 arquivos / 2.391 testes, só as 2 falhas conhecidas de `DOCLIM-01 AC8`; lint 0 erros; build ok.)*
+
+**Evidence:** captura pela extensão Claude in Chrome (`dev:test`, administrador de teste de `crivo-demo`). Topo da lista: "Nathan Ferreira" (marca de condução humana) com o `Token` "Humano" abaixo do horário; "Simone Dias" e as demais conversas do agente sem o token. Fim da lista: as sete conversas em `escalado_humano` sem marca (Otávio Ramos, Gabriela Carvalho, Diego Oliveira, Sabrina Ibrahim, Leonardo Oliveira, Uendel Ramos, Karina Lopes) com o token. Sem `<div>`, `<span>` nem `style`.
 
 **Tests:** none
 **Gate:** Build

@@ -5,6 +5,8 @@ import { Avatar } from "@astryxdesign/core/Avatar";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { LinkProvider } from "@astryxdesign/core/Link";
 import { List, ListItem } from "@astryxdesign/core/List";
+import { VStack } from "@astryxdesign/core/Stack";
+import { Token } from "@astryxdesign/core/Token";
 import { RelativeTime } from "@/src/components/shared/relative-time";
 import type { ConversationSummary } from "@/src/server/data";
 
@@ -24,6 +26,10 @@ interface ConversationListProps {
  * ganha o avatar de iniciais do lead em `startContent`, mantendo nome,
  * preview da última mensagem e timestamp relativo — a navegação e o destaque
  * de seleção seguem exatamente os de hoje.
+ *
+ * Lote-14 (THREAD-01 AC5): a conversa conduzida por humano (marca ou
+ * `escalado_humano`, regra única de `isHumanConducted`) ganha um `Token`
+ * "Humano" junto do horário.
  */
 export function ConversationList({
   summaries,
@@ -53,11 +59,16 @@ export function ConversationList({
               <Avatar name={summary.leadName || "Lead"} size="md" />
             }
             endContent={
-              summary.lastMessage ? (
-                <RelativeTime
-                  value={summary.lastMessage.sentAt.toISOString()}
-                />
-              ) : undefined
+              <VStack gap={1} hAlign="end">
+                {summary.lastMessage ? (
+                  <RelativeTime
+                    value={summary.lastMessage.sentAt.toISOString()}
+                  />
+                ) : null}
+                {summary.humanConducted ? (
+                  <Token label="Humano" size="sm" color="blue" />
+                ) : null}
+              </VStack>
             }
           />
         ))}
