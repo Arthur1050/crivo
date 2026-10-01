@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isSessionExpired, selectSeedMessages } from "../session.mjs";
+import { isSessionExpired, selectSeedMessages, toSeedMemoryItem } from "../session.mjs";
 
 type HistoryMessage = import("../session.mjs").HistoryMessage;
 
@@ -138,5 +138,71 @@ describe("selectSeedMessages (MEM-03 AC5)", () => {
 
     expect(result).toHaveLength(3);
     expect(result.map((m) => m.content)).toEqual(["mensagem 8", "mensagem 9", "mensagem 10"]);
+  });
+});
+
+/**
+ * DEVOLVER-01 AC5/AC6 (lote-14): cada remetente do CRM vira um item da
+ * memória do agente. A fala do corretor (`humano`) entra como `system`
+ * (tipo confirmado na T1, execução 2802), identificada como escrita pela
+ * equipe da imobiliária — nunca como fala do lead (`user`) nem do agente (`ai`).
+ */
+describe("toSeedMemoryItem (DEVOLVER-01 AC5, AC6)", () => {
+  const SENT_AT = "2026-10-01T12:00:00.000Z";
+
+  it("agente -> ai, conteúdo sem alteração", () => {
+    expect(toSeedMemoryItem({ sender: "agente", content: "Qual a região?", sentAt: SENT_AT })).toEqual({
+      type: "ai",
+      message: "Qual a região?",
+    });
+  });
+
+  it("lead -> user, conteúdo sem alteração", () => {
+    expect(toSeedMemoryItem({ sender: "lead", content: "quantas vagas mesmo?", sentAt: SENT_AT })).toEqual({
+      type: "user",
+      message: "quantas vagas mesmo?",
+    });
+  });
+
+  it("humano -> system com a atribuição ao autor, byte a byte (AC6)", () => {
+    expect(
+      toSeedMemoryItem({
+        sender: "humano",
+        content: "o apartamento da Rua X tem 3 vagas",
+        authorName: "Ana Souza",
+        sentAt: SENT_AT,
+      })
+    ).toEqual({
+      type: "system",
+      message: "Mensagem enviada ao lead por Ana Souza, da equipe da imobiliária: o apartamento da Rua X tem 3 vagas",
+    });
+  });
+
+  it('humano com authorName nulo -> "alguém da equipe" na atribuição', () => {
+    expect(toSeedMemoryItem({ sender: "humano", content: "Oi!", authorName: null, sentAt: SENT_AT })).toEqual({
+      type: "system",
+      message: "Mensagem enviada ao lead por alguém da equipe, da equipe da imobiliária: Oi!",
+    });
+  });
+
+  it("remetente desconhecido -> descartado (null)", () => {
+    expect(toSeedMemoryItem({ sender: "sistema", content: "x", sentAt: SENT_AT })).toBeNull();
+    expect(toSeedMemoryItem({ content: "sem remetente", sentAt: SENT_AT })).toBeNull();
+  });
+
+  it("nenhum caminho devolve user para uma mensagem humano (asserção dedicada, AC6)", () => {
+    const variants = [
+      { authorName: "Ana" },
+      { authorName: null },
+      { authorName: undefined },
+      { authorName: "" },
+      { authorName: "Lead" },
+    ];
+    for (const extra of variants) {
+      const item = toSeedMemoryItem({ sender: "humano", content: "texto", sentAt: SENT_AT, ...extra });
+      expect(item?.type).toBe("system");
+      expect(item?.type).not.toBe("user");
+      expect(item?.type).not.toBe("ai");
+    }
   });
 });

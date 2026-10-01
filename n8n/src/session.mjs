@@ -10,8 +10,14 @@ const DEFAULT_SESSION_GAP_HOURS = 12;
 const DEFAULT_MAX_SEED_MESSAGES = 50;
 
 /**
- * @typedef {{sender: "lead"|"agente", content: string, sentAt: string}} HistoryMessage
+ * @typedef {{sender: "lead"|"agente"|"humano", content: string, sentAt: string, authorName?: string|null}} HistoryMessage
  */
+
+/**
+ * @typedef {{type: "ai"|"user"|"system", message: string}} SeedMemoryItem
+ */
+
+const UNKNOWN_AUTHOR = "alguém da equipe";
 
 /**
  * Decide se a sessão expirou: o intervalo entre a mensagem atual (`now`) e a
@@ -78,4 +84,29 @@ export function selectSeedMessages(
 
   const session = list.slice(sessionStart);
   return session.length > maxMessages ? session.slice(session.length - maxMessages) : session;
+}
+
+/**
+ * Converte uma mensagem do CRM no item que a semeadura insere na memória do
+ * agente (lote-14 — DEVOLVER-01 AC5, AC6). `agente` → `ai`; `lead` → `user`;
+ * `humano` → `system`, com a atribuição ao corretor (tipo confirmado na T1:
+ * o `memoryManager` aceita `system` no meio da sessão e o modelo usa o fato).
+ * A fala humana nunca entra como `user`: o modelo a leria como fala do lead.
+ * Remetente desconhecido é descartado (`null`).
+ * @param {Partial<HistoryMessage> & {sender?: unknown}} message
+ * @returns {SeedMemoryItem | null}
+ */
+export function toSeedMemoryItem(message) {
+  const content = message.content;
+  if (message.sender === "agente") return { type: "ai", message: content };
+  if (message.sender === "lead") return { type: "user", message: content };
+  if (message.sender === "humano") {
+    const name = typeof message.authorName === "string" ? message.authorName.trim() : "";
+    const author = name === "" ? UNKNOWN_AUTHOR : name;
+    return {
+      type: "system",
+      message: `Mensagem enviada ao lead por ${author}, da equipe da imobiliária: ${content}`,
+    };
+  }
+  return null;
 }

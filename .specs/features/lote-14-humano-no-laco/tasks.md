@@ -593,10 +593,10 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] Testes em `n8n/src/__tests__/session.test.ts`, um por remetente; o texto de atribuição é afirmado byte a byte (DEVOLVER-01 AC6).
-- [ ] Nenhum caminho devolve `user` para uma mensagem `humano` (asserção dedicada).
-- [ ] O tipo usado para `humano` é o registrado na T1.
-- [ ] Gate Quick passa; contagem registrada.
+- [x] Testes em `n8n/src/__tests__/session.test.ts`, um por remetente; o texto de atribuição é afirmado byte a byte (DEVOLVER-01 AC6). _Evidência: `describe("toSeedMemoryItem")` com 6 testes (agente, lead, humano com nome, humano sem nome, desconhecido, nunca `user`)._
+- [x] Nenhum caminho devolve `user` para uma mensagem `humano` (asserção dedicada). _Evidência: 5 variantes de `authorName`, todas `system`._
+- [x] O tipo usado para `humano` é o registrado na T1. _Evidência: `system` (design.md § Confirmações da T1, execução 2802)._
+- [x] Gate Quick passa; contagem registrada. _Evidência: `npx vitest run n8n/src/__tests__` 17/456 → 17/462, 0 falhas._
 
 **Tests:** unit
 **Gate:** Quick
