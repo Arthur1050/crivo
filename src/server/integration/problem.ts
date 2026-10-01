@@ -30,7 +30,10 @@ export type ProblemCode =
   | "sem-corretor-disponivel"
   // lote-8 — ATRIB-02 AC7: dois agendamentos disputaram o mesmo corretor no
   // mesmo intervalo; o índice único do banco confirmou só um.
-  | "conflito-de-agenda";
+  | "conflito-de-agenda"
+  // lote-14 — SILENCIO-01 AC9: o lead tem a marca de condução humana; o
+  // contrato não muda `status` nem `meetingAt` enquanto um humano conduz.
+  | "lead-conduzido-por-humano";
 
 const TITLES: Record<ProblemCode, string> = {
   "nao-autenticado": "Não autenticado",
@@ -45,6 +48,7 @@ const TITLES: Record<ProblemCode, string> = {
   "tenant-nao-identificado": "Tenant não identificado",
   "sem-corretor-disponivel": "Nenhum corretor disponível no horário",
   "conflito-de-agenda": "Conflito de agenda",
+  "lead-conduzido-por-humano": "Lead conduzido por um humano",
 };
 
 export const PROBLEM_CONTENT_TYPE = "application/problem+json";

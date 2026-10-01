@@ -340,10 +340,10 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] Testes em `leads-patch.test.ts` (ou arquivo novo `leads-patch-conducao.test.ts`): marca + `status` → `409 lead-conduzido-por-humano`; marca + `meetingAt` sem status → 409; marca + patch só de qualificação → 200 e gravado (SILENCIO-01 AC9).
-- [ ] No 409, nenhum campo do patch é gravado, com asserção de antes/depois (L-001), e a recusa aparece em `integration_refusals` (AD-023).
-- [ ] Entrada que satisfaz marca **e** trava humana (`statusChangedBy = humano`) responde `lead-conduzido-por-humano` (L-041); transição inválida com marca continua `transicao-invalida`.
-- [ ] Gate Quick passa; contagem registrada.
+- [x] Testes em `leads-patch.test.ts` (ou arquivo novo `leads-patch-conducao.test.ts`): marca + `status` → `409 lead-conduzido-por-humano`; marca + `meetingAt` sem status → 409; marca + patch só de qualificação → 200 e gravado (SILENCIO-01 AC9). *(leads-patch-conducao.test.ts: 7 testes; marca+status, marca+meetingAt e qualificação 200)*
+- [x] No 409, nenhum campo do patch é gravado, com asserção de antes/depois (L-001), e a recusa aparece em `integration_refusals` (AD-023). *(antes/depois da linha inteira com toEqual; integration_refusals com o código novo)*
+- [x] Entrada que satisfaz marca **e** trava humana (`statusChangedBy = humano`) responde `lead-conduzido-por-humano` (L-041); transição inválida com marca continua `transicao-invalida`. *(marca + statusChangedBy humano responde o código da condução; transicao-invalida preservada)*
+- [x] Gate Quick passa; contagem registrada. *(leads-patch-conducao + leads-patch + leads + problem: 4 arquivos / 39 testes)*
 
 **Tests:** integration
 **Gate:** Quick

@@ -23,6 +23,8 @@ function statusForCode(code: ProblemCode): number {
     // estado atual da agenda, a mesma família das demais 409 desta rota.
     case "sem-corretor-disponivel":
     case "conflito-de-agenda":
+    // lote-14 — SILENCIO-01 AC9: conflito com a condução humana em curso.
+    case "lead-conduzido-por-humano":
       return 409;
     default:
       return 400;
@@ -43,6 +45,8 @@ function detailForCode(code: ProblemCode): string | undefined {
       return "Nenhum corretor com janela de trabalho cobrindo o horário solicitado. Ofereça outro horário ao lead.";
     case "conflito-de-agenda":
       return "O corretor escolhido acabou de receber outra reunião neste mesmo horário. Ofereça outro horário ao lead.";
+    case "lead-conduzido-por-humano":
+      return "Um humano conduz esta conversa pelo CRM; status e reunião não podem ser alterados pela API até a devolução ao agente.";
     default:
       return undefined;
   }

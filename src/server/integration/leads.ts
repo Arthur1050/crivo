@@ -176,7 +176,19 @@ export async function patchLead(
     if (!allowedTargets.includes(dto.status)) {
       return { ok: false, code: "transicao-invalida" };
     }
+  }
 
+  // Condução humana (lote-14 — SILENCIO-01 AC9): checada DEPOIS da transição
+  // e ANTES da trava humana (quem satisfaz as duas regras recebe o código da
+  // condução). Cobre `status` e `meetingAt`; patch só de qualificação passa.
+  if (
+    lead.humanTakeoverAt &&
+    (dto.status !== undefined || dto.meetingAt !== undefined)
+  ) {
+    return { ok: false, code: "lead-conduzido-por-humano" };
+  }
+
+  if (dto.status !== undefined) {
     // Trava humana (INT-04.4): checada DEPOIS da transição ser válida na
     // tabela — uma transição já inválida por si (ex.: sair de
     // escalado_humano) reporta 'transicao-invalida', nunca
