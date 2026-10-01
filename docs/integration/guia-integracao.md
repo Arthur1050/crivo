@@ -55,8 +55,11 @@ Qualquer combinação marcada ❌ responde `409` `transicao-invalida`.
 **Códigos de erro 409 do PATCH**, na ordem em que são avaliados:
 
 1. `transicao-invalida` — a transição pedida não está na tabela acima a partir do status atual do lead.
-2. `lead-travado-por-humano` — a transição está na tabela, mas um humano alterou o status por último.
-3. `motivo-escalonamento-obrigatorio` — a transição para `escalado_humano` foi pedida sem `escalationReason` preenchido (ou preenchido só com espaços).
+2. `lead-conduzido-por-humano` (lote-14) — o lead tem a marca de condução humana (`humanTakeoverAt` preenchido) e o patch traz `status` ou `meetingAt`. Vale também para `meetingAt` sem `status`. Patch só de qualificação continua aceito. Com a marca **e** a trava humana ao mesmo tempo, o código é este.
+3. `lead-travado-por-humano` — a transição está na tabela, mas um humano alterou o status por último.
+4. `motivo-escalonamento-obrigatorio` — a transição para `escalado_humano` foi pedida sem `escalationReason` preenchido (ou preenchido só com espaços).
+
+O agendamento ainda pode responder `409` `sem-corretor-disponivel` (nenhum corretor atende no horário pedido) ou `409` `conflito-de-agenda` (o horário colide com outra reunião), depois das regras acima.
 
 **Atomicidade**: se o PATCH mistura campos válidos com uma transição de status rejeitada, a request inteira é rejeitada — nenhum campo do payload é gravado, nem os que seriam válidos isoladamente. Não há "salvamento parcial".
 
@@ -142,3 +145,24 @@ Nenhum desses passos exige alterar `app/(crm)/**` (as telas do CRM) — elas nun
   restante do contrato (nunca `403`).
 - Sujeito às mesmas regras transversais: `401` sem chave válida, isolamento
   por tenant, `application/problem+json` em qualquer erro.
+
+## 10. Condução humana e autoria (lote-14)
+
+O corretor pode assumir uma conversa pelo Chats do CRM, responder ao lead e devolver a conversa ao agente. Para o consumidor do contrato, isso aparece em quatro pontos.
+
+**Campos de condução no `Lead`** (em toda resposta que devolve o lead):
+
+- `humanTakeoverAt` (ISO 8601 ou `null`): a marca de condução humana. Preenchido, um humano conduz a conversa: o consumidor não deve enviar nenhuma mensagem ao lead e recebe `409 lead-conduzido-por-humano` se tentar mudar `status` ou `meetingAt`. O lead em `escalado_humano` também é conduzido por humano, com ou sem a marca.
+- `memoryResetRequestedAt` (ISO 8601 ou `null`): instante do último pedido do CRM para reconstruir a memória do agente (devolução ao agente ou opt-out registrado pela tela). O consumidor guarda o último pedido atendido e reconstrói a memória a partir de `GET /leads/{id}/messages` quando o pedido for mais novo.
+
+**`GET /leads/{id}`**: devolve o `Lead` do tenant da chave. É a leitura que o agente faz imediatamente antes de cada envio, para não falar com um lead que um humano acabou de assumir. Lead inexistente ou de outro tenant responde `404` `recurso-nao-encontrado`; sem chave, `401`. Se a leitura falhar, o consumidor não deve enviar.
+
+**`GET /memory-resets?since=<ISO 8601>`**: devolve `{ "resets": [{ "leadId", "waId", "requestedAt" }] }` com os pedidos de reconstrução do tenant com `requestedAt` maior ou igual a `since` (o próprio `since` entra). Leads sem `externalId` não aparecem. `since` ausente ou inválido responde `400` `payload-invalido`. Serve para purgar a memória de quem não escreve mais (opt-out pelo CRM tem de ser purgado em até 20 minutos).
+
+**`whatsappPhoneNumberId` no `POST /leads`** (opcional, só dígitos, 1 a 32): o id do número de WhatsApp da imobiliária para o qual o lead escreveu. O CRM responde ao lead por esse número. Enviar a cada mensagem recebida; o CRM grava só quando o valor muda, e uma entrega sem o campo nunca apaga o valor existente. Valor vazio, só espaços, não numérico ou com mais de 32 dígitos responde `400` `payload-invalido`.
+
+**Autoria `humano`** nas mensagens:
+
+- `GET /leads/{id}/messages` pode devolver `sender: "humano"`: mensagem escrita por um usuário do CRM e entregue ao lead pelo WhatsApp. O campo `authorName` traz o nome do autor no momento do envio (preservado mesmo se o usuário for removido depois); nas mensagens `agente` e `lead`, `authorName` é `null`.
+- `POST /leads/{id}/messages` aceita só `sender: "agente"` e `sender: "lead"`. `sender: "humano"` responde `400` `payload-invalido` e nada é gravado: a autoria humana nasce só pela tela, com usuário autenticado, nunca pela credencial de serviço.
+- Ao reconstruir a memória do agente, a mensagem `humano` deve entrar como fala da imobiliária, atribuída ao corretor, e nunca como fala do lead.

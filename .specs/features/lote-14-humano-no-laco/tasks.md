@@ -916,8 +916,8 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] Cada item citado aparece no guia, coerente com o `openapi.yaml` da T13.
-- [ ] Gate Build passa.
+- [x] Cada item citado aparece no guia, coerente com o `openapi.yaml` da T13. *(`docs/integration/guia-integracao.md` §10 "Condução humana e autoria": `humanTakeoverAt`, `memoryResetRequestedAt`, `GET /leads/{id}`, `GET /memory-resets`, `whatsappPhoneNumberId`, `humano` só leitura e `authorName`; §3 ganhou o 409 `lead-conduzido-por-humano` na ordem real de `patchLead` (`src/server/integration/leads.ts:177-201`) e os dois 409 do lote-8.)*
+- [x] Gate Build passa. *(145 arquivos / 2.395 testes, só as 2 falhas conhecidas; lint 0 erros; build ok.)*
 
 **Tests:** none
 **Gate:** Build
