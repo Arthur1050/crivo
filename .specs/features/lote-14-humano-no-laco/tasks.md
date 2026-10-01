@@ -898,8 +898,8 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] Cada item acima tem seção ou parágrafo citável (HUMDOC-01 AC4).
-- [ ] Gate Build passa.
+- [x] Cada item acima tem seção ou parágrafo citável (HUMDOC-01 AC4). *(`n8n/README.md` §15 "Humano no laço": marca no gate, releitura antes do envio, reconstrução da memória com a varredura D, scheduler, número de resposta e ordem de publicação; coluna `memoryResetAt` na tabela do §3; runbook de rotação nos dois cofres no §2.2; varredura D citada no §6.)*
+- [x] Gate Build passa. *(145 arquivos / 2.395 testes, só as 2 falhas conhecidas; lint 0 erros; build ok.)*
 
 **Tests:** none
 **Gate:** Build

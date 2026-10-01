@@ -52,6 +52,16 @@ Passo a passo do token **permanente de System User**:
 6. **Phone number ID**: no app Meta → **WhatsApp → Configuração da API** → "ID do número de telefone" do número de teste (mesmo valor que já está na fixture `n8n/fixtures/meta-message-text.json` → `metadata.phone_number_id`, hoje um valor de exemplo — confirmar contra o real na Execute).
 7. No n8n: credencial do tipo **WhatsApp API**, colar o token permanente + phone number id.
 
+**Token em dois cofres (lote-14, AD-035)**: o mesmo token de System User também vive na Vercel, em `WHATSAPP_ACCESS_TOKEN` (produção), porque a mensagem escrita por humano no Chats sai direto do CRM pela Cloud API. Rotação, sempre nos dois lugares, nesta ordem:
+
+1. Gerar o token novo no Business Manager (passos 1–5 acima). O antigo continua válido até ser revogado.
+2. Colar o novo em `WHATSAPP_ACCESS_TOKEN` na Vercel (produção) e fazer redeploy.
+3. Colar o novo na credencial **WhatsApp API** do n8n.
+4. Conferir os dois envios: uma resposta do agente (execução `success` do `crivo-tool-responder-lead`) e uma mensagem humana pelo Chats.
+5. Só então revogar o token antigo.
+
+Esquecer um dos cofres derruba só um dos envios: no CRM a falha aparece como "O envio pelo WhatsApp não está configurado" (`credencial-invalida`, com log `envio-humano-falhou`); no n8n, como erro do nó de envio.
+
 ### 2.3 Google Calendar — credencial `googleCalendarOAuth2Api`
 
 Fase 8 usa **uma conta Google só** (do usuário) para os 2 tenants de teste (context.md — decisão registrada; credencial por tenant é productização de piloto real).
@@ -106,6 +116,7 @@ Fase 8: 2 linhas para os 2 tenants reais do seed de produção + 1 linha extra c
 | `reengaged` | boolean | true após o único reengajamento (AGT-05 AC2) |
 | `perguntadosJson` | string | **NOVO (lote-6c)** — JSON array dos campos obrigatórios já perguntados (`phase.mjs` — `REQUIRED_FIELDS`); "perguntado" é permanente, não depende do lead ter respondido (QLF-02) |
 | `aberturasJson` | string | **NOVO (lote-6c)** — JSON array das aberturas de turno já usadas pelo agente nesta sessão (`voice.mjs` — `checkOpening`), para barrar repetição (VOZ-01 AC2) |
+| `memoryResetAt` | string | **NOVO (lote-14)** — ISO do último pedido de reconstrução da memória já atendido (`leads.memory_reset_requested_at` do CRM). O reset é devido quando o pedido do CRM é mais novo que este valor (`memoryResetDue` em `conduction.mjs`). Criada por `add_data_table_column`; ver §15 |
 
 Perder esta tabela **não é perda de dado**: o cold start reconstrói `leadId`/campos a partir da resposta idempotente de `POST /leads` (spec.md — edge case). Não over-engineering de durabilidade aqui, de propósito.
 
@@ -190,7 +201,7 @@ Toda mensagem proativa do produto (lembrete de reunião, reengajamento) acontece
 
 ## 6. Cadência do scheduler (Risco R3 — quota de execuções)
 
-`crivo-agente-scheduler` roda como **1 workflow único** com 3 varreduras sequenciais (lembretes, reengajamento, escalonamento por silêncio) exatamente para minimizar o número de execuções contra a quota do plano n8n — 3 workflows separados triplicariam o consumo só de scheduling.
+`crivo-agente-scheduler` roda como **1 workflow único** com 3 varreduras sequenciais (lembretes, reengajamento, escalonamento por silêncio), mais a varredura D de purga pedida pelo CRM desde o lote-14 (§15), todas no mesmo trigger exatamente para minimizar o número de execuções contra a quota do plano n8n — 3 workflows separados triplicariam o consumo só de scheduling.
 
 **Matemática do risco**, a 15 min:
 
@@ -380,3 +391,37 @@ Cada turno de conversa faz **uma** chamada extra ao modelo: cerca de 800 tokens 
 ### Depois de publicar
 
 Toda publicação que muda o system message ou a versão do workflow exige o `check` do §13 e a remedição do teto de contexto. O `crivo-benchmark-contexto` inlina o mesmo `system-message.mjs`: quando o texto muda, republicar o benchmark antes de medir. Última remedição: 2026-09-30, depois da D11 (agente `3be9cfed`, benchmark `b228c3de`).
+
+---
+
+## 15. Humano no laço (lote-14)
+
+O corretor assume uma conversa pelo Chats, responde pelo CRM (envio direto pela Cloud API, AD-035), devolve ao agente e registra opt-out. A regra de quem conduz é uma só, em `n8n/src/conduction.mjs`, inlinada nos Code nodes e importada pelo CRM (AD-034): o lead é **conduzido por humano** quando tem a marca `humanTakeoverAt` ou está em `escalado_humano`.
+
+### Marca no gate
+
+`gate.mjs` recebe `humanTakeoverAt` (passado por `Code: gate` a partir do `POST /leads`). Com a marca, toda mensagem do lead vai para `somente-registrar`, no mesmo nível de `escalado_humano`: a mensagem é gravada no CRM e o agente não fala, inclusive em mídia sem texto. A palavra exata `sair`/`parar` continua vencendo a marca e segue para `opt-out`.
+
+### Releitura do lead antes de cada envio do agente
+
+Um turno do agente pode estar em andamento quando o corretor clica em "Assumir". Por isso o agente relê o lead imediatamente antes de enviar, nos dois caminhos de envio:
+
+- `crivo-tool-responder-lead`: `Aceito pelas barreiras de persona?` → `HTTP: GET /leads/{id} (antes do envio)` → `Code: pode enviar no turno?` → `Agente pode enviar no turno?`. O falso devolve ao agente a recusa `conversa-com-humano`; o erro da leitura, `conducao-indisponivel`. Nenhum dos dois envia nem grava abertura.
+- `crivo-agente-principal`, envio de contingência: o mesmo trio de nós antes do envio fixo; o falso e o erro do HTTP vão ao fechamento sem envio.
+
+`canAgentSendInTurn` olha **só** a marca e o opt-out, nunca o `status`: o agente que acabou de escalar ainda precisa enviar a mensagem de passagem (`system-message.mjs`). Falha da leitura bloqueia o envio (falha fechada).
+
+### Reconstrução da memória (devolução e opt-out pelo CRM)
+
+"Devolver ao agente" e "Registrar opt-out" no CRM gravam `leads.memory_reset_requested_at`. O n8n guarda em `conversa_estado.memoryResetAt` o último pedido já atendido, e o reset é devido quando o pedido é mais novo (`memoryResetDue`). Há dois consumidores, ambos idempotentes porque reconstruir a partir do CRM sempre dá o mesmo conteúdo:
+
+1. **Fluxo principal, na primeira mensagem do lead depois da devolução.** `Code: sessão expirada?` devolve `expired = sessionExpired || resetDue`, e o mesmo IF da sessão expirada purga a memória e as colunas de qualificação e persona de `conversa_estado`, gravando `memoryResetAt`. A semeadura relê `GET /leads/{id}/messages` e insere cada mensagem por `toSeedMemoryItem` (`session.mjs`): `agente` → `ai`, `lead` → `user`, `humano` → `system` com o texto "Mensagem enviada ao lead por <autor>, da equipe da imobiliária: <conteúdo>". O tipo `system` foi confirmado numa execução real (T1, execução 2802): o modelo usa o fato e não o atribui ao lead. O `system message` do agente não mudou, então o teto de contexto e o benchmark do §13 continuam valendo.
+2. **Varredura D do scheduler, a cada 15 min.** Cobre o lead que não escreve mais (opt-out pelo CRM, devolução sem resposta) e a purga da LGPD em até 20 min (OPTHUM-01 AC6): `Data Table: tenants (purga pedida pelo CRM)` → `HTTP: GET /memory-resets (purga pedida pelo CRM)` (`since` = agora − 24 h, `onError: continueRegularOutput`) → `Code: pedidos de purga do tenant` → `Split: pedidos de purga` → `Data Table: conversa_estado (purga pedida pelo CRM)` → `Code: reset devido?` → `Reset devido?` → `Postgres: apagar sessão` (`DELETE FROM n8n_chat_histories WHERE session_id = $1`, parâmetro `<tenantSlug>:<waId>`, a mesma chave do `memoryPostgresChat`) → `Data Table: purgar qualificação e persona (purga pedida pelo CRM)`, que grava `memoryResetAt`. Se o DELETE falhar, `memoryResetAt` não é gravado e o pedido continua devido no tick seguinte; com o CRM fora, a janela de 24 h do `since` repete o pedido.
+
+### Scheduler
+
+Reengajamento (varredura B) e escalonamento por silêncio (C) releem o lead (`HTTP: GET /leads/{id} (reengajamento|escalonamento)`) e só seguem com `canAgentContactProactively`: lead conduzido por humano não recebe template nem é escalado. Erro da leitura não tem saída ligada: aquele lead não é contatado no tick. Os lembretes de reunião (A) não mudaram e continuam saindo durante a condução humana. O `PATCH` de status ou reunião num lead com a marca responde `409 lead-conduzido-por-humano` no CRM, a segunda proteção.
+
+### Número de resposta e coluna nova
+
+O `POST /leads` do principal envia `whatsappPhoneNumberId` a cada mensagem recebida; é o número pelo qual o CRM responde ao lead. A coluna `memoryResetAt` de `conversa_estado` é criada por `add_data_table_column` antes da publicação dos workflows (ordem fixa: `drizzle-kit push` em produção → deploy do CRM → coluna → `tool-responder-lead` → `scheduler` → `principal`). Publicar o n8n antes do CRM faria o agente chamar rotas que ainda não existem e, pela falha fechada, ficar calado.
