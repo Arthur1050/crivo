@@ -290,6 +290,74 @@ memória. Nenhum telefone completo nem texto real além das frases roteirizadas.
 
 ---
 
+## 6.2 Cenário 6 — humano no laço (lote-14, HUMPROVA-01)
+
+**Objetivo**: provar com conversa real que um corretor assume a conversa, responde pelo CRM com
+entrega no WhatsApp, devolve a conversa ao agente com a memória refeita a partir do CRM e registra o
+opt-out pela tela; e que a palavra exata de opt-out continua valendo durante a condução humana.
+
+**Quem conduz**: o lead é o usuário, digitando no WhatsApp do aparelho de teste (§1). O corretor age
+no **Chats do CRM de produção**, com capturas de tela pela extensão do Chrome. Nenhuma automação
+escreve em nome do lead.
+
+**Estado inicial exigido**: os três alvos do checklist (§9) limpos antes de cada caso. Os quatro casos
+usam o mesmo número de teste, em sequência, com `crivo-smoke-reset` + `npm run smoke:reset` e a
+confirmação do checklist entre um caso e outro (o `smoke:reset` também apaga as reservas de envio
+humano, `human_message_sends`, do lead).
+
+### Caso 6a — assumir, responder pelo CRM e receber sem recarregar
+
+| Turno | Quem | Intenção | O que precisa acontecer no sistema |
+| --- | --- | --- | --- |
+| 1 | Lead | Interesse inicial qualquer | Lead criado com o número do canal (`whatsappPhoneNumberId`); agente responde normalmente |
+| 2 | Corretor | Abre a conversa no Chats e clica em "Assumir conversa" | Marca gravada (`humanTakeoverAt`, autor = corretor); `status` igual ao de antes; cabeçalho mostra "Conduzida por <corretor>" |
+| 3 | Corretor | Escreve ao lead pelo composer uma apresentação curta | Mensagem entregue no WhatsApp do aparelho; gravada na thread como `humano`, com o nome do autor e o `wamid` da Meta como `externalId` |
+| 4 | Lead | Responde ao corretor | Mensagem aparece no Chats **em até 10 s sem recarregar**; execução do principal roteada para `somente-registrar`; **nenhuma** mensagem do agente |
+| 5 | Lead | Mais uma mensagem qualquer (pode ser mídia) | Gravada; `somente-registrar`; nenhuma mensagem do agente |
+
+### Caso 6b — devolver e o agente usar um fato que só o corretor disse
+
+| Turno | Quem | Intenção | O que precisa acontecer no sistema |
+| --- | --- | --- | --- |
+| 1 | Lead | Interesse inicial qualquer | Lead criado; agente responde |
+| 2 | Corretor | Assume a conversa | Marca gravada |
+| 3 | Corretor | Escreve exatamente: **"o apartamento da Rua X tem 3 vagas"** | Mensagem entregue e gravada como `humano` |
+| 4 | Corretor | Clica em "Devolver ao agente" | Marca removida; `statusChangedBy` nulo; `memoryResetRequestedAt` gravado; cabeçalho volta ao agente |
+| 5 | Lead | Pergunta quantas vagas o apartamento tem | Execução do principal com `resetDue = true`: memória purgada e semeada a partir do CRM, a fala do corretor como nota `system`; o agente responde **3 vagas**, sem atribuir a informação ao lead |
+| 6 | Lead | Outra mensagem qualquer | Agente responde **sem** nova reconstrução (`resetDue = false`) |
+
+O fato do corretor é literal por necessidade de prova: é o único jeito de saber que o agente leu a
+fala humana. As falas do lead continuam sendo intenção.
+
+### Caso 6c — opt-out registrado pelo CRM
+
+| Turno | Quem | Intenção | O que precisa acontecer no sistema |
+| --- | --- | --- | --- |
+| 1 | Lead | Interesse inicial qualquer | Lead criado; agente responde; memória com conteúdo |
+| 2 | Corretor | Clica em "Registrar opt-out" e confirma na caixa | `optedOutAt` gravado; **uma** confirmação com o texto de OPTMSG-01 entregue no WhatsApp e gravada como `humano`; conversa vira somente leitura com a data do opt-out |
+| — | Scheduler | Próximo tick da varredura D (até 20 min) | Execução do `crivo-agente-scheduler` com o pedido do lead devido; sessão `"triangulo:553499532444"` em `n8n_chat_histories` **vazia**; `memoryResetAt` gravado em `conversa_estado` |
+| 3 | Lead | Qualquer mensagem depois | `gate` roteia `somente-registrar` por `optedOutAt`: gravada, **sem resposta** |
+
+### Caso 6d — `sair` durante a condução humana
+
+| Turno | Quem | Intenção | O que precisa acontecer no sistema |
+| --- | --- | --- | --- |
+| 1 | Lead | Interesse inicial qualquer | Lead criado; agente responde |
+| 2 | Corretor | Assume a conversa | Marca gravada |
+| 3 | Lead | Envia exatamente `sair` (**literal por contrato**, como no cenário 3) | `gate` roteia `opt-out` mesmo com a marca; `optedOutAt` gravado; **uma** confirmação única do lote-13 |
+
+**Captura extra (JANELA-01)**: o campo de envio bloqueado, com o aviso e o instante do fechamento,
+para um lead cuja última mensagem tem 24 h ou mais. Pode ser um lead do seed de produção conduzido por
+humano ou o próprio lead de teste depois de 24 h sem mensagem; nunca um lead real com telefone ou
+texto visível na captura.
+
+**Evidência a coletar** (`n8n/smoke/evidencia.md` § Lote 14): para cada caso, o estado final no CRM
+(marca, `status`, `statusChangedBy`, `optedOutAt`, mensagens `humano` com autor), os ids das
+execuções do n8n conferidos por `get_execution` antes de citados (L-011) e as capturas do Chats.
+Nenhum telefone completo, texto real de lead nem token.
+
+---
+
 ## 7. Barra de aprovação — desfecho, nunca estilo
 
 **A regra**: cada cenário é aprovado **exclusivamente** pelo estado final no CRM (mais o evento no
@@ -303,6 +371,7 @@ Calendar, no cenário 1). Nada que dependa de achar a conversa boa entra no vere
 | 3 — opt-out | `optedOutAt` preenchido **e** sessão de memória purgada pelo fluxo **e** exatamente uma confirmação enviada, com silêncio depois |
 | 4 — consulta de inventário | Turno 2 cita imóvel real (referência + preço batendo com o banco) **e** turno 3 declara ausência sem citar nenhum imóvel **e** nenhum dos dois cita endereço exato nem nome de captador |
 | 5 — opt-out por linguagem natural | 5a: `optedOutAt` preenchido, memória vazia, uma confirmação, silêncio depois **e** 5b: `optedOutAt` nulo e nenhuma mensagem pergunta se o lead quer parar de receber mensagens nem menciona `sair` (decisão D11) **e** 5c: `optedOutAt` nulo |
+| 6 — humano no laço | 6a: mensagem do corretor entregue e gravada como `humano` com autor, resposta do lead no Chats em até 10 s sem recarregar **e** zero mensagem do agente depois da marca (thread e execuções `somente-registrar`) **e** 6b: depois da devolução o agente responde com o fato que só o corretor escreveu, sem atribuí-lo ao lead **e** 6c: `optedOutAt` preenchido, uma confirmação entregue, sessão de memória vazia em até 20 min e silêncio na mensagem seguinte **e** 6d: `sair` com a marca grava `optedOutAt` e envia a confirmação única |
 
 **Quantos turnos o cenário pode gastar**: o roteiro sugere a quantidade mínima, não um teto. Turnos a
 mais — porque o agente perguntou de novo, porque um turno saiu mudo por `maxIterations`, porque a

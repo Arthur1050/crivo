@@ -934,9 +934,9 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] Os quatro cenários têm intenção de turno, estado final exigido no CRM e no WhatsApp, e barra por desfecho, com observações de fala em seção separada (HUMPROVA-01 AC1, AC5).
-- [ ] O cenário (a) exige zero mensagem do agente depois da marca (AC3); o (b) fixa o fato do corretor ("o apartamento da Rua X tem 3 vagas"); o (c) exige a sessão vazia em até 20 min.
-- [ ] Gate Build passa.
+- [x] Os quatro cenários têm intenção de turno, estado final exigido no CRM e no WhatsApp, e barra por desfecho, com observações de fala em seção separada (HUMPROVA-01 AC1, AC5).
+- [x] O cenário (a) exige zero mensagem do agente depois da marca (AC3); o (b) fixa o fato do corretor ("o apartamento da Rua X tem 3 vagas"); o (c) exige a sessão vazia em até 20 min.
+- [x] Gate Build passa. *(`n8n/smoke/roteiro.md` §6.2 "Cenário 6 — humano no laço", casos 6a–6d, captura da janela fechada e linha 6 na barra da §7. Suíte: 145 arquivos / 2.395 testes, só as 2 falhas conhecidas; lint 0 erros; build ok.)*
 
 **Tests:** none
 **Gate:** Build
