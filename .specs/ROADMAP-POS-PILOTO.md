@@ -163,7 +163,15 @@ digitar a palavra exata (`detectOptOut` em `n8n/src/gate.mjs`): um pedido natura
 
 ---
 
-## L14 — Humano no laço
+## L14 — Humano no laço — 📐 PLANEJADO (2026-10-01)
+
+> **Status**: spec, context e design aprovados em `features/lote-14-humano-no-laco/` (AD-034 e
+> AD-035). Decisões do usuário: a condução humana é uma **marca separada do status** (o Kanban e as
+> métricas não mudam ao assumir); fora da janela de 24h o composer bloqueia e explica; existe
+> **devolver ao agente** com a memória refeita a partir do CRM; o corretor registra **opt-out pela
+> tela** (item que o L13 deferiu para cá); o CRM envia **direto pela Cloud API**. O **item 3 já
+> estava entregue** desde o lote-3 (PIPE-04, botão "Ver conversa" no drawer) e fecha sem trabalho
+> novo. O reengajamento gratuito antes de 24h saiu daqui para o **L14b**.
 
 **Fecha**: #7, #11, `openapi.yaml` desatualizado, L5 Fix 1.
 
@@ -171,13 +179,40 @@ digitar a palavra exata (`detectOptOut` em `n8n/src/gate.mjs`): um pedido natura
 | --- | --- |
 | 1 | Composer no Chats: corretor responde o lead pelo CRM, mensagem gravada com autoria humana |
 | 2 | Envio via WhatsApp Cloud API a partir do CRM |
-| 3 | Link cruzado lead ↔ conversa (abrir a conversa a partir do drawer do Pipeline) |
+| 3 | ~~Link cruzado lead ↔ conversa (abrir a conversa a partir do drawer do Pipeline)~~ — já entregue no lote-3 (PIPE-04) |
 | 4 | `openapi.yaml` sem `assignedBroker` nem os 2 códigos de erro do lote-8, mais o que este lote adicionar |
 | 5 | L5 Fix 1: 413 e JSON inválido sem teste dedicado em `POST /api/v1/leads` |
 
 **Buraco que fecha**: hoje o agente escala para humano (`status = escalado_humano`, trava dupla) e o
 humano **não tem por onde responder**. A premissa da AD-017 — "o agente enxerga o que o corretor
 humano escreveu no CRM" — descreve algo que nunca aconteceu, porque não há como escrever.
+
+---
+
+## L14b — Reengajamento gratuito escrito pelo agente
+
+**Origem**: usuário, 2026-10-01, no Specify do L14: "o agente tentaria um contato novamente antes da
+janela de 24h chegar aproveitando o não pagamento".
+
+Hoje o scheduler espera o lead completar 24h em silêncio e só então envia o template `reengajamento`,
+que a Meta aprovou como **Marketing** (pago) (`n8n/workflows/scheduler.ts`, varredura B). Dentro da
+janela de atendimento, a mensagem livre não é cobrada.
+
+| # | Decisão já tomada (2026-10-01) |
+| --- | --- |
+| 1 | O agente envia **antes** de a janela de 24h fechar, como texto livre |
+| 2 | A mensagem é **escrita pelo agente a partir do contexto** da conversa, não texto fixo |
+| 3 | Vale **só nas conversas conduzidas pelo agente** (nunca com a marca de condução humana do L14) |
+| 4 | **Substitui** o template: continua um único reengajamento por silêncio, e o escalonamento por silêncio de 48h permanece |
+
+**O que torna o lote maior do que parece**: às ~22h de silêncio, a conversa anterior já está fora da
+sessão de 12h (AD-019), então a resposta do lead ao reengajamento chegaria a uma memória sem o assunto.
+É preciso emendar o corte de sessão para que o reengajamento carregue a conversa anterior, além de criar
+um caminho no fluxo principal que rode o agente sem mensagem do lead, com prova própria por conversa real
+(AD-027), com o tempo simulado.
+
+**Depende de L14**: a checagem de condução ao vivo no scheduler (SILENCIO-01) e a regra única de
+`n8n/src/conduction.mjs`.
 
 ---
 
@@ -298,7 +333,7 @@ imobiliária". Catálogo estruturado + documentos legíveis já entregam essa fr
 
 ## Ordem
 
-L10 → L11 → L12 → L13 → L14 → L15 → **L16 por último**.
+L10 → L11 → L12 → L13 → L14 → L14b → L15 → **L16 por último**.
 
 Ressalva única: **L11 pode subir na frente do L10** se a janela comercial pedir — o catálogo tem o
 único sinal de cliente real do backlog, e o custo de trocar é adiar a AD-015, aberta desde
