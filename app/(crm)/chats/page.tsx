@@ -10,15 +10,23 @@ import {
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Heading, Text } from "@astryxdesign/core/Text";
 import { ChatRefresh } from "@/src/components/chats/chat-refresh";
+import { ConversationHeader } from "@/src/components/chats/conversation-header";
 import { ConversationList } from "@/src/components/chats/conversation-list";
 import { MessageThread } from "@/src/components/chats/message-thread";
 import {
+  conversationControls,
+  whatsappWindow,
+} from "@/src/lib/conversation-control";
+import { can } from "@/src/lib/permissions";
+import {
   getConversationSummaries,
+  getLastLeadMessageAt,
   getLead,
   getMessages,
   getTenant,
+  getTenantMembers,
 } from "@/src/server/data";
-import { getLeadScope } from "@/src/server/auth/session";
+import { getLeadScope, verifySession } from "@/src/server/auth/session";
 import { getActiveTenantId } from "@/src/server/tenant";
 
 interface ChatsPageProps {
@@ -55,11 +63,43 @@ export default async function ChatsPage({ searchParams }: ChatsPageProps) {
   // telefone): `getConversationSummaries` não carrega o telefone, e
   // `getLead` já é tenant-scoped, então nenhuma consulta nova precisa nascer
   // na DAL.
-  const [messages, selectedLead, tenant] = await Promise.all([
+  const [messages, selectedLead, tenant, session, lastLeadMessageAt] = await Promise.all([
     selectedSummary ? getMessages(scope, selectedSummary.id) : [],
     selectedSummary ? getLead(scope, selectedSummary.leadId) : null,
     getTenant(tenantId),
+    verifySession(),
+    selectedSummary ? getLastLeadMessageAt(tenantId, selectedSummary.leadId) : null,
   ]);
+
+  // Lote-14 (design.md C6): janela e controles calculados no servidor; o
+  // cliente recebe o texto pronto, sem relógio próprio.
+  const now = new Date();
+  const chatWindow = whatsappWindow(lastLeadMessageAt, now);
+  const controls = selectedLead
+    ? conversationControls({
+        status: selectedLead.status,
+        humanTakeoverAt: selectedLead.humanTakeoverAt,
+        optedOutAt: selectedLead.optedOutAt,
+        canWrite: can(session.roles, "chats", "escrever"),
+        window: chatWindow,
+      })
+    : null;
+  const takeoverUser =
+    selectedLead?.humanTakeoverBy
+      ? (await getTenantMembers(tenantId)).find(
+          (member) => member.userId === selectedLead.humanTakeoverBy
+        )
+      : undefined;
+  const agentName = tenant?.agentName ?? "SDR";
+  const conductorLabel = !controls
+    ? ""
+    : controls.conductor === "agente"
+      ? `Conduzida pelo agente ${agentName}`
+      : controls.conductor === "humano"
+        ? `Conduzida por ${takeoverUser?.name ?? "alguém da equipe"}`
+        : controls.conductor === "escalado"
+          ? "Escalado para humano"
+          : "Opt-out registrado";
 
   return (
     <Layout
@@ -96,18 +136,21 @@ export default async function ChatsPage({ searchParams }: ChatsPageProps) {
           <LayoutContent isScrollable={false} padding={0}>
             <ChatRefresh hasOpenConversation />
             <VStack height="100%" gap={0}>
-              {/* Cabeçalho da thread (RD-06 AC4, design.md § R5) — estático. */}
-              <HStack gap={3} vAlign="center" padding={4}>
-                <Avatar name={selectedSummary.leadName || "Lead"} size="md" />
-                <VStack gap={0.5}>
+              {/* Cabeçalho da thread (RD-06 AC4; lote-14 THREAD-01 AC4) — estático. */}
+              {controls ? (
+                <ConversationHeader
+                  leadId={selectedSummary.leadId}
+                  leadName={selectedSummary.leadName || "Lead"}
+                  phone={selectedLead?.phone ?? null}
+                  controls={controls}
+                  conductorLabel={conductorLabel}
+                />
+              ) : (
+                <HStack gap={3} vAlign="center" padding={4}>
+                  <Avatar name={selectedSummary.leadName || "Lead"} size="md" />
                   <Heading level={3}>{selectedSummary.leadName}</Heading>
-                  {selectedLead?.phone && (
-                    <Text type="supporting" color="secondary">
-                      {selectedLead.phone}
-                    </Text>
-                  )}
-                </VStack>
-              </HStack>
+                </HStack>
+              )}
               <Divider />
               <StackItem size="fill" isScrollable>
                 <VStack padding={4} height="100%">

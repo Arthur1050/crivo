@@ -808,10 +808,20 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] Capturas dos quatro estados: agente conduzindo ("Assumir" visível), humano conduzindo ("Devolver" visível), escalado, e a caixa de confirmação de opt-out aberta (THREAD-01 AC4; ASSUMIR-01 AC8; DEVOLVER-01 AC9; OPTHUM-01 AC2).
-- [ ] Clique real em "Assumir" e em "Devolver" no `dev:test`, com o estado do lead conferido no banco de teste depois de cada um.
-- [ ] Grep comprova que `assumeConversationAction`, `returnConversationToAgentAction` e `registerOptOutAction` têm consumidor de produção (L-021).
-- [ ] Nenhum texto em inglês visível (L-010); self-check da Astryx; gate Build passa.
+- [x] Capturas dos quatro estados: agente conduzindo ("Assumir" visível), humano conduzindo ("Devolver" visível), escalado, e a caixa de confirmação de opt-out aberta (THREAD-01 AC4; ASSUMIR-01 AC8; DEVOLVER-01 AC9; OPTHUM-01 AC2).
+- [x] Clique real em "Assumir" e em "Devolver" no `dev:test`, com o estado do lead conferido no banco de teste depois de cada um.
+- [x] Grep comprova que `assumeConversationAction`, `returnConversationToAgentAction` e `registerOptOutAction` têm consumidor de produção (L-021).
+- [x] Nenhum texto em inglês visível (L-010); self-check da Astryx; gate Build passa. *(Suíte: 145 arquivos / 2.391 testes, só as 2 falhas conhecidas de `DOCLIM-01 AC8`; lint 0 erros; build ok.)*
+
+**Evidence** (extensão Claude in Chrome, `dev:test`, administrador de teste "Ana Teste"):
+
+- Agente conduzindo ("Simone Dias"): ponto verde + "Conduzida pelo agente Sofia", botões "Assumir conversa" e "Registrar opt-out".
+- Humano conduzindo ("Nathan Ferreira", marca da Ana): ponto azul + "Conduzida por Ana Teste", botões "Devolver ao agente" e "Registrar opt-out".
+- Escalado sem marca ("Otávio Ramos"): ponto amarelo + "Escalado para humano", "Devolver ao agente" e "Registrar opt-out".
+- Caixa de opt-out aberta: "Registrar opt-out deste lead?", "O lead não receberá mais mensagens, nem do agente nem da equipe. Esta ação não pode ser desfeita pela tela.", "Cancelar" / "Registrar opt-out". Cancelada sem registrar.
+- Clique real em "Assumir conversa" na Simone: antes `status em_qualificacao`, `status_changed_by null`, marca nula; depois `human_takeover_at` preenchido e `human_takeover_by` = Ana, com `status` e `status_changed_by` iguais. Clique real em "Devolver ao agente": marca nula, `status em_qualificacao`, `status_changed_by null`, `memory_reset_requested_at` preenchido; a tela voltou a "Conduzida pelo agente Sofia".
+- Grep (L-021): as três actions são chamadas em `src/components/chats/conversation-header.tsx`. Nenhum texto visível em inglês; os únicos atributos em inglês do DOM ("Side navigation", "Message from user/assistant") vêm da navegação e da thread, anteriores ao lote.
+- Para as capturas, o cabeçalho foi montado em `app/(crm)/chats/page.tsx` com `whatsappWindow`, `conversationControls`, a permissão `chats:escrever` e o nome de quem assumiu calculados no servidor; o restante da composição continua na T34.
 
 **Tests:** none
 **Gate:** Build
