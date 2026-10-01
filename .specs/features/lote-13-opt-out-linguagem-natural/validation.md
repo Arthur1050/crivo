@@ -1,3 +1,5 @@
+**Result**: PASS (lote 13 fechado: Verifier ciclo 3 sobre o delta T20 e T18 aprovada, 2026-09-30)
+
 ## Ciclo 3 — delta T20 (decisão D11)
 
 **Data**: 2026-09-30
