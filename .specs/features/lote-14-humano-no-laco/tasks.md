@@ -696,10 +696,10 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] Testes estruturais em `scheduler-conducao.test.ts`: a cadeia D sai do mesmo trigger (continua um trigger só, R3); o `DELETE` usa parâmetro (`queryReplacement`/`$1`), nunca concatenação; a chave montada é idêntica à `sessionKey` do `memoryPostgresChat` do principal (teste de paridade de string); a purga de `conversa_estado` grava `memoryResetAt`.
-- [ ] O HTTP tem `onError: continueRegularOutput`, e a ausência de pedidos termina a cadeia sem erro.
-- [ ] `node scripts/n8n-inline.mjs` roda; `validate_workflow` sem erro; gerado no mesmo commit.
-- [ ] Gate Build passa (fim da Phase 5); contagem registrada.
+- [x] Testes estruturais em `scheduler-conducao.test.ts`: a cadeia D sai do mesmo trigger (continua um trigger só, R3); o `DELETE` usa parâmetro (`queryReplacement`/`$1`), nunca concatenação; a chave montada é idêntica à `sessionKey` do `memoryPostgresChat` do principal (teste de paridade de string); a purga de `conversa_estado` grava `memoryResetAt`. _Evidência: 15 testes novos (14 falham sem a implementação). Um `scheduleTrigger` só, com saída para `Data Table: tenants (purga pedida pelo CRM)`; tenants → `HTTP: GET /memory-resets` → `Code: pedidos de purga do tenant` → `Split: pedidos de purga` → `Data Table: conversa_estado` → `Code: reset devido?` (`memoryResetDue` inline) → IF; IF 0 → `Postgres: apagar sessão` → purga, IF 1 sem ligação. Query: `WITH apagadas AS (DELETE FROM n8n_chat_histories WHERE session_id = $1::text RETURNING 1) SELECT ...`, `queryReplacement = {{ $json.sessionId }}`, sem `{{`/`+` na query. Paridade: a `sessionKey` do principal renderizada e o `sessionId` executado dão `imobiliaria-a:553499532444`. Upsert grava `perguntadosJson`/`aberturasJson` vazios e `memoryResetAt` = `requestedAt`._
+- [x] O HTTP tem `onError: continueRegularOutput`, e a ausência de pedidos termina a cadeia sem erro. _Evidência: `onError` afirmado; a guarda executada devolve `resets: []` para `{ resets: [] }` e para o item de erro do CRM fora, e o Split sobre `resets` vazio não emite itens. Nó a mais em relação ao design (`Code: pedidos de purga do tenant`): garante o campo antes do Split e carrega o `tenantSlug`, que a resposta não repete._
+- [x] `node scripts/n8n-inline.mjs` roda; `validate_workflow` sem erro; gerado no mesmo commit. _Evidência: só `n8n/generated/scheduler.ts` mudou (32/32 → 41/41); SDK local: válido, 0 warnings; `validate_workflow` do MCP sobre o scheduler final (T26+T27): `valid: true`, 41 nós, sem warnings._
+- [x] Gate Build passa (fim da Phase 5); contagem registrada. _Evidência: `npm test` 145 arquivos / 2.391 testes (início da Phase 5: 140/2.287), só as 2 falhas conhecidas de DOCLIM-01 AC8; `npm run lint` 0 erros (5 warnings preexistentes, nenhum em arquivo da fase); `npm run build` verde._
 
 **Tests:** unit
 **Gate:** Build

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readInlinedModule } from "../../../scripts/n8n-inline.mjs";
+import principal from "../principal";
 import scheduler from "../scheduler";
 
 /**
@@ -167,5 +168,152 @@ describe("lembretes não consultam a condução (SILENCIO-01 AC8)", () => {
       expect(params).not.toContain("humanTakeoverAt");
       expect(params).not.toContain("conduction.mjs");
     }
+  });
+});
+
+/**
+ * Varredura D — purga pedida pelo CRM (lote-14 — T27; OPTHUM-01 AC6,
+ * DEVOLVER-01). Mesmo trigger de 15 min (R3); pedidos de
+ * `GET /memory-resets` ainda não atendidos apagam a sessão da memória em
+ * `n8n_chat_histories` (DELETE parametrizado) e purgam `conversa_estado`,
+ * gravando o pedido atendido em `memoryResetAt`.
+ */
+const D = {
+  tenants: "Data Table: tenants (purga pedida pelo CRM)",
+  http: "HTTP: GET /memory-resets (purga pedida pelo CRM)",
+  guard: "Code: pedidos de purga do tenant",
+  split: "Split: pedidos de purga",
+  state: "Data Table: conversa_estado (purga pedida pelo CRM)",
+  due: "Code: reset devido?",
+  dueIf: "Reset devido?",
+  delete: "Postgres: apagar sessão",
+  purge: "Data Table: purgar qualificação e persona (purga pedida pelo CRM)",
+} as const;
+
+describe("varredura D: grafo (OPTHUM-01 AC6; L-026)", () => {
+  it("continua um trigger só, e a cadeia D sai dele (R3)", () => {
+    const triggers = workflow.nodes.filter((n) => n.type === "n8n-nodes-base.scheduleTrigger");
+    expect(triggers.map((n) => n.name)).toEqual([TRIGGER]);
+    expect(mainTargets(TRIGGER, 0)).toContainEqual({ node: D.tenants, type: "main", index: 0 });
+  });
+
+  it("tenants → HTTP → guarda → Split → conversa_estado → reset devido? → IF", () => {
+    expect(mainTargets(D.tenants, 0)).toEqual([{ node: D.http, type: "main", index: 0 }]);
+    expect(mainTargets(D.http, 0)).toEqual([{ node: D.guard, type: "main", index: 0 }]);
+    expect(mainTargets(D.guard, 0)).toEqual([{ node: D.split, type: "main", index: 0 }]);
+    expect(mainTargets(D.split, 0)).toEqual([{ node: D.state, type: "main", index: 0 }]);
+    expect(mainTargets(D.state, 0)).toEqual([{ node: D.due, type: "main", index: 0 }]);
+    expect(mainTargets(D.due, 0)).toEqual([{ node: D.dueIf, type: "main", index: 0 }]);
+  });
+
+  it("IF verdadeiro → apagar sessão → purgar conversa_estado; IF falso sem ligação", () => {
+    expect(mainTargets(D.dueIf, 0)).toEqual([{ node: D.delete, type: "main", index: 0 }]);
+    expect(mainTargets(D.dueIf, 1)).toEqual([]);
+    expect(mainTargets(D.delete, 0)).toEqual([{ node: D.purge, type: "main", index: 0 }]);
+  });
+
+  it("a purga só é alcançável depois do IF", () => {
+    expect(reachable(TRIGGER, D.dueIf).has(D.delete)).toBe(false);
+    expect(reachable(TRIGGER, D.dueIf).has(D.purge)).toBe(false);
+  });
+});
+
+describe("varredura D: leitura dos pedidos", () => {
+  it("tenants lê todas as linhas de tenant_config", () => {
+    const params = nodeByName(D.tenants).parameters;
+    expect(params.operation).toBe("get");
+    expect(params.returnAll).toBe(true);
+    expect(JSON.stringify(params.dataTableId)).toContain("xRHckWWd6fxGeNta");
+  });
+
+  it("o HTTP pede os resets das últimas 24h com onError continueRegularOutput", () => {
+    const node = nodeByName(D.http);
+    expect(node.onError).toBe("continueRegularOutput");
+    expect(node.parameters.method).toBe("GET");
+    expect(String(node.parameters.url)).toMatch(/\/memory-resets$/);
+    const query = JSON.stringify(node.parameters.queryParameters);
+    expect(query).toContain('"name":"since"');
+    expect(query).toContain("$now.minus({ hours: 24 }).toISO()");
+    expect(JSON.stringify(node.parameters.headerParameters)).toContain("{{ $json.tenantSlug }}");
+  });
+
+  it("sem pedidos, ou com o CRM fora, a guarda devolve resets vazio e o Split termina a cadeia", () => {
+    const tenant = { [D.tenants]: { tenantSlug: "imobiliaria-a" } };
+    expect(runEachItem(D.guard, tenant, { resets: [] }).json).toEqual({ tenantSlug: "imobiliaria-a", resets: [] });
+    expect(runEachItem(D.guard, tenant, { error: { message: "503" } }).json).toEqual({ tenantSlug: "imobiliaria-a", resets: [] });
+    expect(nodeByName(D.split).parameters).toMatchObject({ fieldToSplitOut: "resets", include: "allOtherFields" });
+  });
+
+  it("a guarda repassa os pedidos com o tenant", () => {
+    const resets = [{ leadId: "l1", waId: "553499532444", requestedAt: "2026-10-01T12:00:00.000Z" }];
+    expect(runEachItem(D.guard, { [D.tenants]: { tenantSlug: "imobiliaria-a" } }, { resets }).json).toEqual({ tenantSlug: "imobiliaria-a", resets });
+  });
+
+  it("conversa_estado é lida por tenantSlug e waId do pedido", () => {
+    const filters = JSON.stringify(nodeByName(D.state).parameters.filters);
+    expect(filters).toContain("{{ $json.tenantSlug }}");
+    expect(filters).toContain("{{ $json.resets.waId }}");
+  });
+});
+
+describe("varredura D: reset devido e chave da sessão", () => {
+  const PEDIDO = { tenantSlug: "imobiliaria-a", resets: { leadId: "l1", waId: "553499532444", requestedAt: "2026-10-01T12:00:00.000Z" } };
+
+  it("inlina conduction.mjs e chama memoryResetDue", () => {
+    const code = String(nodeByName(D.due).parameters.jsCode);
+    expect(code).toContain("__INLINE(conduction.mjs)__");
+    expect(code).toContain("memoryResetDue(");
+  });
+
+  it("pedido mais novo que o atendido → resetDue true; igual → false", () => {
+    expect(runEachItem(D.due, { [D.split]: PEDIDO }, { memoryResetAt: "2026-10-01T10:00:00.000Z" }).json.resetDue).toBe(true);
+    expect(runEachItem(D.due, { [D.split]: PEDIDO }, { memoryResetAt: "" }).json.resetDue).toBe(true);
+    expect(runEachItem(D.due, { [D.split]: PEDIDO }, { memoryResetAt: "2026-10-01T12:00:00.000Z" }).json.resetDue).toBe(false);
+  });
+
+  it("a chave da sessão é idêntica à sessionKey do memoryPostgresChat do principal (paridade de string)", () => {
+    const memory = (principal.toJSON() as unknown as WorkflowJson).nodes.find(
+      (n) => n.type === "@n8n/n8n-nodes-langchain.memoryPostgresChat"
+    );
+    const sessionKey = String(memory?.parameters.sessionKey);
+    const rendered = sessionKey
+      .replace(/^=/, "")
+      .replace("{{ $('Code: gate').first().json.tenantSlug }}", PEDIDO.tenantSlug)
+      .replace("{{ $('Code: gate').first().json.waId }}", PEDIDO.resets.waId);
+    const out = runEachItem(D.due, { [D.split]: PEDIDO }, { memoryResetAt: "" }).json;
+    expect(rendered).toBe("imobiliaria-a:553499532444");
+    expect(out.sessionId).toBe(rendered);
+    expect(out).toMatchObject({ tenantSlug: "imobiliaria-a", waId: "553499532444", requestedAt: PEDIDO.resets.requestedAt });
+  });
+
+  it("o IF segue resetDue como boolean verdadeiro", () => {
+    const conditions = JSON.stringify(nodeByName(D.dueIf).parameters.conditions);
+    expect(conditions).toContain("{{ $json.resetDue }}");
+    expect(conditions).toContain('"operation":"true"');
+  });
+});
+
+describe("varredura D: apagar a sessão e purgar conversa_estado", () => {
+  it("DELETE parametrizado por session_id ($1 + queryReplacement), sem concatenação", () => {
+    const node = nodeByName(D.delete);
+    expect(node.type).toBe("n8n-nodes-base.postgres");
+    expect(node.parameters.operation).toBe("executeQuery");
+    const query = String(node.parameters.query);
+    expect(query).toMatch(/DELETE FROM n8n_chat_histories WHERE session_id = \$1/);
+    expect(query).not.toContain("{{");
+    expect(query).not.toContain("+");
+    expect(String((node.parameters.options as Record<string, unknown>).queryReplacement)).toBe("={{ $json.sessionId }}");
+  });
+
+  it("a purga de conversa_estado limpa qualificação e persona e grava memoryResetAt", () => {
+    const columns = nodeByName(D.purge).parameters.columns as {
+      value: Record<string, unknown>;
+      schema: { id: string; type: string }[];
+    };
+    expect(nodeByName(D.purge).parameters.operation).toBe("upsert");
+    expect(columns.value.perguntadosJson).toBe("[]");
+    expect(columns.value.aberturasJson).toBe("[]");
+    expect(String(columns.value.memoryResetAt)).toContain(`$('${D.due}').item.json.requestedAt`);
+    expect(columns.schema.find((c) => c.id === "memoryResetAt")).toMatchObject({ type: "string" });
   });
 });

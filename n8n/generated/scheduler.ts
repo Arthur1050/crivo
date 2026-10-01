@@ -810,6 +810,213 @@ const markEscalatedLocally = node({
 });
 
 // =======================================================================
+// Varredura D — Purga pedida pelo CRM (lote-14 — T27; OPTHUM-01 AC6,
+// DEVOLVER-01). Devolução ao agente e opt-out registrado pelo CRM gravam
+// `memoryResetRequestedAt` no lead; o lead pode nunca mais escrever, então a
+// purga não pode depender de um turno do principal. Mesmo trigger (R3).
+// Idempotente com o principal: os dois só purgam quando o pedido é mais novo
+// que `memoryResetAt`, e reconstruir a partir do CRM dá o mesmo conteúdo.
+// =======================================================================
+
+const getTenantsForPurge = node({
+  type: "n8n-nodes-base.dataTable",
+  version: 1.1,
+  config: {
+    name: "Data Table: tenants (purga pedida pelo CRM)",
+    position: [260, 800],
+    parameters: {
+      resource: "row",
+      operation: "get",
+      dataTableId: { __rl: true, mode: "id", value: TENANT_CONFIG_TABLE_ID },
+      returnAll: true,
+    },
+  },
+  output: [{ phoneNumberId: "109876543210001", tenantSlug: "vale-do-uberaba", calendarId: "exemplo" }],
+});
+
+// CRM fora: `continueRegularOutput` — a janela de 24h do `since` repete o
+// pedido no próximo tick (purga atrasada, nunca perdida dentro de 24h).
+const getMemoryResets = node({
+  type: "n8n-nodes-base.httpRequest",
+  version: 4.4,
+  config: {
+    name: "HTTP: GET /memory-resets (purga pedida pelo CRM)",
+    position: [520, 800],
+    retryOnFail: true,
+    maxTries: 3,
+    waitBetweenTries: 2000,
+    onError: "continueRegularOutput",
+    parameters: {
+      method: "GET",
+      url: `${CRM_BASE_URL}/memory-resets`,
+      sendQuery: true,
+      queryParameters: { parameters: [{ name: "since", value: expr("{{ $now.minus({ hours: 24 }).toISO() }}") }] },
+      authentication: "genericCredentialType",
+      genericAuthType: "httpHeaderAuth",
+      sendHeaders: true,
+      headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $json.tenantSlug }}") }] },
+    },
+    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
+  },
+  output: [{ resets: [{ leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", waId: "5534999990001", requestedAt: "2026-10-01T12:00:00.000Z" }] }],
+});
+
+// Guarda antes do Split: a resposta de erro (CRM fora) não tem `resets`, e o
+// Split precisa do campo. Sem pedidos, `resets` vazio termina a cadeia sem
+// erro. Leva o tenant junto, porque a resposta do CRM não o repete.
+const normalizeMemoryResets = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: pedidos de purga do tenant",
+    position: [780, 800],
+    parameters: {
+      mode: "runOnceForEachItem",
+      language: "javaScript",
+      jsCode:
+        "const tenant = $('Data Table: tenants (purga pedida pelo CRM)').item.json;\n" +
+        "return { json: { tenantSlug: tenant.tenantSlug, resets: Array.isArray($json.resets) ? $json.resets : [] } };\n",
+    },
+  },
+  output: [{ tenantSlug: "vale-do-uberaba", resets: [{ leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", waId: "5534999990001", requestedAt: "2026-10-01T12:00:00.000Z" }] }],
+});
+
+const splitMemoryResets = node({
+  type: "n8n-nodes-base.splitOut",
+  version: 1,
+  config: {
+    name: "Split: pedidos de purga",
+    position: [1040, 800],
+    parameters: { fieldToSplitOut: "resets", include: "allOtherFields" },
+  },
+  output: [{ tenantSlug: "vale-do-uberaba", resets: { leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", waId: "5534999990001", requestedAt: "2026-10-01T12:00:00.000Z" } }],
+});
+
+const lookupConversaForPurge = node({
+  type: "n8n-nodes-base.dataTable",
+  version: 1.1,
+  config: {
+    name: "Data Table: conversa_estado (purga pedida pelo CRM)",
+    position: [1300, 800],
+    parameters: {
+      resource: "row",
+      operation: "get",
+      dataTableId: { __rl: true, mode: "id", value: CONVERSA_ESTADO_TABLE_ID },
+      matchType: "allConditions",
+      filters: {
+        conditions: [
+          { keyName: "tenantSlug", condition: "eq", keyValue: expr("{{ $json.tenantSlug }}") },
+          { keyName: "waId", condition: "eq", keyValue: expr("{{ $json.resets.waId }}") },
+        ],
+      },
+      returnAll: false,
+      limit: 1,
+    },
+  },
+  output: [{ tenantSlug: "vale-do-uberaba", waId: "5534999990001", memoryResetAt: "" }],
+});
+
+// `sessionId` é montado exatamente como a `sessionKey` do
+// `memoryPostgresChat` do principal: `<tenantSlug>:<waId>`.
+const decideMemoryResetDue = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: reset devido?",
+    position: [1560, 800],
+    parameters: {
+      mode: "runOnceForEachItem",
+      language: "javaScript",
+      jsCode:
+        "/**\n * Regra única de condução da conversa (lote-14 — design.md C2; AD-034).\n * Funções puras, sem I/O, sem dependências: rodam inline nos Code nodes do\n * n8n e são importadas pelo CRM (`src/lib/conversation-control.ts`), para que\n * a regra \"quem conduz\" tenha uma fonte só.\n */\n\n/**\n * @typedef {{status?: unknown, humanTakeoverAt?: unknown, optedOutAt?: unknown}} ConductionLead\n */\n\n/**\n * Conduzido por humano: tem a marca de condução humana **ou** está em\n * `escalado_humano` (ASSUMIR-01 AC7).\n * @param {ConductionLead} lead\n * @returns {boolean}\n */\nfunction isHumanConducted({ status, humanTakeoverAt }) {\n  return Boolean(humanTakeoverAt) || status === \"escalado_humano\";\n}\n\n/**\n * O agente pode enviar dentro do turno em andamento (SILENCIO-01 AC4)?\n * Olha só a marca e o opt-out. **Nunca** bloqueia por `escalado_humano`: o\n * agente que acabou de escalar ainda precisa enviar a mensagem de passagem\n * (`system-message.mjs`).\n * @param {ConductionLead} lead\n * @returns {boolean}\n */\nfunction canAgentSendInTurn({ optedOutAt, humanTakeoverAt }) {\n  return !optedOutAt && !humanTakeoverAt;\n}\n\n/**\n * O agente pode iniciar contato sem mensagem do lead (reengajamento,\n * escalonamento por silêncio — SILENCIO-01 AC6/AC7)?\n * @param {ConductionLead} lead\n * @returns {boolean}\n */\nfunction canAgentContactProactively(lead) {\n  return !lead.optedOutAt && !isHumanConducted(lead);\n}\n\n/**\n * @param {unknown} value\n * @returns {boolean}\n */\nfunction isAbsent(value) {\n  return value === null || value === undefined || value === \"\";\n}\n\n/**\n * @param {unknown} value\n * @returns {number}\n */\nfunction toTime(value) {\n  if (value instanceof Date) return value.getTime();\n  if (typeof value !== \"string\" && typeof value !== \"number\") return Number.NaN;\n  return new Date(value).getTime();\n}\n\n/**\n * O pedido de reconstrução da memória ainda não foi atendido? Devido só\n * quando o pedido é **estritamente** mais novo que o último atendido: pedido\n * igual ao atendido já foi consumido (DEVOLVER-01 AC7). Data inválida nunca\n * dispara a purga.\n * @param {unknown} requestedAt - `memoryResetRequestedAt` do lead no CRM\n * @param {unknown} honoredAt - `memoryResetAt` de `conversa_estado` no n8n\n * @returns {boolean}\n */\nfunction memoryResetDue(requestedAt, honoredAt) {\n  if (isAbsent(requestedAt)) return false;\n  const requested = toTime(requestedAt);\n  if (Number.isNaN(requested)) return false;\n  if (isAbsent(honoredAt)) return true;\n  const honored = toTime(honoredAt);\n  if (Number.isNaN(honored)) return false;\n  return requested > honored;\n}" +
+        "\n\n" +
+        "const pedido = $('Split: pedidos de purga').item.json;\n" +
+        "const row = $json;\n" +
+        "const tenantSlug = pedido.tenantSlug;\n" +
+        "const waId = pedido.resets.waId;\n" +
+        "const requestedAt = pedido.resets.requestedAt;\n" +
+        "return { json: { tenantSlug, waId, leadId: pedido.resets.leadId, requestedAt, sessionId: tenantSlug + ':' + waId, resetDue: memoryResetDue(requestedAt, row.memoryResetAt || null) } };\n",
+    },
+  },
+  output: [{ tenantSlug: "vale-do-uberaba", waId: "5534999990001", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", requestedAt: "2026-10-01T12:00:00.000Z", sessionId: "vale-do-uberaba:5534999990001", resetDue: true }],
+});
+
+const isMemoryResetDueIf = ifElse({
+  version: 2.3,
+  config: {
+    name: "Reset devido?",
+    position: [1820, 800],
+    parameters: {
+      conditions: {
+        combinator: "and",
+        options: { caseSensitive: true, leftValue: "", typeValidation: "strict" },
+        conditions: [{ leftValue: expr("{{ $json.resetDue }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }],
+      },
+    },
+  },
+});
+
+// DELETE parametrizado (tabela e coluna confirmadas na T1, execução 2802).
+// A CTE devolve sempre uma linha por sessão, mesmo sem nada a apagar, para a
+// purga de `conversa_estado` seguir. Memória primeiro: se o DELETE falhar,
+// `memoryResetAt` não é gravado e o pedido segue devido no próximo tick.
+const deleteAgentSession = node({
+  type: "n8n-nodes-base.postgres",
+  version: 2.7,
+  config: {
+    name: "Postgres: apagar sessão",
+    position: [2080, 800],
+    parameters: {
+      operation: "executeQuery",
+      query:
+        "WITH apagadas AS (DELETE FROM n8n_chat_histories WHERE session_id = $1::text RETURNING 1) SELECT $1::text AS session_id, count(*)::int AS apagadas FROM apagadas",
+      options: { queryReplacement: expr("{{ $json.sessionId }}") },
+    },
+    credentials: { postgres: newCredential("Postgres n8n local") },
+  },
+  output: [{ session_id: "vale-do-uberaba:5534999990001", apagadas: 4 }],
+});
+
+const purgeConversaEstadoOnCrmReset = node({
+  type: "n8n-nodes-base.dataTable",
+  version: 1.1,
+  config: {
+    name: "Data Table: purgar qualificação e persona (purga pedida pelo CRM)",
+    position: [2340, 800],
+    parameters: {
+      resource: "row",
+      operation: "upsert",
+      dataTableId: { __rl: true, mode: "id", value: CONVERSA_ESTADO_TABLE_ID },
+      matchType: "allConditions",
+      filters: {
+        conditions: [
+          { keyName: "tenantSlug", condition: "eq", keyValue: expr("{{ $('Code: reset devido?').item.json.tenantSlug }}") },
+          { keyName: "waId", condition: "eq", keyValue: expr("{{ $('Code: reset devido?').item.json.waId }}") },
+        ],
+      },
+      columns: {
+        mappingMode: "defineBelow",
+        value: {
+          tenantSlug: expr("{{ $('Code: reset devido?').item.json.tenantSlug }}"),
+          waId: expr("{{ $('Code: reset devido?').item.json.waId }}"),
+          perguntadosJson: "[]",
+          aberturasJson: "[]",
+          memoryResetAt: expr("{{ $('Code: reset devido?').item.json.requestedAt }}"),
+        },
+        schema: [
+          { id: "tenantSlug", displayName: "tenantSlug", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: true },
+          { id: "waId", displayName: "waId", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: true },
+          { id: "perguntadosJson", displayName: "perguntadosJson", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: true },
+          { id: "aberturasJson", displayName: "aberturasJson", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: true },
+          { id: "memoryResetAt", displayName: "memoryResetAt", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: true },
+        ],
+      },
+    },
+  },
+  output: [{ id: 1 }],
+});
+
+// =======================================================================
 // Montagem do grafo — 1 trigger, 3 ramos independentes (fan-out)
 // =======================================================================
 
@@ -868,5 +1075,19 @@ const escalonamentoChain = getSilentReengaged.to(
 scheduleEveryFifteenMinutes.to(lembretesChain);
 scheduleEveryFifteenMinutes.to(reengajamentoChain);
 scheduleEveryFifteenMinutes.to(escalonamentoChain);
+
+// lote-14 (T27): a saída falsa do IF fica sem ligação — pedido já atendido.
+const purgaPedidaChain = getTenantsForPurge.to(
+  getMemoryResets.to(
+    normalizeMemoryResets.to(
+      splitMemoryResets.to(
+        lookupConversaForPurge.to(
+          decideMemoryResetDue.to(isMemoryResetDueIf.onTrue(deleteAgentSession.to(purgeConversaEstadoOnCrmReset)))
+        )
+      )
+    )
+  )
+);
+scheduleEveryFifteenMinutes.to(purgaPedidaChain);
 
 export default workflow("crivo-agente-scheduler", "crivo-agente-scheduler").add(scheduleEveryFifteenMinutes);
