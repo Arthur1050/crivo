@@ -433,7 +433,7 @@ const postLeadIdempotent = node({
       contentType: "json",
       specifyBody: "json",
       jsonBody: expr(
-        "{{ { name: $('Code: combinar evento e tenant').item.json.contactName, phone: $('Code: combinar evento e tenant').item.json.waId, externalId: $('Code: combinar evento e tenant').item.json.waId, firstContactAt: $('Code: combinar evento e tenant').item.json.sentAt } }}"
+        "{{ { name: $('Code: combinar evento e tenant').item.json.contactName, phone: $('Code: combinar evento e tenant').item.json.waId, externalId: $('Code: combinar evento e tenant').item.json.waId, firstContactAt: $('Code: combinar evento e tenant').item.json.sentAt, whatsappPhoneNumberId: $('Code: combinar evento e tenant').item.json.phoneNumberId } }}"
       ),
     },
     credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
@@ -512,7 +512,7 @@ const decideRoute = node({
         '__INLINE(gate.mjs)__' +
         "\n\n" +
         "const ctx = $('Code: contexto do lead').first().json;\n" +
-        "const route = gate({ optedOutAt: ctx.optedOutAt, status: ctx.status, hasMedia: ctx.hasMedia, text: ctx.text });\n" +
+        "const route = gate({ optedOutAt: ctx.optedOutAt, status: ctx.status, humanTakeoverAt: ctx.humanTakeoverAt, hasMedia: ctx.hasMedia, text: ctx.text });\n" +
         "return [{ json: { ...ctx, route } }];\n",
     },
   },
@@ -1704,6 +1704,70 @@ const buildFallbackReply = node({
   output: [{ mensagens: ["resposta do agente que nao passou por responder_lead"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
 });
 
+// lote-14 (T23 — SILENCIO-01 AC4, AC5): o envio de contingência também
+// relê o lead antes de enviar, como `responder_lead`. A marca de condução
+// humana pode ter sido gravada no meio do turno (debounce + modelo), e sem
+// esta leitura o texto final do agente sairia por fora da checagem. Lead e
+// tenant vêm de `Code: gate`, nunca do modelo. Falha da leitura (saída 1,
+// `continueErrorOutput`) e o ramo falso do IF vão ao fechamento sem envio:
+// na dúvida, calar.
+const getLeadBeforeFallback = node({
+  type: "n8n-nodes-base.httpRequest",
+  version: 4.4,
+  config: {
+    name: "HTTP: GET /leads/{id} (antes do envio)",
+    position: [8600, 100],
+    retryOnFail: true,
+    maxTries: 3,
+    waitBetweenTries: 2000,
+    onError: "continueErrorOutput",
+    parameters: {
+      method: "GET",
+      url: expr(`${CRM_BASE_URL}/leads/{{ $('Code: gate').first().json.id }}`),
+      authentication: "genericCredentialType",
+      genericAuthType: "httpHeaderAuth",
+      sendHeaders: true,
+      headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }] },
+    },
+    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
+  },
+  output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", status: "em_qualificacao", optedOutAt: null, humanTakeoverAt: null, memoryResetRequestedAt: null }],
+});
+
+const canSendFallbackCode = node({
+  type: "n8n-nodes-base.code",
+  version: 2,
+  config: {
+    name: "Code: pode enviar no turno?",
+    position: [8860, 100],
+    parameters: {
+      mode: "runOnceForAllItems",
+      language: "javaScript",
+      jsCode:
+        '__INLINE(conduction.mjs)__' +
+        "\n\n" +
+        "const lead = $input.first().json;\n" +
+        "return [{ json: { podeEnviar: canAgentSendInTurn({ optedOutAt: lead.optedOutAt, humanTakeoverAt: lead.humanTakeoverAt }) } }];\n",
+    },
+  },
+  output: [{ podeEnviar: true }],
+});
+
+const canSendFallbackIf = ifElse({
+  version: 2.3,
+  config: {
+    name: "Agente pode enviar no turno?",
+    position: [9120, 100],
+    parameters: {
+      conditions: {
+        combinator: "and",
+        options: { caseSensitive: true, leftValue: "", typeValidation: "strict" },
+        conditions: [{ leftValue: expr("{{ $json.podeEnviar }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }],
+      },
+    },
+  },
+});
+
 const wasTurnAutoSavedIf = ifElse({
   version: 2.3,
   config: {
@@ -2143,8 +2207,20 @@ const agentTurnWired = buildAgentSystemMessage.to(
           needsFallbackSendIf
             // Agente escreveu texto mas não chamou `responder_lead`: manda
             // esse texto pelo caminho de envio fixo em vez de deixar o lead
-            // no vácuo (achado real, execução 947).
-            .onTrue(buildFallbackReply.to(fixedReplyWired))
+            // no vácuo (achado real, execução 947). lote-14 (T23): antes,
+            // relê o lead; marca, opt-out ou falha da leitura fecham o turno
+            // sem envio (`clearAfterAgentTurnWired`, fan-in).
+            .onTrue(
+              getLeadBeforeFallback
+                .to(
+                  canSendFallbackCode.to(
+                    canSendFallbackIf
+                      .onTrue(buildFallbackReply.to(fixedReplyWired))
+                      .onFalse(clearAfterAgentTurnWired)
+                  )
+                )
+                .onError(clearAfterAgentTurnWired)
+            )
             .onFalse(
               wasTurnAutoSavedIf
                 .onTrue(clearAfterAgentTurnWired)

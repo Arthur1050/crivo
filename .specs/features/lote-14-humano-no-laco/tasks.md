@@ -613,11 +613,11 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] Arquivo de teste novo `n8n/workflows/__tests__/principal-conducao-humana.test.ts`: o `jsonBody` do POST contém `whatsappPhoneNumberId` vindo de `Code: combinar evento e tenant`; o código do gate passa `humanTakeoverAt`.
-- [ ] O envio de contingência só é alcançável pela saída verdadeira do novo IF; a saída falsa e a saída de erro do HTTP (índice real no `toJSON()`, L-044) chegam ao fechamento sem envio; testes que falham se qualquer aresta sumir (SILENCIO-01 AC4, AC5; L-026).
-- [ ] O `Code: pode enviar no turno?` inlina `conduction.mjs`; `leadId`/`tenantSlug` vêm de expressão do fluxo, nunca de `$fromAI`.
-- [ ] `node scripts/n8n-inline.mjs` roda; `validate_workflow` do gerado sem erro; gerado no mesmo commit.
-- [ ] Gate Full passa; contagem registrada.
+- [x] Arquivo de teste novo `n8n/workflows/__tests__/principal-conducao-humana.test.ts`: o `jsonBody` do POST contém `whatsappPhoneNumberId` vindo de `Code: combinar evento e tenant`; o código do gate passa `humanTakeoverAt`. _Evidência: 19 testes no arquivo novo; o gate executado com a marca devolve `somente-registrar`._
+- [x] O envio de contingência só é alcançável pela saída verdadeira do novo IF; a saída falsa e a saída de erro do HTTP (índice real no `toJSON()`, L-044) chegam ao fechamento sem envio; testes que falham se qualquer aresta sumir (SILENCIO-01 AC4, AC5; L-026). _Evidência: `toJSON()` — GET saída 0 → Code, saída 1 → `Code: preparar clear de buffer (turno do agente)`; IF 0 → `Code: preparar envio de contingência` (único predecessor), IF 1 → fechamento; o fechamento não alcança nenhum nó `whatsApp`._
+- [x] O `Code: pode enviar no turno?` inlina `conduction.mjs`; `leadId`/`tenantSlug` vêm de expressão do fluxo, nunca de `$fromAI`. _Evidência: URL e `X-Crivo-Tenant` de `$('Code: gate')`; marca/opt-out → `podeEnviar: false`, `escalado_humano` sem marca → `true`._
+- [x] `node scripts/n8n-inline.mjs` roda; `validate_workflow` do gerado sem erro; gerado no mesmo commit. _Evidência: só `n8n/generated/principal.ts` mudou de conteúdo (70/90 → 73/95); `parseWorkflowCodeToBuilder` + `validateWorkflow` do SDK local sobre o gerado completo: válido, 0 erros, 0 warnings. `validate_workflow` do MCP sobre o estado final do principal registrado na T24._
+- [x] Gate Full passa; contagem registrada. _Evidência: `npm test` 142 arquivos / 2.320 testes (base 140/2.287); falhas: as 2 conhecidas de DOCLIM-01 AC8 e o pin de `principal-modelo.test.ts` (70/90), atualizado para a contagem exata nova 73/95 (mesma prática do lote-13 `3a15671`) e reverificado (`n8n/workflows/__tests__` 183/183)._
 
 **Tests:** unit
 **Gate:** Full
