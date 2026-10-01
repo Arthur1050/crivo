@@ -753,11 +753,21 @@ const checkSessionExpired = node({
       language: "javaScript",
       jsCode:
         '__INLINE(session.mjs)__' +
+        "\n" +
+        '__INLINE(conduction.mjs)__' +
         "\n\n" +
         "const lastInboundAt = $('Data Table: conversa_estado (antes do buffer)').first().json.lastInboundAt || null;\n" +
         "const now = $('Code: combinar evento e tenant').first().json.sentAt;\n" +
-        "const expired = isSessionExpired(lastInboundAt, now);\n" +
-        "return [{ json: { expired } }];\n",
+        // lote-14 (T24, DEVOLVER-01 AC5/AC7): o pedido de reconstrução da
+        // memória feito pelo CRM (devolução ao agente, opt-out pelo CRM) entra
+        // pela mesma purga da sessão expirada. Devido só quando o pedido do
+        // lead é mais novo que o já atendido (`memoryResetAt`), então a
+        // segunda mensagem depois da devolução não reconstrói de novo.
+        "const requestedAt = $('Code: gate').first().json.memoryResetRequestedAt || null;\n" +
+        "const honoredAt = $('Data Table: conversa_estado (antes do buffer)').first().json.memoryResetAt || null;\n" +
+        "const sessionExpired = isSessionExpired(lastInboundAt, now);\n" +
+        "const resetDue = memoryResetDue(requestedAt, honoredAt);\n" +
+        "return [{ json: { expired: sessionExpired || resetDue, sessionExpired, resetDue } }];\n",
     },
   },
   output: [{ expired: false }],
@@ -814,12 +824,18 @@ const purgeConversaEstadoOnExpiry = node({
           waId: expr("{{ $('Code: gate').first().json.waId }}"),
           perguntadosJson: "[]",
           aberturasJson: "[]",
+          // lote-14 (T24): registra o pedido de reset atendido nesta purga.
+          // Sem pedido (purga só por expiração), preserva o já atendido.
+          memoryResetAt: expr(
+            "{{ $('Code: gate').first().json.memoryResetRequestedAt || $('Data Table: conversa_estado (antes do buffer)').first().json.memoryResetAt || '' }}"
+          ),
         },
         schema: [
           { id: "tenantSlug", displayName: "tenantSlug", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: true },
           { id: "waId", displayName: "waId", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: true },
           { id: "perguntadosJson", displayName: "perguntadosJson", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: true },
           { id: "aberturasJson", displayName: "aberturasJson", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: true },
+          { id: "memoryResetAt", displayName: "memoryResetAt", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: true },
         ],
       },
     },
@@ -926,7 +942,10 @@ const buildSeedMessages = node({
         "  ? rawHistory\n" +
         "  : rawHistory.filter((m) => new Date(m.sentAt).getTime() < cutoff);\n" +
         "const session = selectSeedMessages(priorHistory, now);\n" +
-        "const seedItems = session.map((m) => ({ json: { type: m.sender === 'agente' ? 'ai' : 'user', message: m.content, nadaParaSemear: false } }));\n" +
+        // lote-14 (T24, DEVOLVER-01 AC6): `toSeedMemoryItem` decide o tipo
+        // por remetente — a fala do corretor entra como `system` atribuída à
+        // equipe, nunca como `user`; remetente desconhecido é descartado.
+        "const seedItems = session.map((m) => toSeedMemoryItem(m)).filter((it) => it !== null).map((it) => ({ json: { type: it.type, message: it.message, nadaParaSemear: false } }));\n" +
         // Zero mensagens ANTERIORES é o caso normal de uma conversa nova,
         // agora que o turno atual é excluído do corte acima. Devolver []
         // aqui mataria a cadeia inteira -- o n8n pula todos os nós seguintes

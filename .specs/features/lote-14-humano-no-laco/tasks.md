@@ -634,11 +634,11 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] Testes estruturais (no arquivo da T23 ou em `principal-reset-memoria.test.ts`): o código de `sessão expirada?` inlina `conduction.mjs` e chama `memoryResetDue`; o IF segue a saída combinada; o upsert tem `memoryResetAt` no `schema` e no `value`; o ternário `m.sender === 'agente' ? 'ai' : 'user'` não existe mais e `toSeedMemoryItem` é chamado.
-- [ ] Teste de ligação: a saída verdadeira do IF continua chegando à purga da memória **e** à purga de `conversa_estado` (L-026).
-- [ ] Grep de `conversa_estado` em todos os workflows (`L-015`) registrado na Evidence: nenhum leitor quebra com a coluna nova.
-- [ ] `node scripts/n8n-inline.mjs` roda; `validate_workflow` sem erro; gerado no mesmo commit.
-- [ ] Gate Full passa; contagem registrada.
+- [x] Testes estruturais (no arquivo da T23 ou em `principal-reset-memoria.test.ts`): o código de `sessão expirada?` inlina `conduction.mjs` e chama `memoryResetDue`; o IF segue a saída combinada; o upsert tem `memoryResetAt` no `schema` e no `value`; o ternário `m.sender === 'agente' ? 'ai' : 'user'` não existe mais e `toSeedMemoryItem` é chamado. _Evidência: `principal-reset-memoria.test.ts`, 16 testes (7 falham sem a implementação); o código executado devolve `expired: true` para pedido mais novo que o atendido e `false` para pedido igual (AC7); a semeadura executada devolve `system` atribuído para `humano` e descarta remetente desconhecido._
+- [x] Teste de ligação: a saída verdadeira do IF continua chegando à purga da memória **e** à purga de `conversa_estado` (L-026). _Evidência: IF 0 → purga da memória → purga de `conversa_estado` → carregar sessão; IF 1 → carregar sessão._
+- [x] Grep de `conversa_estado` em todos os workflows (`L-015`) registrado na Evidence: nenhum leitor quebra com a coluna nova. _Evidência (`grep CONVERSA_ESTADO_TABLE_ID n8n/workflows/*.ts`): principal — `get` (:269, :360) e `upsert` `defineBelow` (:312, :802, :1235, :1918, :2087); scheduler — `get` (:129, :356, :551) e `update` `defineBelow` (:519, :660); tool-responder-lead — `get` (:83) e `upsert` `defineBelow` (:260); smoke-reset — `deleteRows` (:103). Os `get` leem colunas pelo nome e as escritas listam colunas explícitas: `memoryResetAt` é aditiva e só é escrita pela purga da sessão expirada (e, na T27, pela varredura D)._
+- [x] `node scripts/n8n-inline.mjs` roda; `validate_workflow` sem erro; gerado no mesmo commit. _Evidência: só `n8n/generated/principal.ts` mudou de conteúdo (73/95, sem nó novo); SDK local sobre o gerado completo: válido, 0 erros, 0 warnings; `validate_workflow` do MCP sobre o principal final (T23+T24, sem comentários e com os módulos inline abreviados): `valid: true`, 73 nós, só os 5 `SUBNODE_NOT_CONNECTED` do `memoryManager` (falso positivo conhecido)._
+- [x] Gate Full passa; contagem registrada. _Evidência: `npm test` 143 arquivos / 2.336 testes; só as 2 falhas conhecidas de DOCLIM-01 AC8._
 
 **Tests:** unit
 **Gate:** Full
