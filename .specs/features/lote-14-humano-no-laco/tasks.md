@@ -574,9 +574,9 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] Arquivo de teste novo `n8n/src/__tests__/gate-conducao-humana.test.ts`: marca + texto → `somente-registrar` (AC1, AC2); marca + mídia sem texto → `somente-registrar` (Edge Cases); marca + `sair` → `opt-out` (AC3, entrada que satisfaz as duas regras, L-041); marca + `optedOutAt` → `somente-registrar`.
-- [ ] `gate.test.ts` existente passa **sem alteração** (sem a marca, as rotas não mudam).
-- [ ] Gate Quick passa; contagem registrada.
+- [x] Arquivo de teste novo `n8n/src/__tests__/gate-conducao-humana.test.ts`: marca + texto → `somente-registrar` (AC1, AC2); marca + mídia sem texto → `somente-registrar` (Edge Cases); marca + `sair` → `opt-out` (AC3, entrada que satisfaz as duas regras, L-041); marca + `optedOutAt` → `somente-registrar`. _Evidência: 8 testes no arquivo novo; `gate.mjs` passo 3 = `escalado_humano || humanTakeoverAt`._
+- [x] `gate.test.ts` existente passa **sem alteração** (sem a marca, as rotas não mudam). _Evidência: `git diff` vazio em `gate.test.ts`; 3 arquivos de gate, 34/34._
+- [x] Gate Quick passa; contagem registrada. _Evidência: `npx vitest run n8n/src/__tests__` 16/448 → 17/456, 0 falhas._
 
 **Tests:** unit
 **Gate:** Quick

@@ -55,19 +55,22 @@ export function detectOptOut(text) {
  *    (LGPD-03 AC1 — primeira vez, dispara confirmação única). Vence a
  *    checagem de mídia abaixo (um opt-out em texto nunca é tratado como
  *    mídia).
- * 3. `status === 'escalado_humano'` (humano assumiu) → 'somente-registrar'
- *    (AGT-05 AC3) — vence a checagem de mídia abaixo também.
+ * 3. `status === 'escalado_humano'` (humano assumiu) **ou** a marca de
+ *    condução humana `humanTakeoverAt` (lote-14, SILENCIO-01 AC2) →
+ *    'somente-registrar' (AGT-05 AC3) — vence a checagem de mídia abaixo
+ *    também. A palavra exata de opt-out (passo 2) continua vencendo a marca
+ *    (SILENCIO-01 AC3).
  * 4. Mídia sem texto (`hasMedia` e nenhum texto) → 'midia' (edge case —
  *    resposta fixa "sigo por texto", sem LLM).
  * 5. Caso contrário → 'conversa' (rota padrão, segue para o LLM).
  *
- * @param {{optedOutAt: unknown, status: unknown, hasMedia: unknown, text: unknown}} input
+ * @param {{optedOutAt: unknown, status: unknown, humanTakeoverAt?: unknown, hasMedia: unknown, text: unknown}} input
  * @returns {GateRoute}
  */
-export function gate({ optedOutAt, status, hasMedia, text }) {
+export function gate({ optedOutAt, status, humanTakeoverAt, hasMedia, text }) {
   if (optedOutAt) return "somente-registrar";
   if (detectOptOut(text)) return "opt-out";
-  if (status === "escalado_humano") return "somente-registrar";
+  if (status === "escalado_humano" || humanTakeoverAt) return "somente-registrar";
   if (hasMedia && !text) return "midia";
   return "conversa";
 }
