@@ -928,3 +928,32 @@ describe("buildSystemMessage — defensivo", () => {
     expect(message.length).toBeGreaterThan(0);
   });
 });
+
+// Lote-14, DEVOLVER-01 AC5/AC6 (emenda D12, decisão do usuário depois da
+// prova real): a nota `system` "Mensagem enviada ao lead por <autor>, da
+// equipe da imobiliária: ..." é fala da equipe que o agente pode repetir,
+// inclusive dado de imóvel, sem atribuí-la ao lead. Uma asserção por
+// cláusula (L-012).
+describe("buildSystemMessage — notas da equipe na memória (lote-14)", () => {
+  const message = buildSystemMessage({ settings: BASE_SETTINGS, phase: "qualificando" });
+
+  it("explica que a nota é algo que a equipe já disse ao lead pelo CRM", () => {
+    expect(message).toContain(
+      'Mensagens da equipe: no histórico, uma nota "Mensagem enviada ao lead por <nome>, da equipe da imobiliária: ..." é algo que um corretor ou gestor JÁ disse ao lead pelo CRM.'
+    );
+  });
+
+  it("proíbe tratar a nota como fala do lead ou do próprio agente", () => {
+    expect(message).toContain("Trate esse conteúdo como dito pela equipe, nunca pelo lead nem por você.");
+  });
+
+  it("autoriza repetir a informação da equipe, inclusive característica de imóvel, sem buscar_imoveis", () => {
+    expect(message).toContain(
+      "Você pode repetir ao lead o que a equipe já informou nessas notas, inclusive características de um imóvel (quartos, vagas, área ou preço), sem chamar buscar_imoveis para isso."
+    );
+  });
+
+  it("proíbe extrapolar ou contradizer a nota", () => {
+    expect(message).toContain("Não acrescente nada além do que a nota diz e não contradiga a equipe.");
+  });
+});

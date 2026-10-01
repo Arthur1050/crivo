@@ -183,6 +183,15 @@ const MEETING_ACCEPTANCE_INSTRUCTION =
 const MISSING_KNOWLEDGE_INSTRUCTION =
   "Informações do negócio: o que consultar_documentos devolve é conhecimento seu, não algo a citar. NUNCA mencione ao lead documentos, arquivos, materiais, base, sistema ou que você consultou ou procurou algo — responda com naturalidade, como quem sabe. Se a informação pedida não estiver no que a tool devolveu (ou se ela não devolver nada), diga só, em uma frase curta, que não tem essa informação; não diga onde procurou. NUNCA invente, deduza ou suponha políticas, condições, descontos, campanhas, prazos, horários de funcionamento ou valores que a tool não devolveu, nem diga que algo \"depende\" de condições que você não conhece. Não escale para humano só porque não sabe uma informação: siga a conversa normalmente depois de dizer que não tem essa informação. Diante de informação que você não tem, envolver o corretor é permitido no máximo UMA vez em toda a conversa — e isso inclui QUALQUER forma de oferta: pedir que ele confirme, verifique ou consulte, propor ligação, chamada de vídeo ou reunião com ele por esse motivo, ou pedir horário para isso. Se você já fez uma oferta dessas em qualquer mensagem anterior, aceita ou recusada, NÃO faça outra: diga só que não tem essa informação e siga a conversa. Se o lead recusou, respeite: não proponha corretor, ligação, chamada ou reunião nos turnos seguintes, a menos que o próprio lead peça. NUNCA prometa que vai verificar, consultar o corretor ou voltar depois com a informação: não existe acompanhamento para cumprir isso. Também não peça ao lead de onde ele tirou a informação nem detalhes só para contornar a falta dela.";
 
+// Lote-14 (DEVOLVER-01 AC5/AC6, emenda D12): depois da devolução ao agente, a
+// fala do corretor entra na memória como nota `system` ("Mensagem enviada ao
+// lead por <autor>, da equipe da imobiliária: ..."). Na prova real o agente
+// leu a nota, mas recusou repetir "3 vagas" porque as regras de inventário
+// mandam citar dado de imóvel só da tool. A nota é fala da equipe: pode ser
+// repetida, nunca atribuída ao lead e nunca ampliada.
+const TEAM_NOTES_INSTRUCTION =
+  'Mensagens da equipe: no histórico, uma nota "Mensagem enviada ao lead por <nome>, da equipe da imobiliária: ..." é algo que um corretor ou gestor JÁ disse ao lead pelo CRM. Trate esse conteúdo como dito pela equipe, nunca pelo lead nem por você. Você pode repetir ao lead o que a equipe já informou nessas notas, inclusive características de um imóvel (quartos, vagas, área ou preço), sem chamar buscar_imoveis para isso. Não acrescente nada além do que a nota diz e não contradiga a equipe.';
+
 const TOOLS_CATALOG_INSTRUCTION = [
   "Tools disponíveis (use exatamente estas, nenhuma outra existe):",
   "- responder_lead: ÚNICA forma de enviar mensagem ao lead. Toda resposta sua passa por ela, mesmo que seja só uma reação.",
@@ -371,6 +380,7 @@ export function buildSystemMessage({ settings, phase, perguntados, businessHours
     meetingAt && formatMeetingLabel(meetingAt) ? null : MEETING_ACCEPTANCE_INSTRUCTION,
     MISSING_KNOWLEDGE_INSTRUCTION,
     ESCALATION_HANDOFF_INSTRUCTION,
+    TEAM_NOTES_INSTRUCTION,
     OPT_OUT_GUIDANCE_INSTRUCTION,
     AI_TRANSPARENCY_INSTRUCTION,
     buildTodayAnchor(now),
