@@ -6,6 +6,7 @@ import {
   getBrokerContact,
   getLead,
   serviceScope,
+  setLeadChannel,
   updateLeadFromAgent,
   type Lead,
 } from "../data";
@@ -28,12 +29,22 @@ export async function deliverLead(
   tenantId: string,
   dto: LeadCreateDto
 ): Promise<DeliverLeadResult> {
-  return createAgentLead(tenantId, {
+  const result = await createAgentLead(tenantId, {
     name: dto.name,
     phone: dto.phone,
     externalId: dto.externalId,
     firstContactAt: dto.firstContactAt,
   });
+
+  // lote-14 — AD-035: o n8n informa o número da imobiliária a cada entrega.
+  // Ausente → nunca apaga; igual ao gravado → nenhuma escrita.
+  const channel = dto.whatsappPhoneNumberId;
+  if (channel !== undefined && channel !== result.lead.whatsappPhoneNumberId) {
+    await setLeadChannel(tenantId, result.lead.id, channel);
+    return { ...result, lead: { ...result.lead, whatsappPhoneNumberId: channel } };
+  }
+
+  return result;
 }
 
 /** Representação de um lead na API de integração (design.md — Route
@@ -59,6 +70,10 @@ export interface SerializedLead {
   meetingAt: string | null;
   firstContactAt: string;
   optedOutAt: string | null;
+  /** Marca de condução humana (lote-14); `null` quando o agente conduz. */
+  humanTakeoverAt: string | null;
+  /** Pedido de reconstrução da memória do agente (lote-14). */
+  memoryResetRequestedAt: string | null;
 }
 
 export function serializeLead(lead: Lead): SerializedLead {
@@ -81,6 +96,12 @@ export function serializeLead(lead: Lead): SerializedLead {
     meetingAt: lead.meetingAt ? lead.meetingAt.toISOString() : null,
     firstContactAt: lead.firstContactAt.toISOString(),
     optedOutAt: lead.optedOutAt ? lead.optedOutAt.toISOString() : null,
+    humanTakeoverAt: lead.humanTakeoverAt
+      ? lead.humanTakeoverAt.toISOString()
+      : null,
+    memoryResetRequestedAt: lead.memoryResetRequestedAt
+      ? lead.memoryResetRequestedAt.toISOString()
+      : null,
   };
 }
 

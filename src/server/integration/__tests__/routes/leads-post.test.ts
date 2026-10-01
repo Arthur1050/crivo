@@ -162,6 +162,116 @@ describe("routes: POST /api/v1/leads", () => {
     expect(rows).toHaveLength(0);
   });
 
+  // lote-14 — ENVIO-01/CONTRATO-01 (T8): o número do canal é aprendido a cada
+  // entrega do n8n; quem não manda o campo nunca o apaga.
+  async function channelOf(leadId: string): Promise<string | null> {
+    const rows = await db.select().from(leads).where(eq(leads.id, leadId));
+    return rows[0].whatsappPhoneNumberId;
+  }
+
+  it("grava whatsappPhoneNumberId válido no lead novo (T8)", async () => {
+    const externalId = randomUUID();
+    const response = await POST(
+      makeRequest({ ...validPayload(externalId), whatsappPhoneNumberId: "109876543210" })
+    );
+
+    expect(response.status).toBe(201);
+    const body = await response.json();
+    expect(await channelOf(body.id)).toBe("109876543210");
+  });
+
+  it("aceita os limites de 1 e de 32 dígitos (T8)", async () => {
+    for (const value of ["7", "1".repeat(32)]) {
+      const response = await POST(
+        makeRequest({ ...validPayload(randomUUID()), whatsappPhoneNumberId: value })
+      );
+      expect(response.status).toBe(201);
+      const body = await response.json();
+      expect(await channelOf(body.id)).toBe(value);
+    }
+  });
+
+  it("segunda entrega com outro valor atualiza o número do canal (T8)", async () => {
+    const externalId = randomUUID();
+    const first = await POST(
+      makeRequest({ ...validPayload(externalId), whatsappPhoneNumberId: "111" })
+    );
+    const firstBody = await first.json();
+    expect(await channelOf(firstBody.id)).toBe("111");
+
+    const second = await POST(
+      makeRequest({ ...validPayload(externalId), whatsappPhoneNumberId: "222" })
+    );
+    expect(second.status).toBe(200);
+    expect(await channelOf(firstBody.id)).toBe("222");
+  });
+
+  it("entrega sem o campo preserva o número do canal existente (T8, L-005 ausente)", async () => {
+    const externalId = randomUUID();
+    const first = await POST(
+      makeRequest({ ...validPayload(externalId), whatsappPhoneNumberId: "333" })
+    );
+    const firstBody = await first.json();
+
+    const second = await POST(makeRequest(validPayload(externalId)));
+    expect(second.status).toBe(200);
+    expect(await channelOf(firstBody.id)).toBe("333");
+  });
+
+  it("valor vazio, só espaços, não numérico ou com 33 dígitos: 400 payload-invalido sem gravar (T8, L-005 vazio)", async () => {
+    for (const bad of ["", "   ", "55 11 9999", "abc", "+5511999", "1".repeat(33)]) {
+      const externalId = randomUUID();
+      const response = await POST(
+        makeRequest({ ...validPayload(externalId), whatsappPhoneNumberId: bad })
+      );
+      expect(response.status).toBe(400);
+      expect((await response.json()).code).toBe("payload-invalido");
+
+      const rows = await db.select().from(leads).where(eq(leads.externalId, externalId));
+      expect(rows).toHaveLength(0);
+    }
+  });
+
+  it("valor inválido numa reentrega não altera o número já gravado (T8, antes/depois)", async () => {
+    const externalId = randomUUID();
+    const first = await POST(
+      makeRequest({ ...validPayload(externalId), whatsappPhoneNumberId: "444" })
+    );
+    const firstBody = await first.json();
+
+    const second = await POST(
+      makeRequest({ ...validPayload(externalId), whatsappPhoneNumberId: "" })
+    );
+    expect(second.status).toBe(400);
+    expect(await channelOf(firstBody.id)).toBe("444");
+  });
+
+  it("resposta traz humanTakeoverAt e memoryResetRequestedAt nulos quando não preenchidos (T8)", async () => {
+    const response = await POST(makeRequest(validPayload(randomUUID())));
+    const body = await response.json();
+
+    expect(body).toHaveProperty("humanTakeoverAt", null);
+    expect(body).toHaveProperty("memoryResetRequestedAt", null);
+  });
+
+  it("resposta traz humanTakeoverAt e memoryResetRequestedAt em ISO-8601 quando preenchidos (T8)", async () => {
+    const externalId = randomUUID();
+    const first = await POST(makeRequest(validPayload(externalId)));
+    const firstBody = await first.json();
+
+    const takeover = new Date("2026-09-30T12:00:00.000Z");
+    const reset = new Date("2026-09-30T13:30:00.000Z");
+    await db
+      .update(leads)
+      .set({ humanTakeoverAt: takeover, memoryResetRequestedAt: reset })
+      .where(eq(leads.id, firstBody.id));
+
+    const second = await POST(makeRequest(validPayload(externalId)));
+    const body = await second.json();
+    expect(body.humanTakeoverAt).toBe("2026-09-30T12:00:00.000Z");
+    expect(body.memoryResetRequestedAt).toBe("2026-09-30T13:30:00.000Z");
+  });
+
   it("sem header Authorization responde 401 (INT-01 AC1)", async () => {
     const externalId = randomUUID();
     const response = await POST(makeRequest(validPayload(externalId), false));

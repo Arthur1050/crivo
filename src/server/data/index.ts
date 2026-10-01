@@ -2199,6 +2199,28 @@ export async function createAgentLead(
   return { created: false, lead: existing[0] };
 }
 
+/**
+ * Aprende o número de WhatsApp da imobiliária para o lead (lote-14 — AD-035;
+ * design.md C1). Grava só quando o valor muda (`IS DISTINCT FROM`): a entrega
+ * repetida do n8n não gera escrita. Escopo por tenant.
+ */
+export async function setLeadChannel(
+  tenantId: string,
+  leadId: string,
+  phoneNumberId: string
+): Promise<void> {
+  await db
+    .update(leads)
+    .set({ whatsappPhoneNumberId: phoneNumberId })
+    .where(
+      and(
+        eq(leads.tenantId, tenantId),
+        eq(leads.id, leadId),
+        sql`${leads.whatsappPhoneNumberId} is distinct from ${phoneNumberId}`
+      )
+    );
+}
+
 export interface IngestAgentMessageInput {
   externalId: string;
   sender: Message["sender"];

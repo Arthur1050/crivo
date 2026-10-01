@@ -86,7 +86,13 @@ export interface LeadCreateDto {
   phone: string;
   externalId: string;
   firstContactAt: Date;
+  /** Número de WhatsApp da imobiliária (lote-14 — AD-035). Opcional: ausente
+   * nunca apaga o valor já gravado. */
+  whatsappPhoneNumberId?: string;
 }
+
+/** Só dígitos, de 1 a 32 (id do número na Cloud API). */
+const WHATSAPP_PHONE_NUMBER_ID_PATTERN = /^\d{1,32}$/;
 
 export function parseLeadCreate(json: unknown): ParseResult<LeadCreateDto> {
   if (!isPlainObject(json)) {
@@ -112,7 +118,30 @@ export function parseLeadCreate(json: unknown): ParseResult<LeadCreateDto> {
     };
   }
 
-  return { ok: true, dto: { name, phone, externalId, firstContactAt } };
+  let whatsappPhoneNumberId: string | undefined;
+  if (json.whatsappPhoneNumberId !== undefined) {
+    const raw = json.whatsappPhoneNumberId;
+    const trimmed = typeof raw === "string" ? raw.trim() : "";
+    if (!WHATSAPP_PHONE_NUMBER_ID_PATTERN.test(trimmed)) {
+      return {
+        ok: false,
+        detail:
+          "Campo 'whatsappPhoneNumberId' deve conter apenas dígitos (1 a 32).",
+      };
+    }
+    whatsappPhoneNumberId = trimmed;
+  }
+
+  return {
+    ok: true,
+    dto: {
+      name,
+      phone,
+      externalId,
+      firstContactAt,
+      ...(whatsappPhoneNumberId !== undefined ? { whatsappPhoneNumberId } : {}),
+    },
+  };
 }
 
 // ---- PATCH /api/v1/leads/{id} -------------------------------------------

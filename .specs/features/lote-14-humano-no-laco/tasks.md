@@ -297,9 +297,11 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] Testes em `src/server/integration/__tests__/routes/leads-post.test.ts`: valor válido é gravado no lead novo; segunda entrega com outro valor atualiza; entrega **sem o campo** preserva o valor existente; string vazia, só espaços, não numérico ou com mais de 32 dígitos → `400 payload-invalido` sem gravar (L-005).
-- [ ] A resposta do `POST /leads` traz `humanTakeoverAt` e `memoryResetRequestedAt` em ISO-8601 quando preenchidos e `null` quando não.
-- [ ] Gate Quick passa; contagem registrada.
+- [x] Testes em `src/server/integration/__tests__/routes/leads-post.test.ts`: valor válido é gravado no lead novo; segunda entrega com outro valor atualiza; entrega **sem o campo** preserva o valor existente; string vazia, só espaços, não numérico ou com mais de 32 dígitos → `400 payload-invalido` sem gravar (L-005). *(leads-post.test.ts: 10 → 19 testes; também cobre fronteiras de 1 e 32 dígitos e reentrega inválida preservando o valor.)*
+- [x] A resposta do `POST /leads` traz `humanTakeoverAt` e `memoryResetRequestedAt` em ISO-8601 quando preenchidos e `null` quando não.
+- [x] Gate Quick passa; contagem registrada. *(`src/server/integration`: 27 arquivos / 321 testes, todos passando.)*
+
+**Nota de escopo:** `setLeadChannel` (design C1) não existia na DAL (T5–T7 não o entregaram); foi criado aqui em `src/server/data/index.ts`, junto com o parser em `parsers.ts`, por ser dependência direta do `deliverLead`.
 
 **Tests:** integration
 **Gate:** Quick
