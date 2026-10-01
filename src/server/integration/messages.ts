@@ -39,6 +39,8 @@ export interface SerializedMessage {
   sender: Message["sender"];
   content: string;
   sentAt: string;
+  /** Nome de quem escreveu, só para `sender: humano` (lote-14); senão `null`. */
+  authorName: string | null;
 }
 
 export function serializeMessage(message: Message): SerializedMessage {
@@ -48,6 +50,7 @@ export function serializeMessage(message: Message): SerializedMessage {
     sender: message.sender,
     content: message.content,
     sentAt: message.sentAt.toISOString(),
+    authorName: message.authorName ?? null,
   };
 }
 

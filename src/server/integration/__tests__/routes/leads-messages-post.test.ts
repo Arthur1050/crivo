@@ -159,6 +159,48 @@ describe("routes: POST /api/v1/leads/[id]/messages", () => {
     expect(rows).toHaveLength(1);
   });
 
+  // lote-14 — CONTRATO-01 AC5 (T11): a autoria `humano` nunca entra pelo
+  // contrato de serviço; só o CRM a cria (envio humano).
+  async function countMessagesOf(leadId: string): Promise<number> {
+    const rows = await db
+      .select({ id: messages.id })
+      .from(messages)
+      .innerJoin(conversations, eq(messages.conversationId, conversations.id))
+      .where(eq(conversations.leadId, leadId));
+    return rows.length;
+  }
+
+  it("sender humano responde 400 payload-invalido e a contagem de mensagens do lead fica igual (CONTRATO-01 AC5)", async () => {
+    const before = await countMessagesOf(leadAId);
+    const externalId = randomUUID();
+
+    const response = await callPost(leadAId, {
+      externalId,
+      sender: "humano",
+      content: "Autoria humana forjada pelo agente.",
+      sentAt: "2026-08-01T10:00:00Z",
+      authorName: "Corretor Falso",
+    });
+
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.code).toBe("payload-invalido");
+    expect(body.detail).toContain("agente, lead");
+    expect(await countMessagesOf(leadAId)).toBe(before);
+    const rows = await db.select().from(messages).where(eq(messages.externalId, externalId));
+    expect(rows).toHaveLength(0);
+  });
+
+  it("sender agente continua aceito e grava sem autor (T11)", async () => {
+    const externalId = randomUUID();
+    const response = await callPost(leadAId, { ...validPayload(externalId), sender: "agente" });
+
+    expect(response.status).toBe(201);
+    const body = await response.json();
+    expect(body.sender).toBe("agente");
+    expect(body.authorName).toBeNull();
+  });
+
   it("lead inexistente no tenant responde 404 (Edge Case)", async () => {
     const response = await callPost(randomUUID(), validPayload(randomUUID()));
     expect(response.status).toBe(404);

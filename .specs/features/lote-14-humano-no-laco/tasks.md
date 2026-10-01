@@ -360,10 +360,10 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] `POST /leads/{id}/messages` com `sender: humano` → `400 payload-invalido`, e a contagem de mensagens do lead fica igual (CONTRATO-01 AC5).
-- [ ] `agente` e `lead` continuam aceitos (testes existentes passam).
-- [ ] `GET /leads/{id}/messages` devolve a mensagem `humano` com `authorName` e as demais com `authorName: null`.
-- [ ] Gate Quick passa; contagem registrada.
+- [x] `POST /leads/{id}/messages` com `sender: humano` → `400 payload-invalido`, e a contagem de mensagens do lead fica igual (CONTRATO-01 AC5). *(leads-messages-post.test.ts: 400 payload-invalido com detail 'agente, lead' e contagem do lead antes/depois igual)*
+- [x] `agente` e `lead` continuam aceitos (testes existentes passam). *(teste novo com sender agente (201, authorName null) + testes existentes com lead passam)*
+- [x] `GET /leads/{id}/messages` devolve a mensagem `humano` com `authorName` e as demais com `authorName: null`. *(leads-messages-get.test.ts: [lead,null],[humano,'Maria Souza'],[agente,null])*
+- [x] Gate Quick passa; contagem registrada. *(messages-get + messages-post + parsers + messages: 4 arquivos / 77 testes)*
 
 **Tests:** integration
 **Gate:** Quick

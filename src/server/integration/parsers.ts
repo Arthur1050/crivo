@@ -283,6 +283,14 @@ export function parseLeadPatch(json: unknown): ParseResult<LeadPatchDto> {
 
 // ---- POST /api/v1/leads/{id}/messages -----------------------------------
 
+/**
+ * Remetentes que a credencial de serviço pode gravar (lote-14 — CONTRATO-01
+ * AC5). `humano` existe no enum do banco, mas só o CRM cria autoria humana
+ * (envio pela tela de Chats); aceitar `senderEnum.enumValues` aqui deixaria o
+ * agente fabricar a fala de um corretor.
+ */
+export const AGENT_WRITABLE_SENDERS = ["agente", "lead"] as const satisfies readonly Sender[];
+
 export interface MessageCreateDto {
   externalId: string;
   sender: Sender;
@@ -300,11 +308,11 @@ export function parseMessageCreate(json: unknown): ParseResult<MessageCreateDto>
     return { ok: false, detail: "Campo 'externalId' é obrigatório." };
   }
 
-  const sender = enumValue(json.sender, senderEnum.enumValues);
+  const sender = enumValue(json.sender, AGENT_WRITABLE_SENDERS);
   if (!sender) {
     return {
       ok: false,
-      detail: `Campo 'sender' inválido. Valores aceitos: ${senderEnum.enumValues.join(", ")}.`,
+      detail: `Campo 'sender' inválido. Valores aceitos: ${AGENT_WRITABLE_SENDERS.join(", ")}.`,
     };
   }
 

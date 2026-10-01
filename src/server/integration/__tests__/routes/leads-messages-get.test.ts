@@ -159,6 +159,59 @@ describe("routes: GET /api/v1/leads/[id]/messages (lote-6b — CTX-02)", () => {
     );
   });
 
+  // lote-14 — CONTRATO-01/DEVOLVER-01 (T11): a mensagem `humano` volta com o
+  // nome do autor; as demais com `authorName: null`.
+  it("devolve a mensagem humano com authorName e as demais com authorName null (T11)", async () => {
+    const humanLeadId = randomUUID();
+    await db.insert(leads).values({
+      id: humanLeadId,
+      tenantId: tenantAId,
+      name: "Lead Teste Humano",
+      phone: "+55 34 90000-0002",
+      status: "em_qualificacao",
+      firstContactAt: new Date("2026-08-01T00:00:00.000Z"),
+    });
+    const [conversation] = await db
+      .insert(conversations)
+      .values({ tenantId: tenantAId, leadId: humanLeadId })
+      .returning();
+    await db.insert(messages).values([
+      {
+        tenantId: tenantAId,
+        conversationId: conversation.id,
+        sender: "lead",
+        content: "Oi, tenho dúvida.",
+        sentAt: new Date("2026-08-01T10:01:00.000Z"),
+      },
+      {
+        tenantId: tenantAId,
+        conversationId: conversation.id,
+        sender: "humano",
+        authorName: "Maria Souza",
+        content: "Olá, sou a Maria, da equipe.",
+        sentAt: new Date("2026-08-01T10:02:00.000Z"),
+      },
+      {
+        tenantId: tenantAId,
+        conversationId: conversation.id,
+        sender: "agente",
+        content: "Resposta do agente.",
+        sentAt: new Date("2026-08-01T10:03:00.000Z"),
+      },
+    ]);
+
+    const response = await callGet(humanLeadId);
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(
+      body.map((m: { sender: string; authorName: string | null }) => [m.sender, m.authorName])
+    ).toEqual([
+      ["lead", null],
+      ["humano", "Maria Souza"],
+      ["agente", null],
+    ]);
+  });
+
   it("?limit=2 devolve 2 itens, as mensagens mais recentes em ordem crescente (CTX-02 AC2)", async () => {
     const response = await callGet(leadAId, { query: "?limit=2" });
     expect(response.status).toBe(200);
