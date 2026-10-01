@@ -983,10 +983,23 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] Coluna criada e conferida por `search_data_tables`.
-- [ ] Cada workflow publicado com `versionId == activeVersionId` (L-032), e `get_workflow_details` igual ao `n8n/generated/` correspondente.
-- [ ] Uma execução real de cada workflow depois da publicação, conferida por `get_execution`, sem erro (o scheduler no próximo tick; o principal e a tool na prova da T40, se não houver tráfego antes).
-- [ ] Evidence registrada; gate Build passa.
+- [x] Coluna criada e conferida por `search_data_tables`.
+- [x] Cada workflow publicado com `versionId == activeVersionId` (L-032), e `get_workflow_details` igual ao `n8n/generated/` correspondente.
+- [x] Uma execução real de cada workflow depois da publicação, conferida por `get_execution`, sem erro (o scheduler no próximo tick; o principal e a tool na prova da T40, se não houver tráfego antes).
+- [x] Evidence registrada; gate Build passa.
+
+**Evidence** (2026-10-01, ordem fixa respeitada: `drizzle-kit push` → deploy `15c79da` → coluna → tool → scheduler → principal):
+
+- Coluna `memoryResetAt` (string, id `fnsV2nDPvWGtT9Dx`) criada em `conversa_estado` (`ZsplBxJjXv3kwKZ8`) por `add_data_table_column`; `search_data_tables` mostra 11 colunas com ela no índice 10.
+- Publicação por `update_workflow` com a diferença exata entre o gerado anterior ao lote (`git show 6135baf:n8n/generated/*.ts`, `toJSON()`) e o gerado atual, calculada por script; depois `publish_workflow`:
+  - `crivo-tool-responder-lead` (`Li2hgCX943zKmDXf`): 4 nós novos e 7 arestas; `versionId == activeVersionId == d8e9931e-aced-4233-a019-f25b353ee614`, 14 nós. Os nós `Code: aplicar barreiras de persona` e `Code: normalizar destinatario do envio` já estavam publicados sem os comentários de documentação desde 2026-08-16 (lógica idêntica); não foram tocados.
+  - `crivo-agente-scheduler` (`gmIWxiRrHGIdtPub`): 15 nós novos e 19 arestas; `versionId == activeVersionId == e8b97f8b-9890-4191-a8d2-b42aa3c8ebb8`; comparação por script do `get_workflow_details` com o gerado: 41 nós e 41 arestas, **sem diferença**. **Achado**: o scheduler estava **inativo** desde 2026-08-23 (`activeVersionId: null`, nenhuma execução registrada). A publicação o reativou.
+  - `crivo-agente-principal` (`0B1nqjODu7xuYYKF`): 3 nós novos, 5 alterados e 6 arestas; `versionId == activeVersionId == d8a323e6-8ac4-4e51-ba61-84932d1dd355`, 73 nós e 95 arestas. Comparação por script: os 8 nós do lote idênticos ao gerado; diferenças restantes só as conhecidas (escape do regex nos 4 nós de opt-out, D6 do lote-13; quebra de linha final em 2 nós, anterior ao lote) e parâmetros com valor padrão omitidos pelo n8n.
+  - Credenciais dos nós novos (`Crivo - chave de servico` `YhGcdfGtdEBBU9YP`, `Postgres n8n local` `yyiKyt0KY8Q7TwND`) reafirmadas por `setNodeCredential`; a execução 2829 da tool prova o GET autenticado.
+- Execuções reais depois da publicação, conferidas por `get_execution`: scheduler **2803** (23:00 UTC, `success`; varredura D com `resets: []`) e **2838** (purga do 6c); tool **2829** (`HTTP: GET /leads/{id} (antes do envio)` 200 → `podeEnviar: true` → envio); principal **2805**, **2814**, **2819** etc. (T40).
+- `document-context-benchmark.ts check --workflow-version d8a323e6-…`: 9 tetos conferidos, 9 marcados `stale`. A identidade só mudou no `workflowVersion` (modelo, system message, tools e janela de memória iguais); um teto `stale` continua limitando com o valor antigo. Remedição pendente (ver Handoff).
+- **Lembretes antigos**: a Data Table `agenda_envios` tem lembretes de reuniões de setembro com `sentAt` vazio (linhas 17 e 18 do número de teste e duas de teste do lote-6c). A varredura A os reenviaria a um lead do número de teste com `conversa_estado` existente; durante a prova o scheduler ficou despublicado nos casos 6a/6b/6d e republicado no 6c (lead com opt-out → rota `skip`, execução 2838). Limpeza dessas linhas fica para o usuário decidir.
+- Gate Build: sem mudança de código; vale o gate da T37.
 
 **Tests:** none
 **Gate:** Build
