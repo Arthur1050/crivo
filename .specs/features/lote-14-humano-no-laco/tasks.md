@@ -491,13 +491,13 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] Teste novo `src/server/chats/__tests__/human-opt-out.test.ts`: grava `optedOutAt` e `memory_reset_requested_at` (AC1, AC6 lado do CRM).
-- [ ] Janela aberta → exatamente uma chamada à Meta, com o texto **byte a byte igual** a `OPT_OUT_CONFIRMATION`, gravado como `humano` com autor (AC3).
-- [ ] Janela fechada → zero chamadas, opt-out gravado (AC4).
-- [ ] Meta recusa → opt-out mantido e `confirmationDelivered: false` (AC5).
-- [ ] Lead já com opt-out → nenhuma escrita nem envio; fora do escopo → recusa e `optedOutAt` nulo (AC8); lead conduzido pelo agente → permitido.
-- [ ] `n8n/src/opt-out-intent.mjs` não foi alterado (a identidade do classificador da AD-032 continua valendo).
-- [ ] Gate Quick passa; contagem registrada.
+- [x] Teste novo `src/server/chats/__tests__/human-opt-out.test.ts`: grava `optedOutAt` e `memory_reset_requested_at` (AC1, AC6 lado do CRM). *(human-opt-out.test.ts: resultado ok com optedOutAt NOW e newlyOptedOut true; optedOutAt e memoryResetRequestedAt iguais a NOW no banco)*
+- [x] Janela aberta → exatamente uma chamada à Meta, com o texto **byte a byte igual** a `OPT_OUT_CONFIRMATION`, gravado como `humano` com autor (AC3). *(fetch 1 vez; Buffer do corpo enviado igual ao de OPT_OUT_CONFIRMATION; 1 mensagem humano com o mesmo texto, authorUserId e authorName)*
+- [x] Janela fechada → zero chamadas, opt-out gravado (AC4). *(janela com 24 h exatas: fetch 0 vez, confirmationDelivered false, optedOutAt NOW e nenhuma mensagem)*
+- [x] Meta recusa → opt-out mantido e `confirmationDelivered: false` (AC5). *(Meta devolve 131056: optedOutAt mantido, confirmationDelivered false e aviso 'Opt-out registrado. A confirmação não foi entregue ao lead.')*
+- [x] Lead já com opt-out → nenhuma escrita nem envio; fora do escopo → recusa e `optedOutAt` nulo (AC8); lead conduzido pelo agente → permitido. *(já com opt-out: optedOutAt original, memoryResetRequestedAt nulo, updatedAt igual, 0 reserva e 0 envio; outra carteira e outro tenant com linha real: fora-do-escopo, fetch 0 vez e optedOutAt nulo; lead do agente: opt-out e confirmação enviada)*
+- [x] `n8n/src/opt-out-intent.mjs` não foi alterado (a identidade do classificador da AD-032 continua valendo). *(git diff vazio e nenhum commit do lote em n8n/src/opt-out-intent.mjs; o serviço só importa a constante)*
+- [x] Gate Quick passa; contagem registrada. *(Gate Quick: 1 arquivo / 8 testes passando; eslint limpo; tsc sem erro nos arquivos novos)*
 
 **Tests:** integration
 **Gate:** Quick
