@@ -169,11 +169,11 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] `npm run db:push:test` aplica o esquema na base e nas branches de worker sem erro.
-- [ ] Teste novo `src/db/__tests__/schema-humano.test.ts`: mensagem `humano` sem `author_name` é recusada pelo banco; com `author_name`, é aceita.
-- [ ] Mesmo `request_id` duas vezes no mesmo tenant viola o índice único; o mesmo `request_id` em tenants diferentes é aceito.
-- [ ] Excluir o usuário autor deixa `author_user_id` nulo e preserva `author_name` (THREAD-01 AC7, lado do dado).
-- [ ] Gate Full passa; nenhum teste existente quebra.
+- [x] `npm run db:push:test` aplica o esquema na base e nas branches de worker sem erro. *(5 bancos de teste: base + 4 workers.)*
+- [x] Teste novo `src/db/__tests__/schema-humano.test.ts`: mensagem `humano` sem `author_name` é recusada pelo banco; com `author_name`, é aceita. *(`23514` em `:113`; aceita em `:132-133`.)*
+- [x] Mesmo `request_id` duas vezes no mesmo tenant viola o índice único; o mesmo `request_id` em tenants diferentes é aceito. *(`23505` em `:153`; dois tenants em `:174`.)*
+- [x] Excluir o usuário autor deixa `author_user_id` nulo e preserva `author_name` (THREAD-01 AC7, lado do dado). *(`:195-196`.)*
+- [x] Gate Full passa; nenhum teste existente quebra. *(`npm test`: 127 arquivos / 2.112 testes, antes 126 / 2.107; só as 2 falhas conhecidas de `DOCLIM-01 AC8`.)*
 
 **Tests:** integration
 **Gate:** Full

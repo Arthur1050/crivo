@@ -66,7 +66,17 @@ export const creditStatusEnum = pgEnum("credit_status", [
   "fgts",
 ]);
 
-export const senderEnum = pgEnum("sender", ["agente", "lead"]);
+// `humano` (lote-14 — ENVIO-01, THREAD-01): mensagem escrita por um usuário
+// do CRM pela tela de Chats. Só nasce pela tela, com autor autenticado; o
+// contrato `/api/v1` não aceita esse remetente na escrita (CONTRATO-01 AC5).
+export const senderEnum = pgEnum("sender", ["agente", "lead", "humano"]);
+
+// Estado da reserva idempotente do envio humano (lote-14 — ENVIO-01 AC11).
+export const humanSendStateEnum = pgEnum("human_send_state", [
+  "enviando",
+  "enviada",
+  "falhou",
+]);
 
 // Origem da última mudança de status de um lead (lote-5 — INT-04: trava
 // humana). `null` = nunca alterado por nenhum ator (estado do seed).
@@ -213,6 +223,22 @@ export const leads = pgTable(
     externalId: text("external_id"), // id do lead no mundo do agente (ex.: wa_id)
     optedOutAt: timestamp("opted_out_at", { withTimezone: true }),
     statusChangedBy: statusActorEnum("status_changed_by"),
+    // Condução humana (lote-14 — ASSUMIR-01, DEVOLVER-01; AD-034). Todas
+    // nullable/aditivas. A marca (`human_takeover_at` + `human_takeover_by`)
+    // é separada do `status`: assumir não move o lead no Kanban. Excluir o
+    // usuário que assumiu não apaga a marca, só o vínculo (`set null`).
+    humanTakeoverAt: timestamp("human_takeover_at", { withTimezone: true }),
+    humanTakeoverBy: uuid("human_takeover_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    // Pedido de reconstrução da memória do agente (devolução e opt-out pelo
+    // CRM), consumido pelo n8n (`memoryResetDue`).
+    memoryResetRequestedAt: timestamp("memory_reset_requested_at", {
+      withTimezone: true,
+    }),
+    // Número de WhatsApp da imobiliária para o qual o lead escreveu,
+    // aprendido a cada `POST /leads` do n8n (AD-035). Origem do envio humano.
+    whatsappPhoneNumberId: text("whatsapp_phone_number_id"),
   },
   (table) => [
     // Idempotência de entrega (INT-02.2) escopada por tenant: dois tenants
@@ -277,6 +303,13 @@ export const messages = pgTable(
     // usado para deduplicar reentregas. Nullable/aditiva — mensagens do seed
     // antigo nunca têm externalId.
     externalId: text("external_id"),
+    // Autoria humana (lote-14 — ENVIO-01 AC2, THREAD-01 AC1/AC7). O nome é um
+    // instantâneo do momento do envio: sobrevive à perda de vínculo e à
+    // exclusão do usuário, que só zera `author_user_id` (`set null`).
+    authorUserId: uuid("author_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    authorName: text("author_name"),
   },
   (table) => [
     // Idempotência de ingestão (INT-05.2), escopada por tenant, parcial
@@ -284,6 +317,49 @@ export const messages = pgTable(
     uniqueIndex("messages_tenant_id_external_id_idx")
       .on(table.tenantId, table.externalId)
       .where(sql`${table.externalId} is not null`),
+    // Última mensagem por conversa (resumos do Chats e janela de 24h).
+    index("messages_conversation_sent_at_idx").on(
+      table.conversationId,
+      table.sentAt
+    ),
+    // Mensagem `humano` sempre tem autor nomeado (THREAD-01 AC7).
+    check(
+      "messages_humano_author_name_required",
+      sql`${table.sender} <> 'humano' or ${table.authorName} is not null`
+    ),
+  ]
+);
+
+// Reserva idempotente do envio humano (lote-14 — ENVIO-01 AC11): a mesma
+// chave (`tenant_id`, `request_id`) chama a Meta e grava uma vez só.
+export const humanMessageSends = pgTable(
+  "human_message_sends",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
+    leadId: uuid("lead_id")
+      .notNull()
+      .references(() => leads.id),
+    requestId: uuid("request_id").notNull(),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+    state: humanSendStateEnum("state").notNull(),
+    wamid: text("wamid"),
+    messageId: uuid("message_id").references(() => messages.id),
+    failure: text("failure"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("human_message_sends_tenant_request_idx").on(
+      table.tenantId,
+      table.requestId
+    ),
   ]
 );
 
