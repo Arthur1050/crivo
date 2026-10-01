@@ -236,6 +236,24 @@ Corroborated across multiple features. Safe to apply as guidance.
 - evidence: T12-T12e: medições 2685, 2686, 2687 reprovadas; 2688 aprovada com trava (D1-D3) (llm,medicao)
 - last seen: 2026-09-30T00:32:12Z
 
+### L-047 - No Windows deste projeto, o Edit tool, o heredoc do Git Bash e o transporte do MCP convertem escapes de barra invertida (unicode e quebra de linha): edite trechos com escapes por script que monte a barra com chr(92) e confira o byte depois.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `tooling,windows` · harmful: 0
+- features: lote-13-opt-out-linguagem-natural
+- evidence: T13 tasks.md duplicado; D6; T20 (system-message.mjs e STATE.md) (tooling,windows)
+- last seen: 2026-10-01T02:14:41Z
+
+### L-048 - Mudança de comportamento pedida durante a prova real não termina no código: republique o agente, republique o benchmark que inlina o mesmo módulo, remeça o teto de contexto e refaça só os casos afetados do roteiro.
+- signal: `spec_deviation` · recurrence: 1 feature(s) · scope: `n8n,agente,medicao` · harmful: 0
+- features: lote-13-opt-out-linguagem-natural
+- evidence: T18/T20, decisão D11 (execuções 2738/2744) (n8n,agente,medicao)
+- last seen: 2026-10-01T02:14:41Z
+
+### L-049 - Ao emendar um comportamento, varra todo critério que aprova ou reprova (ACs irmãos de outros requisitos e a barra de aprovação do roteiro), não só o AC do requisito emendado.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `specs` · harmful: 0
+- features: lote-13-opt-out-linguagem-natural
+- evidence: Verifier ciclo 3, F1 (roteiro §7) e F2 (OPTPROVA-01 AC2) (specs)
+- last seen: 2026-10-01T02:14:42Z
+
 ## Candidates (under observation - do NOT load as guidance yet)
 
 Seen once or not yet corroborated. Tracked, not trusted.

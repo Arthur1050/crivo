@@ -4,7 +4,7 @@
   "window_days": 45,
   "quarantine_threshold": 2,
   "prune_requires_confirmation": true,
-  "next_id": 47,
+  "next_id": 50,
   "lessons": [
     {
       "id": "L-001",
@@ -746,6 +746,60 @@
       ],
       "created": "2026-09-30T00:32:12Z",
       "last_seen": "2026-09-30T00:32:12Z"
+    },
+    {
+      "id": "L-047",
+      "key": "gate_fail::no windows deste projeto o edit tool o heredoc do git bash e o transporte do mcp convertem escapes de barra invertida unicode e quebra de linha edite trechos com escapes por script que monte a barra com chr 92 e confira o byte depois",
+      "text": "No Windows deste projeto, o Edit tool, o heredoc do Git Bash e o transporte do MCP convertem escapes de barra invertida (unicode e quebra de linha): edite trechos com escapes por script que monte a barra com chr(92) e confira o byte depois.",
+      "signal": "gate_fail",
+      "scope": "tooling,windows",
+      "status": "confirmed",
+      "features": [
+        "lote-13-opt-out-linguagem-natural"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "T13 tasks.md duplicado; D6; T20 (system-message.mjs e STATE.md) (tooling,windows)"
+      ],
+      "created": "2026-10-01T02:14:41Z",
+      "last_seen": "2026-10-01T02:14:41Z"
+    },
+    {
+      "id": "L-048",
+      "key": "spec_deviation::mudanca de comportamento pedida durante a prova real nao termina no codigo republique o agente republique o benchmark que inlina o mesmo modulo remeca o teto de contexto e refaca so os casos afetados do roteiro",
+      "text": "Mudança de comportamento pedida durante a prova real não termina no código: republique o agente, republique o benchmark que inlina o mesmo módulo, remeça o teto de contexto e refaça só os casos afetados do roteiro.",
+      "signal": "spec_deviation",
+      "scope": "n8n,agente,medicao",
+      "status": "confirmed",
+      "features": [
+        "lote-13-opt-out-linguagem-natural"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "T18/T20, decisão D11 (execuções 2738/2744) (n8n,agente,medicao)"
+      ],
+      "created": "2026-10-01T02:14:41Z",
+      "last_seen": "2026-10-01T02:14:41Z"
+    },
+    {
+      "id": "L-049",
+      "key": "spec_precision_gap::ao emendar um comportamento varra todo criterio que aprova ou reprova acs irmaos de outros requisitos e a barra de aprovacao do roteiro nao so o ac do requisito emendado",
+      "text": "Ao emendar um comportamento, varra todo critério que aprova ou reprova (ACs irmãos de outros requisitos e a barra de aprovação do roteiro), não só o AC do requisito emendado.",
+      "signal": "spec_precision_gap",
+      "scope": "specs",
+      "status": "confirmed",
+      "features": [
+        "lote-13-opt-out-linguagem-natural"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "Verifier ciclo 3, F1 (roteiro §7) e F2 (OPTPROVA-01 AC2) (specs)"
+      ],
+      "created": "2026-10-01T02:14:42Z",
+      "last_seen": "2026-10-01T02:14:42Z"
     }
   ]
 }
