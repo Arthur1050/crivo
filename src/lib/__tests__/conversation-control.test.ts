@@ -3,6 +3,7 @@ import {
   CHAT_REFRESH_INTERVAL_MS,
   conversationControls,
   formatWindowRemaining,
+  optOutNotice,
   shouldPollConversation,
   whatsappWindow,
   windowClosedNotice,
@@ -213,5 +214,12 @@ describe("textos da janela no composer (JANELA-01 AC2/AC3)", () => {
     expect(windowClosedNotice(null)).toBe(
       "O WhatsApp só permite responder até 24 horas depois da última mensagem do lead. Esta conversa ainda não tem mensagem do lead."
     );
+  });
+});
+
+// Lote-14, OPTHUM-01 AC7: a conversa com opt-out mostra a data do registro.
+describe("optOutNotice (OPTHUM-01 AC7)", () => {
+  it("data do opt-out no fuso America/Sao_Paulo", () => {
+    expect(optOutNotice(new Date("2026-10-01T02:30:00.000Z"))).toBe("Opt-out em 30/09/2026");
   });
 });

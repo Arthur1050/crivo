@@ -1,4 +1,5 @@
 import { Avatar } from "@astryxdesign/core/Avatar";
+import { Banner } from "@astryxdesign/core/Banner";
 import { Divider } from "@astryxdesign/core/Divider";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import {
@@ -16,6 +17,7 @@ import { HumanComposer } from "@/src/components/chats/human-composer";
 import { MessageThread } from "@/src/components/chats/message-thread";
 import {
   conversationControls,
+  optOutNotice,
   whatsappWindow,
   windowClosedNotice,
   windowOpenLabel,
@@ -37,8 +39,9 @@ interface ChatsPageProps {
 }
 
 /**
- * Visualização somente leitura das conversas do tenant ativo (lote-3 —
- * CHAT-01). A seleção vive na URL (`?conversa=`, RSC-first — design.md):
+ * Conversas do tenant ativo (lote-3 — CHAT-01). A partir do lote-14, a
+ * equipe assume, responde, devolve e registra opt-out pela tela; janela de
+ * 24h e controles são calculados aqui, no servidor (design.md C6). A seleção vive na URL (`?conversa=`, RSC-first — design.md):
  * uma conversa que não existe ou pertence a outro tenant simplesmente não é
  * encontrada em `summaries` (já tenant-scoped por `getConversationSummaries`)
  * e cai no mesmo estado neutro de "nenhuma selecionada" — nunca um erro.
@@ -112,9 +115,10 @@ export default async function ChatsPage({ searchParams }: ChatsPageProps) {
           <VStack gap={1}>
             <Heading level={1}>Chats</Heading>
             <Text type="body" color="secondary">
+              {/* THREAD-01 AC6: conta as conversas sem dizer quem conduz. */}
               {summaries.length === 1
-                ? `1 conversa conduzida pelo agente ${tenant?.agentName ?? "SDR"} no WhatsApp`
-                : `${summaries.length} conversas conduzidas pelo agente ${tenant?.agentName ?? "SDR"} no WhatsApp`}
+                ? "1 conversa no WhatsApp"
+                : `${summaries.length} conversas no WhatsApp`}
             </Text>
           </VStack>
         </LayoutHeader>
@@ -165,6 +169,15 @@ export default async function ChatsPage({ searchParams }: ChatsPageProps) {
                   />
                 </VStack>
               </StackItem>
+              {selectedLead?.optedOutAt && (
+                <VStack padding={4}>
+                  <Banner
+                    status="info"
+                    title={optOutNotice(selectedLead.optedOutAt)}
+                    description="Conversa somente leitura: o lead não recebe mais mensagens."
+                  />
+                </VStack>
+              )}
               {controls && controls.composer !== "oculto" && (
                 <VStack padding={4}>
                   <HumanComposer

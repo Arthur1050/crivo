@@ -96,3 +96,4 @@ Todas as áreas não discutidas estão na tabela de assunções da spec com defa
 - Histórico de quem assumiu e devolveu cada conversa.
 - Atribuir o lead a quem assume a conversa.
 - Erro de hidratação no divisor de data da thread do Chats (`<Timestamp format="date_weekday">` em `src/components/chats/message-thread.tsx`): o servidor renderiza o dia em inglês ("Sat, Sep 26, 2026") e o cliente em português. Anterior ao lote-14 (mesma família do problema do `Timestamp` do lote-12); visto na captura da T29.
+- Chats em largura de celular: o `LayoutPanel width={320}` fixo deixa a thread, o cabeçalho e o composer espremidos numa coluna estreita (visto na captura da T34, iframe de 390 px). Anterior ao lote-14; a tela precisa de um layout de uma coluna (lista ou conversa) abaixo de um ponto de quebra.

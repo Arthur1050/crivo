@@ -868,10 +868,18 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] Capturas de página inteira: conversa do agente; conversa assumida com a janela aberta; conversa assumida com a janela fechada (lead do seed com a última mensagem há mais de 24 h); conversa com opt-out somente leitura com a data (OPTHUM-01 AC7); visão de corretor puro (só a própria carteira); largura de celular.
-- [ ] O subtítulo não diz mais "conduzidas pelo agente" (THREAD-01 AC6).
-- [ ] O texto da janela vem pronto do servidor (nenhum `Timestamp` da Astryx no tempo restante).
-- [ ] Self-check da Astryx no arquivo inteiro; gate Build passa (fim da Phase 6); contagem registrada.
+- [x] Capturas de página inteira: conversa do agente; conversa assumida com a janela aberta; conversa assumida com a janela fechada (lead do seed com a última mensagem há mais de 24 h); conversa com opt-out somente leitura com a data (OPTHUM-01 AC7); visão de corretor puro (só a própria carteira); largura de celular.
+- [x] O subtítulo não diz mais "conduzidas pelo agente" (THREAD-01 AC6).
+- [x] O texto da janela vem pronto do servidor (nenhum `Timestamp` da Astryx no tempo restante).
+- [x] Self-check da Astryx no arquivo inteiro; gate Build passa (fim da Phase 6); contagem registrada. *(Suíte: 145 arquivos / 2.395 testes (+1 de `optOutNotice`), só as 2 falhas conhecidas de `DOCLIM-01 AC8`; lint 0 erros; build ok.)*
+
+**Evidence** (extensão Claude in Chrome, `dev:test`):
+
+- Página inteira, administrador "Ana Teste": conversa do agente ("Simone Dias": "Conduzida pelo agente Sofia", "Assumir conversa", sem composer); conversa assumida com janela aberta ("Nathan Ferreira": "Conduzida por Ana Teste", composer com "Janela do WhatsApp fecha em 23 h 32 min"); conversa assumida com janela fechada ("Wesley Quintino": campo desabilitado e "A janela fechou em 19/09/2026 às 18:23."); conversa com opt-out ("Zélia Carvalho": "Opt-out registrado" no cabeçalho, sem botões nem composer, faixa "Opt-out em 01/10/2026 — Conversa somente leitura: o lead não recebe mais mensagens.") (OPTHUM-01 AC7).
+- Subtítulo: "25 conversas no WhatsApp" (THREAD-01 AC6).
+- Corretor puro (usuário de teste "Bruno Teste", papel `corretor`, 3 leads atribuídos): lista com só as 3 conversas da carteira e subtítulo "3 conversas no WhatsApp".
+- Largura de celular (iframe de 390 px na mesma origem, porque a janela maximizada do Chrome não aceitou o redimensionamento): a lista ocupa a largura útil e a thread fica espremida ao lado. Causa anterior ao lote: o `LayoutPanel width={320}` fixo da página já existia antes (`git show c2c7f34:app/(crm)/chats/page.tsx:79`). Registrado em Deferred Ideas; nenhuma AC do lote cobre layout de celular.
+- O texto da janela e da faixa de opt-out chega pronto do servidor (`windowOpenLabel`, `windowClosedNotice`, `optOutNotice`); a página não usa `Timestamp` para nenhum deles. Sem `<div>`, `<span>` nem `style` em `page.tsx`.
 
 **Tests:** none
 **Gate:** Build

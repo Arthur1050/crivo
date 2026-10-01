@@ -75,6 +75,14 @@ export function windowClosedNotice(closesAt: Date | null): string {
   return `${WINDOW_CLOSED_RULE} A janela fechou em ${parts.day}/${parts.month}/${parts.year} às ${parts.hour}:${parts.minute}.`;
 }
 
+/** Faixa da conversa com opt-out (OPTHUM-01 AC7), com a data em America/Sao_Paulo. */
+export function optOutNotice(optedOutAt: Date): string {
+  const parts = Object.fromEntries(
+    CLOSED_AT_FORMAT.formatToParts(optedOutAt).map((part) => [part.type, part.value])
+  );
+  return `Opt-out em ${parts.day}/${parts.month}/${parts.year}`;
+}
+
 export type Conductor = "agente" | "humano" | "escalado" | "opt-out";
 export type ComposerState = "oculto" | "bloqueado" | "ativo";
 
