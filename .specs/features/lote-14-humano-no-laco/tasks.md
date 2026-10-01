@@ -953,11 +953,20 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] O usuário confirma a variável criada (o agente nunca vê o valor).
-- [ ] `drizzle-kit push` em produção aplicado com autorização; colunas e tabela novas conferidas por consulta de esquema.
-- [ ] Auditoria de trailer limpa antes do push; push autorizado; deploy `READY` conferido por `get_deployment`.
-- [ ] `GET /api/v1/leads/{id}` sem credencial responde 401 (não 405) em produção, e `GET /api/v1/memory-resets` sem credencial responde 401.
-- [ ] Evidence registrada nesta tarefa, sem segredo; gate Build passa.
+- [x] O usuário confirma a variável criada (o agente nunca vê o valor).
+- [x] `drizzle-kit push` em produção aplicado com autorização; colunas e tabela novas conferidas por consulta de esquema.
+- [x] Auditoria de trailer limpa antes do push; push autorizado; deploy `READY` conferido por `get_deployment`.
+- [x] `GET /api/v1/leads/{id}` sem credencial responde 401 (não 405) em produção, e `GET /api/v1/memory-resets` sem credencial responde 401.
+- [x] Evidence registrada nesta tarefa, sem segredo; gate Build passa.
+
+**Evidence** (2026-10-01, autorizações do usuário: token criado por ele; "todas as etapas que demandam autorização já autorizadas"):
+
+- O usuário confirmou `WHATSAPP_ACCESS_TOKEN` (Production) criado na Vercel; o agente não viu o valor. A Vercel fez um redeploy do commit anterior (`dpl_39TmXH8q9RyqHL8CrZ4UESxqE3Kw`, READY) logo depois da variável.
+- `npx drizzle-kit push` em produção: plano só aditivo (enum `human_send_state`, `humano` em `sender`, tabela `human_message_sends` com FKs e índice único, 4 colunas em `leads`, 2 em `messages` com FKs `set null`, CHECK `messages_humano_author_name_required`, índice `messages_conversation_sent_at_idx`), mais o par `DROP`/`CREATE` do índice de expressão `document_categories_tenant_id_lower_name_idx`, que o drizzle-kit sempre recria idêntico. "Changes applied". Consulta de esquema no banco de produção (somente leitura): as 6 colunas, as 11 colunas de `human_message_sends`, os enums `{agente,lead,humano}` e `{enviando,enviada,falhou}`, o CHECK e os três índices presentes.
+- Auditoria de trailer antes do push: 0 ocorrências em `origin/main` inteiro e 0 nos 40 commits locais. `git push origin main`: `6135baf..15c79da`.
+- Deploy `dpl_Grx23HutiMJ1YHyNi2Rd8hrpMdRc` (commit `15c79da`) `READY` por `get_deployment`, com os aliases `crivo-plum.vercel.app` e `crivo-arthur1050s-projects.vercel.app`.
+- Sem credencial, em produção: `GET /api/v1/leads/{id}` → 401 e `GET /api/v1/memory-resets?since=…` → 401 nos dois domínios (antes, o `GET` respondia 405).
+- Gate Build: sem mudança de código nesta tarefa; o gate da T37 (145 arquivos / 2.395 testes, só as 2 falhas conhecidas; lint 0 erros; build ok) vale para o commit implantado.
 
 **Tests:** none
 **Gate:** Build
