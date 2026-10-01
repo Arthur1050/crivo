@@ -514,11 +514,11 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] Teste novo `src/server/__tests__/chats-actions.test.ts` com sessão simulada (padrão de `properties-actions.test.ts`): sessão sem papel recebe a recusa de permissão nas quatro actions e nada é gravado (ASSUMIR-01 AC4, ENVIO-01 AC7, OPTHUM-01 AC8).
-- [ ] Teste de ligação por action, que falha se a action deixar de chamar o serviço (L-026): assumir grava a marca com o id do usuário da sessão; devolver limpa; enviar grava a mensagem com o nome do usuário da sessão como autor; opt-out grava `optedOutAt`.
-- [ ] `revalidatePath("/chats")` é chamado em cada sucesso.
-- [ ] Nota para o Verifier: os consumidores de produção nascem nas T32 e T33 (L-021); esta tarefa não fecha a feature sozinha.
-- [ ] Gate Quick passa; contagem registrada.
+- [x] Teste novo `src/server/__tests__/chats-actions.test.ts` com sessão simulada (padrão de `properties-actions.test.ts`): sessão sem papel recebe a recusa de permissão nas quatro actions e nada é gravado (ASSUMIR-01 AC4, ENVIO-01 AC7, OPTHUM-01 AC8). *(chats-actions.test.ts: com roles [] as quatro actions devolvem 'Sem permissão para escrever chats.'; marca, devolução, mensagem e optedOutAt sem mudança, fetch 0 vez e revalidatePath não chamado)*
+- [x] Teste de ligação por action, que falha se a action deixar de chamar o serviço (L-026): assumir grava a marca com o id do usuário da sessão; devolver limpa; enviar grava a mensagem com o nome do usuário da sessão como autor; opt-out grava `optedOutAt`. *(assumir grava humanTakeoverBy = usuário da sessão; corretor não assume lead de outra carteira (escopo da sessão); devolver zera a marca; enviar grava conteúdo aparado com authorName e authorUserId da sessão; recusa do serviço devolve failure e texto; opt-out grava optedOutAt)*
+- [x] `revalidatePath("/chats")` é chamado em cada sucesso. *(toHaveBeenCalledWith('/chats') nos quatro sucessos)*
+- [x] Nota para o Verifier: os consumidores de produção nascem nas T32 e T33 (L-021); esta tarefa não fecha a feature sozinha. *(Nota para o Verifier: as actions ainda não têm consumidor de produção; o cabeçalho (T32) e o composer (T33) as ligam, então ASSUMIR-01, ENVIO-01, DEVOLVER-01 e OPTHUM-01 não fecham com esta tarefa (L-021))*
+- [x] Gate Quick passa; contagem registrada. *(Gate Quick: 1 arquivo / 10 testes passando; eslint limpo; tsc sem erro nos arquivos novos)*
 
 **Tests:** integration
 **Gate:** Quick
