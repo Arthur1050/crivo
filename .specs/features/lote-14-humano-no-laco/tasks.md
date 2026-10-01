@@ -1016,12 +1016,14 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] Cenário (a) aprovado: mensagem humana entregue no WhatsApp e gravada como `humano` com autor; resposta do lead na tela em até 10 s sem recarregar; zero mensagem do agente depois da marca, conferida na thread e nas execuções `somente-registrar` (HUMPROVA-01 AC3).
-- [ ] Cenário (b) aprovado: depois da devolução, o agente responde usando o fato que só o corretor escreveu, sem atribuí-lo ao lead.
-- [ ] Cenário (c) aprovado: `optedOutAt` gravado, uma confirmação entregue, sessão vazia em `n8n_chat_histories` em até 20 min (execução da varredura D conferida) e silêncio na mensagem seguinte.
-- [ ] Cenário (d) aprovado: `sair` com a marca grava `optedOutAt` e envia a confirmação única.
-- [ ] Captura do campo bloqueado para um lead com a última mensagem há 24 h ou mais (AC4).
-- [ ] Evidência em `n8n/smoke/evidencia.md` § Lote 14 com ids conferidos por `get_execution` (L-011), sem PII; estado de teste limpo no fim; gate Build passa.
+- [x] Cenário (a) aprovado: mensagem humana entregue no WhatsApp e gravada como `humano` com autor; resposta do lead na tela em até 10 s sem recarregar; zero mensagem do agente depois da marca, conferida na thread e nas execuções `somente-registrar` (HUMPROVA-01 AC3).
+- [x] Cenário (b) aprovado: depois da devolução, o agente responde usando o fato que só o corretor escreveu, sem atribuí-lo ao lead.
+- [x] Cenário (c) aprovado: `optedOutAt` gravado, uma confirmação entregue, sessão vazia em `n8n_chat_histories` em até 20 min (execução da varredura D conferida) e silêncio na mensagem seguinte.
+- [x] Cenário (d) aprovado: `sair` com a marca grava `optedOutAt` e envia a confirmação única.
+- [x] Captura do campo bloqueado para um lead com a última mensagem há 24 h ou mais (AC4).
+- [x] Evidência em `n8n/smoke/evidencia.md` § Lote 14 com ids conferidos por `get_execution` (L-011), sem PII; estado de teste limpo no fim; gate Build passa.
+
+**Evidence** (2026-10-01): `n8n/smoke/evidencia.md` § "Lote 14 — T40". 6a aprovado (2805; `somente-registrar` em 2814 e 2815, zero mensagem do agente depois da marca). 6b reprovado na primeira rodada (2819, 2828: o agente leu a nota do corretor, mas recusou repetir dado de imóvel fora de `buscar_imoveis`) e aprovado depois da emenda D12 do system message, aprovada pelo usuário (`0688deb`, principal `e3e25681`): 2875 com `resetDue = true` e resposta "3 vagas", 2881 com `resetDue = false`; atualização da thread em 5,9 s sem recarregar. 6c aprovado (opt-out pelo CRM às 23:11:02Z, uma confirmação; varredura D 2838 apagou 14 linhas da sessão; 2837 em silêncio). 6d aprovado (2859: `sair` com a marca roteou `opt-out`, confirmação única). Captura da janela fechada num lead do seed demonstrativo ("A janela fechou em 05/07/2026 às 20:08."). Limpezas `crivo-smoke-reset` 2804, 2839, 2863 e 2890, cada uma com `smoke:reset`. Gate Build: nenhuma mudança de código nesta task.
 
 **Tests:** none
 **Gate:** Build

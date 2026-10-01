@@ -1778,3 +1778,96 @@ memória nos casos que registram está provada pelo nó do próprio fluxo (`succ
 - 5b: resposta cordial e curta, sem insistência e sem convite para sair.
 - 5c: o agente respondeu "Posso sim" a um pedido que era sobre fotos, embora nunca mande fotos; o
   resto da resposta esclarece. Observação de estilo, sem efeito no desfecho.
+
+---
+
+## Lote 14 — T40: humano no laço — APROVADO (2026-10-01)
+
+Prova conduzida pelo usuário no WhatsApp do número de teste, com o corretor agindo no **Chats do CRM
+de produção** e capturas de tela pela extensão do Chrome. Workflows publicados na T39:
+`crivo-agente-principal` (`0B1nqjODu7xuYYKF`), `crivo-tool-responder-lead` (`Li2hgCX943zKmDXf`,
+`d8e9931e`) e `crivo-agente-scheduler` (`gmIWxiRrHGIdtPub`, `e8b97f8b`). Todo id abaixo foi conferido
+por `get_execution`. As mensagens do lead não são reproduzidas; o único texto literal é o fato do
+corretor do caso 6b, literal por contrato do roteiro.
+
+O scheduler ficou despublicado durante os casos 6a, 6b e 6d, para não disparar lembretes antigos de
+`agenda_envios` do número de teste (reuniões de setembro com `sentAt` nulo), e foi republicado para
+o 6c e no fim da prova. Esses lembretes continuam pendentes de limpeza (ver Handoff do `STATE.md`).
+
+### Caso 6a — assumir, responder pelo CRM e receber sem recarregar: **APROVADO**
+
+Limpeza antes: `crivo-smoke-reset` 2804 e `npm run smoke:reset`.
+
+| Turno | Execução | Resultado |
+| --- | --- | --- |
+| 1 — lead | 2805 | Gate `conversa`; lead criado com o número do canal; agente respondeu |
+| 2 — corretor | — | "Assumir conversa" no Chats: marca gravada, `status` inalterado, cabeçalho "Conduzida por" com o nome do corretor (captura) |
+| 3 — corretor | — | Mensagem pelo composer entregue no aparelho e gravada como `humano`, à direita, com avatar e nome do autor (captura) |
+| 4 — lead | 2814 | Gate `somente-registrar` pela marca; mensagem gravada; nenhum envio do agente |
+| 5 — lead | 2815 | Gate `somente-registrar`; nenhum envio do agente |
+
+Zero mensagem do agente depois da marca, conferido na thread e nas duas execuções.
+
+### Caso 6b — devolver e o agente usar o fato do corretor: **APROVADO** depois da emenda D12
+
+**Primeira rodada, reprovada.** O corretor escreveu "o apartamento da Rua X tem 3 vagas" e devolveu
+a conversa. Na execução 2819 o principal rodou com `resetDue = true`: a memória foi purgada e
+semeada a partir do CRM, com a fala do corretor como nota `system`. O agente leu a nota, mas recusou
+repetir as vagas, porque as regras de inventário mandam citar dado de imóvel só a partir de
+`buscar_imoveis` (2819 e 2828). A tool 2829 mostra o `GET /leads/{id}` autenticado antes do envio
+(`podeEnviar: true`).
+
+**Decisão D12 (usuário, 2026-10-01)**: emendar o system message — uma nota "Mensagem enviada ao lead
+por <nome>, da equipe da imobiliária: ..." é fala da equipe, que o agente pode repetir, inclusive
+características de imóvel, sem atribuí-la ao lead e sem acrescentar nada (`TEAM_NOTES_INSTRUCTION`,
+commit `0688deb`). O principal foi republicado em `e3e25681-8cd1-4ea3-bc38-33d373cf6b80`.
+
+**Segunda rodada, aprovada** (lead novo, mesmos passos):
+
+| Turno | Execução | Resultado |
+| --- | --- | --- |
+| 5 — pergunta das vagas | 2875 | `resetDue = true`; semeadura contém a nota `system` do corretor; o agente respondeu "Boa pergunta. Esse apartamento tem 3 vagas.", sem atribuir a informação ao lead |
+| 6 — outra mensagem | 2881 | `resetDue = false`: nenhuma reconstrução nova |
+
+Atualização sem recarregar: a mensagem do lead apareceu no Chats 5,9 s depois de o CRM gravá-la,
+com a aba visível (limite: 10 s).
+
+### Caso 6c — opt-out registrado pelo CRM: **APROVADO**
+
+"Registrar opt-out" confirmado na caixa de diálogo às 23:11:02Z: `optedOutAt` gravado, **uma**
+confirmação com o texto de OPTMSG-01 entregue e gravada como `humano`, conversa somente leitura com
+o aviso "Opt-out em 01/10/2026".
+
+| Passo | Execução | Resultado |
+| --- | --- | --- |
+| Lead escreve depois do opt-out | 2837 | Gate `somente-registrar` por `optedOutAt`; gravada, sem resposta |
+| Varredura D do scheduler | 2838 (23:15:00Z) | `GET /memory-resets` trouxe o lead; reset devido; `Postgres: apagar sessão` removeu 14 linhas de `n8n_chat_histories`; `conversa_estado` purgada — 4 min depois do opt-out (limite: 20 min) |
+
+Limpeza depois: `crivo-smoke-reset` 2839 e `smoke:reset`.
+
+### Caso 6d — `sair` durante a condução humana: **APROVADO**
+
+Lead novo, corretor assumiu a conversa. Execução 2859: com a marca gravada, a palavra exata `sair`
+fez o gate rotear `opt-out`; `POST /leads/{id}/opt-out` gravou `optedOutAt`, a memória foi purgada e
+a confirmação do lote-13 saiu **uma** vez. Limpeza depois: `crivo-smoke-reset` 2863 e `smoke:reset`.
+
+### Captura da janela fechada (JANELA-01 AC4): **APROVADO**
+
+Lead do seed de produção do tenant demonstrativo, sem telefone nem texto real na captura: o campo
+de envio bloqueado com o aviso "A janela fechou em 05/07/2026 às 20:08."
+
+### Estado final
+
+`crivo-smoke-reset` 2890 e `npm run smoke:reset` depois da segunda rodada do 6b; scheduler
+republicado e ativo (`e8b97f8b`).
+
+### Observações de qualidade (AD-027, não reprovam)
+
+- No turno 1 do 6d o agente fez três perguntas seguidas em balões separados.
+- Na execução 2859 o buffer de mensagens reincluiu uma mensagem anterior do lead junto com `sair`;
+  sem efeito no desfecho (opt-out gravado e confirmação única). Fica como observação para o buffer.
+
+### Veredito da T40: **APROVADO**
+
+Os quatro casos e a captura da janela fechada passaram, o 6b depois da emenda D12 aprovada pelo
+usuário.
