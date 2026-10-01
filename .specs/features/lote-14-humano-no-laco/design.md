@@ -393,8 +393,8 @@ não são afetados. A lição L-015 manda conferir com `grep` todos os workflows
 | `getConversationSummaries` lê todas as mensagens do tenant | `src/server/data/index.ts:455-542` | Com atualização a cada 5 s, o custo cresce com o histórico | `DISTINCT ON (conversation_id)` + índice `(conversation_id, sent_at)`; o teste de ordenação existente continua valendo |
 | Atualização a cada 5 s gera invocações na Vercel | `chat-refresh.tsx` (novo) | Custo por aba aberta | Só com a aba visível e a conversa aberta; intervalo em constante única |
 | `ChatSendButton` e o input emitem textos em inglês do catálogo | `node_modules/@astryxdesign/core/dist/Chat/ChatSendButton.js:78` | Rótulo acessível "Send" | Botão próprio rotulado "Enviar"; `placeholder` e `label` passados por prop (L-010) |
-| Mensagem `system` no meio da memória | `memoryManager` insert | Se o nó ou o modelo não aceitarem `system` fora do início, a semeadura falha | Verificar com `get_node_types` e numa execução real do `crivo-smoke-memoria` antes de publicar; alternativa registrada: tipo `ai` com o mesmo texto de atribuição |
-| Nomes da tabela e da coluna da memória na varredura D | `n8n_chat_histories.session_id` | `DELETE` em coluna errada não purga | Conferir com uma consulta `SELECT` real via MCP antes de ligar a varredura |
+| Mensagem `system` no meio da memória | `memoryManager` insert | Se o nó ou o modelo não aceitarem `system` fora do início, a semeadura falha | **Confirmado na T1** (execução 2802): `memoryManager` v1.1 aceita `system` em `insert`, a memória devolve `SystemMessage` no meio da sessão e o modelo usa o fato da nota. A alternativa `ai` não é necessária |
+| Nomes da tabela e da coluna da memória na varredura D | `n8n_chat_histories.session_id` | `DELETE` em coluna errada não purga | **Confirmado na T1** (execução 2802): tabela padrão `n8n_chat_histories`, colunas `id`, `session_id`, `message`; o `DELETE` parametrizado por `session_id` esvazia a sessão |
 | `GET /leads/{id}` hoje responde 405 por teste | `src/server/integration/__tests__/routes/leads-patch.test.ts:247` | O teste antigo falha com a rota nova | O teste é substituído por testes do GET (200, 404 de outro tenant, 401) e mantém 405 para POST/PUT/DELETE; não é enfraquecimento |
 | Ordem de implantação | — | n8n publicado antes do CRM chamaria rotas inexistentes | Ordem fixa: `db:push` produção → deploy do CRM → coluna da Data Table → publicação do n8n → prova |
 | Lead com a janela aberta no deploy e sem mensagem nova | — | Número do canal desconhecido por até 24h | Aceito: o piloto não começou; mensagem clara (`numero-desconhecido`) |
@@ -409,11 +409,32 @@ não são afetados. A lição L-015 manda conferir com `grep` todos os workflows
 | Número de resposta | Aprendido por lead (`whatsappPhoneNumberId` no `POST /leads`) | Responde pelo número para o qual o lead escreveu; nenhuma configuração manual nem cópia de `tenant_config` para manter em sincronia |
 | Modelo de condução | Marca no lead; humano = marca ou `escalado_humano`; 409 server-side para status e reunião | Decisão do usuário + dupla proteção no padrão da AD-018. **AD-034.** |
 | Reset da memória | Marcador durável no CRM + `memoryResetAt` no n8n, consumido pelo turno e pela varredura D | Sobrevive a falha de rede; reconstruir a partir do CRM é idempotente; sem webhook novo |
-| Fala humana na memória | Mensagem `system` com atribuição | Não muda o `system message` (sem remedir teto nem benchmark) e não se confunde com a fala do agente nem com a do lead |
+| Fala humana na memória | Mensagem `system` com atribuição (confirmada na T1) | Não muda o `system message` (sem remedir teto nem benchmark) e não se confunde com a fala do agente nem com a do lead |
 | Regra de condução | `n8n/src/conduction.mjs` importado pelo CRM | Uma fonte só da regra que decide quem fala |
 | Idempotência do envio | Tabela de reserva `human_message_sends` | A thread nunca mostra mensagem não entregue, e a reserva trava o duplo envio antes da Meta |
 | Atualização da tela | `router.refresh()` a cada 5 s com a aba visível | Padrão já usado nos documentos; RSC-first (AD-007) |
 | Janela no cliente | Calculada no servidor e entregue como texto | Evita o problema de hidratação do `Timestamp` (lote-12) |
+
+---
+
+## Confirmações da T1 (2026-10-01)
+
+Rascunho `crivo-rascunho-l14-memoria` (`5f6NETNOgpkXEjgq`, projeto pessoal), execução manual `2802`,
+`success`, conferida por `get_execution`. Sessão sintética `rascunho-l14:1790853712528`, sem dado real.
+
+- `get_node_types`: `memoryManager` v1.1 em `insert` aceita `type: 'ai' | 'system' | 'user'`;
+  `memoryPostgresChat` v1.4 tem `tableName` padrão `n8n_chat_histories`.
+- Inseridos `user` ("quantas vagas tem?") e `system` ("Mensagem enviada ao lead por Ana, da equipe da
+  imobiliária: o apartamento tem 3 vagas"). A memória carregou `HumanMessage` e `SystemMessage` nessa
+  ordem; o modelo recebeu a nota como `System:` no meio do histórico. O AI Agent
+  (`gpt-5.4-nano-2026-03-17`, `reasoningEffort: low`) respondeu "São 3 vagas no apartamento." à
+  pergunta "quantas vagas tem mesmo?", sem atribuir o fato ao lead.
+- `information_schema.columns` de `n8n_chat_histories`: `id` (integer), `session_id` (character
+  varying), `message` (jsonb). Contagem da sessão antes da purga: 4; `DELETE FROM n8n_chat_histories
+  WHERE session_id = $1` (`queryReplacement`); `load` seguinte devolveu `messagesCount: 0`, e a
+  contagem depois, 0.
+- Consequência: a T22 usa `system` para a fala humana, e a varredura D (C10) usa `session_id` como
+  descrito. Nenhum AC muda.
 
 ---
 

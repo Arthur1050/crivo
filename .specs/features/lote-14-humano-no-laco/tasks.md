@@ -137,12 +137,20 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] `get_node_types` confirma os tipos aceitos por `memoryManager` em `insert` e o `tableName` padrão do `memoryPostgresChat`; o resultado está na Evidence.
-- [ ] Rascunho `crivo-rascunho-l14-memoria` executado numa sessão sintética (`rascunho-l14:<timestamp>`): insere `user` ("quantas vagas tem?"), `system` ("Mensagem enviada ao lead por Ana, da equipe da imobiliária: o apartamento tem 3 vagas") e roda o AI Agent (`gpt-5.4-nano-2026-03-17`, mesma memória) com a pergunta do lead; a execução termina `success` e a resposta cita 3 vagas.
-- [ ] Um nó Postgres lê `information_schema.columns` de `n8n_chat_histories` e confirma a coluna `session_id`; outro executa o `DELETE` parametrizado; um `load` seguinte devolve `messagesCount: 0`.
-- [ ] Ids das execuções conferidos por `get_execution` e registrados **antes** de arquivar o rascunho (L-011, L-016); nenhum dado real.
-- [ ] `design.md` (Tech Decisions e Risks & Concerns) registra a confirmação ou a troca: se `system` falhar, a semeadura usa `ai` com o mesmo texto de atribuição, e a T22 segue essa escolha; se a coluna for outra, C10 é corrigido. Qualquer desvio que mude o comportamento prometido por um AC para o lote e vai ao usuário antes da T2.
-- [ ] Rascunho arquivado; gate Build passa sem mudança na contagem de testes.
+- [x] `get_node_types` confirma os tipos aceitos por `memoryManager` em `insert` e o `tableName` padrão do `memoryPostgresChat`; o resultado está na Evidence.
+- [x] Rascunho `crivo-rascunho-l14-memoria` executado numa sessão sintética (`rascunho-l14:<timestamp>`): insere `user` ("quantas vagas tem?"), `system` ("Mensagem enviada ao lead por Ana, da equipe da imobiliária: o apartamento tem 3 vagas") e roda o AI Agent (`gpt-5.4-nano-2026-03-17`, mesma memória) com a pergunta do lead; a execução termina `success` e a resposta cita 3 vagas.
+- [x] Um nó Postgres lê `information_schema.columns` de `n8n_chat_histories` e confirma a coluna `session_id`; outro executa o `DELETE` parametrizado; um `load` seguinte devolve `messagesCount: 0`.
+- [x] Ids das execuções conferidos por `get_execution` e registrados **antes** de arquivar o rascunho (L-011, L-016); nenhum dado real.
+- [x] `design.md` (Tech Decisions e Risks & Concerns) registra a confirmação ou a troca: se `system` falhar, a semeadura usa `ai` com o mesmo texto de atribuição, e a T22 segue essa escolha; se a coluna for outra, C10 é corrigido. Qualquer desvio que mude o comportamento prometido por um AC para o lote e vai ao usuário antes da T2.
+- [x] Rascunho arquivado; gate Build passa sem mudança na contagem de testes. *(Arquivado por `archive_workflow` depois da Evidence. Suíte: 126 arquivos / 2.107 testes, igual ao baseline, só as 2 falhas conhecidas de `DOCLIM-01 AC8`; lint sem erros; build ok.)*
+
+**Evidence** (registrada antes de arquivar o rascunho, L-016):
+
+- `get_node_types`: `memoryManager` v1.1 `insert` aceita `ai | system | user`; `memoryPostgresChat` v1.4 tem `tableName` padrão `n8n_chat_histories`.
+- Rascunho `crivo-rascunho-l14-memoria`, id `5f6NETNOgpkXEjgq`, projeto pessoal, criado por `create_workflow_from_code` com autorização do usuário. Execução manual `2802`, `success`, conferida por `get_execution` (L-011). Sessão sintética `rascunho-l14:1790853712528`.
+- Memória carregada pelo agente: `HumanMessage` "quantas vagas tem?" seguida de `SystemMessage` com a nota da Ana. O modelo recebeu a nota como `System:` no meio do histórico e respondeu "São 3 vagas no apartamento." à pergunta "quantas vagas tem mesmo?".
+- `information_schema.columns`: `id` integer, `session_id` character varying, `message` jsonb. Contagem antes da purga 4; `DELETE ... WHERE session_id = $1` com `queryReplacement`; `load` seguinte `messagesCount: 0`; contagem depois 0.
+- Resultado: `system` confirmado para a T22 e `session_id` confirmado para a T27. `design.md` § Confirmações da T1, Tech Decisions e Risks & Concerns atualizados. Nenhum desvio de AC.
 
 **Tests:** none
 **Gate:** Build
