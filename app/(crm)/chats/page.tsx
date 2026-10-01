@@ -12,10 +12,13 @@ import { Heading, Text } from "@astryxdesign/core/Text";
 import { ChatRefresh } from "@/src/components/chats/chat-refresh";
 import { ConversationHeader } from "@/src/components/chats/conversation-header";
 import { ConversationList } from "@/src/components/chats/conversation-list";
+import { HumanComposer } from "@/src/components/chats/human-composer";
 import { MessageThread } from "@/src/components/chats/message-thread";
 import {
   conversationControls,
   whatsappWindow,
+  windowClosedNotice,
+  windowOpenLabel,
 } from "@/src/lib/conversation-control";
 import { can } from "@/src/lib/permissions";
 import {
@@ -162,6 +165,19 @@ export default async function ChatsPage({ searchParams }: ChatsPageProps) {
                   />
                 </VStack>
               </StackItem>
+              {controls && controls.composer !== "oculto" && (
+                <VStack padding={4}>
+                  <HumanComposer
+                    key={selectedSummary.leadId}
+                    leadId={selectedSummary.leadId}
+                    state={controls.composer}
+                    windowLabel={
+                      chatWindow.open ? windowOpenLabel(chatWindow.remainingMinutes) : null
+                    }
+                    closedNotice={windowClosedNotice(chatWindow.closesAt)}
+                  />
+                </VStack>
+              )}
             </VStack>
           </LayoutContent>
         )

@@ -838,10 +838,20 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 **Done when:**
 
-- [ ] Capturas: janela aberta com o tempo restante (JANELA-01 AC2); janela fechada com o campo desabilitado, o aviso e o instante de fechamento (AC3); erro de envio com o texto preservado no campo (ENVIO-01 AC9).
-- [ ] No `dev:test`, com o envio à Meta apontado para um `fetch` falso ou sem token, o erro aparece em pt-BR e o texto fica no campo; a captura prova.
-- [ ] Inspeção do DOM confirma o rótulo acessível "Enviar" e nenhum "Send"/"Type a message" (L-010).
-- [ ] Grep comprova que `sendHumanMessageAction` tem consumidor de produção (L-021); self-check da Astryx; gate Build passa.
+- [x] Capturas: janela aberta com o tempo restante (JANELA-01 AC2); janela fechada com o campo desabilitado, o aviso e o instante de fechamento (AC3); erro de envio com o texto preservado no campo (ENVIO-01 AC9).
+- [x] No `dev:test`, com o envio à Meta apontado para um `fetch` falso ou sem token, o erro aparece em pt-BR e o texto fica no campo; a captura prova.
+- [x] Inspeção do DOM confirma o rótulo acessível "Enviar" e nenhum "Send"/"Type a message" (L-010).
+- [x] Grep comprova que `sendHumanMessageAction` tem consumidor de produção (L-021); self-check da Astryx; gate Build passa. *(Suíte: 145 arquivos / 2.394 testes (+3 de `conversation-control.test.ts`), só as 2 falhas conhecidas de `DOCLIM-01 AC8`; lint 0 erros; build ok.)*
+
+**Evidence** (extensão Claude in Chrome, `dev:test`, administrador de teste "Ana Teste"):
+
+- Janela aberta ("Nathan Ferreira", última mensagem do lead minutos antes): composer com "Janela do WhatsApp fecha em 23 h 41 min" no cabeçalho, placeholder "Escreva para o lead" e botão "Enviar" (JANELA-01 AC2).
+- Janela fechada ("Wesley Quintino", marca gravada, última mensagem do lead em 18/09): campo desabilitado e aviso "O WhatsApp só permite responder até 24 horas depois da última mensagem do lead. A janela fechou em 19/09/2026 às 18:23." (AC3).
+- Envio sem token no ambiente local: "O envio pelo WhatsApp não está configurado. Avise o administrador." em pt-BR, com o texto digitado ainda no campo (ENVIO-01 AC9, AC13). No banco de teste, as reservas ficaram `falhou`/`envio-nao-configurado`, sem `wamid` nem `message_id`, e nenhuma mensagem `humano` nova foi gravada; a Meta não foi chamada.
+- **Defeito encontrado e corrigido na própria tarefa**: o `ChatComposer` da Astryx chama `onChange("")` depois de `onSubmit` mesmo no modo controlado (`node_modules/@astryxdesign/core/dist/Chat/ChatComposer.js:150-151`), o que apagava o texto num envio com falha. O composer ignora essa limpeza; só o envio aceito (ou entregue sem registro) limpa o campo. A captura acima é posterior à correção.
+- DOM: rótulo acessível "Enviar" no botão e "Mensagem para o lead" no campo; nenhum "Send" nem "Type a message" (L-010).
+- Grep (L-021): `sendHumanMessageAction` é chamada em `src/components/chats/human-composer.tsx`.
+- O texto do aviso de janela fechada e o rótulo da janela aberta são montados no servidor por `windowClosedNotice` e `windowOpenLabel` (`src/lib/conversation-control.ts`), com 3 testes unitários novos (L-003). O composer foi montado em `app/(crm)/chats/page.tsx` abaixo da thread.
 
 **Tests:** none
 **Gate:** Build

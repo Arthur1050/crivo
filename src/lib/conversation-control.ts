@@ -43,6 +43,38 @@ export function formatWindowRemaining(minutes: number): string {
   return `${Math.floor(minutes / 60)} h ${minutes % 60} min`;
 }
 
+/** Rótulo do composer com a janela aberta (JANELA-01 AC2). */
+export function windowOpenLabel(remainingMinutes: number): string {
+  return `Janela do WhatsApp fecha em ${formatWindowRemaining(remainingMinutes)}`;
+}
+
+const WINDOW_CLOSED_RULE =
+  "O WhatsApp só permite responder até 24 horas depois da última mensagem do lead.";
+
+const CLOSED_AT_FORMAT = new Intl.DateTimeFormat("pt-BR", {
+  timeZone: "America/Sao_Paulo",
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
+
+/**
+ * Aviso do composer com a janela fechada (JANELA-01 AC3): a regra e o
+ * instante em que a janela fechou, no fuso da operação (America/Sao_Paulo).
+ */
+export function windowClosedNotice(closesAt: Date | null): string {
+  if (!closesAt) {
+    return `${WINDOW_CLOSED_RULE} Esta conversa ainda não tem mensagem do lead.`;
+  }
+  const parts = Object.fromEntries(
+    CLOSED_AT_FORMAT.formatToParts(closesAt).map((part) => [part.type, part.value])
+  );
+  return `${WINDOW_CLOSED_RULE} A janela fechou em ${parts.day}/${parts.month}/${parts.year} às ${parts.hour}:${parts.minute}.`;
+}
+
 export type Conductor = "agente" | "humano" | "escalado" | "opt-out";
 export type ComposerState = "oculto" | "bloqueado" | "ativo";
 

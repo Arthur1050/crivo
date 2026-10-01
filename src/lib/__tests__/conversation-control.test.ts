@@ -5,6 +5,8 @@ import {
   formatWindowRemaining,
   shouldPollConversation,
   whatsappWindow,
+  windowClosedNotice,
+  windowOpenLabel,
   type WhatsappWindow,
 } from "../conversation-control";
 
@@ -191,5 +193,25 @@ describe("atualização periódica do Chats (THREAD-01 AC2/AC3)", () => {
     expect(shouldPollConversation(true, "visible")).toBe(true);
     expect(shouldPollConversation(true, "hidden")).toBe(false);
     expect(shouldPollConversation(false, "visible")).toBe(false);
+  });
+});
+
+// Lote-14, JANELA-01 AC2/AC3: textos prontos do composer, montados no
+// servidor (sem relógio no cliente).
+describe("textos da janela no composer (JANELA-01 AC2/AC3)", () => {
+  it("rótulo da janela aberta com o tempo restante", () => {
+    expect(windowOpenLabel(200)).toBe("Janela do WhatsApp fecha em 3 h 20 min");
+  });
+
+  it("aviso de janela fechada com o instante do fechamento em America/Sao_Paulo", () => {
+    expect(windowClosedNotice(new Date("2026-09-30T14:44:00.000Z"))).toBe(
+      "O WhatsApp só permite responder até 24 horas depois da última mensagem do lead. A janela fechou em 30/09/2026 às 11:44."
+    );
+  });
+
+  it("aviso sem instante quando a conversa não tem mensagem do lead", () => {
+    expect(windowClosedNotice(null)).toBe(
+      "O WhatsApp só permite responder até 24 horas depois da última mensagem do lead. Esta conversa ainda não tem mensagem do lead."
+    );
   });
 });
