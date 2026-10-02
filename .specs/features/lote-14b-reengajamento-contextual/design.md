@@ -234,6 +234,26 @@ e confirmado na integração. WABA/fuso/acesso a Analytics exigem prova adiciona
 numérica. Não criar formulário de WABA ou token. Texto do número em Configurações não é
 identidade suficiente para associar Analytics.
 
+T7 `resolveChannel(context, { phoneNumberId, expectedRevision? })` recebe somente
+contexto já autorizado por authenticate/verifySession, consulta tenant+número e
+exige ownershipVerifiedAt. Revisão antiga falha antes de consumir a credencial.
+WHATSAPP_ACCESS_TOKEN é lido apenas para presença no processo servidor; não é
+retornado ou logado, e transportes continuam lendo-o diretamente no servidor.
+O módulo usa server-only, conforme guia Next instalado de Server/Client Components.
+
+Identidade/credencial e capacidade de Analytics são separadas. Canal confiável
+continua resolvido com consumo indisponível quando accountKind é test/unverified,
+WABA/fuso/Analytics não foram provados ou usageEnabled está desligado. Analytics
+só habilita com produção explícita, todas as provas/campos, IANA válido e flag
+ativa. Intl valida UTC ou nomes com barra, rejeitando abreviação/offset/fuso
+desconhecido. Isso valida o cadastro, sem inventar prova externa da conta.
+
+O retorno é configuração interna do servidor, com WABA somente na capacidade
+Analytics habilitada. DTOs do cliente serão projetados na T14 sem WABA/segredo;
+não serializar esse retorno para o navegador. O resolvedor não consulta Graph,
+não cadastra canal e não infere identidade de agentWhatsapp/telefone da lead.
+Não amplia carteira/permissão; futuras leituras/handlers usam as guardas existentes.
+
 ### `lead_agent_state`
 
 Uma linha por `(tenant_id, lead_id)`: `anchor_message_id`, fase nullable

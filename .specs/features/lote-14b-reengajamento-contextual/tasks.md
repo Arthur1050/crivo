@@ -8,7 +8,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 
 **Design:** [design.md](design.md), aprovado em 2026-10-02: “Aprovo. Vá para as tarefas”.
 
-**Status:** Approved — usuário em 2026-10-02: “Aprovo. Gere o prompt de execução para que a fase de execução seja iniciado em outra janela de contexto”. 68 tarefas em 9 fases; T1/T2/T3/T4/T5/T6 concluídas localmente (6/68), conforme evidências individuais abaixo.
+**Status:** Approved — usuário em 2026-10-02: “Aprovo. Gere o prompt de execução para que a fase de execução seja iniciado em outra janela de contexto”. 68 tarefas em 9 fases; T1/T2/T3/T4/T5/T6/T7 concluídas localmente (7/68), fase 1/lote A fechados com a ressalva autorizada dos dois timeouts históricos, conforme evidências individuais abaixo.
 
 **Escopo:** 13 requisitos e 95 ACs aprovados. Uma retomada >=22h/<24h, continuidade restrita, desfecho >=48h, classificação após entrega e saldo mensal estimado. Sem modal/bloqueio financeiro.
 
@@ -708,16 +708,70 @@ SPEC_DEVIATION; nenhum AC integral de Analytics/lease/retention concluído.
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: canal desconhecido; tenant errado; número duplicado; WABA de teste; fuso ausente; permissão não provada; configuração mudou; nenhum token em DTO/log; legado não inferido.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **9 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/server/whatsapp/__tests__/channels.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: canal desconhecido; tenant errado; número duplicado; WABA de teste; fuso ausente; permissão não provada; configuração mudou; nenhum token em DTO/log; legado não inferido.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **9 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou: `npx vitest run src/server/whatsapp/__tests__/channels.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
 
 **Tests**: integration — `src/server/whatsapp/__tests__/channels.test.ts`; matriz: Serviço/repositório.
 
 **Gate**: Full; Build no fechamento da fase.
 
 **Commit**: `feat(l14b): resolver canal verificado no servidor` (docs para mudança exclusivamente contratual).
+
+**Execução T7 (2026-10-02): concluída, fase 1 fechada com ressalva autorizada.** Full real
+pelo root: quatro arquivos, 43/43 testes, exit0, 36,22s (T7=14 + regressões=29).
+Comando: `node node_modules/vitest/vitest.mjs run src/server/whatsapp/__tests__/channels.test.ts src/server/whatsapp/__tests__/cloud-api.test.ts src/db/__tests__/schema-whatsapp-channels.test.ts src/server/integration/__tests__/auth.test.ts`. Arquivos
+channels.ts/server-only e channels.test.ts com14cenários. Guia Next instalado de
+Server/Client Components lido integralmente antes da escrita. ESLint dos dois
+arquivos passou; tsc mantém50erros herdados sem novos; whitespace passou.
+Nenhuma suíte/Graph/env real alterada por este worker. Root executou os gates de fase: npm test exit1, 151/152 arquivos e 2470/2472 testes, 363,23s; apenas os dois timeouts DOCLIM-01 AC8 actions.test.ts:1337/:1349 já adiados pelo usuário. Todas as 70 adições passaram. Lint exit0 com os cinco avisos anteriores; build exit0; tsc exit1 com exatamente as 50 linhas de erro do baseline (Compare-Object vazio). Nenhum teste pulado/alterado; a suíte completa não é integralmente verde. Evidência e escopo da ressalva em phase-1-verification.md.
+
+**Adequação A/B/D:** integração com Postgres real, fixtures próprias de tenants,
+chave Bearer hasheada e autenticação existente; sem mocks do banco. Tokens são
+sintéticos via stubEnv restaurado; fetch é bloqueado. Teste de segredo compara
+retorno inteiro com valores/chaves explícitos, não com shape importado da
+implementação. Nenhuma mudança de testes anteriores, carteira ou auth. Contexto
+é autorizado antes do resolvedor; handlers/leituras posteriores mantêm essas
+guardas. Habilitação do consumo em fixture não comprova os fatos externos T1.
+
+| Critério / parcela do requisito | file:line + asserção | Resultado exigido |
+| --- | --- | --- |
+| Canal desconhecido / REEN-01 AC6 infraestrutura | `src/server/whatsapp/__tests__/channels.test.ts:63` — `expect(await resolveChannel(ctxA, { phoneNumberId })).toEqual({ ok: false, reason: "unknown-channel" })`; `:65` — fetch sem chamadas | Null/vazio/ausente não escolhe canal por inferência |
+| Autorização/isolamento / L14B-01 AC1 e PRECO-02 AC2/8 parcela T7 | `src/server/whatsapp/__tests__/channels.test.ts:72` — `expect(auth).toEqual(ctxA)` mesmo header de B; `:74` — número de B retorna unknown-channel; `:78` — `expect(result.channel.tenantId).toBe(tenantA)` | Usa tenant da chave existente e consulta escopada |
+| Número duplicado | `src/server/whatsapp/__tests__/channels.test.ts:83` — cadastro B duplicado recusa23505; `:87` — `expect(result.channel.id).toBe(own.id)`; `:88` — B continua unknown-channel | Sem troca de dono ou associação ambígua |
+| Ownership / REEN-01 AC6 e PRECO-02 AC8 parcela | `src/server/whatsapp/__tests__/channels.test.ts:93` — `expect(await resolveChannel(ctxA, { phoneNumberId: row.phoneNumberId })).toEqual({ ok: false, reason: "ownership-unverified" })` | Cadastro sem prova não vira identidade confiável |
+| Conta test/unverified / USO-01 AC8 | `src/server/whatsapp/__tests__/channels.test.ts:100` — identidade ok; `:102` — `expect(result.usage).toEqual({ enabled: false, reason: "account-not-production" })` para ambos kinds | Demais provas não fabricam produção |
+| Fuso / USO-01 AC8 | `src/server/whatsapp/__tests__/channels.test.ts:110` — identidade ok; `:112` — `expect(result.usage).toEqual({ enabled: false, reason: "timezone-unverified" })` para null/Mars/PST/GMT/+03 | IANA ausente ou inválido mantém consumo indisponível |
+| Permissão/número Analytics / USO-01 AC1/8 parcela | `src/server/whatsapp/__tests__/channels.test.ts:120` — identidade ok; `:122` — `expect(result.usage).toEqual({ enabled: false, reason: "analytics-unverified" })` em três casos | Sem prova/número normalizado não habilita saldo |
+| WABA / USO-01 AC8 | `src/server/whatsapp/__tests__/channels.test.ts:129` — identidade ok; `:131` — `expect(result.usage).toEqual({ enabled: false, reason: "waba-unverified" })` | Consumo separado da identidade; sem conta inferida |
+| Configuração mudou | `src/server/whatsapp/__tests__/channels.test.ts:138` — revisão1 retorna configuration-changed mesmo semtoken; `:143` — `expect(result.channel.configurationRevision).toBe(2)` | Snapshot de configuração antigo falha antes da credencial |
+| Credencial servidor / L14B-01 AC2 | `src/server/whatsapp/__tests__/channels.test.ts:149` — `expect(await resolveChannel(ctxA, { phoneNumberId: row.phoneNumberId })).toEqual({ ok: false, reason: "credential-missing" })`; `:150` — fetch0calls | Segredo ausente no processo não chama rede |
+| Segredo/retorno / L14B-01 AC2 | `src/server/whatsapp/__tests__/channels.test.ts:159` — retorno inteiro igual chaves/valores explícitos; `:164` — `expect(JSON.stringify(result)).not.toContain(SYNTHETIC_TOKEN)`; `:165`/`:166`/`:167`/`:168` — log/warn/error/fetch0calls | Nenhuma propriedade extra/token/erro sensível; configuração interna não é DTO cliente |
+| Legado não inferido / PRECO-02 AC8 | `src/server/whatsapp/__tests__/channels.test.ts:175` — `expect(lead.whatsappPhoneNumberId).toBeNull()`; `:176`/`:177` — canalnull/displayphone retornam unknown-channel | Sem usar agentWhatsapp/telefone de exibição |
+| Provas completas / USO-01 AC1/8 parcela | `src/server/whatsapp/__tests__/channels.test.ts:183` — identidade ok; `:185` — revisão3; `:186` — usageenabledtrue com WABA/númeroAnalytics/UTC explícitos | Habilita somente configuração fixture completa, sem consulta ou prova externa fabricada |
+| Flag explícita | `src/server/whatsapp/__tests__/channels.test.ts:192` — identidade ok; `:194` — `expect(result.usage).toEqual({ enabled: false, reason: "usage-disabled" })` | Provas completas não substituem ativação explícita |
+
+**Mapa reverso C:**
+
+| Cenário + file:line da asserção | Origem / manter |
+| --- | --- |
+| `src/server/whatsapp/__tests__/channels.test.ts:63`/`:65`, desconhecido | Done when canal desconhecido; REEN-01 AC6 parcela — manter |
+| `src/server/whatsapp/__tests__/channels.test.ts:72`/`:74`/`:78`, auth/tenant | Done when tenant errado; L14B-01 AC1/PRECO-02 AC2/8 parcela — manter |
+| `src/server/whatsapp/__tests__/channels.test.ts:83`/`:87`/`:88`, duplicado | Done when número duplicado — manter |
+| `src/server/whatsapp/__tests__/channels.test.ts:93`, ownership | Done when canal verificado; REEN-01 AC6/PRECO-02 AC8 parcela — manter |
+| `src/server/whatsapp/__tests__/channels.test.ts:100`/`:102`, test/unverified | Done when conta teste; USO-01 AC8 — manter |
+| `src/server/whatsapp/__tests__/channels.test.ts:110`/`:112`, fuso | Done when fuso ausente; USO-01 AC8 — manter |
+| `src/server/whatsapp/__tests__/channels.test.ts:120`/`:122`, Analytics | Done when permissão não provada; USO-01 AC1/8 parcela — manter |
+| `src/server/whatsapp/__tests__/channels.test.ts:129`/`:131`, WABA | Done when provas; USO-01 AC8 — manter |
+| `src/server/whatsapp/__tests__/channels.test.ts:138`/`:143`, revisão | Done when configuração mudou — manter |
+| `src/server/whatsapp/__tests__/channels.test.ts:149`/`:150`, credencial | Done when servidor; L14B-01 AC2 — manter |
+| `src/server/whatsapp/__tests__/channels.test.ts:159`/`:164`/`:165`/`:166`/`:167`/`:168`, segredo | Done when nenhum token; L14B-01 AC2 — manter |
+| `src/server/whatsapp/__tests__/channels.test.ts:175`/`:176`/`:177`, legado | Done when legado não inferido; PRECO-02 AC8 — manter |
+| `src/server/whatsapp/__tests__/channels.test.ts:183`/`:185`/`:186`, completo | Done when gate do canal; USO-01 AC1/8 parcela — manter |
+| `src/server/whatsapp/__tests__/channels.test.ts:192`/`:194`, desligado | Done when gate explícito, Designusageenabled — manter |
+
+**Veredito:** 14 cenários discriminantes necessários passaram em Full43/43. Fase fechada sob a ressalva expressamente autorizada dos dois timeouts anteriores, mantendo-os ativos. Sem SPEC_DEVIATION; Analytics/fuso/produção externos continuam pendentes e demais tarefas T8–T68 não concluídas.
 
 ---
 
