@@ -25,14 +25,17 @@ código, asserção ou timeout. A diferença entre os ambientes permanece em inv
 Na repetição completa, os testes do cron passaram. As únicas falhas restantes
 foram os dois testes históricos em `src/server/__tests__/actions.test.ts:1337`
 e `:1349`, ambos por timeout de 30s. Esse resultado não autoriza ignorar
-falhas nos gates posteriores.
+falhas novas nos gates posteriores.
 
-## Pendência antes de T1
+## Falha adiada por decisão do usuário
 
-O Execute permanece sem implementação. Foi solicitada orientação ao usuário
-para investigar e corrigir os dois timeouts anteriores em commit separado,
-preservando asserções e limites. A pergunta segue o passo 8 do prompt aprovado;
-não é uma nova aprovação geral de spec, tarefas ou workers.
+Em 2026-10-02 o usuário determinou: “Registre essa falha para que seja resolvido
+posteriormente. Por enquanto, foque nas tasks desse lote e finalize elas”.
+Os dois timeouts históricos de DOCLIM-01 AC8 ficam fora da correção do L14b.
+O Execute prossegue em T1. Os testes continuam na suíte, com as mesmas asserções
+e limites; a contagem real e eventual reprodução da falha devem ser reportadas.
+Não declarar a suíte integralmente verde quando esses testes falharem. A decisão
+não dispensa testes do lote nem autoriza falhas novas ou outros testes pendentes.
 
 Há uma hipótese de latência, ainda não comprovada: a reconciliação em
 `src/server/documents/repository.ts:496` faz um UPDATE por documento, e a

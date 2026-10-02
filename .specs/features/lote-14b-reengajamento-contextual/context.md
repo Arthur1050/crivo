@@ -240,6 +240,16 @@ dependendo de autorização específica, conforme o escopo aprovado e a skill.
 
 ## Deferred Ideas
 
+### Falha anterior adiada na execução (2026-10-02)
+
+Usuário: “Registre essa falha para que seja resolvido posteriormente. Por enquanto,
+foque nas tasks desse lote e finalize elas”. Registrar para correção posterior os
+timeouts de 30s de `DOCLIM-01 AC8` em `src/server/__tests__/actions.test.ts:1337`
+e `:1349`. Baseline repetido: 2400/2402 testes; build/lint passaram. Evidência e
+hipótese ainda não comprovada em [baseline.md](baseline.md). Não alterar nem
+pular esses testes neste lote. Prosseguir com as tarefas aprovadas, reportando
+esses dois resultados como ressalva e exigindo os gates das mudanças do L14b.
+
 Bloqueio por orçamento, cobrança ao cliente, relatório financeiro e tarifa em reais ficam fora
 da proposta de barra e aviso. O usuário não solicitou essas capacidades.
 As pendências do L14 permanecem no contexto daquele lote; não foram incorporadas ao L14b.

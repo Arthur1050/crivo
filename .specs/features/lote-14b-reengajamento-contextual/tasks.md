@@ -46,6 +46,13 @@ Não criar teste frágil para prosa da documentação; asserções de OpenAPI ve
 
 ## Gate Check Commands
 
+**Decisão de execução (2026-10-02):** usuário determinou registrar e adiar os dois
+timeouts anteriores de DOCLIM-01 AC8 (`actions.test.ts:1337` e `:1349`) e finalizar
+as tarefas deste lote. Continuam sendo executados, com resultado real reportado;
+essa ressalva não equivale a suíte integralmente verde nem dispensa qualquer
+teste/gate do L14b. Falhas novas ou diferentes continuam exigindo resolução.
+Registro durável em [baseline.md](baseline.md) e Deferred Ideas de [context.md](context.md).
+
 > Comandos descobertos em package.json, vitest.config.ts, scripts/test-suite.mjs, scripts/test-db-push.ts e n8n/README.md; confirmados na aprovação das tarefas.
 
 | Gate Level | When to Use | Command |
