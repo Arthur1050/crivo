@@ -332,26 +332,26 @@ Every ambiguity is resolved or recorded here; nothing remains silently unclear.
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| ASSUMIR-01 | P1: Assumir a conversa | T2, T3, T4, T5, T8, T18, T32, T40 | In Tasks |
-| SILENCIO-01 | P1: Calar o agente enquanto o humano conduz | T3, T9, T10, T21, T23, T25, T26, T39, T40 | In Tasks |
-| ENVIO-01 | P1: Responder pelo CRM | T2, T6, T8, T15, T16, T18, T20, T23, T33, T34, T38, T40 | In Tasks |
-| JANELA-01 | P1: Respeitar a janela de 24h do WhatsApp | T4, T6, T15, T16, T31, T33, T34, T40 | In Tasks |
-| THREAD-01 | P1: Ver a conversa com autoria e atualização automática | T2, T4, T7, T28, T29, T30, T31, T32, T34, T40 | In Tasks |
-| DEVOLVER-01 | P1: Devolver a conversa ao agente | T1, T2, T3, T4, T5, T8, T11, T12, T18, T22, T24, T27, T32, T39, T40 | In Tasks |
-| OPTHUM-01 | P1: Registrar o opt-out pelo CRM | T1, T4, T5, T12, T17, T18, T27, T32, T34, T39, T40 | In Tasks |
-| CONTRATO-01 | P2: Contrato documentado e protegido contra divergência | T8, T9, T11, T12, T13, T36 | In Tasks |
-| CONTRATO-02 | P3: Cobrir o 413 e o JSON inválido de `POST /api/v1/leads` (L5 Fix 1) | T14 | In Tasks |
-| HUMPROVA-01 | P1: Provar por conversa real | T19, T37, T38, T40 | In Tasks |
-| HUMDOC-01 | P1: Registrar decisões e documentação | AC1–AC3 cumpridos no planejamento (AD-034, AD-035, `amended by` em AD-018/AD-019, L14b no roadmap); AC4: T35 | In Tasks |
+| ASSUMIR-01 | P1: Assumir a conversa | T2, T3, T4, T5, T8, T18, T32, T40 | ✅ Verified |
+| SILENCIO-01 | P1: Calar o agente enquanto o humano conduz | T3, T9, T10, T21, T23, T25, T26, T39, T40 | ✅ Verified |
+| ENVIO-01 | P1: Responder pelo CRM | T2, T6, T8, T15, T16, T18, T20, T23, T33, T34, T38, T40 | ✅ Verified |
+| JANELA-01 | P1: Respeitar a janela de 24h do WhatsApp | T4, T6, T15, T16, T31, T33, T34, T40 | ✅ Verified |
+| THREAD-01 | P1: Ver a conversa com autoria e atualização automática | T2, T4, T7, T28, T29, T30, T31, T32, T34, T40 | ✅ Verified |
+| DEVOLVER-01 | P1: Devolver a conversa ao agente | T1, T2, T3, T4, T5, T8, T11, T12, T18, T22, T24, T27, T32, T39, T40 | ✅ Verified |
+| OPTHUM-01 | P1: Registrar o opt-out pelo CRM | T1, T4, T5, T12, T17, T18, T27, T32, T34, T39, T40 | ✅ Verified |
+| CONTRATO-01 | P2: Contrato documentado e protegido contra divergência | T8, T9, T11, T12, T13, T36 | ✅ Verified |
+| CONTRATO-02 | P3: Cobrir o 413 e o JSON inválido de `POST /api/v1/leads` (L5 Fix 1) | T14 | ✅ Verified |
+| HUMPROVA-01 | P1: Provar por conversa real | T19, T37, T38, T40 | ✅ Verified com ressalva (capturas da T40 não versionadas; validation.md ciclo 2) |
+| HUMDOC-01 | P1: Registrar decisões e documentação | AC1–AC3 cumpridos no planejamento (AD-034, AD-035, `amended by` em AD-018/AD-019, L14b no roadmap); AC4: T35 | ✅ Verified |
 
-**Coverage:** 11 total, 11 mapped to tasks, 0 unmapped.
+**Coverage:** 11 total, 11 mapped to tasks, 0 unmapped. 11 verificados pelo Verifier independente (ciclo 2, PASS, 15/15 mutantes mortos).
 
 ---
 
 ## Success Criteria
 
-- [ ] Numa conversa real, um corretor assume, responde pelo CRM, o lead recebe no WhatsApp e a resposta do lead aparece no Chats em até 10 s, sem recarregar.
-- [ ] Zero mensagens do agente enviadas ao lead entre assumir e devolver, no cenário (a) da prova.
-- [ ] Depois de devolver, o agente responde usando um fato que só o corretor escreveu.
-- [ ] O opt-out registrado pelo CRM grava `optedOutAt`, envia uma confirmação e esvazia a memória do agente em até 20 min.
-- [ ] A suíte falha quando `ProblemCode` ou `Sender` divergem entre código e `openapi.yaml`.
+- [x] Numa conversa real, um corretor assume, responde pelo CRM, o lead recebe no WhatsApp e a resposta do lead aparece no Chats em até 10 s, sem recarregar.
+- [x] Zero mensagens do agente enviadas ao lead entre assumir e devolver, no cenário (a) da prova.
+- [x] Depois de devolver, o agente responde usando um fato que só o corretor escreveu.
+- [x] O opt-out registrado pelo CRM grava `optedOutAt`, envia uma confirmação e esvazia a memória do agente em até 20 min.
+- [x] A suíte falha quando `ProblemCode` ou `Sender` divergem entre código e `openapi.yaml`.

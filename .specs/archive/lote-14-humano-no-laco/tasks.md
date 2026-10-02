@@ -945,7 +945,7 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 #### T38: Implantar o CRM
 
 **What:** Com autorização específica a cada passo: o usuário cria `WHATSAPP_ACCESS_TOKEN` (produção) na Vercel; `drizzle-kit push` no banco de produção; auditoria de trailer em `origin/main` inteiro e no range local (AD-014); `git push` para o deploy; conferência do deploy.
-**Where:** `.specs/features/lote-14-humano-no-laco/tasks.md`
+**Where:** `.specs/archive/lote-14-humano-no-laco/tasks.md`
 **Depends on:** T37
 **Reuses:** MCP Vercel somente leitura
 **Requirement:** ENVIO-01, HUMPROVA-01
@@ -975,7 +975,7 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 #### T39: Publicar o n8n
 
 **What:** Com autorização específica: `add_data_table_column` `memoryResetAt` em `conversa_estado`; `update_workflow` + `publish_workflow` de `crivo-tool-responder-lead`, `crivo-agente-scheduler` e `crivo-agente-principal`, nessa ordem.
-**Where:** `.specs/features/lote-14-humano-no-laco/tasks.md`
+**Where:** `.specs/archive/lote-14-humano-no-laco/tasks.md`
 **Depends on:** T38
 **Reuses:** pipeline de publicação do `n8n/README.md`
 **Requirement:** SILENCIO-01, DEVOLVER-01, OPTHUM-01

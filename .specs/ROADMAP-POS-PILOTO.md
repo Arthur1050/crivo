@@ -163,7 +163,19 @@ digitar a palavra exata (`detectOptOut` em `n8n/src/gate.mjs`): um pedido natura
 
 ---
 
-## L14 — Humano no laço — 📐 PLANEJADO (2026-10-01)
+## L14 — Humano no laço — ✅ EXECUTADO (2026-10-01)
+
+**Status final**: PASS do Verifier independente no ciclo 2 — 11 requisitos verificados (HUMPROVA-01
+com ressalva: capturas da T40 não versionadas), 15/15 mutantes mortos; suíte com 2.400 de 2.402
+testes (2 falhas conhecidas de `DOCLIM-01 AC8`, por timeout). O corretor assume a conversa (marca
+separada do status), responde pelo CRM com entrega direta pela Cloud API, devolve ao agente com a
+memória refeita a partir do CRM e registra opt-out pela tela; o agente fica em silêncio enquanto
+a marca existe e relê o lead antes de cada envio. Na prova real o agente recusou repetir um dado
+de imóvel dito pelo corretor; a emenda D12 do system message permitiu repetir o que a equipe já
+disse, e o teto de contexto remedido ficou igual. Prova por WhatsApp (HUMPROVA-01) aprovada nos
+quatro casos em 2026-10-01. Backlog em `features/lote-14-humano-no-laco/context.md` § Deferred
+Ideas.
+
 
 > **Status**: spec, context e design aprovados em `features/lote-14-humano-no-laco/` (AD-034 e
 > AD-035). Decisões do usuário: a condução humana é uma **marca separada do status** (o Kanban e as
