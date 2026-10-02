@@ -8,7 +8,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 
 **Design:** [design.md](design.md), aprovado em 2026-10-02: “Aprovo. Vá para as tarefas”.
 
-**Status:** Approved — usuário em 2026-10-02: “Aprovo. Gere o prompt de execução para que a fase de execução seja iniciado em outra janela de contexto”. 68 tarefas em 9 fases; T1/T2/T3 concluídas localmente (3/68), conforme evidências individuais abaixo.
+**Status:** Approved — usuário em 2026-10-02: “Aprovo. Gere o prompt de execução para que a fase de execução seja iniciado em outra janela de contexto”. 68 tarefas em 9 fases; T1/T2/T3/T4 concluídas localmente (4/68), conforme evidências individuais abaixo.
 
 **Escopo:** 13 requisitos e 95 ACs aprovados. Uma retomada >=22h/<24h, continuidade restrita, desfecho >=48h, classificação após entrega e saldo mensal estimado. Sem modal/bloqueio financeiro.
 
@@ -500,16 +500,58 @@ A leitura Graph dentro do sandbox resultou em `transport-failure`; não é respo
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: chave tenant/lead/canal/âncora única; FK composta; claims; estados de despacho; reset não duplica; escalada independente; exclusão; referência sem cópia de histórico.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **8 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/db/__tests__/schema-reengagement.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: chave tenant/lead/canal/âncora única; FK composta; claims; estados de despacho; reset não duplica; escalada independente; exclusão; referência sem cópia de histórico.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **8 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou: `npx vitest run src/db/__tests__/schema-reengagement.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
 
 **Tests**: integration — `src/db/__tests__/schema-reengagement.test.ts`; matriz: Esquema/constraints.
 
 **Gate**: Full; Build no fechamento da fase.
 
 **Commit**: `feat(l14b): modelo do episódio durável` (docs para mudança exclusivamente contratual).
+
+**Execução T4 (2026-10-02): concluída.** Full real pelo root: quatro arquivos, 30/30 testes, exit0, 98,13s (T4=10 + regressões=20). Comando: `node node_modules/vitest/vitest.mjs run src/db/__tests__/schema-reengagement.test.ts src/db/__tests__/schema-agent-state.test.ts src/db/__tests__/schema-whatsapp-channels.test.ts src/db/__tests__/schema-humano.test.ts`. Delta offline contra
+HEAD `08f6fc6`, treze statements em t4-schema.sql. ESLint dos dois arquivos passou;
+tsc mantém os 50 erros herdados, sem novos; whitespace passou. Root revisou e aplicou o hash autorizado em cinco transações MCP, todas isError=false, exclusivamente nos alvos de teste documentados. Nenhum teste anterior mudou. Build de fase permanece T7.
+
+**Adequação A/B/D:** dez cenários de constraints e resultados persistidos em
+Postgres, sem mocks; valores de estado explícitos do Design, sem importar lista
+esperada da implementação. Fixtures próprias, limpeza começa pelos episódios
+dos dois tenants próprios. Testes anteriores intactos. T4 prova o modelo, não
+CAS/imutabilidade de UPDATE arbitrário nem uma chamada externa; T20/T21 provarão
+essa parcela. FKs compostas provam tenant; mesma lead é consultada nos serviços.
+
+| Critério / parcela do requisito | file:line + asserção | Resultado da spec/Done when |
+| --- | --- | --- |
+| Chave única / REEN-03 AC8 modelo | `src/db/__tests__/schema-reengagement.test.ts:55` — `expect(await codeOf(db.insert(reengagementEpisodes).values({ ...input, resetObservedAt: new Date() }))).toBe("23505")`; `:56` — `expect(await db.select().from(reengagementEpisodes).where(eq(reengagementEpisodes.leadId, input.leadId))).toHaveLength(1)` | Reset fora da chave; uma tentativa |
+| Propriedade lead/canal/âncora | `src/db/__tests__/schema-reengagement.test.ts:62` — `expect(await codeOf(db.insert(reengagementEpisodes).values(input))).toBe("23503")`; `:63` — `expect(await db.select().from(reengagementEpisodes).where(eq(reengagementEpisodes.anchorMessageId, input.anchorMessageId))).toHaveLength(0)` | Três FKs recusam outro tenant, sem linha parcial |
+| Claim e preparação | `src/db/__tests__/schema-reengagement.test.ts:71` e `:72` — `expect(await codeOf(...)).toBe("23514")` para token/prazo isolados; `:74` — `expect(row.state).toBe("preparing")`; `:75` — `expect(row.claimToken).toBe(claimToken)`; `:76` — `expect(row.claimExpiresAt).toEqual(claimExpiresAt)`; `:77` — `expect(row.dispatchAuthorizedAt).toBeNull()`; `:78` — `expect(row.submittedText).toBeNull()` | Claim pareada, sem despacho/texto fabricado |
+| Resultado e identidade / L14B-01 AC3 modelo | `src/db/__tests__/schema-reengagement.test.ts:82` — enum queued recusado `22P02`; `:87` — `expect(row.state).toBe(state)` para oito estados explícitos; `:88` — `expect(row.reasonCode).toBe(\`fixture-${state}\`)`; `:89` — `expect(row.dispatchAuthorizedAt).toEqual(sent ? dispatchAuthorizedAt : null)`; `:91`/`:92`/`:93`/`:94`/`:95` — formatos incompatíveis/aceite sem identidade recusados `23514` | Estados aprovados; marcador após autorização, wamid/aceite obrigatórios no aceite |
+| Reset após resultado / REEN-03 AC8 modelo | `src/db/__tests__/schema-reengagement.test.ts:104` — `expect(row.state).toBe(state)`; `:105` — `expect(row.dispatchAuthorizedAt).toEqual(dispatchAuthorizedAt)`; `:106` — `expect(row.reasonCode).toBe("fixture-result")`; `:107` — `expect(row.resetObservedAt).toEqual(resetObservedAt)`; `:108` — tentativa com novo reset/revisão recusa `23505` | Evidência de refused/uncertain preservada sem duplicar chave |
+| Escalonamento independente / REEN-05 infraestrutura | `src/db/__tests__/schema-reengagement.test.ts:116` — `expect(row.state).toBe(state)`; `:117` — `expect(row.escalatedAt).toEqual(escalatedAt)`; `:118` — `expect(row.escalationResult).toBe("escalado_humano")`; `:119` — `expect(row.escalationReasonCode).toBe(\`no-response-${state}\`)`; `:120` — `expect(row.bridgeInvalidatedAt).toBeNull()` | Aceita/recusada/incerta/omitida mantêm resultado ao registrar eixo humano |
+| Referências/tenant / REEN-04 infraestrutura | `src/db/__tests__/schema-reengagement.test.ts:127` — quatro refs estrangeiras recusadas `23503`; `:128` — `expect(await db.select().from(reengagementEpisodes).where(eq(reengagementEpisodes.leadId, input.leadId))).toHaveLength(0)` | Nenhuma ponte/saída de outro tenant |
+| Limpeza sem rearmar / REEN-03 AC8; L14B-01 AC6 infraestrutura | `src/db/__tests__/schema-reengagement.test.ts:137` — exclusão de quatro mensagens referenciadas recusada `23503`; `:143` — `expect(row.tenantId).toBe(tenantA)`; `:144` — `expect(row.anchorMessageId).toBe(input.anchorMessageId)`; `:145` — `expect(row.state).toBe("accepted")`; `:146` — `expect(row.dispatchAuthorizedAt).toEqual(dispatchAuthorizedAt)`; `:147` — `expect(row.wamid).toBe("wamid.fixture.retained")`; `:148` — refs limpas `[null,null,null,null]`; `:149` — `expect(JSON.stringify(row)).not.toContain("Conteúdo só no CRM")`; `:150` — chave continua recusando `23505` | Limpar referências antes da exclusão preserva tenant/chave/consumo/identidade, sem copiar histórico |
+| Exclusão isolada da âncora/canal | `src/db/__tests__/schema-reengagement.test.ts:157` e `:158` — exclusões recusadas `23503`; `:159` — `expect(await db.select().from(reengagementEpisodes).where(eq(reengagementEpisodes.id, own.id))).toEqual([own])`; `:160` — `expect(await db.select().from(reengagementEpisodes).where(eq(reengagementEpisodes.id, other.id))).toEqual([other])` | Não perde proteção silenciosamente; outro tenant intacto |
+| Revisões positivas | `src/db/__tests__/schema-reengagement.test.ts:165` — quatro zeros/negativos recusados `23514`; `:168` — `expect(row.agentStateRevision).toBe(2)`; `:169` — `expect(row.bridgeRevision).toBe(3)` | Revisões observada/ponte positivas e distintas |
+
+**Mapa reverso C:**
+
+| Cenário + file:line da asserção | Origem / manter |
+| --- | --- |
+| `src/db/__tests__/schema-reengagement.test.ts:55`/`:56`, unicidade/reset | Done when chave única; REEN-03 AC8 modelo — manter |
+| `src/db/__tests__/schema-reengagement.test.ts:62`/`:63`, lead/canal/âncora estrangeiros | Done when FK composta — manter |
+| `src/db/__tests__/schema-reengagement.test.ts:71`/`:72`/`:74`/`:75`/`:76`/`:77`/`:78`, claim | Done when claims — manter |
+| `src/db/__tests__/schema-reengagement.test.ts:82`/`:87`/`:88`/`:89`/`:91`/`:92`/`:93`/`:94`/`:95`, oito estados/erros | Done when estados; L14B-01 AC3 modelo — manter |
+| `src/db/__tests__/schema-reengagement.test.ts:104`/`:105`/`:106`/`:107`/`:108`, reset pós-resultado | Done when reset; REEN-03 AC8 modelo — manter |
+| `src/db/__tests__/schema-reengagement.test.ts:116`/`:117`/`:118`/`:119`/`:120`, eixo humano | Done when escalada independente; REEN-05 infraestrutura — manter |
+| `src/db/__tests__/schema-reengagement.test.ts:127`/`:128`, quatro refs estrangeiras | Done when FK composta/referências; REEN-04 infraestrutura — manter |
+| `src/db/__tests__/schema-reengagement.test.ts:137`/`:143`/`:144`/`:145`/`:146`/`:147`/`:148`/`:149`/`:150`, limpeza | Done when exclusão/referência sem cópia; REEN-03 AC8/L14B-01 AC6 infraestrutura — manter |
+| `src/db/__tests__/schema-reengagement.test.ts:157`/`:158`/`:159`/`:160`, âncora/canal preservados | Done when exclusão; REEN-03 AC8 modelo — manter |
+| `src/db/__tests__/schema-reengagement.test.ts:165`/`:168`/`:169`, revisões | Done when modelo durável, revisões observadas do Design — manter |
+
+**Veredito:** dez cenários necessários para os contratos T4, Full30/30 passou e regressões preservadas.
+Sem SPEC_DEVIATION. Não declarar os ACs completos do serviço com este gate de schema.
 
 ---
 

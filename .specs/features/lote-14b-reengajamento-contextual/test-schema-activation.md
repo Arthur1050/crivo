@@ -126,3 +126,46 @@ e cinco aplicações T3 concluídas. As leituras prévias foram somente diagnós
 Revisão local adicional: ESLint de `src/db/schema.ts` e
 `src/db/__tests__/schema-agent-state.test.ts` passou com exit0 e nenhuma saída.
 Esse resultado confirma o lint dos arquivos novos; não substitui o gate Postgres.
+
+### T4 revisada, aplicada e validada nas cinco branches de teste
+
+Baseline: T3 `08f6fc6`. Delta offline em [t4-schema.sql](t4-schema.sql), gerado
+por Drizzle Kit 0.31.10 entre o schema desse HEAD e o local, sem conexão ou leitura
+de credencial. SHA256:
+`304cf2cc203259e22bbb387c1a9a4e23101fa3d59699f2186e896e2aaf233442`.
+Treze statements: enum reengagement_state, tabela reengagement_episodes com cinco
+CHECKs, quatro índices (um unique, dois parciais) e sete FKs compostas.
+Nenhuma mudança de objetos existentes, DROP ou atualização de dados.
+
+Chave tenant/lead/canal/âncora exclui reset e revisão. Claims e prazos de despacho
+são pareados; os cinco estados posteriores à autorização exigem marcador;
+aceites exigem acceptedAt e wamid não vazio. T4 não afirma imutabilidade de UPDATE
+arbitrário nem uma chamada externa; esses contratos pertencem aos serviços.
+
+Âncora/canal usam NO ACTION. As quatro referências nullable a mensagens também
+usam NO ACTION composto; T63/T64 limparão somente os UUIDs antes da exclusão,
+preservando tenant/chave/state/dispatchAuthorizedAt/wamid. Não usar SET NULL do
+par composto nem cascade para excluir só saída ou âncora. Exclusão integral da
+lead tem cascade explícito, diferente de expiração de metadados temporários.
+Não há cópia do histórico. Propriedade da mesma lead dentro do tenant continua
+exigindo consulta da conversa nos serviços, como na T3.
+
+Dez cenários preparados em schema-reengagement.test.ts: unicidade/reset,
+propriedade lead/canal/âncora, claims, oito estados/erros, reset após recusa ou
+incerteza, escalonamento independente, tenant das referências opcionais,
+limpeza de referências sem rearmar, exclusão isolada bloqueada e revisões.
+Fixtures próprias de dois tenants; limpeza começa pelos próprios episódios.
+ESLint dos dois arquivos passou exit0; whitespace passou. Tsc preserva exatamente
+50 erros herdados, nenhum no schema/teste T4. Full real pelo root passou: quatro
+arquivos, 30/30 testes, exit0, 98,13s (T4=10, agent-state=7, canais=8, humano=5).
+Comando: `node node_modules/vitest/vitest.mjs run src/db/__tests__/schema-reengagement.test.ts src/db/__tests__/schema-agent-state.test.ts src/db/__tests__/schema-whatsapp-channels.test.ts src/db/__tests__/schema-humano.test.ts`.
+T4 concluída, sem modificar testes anteriores; Build de fase permanece T7.
+
+Aplica-se a autorização ampla posterior já registrada para o L14b. Alvos são
+exclusivamente test e test-worker-1/2/3/4 da tabela; main/produção excluídas.
+Root revisou o SQL de treze statements e os dez cenários. Leitura MCP confirmou
+ausência de reengagement_episodes e reengagement_state nos cinco alvos. Aplicou
+exatamente o hash acima em cinco transações MCP, todas isError=false. Nenhuma
+aplicação em main/produção. Os testes conectaram a branch test real; as cinco
+aplicações MCP não são cinco execuções da suíte. Full exclusivamente pelo root,
+resultado acima. Autor e verifier do fechamento global continuam distintos.

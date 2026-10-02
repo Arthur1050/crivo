@@ -339,20 +339,20 @@ de qualquer prova real, conforme L-051. Não enviar 1.001 mensagens para fabrica
 | --- | --- | --- | --- |
 | REEN-01 | P1: Momento permitido | Execute | Partial — T3 fase desconhecida modelada; seleção/gates pendentes |
 | REEN-02 | P1: Texto contextual | Tasks | Planned |
-| REEN-03 | P1: Envio único e válido | Execute | Partial — T3 reset/revisão modelados; autorização/cancelamento pendentes |
-| REEN-04 | P1: Continuidade da memória | Execute | Partial — T3 projeção mínima; ponte/continuidade pendentes |
-| REEN-05 | P1: Desfecho às 48h | Tasks | Planned |
+| REEN-03 | P1: Envio único e válido | Execute | Partial — T3/T4 reset/chave/consumo modelados; imutabilidade/CAS/uma chamada pendentes |
+| REEN-04 | P1: Continuidade da memória | Execute | Partial — T3 projeção/T4 referências de ponte; reconstrução/invalidação pendentes |
+| REEN-05 | P1: Desfecho às 48h | Execute | Partial — T4 eixo de escalonamento modelado; transição/gate 48h pendentes |
 | PRECO-01 | P1: Classificação de entrega | Tasks | Planned |
 | PRECO-02 | P1: Autenticidade e correlação | Tasks | Planned |
 | USO-01 | P1: Saldo mensal estimado | Execute | Partial — T1 preflight e T2 canais; ativação/consulta mensal pendentes |
 | USO-02 | P1: Atualização e indisponibilidade | Execute | Partial — T2 coordenação modelada; lease/CAS/serviço pendentes |
 | USO-03 | P1: Superfícies e permissões | Tasks | Planned |
 | USO-04 | P1: Aviso sem bloqueio | Tasks | Planned |
-| L14B-01 | P1: Isolamento e operação | Execute | Partial — T1 sanitização e T2 propriedade dos canais; demais fronteiras pendentes |
+| L14B-01 | P1: Isolamento e operação | Execute | Partial — T1 sanitização/T2 canais/T4 identidade e refs isoladas; auth/retention/serviços pendentes |
 | PROVA-01 | P1: Evidência integrada | Tasks | Planned |
 
 **Coverage:** 13/13 requisitos e 95/95 critérios mapeados individualmente em [tasks.md](tasks.md).
-Spec, Design, Tasks/matriz/ferramentas e agentes sequenciais aprovados. T1 preflight local implementado, Quick15/15; T2 modelo aditivo, Full13/13 (8 novos+5 anteriores); T3 projeção mínima, Full20/20 (7 novos+13 anteriores); evidência/adequação e mapa reverso em tasks.md T1. USO-01 AC1/6/7/8 e L14B-01 AC2/4 têm somente a parcela preflight provada. Nenhum AC integral do produto ou gate factual externo é marcado como concluído.
+Spec, Design, Tasks/matriz/ferramentas e agentes sequenciais aprovados. T1 preflight local implementado, Quick15/15; T2 modelo aditivo, Full13/13 (8 novos+5 anteriores); T3 projeção mínima, Full20/20 (7 novos+13 anteriores); T4 episódio durável, Full30/30 (10 novos+20 anteriores). Evidência/adequação e mapa reverso nas seções individuais de tasks.md. USO-01 AC1/6/7/8 e L14B-01 AC2/4 têm somente a parcela preflight provada; REEN-03 AC8/L14B-01 AC3 têm a parcela de modelo T4, sem antecipar CAS/serviços. Nenhum AC integral do produto ou gate factual externo é marcado como concluído.
 
 ## Success Criteria
 

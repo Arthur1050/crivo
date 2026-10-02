@@ -271,6 +271,29 @@ Chave única `(tenant_id, lead_id, phone_number_id, anchor_message_id)`. Campos:
 Índices por lead/âncora, claims vencidas e aceite pendente. Reset não cria segunda tentativa
 da mesma âncora. Marcador de despacho permanece consumido após timeout ou recusa.
 
+T4 implementa o modelo: enum dos oito estados abaixo, claims e prazos pareados,
+revisões positivas e identidade obrigatória nos resultados aceitos. A chave não
+contém reset ou revisão. CHECKs validam a forma da linha; não substituem os locks,
+CAS e a imutabilidade de dispatchAuthorizedAt nos serviços T20/T21.
+
+Todas as referências têm FKs compostas com tenant. A relação corrente com a
+mesma lead é revalidada pela conversa nos serviços; tenant/message não prova
+essa relação. Âncora e canal usam NO ACTION: exclusão isolada não apaga proteção
+nem permite recriar tentativa após recadastrar o número. Atualizar configuração
+do canal usa sua revisão. A FK da lead usa cascade na exclusão integral da lead;
+essa operação é diferente da limpeza temporária e deve respeitar o ciclo do CRM.
+
+Saída, limites da sessão de origem e primeiro inbound são UUIDs nullable com
+NO ACTION, sem cópia das conversas. T63/T64 devem limpar essas referências antes
+de excluir suas mensagens, na mesma transação. Limpar saída não limpa wamid,
+state, chave ou dispatchAuthorizedAt. accepted continua válido após essa limpeza;
+messageId não é obrigatório permanentemente. T63 decide explicitamente quando
+a proteção contra duplicação deixou de ser necessária antes de remover episódio
+e âncora; o prazo de 30 dias não autoriza apagar essa proteção por cascade.
+Texto submetido e metadados temporários seguem retenção, enquanto classificação
+normalizada acompanha a mensagem (L14B-01 AC5/6). O CRM atual não purga mensagens
+na rotina lgpd.ts; T4 não introduz uma purga automática.
+
 ### `messages`: canal por mensagem
 
 Adicionar whatsappPhoneNumberId nullable. Humano, responder_lead, saída fixa/contingência e

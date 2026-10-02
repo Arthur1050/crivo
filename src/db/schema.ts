@@ -404,6 +404,70 @@ export const leadAgentState = pgTable(
   ],
 );
 
+// L14b T4 — consumo pertence ao episódio, não às referências temporárias.
+// T20/T21 controlam transições e imutabilidade sob lock; constraints validam o modelo.
+export const reengagementStateEnum = pgEnum("reengagement_state", [
+  "preparing", "cancelled", "omitted", "authorized", "accepted_pending_record",
+  "accepted", "refused", "uncertain",
+]);
+
+export const reengagementEpisodes = pgTable(
+  "reengagement_episodes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id").notNull(),
+    leadId: uuid("lead_id").notNull(),
+    phoneNumberId: text("phone_number_id").notNull(),
+    anchorMessageId: uuid("anchor_message_id").notNull(),
+    anchorSentAt: timestamp("anchor_sent_at", { withTimezone: true }).notNull(),
+    resetObservedAt: timestamp("reset_observed_at", { withTimezone: true }),
+    agentStateRevision: integer("agent_state_revision").notNull(),
+    state: reengagementStateEnum("state").notNull().default("preparing"),
+    reasonCode: text("reason_code"),
+    claimToken: uuid("claim_token"),
+    claimExpiresAt: timestamp("claim_expires_at", { withTimezone: true }),
+    preparedAt: timestamp("prepared_at", { withTimezone: true }),
+    submittedText: text("submitted_text"),
+    dispatchAuthorizedAt: timestamp("dispatch_authorized_at", { withTimezone: true }),
+    dispatchCompletionDeadline: timestamp("dispatch_completion_deadline", { withTimezone: true }),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+    wamid: text("wamid"),
+    // NO ACTION composto: T63/T64 zeram só as refs antes de excluir mensagens.
+    // Nunca zerar tenant nem apagar consumo ao perder saída/sessão de origem.
+    messageId: uuid("message_id"),
+    originSessionStartMessageId: uuid("origin_session_start_message_id"),
+    originSessionEndMessageId: uuid("origin_session_end_message_id"),
+    firstInboundMessageId: uuid("first_inbound_message_id"),
+    bridgeRevision: integer("bridge_revision").notNull().default(1),
+    bridgeInvalidatedAt: timestamp("bridge_invalidated_at", { withTimezone: true }),
+    bridgeLastInboundAt: timestamp("bridge_last_inbound_at", { withTimezone: true }),
+    escalatedAt: timestamp("escalated_at", { withTimezone: true }),
+    escalationResult: text("escalation_result"),
+    escalationReasonCode: text("escalation_reason_code"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("reengagement_episodes_key_idx").on(table.tenantId, table.leadId, table.phoneNumberId, table.anchorMessageId),
+    index("reengagement_episodes_lead_anchor_idx").on(table.tenantId, table.leadId, table.anchorSentAt),
+    index("reengagement_episodes_expired_claim_idx").on(table.claimExpiresAt).where(sql`${table.state} = 'preparing' and ${table.dispatchAuthorizedAt} is null`),
+    index("reengagement_episodes_pending_acceptance_idx").on(table.updatedAt).where(sql`${table.state} = 'accepted_pending_record'`),
+    foreignKey({ name: "reengagement_episodes_tenant_lead_fk", columns: [table.tenantId, table.leadId], foreignColumns: [leads.tenantId, leads.id] }).onDelete("cascade"),
+    foreignKey({ name: "reengagement_episodes_tenant_channel_fk", columns: [table.tenantId, table.phoneNumberId], foreignColumns: [whatsappChannels.tenantId, whatsappChannels.phoneNumberId] }),
+    foreignKey({ name: "reengagement_episodes_tenant_anchor_fk", columns: [table.tenantId, table.anchorMessageId], foreignColumns: [messages.tenantId, messages.id] }),
+    foreignKey({ name: "reengagement_episodes_tenant_message_fk", columns: [table.tenantId, table.messageId], foreignColumns: [messages.tenantId, messages.id] }),
+    foreignKey({ name: "reengagement_episodes_tenant_origin_start_fk", columns: [table.tenantId, table.originSessionStartMessageId], foreignColumns: [messages.tenantId, messages.id] }),
+    foreignKey({ name: "reengagement_episodes_tenant_origin_end_fk", columns: [table.tenantId, table.originSessionEndMessageId], foreignColumns: [messages.tenantId, messages.id] }),
+    foreignKey({ name: "reengagement_episodes_tenant_first_inbound_fk", columns: [table.tenantId, table.firstInboundMessageId], foreignColumns: [messages.tenantId, messages.id] }),
+    check("reengagement_episodes_positive_revisions", sql`${table.agentStateRevision} > 0 and ${table.bridgeRevision} > 0`),
+    check("reengagement_episodes_claim_pair", sql`(${table.claimToken} is null) = (${table.claimExpiresAt} is null)`),
+    check("reengagement_episodes_dispatch_pair", sql`(${table.dispatchAuthorizedAt} is null) = (${table.dispatchCompletionDeadline} is null)`),
+    check("reengagement_episodes_dispatch_state", sql`(${table.state} in ('preparing', 'cancelled', 'omitted')) = (${table.dispatchAuthorizedAt} is null)`),
+    // messageId pode ser limpo na retenção; identidade aceita permanece no episódio.
+    check("reengagement_episodes_accepted_identity", sql`${table.state} not in ('accepted_pending_record', 'accepted') or (${table.acceptedAt} is not null and ${table.wamid} is not null and length(trim(${table.wamid})) > 0)`),
+  ],
+);
+
 // Reserva idempotente do envio humano (lote-14 — ENVIO-01 AC11): a mesma
 // chave (`tenant_id`, `request_id`) chama a Meta e grava uma vez só.
 export const humanMessageSends = pgTable(
