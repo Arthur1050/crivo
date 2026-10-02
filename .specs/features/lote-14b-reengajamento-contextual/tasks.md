@@ -318,17 +318,53 @@ T62 → T68
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: 200/401/403/429/timeout; conta de teste identificada; número divergente; fuso ou zero não comprovado deixam gate pendente, sem habilitar saldo.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **8 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Quick passou: `npx vitest run scripts/__tests__/whatsapp-account-preflight.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
-- [ ] Evidência sanitizada diferencia confirmado/pendente; dry run/relatório não altera conta, workflow, banco de produção ou env. Aplicação externa é gate posterior.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: 200/401/403/429/timeout; conta de teste identificada; número divergente; fuso ou zero não comprovado deixam gate pendente, sem habilitar saldo.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **8 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Quick passou: `npx vitest run scripts/__tests__/whatsapp-account-preflight.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
+- [x] Evidência sanitizada diferencia confirmado/pendente; dry run/relatório não altera conta, workflow, banco de produção ou env. Aplicação externa é gate posterior.
 
 **Tests**: unit — `scripts/__tests__/whatsapp-account-preflight.test.ts`; matriz: Scripts operacionais.
 
 **Gate**: Quick; Build no fechamento da fase.
 
 **Commit**: `feat(l14b): preflight de conta e contrato analytics` (docs para mudança exclusivamente contratual).
+
+**Execução T1 (2026-10-02): concluída localmente.** Quick: `node node_modules/vitest/vitest.mjs run scripts/__tests__/whatsapp-account-preflight.test.ts`, exit0, 1 arquivo, 15/15 testes, 271ms. Sem alteração/exclusão/skip de teste existente. Diagnóstico sempre dryRun, sem aplicação nem saldo. `monthlyContract` é evidência documental revisada pelo operador; `analytics` permanece pendente da resposta integral real do mês, e `zero` da representação observada. A fixture de fuso é somente teste, não prova da conta real.
+
+A leitura Graph dentro do sandbox resultou em `transport-failure`; não é resposta da Meta. A repetição fora do sandbox ficou aguardando aprovação e foi cancelada, sem resposta/captura. Fatos prévios de conta de teste permanecem; número/tenant/IANA/Analytics/zero reais não foram confirmados nesta execução. Nenhum requisito completo do produto é dado por realizado somente por este preflight.
+
+**Adequação A/B/D:** valores e campos do relatório distinguem confirmado/pendente, não apenas chamadas; tests derivam de USO-01 AC1/6/7/8 e L14B-01 AC2/4, mais Done when T1. Convenções: scripts/__tests__, Vitest e fetch injetado conforme matriz. Evidência abaixo usa o arquivo `scripts/__tests__/whatsapp-account-preflight.test.ts`.
+
+| Critério / AC atribuído (parcela T1) | file:line + asserção | Resultado exigido |
+| --- | --- | --- |
+| Done when 200/vínculo | `scripts/__tests__/whatsapp-account-preflight.test.ts:24` — `expect(result.account).toEqual({ state: "confirmed", code: "account-read", wabaId: "123", testAccount: false, timezoneId: 1 })`; `:25` — `expect(result.ownership).toEqual({ state: "confirmed", code: "waba-membership", tenantId: input.tenantId, phoneNumberId: "456" })` | Identidade/vínculo explícitos |
+| Done when 401/403/429 | `scripts/__tests__/whatsapp-account-preflight.test.ts:45` — `expect(result.account).toEqual({ state: "pending", code })` | unauthorized/forbidden/rate-limited, pendentes |
+| Done when timeout | `scripts/__tests__/whatsapp-account-preflight.test.ts:54` — `expect(result.account).toEqual({ state: "pending", code: "timeout" })` | Pendência, sem presumir resposta |
+| Conta de teste | `scripts/__tests__/whatsapp-account-preflight.test.ts:61` — `expect(result.account.testAccount).toBe(true)`; `:62` — `expect(result.analytics).toEqual({ state: "pending", code: "test-account-production-unproven" })` | Não comprova produção |
+| USO-01 AC8 / número divergente | `scripts/__tests__/whatsapp-account-preflight.test.ts:71` — `expect(result.ownership).toEqual({ state: "pending", code: "number-mismatch" })`; `:124` — `expect(result.ownership).toEqual({ state: "pending", code: "incomplete-number-pagination" })` | Não vincular parcial/divergente |
+| USO-01 AC6/8, IANA da conta | `scripts/__tests__/whatsapp-account-preflight.test.ts:77` — `expect(result.timezone).toEqual({ state: "confirmed", code: "primary-timezone-reviewed", iana: "America/Los_Angeles", source })`; `:92` — `expect(result.analytics.state).toBe("pending")` | Revisão primária de fixture, sem assumir SP/ID divergente/fonte secundária/IANA inválido |
+| USO-01 AC1/7, zero/consulta inicial | `scripts/__tests__/whatsapp-account-preflight.test.ts:79` — `expect(result.analytics).toEqual({ state: "pending", code: "account-access-full-month-response-pending" })`; `:80` — `expect(result.zero).toEqual({ state: "pending", code: "documented-zero-account-response-pending" })`; `:82` — `expect(result).not.toHaveProperty("used")` | Documento não substitui consulta/zero observados |
+| L14B-01 AC2, segredo servidor | `scripts/__tests__/whatsapp-account-preflight.test.ts:34` — `expect(new URL(String(url)).searchParams.has("access_token")).toBe(false)`; `:101` — `expect(result.account).toEqual({ state: "pending", code: "credential-missing" })` | Token só header/processo, ausente impede rede |
+| L14B-01 AC4, sanitização | `scripts/__tests__/whatsapp-account-preflight.test.ts:48` — `expect(JSON.stringify(result)).not.toMatch(/test-server-credential|conversa completa/)`; `:56` — `expect(JSON.stringify(result)).not.toContain("test-server-credential")`; `:114` — `expect(JSON.stringify(result)).not.toMatch(/test-server-credential|access_token|conversa-completa/)` | Erro/payload/locator sensível descartados |
+| Done when readonly | `scripts/__tests__/whatsapp-account-preflight.test.ts:35` — `expect(request?.method).toBe("GET")`; `:36` — `expect(request?.body).toBeUndefined()`; `:29` — `expect(result.usageEnabled).toBe(false)`; `:30` — `expect(result.dryRun).toBe(true)` | Nenhuma aplicação/habilitação |
+
+**Mapa reverso C (cada cenário necessário):**
+
+| Teste + file:line da asserção | Origem / manter |
+| --- | --- |
+| 200, `scripts/__tests__/whatsapp-account-preflight.test.ts:24` / `:25` / `:29` / `:35` | Done when 200, readonly; USO-01 AC1/8; L14B-01 AC2 — manter |
+| 401,403,429, `scripts/__tests__/whatsapp-account-preflight.test.ts:45` / `:48` | Done when erros; L14B-01 AC4 — manter os 3 cenários |
+| timeout, `scripts/__tests__/whatsapp-account-preflight.test.ts:54` / `:56` | Done when timeout; L14B-01 AC4 — manter |
+| teste, `scripts/__tests__/whatsapp-account-preflight.test.ts:61` / `:62` | Done when conta de teste / USO-01 AC8 — manter |
+| divergente, `scripts/__tests__/whatsapp-account-preflight.test.ts:71` | Done when número divergente / USO-01 AC8 — manter |
+| fixture IANA/documento, `scripts/__tests__/whatsapp-account-preflight.test.ts:77` / `:78` / `:79` / `:80` | USO-01 AC1/6/7/8, Done when fuso/zero — manter |
+| ID divergente,fonte secundária,IANA inválido,zero não documentado, `scripts/__tests__/whatsapp-account-preflight.test.ts:92` / `:93` | Done when prova insuficiente, USO-01 AC7/8 — manter os 4 cenários |
+| credencial ausente, `scripts/__tests__/whatsapp-account-preflight.test.ts:101` / `:102` | L14B-01 AC2 / Independent Test — manter |
+| locator sensível, `scripts/__tests__/whatsapp-account-preflight.test.ts:112` / `:114` | L14B-01 AC4 — manter |
+| página parcial, `scripts/__tests__/whatsapp-account-preflight.test.ts:124` / `:125` | Done when vínculo/número; USO-01 AC8; L14B-01 AC4 — manter |
+
+**Veredito:** adequação T1 aprovada; 15 cenários necessários, resultados sanitizados, nenhum saldo fictício. Gates factuais de ativação seguem pendentes. Sem SPEC_DEVIATION. Build fica para T7; ressalva baseline dos 2 timeouts históricos continua documentada.
 
 ---
 
