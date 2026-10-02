@@ -514,6 +514,39 @@ export const whatsappMessageReceipts = pgTable(
   ],
 );
 
+// L14b T6 — um snapshot substituível por período/revisão; ausência não é zero.
+export const whatsappUsage = pgTable(
+  "whatsapp_usage",
+  {
+    tenantId: uuid("tenant_id").notNull(),
+    phoneNumberId: text("phone_number_id").notNull(),
+    monthStart: timestamp("month_start", { withTimezone: true }).notNull(),
+    configurationRevision: integer("configuration_revision").notNull(),
+    accountTimezone: text("account_timezone").notNull(),
+    monthEnd: timestamp("month_end", { withTimezone: true }).notNull(),
+    queryEnd: timestamp("query_end", { withTimezone: true }),
+    freeServiceVolume: bigint("free_service_volume", { mode: "number" }),
+    lastSuccessAt: timestamp("last_success_at", { withTimezone: true }),
+    lastAttemptAt: timestamp("last_attempt_at", { withTimezone: true }),
+    failureCode: text("failure_code"),
+    querySequence: integer("query_sequence").notNull().default(0),
+    responseToken: uuid("response_token"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull().default(sql`now() + interval '30 days'`),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ name: "whatsapp_usage_period_revision_pk", columns: [table.tenantId, table.phoneNumberId, table.monthStart, table.configurationRevision] }),
+    index("whatsapp_usage_expiry_idx").on(table.expiresAt),
+    foreignKey({ name: "whatsapp_usage_tenant_channel_fk", columns: [table.tenantId, table.phoneNumberId], foreignColumns: [whatsappChannels.tenantId, whatsappChannels.phoneNumberId] }),
+    check("whatsapp_usage_revision_sequence", sql`${table.configurationRevision} > 0 and ${table.querySequence} >= 0`),
+    check("whatsapp_usage_nonnegative_volume", sql`${table.freeServiceVolume} >= 0`),
+    // Postgres interpreta o período no fuso armazenado, sem usar o fuso do servidor.
+    check("whatsapp_usage_civil_month", sql`(${table.monthStart} at time zone ${table.accountTimezone}) = date_trunc('month', ${table.monthStart} at time zone ${table.accountTimezone}) and ${table.monthEnd} = ((date_trunc('month', ${table.monthStart} at time zone ${table.accountTimezone}) + interval '1 month') at time zone ${table.accountTimezone})`),
+    check("whatsapp_usage_query_period", sql`${table.queryEnd} >= ${table.monthStart} and ${table.queryEnd} <= ${table.monthEnd}`),
+    check("whatsapp_usage_success_fields", sql`(${table.freeServiceVolume} is null) = (${table.lastSuccessAt} is null) and (${table.queryEnd} is null) = (${table.lastSuccessAt} is null)`),
+  ],
+);
+
 // Reserva idempotente do envio humano (lote-14 — ENVIO-01 AC11): a mesma
 // chave (`tenant_id`, `request_id`) chama a Meta e grava uma vez só.
 export const humanMessageSends = pgTable(

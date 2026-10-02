@@ -343,6 +343,26 @@ Snapshot substitui anterior do mesmo período; histórico não é exibido no mê
 Guardar snapshot necessário e metadados operacionais até 30 dias, sem relatório histórico.
 queryEnd e lastSuccessAt são distintos.
 
+T6 modela freeServiceVolume nullable sem default; null significa desconhecido,
+nunca volume zero. Um sucesso exige volume inteiro não negativo, queryEnd e
+lastSuccessAt presentes juntos. queryEnd representa o corte da última resposta
+mensal aceita, dentro do período; tentativa/falha subsequente preserva esse corte
+e volume. lastAttemptAt/failureCode são campos independentes. Sequência não
+negativa e UUID responseToken identificam a resposta; lease continua no canal.
+T12/T13 validarão safe integer, proveniência da resposta e CAS da sequência.
+
+O período tem accountTimezone sem default e fronteiras civis verificadas com
+AT TIME ZONE no Postgres, inclusive DST; isso não comprova o fuso real da conta.
+T7 resolverá a evidência registrada; T11 calculará as fronteiras do mês corrente.
+FK tenant/canal e PK de período/revisão impedem mistura; revisão positiva não
+afirma ser a configuração corrente, gate transacional que pertence à T13.
+
+expiresAt é metadado operacional com índice, sem rotina automática nesta tarefa.
+T63 decidirá a remoção por idade e necessidade: expirar uma linha não pode
+apagar o snapshot corrente ainda necessário para apresentação. O modelo não
+cria relatório histórico nem transporta volume ao novo mês; seleção corrente e
+retenção efetiva serão provadas nos serviços T14/T63.
+
 ## Episódio: concorrência e resultados
 
 ### Preparação e autorização

@@ -202,3 +202,38 @@ arquivos, 38/38 testes, exit0, 116,46s (T5=8, T4=10, T3=7, canais=8, humano=5).
 Comando: `node node_modules/vitest/vitest.mjs run src/db/__tests__/schema-whatsapp-receipts.test.ts src/db/__tests__/schema-reengagement.test.ts src/db/__tests__/schema-agent-state.test.ts src/db/__tests__/schema-whatsapp-channels.test.ts src/db/__tests__/schema-humano.test.ts`.
 Os testes conectaram a branch test real; cinco aplicações não são cinco execuções
 da suíte. T5 concluída, sem mudança de testes anteriores; Build de fase fica T7.
+
+### T6 revisada, aplicada e validada
+
+Baseline: T5 `e676509`. Delta offline Drizzle Kit 0.31.10 em
+[t6-schema.sql](t6-schema.sql), SHA256:
+`9f21de86bd82802d69f641ade499bb4b1927a47aff7147781be96c4f77adc50e`.
+Três statements: CREATE whatsapp_usage, índice expiry e FK composta tenant/canal
+NO ACTION. Nenhum objeto existente alterado, DROP, seed ou atualização de dados.
+PK tem nome explícito whatsapp_usage_period_revision_pk para evitar truncamento
+de identificador >63 no PostgreSQL. Alvos test/test-worker-1/2/3/4 da tabela,
+main/produção excluídas; aplicação coberta pela autorização ampla posterior.
+
+Volume bigint nullable sem default, não negativo; ausência não é zero. Sucesso
+exige volume/queryEnd/lastSuccessAt juntos. queryEnd é corte do último snapshot
+aceito, dentro das fronteiras civis armazenadas no fuso explícito. CHECK usa
+AT TIME ZONE; fixture não confirma o fuso da conta real. Tentativa/falha podem
+atualizar separadamente sem apagar sucesso. Revisão positiva, sequência>=0 e
+responseToken UUID modelam ordenação; CAS/safeinteger serão T12/T13.
+
+expiresAt/index são somente metadados de retenção; T63 preservará o snapshot
+corrente ainda necessário e decidirá quando remover. T6 não cria rotina de purga
+nem relatório histórico. O teste de limpeza confirma capacidade do modelo e
+isolamento, não declara T63 implementada.
+
+Oito cenários preparados em schema-whatsapp-usage.test.ts; ESLint dos dois
+arquivos exit0; whitespace passou; tsc preserva50erros herdados, nenhum T6/schema.
+Root revisou exatamente o SQL de três statements e os oito cenários. MCP
+confirmou ausência de whatsapp_usage e do índice expiry nos cinco alvos. Aplicou
+o hash acima em cinco transações MCP, todas isError=false, sob a autorização ampla
+já registrada. Nenhuma aplicação em main/produção.
+Full real T6/T5/T4/T3/canais/humano exclusivamente pelo root passou: seis arquivos,
+46/46 testes, exit0, 139,69s (T6=8 + regressões=38). Comando:
+`node node_modules/vitest/vitest.mjs run src/db/__tests__/schema-whatsapp-usage.test.ts src/db/__tests__/schema-whatsapp-receipts.test.ts src/db/__tests__/schema-reengagement.test.ts src/db/__tests__/schema-agent-state.test.ts src/db/__tests__/schema-whatsapp-channels.test.ts src/db/__tests__/schema-humano.test.ts`.
+Testes conectaram a branch test real; cinco aplicações não são cinco execuções
+da suíte. T6 concluída, sem mudar testes anteriores. Build de fase permanece T7.

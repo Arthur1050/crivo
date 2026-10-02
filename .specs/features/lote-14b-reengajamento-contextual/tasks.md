@@ -8,7 +8,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 
 **Design:** [design.md](design.md), aprovado em 2026-10-02: “Aprovo. Vá para as tarefas”.
 
-**Status:** Approved — usuário em 2026-10-02: “Aprovo. Gere o prompt de execução para que a fase de execução seja iniciado em outra janela de contexto”. 68 tarefas em 9 fases; T1/T2/T3/T4/T5 concluídas localmente (5/68), conforme evidências individuais abaixo.
+**Status:** Approved — usuário em 2026-10-02: “Aprovo. Gere o prompt de execução para que a fase de execução seja iniciado em outra janela de contexto”. 68 tarefas em 9 fases; T1/T2/T3/T4/T5/T6 concluídas localmente (6/68), conforme evidências individuais abaixo.
 
 **Escopo:** 13 requisitos e 95 ACs aprovados. Uma retomada >=22h/<24h, continuidade restrita, desfecho >=48h, classificação após entrega e saldo mensal estimado. Sem modal/bloqueio financeiro.
 
@@ -640,16 +640,55 @@ Sem SPEC_DEVIATION; nenhum AC integral de ingestão/classificação declarado co
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: unicidade por período/revisão; volume inteiro não negativo; fuso; tenant/canal; sucesso versus tentativa; retenção sem relatório histórico.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **6 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/db/__tests__/schema-whatsapp-usage.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: unicidade por período/revisão; volume inteiro não negativo; fuso; tenant/canal; sucesso versus tentativa; retenção sem relatório histórico.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **6 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou: `npx vitest run src/db/__tests__/schema-whatsapp-usage.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
 
 **Tests**: integration — `src/db/__tests__/schema-whatsapp-usage.test.ts`; matriz: Esquema/constraints.
 
 **Gate**: Full; Build no fechamento da fase.
 
 **Commit**: `feat(l14b): modelo do snapshot mensal` (docs para mudança exclusivamente contratual).
+
+**Execução T6 (2026-10-02): concluída.** Full real pelo root: seis arquivos, 46/46 testes, exit0, 139,69s (T6=8 + regressões=38). Comando: `node node_modules/vitest/vitest.mjs run src/db/__tests__/schema-whatsapp-usage.test.ts src/db/__tests__/schema-whatsapp-receipts.test.ts src/db/__tests__/schema-reengagement.test.ts src/db/__tests__/schema-agent-state.test.ts src/db/__tests__/schema-whatsapp-channels.test.ts src/db/__tests__/schema-humano.test.ts`. SQL offline de três
+statements contra HEAD `e676509`; hash/alvos em test-schema-activation.md. ESLint
+dos dois arquivos passou; tsc mantém os 50 erros herdados sem novos; whitespace
+passou. Root revisou e aplicou o hash autorizado em cinco transações MCP, todas isError=false, exclusivamente nos cinco alvos de teste documentados. Nenhum teste anterior mudou. Build de fase permanece T7.
+
+**Adequação A/B/D:** oito cenários de constraints e valores persistidos, fixtures
+próprias por canal em dois tenants; sem mocks ou alterações nos testes anteriores.
+UTC/SP/LA e offsets DST são fixtures explícitas, sem cálculo compartilhado com o
+schema. T6 não prova acesso Analytics/fuso externo, CAS ou rotina de retenção.
+expiresAt é infraestrutura; T63 preservará snapshot corrente ainda necessário.
+USO-01/02 têm somente a parcela de modelo descrita abaixo.
+
+| Critério / parcela do requisito | file:line + asserção | Resultado exigido |
+| --- | --- | --- |
+| Chave período/revisão / USO-01 AC4/6 modelo | `src/db/__tests__/schema-whatsapp-usage.test.ts:49` — `expect(await codeOf(db.insert(whatsappUsage).values(input))).toBe("23505")`; `:55` — `expect(rows).toHaveLength(3)`; `:56` — duas linhas desconhecidas; `:57` — volume999 só mês/revisão anterior | Uma linha por chave; novo mês/revisão não herda volume |
+| Volume / USO-01 AC2/7 modelo | `src/db/__tests__/schema-whatsapp-usage.test.ts:62` — negativo `23514`; `:63` — fracionário `22P02`; `:66` — `expect(zero.freeServiceVolume).toBe(0)`; `:67` — `expect(above.freeServiceVolume).toBe(1001)` | Inteiro não negativo; zero somente explícito, sem cap arbitrário1000 |
+| Fuso/período / USO-01 AC6/8 modelo | `src/db/__tests__/schema-whatsapp-usage.test.ts:78` — `expect(row.accountTimezone).toBe(expected.accountTimezone)`; `:79`/`:80` — fronteiras exatas UTC/SP/LA; `:82` — períodoUTC sobSP `23514`; `:83` — fuso desconhecido `22023`; `:84` — null `23502` | Sem fuso presumido; fronteiras civis inclusive DST |
+| Tenant/canal | `src/db/__tests__/schema-whatsapp-usage.test.ts:89` — canal estranho/ausente `23503`; `:90` — `expect(await db.select().from(whatsappUsage).where(eq(whatsappUsage.phoneNumberId, phoneNumberId))).toHaveLength(0)` | Nenhum snapshot parcial ou mistura |
+| Ausência/falha / USO-01 AC7 e USO-02 AC3/4 modelo | `src/db/__tests__/schema-whatsapp-usage.test.ts:97` — `expect(unknown.freeServiceVolume).toBeNull()`; `:98`/`:99`/`:100` — queryEnd/sucesso/tentativa null; `:104` — `expect(failed.freeServiceVolume).toBe(999)`; `:105` — `expect(failed.queryEnd).toEqual(queryEnd)`; `:106` — sucesso anterior preservado; `:107`/`:108` — tentativa nova e http429 persistidos | Falha não publica zero nem substitui corte/volume anterior |
+| Corte de consulta / USO-01 AC1/7 infraestrutura | `src/db/__tests__/schema-whatsapp-usage.test.ts:113` — corte fora do mês `23514`; `:116` — cada campo de sucesso ausente `23514`; `:119` — `expect(row.queryEnd).toEqual(queryEnd)`; `:120` — `expect(row.lastSuccessAt).toEqual(lastSuccessAt)`; `:121` — `expect(row.queryEnd).not.toEqual(row.lastSuccessAt)` | Período completo modelado; consulta e sucesso distintos |
+| Retenção/mês / L14B-01 AC6 infraestrutura | `src/db/__tests__/schema-whatsapp-usage.test.ts:131` — vencido removido pela operação de fixture; `:132` — atual igual `[current]`; `:133` — `expect(current.freeServiceVolume).toBeNull()`; `:134` — estrangeiro igual `[foreign]` | Modelo suporta limpeza isolada e novo mês sem carry; não prova rotinaT63 |
+| Revisão/resposta / USO-02 AC2 infraestrutura | `src/db/__tests__/schema-whatsapp-usage.test.ts:139` — zero/negativo revisão e sequência negativa `23514`; `:143` — `expect(row.configurationRevision).toBe(2)`; `:144` — `expect(row.querySequence).toBe(3)`; `:145` — `expect(row.responseToken).toBe(responseToken)`; `:147`/`:148` — padrão sequência0/tokennull; `:149` — expiração30dias da fixture | Identidade de resposta separada; coordenação/CAS continuam serviços |
+
+**Mapa reverso C:**
+
+| Cenário + file:line da asserção | Origem / manter |
+| --- | --- |
+| `src/db/__tests__/schema-whatsapp-usage.test.ts:49`/`:55`/`:56`/`:57`, chave/revisão/mês | Done when unicidade; USO-01 AC4/6 modelo — manter |
+| `src/db/__tests__/schema-whatsapp-usage.test.ts:62`/`:63`/`:66`/`:67`, volume | Done when inteiro não negativo; USO-01 AC2/7 modelo — manter |
+| `src/db/__tests__/schema-whatsapp-usage.test.ts:78`/`:79`/`:80`/`:82`/`:83`/`:84`, fuso | Done when fuso; USO-01 AC6/8 modelo — manter |
+| `src/db/__tests__/schema-whatsapp-usage.test.ts:89`/`:90`, FK | Done when tenant/canal — manter |
+| `src/db/__tests__/schema-whatsapp-usage.test.ts:97`/`:98`/`:99`/`:100`/`:104`/`:105`/`:106`/`:107`/`:108`, falha/sucesso | Done when sucesso versus tentativa; USO-01 AC7/USO-02 AC3/4 modelo — manter |
+| `src/db/__tests__/schema-whatsapp-usage.test.ts:113`/`:116`/`:119`/`:120`/`:121`, queryEnd | Done when modelo; queryEnd do Design; USO-01 AC1/7 infraestrutura — manter |
+| `src/db/__tests__/schema-whatsapp-usage.test.ts:131`/`:132`/`:133`/`:134`, retenção/mês | Done when retenção sem relatório; L14B-01 AC6 infraestrutura — manter |
+| `src/db/__tests__/schema-whatsapp-usage.test.ts:139`/`:143`/`:144`/`:145`/`:147`/`:148`/`:149`, identidade de resposta | Done when modelo; sequência/token do Design; USO-02 AC2 infraestrutura — manter |
+
+**Veredito:** oito cenários discriminantes necessários; Full46/46 passou e regressões intactas. Sem
+SPEC_DEVIATION; nenhum AC integral de Analytics/lease/retention concluído.
 
 ---
 
