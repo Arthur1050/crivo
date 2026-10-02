@@ -352,6 +352,9 @@ export const messages = pgTable(
     // usado para deduplicar reentregas. Nullable/aditiva — mensagens do seed
     // antigo nunca têm externalId.
     externalId: text("external_id"),
+    // Canal efetivamente usado, sem backfill a partir do telefone atual da lead.
+    // Sem FK de cadastro: legado/canal humano não depende de Analytics habilitado.
+    whatsappPhoneNumberId: text("whatsapp_phone_number_id"),
     // Autoria humana (lote-14 — ENVIO-01 AC2, THREAD-01 AC1/AC7). O nome é um
     // instantâneo do momento do envio: sobrevive à perda de vínculo e à
     // exclusão do usuário, que só zera `author_user_id` (`set null`).
@@ -362,6 +365,7 @@ export const messages = pgTable(
   },
   (table) => [
     uniqueIndex("messages_tenant_id_id_idx").on(table.tenantId, table.id),
+    uniqueIndex("messages_receipt_identity_idx").on(table.tenantId, table.whatsappPhoneNumberId, table.externalId, table.id),
     // Idempotência de ingestão (INT-05.2), escopada por tenant, parcial
     // (WHERE NOT NULL) pela mesma razão de leads_tenant_id_external_id_idx.
     uniqueIndex("messages_tenant_id_external_id_idx")
@@ -465,6 +469,48 @@ export const reengagementEpisodes = pgTable(
     check("reengagement_episodes_dispatch_state", sql`(${table.state} in ('preparing', 'cancelled', 'omitted')) = (${table.dispatchAuthorizedAt} is null)`),
     // messageId pode ser limpo na retenção; identidade aceita permanece no episódio.
     check("reengagement_episodes_accepted_identity", sql`${table.state} not in ('accepted_pending_record', 'accepted') or (${table.acceptedAt} is not null and ${table.wamid} is not null and length(trim(${table.wamid})) > 0)`),
+  ],
+);
+
+export const whatsappReceiptClassificationEnum = pgEnum("whatsapp_receipt_classification", [
+  "pending", "paid_service", "free_service", "free_entry_point", "unavailable", "not_delivered",
+]);
+
+// L14b T5 — evidências normalizadas, sem conteúdo/payload bruto permanente.
+export const whatsappMessageReceipts = pgTable(
+  "whatsapp_message_receipts",
+  {
+    tenantId: uuid("tenant_id").notNull(),
+    phoneNumberId: text("phone_number_id").notNull(),
+    wamid: text("wamid").notNull(),
+    messageId: uuid("message_id"),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+    readAt: timestamp("read_at", { withTimezone: true }),
+    failedAt: timestamp("failed_at", { withTimezone: true }),
+    pricingModel: text("pricing_model"),
+    category: text("category"),
+    pricingType: text("pricing_type"),
+    billable: boolean("billable"),
+    pricingConflict: boolean("pricing_conflict").notNull().default(false),
+    classification: whatsappReceiptClassificationEnum("classification").notNull().default("pending"),
+    // Apenas o código numérico normalizado; nunca a mensagem/payload da falha.
+    failureCode: integer("failure_code"),
+    firstSeenAt: timestamp("first_seen_at", { withTimezone: true }).notNull().defaultNow(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull().defaultNow(),
+    orphanExpiresAt: timestamp("orphan_expires_at", { withTimezone: true }).default(sql`now() + interval '30 days'`),
+  },
+  (table) => [
+    primaryKey({ columns: [table.tenantId, table.phoneNumberId, table.wamid] }),
+    index("whatsapp_message_receipts_message_idx").on(table.tenantId, table.messageId),
+    index("whatsapp_message_receipts_orphan_expiry_idx").on(table.orphanExpiresAt).where(sql`${table.messageId} is null`),
+    foreignKey({ name: "whatsapp_message_receipts_tenant_channel_fk", columns: [table.tenantId, table.phoneNumberId], foreignColumns: [whatsappChannels.tenantId, whatsappChannels.phoneNumberId] }),
+    // Se a mensagem correlacionada sair do CRM, o recibo sai junto; não vira órfão.
+    foreignKey({ name: "whatsapp_message_receipts_message_identity_fk", columns: [table.tenantId, table.phoneNumberId, table.wamid, table.messageId], foreignColumns: [messages.tenantId, messages.whatsappPhoneNumberId, messages.externalId, messages.id] }).onDelete("cascade"),
+    check("whatsapp_message_receipts_orphan_expiry", sql`(${table.messageId} is null) = (${table.orphanExpiresAt} is not null)`),
+    check("whatsapp_message_receipts_seen_order", sql`${table.lastSeenAt} >= ${table.firstSeenAt}`),
+    check("whatsapp_message_receipts_conflict", sql`not ${table.pricingConflict} or ${table.classification} = 'unavailable'`),
+    check("whatsapp_message_receipts_identity_nonempty", sql`length(trim(${table.wamid})) > 0`),
   ],
 );
 

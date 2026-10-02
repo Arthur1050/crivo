@@ -8,7 +8,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 
 **Design:** [design.md](design.md), aprovado em 2026-10-02: “Aprovo. Vá para as tarefas”.
 
-**Status:** Approved — usuário em 2026-10-02: “Aprovo. Gere o prompt de execução para que a fase de execução seja iniciado em outra janela de contexto”. 68 tarefas em 9 fases; T1/T2/T3/T4 concluídas localmente (4/68), conforme evidências individuais abaixo.
+**Status:** Approved — usuário em 2026-10-02: “Aprovo. Gere o prompt de execução para que a fase de execução seja iniciado em outra janela de contexto”. 68 tarefas em 9 fases; T1/T2/T3/T4/T5 concluídas localmente (5/68), conforme evidências individuais abaixo.
 
 **Escopo:** 13 requisitos e 95 ACs aprovados. Uma retomada >=22h/<24h, continuidade restrita, desfecho >=48h, classificação após entrega e saldo mensal estimado. Sem modal/bloqueio financeiro.
 
@@ -571,16 +571,56 @@ Sem SPEC_DEVIATION. Não declarar os ACs completos do serviço com este gate de 
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: unicidade tenant/canal/wamid; mensagem de outro tenant; órfão; ciclo de exclusão; legado sem canal; evidência de conflito; ausência de payload bruto.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **7 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/db/__tests__/schema-whatsapp-receipts.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: unicidade tenant/canal/wamid; mensagem de outro tenant; órfão; ciclo de exclusão; legado sem canal; evidência de conflito; ausência de payload bruto.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **7 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou: `npx vitest run src/db/__tests__/schema-whatsapp-receipts.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
 
 **Tests**: integration — `src/db/__tests__/schema-whatsapp-receipts.test.ts`; matriz: Esquema/constraints.
 
 **Gate**: Full; Build no fechamento da fase.
 
 **Commit**: `feat(l14b): modelo de recibos e canal da mensagem` (docs para mudança exclusivamente contratual).
+
+**Execução T5 (2026-10-02): concluída.** Full real pelo root: cinco arquivos, 38/38 testes, exit0, 116,46s (T5=8 + regressões=30). Comando: `node node_modules/vitest/vitest.mjs run src/db/__tests__/schema-whatsapp-receipts.test.ts src/db/__tests__/schema-reengagement.test.ts src/db/__tests__/schema-agent-state.test.ts src/db/__tests__/schema-whatsapp-channels.test.ts src/db/__tests__/schema-humano.test.ts`. SQL de oito statements
+aditivos contra HEAD `6110042`; hash/alvos em test-schema-activation.md. ESLint
+dos dois arquivos passou, tsc mantém 50 erros herdados sem novos, whitespace
+passou. Root revisou e aplicou exatamente o hash autorizado nos cinco alvos em cinco transações MCP, todas isError=false. Nenhum teste anterior mudou. Build de fase permanece T7.
+
+**Adequação A/B/D:** oito cenários reais de constraints/valores persistidos,
+fixtures próprias de dois tenants; limpeza apenas seus recibos e dependentes.
+Nenhum mock de banco ou alteração de teste anterior. PRECO-02 AC2 e L14B-01 AC5
+provam somente modelo/FKs/ciclo de exclusão. Redução, sender de saída, replay e
+autenticidade continuam T8/T9/T10. Lista explícita dos campos normalizados no
+teste distingue acréscimo indevido de payload, sem compartilhar nomes esperados
+com a implementação.
+
+| Critério / parcela do requisito | file:line + asserção | Resultado exigido |
+| --- | --- | --- |
+| Unicidade/canal / PRECO-02 AC2 modelo | `src/db/__tests__/schema-whatsapp-receipts.test.ts:62` — chave duplicada `23505`; `:65` — `expect(rows).toHaveLength(3)`; `:66` — pares esperados tenant/canal A1,A2,B | Mesmo wamid em canais distintos não mistura recibos |
+| Correlação composta / PRECO-02 AC2 modelo | `src/db/__tests__/schema-whatsapp-receipts.test.ts:77` — mensagem estrangeira/canal errado/wamid errado `23503`; `:78` — nenhuma linha parcial; `:80` — canal de B sob tenant A recusado `23503` | Tenant/canal/identidade precisam corresponder |
+| Órfão / PRECO-02 AC5 infraestrutura | `src/db/__tests__/schema-whatsapp-receipts.test.ts:87` — `expect(row.messageId).toBeNull()`; `:88` — `expect(row.classification).toBe("pending")`; `:89` — expiração menos firstSeen igual30dias; `:90` — lista de messages continua igual; `:91` — órfão sem expiração `23514`; `:94` — `expect(attached.messageId).toBe(message.id)`; `:95` — `expect(attached.orphanExpiresAt).toBeNull()` | Sem bolha sintética; vínculo posterior retira prazo temporário |
+| Exclusão / L14B-01 AC5 | `src/db/__tests__/schema-whatsapp-receipts.test.ts:104` — recibo da mensagem excluída tem0linhas; `:105` — recibo de outro tenant igual `[other]` | Recibo acompanha ciclo da mensagem, sem órfão permanente |
+| Legado/canal humano | `src/db/__tests__/schema-whatsapp-receipts.test.ts:110` — `expect(legacy.whatsappPhoneNumberId).toBeNull()`; `:111` — `expect(legacy.externalId).toBeNull()`; `:113` — `expect(human.whatsappPhoneNumberId).toBe("fixture-canal-sem-analytics")`; `:114` — `expect(human.authorName).toBe("Equipe fixture")` | Nullable sem backfill; Analytics desconhecido não bloqueia escrita humana |
+| Conflito / PRECO-02 AC6 infraestrutura | `src/db/__tests__/schema-whatsapp-receipts.test.ts:119` — `expect(row.pricingConflict).toBe(true)`; `:120` — `expect(row.classification).toBe("unavailable")`; `:121`/`:122` — formato observado desconhecido preservado; `:123` — `expect(row.billable).toBeNull()`; `:124` — conflito+free_service `23514`; `:125` — enum inventado `22P02` | Modela indisponibilidade sem inferir gratuidade |
+| Dados normalizados / L14B-01 AC5 | `src/db/__tests__/schema-whatsapp-receipts.test.ts:130` — `expect(row.failureCode).toBe(131026)`; `:131` — `expect(row.classification).toBe("not_delivered")`; `:132`/`:133` — instantes sent/failed exatos; `:134` — keys igual lista explícita de18campos; `:139` — serialização não contém conteúdo privado | Sem campo de payload bruto/conteúdo/telefone pessoal |
+| Metadados/identidade | `src/db/__tests__/schema-whatsapp-receipts.test.ts:143`/`:144`/`:146` — ordem invertida/wamid vazio/vinculado expirável `23514`; `:150` — `expect(row.firstSeenAt).toEqual(firstSeenAt)`; `:151` — `expect(row.lastSeenAt).toEqual(lastSeenAt)` | Ordem first/lastSeen e política órfão/vínculo preservadas |
+
+**Mapa reverso C:**
+
+| Cenário + file:line da asserção | Origem / manter |
+| --- | --- |
+| `src/db/__tests__/schema-whatsapp-receipts.test.ts:62`/`:65`/`:66`, chave/canais | Done when unicidade; PRECO-02 AC2 modelo — manter |
+| `src/db/__tests__/schema-whatsapp-receipts.test.ts:77`/`:78`/`:80`, FKs/identidade | Done when mensagem estrangeira; PRECO-02 AC2 modelo — manter |
+| `src/db/__tests__/schema-whatsapp-receipts.test.ts:87`/`:88`/`:89`/`:90`/`:91`/`:94`/`:95`, órfão/vínculo | Done when órfão; PRECO-02 AC5 infraestrutura — manter |
+| `src/db/__tests__/schema-whatsapp-receipts.test.ts:104`/`:105`, exclusão | Done when ciclo; L14B-01 AC5 — manter |
+| `src/db/__tests__/schema-whatsapp-receipts.test.ts:110`/`:111`/`:113`/`:114`, legado/humano | Done when legado sem canal — manter |
+| `src/db/__tests__/schema-whatsapp-receipts.test.ts:119`/`:120`/`:121`/`:122`/`:123`/`:124`/`:125`, conflito | Done when evidência de conflito; PRECO-02 AC6 infraestrutura — manter |
+| `src/db/__tests__/schema-whatsapp-receipts.test.ts:130`/`:131`/`:132`/`:133`/`:134`/`:139`, campos normalizados | Done when ausência de payload; L14B-01 AC5 — manter |
+| `src/db/__tests__/schema-whatsapp-receipts.test.ts:143`/`:144`/`:146`/`:150`/`:151`, first/lastSeen/expiração | Done when modelo; lifecycle do Design — manter |
+
+**Veredito:** oito cenários discriminantes necessários e Full38/38 passou, sem mudar regressões.
+Sem SPEC_DEVIATION; nenhum AC integral de ingestão/classificação declarado completo.
 
 ---
 

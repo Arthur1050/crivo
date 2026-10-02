@@ -301,6 +301,10 @@ retomada informam número realmente usado e wamid. Não preencher histórico com
 do lead, que pode ter mudado. Mensagem sem canal/identidade confiável recebe classificação
 indisponível, nunca gratuidade inferida.
 
+T5 não adiciona FK de whatsappPhoneNumberId ao cadastro do canal: a mensagem
+histórica preserva o número efetivamente usado, e escrita humana/legado não
+depende de ativar Analytics. Ausência de canal não gera associação por telefone.
+
 ### `whatsapp_message_receipts`
 
 Uma linha por `(tenant_id, phone_number_id, wamid)`; messageId nullable. Evidências normalizadas
@@ -311,6 +315,23 @@ Sem conteúdo, recipient_id, telefone pessoal ou payload bruto permanente.
 Vincular só a mensagem de saída com mesmo tenant/canal/wamid. Status anterior à mensagem
 fica órfão até ingestão/ack: não cria bolha sintética. Recibo vinculado acompanha retenção
 da mensagem; excluí-la não cria um órfão permanente.
+
+T5 usa PK tenant/canal/wamid e FK composta tenant/canal/wamid/messageId para
+messages(tenant/whatsappPhoneNumberId/externalId/id), com índice unique aditivo
+nessa identidade. Canal confiável também tem FK composta. A FK da mensagem usa
+cascade: o recibo vinculado sai junto com a mensagem. A direção de saída é
+validada pela consulta T10, sem afirmar que a FK distingue sender. Órfão tem
+messageId null e orphanExpiresAt preenchido (padrão firstSeenAt+30 dias); vínculo
+exige retirar a expiração temporária. A rotina T63 executa a purga pelo prazo.
+
+Evidências sent/delivered/read/failed têm timestamps separados. Os nomes internos
+da classificação são pending, paid_service, free_service, free_entry_point,
+unavailable e not_delivered, correspondentes à tabela de classificações abaixo.
+pricingModel/category/pricingType/billable são nullable; formato desconhecido
+não é descartado nem inferido como gratuito. pricingConflict exige unavailable.
+failureCode guarda apenas inteiro normalizado, sem mensagem/payload da falha.
+firstSeenAt/lastSeenAt são distintos e ordenados. T8/T9 provarão a redução,
+autenticidade, replay e classificação a partir da evidência; T5 prova o modelo.
 
 ### `whatsapp_usage`
 

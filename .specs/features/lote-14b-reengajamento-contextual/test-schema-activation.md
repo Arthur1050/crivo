@@ -169,3 +169,36 @@ exatamente o hash acima em cinco transações MCP, todas isError=false. Nenhuma
 aplicação em main/produção. Os testes conectaram a branch test real; as cinco
 aplicações MCP não são cinco execuções da suíte. Full exclusivamente pelo root,
 resultado acima. Autor e verifier do fechamento global continuam distintos.
+
+### T5 revisada, aplicada e validada
+
+Baseline: T4 `6110042`. Delta offline Drizzle Kit 0.31.10 em
+[t5-schema.sql](t5-schema.sql), SHA256:
+`11d4848e7f80cc936189651e9426b3a5cba641336795dcf9f0489fb4b832d082`.
+Oito statements: enum de classificação, tabela receipts, coluna messages
+whatsapp_phone_number_id nullable sem default/backfill/FK de Analytics, dois
+índices receipts, unique de identidade em messages e duas FKs compostas novas.
+Somente delta aditivo; nenhum DROP, alteração de dados ou envio externo.
+
+Statements gerados são reordenados para ADD COLUMN antes do unique que a usa,
+e índices antes de FKs. Conteúdo dos statements não muda. FK de correlação usa
+tenant/canal/wamid/messageId e cascade na exclusão da mensagem, sem transformar
+recibo vinculado em órfão. Legado/humano sem canal continua válido. FK de canal
+confiável restringe receipts, sem impedir escrita de mensagens humanas.
+
+CHECKs: órfão com expiração/vinculado sem expiração; firstSeenAt<=lastSeenAt;
+conflito exige unavailable; wamid não vazio. Campos nullable de evidência não
+fabricam gratuidades: o reducer T8/T9, não o schema, decidirá a classificação.
+Não há payload bruto, conteúdo, recipient_id ou telefone pessoal no recibo.
+
+Oito cenários preparados em schema-whatsapp-receipts.test.ts. ESLint dos dois
+arquivos exit0; whitespace passou; tsc preserva os 50 erros herdados, nenhum T5.
+Root revisou o delta; MCP confirmou ausência de tabela, enum, coluna e índice
+novos nos cinco alvos. O hash acima foi aplicado exatamente em cinco transações
+MCP, todas isError=false. A autorização ampla já cobre a aplicação L14b nos cinco
+alvos test/test-worker-1/2/3/4 da tabela, excluindo main/produção.
+Full real T5 + T4 + T3 + canais + humano exclusivamente pelo root passou: cinco
+arquivos, 38/38 testes, exit0, 116,46s (T5=8, T4=10, T3=7, canais=8, humano=5).
+Comando: `node node_modules/vitest/vitest.mjs run src/db/__tests__/schema-whatsapp-receipts.test.ts src/db/__tests__/schema-reengagement.test.ts src/db/__tests__/schema-agent-state.test.ts src/db/__tests__/schema-whatsapp-channels.test.ts src/db/__tests__/schema-humano.test.ts`.
+Os testes conectaram a branch test real; cinco aplicações não são cinco execuções
+da suíte. T5 concluída, sem mudança de testes anteriores; Build de fase fica T7.
