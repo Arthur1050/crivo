@@ -11,6 +11,7 @@ import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { Timestamp } from "@astryxdesign/core/Timestamp";
 import { buildChatThread } from "@/src/lib/chat-thread";
 import type { Message } from "@/src/server/data";
+import { Text } from "@astryxdesign/core/Text";
 
 interface MessageThreadProps {
   messages: Message[];
@@ -93,13 +94,11 @@ export function MessageThread({
                     variant={isLead ? "ghost" : "filled"}
                     group={bubble.group}
                     name={
-                      index !== 0
-                        ? undefined
-                        : isLead
-                          ? leadName
-                          : isHuman
-                            ? authorName
-                            : undefined
+                      index === 0 && (isLead || isHuman) ? (
+                        <Text type="supporting" weight="semibold" color="secondary">
+                          {isLead ? leadName : authorName}
+                        </Text>
+                      ) : undefined
                     }
                     metadata={
                       index === lastIndex ? (
