@@ -339,13 +339,14 @@
 ## Handoff
 
 - **Feature**: L14b — reengajamento contextual e consumo, `features/lote-14b-reengajamento-contextual/`.
-- **Phase / Task**: Tasks aprovadas; Execute será iniciado em outra janela. 68 tarefas/9 fases/13 requisitos/95 ACs.
-- **Completed**: 0/68 tarefas. Spec, Design, Tasks, matriz/gates e perfis S/R/N/U aprovados; planejamento e prompt concluídos.
+- **Phase / Task**: Execute inicializado; baseline medido, T1 preparada sem edição. 68 tarefas/9 fases/13 requisitos/95 ACs.
+- **Completed**: 0/68 tarefas. Planejamento aprovado versionado em `c65b186`; validadores strict com 0 erros/avisos.
 - **Aprovação atual (2026-10-02)**: após a proposta de tarefas, ferramentas e agentes por lotes sequenciais, usuário respondeu “Aprovo. Gere o prompt de execução para que a fase de execução seja iniciado em outra janela de contexto”. Implementação/commits locais e workers sequenciais aprovados; não repetir essas perguntas. Ações externas continuam com autorização específica.
-- **In-progress**: `features/lote-14b-reengajamento-contextual/EXECUTE-PROMPT.md:1` entregue para nova janela; nenhum worker despachado e nenhuma implementação iniciada.
-- **Next step**: ativar tlc-spec-driven na nova janela, seguir EXECUTE-PROMPT.md, reconciliar Git/documentos, validar e registrar baseline de testes; então executar lote A/T1.
+- **In-progress**: worker `/root/lote_a` preparou T1 readonly, sem editar código; aguarda liberação do baseline. Relatório em `features/lote-14b-reengajamento-contextual/baseline.md:1`.
+- **Next step**: obter orientação pendente sobre correção dos dois timeouts anteriores; resolver baseline antes de liberar lote A/T1. Não repetir aprovações gerais.
+- **Blockers**: segunda suíte completa passou 2400/2402; dois timeouts de 30s em `src/server/__tests__/actions.test.ts:1337` e `:1349` (DOCLIM-01 AC8), já históricos. Prompt não concede exceção automática. Pergunta enviada: autorizar investigação/correção em commit separado, preservando asserções e timeouts, ou manter execução bloqueada para revisão. Nenhum código/teste alterado para contornar falha.
 - **Gates factuais**: extensão e Graph v25.0 confirmaram WABA `1000796702954808`, nome `Test WhatsApp Business Account`, timezone_id=1. Não há captura de pixels da aba (bind falhou). Vínculo número/tenant, fuso IANA primário, Analytics/mês/zero e HMAC/configuração instalada permanecem pendentes; conta de teste não prova tarifação de produção.
-- **Gates documentais**: validate_spec.py e validate_tasks.py --strict passaram com zero erros/avisos; 95 ACs mapeados, dependências sem ciclo/futuras, links e whitespace verificados. Testes do produto não executados neste planejamento.
-- **Uncommitted files**: `.specs/STATE.md`, `.specs/ROADMAP-POS-PILOTO.md` e diretório novo `.specs/features/lote-14b-reengajamento-contextual/` (context.md, spec.md, design.md, tasks.md, EXECUTE-PROMPT.md). Somente planejamento; nenhum commit documental criado. Auditar antes de registrar baseline, preservar mudanças adicionais.
-- **Branch**: main, HEAD `acde7b5` observado na geração do prompt. Reconciliar novamente; não presumir estado remoto.
+- **Gates medidos (2026-10-02)**: spec/tasks strict 0 erros/avisos; lint exit0, 0 erros/5 avisos; build autorizado exit0; tsc exit1, 50 erros anteriores. Primeira suíte autorizada 2395/2402 (7 timeouts cron); cron isolado 10/10; segunda suíte 2400/2402 (somente DOCLIM-01 AC8), 311,36s. Tentativas sandbox com EACCES descartadas; nenhuma suíte em andamento.
+- **Arquivos locais**: logs `baseline-*.local.log` preservados somente localmente, fora dos commits; quatro `n8n/generated/{erros,medicao-opt-out,smoke-memoria,tool-agendar-reuniao}.ts` reportados dirty por fim de linha, com diff de conteúdo vazio. Nenhuma migração, seed manual ou limpeza global executada.
+- **Branch**: main, baseline documental `c65b186`; relatório/handoff desta inicialização preparados para commit documental. Reconciliar HEAD no próximo turno; nenhum push.
 - **Lote anterior**: L14 concluído; referências em `features/lote-14-humano-no-laco/validation.md` e `archive/lote-14-humano-no-laco/`. Baseline histórico 2400/2402 (2 timeouts DOCLIM), tsc50 erros anteriores; não substitui baseline fresco nem autoriza skip do L14b.
