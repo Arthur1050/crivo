@@ -117,6 +117,17 @@ describe("server/data — condução humana (lote-14, T5)", () => {
       expect(after.assignedUserId).toBe(brokerAId);
     });
 
+    it("statusChangedBy nulo continua nulo depois de assumir (AC2)", async () => {
+      // O caso acima parte de "humano": uma escrita de "humano" ao assumir
+      // passaria despercebida lá.
+      const leadId = await createLead({ status: "em_qualificacao", statusChangedBy: null });
+      const result = await takeOverConversation(managerScope, leadId, managerId, NOW);
+      expect(result.outcome).toBe("assumido");
+      const after = await readLead(leadId);
+      expect(after.status).toBe("em_qualificacao");
+      expect(after.statusChangedBy).toBeNull();
+    });
+
     it("corretor puro não assume lead de outra carteira, e nada é gravado (AC3)", async () => {
       const leadId = await createLead({ assignedUserId: brokerBId });
       const result = await takeOverConversation(brokerAScope, leadId, brokerAId, NOW);

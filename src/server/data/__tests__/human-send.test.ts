@@ -15,6 +15,7 @@ import {
   HUMAN_SEND_STALE_MS,
   failHumanSend,
   getLastLeadMessageAt,
+  getMessages,
   recordHumanMessage,
   reserveHumanSend,
 } from "../index";
@@ -99,6 +100,20 @@ describe("server/data — envio humano (lote-14, T6)", () => {
       .from(humanMessageSends)
       .where(and(eq(humanMessageSends.tenantId, tenantId), eq(humanMessageSends.requestId, requestId)));
     return row;
+  }
+
+  /** Espera até `count` conexões estarem paradas em trava de linha nesta tabela. */
+  async function waitForLockWaiters(count: number) {
+    for (let attempt = 0; attempt < 100; attempt += 1) {
+      const { rows } = await db.$client.query<{ waiting: number }>(
+        `SELECT count(*)::int AS waiting FROM pg_stat_activity
+         WHERE datname = current_database() AND wait_event_type = 'Lock'
+           AND query ILIKE 'update "human_message_sends"%'`
+      );
+      if (rows[0].waiting >= count) return;
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    throw new Error(`Menos de ${count} retomadas paradas na trava em 5 s.`);
   }
 
   function recordInput(leadId: string, requestId: string, sentAt: Date) {
@@ -240,9 +255,83 @@ describe("server/data — envio humano (lote-14, T6)", () => {
       const outcomes = results.map((result) => result.outcome).sort();
       expect(outcomes).toEqual(["envio-em-andamento", "reservado"]);
     });
+
+    it("dois retomadores que leram a mesma reserva falhou: o compare-and-set barra o segundo", async () => {
+      // O teste acima não chega ao compare-and-set: o pool serializa as duas
+      // retomadas e a segunda já lê `enviando` recente. Aqui uma transação
+      // separada trava a linha; as duas retomadas leem `falhou` (leitura sem
+      // trava) e param no UPDATE. Ao liberar, a segunda reavalia o WHERE contra
+      // a linha que a primeira acabou de mudar.
+      const leadId = await createLead();
+      const requestId = randomUUID();
+      await reserveHumanSend(tenantAId, leadId, authorId, requestId, T0);
+      await failHumanSend(tenantAId, requestId, "falha-meta", new Date(T0.getTime() + SECOND));
+
+      const locker = await db.$client.connect();
+      let results: Awaited<ReturnType<typeof reserveHumanSend>>[];
+      try {
+        await locker.query("BEGIN");
+        await locker.query(
+          "SELECT id FROM human_message_sends WHERE tenant_id = $1 AND request_id = $2 FOR UPDATE",
+          [tenantAId, requestId]
+        );
+        const retry = new Date(T0.getTime() + 5 * SECOND);
+        const pending = Promise.all([
+          reserveHumanSend(tenantAId, leadId, authorId, requestId, retry),
+          reserveHumanSend(tenantAId, leadId, authorId, requestId, retry),
+        ]);
+        await waitForLockWaiters(2);
+        await locker.query("COMMIT");
+        results = await pending;
+      } finally {
+        locker.release();
+      }
+
+      const outcomes = results.map((result) => result.outcome).sort();
+      expect(outcomes).toEqual(["envio-em-andamento", "reservado"]);
+    });
   });
 
   describe("recordHumanMessage (ENVIO-01 AC2)", () => {
+    it("dois usuários enviando quase juntos: as duas mensagens ficam gravadas, na ordem do envio (Edge Cases)", async () => {
+      const leadId = await createLead();
+      const conversationId = await createConversation(leadId);
+      const otherId = randomUUID();
+      await db.insert(users).values({ id: otherId, name: "Bruno Corretor", email: `${otherId}@fixture.test` });
+      try {
+        const firstRequest = randomUUID();
+        const secondRequest = randomUUID();
+        const reservations = await Promise.all([
+          reserveHumanSend(tenantAId, leadId, authorId, firstRequest, T0),
+          reserveHumanSend(tenantAId, leadId, otherId, secondRequest, T0),
+        ]);
+        expect(reservations.map((result) => result.outcome)).toEqual(["reservado", "reservado"]);
+
+        // O segundo envio é gravado primeiro: a thread segue o instante de envio.
+        const firstAt = new Date(T0.getTime() + SECOND);
+        const secondAt = new Date(T0.getTime() + 2 * SECOND);
+        await Promise.all([
+          recordHumanMessage({
+            ...recordInput(leadId, secondRequest, secondAt),
+            authorUserId: otherId,
+            authorName: "Bruno Corretor",
+            content: "Bruno aqui",
+          }),
+          recordHumanMessage({ ...recordInput(leadId, firstRequest, firstAt), content: "Ana aqui" }),
+        ]);
+
+        const thread = await getMessages({ tenantId: tenantAId, assignedUserId: null }, conversationId);
+        expect(thread.map((message) => [message.authorName, message.content])).toEqual([
+          ["Ana Corretora", "Ana aqui"],
+          ["Bruno Corretor", "Bruno aqui"],
+        ]);
+      } finally {
+        await db.delete(humanMessageSends).where(eq(humanMessageSends.leadId, leadId));
+        await db.delete(messages).where(eq(messages.conversationId, conversationId));
+        await db.delete(users).where(eq(users.id, otherId));
+      }
+    });
+
     it("grava sender humano, autor, wamid como externalId e fecha a reserva com message_id", async () => {
       const leadId = await createLead();
       const conversationId = await createConversation(leadId);
