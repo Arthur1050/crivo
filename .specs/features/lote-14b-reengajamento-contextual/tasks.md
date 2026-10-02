@@ -8,7 +8,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 
 **Design:** [design.md](design.md), aprovado em 2026-10-02: “Aprovo. Vá para as tarefas”.
 
-**Status:** Approved — usuário em 2026-10-02: “Aprovo. Gere o prompt de execução para que a fase de execução seja iniciado em outra janela de contexto”. 68 tarefas em 9 fases; T1/T2/T3/T4/T5/T6/T7 concluídas localmente (7/68), fase 1/lote A fechados com a ressalva autorizada dos dois timeouts históricos, conforme evidências individuais abaixo.
+**Status:** Approved — usuário em 2026-10-02: “Aprovo. Gere o prompt de execução para que a fase de execução seja iniciado em outra janela de contexto”. 68 tarefas em 9 fases; T1–T8 concluídas localmente (8/68), fase 1/lote A fechados com a ressalva autorizada dos dois timeouts históricos, conforme evidências individuais abaixo.
 
 **Escopo:** 13 requisitos e 95 ACs aprovados. Uma retomada >=22h/<24h, continuidade restrita, desfecho >=48h, classificação após entrega e saldo mensal estimado. Sem modal/bloqueio financeiro.
 
@@ -793,16 +793,25 @@ guardas. Habilitação do consumo em fixture não comprova os fatos externos T1.
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: regular pago; free_customer_service; FEP; aceite/sent pendente; delivered sem pricing; categoria incompatível; read; sent atrasado; failed antes/depois de entrega; replay; conflito persistente; contrato desconhecido; 999/1000/1001.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **15 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Quick passou: `npx vitest run src/server/whatsapp/__tests__/pricing-classification.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: regular pago; free_customer_service; FEP; aceite/sent pendente; delivered sem pricing; categoria incompatível; read; sent atrasado; failed antes/depois de entrega; replay; conflito persistente; contrato desconhecido; 999/1000/1001.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **15 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Quick passou: `npx vitest run src/server/whatsapp/__tests__/pricing-classification.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
 
 **Tests**: unit — `src/server/whatsapp/__tests__/pricing-classification.test.ts`; matriz: Domínio/adapter puro.
 
 **Gate**: Quick; Build no fechamento da fase.
 
 **Commit**: `feat(l14b): classificar evidências de entrega` (docs para mudança exclusivamente contratual).
+
+**Resultado T8:** Quick root exit0, 28/28 testes, 225ms em 2026-10-02 20:29:50
+America/Sao_Paulo. ESLint direcionado exit0; tsc mantém as 50 linhas de erro
+anteriores, sem diferença. Reducer puro/server-only, timestamps separados,
+confirmação completa de delivered/read e conflito persistente. FEP separado
+da restrição service; união de pricing parcial não fabrica confirmação.
+Todos os testes anteriores preservados. Adequação forward/reverse com
+file:line/expressão/esperado em [t8-verification.md](t8-verification.md).
+Sem delta schema/SPEC_DEVIATION; autenticação/persistência/UI continuam pendentes.
 
 ---
 
