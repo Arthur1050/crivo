@@ -136,7 +136,8 @@ describe("routes: GET /api/v1/memory-resets", () => {
       new Request(`http://local/api/v1/memory-resets${query}`, {
         method: "GET",
         headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {},
-      })
+      }),
+      undefined
     );
   }
 

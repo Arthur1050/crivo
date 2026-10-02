@@ -186,6 +186,7 @@ describe("toSeedMemoryItem (DEVOLVER-01 AC5, AC6)", () => {
   });
 
   it("remetente desconhecido -> descartado (null)", () => {
+    // @ts-expect-error remetente fora do contrato, de propósito
     expect(toSeedMemoryItem({ sender: "sistema", content: "x", sentAt: SENT_AT })).toBeNull();
     expect(toSeedMemoryItem({ content: "sem remetente", sentAt: SENT_AT })).toBeNull();
   });

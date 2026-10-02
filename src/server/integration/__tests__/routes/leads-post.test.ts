@@ -77,7 +77,7 @@ describe("routes: POST /api/v1/leads", () => {
 
   it("cria o lead com status em_qualificacao e responde 201 com o id (INT-02 AC1)", async () => {
     const externalId = randomUUID();
-    const response = await POST(makeRequest(validPayload(externalId)));
+    const response = await POST(makeRequest(validPayload(externalId)), undefined);
 
     expect(response.status).toBe(201);
     const body = await response.json();
@@ -93,7 +93,7 @@ describe("routes: POST /api/v1/leads", () => {
 
   it("lead criado aparece via getLeads filtrado por em_qualificacao — telas intocadas (INT-02 AC4)", async () => {
     const externalId = randomUUID();
-    const response = await POST(makeRequest(validPayload(externalId)));
+    const response = await POST(makeRequest(validPayload(externalId)), undefined);
     const body = await response.json();
 
     const rows = await getLeads(serviceScope(tenantId), { status: "em_qualificacao" });
@@ -103,11 +103,11 @@ describe("routes: POST /api/v1/leads", () => {
   it("reentrega do mesmo externalId: 201 e depois 200 com o mesmo id, sem duplicar (INT-02 AC2)", async () => {
     const externalId = randomUUID();
 
-    const first = await POST(makeRequest(validPayload(externalId)));
+    const first = await POST(makeRequest(validPayload(externalId)), undefined);
     expect(first.status).toBe(201);
     const firstBody = await first.json();
 
-    const second = await POST(makeRequest(validPayload(externalId)));
+    const second = await POST(makeRequest(validPayload(externalId)), undefined);
     expect(second.status).toBe(200);
     const secondBody = await second.json();
     expect(secondBody.id).toBe(firstBody.id);
@@ -124,8 +124,8 @@ describe("routes: POST /api/v1/leads", () => {
     const payload = validPayload(externalId);
 
     const [resA, resB] = await Promise.all([
-      POST(makeRequest(payload)),
-      POST(makeRequest(payload)),
+      POST(makeRequest(payload), undefined),
+      POST(makeRequest(payload), undefined),
     ]);
 
     const statuses = [resA.status, resB.status].sort();
@@ -151,7 +151,7 @@ describe("routes: POST /api/v1/leads", () => {
       firstContactAt: "2026-08-01T10:00:00Z",
     };
 
-    const response = await POST(makeRequest(invalidPayload));
+    const response = await POST(makeRequest(invalidPayload), undefined);
     expect(response.status).toBe(400);
     const body = await response.json();
     expect(body.code).toBe("payload-invalido");
@@ -173,7 +173,8 @@ describe("routes: POST /api/v1/leads", () => {
   it("grava whatsappPhoneNumberId válido no lead novo (T8)", async () => {
     const externalId = randomUUID();
     const response = await POST(
-      makeRequest({ ...validPayload(externalId), whatsappPhoneNumberId: "109876543210" })
+      makeRequest({ ...validPayload(externalId), whatsappPhoneNumberId: "109876543210" }),
+      undefined
     );
 
     expect(response.status).toBe(201);
@@ -184,7 +185,8 @@ describe("routes: POST /api/v1/leads", () => {
   it("aceita os limites de 1 e de 32 dígitos (T8)", async () => {
     for (const value of ["7", "1".repeat(32)]) {
       const response = await POST(
-        makeRequest({ ...validPayload(randomUUID()), whatsappPhoneNumberId: value })
+        makeRequest({ ...validPayload(randomUUID()), whatsappPhoneNumberId: value }),
+        undefined
       );
       expect(response.status).toBe(201);
       const body = await response.json();
@@ -195,13 +197,15 @@ describe("routes: POST /api/v1/leads", () => {
   it("segunda entrega com outro valor atualiza o número do canal (T8)", async () => {
     const externalId = randomUUID();
     const first = await POST(
-      makeRequest({ ...validPayload(externalId), whatsappPhoneNumberId: "111" })
+      makeRequest({ ...validPayload(externalId), whatsappPhoneNumberId: "111" }),
+      undefined
     );
     const firstBody = await first.json();
     expect(await channelOf(firstBody.id)).toBe("111");
 
     const second = await POST(
-      makeRequest({ ...validPayload(externalId), whatsappPhoneNumberId: "222" })
+      makeRequest({ ...validPayload(externalId), whatsappPhoneNumberId: "222" }),
+      undefined
     );
     expect(second.status).toBe(200);
     expect(await channelOf(firstBody.id)).toBe("222");
@@ -210,11 +214,12 @@ describe("routes: POST /api/v1/leads", () => {
   it("entrega sem o campo preserva o número do canal existente (T8, L-005 ausente)", async () => {
     const externalId = randomUUID();
     const first = await POST(
-      makeRequest({ ...validPayload(externalId), whatsappPhoneNumberId: "333" })
+      makeRequest({ ...validPayload(externalId), whatsappPhoneNumberId: "333" }),
+      undefined
     );
     const firstBody = await first.json();
 
-    const second = await POST(makeRequest(validPayload(externalId)));
+    const second = await POST(makeRequest(validPayload(externalId)), undefined);
     expect(second.status).toBe(200);
     expect(await channelOf(firstBody.id)).toBe("333");
   });
@@ -223,7 +228,8 @@ describe("routes: POST /api/v1/leads", () => {
     for (const bad of ["", "   ", "55 11 9999", "abc", "+5511999", "1".repeat(33)]) {
       const externalId = randomUUID();
       const response = await POST(
-        makeRequest({ ...validPayload(externalId), whatsappPhoneNumberId: bad })
+        makeRequest({ ...validPayload(externalId), whatsappPhoneNumberId: bad }),
+        undefined
       );
       expect(response.status).toBe(400);
       expect((await response.json()).code).toBe("payload-invalido");
@@ -236,19 +242,21 @@ describe("routes: POST /api/v1/leads", () => {
   it("valor inválido numa reentrega não altera o número já gravado (T8, antes/depois)", async () => {
     const externalId = randomUUID();
     const first = await POST(
-      makeRequest({ ...validPayload(externalId), whatsappPhoneNumberId: "444" })
+      makeRequest({ ...validPayload(externalId), whatsappPhoneNumberId: "444" }),
+      undefined
     );
     const firstBody = await first.json();
 
     const second = await POST(
-      makeRequest({ ...validPayload(externalId), whatsappPhoneNumberId: "" })
+      makeRequest({ ...validPayload(externalId), whatsappPhoneNumberId: "" }),
+      undefined
     );
     expect(second.status).toBe(400);
     expect(await channelOf(firstBody.id)).toBe("444");
   });
 
   it("resposta traz humanTakeoverAt e memoryResetRequestedAt nulos quando não preenchidos (T8)", async () => {
-    const response = await POST(makeRequest(validPayload(randomUUID())));
+    const response = await POST(makeRequest(validPayload(randomUUID())), undefined);
     const body = await response.json();
 
     expect(body).toHaveProperty("humanTakeoverAt", null);
@@ -257,7 +265,7 @@ describe("routes: POST /api/v1/leads", () => {
 
   it("resposta traz humanTakeoverAt e memoryResetRequestedAt em ISO-8601 quando preenchidos (T8)", async () => {
     const externalId = randomUUID();
-    const first = await POST(makeRequest(validPayload(externalId)));
+    const first = await POST(makeRequest(validPayload(externalId)), undefined);
     const firstBody = await first.json();
 
     const takeover = new Date("2026-09-30T12:00:00.000Z");
@@ -267,7 +275,7 @@ describe("routes: POST /api/v1/leads", () => {
       .set({ humanTakeoverAt: takeover, memoryResetRequestedAt: reset })
       .where(eq(leads.id, firstBody.id));
 
-    const second = await POST(makeRequest(validPayload(externalId)));
+    const second = await POST(makeRequest(validPayload(externalId)), undefined);
     const body = await second.json();
     expect(body.humanTakeoverAt).toBe("2026-09-30T12:00:00.000Z");
     expect(body.memoryResetRequestedAt).toBe("2026-09-30T13:30:00.000Z");
@@ -291,7 +299,7 @@ describe("routes: POST /api/v1/leads", () => {
       name: "x".repeat(MAX_BODY_BYTES + 1),
     });
 
-    const response = await POST(makeRawRequest(raw));
+    const response = await POST(makeRawRequest(raw), undefined);
 
     expect(response.status).toBe(413);
     const body = await response.json();
@@ -301,7 +309,7 @@ describe("routes: POST /api/v1/leads", () => {
   });
 
   it("corpo que não é JSON válido responde 400 payload-invalido (CONTRATO-02 AC2)", async () => {
-    const response = await POST(makeRawRequest("{isto não é json"));
+    const response = await POST(makeRawRequest("{isto não é json"), undefined);
 
     expect(response.status).toBe(400);
     const body = await response.json();
@@ -311,7 +319,7 @@ describe("routes: POST /api/v1/leads", () => {
 
   it("sem header Authorization responde 401 (INT-01 AC1)", async () => {
     const externalId = randomUUID();
-    const response = await POST(makeRequest(validPayload(externalId), false));
+    const response = await POST(makeRequest(validPayload(externalId), false), undefined);
     expect(response.status).toBe(401);
 
     const rows = await db
@@ -334,7 +342,7 @@ describe("routes: POST /api/v1/leads", () => {
       firstContactAt: "2026-08-01T10:00:00Z",
     };
 
-    const response = await POST(makeRequest(invalidPayload));
+    const response = await POST(makeRequest(invalidPayload), undefined);
     expect(response.status).toBe(400);
 
     const rows = await db
@@ -430,7 +438,7 @@ describe("routes: POST /api/v1/leads — modo de autenticação de serviço (lot
 
   it("cria o lead no tenant correto via chave de serviço + X-Crivo-Tenant (SEC-01 AC2)", async () => {
     const externalId = randomUUID();
-    const response = await POST(makeServiceRequest(validPayload(externalId)));
+    const response = await POST(makeServiceRequest(validPayload(externalId)), undefined);
 
     expect(response.status).toBe(201);
     const body = await response.json();
@@ -444,7 +452,8 @@ describe("routes: POST /api/v1/leads — modo de autenticação de serviço (lot
   it("chave de serviço sem X-Crivo-Tenant responde 401 tenant-nao-identificado, sem gravar nada", async () => {
     const externalId = randomUUID();
     const response = await POST(
-      makeServiceRequest(validPayload(externalId), { withTenantHeader: false })
+      makeServiceRequest(validPayload(externalId), { withTenantHeader: false }),
+      undefined
     );
 
     expect(response.status).toBe(401);
