@@ -187,7 +187,7 @@
 - **Trade-off**: A thread passa a existir em dois lugares (CRM e `n8n_chat_histories`) — qualquer purga de sessão precisa lembrar dos dois, e uma cópia desatualizada é possível se um dos dois falhar isoladamente. A tabela de memória divide o mesmo Postgres com as tabelas operacionais do n8n (execuções, credenciais, workflows), competindo por disco e sendo restaurada junto num backup — sem política de retenção adicional além do corte de 12h.
 - **Scope**: Fluxo do agente conversacional e contrato de integração, a partir do lote-6c.
 - **Date**: 2026-08-14
-- **Status**: amended by AD-034 (a memória também é reconstruída a partir do CRM quando o CRM pede, na devolução ao agente e no opt-out registrado pela tela, e não só em cold start; a fala humana entra na semeadura como mensagem `system` atribuída ao corretor. O cache derivado, o corte de 12h e a salvaguarda de 50 continuam ativos)
+- **Status**: amended by AD-034 (a memória também é reconstruída a partir do CRM quando o CRM pede, na devolução ao agente e no opt-out registrado pela tela, e não só em cold start; a fala humana entra na semeadura como mensagem `system` atribuída ao corretor. O cache derivado, o corte de 12h e a salvaguarda de 50 continuam ativos); amended by AD-036 (ponte restrita para reengajamento contextual e primeira resposta elegível; demais sessões conservam o corte normal)
 
 ### AD-020
 - **Decision**: O roadmap ganha um lote interstitial novo — **L8, usuários/perfis/papéis por tenant** (administrador/gestor/corretor, papéis acumuláveis, permissões por cargo, administrador gerenciando os demais) **+ atribuição de lead por disponibilidade de agenda dos corretores e preferência do lead** — posicionado **entre a Fase 9 (L7, este lote) e a Fase 10**. Renumeração: L7 = Fase 9 (inalterado), L8 = usuários/papéis (novo), L9 = Fase 10 (era L8). A AD-006 é emendada por esta decisão.
@@ -320,14 +320,32 @@
 - **Date**: 2026-10-01
 - **Status**: active
 
+### AD-036
+- **Decision**: O reengajamento contextual ganha uma exceção restrita ao corte de sessão da AD-019. No disparo proativo de um episódio elegível, o agente reconstrói a sessão da última mensagem real do lead a partir do CRM, ignorando somente o intervalo até o disparo. Se a retomada foi aceita e o primeiro inbound seguinte chega antes de 48h da âncora original, ele continua aquela sessão; a continuidade precisa ser reconstruível também em cold start enquanto a sessão retomada estiver ativa pela regra normal de 12h. Opt-out e pedido de reset invalidam a ponte. A semeadura mantém a ordem, a salvaguarda de 50 mensagens e a atribuição das falas humanas à equipe da AD-034. Fora dessa ponte válida, o corte maior que 12h continua governando a memória.
+- **Reason**: Especificação completa do L14b aprovada pelo usuário em 2026-10-02 ("Aprovo"). O disparo a partir de 22h ocorreria depois da expiração normal da sessão e perderia o assunto que precisa retomar; mudar globalmente a duração das sessões alteraria conversas fora do lote.
+- **Trade-off**: A semeadura e a expiração passam a considerar metadado de continuidade do episódio, inclusive após restart; o Design precisa garantir paridade entre memória aquecida e reconstruída e impedir que reset reative uma ponte antiga.
+- **Scope**: Sessões abrangidas pelo reengajamento contextual do L14b e sua primeira resposta elegível. Emenda a AD-019 somente para essa continuidade; CRM como fonte de verdade, purga, corte normal e salvaguarda permanecem ativos.
+- **Date**: 2026-10-02
+- **Status**: active — decisão aprovada; implementação pendente
+
+### AD-037
+- **Decision**: A entrada da Meta permanece no WhatsApp Trigger do n8n. Status verificados seguem ramo separado, sem agente, para o contrato autenticado do CRM. O CRM/Postgres é dono durável dos episódios de retomada, proteção de despacho, classificação das mensagens e snapshots de consumo. O tick n8n mantém a cadência de 15min e chama a sincronização do CRM; o envio humano continua direto, conforme AD-035.
+- **Reason**: Usuário aprovou a arquitetura A em 2026-10-02: “Aprovo. Siga com a recomendação”. Entrega o escopo do L14b sem migrar toda a entrada de mensagens do piloto.
+- **Trade-off**: Status consomem execuções curtas do n8n e podem atrasar se ele cair; o saldo fica desatualizado quando o tick falha. A persistência e o canal humano permanecem independentes. Acesso real a Analytics e comportamento do trigger instalado ainda precisam de prova; aprovação arquitetural não os comprova.
+- **Scope**: Fronteiras de automação/entrega/consumo WhatsApp a partir do L14b. Design detalhado aprovado pelo usuário em 2026-10-02; detalhes em design.md e tarefas planejadas em tasks.md.
+- **Date**: 2026-10-02
+- **Status**: active — arquitetura aprovada; implementação pendente
+
 ## Handoff
 
-- **Feature**: Lote 14 — humano no laço — **CONCLUÍDO** (2026-10-01). Spec, context, design, validation e `ARCHIVED.md` em `.specs/features/lote-14-humano-no-laco/`; `tasks.md`, `EXECUTE-PROMPT.md` e a remedição do teto de contexto em `.specs/archive/lote-14-humano-no-laco/`; linha nova em `features/INDEX.md`; L14 marcado como executado em `ROADMAP-POS-PILOTO.md`.
-- **Verifier**: PASS no ciclo 2 (`validation.md`), 11 requisitos verificados (HUMPROVA-01 com ressalva: capturas da T40 não versionadas), 15/15 mutantes mortos. Ciclo 1 reprovou por 2 testes que não discriminavam (retomada da reserva sem compare-and-set; assumir com `statusChangedBy` já "humano"), corrigidos em `770bed1`; erros de tipo do lote em `97d49a1`. `validate_state.py`: 0 erros.
-- **Gates**: suíte 2.400 de 2.402 (2 falhas conhecidas de `DOCLIM-01 AC8`, timeout); lint 0 erros; build verde; `tsc` com 50 erros, todos anteriores ao lote (eram 61; 11 de `leads-post.test.ts` corrigidos junto).
-- **Produção**: deploy do CRM com o esquema do lote (T38); n8n publicado — `tool-responder-lead` `d8e9931e`, `scheduler` `e8b97f8b` (estava **inativo desde 2026-08-23**; reativado), `principal` `e3e25681` (emenda D12), benchmark `22fe002c`. Teto de contexto remedido depois da D12: novo 106.898 / usado 119.714 / ambos 106.720 bytes, iguais aos anteriores; `check` com 0 desatualizados.
-- **Decisão nova no lote**: D12 (usuário, 2026-10-01) — o agente pode repetir ao lead o que a equipe já disse numa nota `system`, sem atribuí-lo ao lead (emenda registrada em AD-034 e em `spec.md` § assumptions).
-- **Fechamento delegado** (usuário, 2026-10-02: "tome as devidas decisões por mim"): (1) lições do lote-14 revisadas pelo critério da AD-028 e **6 promovidas** a `confirmed` (L-050 a L-055, `recurrence` 1, sem inflar); (2) os 4 lembretes vencidos e nunca enviados de `agenda_envios` (ids 1, 2, 17, 18 — leads de teste, reuniões de agosto e setembro) foram apagados por um workflow temporário com dry run antes (execuções 2932 dry run e 2933 real), arquivado em seguida; o scheduler continua ativo; (3) a alteração do usuário em `src/components/chats/message-thread.tsx` (nome do autor em `<Text type="supporting" weight="semibold" color="secondary">`) foi commitada, com o `Text` aplicado só no primeiro balão de lead ou humano, para não renderizar o slot de nome vazio nos demais.
-- **Deferred Ideas novas** (`context.md`): hidratação do divisor de data, Chats em celular, possível 500 com id não UUID, filtro do scheduler sem limite inferior, buffer reincluindo mensagem antiga, capturas da prova como arquivo.
-- **Next step**: escolher o próximo lote do `ROADMAP-POS-PILOTO.md` (L14b — reengajamento gratuito escrito pelo agente — depende deste lote) e planejar em janela separada.
-- **Branch**: `main`, sincronizada com `origin/main` depois do push do fechamento.
+- **Feature**: L14b — reengajamento contextual e consumo, `features/lote-14b-reengajamento-contextual/`.
+- **Phase / Task**: Tasks aprovadas; Execute será iniciado em outra janela. 68 tarefas/9 fases/13 requisitos/95 ACs.
+- **Completed**: 0/68 tarefas. Spec, Design, Tasks, matriz/gates e perfis S/R/N/U aprovados; planejamento e prompt concluídos.
+- **Aprovação atual (2026-10-02)**: após a proposta de tarefas, ferramentas e agentes por lotes sequenciais, usuário respondeu “Aprovo. Gere o prompt de execução para que a fase de execução seja iniciado em outra janela de contexto”. Implementação/commits locais e workers sequenciais aprovados; não repetir essas perguntas. Ações externas continuam com autorização específica.
+- **In-progress**: `features/lote-14b-reengajamento-contextual/EXECUTE-PROMPT.md:1` entregue para nova janela; nenhum worker despachado e nenhuma implementação iniciada.
+- **Next step**: ativar tlc-spec-driven na nova janela, seguir EXECUTE-PROMPT.md, reconciliar Git/documentos, validar e registrar baseline de testes; então executar lote A/T1.
+- **Gates factuais**: extensão e Graph v25.0 confirmaram WABA `1000796702954808`, nome `Test WhatsApp Business Account`, timezone_id=1. Não há captura de pixels da aba (bind falhou). Vínculo número/tenant, fuso IANA primário, Analytics/mês/zero e HMAC/configuração instalada permanecem pendentes; conta de teste não prova tarifação de produção.
+- **Gates documentais**: validate_spec.py e validate_tasks.py --strict passaram com zero erros/avisos; 95 ACs mapeados, dependências sem ciclo/futuras, links e whitespace verificados. Testes do produto não executados neste planejamento.
+- **Uncommitted files**: `.specs/STATE.md`, `.specs/ROADMAP-POS-PILOTO.md` e diretório novo `.specs/features/lote-14b-reengajamento-contextual/` (context.md, spec.md, design.md, tasks.md, EXECUTE-PROMPT.md). Somente planejamento; nenhum commit documental criado. Auditar antes de registrar baseline, preservar mudanças adicionais.
+- **Branch**: main, HEAD `acde7b5` observado na geração do prompt. Reconciliar novamente; não presumir estado remoto.
+- **Lote anterior**: L14 concluído; referências em `features/lote-14-humano-no-laco/validation.md` e `archive/lote-14-humano-no-laco/`. Baseline histórico 2400/2402 (2 timeouts DOCLIM), tsc50 erros anteriores; não substitui baseline fresco nem autoriza skip do L14b.

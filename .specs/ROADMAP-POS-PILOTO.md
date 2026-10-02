@@ -201,14 +201,26 @@ humano escreveu no CRM" — descreve algo que nunca aconteceu, porque não há c
 
 ---
 
-## L14b — Reengajamento gratuito escrito pelo agente
+## L14b — Reengajamento contextual dentro da janela
+
+**Planejamento (2026-10-02):** contexto e especificação em
+`features/lote-14b-reengajamento-contextual/`; 13 requisitos, spec e Design aprovados.
+Tasks/matriz/ferramentas e agentes sequenciais aprovados: 68 tarefas em nove fases e 95 ACs
+mapeados; prompt para outra janela em `features/lote-14b-reengajamento-contextual/EXECUTE-PROMPT.md`. WABA `1000796702954808`
+identificada pela extensão e confirmada pela API como conta de teste. Analytics, vínculo
+número/tenant/fuso e transporte instalado ainda precisam de prova. Implementação não iniciada.
+**Correção da premissa de custo:** o [FAQ oficial do WhatsApp Business](https://whatsappbusiness.com/resources/faq/)
+informa cobrança de mensagens de serviço desde 2026-10-01 após a franquia de 1.000 por número
+por mês. Enviar dentro da janela não garante gratuidade. O usuário aprovou a retomada sem
+condição de custo zero, com barra estimada e aviso; a intenção original abaixo fica preservada.
 
 **Origem**: usuário, 2026-10-01, no Specify do L14: "o agente tentaria um contato novamente antes da
 janela de 24h chegar aproveitando o não pagamento".
 
 Hoje o scheduler espera o lead completar 24h em silêncio e só então envia o template `reengajamento`,
-que a Meta aprovou como **Marketing** (pago) (`n8n/workflows/scheduler.ts`, varredura B). Dentro da
-janela de atendimento, a mensagem livre não é cobrada.
+registrado no projeto como **Marketing** (pago) (`n8n/workflows/scheduler.ts`, varredura B).
+A premissa original era aproveitar a gratuidade da mensagem livre na janela de atendimento;
+ela precisa considerar a mudança de cobrança registrada acima.
 
 | # | Decisão já tomada (2026-10-01) |
 | --- | --- |
@@ -216,6 +228,11 @@ janela de atendimento, a mensagem livre não é cobrada.
 | 2 | A mensagem é **escrita pelo agente a partir do contexto** da conversa, não texto fixo |
 | 3 | Vale **só nas conversas conduzidas pelo agente** (nunca com a marca de condução humana do L14) |
 | 4 | **Substitui** o template: continua um único reengajamento por silêncio, e o escalonamento por silêncio de 48h permanece |
+
+**Adicionais aprovados (2026-10-02):** barra mensal estimada por número em Configurações,
+resumo e aviso de possível cobrança no Chats sem bloquear o envio, classificação gratuita ou
+tarifável após confirmação da entrega pela Meta, incluindo mensagens automáticas. Fora do lote:
+orçamento, bloqueio por saldo, valores de fatura e repasse de cobrança.
 
 **O que torna o lote maior do que parece**: às ~22h de silêncio, a conversa anterior já está fora da
 sessão de 12h (AD-019), então a resposta do lead ao reengajamento chegaria a uma memória sem o assunto.
