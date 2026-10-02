@@ -222,6 +222,10 @@ lead/conversa/mensagem, não apenas um UUID. Fase, despacho, entrega e saldo sã
 `waba_id` nullable, fuso IANA da conta nullable, `ownership_verified_at`,
 `analytics_verified_at`, `usage_enabled`, `configuration_revision`, timestamps e coordenação
 por canal (`last_usage_attempt_at`, `usage_sync_token`, `usage_sync_deadline`).
+`account_kind` (`unverified`, `test`, `production`, padrão `unverified`) guarda a
+evidência operacional exigida pelo gate T7. Nome diferente de conta de teste não
+comprova produção. Esse campo aditivo impede habilitar consumo de conta de teste
+mesmo com outros metadados presentes; não cadastra nem verifica a conta remota.
 Unicidade global de phoneNumberId: um número físico não pertence a dois tenants simultaneamente.
 Sem token na tabela; resolver credencial no servidor, usando env atual no piloto.
 

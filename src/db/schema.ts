@@ -97,6 +97,11 @@ export const categoryColorEnum = pgEnum("category_color", [
   "gray",
 ]);
 
+// L14b: identidade operacional comprovada, nunca inferida pelo nome da WABA.
+export const whatsappAccountKindEnum = pgEnum("whatsapp_account_kind", [
+  "unverified", "test", "production",
+]);
+
 export const documentStatusEnum = pgEnum("document_status", [
   "processando",
   "pronto",
@@ -176,6 +181,42 @@ export const tenants = pgTable(
       .defaultNow(),
   },
   (table) => [uniqueIndex("tenants_slug_idx").on(table.slug)]
+);
+
+// L14b T2 — canal servidor e lease de Analytics. Não guarda credenciais.
+export const whatsappChannels = pgTable(
+  "whatsapp_channels",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+    phoneNumberId: text("phone_number_id").notNull(),
+    analyticsPhoneNumber: text("analytics_phone_number"),
+    wabaId: text("waba_id"),
+    accountTimezone: text("account_timezone"),
+    accountKind: whatsappAccountKindEnum("account_kind").notNull().default("unverified"),
+    ownershipVerifiedAt: timestamp("ownership_verified_at", { withTimezone: true }),
+    analyticsVerifiedAt: timestamp("analytics_verified_at", { withTimezone: true }),
+    usageEnabled: boolean("usage_enabled").notNull().default(false),
+    configurationRevision: integer("configuration_revision").notNull().default(1),
+    lastUsageAttemptAt: timestamp("last_usage_attempt_at", { withTimezone: true }),
+    usageSyncToken: uuid("usage_sync_token"),
+    usageSyncDeadline: timestamp("usage_sync_deadline", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("whatsapp_channels_phone_number_id_idx").on(table.phoneNumberId),
+    // Alvo das FKs tenant/canal dos próximos modelos, sem associação por UUID isolado.
+    uniqueIndex("whatsapp_channels_tenant_phone_idx").on(table.tenantId, table.phoneNumberId),
+    check("whatsapp_channels_positive_revision", sql`${table.configurationRevision} > 0`),
+    check("whatsapp_channels_lease_pair", sql`(${table.usageSyncToken} is null) = (${table.usageSyncDeadline} is null)`),
+    check("whatsapp_channels_usage_verified", sql`not ${table.usageEnabled} or (
+      ${table.accountKind} = 'production' and ${table.ownershipVerifiedAt} is not null
+      and ${table.analyticsVerifiedAt} is not null and nullif(trim(${table.wabaId}), '') is not null
+      and nullif(trim(${table.accountTimezone}), '') is not null
+      and nullif(trim(${table.analyticsPhoneNumber}), '') is not null
+    )`),
+  ],
 );
 
 export const leads = pgTable(

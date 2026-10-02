@@ -8,7 +8,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 
 **Design:** [design.md](design.md), aprovado em 2026-10-02: “Aprovo. Vá para as tarefas”.
 
-**Status:** Approved — usuário em 2026-10-02: “Aprovo. Gere o prompt de execução para que a fase de execução seja iniciado em outra janela de contexto”. 68 tarefas em 9 fases; nenhuma implementação iniciada.
+**Status:** Approved — usuário em 2026-10-02: “Aprovo. Gere o prompt de execução para que a fase de execução seja iniciado em outra janela de contexto”. 68 tarefas em 9 fases; T1/T2 concluídas localmente (2/68), conforme evidências individuais abaixo.
 
 **Escopo:** 13 requisitos e 95 ACs aprovados. Uma retomada >=22h/<24h, continuidade restrita, desfecho >=48h, classificação após entrega e saldo mensal estimado. Sem modal/bloqueio financeiro.
 
@@ -384,16 +384,46 @@ A leitura Graph dentro do sandbox resultou em `transport-failure`; não é respo
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: unicidade global do número; tenant/FK; configuração não verificada; revisão; lease; exclusão sem cruzar tenant.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **6 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/db/__tests__/schema-whatsapp-channels.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: unicidade global do número; tenant/FK; configuração não verificada; revisão; lease; exclusão sem cruzar tenant.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **6 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou: `npx vitest run src/db/__tests__/schema-whatsapp-channels.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
 
 **Tests**: integration — `src/db/__tests__/schema-whatsapp-channels.test.ts`; matriz: Esquema/constraints.
 
 **Gate**: Full; Build no fechamento da fase.
 
 **Commit**: `feat(l14b): modelo dos canais whatsapp` (docs para mudança exclusivamente contratual).
+
+**Execução T2 (2026-10-02): concluída.** Full executado pelo orquestrador em Postgres real isolado: `node node_modules/vitest/vitest.mjs run src/db/__tests__/schema-whatsapp-channels.test.ts src/db/__tests__/schema-humano.test.ts`, exit0, 2 arquivos, 13/13 testes (T2=8, regressão=5), 23,46s. Nenhuma asserção, timeout ou teste anterior mudou. Schema aplicado pelo root com autorização específica, SQL/branches em test-schema-activation.md; produção excluída. Check local tsc preservou 50 erros anteriores, sem novos. A tabela é infraestrutura; USO-02 AC2 só ganha metadados de coordenação, sem alegação prematura de lease/CAS implementado.
+
+**Adequação A/B/D:** resultados persistidos e violações reais de constraints; nenhum mock de banco. Diretrizes AGENTS/vitest.config/src/db/index, fixtures próprias, limpeza somente seus tenants. Fuso real ainda exige T7; a fixture IANA não prova a conta externa.
+
+| Critério / AC (parcela T2) | file:line + asserção | Resultado exigido |
+| --- | --- | --- |
+| Configuração não verificada / USO-01 AC8 | `src/db/__tests__/schema-whatsapp-channels.test.ts:39` — `expect(row.usageEnabled).toBe(false)`; `:40` — `expect(row.accountKind).toBe("unverified")`; `:41` — `expect(row.wabaId).toBeNull()`; `:42` — `expect(row.accountTimezone).toBeNull()`; `:43` — `expect(row.analyticsPhoneNumber).toBeNull()`; `:44` — `expect(row.ownershipVerifiedAt).toBeNull()`; `:45` — `expect(row.analyticsVerifiedAt).toBeNull()` | Sem saldo/prova fabricada |
+| Unicidade global / propriedade tenant | `src/db/__tests__/schema-whatsapp-channels.test.ts:55` — `expect(await codeOf(db.insert(whatsappChannels).values({ ...input, tenantId: tenantB }))).toBe("23505")`; `:57` — `expect(rows.map((row) => row.tenantId)).toEqual([tenantA])` | Número continua exclusivamente de A |
+| FK/tenant inexistente | `src/db/__tests__/schema-whatsapp-channels.test.ts:62` — `expect(await codeOf(db.insert(whatsappChannels).values(input))).toBe("23503")`; `:63` — `expect(await db.select().from(whatsappChannels).where(eq(whatsappChannels.phoneNumberId, input.phoneNumberId))).toHaveLength(0)` | Nenhum canal parcial |
+| Provas/conta test ou unverified | `src/db/__tests__/schema-whatsapp-channels.test.ts:67` — `expect(await codeOf(db.insert(whatsappChannels).values({ ...channel(), usageEnabled: true }))).toBe("23514")`; `:69` — `expect(await codeOf(db.insert(whatsappChannels).values({ ...verified(), accountKind, usageEnabled: true }))).toBe("23514")`; `:73` — `expect(await codeOf(db.insert(whatsappChannels).values(input))).toBe("23514")` | Bloqueia mesmo com demais metadados completos, ou sem qualquer uma das cinco provas/campos |
+| Habilitação explícita documentada | `src/db/__tests__/schema-whatsapp-channels.test.ts:80` — `expect(row.usageEnabled).toBe(true)`; `:81` — `expect(row.accountKind).toBe("production")`; `:82` — `expect(row.accountTimezone).toBe("America/Los_Angeles")`; `:83` — `expect(row.ownershipVerifiedAt).toEqual(input.ownershipVerifiedAt)`; `:84` — `expect(row.analyticsVerifiedAt).toEqual(input.analyticsVerifiedAt)` | Preserva provas/fuso da fixture |
+| Revisão | `src/db/__tests__/schema-whatsapp-channels.test.ts:46` — `expect(row.configurationRevision).toBe(1)`; `:89` — `expect(await codeOf(db.insert(whatsappChannels).values({ ...channel(), configurationRevision }))).toBe("23514")`; `:92` — `expect(row.configurationRevision).toBe(2)` | Padrão1, positivo; zero/negativo recusados |
+| Lease / USO-02 AC2 modelo | `src/db/__tests__/schema-whatsapp-channels.test.ts:48` — `expect(row.usageSyncToken).toBeNull()`; `:49` — `expect(row.usageSyncDeadline).toBeNull()`; `:99` — `expect(await codeOf(db.insert(whatsappChannels).values({ ...channel(), usageSyncToken }))).toBe("23514")`; `:100` — `expect(await codeOf(db.insert(whatsappChannels).values({ ...channel(), usageSyncDeadline }))).toBe("23514")`; `:102` — `expect(row.usageSyncToken).toBe(usageSyncToken)`; `:103` — `expect(row.usageSyncDeadline).toEqual(usageSyncDeadline)`; `:104` — `expect(row.lastUsageAttemptAt).toEqual(lastUsageAttemptAt)` | UUID/prazo pareados, tentativa separada |
+| Exclusão isolada | `src/db/__tests__/schema-whatsapp-channels.test.ts:113` — `expect(await db.select().from(whatsappChannels).where(eq(whatsappChannels.id, own.id))).toHaveLength(0)`; `:114` — `expect(await db.select().from(whatsappChannels).where(eq(whatsappChannels.id, foreign.id))).toEqual([foreign])` | Cascade somente do dono; outro tenant intacto |
+
+**Mapa reverso C:**
+
+| Cenário + file:line da asserção | Origem / manter |
+| --- | --- |
+| `src/db/__tests__/schema-whatsapp-channels.test.ts:39` — `expect(row.usageEnabled).toBe(false)`; demais campos individualmente citados na matriz A | Done when configuração/revisão/lease; USO-01 AC8 — manter |
+| `src/db/__tests__/schema-whatsapp-channels.test.ts:57` — `expect(rows.map((row) => row.tenantId)).toEqual([tenantA])` | Done when unicidade/tenant — manter |
+| `src/db/__tests__/schema-whatsapp-channels.test.ts:62` — `expect(await codeOf(db.insert(whatsappChannels).values(input))).toBe("23503")` | Done when tenant/FK — manter |
+| `src/db/__tests__/schema-whatsapp-channels.test.ts:73` — `expect(await codeOf(db.insert(whatsappChannels).values(input))).toBe("23514")`; subcasos `:67` e `:69` citados na matriz A | Done when configuração não verificada; gate factual USO-01 AC8 — manter |
+| `src/db/__tests__/schema-whatsapp-channels.test.ts:80` — `expect(row.usageEnabled).toBe(true)`; campos `:81`/`:82`/`:83`/`:84` citados na matriz A | Done when modelo/provas, USO-01 AC8 — manter |
+| `src/db/__tests__/schema-whatsapp-channels.test.ts:92` — `expect(row.configurationRevision).toBe(2)` | Done when revisão — manter |
+| `src/db/__tests__/schema-whatsapp-channels.test.ts:102` — `expect(row.usageSyncToken).toBe(usageSyncToken)`; `:103` — `expect(row.usageSyncDeadline).toEqual(usageSyncDeadline)`; demais checks citados na matriz A | Done when lease; USO-02 AC2 infraestrutura — manter |
+| `src/db/__tests__/schema-whatsapp-channels.test.ts:114` — `expect(await db.select().from(whatsappChannels).where(eq(whatsappChannels.id, foreign.id))).toEqual([foreign])` | Done when exclusão/tenant — manter |
+
+**Veredito:** 8 cenários necessários e suficientes para T2, constraints e estados discriminados, regressão anterior preservada; sem SPEC_DEVIATION. accountKind é campo aditivo de evidência do gate já aprovado, justificado no Design. Build de fase permanece T7.
 
 ---
 
