@@ -1790,6 +1790,11 @@ de produção** e capturas de tela pela extensão do Chrome. Workflows publicado
 por `get_execution`. As mensagens do lead não são reproduzidas; o único texto literal é o fato do
 corretor do caso 6b, literal por contrato do roteiro.
 
+**Limite desta evidência**: as capturas do Chats marcadas "(captura)" foram feitas pela extensão do
+Chrome e conferidas na sessão, mas não foram salvas como arquivo (o lote-11 versionou as dele em
+`evidencia/`). O estado de cada caso foi limpo depois dele, então não há como refazê-las fielmente;
+o que sustenta cada caso no repositório são os ids de execução e o estado gravado descritos aqui.
+
 O scheduler ficou despublicado durante os casos 6a, 6b e 6d, para não disparar lembretes antigos de
 `agenda_envios` do número de teste (reuniões de setembro com `sentAt` nulo), e foi republicado para
 o 6c e no fim da prova. Esses lembretes continuam pendentes de limpeza (ver Handoff do `STATE.md`).
