@@ -254,6 +254,42 @@ Corroborated across multiple features. Safe to apply as guidance.
 - evidence: Verifier ciclo 3, F1 (roteiro §7) e F2 (OPTPROVA-01 AC2) (specs)
 - last seen: 2026-10-01T02:14:42Z
 
+### L-050 - Ao pôr uma fonte nova de fatos no contexto do agente (nota da equipe, documento, tool), revise as regras do system message que restringem de onde um fato pode vir; senão o agente lê a fonte e se recusa a usá-la.
+- signal: `spec_deviation` · recurrence: 1 feature(s) · scope: `n8n,agente,system-message` · harmful: 0
+- features: lote-14-humano-no-laco
+- evidence: T40 caso 6b, execuções 2819/2828; emenda D12 (0688deb) (n8n,agente,system-message)
+- last seen: 2026-10-02T05:49:47Z
+
+### L-051 - Antes de uma prova real, confira se todo workflow envolvido está publicado (activeVersionId) e se há fila pendente que ele dispararia ao ser reativado, como lembretes antigos.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `n8n,smoke,scheduler` · harmful: 0
+- features: lote-14-humano-no-laco
+- evidence: T39: scheduler com activeVersionId nulo desde 2026-08-23; agenda_envios pendente do número de teste (n8n,smoke,scheduler)
+- last seen: 2026-10-02T05:49:47Z
+
+### L-052 - Teste de concorrência com Promise.all no mesmo pool não cria disputa real; para provar um compare-and-set, trave a linha numa transação separada e confirme os dois esperando em pg_stat_activity antes de liberar.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `server/data,concorrencia` · harmful: 0
+- features: lote-14-humano-no-laco
+- evidence: M6a — src/server/data/__tests__/human-send.test.ts:259 (server/data,concorrencia)
+- last seen: 2026-10-02T05:49:47Z
+
+### L-053 - Um teste de que um campo ficou igual precisa partir de um valor que o defeito não produziria; partir do mesmo valor que a escrita errada gravaria deixa o mutante vivo.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `server/data,testes` · harmful: 0
+- features: lote-14-humano-no-laco
+- evidence: M10b — src/server/data/__tests__/conversation-conduction.test.ts:120 (server/data,testes)
+- last seen: 2026-10-02T05:49:47Z
+
+### L-054 - Salve as capturas da prova real como arquivo versionado no momento em que são feitas: a limpeza entre cenários torna impossível refazê-las depois.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `smoke,evidencia,ui` · harmful: 0
+- features: lote-14-humano-no-laco
+- evidence: HUMPROVA-01 AC2 — validation.md ciclo 2, Lacuna 4 (smoke,evidencia,ui)
+- last seen: 2026-10-02T05:49:48Z
+
+### L-055 - Ao receber o trabalho de um worker, confira no diff se alguma asserção de teste existente mudou antes de aceitar; a proibição no prompt não basta.
+- signal: `spec_deviation` · recurrence: 1 feature(s) · scope: `sub-agentes,testes` · harmful: 0
+- features: lote-14-humano-no-laco
+- evidence: Worker D, principal-modelo.test.ts 70/90 -> 73/95 (5a00dd8) (sub-agentes,testes)
+- last seen: 2026-10-02T05:49:48Z
+
 ## Candidates (under observation - do NOT load as guidance yet)
 
 Seen once or not yet corroborated. Tracked, not trusted.

@@ -4,7 +4,7 @@
   "window_days": 45,
   "quarantine_threshold": 2,
   "prune_requires_confirmation": true,
-  "next_id": 50,
+  "next_id": 56,
   "lessons": [
     {
       "id": "L-001",
@@ -800,6 +800,114 @@
       ],
       "created": "2026-10-01T02:14:42Z",
       "last_seen": "2026-10-01T02:14:42Z"
+    },
+    {
+      "id": "L-050",
+      "key": "spec_deviation::ao por uma fonte nova de fatos no contexto do agente nota da equipe documento tool revise as regras do system message que restringem de onde um fato pode vir senao o agente le a fonte e se recusa a usa la",
+      "text": "Ao pôr uma fonte nova de fatos no contexto do agente (nota da equipe, documento, tool), revise as regras do system message que restringem de onde um fato pode vir; senão o agente lê a fonte e se recusa a usá-la.",
+      "signal": "spec_deviation",
+      "scope": "n8n,agente,system-message",
+      "status": "confirmed",
+      "features": [
+        "lote-14-humano-no-laco"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "T40 caso 6b, execuções 2819/2828; emenda D12 (0688deb) (n8n,agente,system-message)"
+      ],
+      "created": "2026-10-02T05:49:47Z",
+      "last_seen": "2026-10-02T05:49:47Z"
+    },
+    {
+      "id": "L-051",
+      "key": "gate_fail::antes de uma prova real confira se todo workflow envolvido esta publicado activeversionid e se ha fila pendente que ele dispararia ao ser reativado como lembretes antigos",
+      "text": "Antes de uma prova real, confira se todo workflow envolvido está publicado (activeVersionId) e se há fila pendente que ele dispararia ao ser reativado, como lembretes antigos.",
+      "signal": "gate_fail",
+      "scope": "n8n,smoke,scheduler",
+      "status": "confirmed",
+      "features": [
+        "lote-14-humano-no-laco"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "T39: scheduler com activeVersionId nulo desde 2026-08-23; agenda_envios pendente do número de teste (n8n,smoke,scheduler)"
+      ],
+      "created": "2026-10-02T05:49:47Z",
+      "last_seen": "2026-10-02T05:49:47Z"
+    },
+    {
+      "id": "L-052",
+      "key": "surviving_mutant::teste de concorrencia com promise all no mesmo pool nao cria disputa real para provar um compare and set trave a linha numa transacao separada e confirme os dois esperando em pg stat activity antes de liberar",
+      "text": "Teste de concorrência com Promise.all no mesmo pool não cria disputa real; para provar um compare-and-set, trave a linha numa transação separada e confirme os dois esperando em pg_stat_activity antes de liberar.",
+      "signal": "surviving_mutant",
+      "scope": "server/data,concorrencia",
+      "status": "confirmed",
+      "features": [
+        "lote-14-humano-no-laco"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "M6a — src/server/data/__tests__/human-send.test.ts:259 (server/data,concorrencia)"
+      ],
+      "created": "2026-10-02T05:49:47Z",
+      "last_seen": "2026-10-02T05:49:47Z"
+    },
+    {
+      "id": "L-053",
+      "key": "surviving_mutant::um teste de que um campo ficou igual precisa partir de um valor que o defeito nao produziria partir do mesmo valor que a escrita errada gravaria deixa o mutante vivo",
+      "text": "Um teste de que um campo ficou igual precisa partir de um valor que o defeito não produziria; partir do mesmo valor que a escrita errada gravaria deixa o mutante vivo.",
+      "signal": "surviving_mutant",
+      "scope": "server/data,testes",
+      "status": "confirmed",
+      "features": [
+        "lote-14-humano-no-laco"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "M10b — src/server/data/__tests__/conversation-conduction.test.ts:120 (server/data,testes)"
+      ],
+      "created": "2026-10-02T05:49:47Z",
+      "last_seen": "2026-10-02T05:49:47Z"
+    },
+    {
+      "id": "L-054",
+      "key": "ac_gap::salve as capturas da prova real como arquivo versionado no momento em que sao feitas a limpeza entre cenarios torna impossivel refaze las depois",
+      "text": "Salve as capturas da prova real como arquivo versionado no momento em que são feitas: a limpeza entre cenários torna impossível refazê-las depois.",
+      "signal": "ac_gap",
+      "scope": "smoke,evidencia,ui",
+      "status": "confirmed",
+      "features": [
+        "lote-14-humano-no-laco"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "HUMPROVA-01 AC2 — validation.md ciclo 2, Lacuna 4 (smoke,evidencia,ui)"
+      ],
+      "created": "2026-10-02T05:49:48Z",
+      "last_seen": "2026-10-02T05:49:48Z"
+    },
+    {
+      "id": "L-055",
+      "key": "spec_deviation::ao receber o trabalho de um worker confira no diff se alguma assercao de teste existente mudou antes de aceitar a proibicao no prompt nao basta",
+      "text": "Ao receber o trabalho de um worker, confira no diff se alguma asserção de teste existente mudou antes de aceitar; a proibição no prompt não basta.",
+      "signal": "spec_deviation",
+      "scope": "sub-agentes,testes",
+      "status": "confirmed",
+      "features": [
+        "lote-14-humano-no-laco"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "Worker D, principal-modelo.test.ts 70/90 -> 73/95 (5a00dd8) (sub-agentes,testes)"
+      ],
+      "created": "2026-10-02T05:49:48Z",
+      "last_seen": "2026-10-02T05:49:48Z"
     }
   ]
 }
