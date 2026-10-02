@@ -337,10 +337,10 @@ de qualquer prova real, conforme L-051. Não enviar 1.001 mensagens para fabrica
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| REEN-01 | P1: Momento permitido | Tasks | Planned |
+| REEN-01 | P1: Momento permitido | Execute | Partial — T3 fase desconhecida modelada; seleção/gates pendentes |
 | REEN-02 | P1: Texto contextual | Tasks | Planned |
-| REEN-03 | P1: Envio único e válido | Tasks | Planned |
-| REEN-04 | P1: Continuidade da memória | Tasks | Planned |
+| REEN-03 | P1: Envio único e válido | Execute | Partial — T3 reset/revisão modelados; autorização/cancelamento pendentes |
+| REEN-04 | P1: Continuidade da memória | Execute | Partial — T3 projeção mínima; ponte/continuidade pendentes |
 | REEN-05 | P1: Desfecho às 48h | Tasks | Planned |
 | PRECO-01 | P1: Classificação de entrega | Tasks | Planned |
 | PRECO-02 | P1: Autenticidade e correlação | Tasks | Planned |
@@ -352,7 +352,7 @@ de qualquer prova real, conforme L-051. Não enviar 1.001 mensagens para fabrica
 | PROVA-01 | P1: Evidência integrada | Tasks | Planned |
 
 **Coverage:** 13/13 requisitos e 95/95 critérios mapeados individualmente em [tasks.md](tasks.md).
-Spec, Design, Tasks/matriz/ferramentas e agentes sequenciais aprovados. T1 preflight local implementado, Quick15/15; T2 modelo aditivo, Full13/13 (8 novos+5 anteriores); evidência/adequação e mapa reverso em tasks.md T1. USO-01 AC1/6/7/8 e L14B-01 AC2/4 têm somente a parcela preflight provada. Nenhum AC integral do produto ou gate factual externo é marcado como concluído.
+Spec, Design, Tasks/matriz/ferramentas e agentes sequenciais aprovados. T1 preflight local implementado, Quick15/15; T2 modelo aditivo, Full13/13 (8 novos+5 anteriores); T3 projeção mínima, Full20/20 (7 novos+13 anteriores); evidência/adequação e mapa reverso em tasks.md T1. USO-01 AC1/6/7/8 e L14B-01 AC2/4 têm somente a parcela preflight provada. Nenhum AC integral do produto ou gate factual externo é marcado como concluído.
 
 ## Success Criteria
 

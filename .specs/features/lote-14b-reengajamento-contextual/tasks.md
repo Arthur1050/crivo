@@ -8,7 +8,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 
 **Design:** [design.md](design.md), aprovado em 2026-10-02: “Aprovo. Vá para as tarefas”.
 
-**Status:** Approved — usuário em 2026-10-02: “Aprovo. Gere o prompt de execução para que a fase de execução seja iniciado em outra janela de contexto”. 68 tarefas em 9 fases; T1/T2 concluídas localmente (2/68), conforme evidências individuais abaixo.
+**Status:** Approved — usuário em 2026-10-02: “Aprovo. Gere o prompt de execução para que a fase de execução seja iniciado em outra janela de contexto”. 68 tarefas em 9 fases; T1/T2/T3 concluídas localmente (3/68), conforme evidências individuais abaixo.
 
 **Escopo:** 13 requisitos e 95 ACs aprovados. Uma retomada >=22h/<24h, continuidade restrita, desfecho >=48h, classificação após entrega e saldo mensal estimado. Sem modal/bloqueio financeiro.
 
@@ -443,16 +443,44 @@ A leitura Graph dentro do sandbox resultou em `transport-failure`; não é respo
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: um estado por tenant/lead; propriedade do lead; fase nullable; enum inválido; campos perguntados <=8; FK da âncora.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **6 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/db/__tests__/schema-agent-state.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: um estado por tenant/lead; propriedade do lead; fase nullable; enum inválido; campos perguntados <=8; FK da âncora.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **6 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou: `npx vitest run src/db/__tests__/schema-agent-state.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
 
 **Tests**: integration — `src/db/__tests__/schema-agent-state.test.ts`; matriz: Esquema/constraints.
 
 **Gate**: Full; Build no fechamento da fase.
 
 **Commit**: `feat(l14b): projeção mínima de fase` (docs para mudança exclusivamente contratual).
+
+**Execução T3 (2026-10-02): concluída.** Full real pelo orquestrador: `node node_modules/vitest/vitest.mjs run src/db/__tests__/schema-agent-state.test.ts src/db/__tests__/schema-whatsapp-channels.test.ts src/db/__tests__/schema-humano.test.ts`, exit0, 3 arquivos, 20/20 testes, 42,78s (T3=7, canais=8, humano=5). Lint dos dois arquivos T3 passou. Tsc mantém 50 erros herdados, nenhum novo. SQL/hash/seis statements e cinco aplicações MCP autorizadas em test-schema-activation.md. A aprovação posterior ampla está em EXECUTE-PROMPT; nenhum pedido adicional é necessário.
+
+**Adequação A/B/D:** constraints reais e campos persistidos, sem mocks de banco. Defaults não fabricam fase; os oito nomes esperados são explícitos no teste, separados da expressão do schema. Diretrizes AGENTS/Vitest/src/db/index; fixtures próprias; nenhuma mudança/exclusão/skip dos testes anteriores. FKs garantem tenant, não alegam vínculo entre âncora e lead dentro do mesmo tenant: esse gate corrente pertence à consulta T16.
+
+| Critério / parcela do requisito | file:line + asserção | Resultado da spec/Done when |
+| --- | --- | --- |
+| Estado único tenant/lead | `src/db/__tests__/schema-agent-state.test.ts:47` — `expect(await codeOf(db.insert(leadAgentState).values(input))).toBe("23505")`; `:48` — `expect(await db.select().from(leadAgentState).where(eq(leadAgentState.leadId, input.leadId))).toHaveLength(1)` | Uma linha, sem duplicar |
+| Propriedade da lead | `src/db/__tests__/schema-agent-state.test.ts:53` — `expect(await codeOf(db.insert(leadAgentState).values(input))).toBe("23503")`; `:54` — `expect(await db.select().from(leadAgentState).where(eq(leadAgentState.leadId, leadB))).toHaveLength(0)` | Lead do outro tenant não gera projeção |
+| Fase nullable / REEN-01 AC6 infraestrutura | `src/db/__tests__/schema-agent-state.test.ts:60` — `expect(row.phase).toBeNull()`; `:61` — `expect(row.askedFields).toEqual([])`; `:62` — `expect(row.openingHistory).toEqual([])`; `:63` — `expect(row.resetObservedAt).toBeNull()`; `:64` — `expect(row.revision).toBe(1)` | Desconhecida; nenhum qualificando/reset/contexto presumido |
+| Enum inválido e três fases | `src/db/__tests__/schema-agent-state.test.ts:68` — `expect(await codeOf(db.insert(leadAgentState).values({ ...await createAnchor(), phase: "inventada" as never }))).toBe("22P02")`; `:71` — `expect(row.phase).toBe(phase)` | Rejeita inventada; preserva qualificando/agendando/encerrada |
+| Perguntados até oito nomes atuais | `src/db/__tests__/schema-agent-state.test.ts:81` — `expect(row.askedFields).toEqual(fields)`; `:82` — `expect(row.askedFields).toHaveLength(8)`; `:83` — `expect(await codeOf(db.insert(leadAgentState).values({ ...await createAnchor(), askedFields: [...fields, fields[0]] }))).toBe("23514")`; `:84` — `expect(await codeOf(db.insert(leadAgentState).values({ ...await createAnchor(), askedFields: ["campoInventado"] }))).toBe("23514")` | fields explícitos: modality/region/propertyType/budgetCents/purchaseHorizon/motivation/creditStatus/chainedOperation; 9 ou desconhecido recusados |
+| FK âncora existente do tenant | `src/db/__tests__/schema-agent-state.test.ts:90` — `expect(await codeOf(db.insert(leadAgentState).values(input))).toBe("23503")`; `:91` — `expect(await db.select().from(leadAgentState).where(eq(leadAgentState.leadId, input.leadId))).toHaveLength(0)` | Ausente/estrangeira rejeitada, sem projeção parcial |
+| Revisão/reset/aberturas mínimos | `src/db/__tests__/schema-agent-state.test.ts:98` — `expect(row.revision).toBe(2)`; `:99` — `expect(row.resetObservedAt).toEqual(resetObservedAt)`; `:100` — `expect(row.openingHistory).toEqual(["hmm", "certo"])`; `:101` — `expect(await codeOf(db.insert(leadAgentState).values({ ...await createAnchor(), revision: 0 }))).toBe("23514")` | Preserva metadados; revisão positiva; nenhum histórico paralelo |
+
+**Mapa reverso C:**
+
+| Cenário / file:line + asserção | Origem / manter |
+| --- | --- |
+| `src/db/__tests__/schema-agent-state.test.ts:48` — `expect(await db.select().from(leadAgentState).where(eq(leadAgentState.leadId, input.leadId))).toHaveLength(1)` | Done when estado único — manter |
+| `src/db/__tests__/schema-agent-state.test.ts:53` — `expect(await codeOf(db.insert(leadAgentState).values(input))).toBe("23503")` | Done when propriedade da lead — manter |
+| `src/db/__tests__/schema-agent-state.test.ts:60` — `expect(row.phase).toBeNull()`; demais defaults individualmente na matriz A | Done when fase nullable, REEN-01 AC6 preparação — manter |
+| `src/db/__tests__/schema-agent-state.test.ts:68` — `expect(await codeOf(db.insert(leadAgentState).values({ ...await createAnchor(), phase: "inventada" as never }))).toBe("22P02")`; `:71` — `expect(row.phase).toBe(phase)` | Done when enum inválido/modelo — manter |
+| `src/db/__tests__/schema-agent-state.test.ts:81` — `expect(row.askedFields).toEqual(fields)`; limite/recusas individualmente na matriz A | Done when nomes/perguntados<=8 — manter |
+| `src/db/__tests__/schema-agent-state.test.ts:90` — `expect(await codeOf(db.insert(leadAgentState).values(input))).toBe("23503")`; sem estado em `:91` | Done when FK da âncora — manter |
+| `src/db/__tests__/schema-agent-state.test.ts:99` — `expect(row.resetObservedAt).toEqual(resetObservedAt)`; `:100` — `expect(row.openingHistory).toEqual(["hmm", "certo"])`; revisão na matriz A | What T3/Design reset/revisão/persona — manter |
+
+**Veredito:** 7 cenários necessários e suficientes para o modelo T3, campos e limites discriminados. REEN-01/03/04 têm somente infraestrutura de projeção neste ponto; suas transições/ponte continuam pendentes. Sem SPEC_DEVIATION; Build de fase em T7.
 
 ---
 

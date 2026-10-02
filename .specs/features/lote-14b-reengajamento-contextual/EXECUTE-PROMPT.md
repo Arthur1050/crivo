@@ -7,6 +7,15 @@ com testes e commits atômicos, até o fechamento verificável do lote.
 
 ## Aprovações que já existem
 
+**Autorização posterior, durante Execute (2026-10-02):** o usuário ampliou o
+objetivo: “Eu autorizo qualquer tarefa que demandar da minha aprovação. Não
+interrompa a execução nesses casos, eu autorizo tudo”. Essa instrução posterior
+cobre as ações necessárias às tarefas aprovadas do L14b e prevalece sobre os
+pedidos de autorização adicional descritos abaixo. Preparar e revisar delta,
+alvos e resultado antes da ação; não repetir confirmações. Testes, gates,
+isolamento, commits atômicos e provas factuais continuam obrigatórios. Fato
+desconhecido permanece desconhecido; autorização não substitui evidência.
+
 Em 2026-10-02 o usuário aprovou spec, Design, as 68 tarefas, matriz/gates, perfis de
 ferramentas S/R/N/U e a execução por lotes sequenciais de agentes. A proposta final foi:
 “Aprova as tarefas, as ferramentas propostas e a execução por lotes sequenciais de agentes?”.

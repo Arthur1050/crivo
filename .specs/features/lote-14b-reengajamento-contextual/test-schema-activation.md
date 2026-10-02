@@ -27,9 +27,10 @@ limpeza global ou alteração de credenciais.
 
 ## Aplicações
 
-T2 (`whatsapp_channels`) aplicada nos cinco alvos conforme registro abaixo.
-Qualquer novo delta exige revisão e autorização específicas; T3 e posteriores
-ainda não foram autorizadas ou aplicadas. Registrar cada diff e resultado aqui.
+T2 e T3 aplicadas nos cinco alvos conforme registros abaixo. A autorização
+posterior ampla cobre as tarefas do L14b; cada novo delta continua sujeito a
+revisão de SQL/alvos e gate real. T4 e posteriores ainda não foram aplicadas.
+Registrar cada diff e resultado aqui.
 
 ### T2 aplicada nas cinco branches autorizadas
 
@@ -77,3 +78,51 @@ alterações de drift fora do delta revisado.
 
 Diagnóstico local `tsc --noEmit`: 50 erros herdados, nenhum em schema/T1/T2.
 Whitespace passou. Esses checks não substituem o gate Full.
+
+### T3 aplicada nas cinco branches autorizadas
+
+Baseline: T2 `f281a2f`. Proposta em [t3-schema.sql](t3-schema.sql), delta offline
+Drizzle Kit 0.31.10 entre schema do HEAD (git show) e schema local. Seis statements:
+enum agent_phase, tabela lead_agent_state, dois índices únicos tenant/id nas
+tabelas existentes leads/messages e duas FKs compostas novas. Sem DROP, mudança
+de coluna, atualização de linha ou aplicação em produção.
+
+Índices são adicionados antes das FKs no SQL de aplicação, porque PostgreSQL
+exige o alvo unique já criado; os statements gerados foram apenas reordenados,
+sem alterar o delta. O CHECK usa literais SQL dos oito nomes canônicos de
+phase.mjs, sem placeholders de parâmetros em DDL. PK tenant/lead garante estado
+único, enum aceita as três fases e null; revisão positiva e até oito campos
+conhecidos são constraints. Aberturas/reset permanecem metadados mínimos.
+
+Propriedade de tenant da lead e da mensagem é garantida pelas FKs; âncora
+corrente da mesma lead é validada pela consulta sob lock da T16, como no Design.
+Não afirmar que a FK tenant/message resolve associação a outra lead do mesmo
+tenant. Cascade remove projeção derivada ao excluir lead/âncora.
+
+Sete cenários de integração preparados em schema-agent-state.test.ts: estado
+único, lead de outro tenant, fase nullable, enum inválido/fases válidas, limite
+8/9 e nomes desconhecidos, âncora ausente/estrangeira, revisão/reset/aberturas.
+Fixtures próprias, sem limpeza global. Gate Full real pelo root passou: 3 arquivos,
+20/20 testes, exit0, 42,78s (T3=7, canais=8, humano=5). T3 concluída.
+Regressões afetadas: schema-humano.test.ts e schema-whatsapp-channels.test.ts.
+Tipos locais: exatamente os 50 erros herdados, nenhum em T3/novo import phase.
+
+Escopo solicitado continua exclusivamente as cinco branches na tabela acima,
+sem main/produção. Autorização posterior do usuário: “Eu autorizo qualquer tarefa
+que demandar da minha aprovação. Não interrompa a execução nesses casos, eu
+autorizo tudo”. Após revisão do delta e dos alvos, root aplicou exatamente o hash
+abaixo em cinco transações MCP (test e test-worker-1 a test-worker-4), todas
+isError=false. Nenhuma aplicação em main/produção.
+
+Revisão root: SQL de seis statements conferido; SHA256:
+`3e17c8b1c1bc0b00d474f73dd5b767cd26d697366e7cd0eadb4488930d5fdb68`.
+Leitura MCP em cada um dos cinco alvos confirmou ausência de lead_agent_state,
+agent_phase e dos índices leads_tenant_id_id_idx/messages_tenant_id_id_idx.
+O teste de asked_fields usa os oito nomes explícitos da política aprovada,
+evitando que a expectativa seja calculada pela mesma expressão do schema.
+A autorização ampla posterior concedeu a aplicação das tarefas do L14b; revisão
+e cinco aplicações T3 concluídas. As leituras prévias foram somente diagnóstico.
+
+Revisão local adicional: ESLint de `src/db/schema.ts` e
+`src/db/__tests__/schema-agent-state.test.ts` passou com exit0 e nenhuma saída.
+Esse resultado confirma o lint dos arquivos novos; não substitui o gate Postgres.

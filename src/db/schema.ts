@@ -1,9 +1,11 @@
 import { sql } from "drizzle-orm";
+import { FIELD_LABELS } from "../../n8n/src/phase.mjs";
 import {
   bigint,
   boolean,
   char,
   check,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -100,6 +102,10 @@ export const categoryColorEnum = pgEnum("category_color", [
 // L14b: identidade operacional comprovada, nunca inferida pelo nome da WABA.
 export const whatsappAccountKindEnum = pgEnum("whatsapp_account_kind", [
   "unverified", "test", "production",
+]);
+
+export const agentPhaseEnum = pgEnum("agent_phase", [
+  "qualificando", "agendando", "encerrada",
 ]);
 
 export const documentStatusEnum = pgEnum("document_status", [
@@ -282,6 +288,8 @@ export const leads = pgTable(
     whatsappPhoneNumberId: text("whatsapp_phone_number_id"),
   },
   (table) => [
+    // Alvo aditivo de FKs compostas, sem alterar a chave existente (L14b T3).
+    uniqueIndex("leads_tenant_id_id_idx").on(table.tenantId, table.id),
     // Idempotência de entrega (INT-02.2) escopada por tenant: dois tenants
     // podem receber o mesmo externalId (ex.: mesmo wa_id em duas
     // imobiliárias distintas). Parcial (WHERE NOT NULL) para não afetar as
@@ -353,6 +361,7 @@ export const messages = pgTable(
     authorName: text("author_name"),
   },
   (table) => [
+    uniqueIndex("messages_tenant_id_id_idx").on(table.tenantId, table.id),
     // Idempotência de ingestão (INT-05.2), escopada por tenant, parcial
     // (WHERE NOT NULL) pela mesma razão de leads_tenant_id_external_id_idx.
     uniqueIndex("messages_tenant_id_external_id_idx")
@@ -369,6 +378,30 @@ export const messages = pgTable(
       sql`${table.sender} <> 'humano' or ${table.authorName} is not null`
     ),
   ]
+);
+
+// L14b T3 — projeção da fase, sempre ligada a lead/âncora do tenant.
+// A âncora corrente da MESMA lead é revalidada pelo repositório sob lock (T16).
+export const leadAgentState = pgTable(
+  "lead_agent_state",
+  {
+    tenantId: uuid("tenant_id").notNull(),
+    leadId: uuid("lead_id").notNull(),
+    anchorMessageId: uuid("anchor_message_id").notNull(),
+    phase: agentPhaseEnum("phase"),
+    askedFields: text("asked_fields").array().notNull().default(sql`ARRAY[]::text[]`),
+    openingHistory: text("opening_history").array().notNull().default(sql`ARRAY[]::text[]`),
+    resetObservedAt: timestamp("reset_observed_at", { withTimezone: true }),
+    revision: integer("revision").notNull().default(1),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.tenantId, table.leadId] }),
+    foreignKey({ name: "lead_agent_state_tenant_lead_fk", columns: [table.tenantId, table.leadId], foreignColumns: [leads.tenantId, leads.id] }).onDelete("cascade"),
+    foreignKey({ name: "lead_agent_state_tenant_anchor_fk", columns: [table.tenantId, table.anchorMessageId], foreignColumns: [messages.tenantId, messages.id] }).onDelete("cascade"),
+    check("lead_agent_state_positive_revision", sql`${table.revision} > 0`),
+    check("lead_agent_state_asked_fields", sql`cardinality(${table.askedFields}) <= 8 and ${table.askedFields} <@ ARRAY[${sql.join(Object.keys(FIELD_LABELS).map((field) => sql`${field}`), sql`, `)}]::text[]`.inlineParams()),
+  ],
 );
 
 // Reserva idempotente do envio humano (lote-14 — ENVIO-01 AC11): a mesma

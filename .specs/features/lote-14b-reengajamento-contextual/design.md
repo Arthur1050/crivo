@@ -241,6 +241,14 @@ Uma linha por `(tenant_id, lead_id)`: `anchor_message_id`, fase nullable
 estados de aberturas da persona, `reset_observed_at`, `revision`, `updated_at`.
 Reusar valores/limites da política existente, sem novos fatos do lead.
 
+FKs compostas `(tenant_id, lead_id)` e `(tenant_id, anchor_message_id)` conferem
+propriedade do tenant. Índices únicos aditivos em leads/messages tornam esses
+pares alvos de FK. A verificação de que a âncora é o inbound corrente da mesma
+lead é da escrita T16 sob lock, consultando a conversa; as FKs não afirmam esse
+vínculo dentro do mesmo tenant. Fase nasce null; asked_fields reutiliza os oito
+nomes de phase.mjs, opening_history preserva o estado da persona. Exclusão da
+lead ou âncora remove sua projeção derivada, sem cópia paralela de histórico.
+
 A fase hoje só existe em conversa_estado. O principal publica alterações/encerramentos no
 CRM antes de gravar a projeção correspondente no cache. Escrita exige âncora corrente,
 reset igual ao do lead e expectedRevision; replay idêntico é idempotente. Execução antiga
