@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isSessionExpired, selectSeedMessages, selectOriginSessionMessages, requiresSessionRebuild, toSeedMemoryItem } from "../session.mjs";
+import { isSessionExpired, selectSeedMessages, selectOriginSessionMessages, selectOriginSessionFrame, requiresSessionRebuild, toSeedMemoryItem } from "../session.mjs";
 
 type HistoryMessage = import("../session.mjs").HistoryMessage;
 
@@ -106,6 +106,13 @@ describe("REEN-04: ponte restrita e reconstrução de sessão (T24)", () => {
     const wanted = expected === 0 ? [] : rows.slice(-expected);
     expect(selectSeedMessages(rows, rows[59].sentAt, { maxMessages: budget })).toEqual(wanted);
     expect(selectOriginSessionMessages(rows, "row-30", { maxMessages: budget })).toEqual(wanted);
+  });
+
+  it("bounds da origem permanecem completos quando a âncora fica fora do conteúdo cap50", () => {
+    const rows = buildMessages(60).map((row, i) => ({ ...row, id: `row-${i}` }));
+    expect(selectOriginSessionFrame(rows, "row-0")).toEqual({ startMessageId: "row-0", endMessageId: "row-59", messages: rows.slice(-50) });
+    expect(selectOriginSessionFrame(rows, "row-0", { maxMessages: 0 })).toEqual({ startMessageId: "row-0", endMessageId: "row-59", messages: [] });
+    expect(selectOriginSessionFrame(rows, "missing")).toBeNull();
   });
 
   it("ordena por sentAt/id sem alterar array recebido", () => {

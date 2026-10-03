@@ -75,16 +75,27 @@ export function requiresSessionRebuild(frame, bufferMessageIds = []) {
  */
 export function selectOriginSessionMessages(messages, anchorMessageId,
   { maxMessages = DEFAULT_MAX_SEED_MESSAGES, sessionGapHours = DEFAULT_SESSION_GAP_HOURS } = {}) {
+  return selectOriginSessionFrame(messages, anchorMessageId, { maxMessages, sessionGapHours })?.messages ?? [];
+}
+
+/** Limites factuais não são recortados junto com o conteúdo semeado.
+ * @param {HistoryMessage[]|null|undefined} messages
+ * @param {string} anchorMessageId
+ * @param {{maxMessages?: number, sessionGapHours?: number}} [options]
+ * @returns {{startMessageId: string|null, endMessageId: string|null, messages: HistoryMessage[]}|null}
+ */
+export function selectOriginSessionFrame(messages, anchorMessageId,
+  { maxMessages = DEFAULT_MAX_SEED_MESSAGES, sessionGapHours = DEFAULT_SESSION_GAP_HOURS } = {}) {
   const budget = messageBudget(maxMessages);
-  if (budget === 0) return [];
   const list = orderedMessages(messages);
   const anchor = list.findIndex((message) => message.id === anchorMessageId);
-  if (anchor < 0) return [];
+  if (anchor < 0) return null;
   const gapMs = sessionGapHours * 3600000;
   let start = anchor, end = anchor;
   while (start > 0 && new Date(list[start].sentAt).getTime() - new Date(list[start - 1].sentAt).getTime() <= gapMs) start--;
   while (end + 1 < list.length && new Date(list[end + 1].sentAt).getTime() - new Date(list[end].sentAt).getTime() <= gapMs) end++;
-  return list.slice(start, end + 1).slice(-budget);
+  return { startMessageId: list[start].id ?? null, endMessageId: list[end].id ?? null,
+    messages: budget === 0 ? [] : list.slice(start, end + 1).slice(-budget) };
 }
 
 /**

@@ -1389,10 +1389,12 @@ Fechamento da fase: TS2339 na inspeção de query.mock.calls corrigido com argum
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: pendência atual; informação confirmada; nota humana; sessão antiga distinta; 50 mensagens; reset; contexto ilegível; tenant; nenhum inbound sintético/alteração de fatos.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **9 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/server/reengagement/__tests__/prepare-frame.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: pendência atual; informação confirmada; nota humana; sessão antiga distinta; 50 mensagens; reset; contexto ilegível; tenant; nenhum inbound sintético/alteração de fatos.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **9 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou: `npx vitest run src/server/reengagement/__tests__/prepare-frame.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+
+**Evidence**: `node node_modules/vitest/vitest.mjs run src/server/reengagement/__tests__/prepare-frame.test.ts n8n/src/__tests__/session.test.ts` PASS 63/63, 2 arquivos, exit0, 70.57s; 17 novos Postgres + 1 unitário + 45 regressões, bounds completos/cap50/reset/lock/rollback provados, sem desvio.
 
 **Tests**: integration — `src/server/reengagement/__tests__/prepare-frame.test.ts`; matriz: Serviço/repositório.
 
