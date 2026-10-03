@@ -8,7 +8,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 
 **Design:** [design.md](design.md), aprovado em 2026-10-02: “Aprovo. Vá para as tarefas”.
 
-**Status:** Approved — usuário em 2026-10-02: “Aprovo. Gere o prompt de execução para que a fase de execução seja iniciado em outra janela de contexto”. 68 tarefas em 9 fases; T1–T13 concluídas localmente (13/68), fase 1/lote A fechados com a ressalva autorizada dos dois timeouts históricos, conforme evidências individuais abaixo.
+**Status:** Approved — usuário em 2026-10-02: “Aprovo. Gere o prompt de execução para que a fase de execução seja iniciado em outra janela de contexto”. 68 tarefas em 9 fases; T1–T14 concluídas localmente (14/68), fases 1/2 e lotes A/B fechados com a ressalva autorizada dos dois timeouts históricos, conforme evidências individuais e phase-2-verification.md.
 
 **Escopo:** 13 requisitos e 95 ACs aprovados. Uma retomada >=22h/<24h, continuidade restrita, desfecho >=48h, classificação após entrega e saldo mensal estimado. Sem modal/bloqueio financeiro.
 
@@ -1030,7 +1030,7 @@ Conta real/fullmonth/zero e integração tick T44 continuam pendentes.
 
 **Depends on**: T13, T10
 
-**Reuses**: SessionScope, getConversations/getMessages.
+**Reuses**: AuthContext/LeadScope reais (SessionScope conceitual no Design), can, escopo de getConversations/getMessages.
 
 **Requirement**: USO-02, USO-03, USO-04, L14B-01, USO-01; ACs individuais na matriz de rastreabilidade abaixo.
 
@@ -1038,16 +1038,29 @@ Conta real/fullmonth/zero e integração tick T44 continuam pendentes.
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: admin/gestor; corretor na carteira; conversa alheia; tenant trocado; dois números; unknown; mês novo; 60min/60min+1ms; falha recente; sem snapshot; DTO sem segredo; leitura sem Graph/N+1.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **12 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/server/data/__tests__/whatsapp.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: admin/gestor; corretor na carteira; conversa alheia; tenant trocado; dois números; unknown; mês novo; 60min/60min+1ms; falha recente; sem snapshot; DTO sem segredo; leitura sem Graph/N+1.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **12 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou: `npx vitest run src/server/data/__tests__/whatsapp.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
 
 **Tests**: integration — `src/server/data/__tests__/whatsapp.test.ts`; matriz: DAL/mutação.
 
 **Gate**: Full; Build no fechamento da fase.
 
 **Commit**: `feat(l14b): leituras autorizadas de consumo e classificação` (docs para mudança exclusivamente contratual).
+
+**Verificação T14**: Regate Full pelo root exit0, 5/5 arquivos, 79/79 testes,
+67,57s, início 2026-10-03 07:38:11 America/Sao_Paulo; 18 novos e 61 anteriores
+preservados. Adequação forward/reverse e primeira falha de fixture/cleanup em
+[t14-verification.md](t14-verification.md). Pool.query real mede Settings1,
+conversa2 e thread50saídas1; Graph0. Snapshot confere fuso/fim/revisão, DTO
+queriedAt vem de queryEnd e stale usa lastSuccessAt >60min. Rótulos históricos
+independem de Analytics atual. Lint de fase exit0 com cinco avisos anteriores,
+build exit0, tsc pós-build exit2 com 50 erros anteriores e delta vazio.
+Fase2 fechada sob a ressalva autorizada: npm test fresco exit1, 158/159 arquivos,
+2612/2614 testes, 399,96s; só actions.test.ts:1337/:1349 DOCLIM-01 AC8 timeout
+30s, sem falhas novas. Todas as 142 adições da fase2 passaram. Evidência em
+[phase-2-verification.md](phase-2-verification.md); Whole não é verde integral.
 
 ---
 

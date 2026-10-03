@@ -664,6 +664,17 @@ type MessagePricingView = {
 DTO não contém segredo/WABA ou payload bruto. Só saídas recebem MessagePricingView.
 Saldo/classificação não bloqueiam o envio autorizado.
 
+T14 concretiza SessionScope com AuthContext/LeadScope existentes e can, sem
+dependência runtime da guarda Next. Settings exigem permissão de configurações;
+conversa/thread exigem chats e carteira. Canal atual da conversa vem do
+leads.whatsappPhoneNumberId persistido, já usado pelo envio humano, sem inferir
+de telefone pessoal ou mensagem histórica. QueriedAt projeta queryEnd, o corte
+coberto; stale compara lastSuccessAt com >60min estrito, horário de conclusão
+separado. Falha de atualização preserva último snapshot corrente compatível
+com tenant/número/revisão/fuso/início/fim. Classificação vinculada histórica é
+independente da capacidade atual do cadastro. DAL faz uma query de Settings,
+duas da conversa e uma para todas as classificações do thread, sem Graph.
+
 ## UI e autorização
 
 Discovery Astryx realizado: build da ideia, templates ChatComposerValidation/settings,

@@ -345,10 +345,10 @@ de qualquer prova real, conforme L-051. Não enviar 1.001 mensagens para fabrica
 | PRECO-01 | P1: Classificação de entrega | Execute | Partial — T5 modelo/T8 reducer/T9 evidência persistida/T10 saída humana e agente; transporte real/apresentação pendentes |
 | PRECO-02 | P1: Autenticidade e correlação | Execute | Partial — T5 FKs/T7 identidade/T8 reducer/T9 origem opaca, lote/replay/ordem/T10 correlação antes e depois por carteira; HMAC instalado/integrações de envio pendentes |
 | USO-01 | P1: Saldo mensal estimado | Execute | Partial — T1/T2/T6 modelos/T7 gate Analytics/T11 mês civil/T12 adapter condicionado/T13 snapshot substituível; prova externa integral/tick pendentes |
-| USO-02 | P1: Atualização e indisponibilidade | Execute | Partial — T2/T6 modelos/T12 timeout/T13 cadência, lease e CAS com orçamento; leituras/tick pendentes |
-| USO-03 | P1: Superfícies e permissões | Tasks | Planned |
-| USO-04 | P1: Aviso sem bloqueio | Tasks | Planned |
-| L14B-01 | P1: Isolamento e operação | Execute | Partial — T1–T6 modelos/T7 segredo servidor/T9 contexto, isolamento e log limitado/T10 vínculo e cascade; demais fronteiras/retention pendentes |
+| USO-02 | P1: Atualização e indisponibilidade | Execute | Partial — T2/T6 modelos/T12 timeout/T13 cadência, lease e CAS com orçamento/T14 leituras stale e falha; UI/tick pendentes |
+| USO-03 | P1: Superfícies e permissões | Execute | Partial — T14 DAL por permissões, carteira, tenant/número e DTO; superfícies/refresh pendentes |
+| USO-04 | P1: Aviso sem bloqueio | Execute | Partial — T14 DTO unknown/stale e classificação histórica; aviso/envio/UI pendentes |
+| L14B-01 | P1: Isolamento e operação | Execute | Partial — T1–T6 modelos/T7 segredo servidor/T9 contexto, isolamento e log limitado/T10 vínculo e cascade/T14 DAL autorizada sem segredo ou Graph; demais fronteiras/retention pendentes |
 | PROVA-01 | P1: Evidência integrada | Execute | Partial — T8 fixtures de preço 999/1000/1001/FEP/replay/T11 volume e fuso; provas integradas/virada real pendentes |
 
 **Coverage:** 13/13 requisitos e 95/95 critérios mapeados individualmente em [tasks.md](tasks.md).
@@ -387,7 +387,15 @@ Aliases ISO uppercase recusados no normalizador/decoder sem alterar testes antig
 Guardas de fuso/fim do snapshot impedem conversão Amman/Atenas no mesmo início;
 primeiro gate 92/92 passou e foi repetido após essa revisão final.
 Adequação em [t13-verification.md](t13-verification.md).
-São 13/68 tarefas concluídas; T14–T68, gates externos e verifier global continuam pendentes.
+T14 passou regate Full 79/79 (18 novos + 61 regressões). Leituras autorizadas
+conferem tenant/carteira/canal/período/revisão; queryEnd e lastSuccessAt têm
+semânticas separadas, sem segredo no DTO ou Graph por leitura. Adequação em
+[t14-verification.md](t14-verification.md). Fase2 fechada sob a ressalva dos dois
+timeouts históricos autorizados: npm test fresco 2612/2614, exit1, somente
+DOCLIM-01 AC8, nenhuma falha nova; todas as 142 adições passaram. Lint/build
+exit0, tsc exit2 com os mesmos 50 erros anteriores e delta vazio. Evidência em
+[phase-2-verification.md](phase-2-verification.md); Whole não é integralmente verde.
+São 14/68 tarefas concluídas; T15–T68, gates externos e verifier global continuam pendentes.
 
 ## Success Criteria
 
