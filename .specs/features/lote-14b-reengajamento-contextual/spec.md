@@ -337,17 +337,17 @@ de qualquer prova real, conforme L-051. Não enviar 1.001 mensagens para fabrica
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| REEN-01 | P1: Momento permitido | Execute | Partial — T3 fase desconhecida/T7 canal confiável/T15 política pura22h–24h/T16 projeção revisada/T17 seleção paginada com corte, canal da âncora e dados inválidos fechados; reserva/efeitos e demais gates pendentes |
+| REEN-01 | P1: Momento permitido | Execute | Partial — T15–T20 política, seleção, claim e autorização com revalidação sob locks; integração proativa e gates externos pendentes |
 | REEN-02 | P1: Texto contextual | Tasks | Planned |
-| REEN-03 | P1: Envio único e válido | Execute | Partial — T3/T4 reset/chave/consumo/T16 publicação com âncora/reset/CAS e replay/T17 nova âncora seleciona nova chave preservando episódio consumido; autorização, cancelamento integrado e uma chamada pendentes |
-| REEN-04 | P1: Continuidade da memória | Execute | Partial — T3 projeção/T4 referências/T16 reset observado corrente na publicação; ponte, reconstrução e invalidação integradas pendentes |
-| REEN-05 | P1: Desfecho às 48h | Execute | Partial — T4 eixo de escalonamento/T15 política48h independente do horário/T17 seleção48h independente do resultado com trava humana; transição e concorrência pendentes |
+| REEN-03 | P1: Envio único e válido | Execute | Partial — T18–T21 lease, falha antes do envio, marcador permanente e aceite sem reenvio; transporte/escritores integrados pendentes |
+| REEN-04 | P1: Continuidade da memória | Execute | Partial — T21 ponte factual/reconciliação inclusive inbound concorrente; sessão, frame e invalidação integradas T24–T32 pendentes |
+| REEN-05 | P1: Desfecho às 48h | Execute | Partial — T22/T23 omissão e escalonamento transacionais, resultado real, trava humana, responsável, rollback e disputa; endpoint/tick/prova integrada pendentes |
 | PRECO-01 | P1: Classificação de entrega | Execute | Partial — T5 modelo/T8 reducer/T9 evidência persistida/T10 saída humana e agente; transporte real/apresentação pendentes |
 | PRECO-02 | P1: Autenticidade e correlação | Execute | Partial — T5 FKs/T7 identidade/T8 reducer/T9 origem opaca, lote/replay/ordem/T10 correlação antes e depois por carteira; HMAC instalado/integrações de envio pendentes |
 | USO-01 | P1: Saldo mensal estimado | Execute | Partial — T1/T2/T6 modelos/T7 gate Analytics/T11 mês civil/T12 adapter condicionado/T13 snapshot substituível; prova externa integral/tick pendentes |
 | USO-02 | P1: Atualização e indisponibilidade | Execute | Partial — T2/T6 modelos/T12 timeout/T13 cadência, lease e CAS com orçamento/T14 leituras stale e falha; UI/tick pendentes |
-| USO-03 | P1: Superfícies e permissões | Execute | Partial — T14 DAL por permissões, carteira, tenant/número e DTO; superfícies/refresh pendentes |
-| USO-04 | P1: Aviso sem bloqueio | Execute | Partial — T14 DTO unknown/stale e classificação histórica; aviso/envio/UI pendentes |
+| USO-03 | P1: Superfícies e permissões | Execute | Deferred UI → L14c por preflight restrito à conta de teste; T14 DAL preservada, consumo indisponível; ver context.md Deferred Ideas |
+| USO-04 | P1: Aviso sem bloqueio | Execute | Deferred UI → L14c por preflight restrito à conta de teste; T14 DTO preservado, consumo indisponível; envio humano/PRECO seguem sem bloqueio |
 | L14B-01 | P1: Isolamento e operação | Execute | Partial — T1–T6 modelos/T7 segredo servidor/T9 contexto, isolamento e log limitado/T10 vínculo e cascade/T14 DAL autorizada/T17 seleção/cursor por tenant sem conteúdo; demais fronteiras/retention pendentes |
 | PROVA-01 | P1: Evidência integrada | Execute | Partial — T8 fixtures de preço 999/1000/1001/FEP/replay/T11 volume e fuso; provas integradas/virada real pendentes |
 
