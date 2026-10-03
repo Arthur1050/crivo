@@ -8,7 +8,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 
 **Design:** [design.md](design.md), aprovado em 2026-10-02: “Aprovo. Vá para as tarefas”.
 
-**Status:** Approved — usuário em 2026-10-02: “Aprovo. Gere o prompt de execução para que a fase de execução seja iniciado em outra janela de contexto”. 68 tarefas em 9 fases; T1–T11 concluídas localmente (11/68), fase 1/lote A fechados com a ressalva autorizada dos dois timeouts históricos, conforme evidências individuais abaixo.
+**Status:** Approved — usuário em 2026-10-02: “Aprovo. Gere o prompt de execução para que a fase de execução seja iniciado em outra janela de contexto”. 68 tarefas em 9 fases; T1–T12 concluídas localmente (12/68), fase 1/lote A fechados com a ressalva autorizada dos dois timeouts históricos, conforme evidências individuais abaixo.
 
 **Escopo:** 13 requisitos e 95 ACs aprovados. Uma retomada >=22h/<24h, continuidade restrita, desfecho >=48h, classificação após entrega e saldo mensal estimado. Sem modal/bloqueio financeiro.
 
@@ -951,16 +951,29 @@ externa de fullmonth/zero/identidade da conta permanece pendente.
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: filtros/identidade/período confirmados; contrato não confirmado recusa; 401/403/429; timeout; paginação incompleta; erro sem token; zero somente com prova.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **8 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Quick passou: `npx vitest run src/server/whatsapp/__tests__/analytics-query.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: filtros/identidade/período confirmados; contrato não confirmado recusa; 401/403/429; timeout; paginação incompleta; erro sem token; zero somente com prova.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **8 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Quick passou: `npx vitest run src/server/whatsapp/__tests__/analytics-query.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
 
 **Tests**: unit — `src/server/whatsapp/__tests__/analytics-query.test.ts`; matriz: Domínio/adapter puro.
 
 **Gate**: Quick; Build no fechamento da fase.
 
 **Commit**: `feat(l14b): consultar analytics pelo adapter graph` (docs para mudança exclusivamente contratual).
+
+**Resultado T12:** Quick root exit0, 86/86 testes, 4/4 arquivos, 1,51s,
+início 2026-10-02 23:55:41 America/Sao_Paulo (18 T12 + 28 T11 + 28 T8 + 12 Cloud).
+Factory opaca exige provas servidor, default recusa; uma consulta v25 com
+filtro normalizado comprovado. Decoder estrito recusa country null/alias,
+shape desconhecido/paginação/bucket parcial e vazio sem prova. Orçamento total
+15s monotônico inclui guarda/fetch/JSON/decode, inclusive bloqueio síncrono;
+401/403/429/rede/JSON retornam motivos limitados sem token/erro bruto.
+ESLint exit0; tsc mantém os 50 erros anteriores sem diferenças. Sem schema
+novo/SPEC_DEVIATION. Adequação em [t12-verification.md](t12-verification.md).
+[Observação real sanitizada](analytics-account-observation.md) confirma somente
+filtro/shape dessa conta de teste; fullmonth/zero/paginação/IANA/tenant/produção
+permanecem não comprovados, nenhuma capacidade real habilitada.
 
 ---
 

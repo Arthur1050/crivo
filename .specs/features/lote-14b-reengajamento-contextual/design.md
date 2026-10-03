@@ -589,6 +589,18 @@ aliases de país silenciosamente. Total+detalhe e sobreposições são recusados
 partições temporais de cada país devem cobrir o corte integralmente. Vazio só
 é zero com prova específica servidor. Fixtures são sintéticas, não prova externa.
 
+T12 implementa decoder básico v25 observado, condicionado a provas servidor
+separadas de filtro por número normalizado, mês inteiro e paginação. Ausência
+de prova recusa antes da rede. GET usa DAILY e filtros/dimensões do SDK; não
+insere phoneNumberId em phone_numbers. A forma observada exige country string
+alpha2 uppercase, sem tratar null como agregado documentado. Qualquer paging
+fora da forma comprovada recusa, sem seguir next. Token só no header servidor;
+erro vira código limitado. Orçamento total 15s usa timer/race e deadline
+monotônico antes/depois das etapas, incluindo JSON/decode síncrono.
+[Observação da conta de teste](analytics-account-observation.md) comprova filtro
+e shape básicos, mas os pontos são parciais e MONTHLY vazio não comprova zero.
+Nenhuma capacidade real é configurada com essas provas parciais.
+
 Fronteiras civis no fuso IANA confirmado, usando AT TIME ZONE no Postgres ou equivalente
 verificado; armazenar UTC. Não assumir o fuso SP do contato como fuso da conta. QueryEnd é
 capturado no começo da consulta; fim civil é metadado, não consulta de período futuro.
