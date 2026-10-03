@@ -1303,6 +1303,7 @@ Fase2 fechada sob a ressalva autorizada: npm test fresco exit1, 158/159 arquivos
 **Gate**: Full; Build no fechamento da fase.
 
 **Evidence**: `node node_modules/vitest/vitest.mjs run src/server/data/__tests__/escalation-executor.test.ts src/server/data/__tests__/assignment.test.ts` — 22/22, 2/2 arquivos, exit0, 49.66s, início14:03:01; 8 novos+14 regressões. Executor externo observado por client.query com BEGIN/SELECT/UPDATE/COMMIT e sem SAVEPOINT; rollback íntegro, seleção pós-lock real e política preservada. Sem desvio.
+Fechamento da fase: TS2339 na inspeção de query.mock.calls corrigido com argumento unknown antes do narrowing, todas as asserções intactas; regate root 22/22, 2/2 arquivos, exit0, 49.77s, início 14:43:17; tsc exit2 com 50 diagnósticos baseline/atuais e delta0.
 
 **Commit**: `feat(l14b): atribuição com executor transacional` (docs para mudança exclusivamente contratual).
 

@@ -65,7 +65,10 @@ describe("T22 — atribuição composta na transação do episódio", () => {
       const database = drizzle(client, { schema }), outer = vi.spyOn(database, "transaction"), global = vi.spyOn(db, "transaction"), queries = vi.spyOn(client, "query");
       expect(await database.transaction((tx) => assignBrokerForEscalation(tenantId, row.id, at, { status: "escalado_humano" }, tx))).toMatchObject({ ok: true, brokerId: broker });
       expect(outer).toHaveBeenCalledTimes(1); expect(global).not.toHaveBeenCalled();
-      const statements = queries.mock.calls.map(([config]) => typeof config === "string" ? config : config && typeof config === "object" && "text" in config ? String(config.text) : "");
+      const statements = queries.mock.calls.map((call) => {
+        const config: unknown = call[0];
+        return typeof config === "string" ? config : config && typeof config === "object" && "text" in config ? String(config.text) : "";
+      });
       for (const operation of [/^begin\b/i, /^select\b/i, /^update\b/i, /^commit\b/i]) expect(statements.some((statement) => operation.test(statement))).toBe(true);
       expect(statements.some((statement) => /savepoint/i.test(statement))).toBe(false);
       expect(await read(row.id)).toMatchObject({ assignedUserId: broker, status: "escalado_humano" });
