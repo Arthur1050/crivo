@@ -337,18 +337,18 @@ de qualquer prova real, conforme L-051. Não enviar 1.001 mensagens para fabrica
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| REEN-01 | P1: Momento permitido | Execute | Partial — T3 fase desconhecida/T7 canal confiável/T15 política pura22h–24h/T16 projeção revisada sobre âncora corrente, sem reabrir encerrada; seleção/efeitos e demais gates pendentes |
+| REEN-01 | P1: Momento permitido | Execute | Partial — T3 fase desconhecida/T7 canal confiável/T15 política pura22h–24h/T16 projeção revisada/T17 seleção paginada com corte, canal da âncora e dados inválidos fechados; reserva/efeitos e demais gates pendentes |
 | REEN-02 | P1: Texto contextual | Tasks | Planned |
-| REEN-03 | P1: Envio único e válido | Execute | Partial — T3/T4 reset/chave/consumo/T16 publicação com âncora/reset/CAS e replay; autorização, cancelamento integrado e uma chamada pendentes |
+| REEN-03 | P1: Envio único e válido | Execute | Partial — T3/T4 reset/chave/consumo/T16 publicação com âncora/reset/CAS e replay/T17 nova âncora seleciona nova chave preservando episódio consumido; autorização, cancelamento integrado e uma chamada pendentes |
 | REEN-04 | P1: Continuidade da memória | Execute | Partial — T3 projeção/T4 referências/T16 reset observado corrente na publicação; ponte, reconstrução e invalidação integradas pendentes |
-| REEN-05 | P1: Desfecho às 48h | Execute | Partial — T4 eixo de escalonamento/T15 política48h independente do horário; transição e concorrência pendentes |
+| REEN-05 | P1: Desfecho às 48h | Execute | Partial — T4 eixo de escalonamento/T15 política48h independente do horário/T17 seleção48h independente do resultado com trava humana; transição e concorrência pendentes |
 | PRECO-01 | P1: Classificação de entrega | Execute | Partial — T5 modelo/T8 reducer/T9 evidência persistida/T10 saída humana e agente; transporte real/apresentação pendentes |
 | PRECO-02 | P1: Autenticidade e correlação | Execute | Partial — T5 FKs/T7 identidade/T8 reducer/T9 origem opaca, lote/replay/ordem/T10 correlação antes e depois por carteira; HMAC instalado/integrações de envio pendentes |
 | USO-01 | P1: Saldo mensal estimado | Execute | Partial — T1/T2/T6 modelos/T7 gate Analytics/T11 mês civil/T12 adapter condicionado/T13 snapshot substituível; prova externa integral/tick pendentes |
 | USO-02 | P1: Atualização e indisponibilidade | Execute | Partial — T2/T6 modelos/T12 timeout/T13 cadência, lease e CAS com orçamento/T14 leituras stale e falha; UI/tick pendentes |
 | USO-03 | P1: Superfícies e permissões | Execute | Partial — T14 DAL por permissões, carteira, tenant/número e DTO; superfícies/refresh pendentes |
 | USO-04 | P1: Aviso sem bloqueio | Execute | Partial — T14 DTO unknown/stale e classificação histórica; aviso/envio/UI pendentes |
-| L14B-01 | P1: Isolamento e operação | Execute | Partial — T1–T6 modelos/T7 segredo servidor/T9 contexto, isolamento e log limitado/T10 vínculo e cascade/T14 DAL autorizada sem segredo ou Graph; demais fronteiras/retention pendentes |
+| L14B-01 | P1: Isolamento e operação | Execute | Partial — T1–T6 modelos/T7 segredo servidor/T9 contexto, isolamento e log limitado/T10 vínculo e cascade/T14 DAL autorizada/T17 seleção/cursor por tenant sem conteúdo; demais fronteiras/retention pendentes |
 | PROVA-01 | P1: Evidência integrada | Execute | Partial — T8 fixtures de preço 999/1000/1001/FEP/replay/T11 volume e fuso; provas integradas/virada real pendentes |
 
 **Coverage:** 13/13 requisitos e 95/95 critérios mapeados individualmente em [tasks.md](tasks.md).
@@ -406,7 +406,15 @@ sob lock real. Fase unknown não autoriza contato; encerrada não reabre na
 mesma âncora/reset. Pipeline/thread/condução preservados e rollback permite
 takeover humano. Adequação em [t16-verification.md](t16-verification.md).
 Invalidação automática de inbound/reset/ponte e writers/workflows seguem
-pendentes. São 16/68 tarefas concluídas; T17–T68, gates externos e verifier
+pendentes. T17 implementada: regate Full pelo root151/151, 7/7 arquivos,
+25 novos+126 regressões, 139,13s. Seleção22h/24h/48h por corte/cursor,
+limite real de101 linhas para102 leads, páginas100+2 sem perda e página
+vazia continuável; DTO somente IDs/âncora/ação e canal real da âncora.
+Falha inicial131/150 por timestamps rawstring do driver foi corrigida com
+decoder explícito e cenário PostgreSQL infinity que falha fechado, sem
+enfraquecer os24 casos anteriores. Adequação em [t17-verification.md](t17-verification.md).
+Claim, omissão/escalada persistidas, integração e revalidação final seguem
+pendentes. São 17/68 tarefas concluídas; T18–T68, gates externos e verifier
 global continuam pendentes, sem antecipar qualquer AC integral do produto.
 
 ## Success Criteria

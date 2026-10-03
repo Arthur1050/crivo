@@ -419,6 +419,31 @@ ilimitado nem usar lastInboundAt do buffer como relógio autoritativo. Considera
 real, fase conhecida, canal, status e condução. Fora de horário aguarda oportunidade <24h;
 >=24h registra omissão, >=48h oferece escalonamento, sem depender de reengaged do cache.
 
+T17 concretiza `listCandidates(AuthResult, {cursor?, limit?})`: limit padrão100,
+inteiro1..100; sucesso `{ok:true, candidates, cutoffAt:Date, nextCursor:string|null}`,
+falha `{ok:false, reason:"invalid-limit"|"invalid-cursor"|"tenant-not-found"}`.
+Cada item contém apenas leadId, anchorMessageId, anchorSentAt ISO, phoneNumberId
+e action prepare/omit/escalate. Cursor opaco base64url canônico contém version1,
+tenantId, cutoffAt ISO e afterLeadId do último lead EXAMINADO. A continuação
+mantém o corte do primeiro tick; cursor alheio, inválido ou com corte futuro recusa.
+Uma leitura de settings e uma consulta lateral limitada a limit+1 leads por ID
+resolvem um inbound por lead; não há loop para preencher páginas. Página vazia
+pode ter nextCursor e deve ser continuada até null. Leads createdAt>cutoffAt
+esperam novo tick. O corte estabiliza o relógio, sem prometer snapshot MVCC entre
+páginas; reserva/autorização revalidam fatos vivos sob locks nas tarefas seguintes.
+
+A seleção exige projeção na âncora/reset correntes e o phoneNumberId da mensagem
+inbound igual ao canal comercial confiável da lead/tenant. NULL histórico ou canal
+conflitante não herda correlação da lead. O execute(sql) do driver instalado devolve
+timestamps rawstring; T17 os decodifica explicitamente e descarta linhas com instante
+não finito/ilegível, inclusive infinity real do PostgreSQL. Lease preparando viva
+aguarda; prazo exato expirado permite seleção. Marker consumido e estados terminais
+não voltam para prepare/omit; reset não muda a chave tenant/lead/canal/âncora.
+Novo inbound real com projeção corrente permite outra chave, preservando a tentativa
+anterior. Escalada48h independe do envio, horário, Analytics e token; já escalado ou
+statusChangedBy humano exclui a seleção. T17 apenas lê: claim, omissão, transição,
+uma chamada externa e invalidação automática permanecem nas tarefas seguintes.
+
 Prepare trava lead, resolve âncora por sentAt/id e verifica silêncio >=22h/<24h e demais
 condições. Claim de preparação de 5min, token novo a cada aquisição. Geração tem limite
 TOTAL de 120s: timeout individual do modelo não limita múltiplas iterações. Worker antigo
