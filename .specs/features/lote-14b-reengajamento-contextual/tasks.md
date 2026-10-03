@@ -1514,16 +1514,18 @@ Correção somente da autoria factual da fixture; regate `node node_modules/vite
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: keyword/natural usam mesmo serviço; replay conserva timestamp; preparação cancelada; ponte invalidada; corrida com authorizeDispatch; tenant; nenhum histórico restaurado.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **7 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/server/integration/__tests__/lgpd-reengagement.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: keyword/natural usam mesmo serviço; replay conserva timestamp; preparação cancelada; ponte invalidada; corrida com authorizeDispatch; tenant; nenhum histórico restaurado.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **7 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou: `npx vitest run src/server/integration/__tests__/lgpd-reengagement.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
 
 **Tests**: integration — `src/server/integration/__tests__/lgpd-reengagement.test.ts`; matriz: Serviço/repositório.
 
 **Gate**: Full; Build no fechamento da fase.
 
 **Commit**: `feat(l14b): invalidar ponte no opt-out da integração` (docs para mudança exclusivamente contratual).
+
+**Evidence**: `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__/lgpd-reengagement.test.ts src/server/integration/__tests__/lgpd.test.ts src/server/integration/__tests__/routes/leads-opt-out.test.ts`: 23/23, 3 arquivos, exit0, 104.23s; 12 novos PG +11 regressões preservadas, sem desvio.
 
 ---
 

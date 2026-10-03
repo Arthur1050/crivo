@@ -1,8 +1,8 @@
 import "server-only";
-import { and, eq, lte, sql } from "drizzle-orm";
+import { lte } from "drizzle-orm";
 import { db } from "../../db";
-import { humanMessageSends, leads } from "../../db/schema";
-import { purgeIntegrationRefusals } from "../data";
+import { humanMessageSends } from "../../db/schema";
+import { optOutLeadByHuman, purgeIntegrationRefusals, serviceScope } from "../data";
 import { createDocumentLifecycle } from "../documents/lifecycle";
 import {
   expireDueDocuments,
@@ -18,26 +18,21 @@ export interface OptOutResult {
 
 /**
  * Registra o opt-out de um lead (design.md — `src/server/integration/
- * lgpd.ts`, LGPD-01), idempotente: `SET opted_out_at = COALESCE(opted_out_at,
- * now())` preserva o timestamp original numa segunda chamada — nunca o
- * substitui por um "agora" mais recente. Retorna `null` quando nenhuma linha
- * corresponde a `tenantId` + `leadId` (lead inexistente ou de outro tenant —
- * 404 na rota).
+ * lgpd.ts`, LGPD-01). O mesmo writer do CRM trava lead→episódios, preserva
+ * o timestamp original no replay e invalida memória/ponte na primeira ação.
+ * Palavra-chave e linguagem natural chegam a este serviço pela mesma rota.
+ * Retorna `null` fora do tenant (404 na rota), sem expor campos internos.
  */
 export async function optOutLead(
   tenantId: string,
-  leadId: string
+  leadId: string,
+  options: { now?: () => Date; database?: Pick<typeof db, "transaction"> } = {},
 ): Promise<OptOutResult | null> {
-  const rows = await db
-    .update(leads)
-    .set({ optedOutAt: sql`coalesce(${leads.optedOutAt}, now())` })
-    .where(and(eq(leads.tenantId, tenantId), eq(leads.id, leadId)))
-    .returning({ optedOutAt: leads.optedOutAt });
-
-  const row = rows[0];
-  if (!row) return null;
-  // COALESCE(coluna, now()) nunca é null — now() sempre supre a ausência.
-  return { optedOutAt: row.optedOutAt! };
+  // O argumento Date legado é ignorado: o clock abaixo só é lido após locks.
+  const result = await optOutLeadByHuman(serviceScope(tenantId), leadId, new Date(0), {
+    ...options, now: options.now ?? (() => new Date()),
+  });
+  return result ? { optedOutAt: result.optedOutAt } : null;
 }
 
 /** Retenção das reservas de envio humano (lote-14 — design.md Data Models). */
