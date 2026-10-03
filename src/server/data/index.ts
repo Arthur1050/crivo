@@ -1669,6 +1669,8 @@ export interface RecordHumanMessageInput {
   /** Id devolvido pela Meta (`messages[0].id`), gravado como `externalId`. */
   wamid: string;
   sentAt: Date;
+  /** Número efetivamente usado no envio, nunca inferido do lead atual. */
+  whatsappPhoneNumberId?: string | null;
 }
 
 /**
@@ -1680,73 +1682,104 @@ export interface RecordHumanMessageInput {
  * tenant.
  */
 export async function recordHumanMessage(
-  input: RecordHumanMessageInput
+  input: RecordHumanMessageInput,
+  options: { database?: Pick<typeof db, "transaction"> } = {},
 ): Promise<Message | null> {
   const { tenantId, leadId } = input;
-  return db.transaction(async (tx) => {
-    const leadRows = await tx
-      .select({ id: leads.id })
-      .from(leads)
-      .where(and(eq(leads.tenantId, tenantId), eq(leads.id, leadId)))
-      .limit(1);
-    if (!leadRows[0]) return null;
+  if (!Number.isFinite(input.sentAt.getTime())) throw new Error("recordHumanMessage: invalid timestamp");
+  try {
+    return await (options.database ?? db).transaction(async (tx) => {
+      const leadRows = await tx
+        .select({ id: leads.id })
+        .from(leads)
+        .where(and(eq(leads.tenantId, tenantId), eq(leads.id, leadId)))
+        .for("update");
+      if (!leadRows[0]) return null;
 
-    const conversationRows = await tx
-      .select()
-      .from(conversations)
-      .where(and(eq(conversations.tenantId, tenantId), eq(conversations.leadId, leadId)))
-      .limit(1);
-    const conversation =
-      conversationRows[0] ??
-      (await tx.insert(conversations).values({ tenantId, leadId }).returning())[0];
+      const [reservation] = await tx.select().from(humanMessageSends)
+        .where(and(eq(humanMessageSends.tenantId, tenantId), eq(humanMessageSends.requestId, input.requestId))).for("update");
+      if (reservation && reservation.leadId !== leadId) return null;
+      const ownHumanMessage = async (message: Message | undefined) => {
+        if (!message || message.sender !== "humano") return false;
+        const [owner] = await tx.select({ leadId: conversations.leadId }).from(conversations)
+          .where(and(eq(conversations.tenantId, tenantId), eq(conversations.id, message.conversationId)));
+        return owner?.leadId === leadId;
+      };
+      if (reservation?.state === "enviada") {
+        const [original] = reservation.messageId ? await tx.select().from(messages)
+          .where(and(eq(messages.tenantId, tenantId), eq(messages.id, reservation.messageId))) : [];
+        if (!original || !await ownHumanMessage(original)) return null;
+        await attachReceipt(serviceScope(tenantId), original.id, tx);
+        return original;
+      }
+      const [replay] = await tx.select().from(messages)
+        .where(and(eq(messages.tenantId, tenantId), eq(messages.externalId, input.wamid))).limit(1);
+      if (replay && !await ownHumanMessage(replay)) return null;
 
-    const inserted = await tx
-      .insert(messages)
-      .values({
-        tenantId,
-        conversationId: conversation.id,
-        sender: "humano",
-        content: input.content,
-        sentAt: input.sentAt,
-        externalId: input.wamid,
-        authorUserId: input.authorUserId,
-        authorName: input.authorName,
-      })
-      .onConflictDoNothing({
-        target: [messages.tenantId, messages.externalId],
-        where: sql`${messages.externalId} is not null`,
-      })
-      .returning();
-    const message =
-      inserted[0] ??
-      (
-        await tx
-          .select()
-          .from(messages)
-          .where(and(eq(messages.tenantId, tenantId), eq(messages.externalId, input.wamid)))
-          .limit(1)
-      )[0];
-    if (!message) {
-      throw new Error("recordHumanMessage: conflito sem mensagem existente.");
-    }
+      const conversationRows = await tx
+        .select()
+        .from(conversations)
+        .where(and(eq(conversations.tenantId, tenantId), eq(conversations.leadId, leadId)))
+        .limit(1);
+      const conversation = replay ? null :
+        conversationRows[0] ??
+        (await tx.insert(conversations).values({ tenantId, leadId }).returning())[0];
 
-    await tx
-      .update(humanMessageSends)
-      .set({
-        state: "enviada",
-        wamid: input.wamid,
-        messageId: message.id,
-        failure: null,
-        updatedAt: input.sentAt,
-      })
-      .where(
-        and(
-          eq(humanMessageSends.tenantId, tenantId),
-          eq(humanMessageSends.requestId, input.requestId)
-        )
-      );
-    return message;
-  });
+      const inserted = replay ? [] : await tx
+        .insert(messages)
+        .values({
+          tenantId,
+          conversationId: conversation!.id,
+          sender: "humano",
+          content: input.content,
+          sentAt: input.sentAt,
+          externalId: input.wamid,
+          authorUserId: input.authorUserId,
+          authorName: input.authorName,
+          whatsappPhoneNumberId: input.whatsappPhoneNumberId ?? null,
+        })
+        .onConflictDoNothing({
+          target: [messages.tenantId, messages.externalId],
+          where: sql`${messages.externalId} is not null`,
+        })
+        .returning();
+      const message =
+        replay ?? inserted[0] ??
+        (
+          await tx
+            .select()
+            .from(messages)
+            .where(and(eq(messages.tenantId, tenantId), eq(messages.externalId, input.wamid)))
+            .limit(1)
+        )[0];
+      if (!message) {
+        throw new Error("recordHumanMessage: conflito sem mensagem existente.");
+      }
+      if (!await ownHumanMessage(message)) throw new MessageIdentityConflict();
+      await attachReceipt(serviceScope(tenantId), message.id, tx);
+
+      await tx
+        .update(humanMessageSends)
+        .set({
+          state: "enviada",
+          wamid: input.wamid,
+          messageId: message.id,
+          failure: null,
+          updatedAt: message.sentAt,
+        })
+        .where(
+          and(
+            eq(humanMessageSends.tenantId, tenantId),
+            eq(humanMessageSends.requestId, input.requestId),
+            eq(humanMessageSends.leadId, leadId)
+          )
+        );
+      return message;
+    });
+  } catch (error) {
+    if (error instanceof MessageIdentityConflict) return null;
+    throw error;
+  }
 }
 
 export interface PendingMeeting {

@@ -1576,16 +1576,18 @@ Correção somente da autoria factual da fixture; regate `node node_modules/vite
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: número real versus atual; legado nullable; status órfão antes do registro; replay de reserva; outro tenant/canal; falha de registro; autoria humana; não atualizar lastInboundAt.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **8 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/server/data/__tests__/human-record-channel.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: número real versus atual; legado nullable; status órfão antes do registro; replay de reserva; outro tenant/canal; falha de registro; autoria humana; não atualizar lastInboundAt.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **8 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou: `npx vitest run src/server/data/__tests__/human-record-channel.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
 
 **Tests**: integration — `src/server/data/__tests__/human-record-channel.test.ts`; matriz: DAL/mutação.
 
 **Gate**: Full; Build no fechamento da fase.
 
 **Commit**: `feat(l14b): canal e recibo no registro humano` (docs para mudança exclusivamente contratual).
+
+**Evidence**: `node node_modules/vitest/vitest.mjs run src/server/data/__tests__/human-record-channel.test.ts src/server/data/__tests__/human-send.test.ts`: 33/33, 2 arquivos, exit0, 90.55s; 18 novos PG +15 regressões preservadas, sem desvio.
 
 ---
 
