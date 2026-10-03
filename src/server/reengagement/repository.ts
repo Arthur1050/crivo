@@ -1,9 +1,10 @@
 import "server-only";
-import { and, eq, sql } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { evaluateReengagement } from "../../../n8n/src/reengagement.mjs";
 import { toWhatsAppMsisdn } from "../../../n8n/src/phone.mjs";
 import { db } from "../../db";
-import { tenants } from "../../db/schema";
+import { conversations, leadAgentState, leads, messages, reengagementEpisodes, tenants, whatsappChannels } from "../../db/schema";
 import type { AuthResult } from "../integration/auth";
 
 export interface ReengagementCandidate {
@@ -119,4 +120,56 @@ export async function listCandidates(
   const nextCursor = result.rows.length > limit ? Buffer.from(JSON.stringify({ version: 1, tenantId: context.tenantId,
     afterLeadId: examined[examined.length - 1].leadId, cutoffAt: cutoffAt.toISOString() } satisfies Cursor)).toString("base64url") : null;
   return { ok: true, candidates, cutoffAt, nextCursor };
+}
+
+export type PreparationClaimResult =
+  | { ok: true; acquired: true; episodeId: string; claimToken: string; claimExpiresAt: Date; agentStateRevision: number }
+  | { ok: true; acquired: false; episodeId: string; state: typeof reengagementEpisodes.$inferSelect["state"] }
+  | { ok: false; reason: "invalid-anchor" | "lead-not-found" | "context-changed" | "lease-active" | "not-eligible"; policyReason?: string };
+
+/** Só o vencedor recebe token. Relógio é amostrado após lead→episódio. */
+export async function claimPreparation(
+  context: AuthResult,
+  leadId: string,
+  input: { anchorMessageId: string },
+  options: { now?: () => Date; database?: Pick<typeof db, "transaction"> } = {},
+): Promise<PreparationClaimResult> {
+  if (typeof input.anchorMessageId !== "string" || !UUID.test(input.anchorMessageId)) return { ok: false, reason: "invalid-anchor" };
+  return (options.database ?? db).transaction(async (tx): Promise<PreparationClaimResult> => {
+    const [lead] = await tx.select().from(leads).where(and(eq(leads.tenantId, context.tenantId), eq(leads.id, leadId))).for("update");
+    if (!lead) return { ok: false, reason: "lead-not-found" };
+    const [anchor] = await tx.select({ id: messages.id, sentAt: messages.sentAt, phoneNumberId: messages.whatsappPhoneNumberId }).from(messages)
+      .innerJoin(conversations, and(eq(conversations.id, messages.conversationId), eq(conversations.tenantId, messages.tenantId)))
+      .where(and(eq(messages.tenantId, context.tenantId), eq(conversations.leadId, leadId), eq(messages.sender, "lead")))
+      .orderBy(desc(messages.sentAt), desc(messages.id)).limit(1);
+    const [agent] = await tx.select().from(leadAgentState).where(and(eq(leadAgentState.tenantId, context.tenantId), eq(leadAgentState.leadId, leadId)));
+    if (!anchor || anchor.id !== input.anchorMessageId || agent?.anchorMessageId !== anchor.id
+        || lead.memoryResetRequestedAt?.getTime() !== agent.resetObservedAt?.getTime()) return { ok: false, reason: "context-changed" };
+    const [channel] = await tx.select().from(whatsappChannels).where(and(eq(whatsappChannels.tenantId, context.tenantId),
+      eq(whatsappChannels.phoneNumberId, lead.whatsappPhoneNumberId ?? "")));
+    const [settings] = await tx.select({ meetingDays: tenants.meetingDays, meetingHoursStart: tenants.meetingHoursStart, meetingHoursEnd: tenants.meetingHoursEnd })
+      .from(tenants).where(eq(tenants.id, context.tenantId));
+    const [episode] = await tx.select().from(reengagementEpisodes).where(and(eq(reengagementEpisodes.tenantId, context.tenantId),
+      eq(reengagementEpisodes.leadId, leadId), eq(reengagementEpisodes.phoneNumberId, channel?.phoneNumberId ?? ""),
+      eq(reengagementEpisodes.anchorMessageId, anchor.id))).for("update");
+    const now = (options.now ?? (() => new Date()))();
+    const decision = evaluateReengagement({ lead, anchor: { messageId: anchor.id, sentAt: anchor.sentAt }, phase: agent.phase,
+      channel: channel?.ownershipVerifiedAt && Number.isFinite(channel.ownershipVerifiedAt.getTime()) && anchor.phoneNumberId === channel.phoneNumberId ? channel : null,
+      destination: toWhatsAppMsisdn(lead.externalId), now, settings });
+    if (decision.action !== "prepare") return { ok: false, reason: "not-eligible", policyReason: decision.reason };
+    if (episode && (episode.dispatchAuthorizedAt || episode.state !== "preparing")) {
+      return { ok: true, acquired: false, episodeId: episode.id, state: episode.state };
+    }
+    if (episode?.claimExpiresAt && (!Number.isFinite(episode.claimExpiresAt.getTime()) || episode.claimExpiresAt.getTime() > now.getTime())) {
+      return { ok: false, reason: "lease-active" };
+    }
+    const claimToken = randomUUID(), claimExpiresAt = new Date(now.getTime() + 5 * 60 * 1000);
+    const values = { resetObservedAt: agent.resetObservedAt, agentStateRevision: agent.revision, claimToken, claimExpiresAt,
+      preparedAt: now, reasonCode: null, updatedAt: now };
+    const [claimed] = episode
+      ? await tx.update(reengagementEpisodes).set(values).where(eq(reengagementEpisodes.id, episode.id)).returning()
+      : await tx.insert(reengagementEpisodes).values({ tenantId: context.tenantId, leadId, phoneNumberId: channel!.phoneNumberId,
+        anchorMessageId: anchor.id, anchorSentAt: anchor.sentAt, createdAt: now, ...values }).returning();
+    return { ok: true, acquired: true, episodeId: claimed.id, claimToken, claimExpiresAt, agentStateRevision: agent.revision };
+  });
 }

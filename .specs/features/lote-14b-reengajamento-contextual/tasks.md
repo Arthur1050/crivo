@@ -1169,14 +1169,16 @@ Fase2 fechada sob a ressalva autorizada: npm test fresco exit1, 158/159 arquivos
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: dois workers; token substituído; 5min exatas/vencida; contexto mudou; fora de janela/horário; fase unknown; reset não cria outro envio; nova âncora; replay; tenant.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **10 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/server/reengagement/__tests__/preparation-claim.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: dois workers; token substituído; 5min exatas/vencida; contexto mudou; fora de janela/horário; fase unknown; reset não cria outro envio; nova âncora; replay; tenant.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **10 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou: `npx vitest run src/server/reengagement/__tests__/preparation-claim.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
 
 **Tests**: integration — `src/server/reengagement/__tests__/preparation-claim.test.ts`; matriz: Serviço/repositório.
 
 **Gate**: Full; Build no fechamento da fase.
+
+**Evidence**: `node node_modules/vitest/vitest.mjs run src/server/reengagement/__tests__/preparation-claim.test.ts src/server/reengagement/__tests__/candidates.test.ts` — 54/54, 2/2 arquivos, exit0, 119.07s; 29 novos. Postgres real, concorrência e relógio após locks; sem desvio.
 
 **Commit**: `feat(l14b): reservar preparação de episódio` (docs para mudança exclusivamente contratual).
 
