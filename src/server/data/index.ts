@@ -413,14 +413,16 @@ export async function getMessages(
 export async function getLeadMessages(
   tenantId: string,
   leadId: string,
-  limit: number
+  limit: number,
+  executor: Pick<typeof db, "select"> = db,
 ): Promise<Message[] | null> {
   // Caminho do contrato (SEC-01): o agente não é usuário e enxerga a
   // imobiliária inteira, por credencial de serviço.
-  const lead = await getLead(serviceScope(tenantId), leadId);
+  const [lead] = await executor.select({ id: leads.id }).from(leads)
+    .where(and(eq(leads.tenantId, tenantId), eq(leads.id, leadId)));
   if (!lead) return null;
 
-  const rows = await db
+  const rows = await executor
     .select(getTableColumns(messages))
     .from(messages)
     .innerJoin(conversations, eq(messages.conversationId, conversations.id))
@@ -2296,6 +2298,7 @@ export interface IngestAgentMessageResult {
 }
 
 class MessageIdentityConflict extends Error {}
+export class MessageChannelNotLinked extends Error {}
 
 /**
  * Ingestão idempotente de uma mensagem vinda do agente (lote-5 — INT-05),
@@ -2319,7 +2322,7 @@ export async function ingestAgentMessage(
   tenantId: string,
   leadId: string,
   input: IngestAgentMessageInput,
-  options: { now?: () => Date; database?: Pick<typeof db, "transaction"> } = {}
+  options: { now?: () => Date; database?: Pick<typeof db, "transaction">; requireLinkedChannel?: boolean } = {}
 ): Promise<IngestAgentMessageResult | null> {
   if (!Number.isFinite(input.sentAt.getTime())) throw new Error("ingestAgentMessage: invalid timestamp");
   try {
@@ -2345,6 +2348,11 @@ export async function ingestAgentMessage(
       }
       const episodes = await tx.select().from(reengagementEpisodes).where(and(eq(reengagementEpisodes.tenantId, tenantId), eq(reengagementEpisodes.leadId, leadId)))
         .orderBy(reengagementEpisodes.id).for("update");
+      if (options.requireLinkedChannel && input.whatsappPhoneNumberId !== undefined && input.whatsappPhoneNumberId !== null) {
+        const [channel] = await tx.select({ ownershipVerifiedAt: whatsappChannels.ownershipVerifiedAt }).from(whatsappChannels)
+          .where(and(eq(whatsappChannels.tenantId, tenantId), eq(whatsappChannels.phoneNumberId, input.whatsappPhoneNumberId))).for("share");
+        if (!channel?.ownershipVerifiedAt || !Number.isFinite(channel.ownershipVerifiedAt.getTime())) throw new MessageChannelNotLinked();
+      }
       const now = (options.now ?? (() => new Date()))();
       if (!Number.isFinite(now.getTime())) throw new Error("ingestAgentMessage: invalid clock");
       const [previousAnchor] = await anchorQuery();

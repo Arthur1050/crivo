@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { createHash, randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "../../../../db";
 import {
   conversations,
@@ -10,6 +10,7 @@ import {
   messages,
   tenantApiKeys,
   tenants,
+  whatsappChannels,
 } from "../../../../db/schema";
 import {
   DELETE,
@@ -127,6 +128,37 @@ describe("routes: POST /api/v1/leads/[id]/messages", () => {
       sentAt: "2026-08-01T10:00:00Z",
     };
   }
+
+  it("T30 canal próprio verificado e metadata de âncora atravessam HTTP", async () => {
+    const phoneNumberId = "430000000000001";
+    await db.insert(whatsappChannels).values({ tenantId: tenantAId, phoneNumberId, ownershipVerifiedAt: new Date("2026-08-01T00:00:00Z") });
+    try {
+      const response = await callPost(leadAId, { ...validPayload(randomUUID()), sentAt: "2026-08-02T10:00:00Z", whatsappPhoneNumberId: phoneNumberId });
+      expect(response.status).toBe(201);
+      const body = await response.json(); expect(body.whatsappPhoneNumberId).toBe(phoneNumberId); expect(body.anchorMessageId).toBe(body.id); expect(body.agentStateRevision).toBeGreaterThan(0);
+    } finally { await db.delete(whatsappChannels).where(and(eq(whatsappChannels.tenantId, tenantAId), eq(whatsappChannels.phoneNumberId, phoneNumberId))); }
+  });
+
+  it("T30 canal não vinculado responde409 sem gravação e lead de outro tenant continua404", async () => {
+    const externalId = randomUUID(), input = { ...validPayload(externalId), whatsappPhoneNumberId: "430000000000099" };
+    const response = await callPost(leadAId, input);
+    expect(response.status).toBe(409); expect((await response.json()).code).toBe("canal-nao-vinculado");
+    expect(await db.select().from(messages).where(eq(messages.externalId, externalId))).toEqual([]);
+    const foreign = await callPost(leadOfBId, input); expect(foreign.status).toBe(404); expect((await foreign.json()).code).toBe("recurso-nao-encontrado");
+  });
+
+  it.each([null, undefined])("T30 canal legado%s e replay conservam mensagem enquanto metadata é corrente", async (whatsappPhoneNumberId) => {
+    const input = { ...validPayload(randomUUID()), ...(whatsappPhoneNumberId !== undefined ? { whatsappPhoneNumberId } : {}) };
+    const first = await callPost(leadAId, input); expect(first.status).toBe(201); const original = await first.json();
+    const replay = await callPost(leadAId, { ...input, whatsappPhoneNumberId: "430000000000099" }); expect(replay.status).toBe(200);
+    expect(await replay.json()).toEqual(original); expect(original.whatsappPhoneNumberId).toBeNull(); expect(original.anchorMessageId).toBeTruthy(); expect(original.agentStateRevision).toBeGreaterThan(0);
+  });
+
+  it.each(["", 123, "abc"])("T30 formato de canal%s responde400 sem descartá-lo", async (whatsappPhoneNumberId) => {
+    const externalId = randomUUID(), response = await callPost(leadAId, { ...validPayload(externalId), whatsappPhoneNumberId });
+    expect(response.status).toBe(400); expect((await response.json()).code).toBe("payload-invalido");
+    expect(await db.select().from(messages).where(eq(messages.externalId, externalId))).toEqual([]);
+  });
 
   it("mensagem válida responde 201 e persiste (INT-05 AC1)", async () => {
     const externalId = randomUUID();

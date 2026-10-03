@@ -186,6 +186,16 @@ paths:
       responses:
         "200":
           description: Mensagens do lead em ordem cronológica crescente.
+          headers:
+            X-Crivo-Anchor-Message-Id:
+              description: ID do inbound cronologicamente corrente (sentAt/id), independente do limit; string null sem inbound.
+              schema:
+                type: string
+            X-Crivo-Agent-State-Revision:
+              description: Revisão corrente da projeção do agente; string null sem projeção. Mesmo snapshot do histórico, inclusive array vazio.
+              schema:
+                type: string
+                pattern: '^(null|[0-9]+)$'
           content:
             application/json:
               schema:
@@ -213,6 +223,10 @@ paths:
         `sentAt`. Só `agente` e `lead` são aceitos em `sender`: `humano` é
         autoria do CRM (envio pela tela de Chats) e responde `400
         payload-invalido`, sem gravar.
+        Canal ausente/nulo mantém legado sem inferência. Canal novo presente
+        exige vínculo e propriedade verificada no tenant, sem credencial de
+        transporte; caso contrário 409 canal-nao-vinculado. Replay conserva
+        todos os fatos originais, inclusive canal, e retorna metadata atual.
       parameters:
         - $ref: "#/components/parameters/LeadId"
         - $ref: "#/components/parameters/XCrivoTenant"
@@ -228,13 +242,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Message"
+                $ref: "#/components/schemas/MessageIngestResponse"
         "200":
           description: Mensagem já existia para este `externalId` — devolvida sem duplicar.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Message"
+                $ref: "#/components/schemas/MessageIngestResponse"
         "400":
           $ref: "#/components/responses/PayloadInvalido"
         "401":
@@ -243,6 +257,12 @@ paths:
           $ref: "#/components/responses/RecursoNaoEncontrado"
         "413":
           $ref: "#/components/responses/CorpoGrandeDemais"
+        "409":
+          description: Número novo não vinculado e verificado neste tenant (canal-nao-vinculado).
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
       security:
         - bearerAuth: []
         - serviceAuth: []
@@ -553,6 +573,7 @@ components:
         - sem-corretor-disponivel
         - conflito-de-agenda
         - lead-conduzido-por-humano
+        - canal-nao-vinculado
     Problem:
       type: object
       description: application/problem+json (RFC 9457).
@@ -871,9 +892,13 @@ components:
         sentAt:
           type: string
           format: date-time
+        whatsappPhoneNumberId:
+          type: ["string", "null"]
+          pattern: '^\s*[0-9]{1,32}\s*$'
+          description: ID factual do número no evento/envio; opcional ou nulo para legado, sem inferência do cadastro do lead. String recebe trim antes da validação.
     Message:
       type: object
-      required: [id, externalId, sender, content, sentAt, authorName]
+      required: [id, externalId, sender, content, sentAt, authorName, whatsappPhoneNumberId]
       properties:
         id:
           type: string
@@ -892,6 +917,23 @@ components:
           description: >-
             Nome de quem escreveu, só quando `sender` é `humano` (lote-14); `null`
             nas demais.
+        whatsappPhoneNumberId:
+          type: ["string", "null"]
+          description: Canal factual original da mensagem; null no legado, nunca enriquecido no replay.
+    MessageIngestResponse:
+      allOf:
+        - $ref: "#/components/schemas/Message"
+        - type: object
+          required: [anchorMessageId, agentStateRevision]
+          properties:
+            anchorMessageId:
+              type: ["string", "null"]
+              format: uuid
+              description: ID do inbound corrente por sentAt/id, mesmo ao ingerir saída, mensagem atrasada ou replay; null sem inbound.
+            agentStateRevision:
+              type: ["integer", "null"]
+              minimum: 1
+              description: Revisão corrente da projeção do agente, independente da revisão da ponte; null sem projeção.
     ContextDocumentCategory:
       type: object
       required: [name, color]

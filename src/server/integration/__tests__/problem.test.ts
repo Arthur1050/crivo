@@ -37,6 +37,7 @@ describe("server/integration problem", () => {
         [409, "transicao-invalida"],
         [409, "lead-travado-por-humano"],
         [409, "motivo-escalonamento-obrigatorio"],
+        [409, "canal-nao-vinculado"],
         [413, "corpo-grande-demais"],
         [404, "rota-inexistente"],
         [405, "metodo-nao-suportado"],

@@ -1,10 +1,14 @@
 import "server-only";
-import { getLeadMessages, ingestAgentMessage, type Message } from "../data";
+import { and, desc, eq } from "drizzle-orm";
+import { db } from "../../db";
+import { conversations, leadAgentState, leads, messages } from "../../db/schema";
+import { getLeadMessages, ingestAgentMessage, MessageChannelNotLinked, type Message } from "../data";
 import type { MessageCreateDto } from "./parsers";
 
+interface AnchorProjection { anchorMessageId: string | null; agentStateRevision: number | null }
 export type IngestMessageResult =
-  | { ok: true; created: boolean; message: Message }
-  | { ok: false; code: "recurso-nao-encontrado" };
+  | ({ ok: true; created: boolean; message: Message } & AnchorProjection)
+  | { ok: false; code: "recurso-nao-encontrado" | "canal-nao-vinculado" };
 
 /**
  * Ingestão idempotente de mensagens do agente (design.md —
@@ -17,17 +21,24 @@ export type IngestMessageResult =
 export async function ingestMessage(
   tenantId: string,
   leadId: string,
-  dto: MessageCreateDto
+  dto: MessageCreateDto,
+  options: { now?: () => Date; database?: Pick<typeof db, "transaction"> } = {},
 ): Promise<IngestMessageResult> {
-  const result = await ingestAgentMessage(tenantId, leadId, {
-    externalId: dto.externalId,
-    sender: dto.sender,
-    content: dto.content,
-    sentAt: dto.sentAt,
-  });
+  try {
+    const result = await ingestAgentMessage(tenantId, leadId, {
+      externalId: dto.externalId,
+      sender: dto.sender,
+      content: dto.content,
+      sentAt: dto.sentAt,
+      whatsappPhoneNumberId: dto.whatsappPhoneNumberId,
+    }, { ...options, requireLinkedChannel: true });
 
-  if (!result) return { ok: false, code: "recurso-nao-encontrado" };
-  return { ok: true, created: result.created, message: result.message };
+    if (!result) return { ok: false, code: "recurso-nao-encontrado" };
+    return { ok: true, ...result };
+  } catch (error) {
+    if (error instanceof MessageChannelNotLinked) return { ok: false, code: "canal-nao-vinculado" };
+    throw error;
+  }
 }
 
 /** Representação de uma mensagem na API de integração (mesmo estilo de
@@ -41,6 +52,7 @@ export interface SerializedMessage {
   sentAt: string;
   /** Nome de quem escreveu, só para `sender: humano` (lote-14); senão `null`. */
   authorName: string | null;
+  whatsappPhoneNumberId: string | null;
 }
 
 export function serializeMessage(message: Message): SerializedMessage {
@@ -51,11 +63,12 @@ export function serializeMessage(message: Message): SerializedMessage {
     content: message.content,
     sentAt: message.sentAt.toISOString(),
     authorName: message.authorName ?? null,
+    whatsappPhoneNumberId: message.whatsappPhoneNumberId ?? null,
   };
 }
 
 export type ListMessagesResult =
-  | { ok: true; messages: Message[] }
+  | ({ ok: true; messages: Message[] } & AnchorProjection)
   | { ok: false; code: "recurso-nao-encontrado" };
 
 /**
@@ -67,9 +80,19 @@ export type ListMessagesResult =
 export async function listMessages(
   tenantId: string,
   leadId: string,
-  limit: number
+  limit: number,
+  options: { database?: Pick<typeof db, "transaction"> } = {},
 ): Promise<ListMessagesResult> {
-  const result = await getLeadMessages(tenantId, leadId, limit);
-  if (result === null) return { ok: false, code: "recurso-nao-encontrado" };
-  return { ok: true, messages: result };
+  return (options.database ?? db).transaction(async (tx): Promise<ListMessagesResult> => {
+    const [lead] = await tx.select({ id: leads.id }).from(leads).where(and(eq(leads.tenantId, tenantId), eq(leads.id, leadId))).for("update");
+    if (!lead) return { ok: false, code: "recurso-nao-encontrado" };
+    const result = await getLeadMessages(tenantId, leadId, limit, tx);
+    const [anchor] = await tx.select({ id: messages.id }).from(messages)
+      .innerJoin(conversations, and(eq(conversations.id, messages.conversationId), eq(conversations.tenantId, messages.tenantId)))
+      .where(and(eq(messages.tenantId, tenantId), eq(conversations.leadId, leadId), eq(messages.sender, "lead")))
+      .orderBy(desc(messages.sentAt), desc(messages.id)).limit(1);
+    const [agent] = await tx.select({ revision: leadAgentState.revision }).from(leadAgentState)
+      .where(and(eq(leadAgentState.tenantId, tenantId), eq(leadAgentState.leadId, leadId)));
+    return { ok: true, messages: result!, anchorMessageId: anchor?.id ?? null, agentStateRevision: agent?.revision ?? null };
+  });
 }

@@ -130,6 +130,12 @@ Nenhum desses passos exige alterar `app/(crm)/**` (as telas do CRM) — elas nun
 
 ## 9. Histórico de mensagens do lead (lote-6b — CTX-02)
 
+L14b: `POST /leads/{id}/messages` aceita `whatsappPhoneNumberId` opcional/nulo para legado, ou string de 1–32 dígitos após trim. Registre o número factual do evento/envio; o CRM não infere o canal do cadastro do lead. Formato inválido responde `400 payload-invalido`; numa mensagem nova, número desconhecido, de outro tenant ou sem propriedade verificada responde `409 canal-nao-vinculado`, sem gravação. Registrar mensagem não exige credencial de transporte. Replay conserva texto, hora, autoria e canal originais, inclusive `null`.
+
+As mensagens serializadas acrescentam `whatsappPhoneNumberId` (nulo no legado). POST continua retornando o objeto da mensagem (`201` nova / `200` replay) e acrescenta `anchorMessageId` e `agentStateRevision`, ambos anuláveis. A âncora é o inbound corrente por `sentAt`/`id`, mesmo se o turno enviado for antigo ou uma saída; a revisão é a projeção corrente do agente, independente da revisão da ponte. Não use o ID da mensagem atrasada/repetida como âncora para publicar estado. Uma fase calculada para turno antigo também não pode ser publicada na âncora corrente só porque ela veio na resposta: descarte a publicação desse turno quando a âncora calculada não for a mesma âncora corrente.
+
+GET mantém o array legado e acrescenta headers `X-Crivo-Anchor-Message-Id` e `X-Crivo-Agent-State-Revision`, com a string literal `null` quando ausentes. Os metadados vêm do mesmo snapshot do histórico e não são limitados pelos itens retornados: a âncora pode ficar fora de `limit`, e um array vazio também fornece os headers. Serviço de integração consulta todas as carteiras do tenant autorizado; nunca retorna fatos de outro tenant.
+
 - `GET /leads/{id}/messages` retorna a thread do lead em ordem cronológica
   crescente (`sentAt` ASC), no mesmo formato `Message` já usado pelo
   `POST /leads/{id}/messages`. É esta rota que o fluxo do agente consulta a

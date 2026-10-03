@@ -202,6 +202,7 @@ describe("docs/integration/openapi.yaml — SwaggerParser.validate()", () => {
 // de paridade com o código (enums) e asserções de presença do que o lote muda.
 describe("docs/integration/openapi.yaml — paridade e presença (lote-14 — CONTRATO-01)", () => {
   type Schema = {
+    type?: string | string[];
     enum?: string[];
     description?: string;
     required?: string[];
@@ -213,7 +214,7 @@ describe("docs/integration/openapi.yaml — paridade e presença (lote-14 — CO
     parameters?: { name?: string; required?: boolean; in?: string }[];
     responses: Record<
       string,
-      { content?: { "application/json"?: { schema?: Schema } } }
+      { content?: { "application/json"?: { schema?: Schema } }; headers?: Record<string, { schema?: Schema }> }
     >;
   };
   type Api = {
@@ -284,6 +285,32 @@ describe("docs/integration/openapi.yaml — paridade e presença (lote-14 — CO
     const api = await load();
     expect(Object.keys(api.components.schemas.Message.properties ?? {})).toContain("authorName");
     expect(api.components.schemas.Message.required).toContain("authorName");
+  });
+
+  it("T30 documenta canal opcional/nulo e resposta POST aditiva com âncora/revisão", async () => {
+    const api = await load(), input = api.components.schemas.MessageCreateRequest;
+    expect(input.required).not.toContain("whatsappPhoneNumberId");
+    expect(input.properties?.whatsappPhoneNumberId).toMatchObject({ type: ["string", "null"], pattern: "^\\s*[0-9]{1,32}\\s*$" });
+    const channelPattern = new RegExp(input.properties!.whatsappPhoneNumberId.pattern!);
+    expect(channelPattern.test(" 123 ")).toBe(true);
+    for (const invalid of ["", " ", "1".repeat(33), "123x"]) expect(channelPattern.test(invalid)).toBe(false);
+    expect(api.components.schemas.Message.required).toContain("whatsappPhoneNumberId");
+    const post = api.paths["/leads/{id}/messages"].post;
+    expect(post.responses["409"]).toBeDefined();
+    for (const status of ["201", "200"]) {
+      const schema = post.responses[status].content?.["application/json"]?.schema;
+      expect(schema?.allOf?.[0].required).toContain("authorName");
+      expect(schema?.allOf?.[1].required).toEqual(["anchorMessageId", "agentStateRevision"]);
+      expect(schema?.allOf?.[1].properties?.anchorMessageId.type).toEqual(["string", "null"]);
+      expect(schema?.allOf?.[1].properties?.agentStateRevision.type).toEqual(["integer", "null"]);
+    }
+  });
+
+  it("T30 GET preserva array e documenta headers para metadata inclusive resposta vazia", async () => {
+    const api = await load(), response = api.paths["/leads/{id}/messages"].get.responses["200"];
+    expect(response.content?.["application/json"]?.schema?.type).toBe("array");
+    expect(Object.keys(response.headers ?? {})).toEqual(["X-Crivo-Anchor-Message-Id", "X-Crivo-Agent-State-Revision"]);
+    expect(response.headers?.["X-Crivo-Agent-State-Revision"].schema?.pattern).toBe("^(null|[0-9]+)$");
   });
 
   it("documenta GET /leads/{id}, GET /memory-resets e whatsappPhoneNumberId opcional em POST /leads (AC7)", async () => {

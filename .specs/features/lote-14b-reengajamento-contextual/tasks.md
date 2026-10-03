@@ -1545,16 +1545,18 @@ Correção somente da autoria factual da fixture; regate `node node_modules/vite
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: canal válido; sem canal legado; número sem vínculo; wamid duplicado; leitura de outra carteira; autor; status órfão correlacionado; âncora corrente independente do turno antigo.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **8 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/server/integration/__tests__/messages.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: canal válido; sem canal legado; número sem vínculo; wamid duplicado; leitura de outra carteira; autor; status órfão correlacionado; âncora corrente independente do turno antigo.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **8 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou: `npx vitest run src/server/integration/__tests__/messages.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
 
 **Tests**: integration — `src/server/integration/__tests__/messages.test.ts`; matriz: Serviço/repositório.
 
 **Gate**: Full; Build no fechamento da fase.
 
 **Commit**: `feat(l14b): contrato aditivo de ingestão` (docs para mudança exclusivamente contratual).
+
+**Evidence**: `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__/messages.test.ts src/server/integration/__tests__/routes/leads-messages-post.test.ts src/server/integration/__tests__/routes/leads-messages-get.test.ts src/server/integration/__tests__/parsers.test.ts src/server/integration/__tests__/openapi.test.ts src/server/integration/__tests__/problem.test.ts src/server/data/__tests__/lead-messages.test.ts`: 142/142, 7 arquivos, exit0, 116.63s; 37 adições +105 regressões preservadas, OpenAPI raw input alinhado antes do gate, sem desvio.
 
 ---
 

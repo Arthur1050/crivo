@@ -10,6 +10,7 @@ import {
   messages,
   tenantApiKeys,
   tenants,
+  leadAgentState,
 } from "../../../../db/schema";
 import {
   DELETE,
@@ -270,5 +271,25 @@ describe("routes: GET /api/v1/leads/[id]/messages (lote-6b — CTX-02)", () => {
       const body = await response.json();
       expect(body.code).toBe("metodo-nao-suportado");
     }
+  });
+
+  it("T30 GET vazio preserva array e headers null explícitos", async () => {
+    const id = randomUUID();
+    await db.insert(leads).values({ id, tenantId: tenantAId, name: "Vazio T30", phone: "123", status: "em_qualificacao", firstContactAt: new Date("2026-08-01T00:00:00Z") });
+    const response = await callGet(id);
+    expect(response.status).toBe(200); expect(await response.json()).toEqual([]);
+    expect(response.headers.get("X-Crivo-Anchor-Message-Id")).toBe("null"); expect(response.headers.get("X-Crivo-Agent-State-Revision")).toBe("null");
+  });
+
+  it("T30 GET limitado conserva metadata fora do array e canal/autoria legados", async () => {
+    const id = randomUUID(), clock = new Date("2026-08-01T12:00:00Z");
+    await db.insert(leads).values({ id, tenantId: tenantAId, name: "Snapshot T30", phone: "123", status: "em_qualificacao", firstContactAt: clock });
+    const [conversation] = await db.insert(conversations).values({ tenantId: tenantAId, leadId: id }).returning();
+    const [anchor] = await db.insert(messages).values({ tenantId: tenantAId, conversationId: conversation.id, sender: "lead", content: "Âncora fora do limite", sentAt: clock }).returning();
+    await db.insert(leadAgentState).values({ tenantId: tenantAId, leadId: id, anchorMessageId: anchor.id, revision: 7, phase: "qualificando" });
+    const [human] = await db.insert(messages).values({ tenantId: tenantAId, conversationId: conversation.id, sender: "humano", authorName: "Equipe T30", content: "Resposta humana", sentAt: new Date(clock.getTime() + 1) }).returning();
+    const response = await callGet(id, { query: "?limit=1" });
+    expect(response.status).toBe(200); expect(await response.json()).toEqual([{ id: human.id, externalId: null, sender: "humano", authorName: "Equipe T30", content: "Resposta humana", sentAt: human.sentAt.toISOString(), whatsappPhoneNumberId: null }]);
+    expect(response.headers.get("X-Crivo-Anchor-Message-Id")).toBe(anchor.id); expect(response.headers.get("X-Crivo-Agent-State-Revision")).toBe("7");
   });
 });

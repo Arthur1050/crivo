@@ -296,6 +296,7 @@ export interface MessageCreateDto {
   sender: Sender;
   content: string;
   sentAt: Date;
+  whatsappPhoneNumberId?: string | null;
 }
 
 export function parseMessageCreate(json: unknown): ParseResult<MessageCreateDto> {
@@ -327,7 +328,13 @@ export function parseMessageCreate(json: unknown): ParseResult<MessageCreateDto>
     };
   }
 
-  return { ok: true, dto: { externalId, sender, content, sentAt } };
+  let whatsappPhoneNumberId: string | null | undefined;
+  if (json.whatsappPhoneNumberId !== undefined) {
+    if (json.whatsappPhoneNumberId === null) whatsappPhoneNumberId = null;
+    else if (typeof json.whatsappPhoneNumberId === "string" && /^\d{1,32}$/.test(json.whatsappPhoneNumberId.trim())) whatsappPhoneNumberId = json.whatsappPhoneNumberId.trim();
+    else return { ok: false, detail: "Campo 'whatsappPhoneNumberId' deve ser nulo ou conter apenas dígitos (1 a 32)." };
+  }
+  return { ok: true, dto: { externalId, sender, content, sentAt, ...(whatsappPhoneNumberId !== undefined ? { whatsappPhoneNumberId } : {}) } };
 }
 
 // ---- GET /api/v1/memory-resets ------------------------------------------

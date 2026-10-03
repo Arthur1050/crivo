@@ -37,7 +37,10 @@ export const GET = withIntegrationRoute<MessagesRouteContext>(
       return problem(404, result.code, "Lead não encontrado.");
     }
 
-    return Response.json(result.messages.map(serializeMessage));
+    return Response.json(result.messages.map(serializeMessage), { headers: {
+      "X-Crivo-Anchor-Message-Id": result.anchorMessageId ?? "null",
+      "X-Crivo-Agent-State-Revision": result.agentStateRevision === null ? "null" : String(result.agentStateRevision),
+    } });
   }
 );
 
@@ -73,10 +76,11 @@ export const POST = withIntegrationRoute<MessagesRouteContext>(
 
     const result = await ingestMessage(auth.tenantId, id, parsed.dto);
     if (!result.ok) {
+      if (result.code === "canal-nao-vinculado") return problem(409, result.code, "Número não vinculado e verificado neste tenant.");
       return problem(404, result.code, "Lead não encontrado.");
     }
 
-    return Response.json(serializeMessage(result.message), {
+    return Response.json({ ...serializeMessage(result.message), anchorMessageId: result.anchorMessageId, agentStateRevision: result.agentStateRevision }, {
       status: result.created ? 201 : 200,
     });
   }
