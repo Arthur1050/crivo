@@ -1293,14 +1293,16 @@ Fase2 fechada sob a ressalva autorizada: npm test fresco exit1, 158/159 arquivos
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: responsável existente; corretor elegível; sem corretor; concorrência; erro desfaz transição; seleção tenant-scoped.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **6 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/server/data/__tests__/escalation-executor.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: responsável existente; corretor elegível; sem corretor; concorrência; erro desfaz transição; seleção tenant-scoped.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, **8 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou pelo root: 22/22 testes em 2/2 arquivos, Postgres real com fixtures próprias e conexões independentes na disputa.
 
 **Tests**: integration — `src/server/data/__tests__/escalation-executor.test.ts`; matriz: DAL/mutação.
 
 **Gate**: Full; Build no fechamento da fase.
+
+**Evidence**: `node node_modules/vitest/vitest.mjs run src/server/data/__tests__/escalation-executor.test.ts src/server/data/__tests__/assignment.test.ts` — 22/22, 2/2 arquivos, exit0, 49.66s, início14:03:01; 8 novos+14 regressões. Executor externo observado por client.query com BEGIN/SELECT/UPDATE/COMMIT e sem SAVEPOINT; rollback íntegro, seleção pós-lock real e política preservada. Sem desvio.
 
 **Commit**: `feat(l14b): atribuição com executor transacional` (docs para mudança exclusivamente contratual).
 

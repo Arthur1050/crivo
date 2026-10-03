@@ -1827,6 +1827,8 @@ export interface UpdateLeadFromAgentInput {
   assignedUserId?: string | null;
 }
 
+export type EscalationExecutor = Pick<typeof db, "select" | "update">;
+
 /**
  * Upsert parcial de um lead vindo do agente (lote-5 — INT-03/04): uma única
  * `UPDATE` grava todos os campos presentes em `input` (chave ausente não
@@ -1840,7 +1842,8 @@ export interface UpdateLeadFromAgentInput {
 export async function updateLeadFromAgent(
   tenantId: string,
   leadId: string,
-  input: UpdateLeadFromAgentInput
+  input: UpdateLeadFromAgentInput,
+  executor: EscalationExecutor = db
 ): Promise<Lead | null> {
   const setValues: Partial<typeof leads.$inferInsert> = { updatedAt: new Date() };
 
@@ -1867,7 +1870,7 @@ export async function updateLeadFromAgent(
   if ("meetingAt" in input) setValues.meetingAt = input.meetingAt;
   if ("assignedUserId" in input) setValues.assignedUserId = input.assignedUserId;
 
-  const rows = await db
+  const rows = await executor
     .update(leads)
     .set(setValues)
     .where(and(eq(leads.tenantId, tenantId), eq(leads.id, leadId)))
@@ -1952,9 +1955,10 @@ const MEETINGS_JSON = sql<string[] | null>`(
  * sempre (AGENDA-01 AC5).
  */
 export async function getBrokerCandidates(
-  tenantId: string
+  tenantId: string,
+  executor: EscalationExecutor = db
 ): Promise<BrokerCandidate[]> {
-  const rows = await db
+  const rows = await executor
     .select({
       id: tenant_members.userId,
       createdAt: tenant_members.createdAt,
@@ -2105,26 +2109,24 @@ export async function assignBrokerForEscalation(
   tenantId: string,
   leadId: string,
   at: Date,
-  patch: UpdateLeadFromAgentInput = {}
+  patch: UpdateLeadFromAgentInput = {},
+  executor?: EscalationExecutor
 ): Promise<AssignResult> {
-  const lead = await getLead(serviceScope(tenantId), leadId);
-  if (!lead) return { ok: false, reason: "lead-nao-encontrado" };
-
-  let brokerId = lead.assignedUserId;
-
-  if (!brokerId) {
-    const candidates = await getBrokerCandidates(tenantId);
-    brokerId = assignBroker(selectForEscalation(candidates, at));
-  }
-
-  const updated = await updateLeadFromAgent(tenantId, leadId, {
-    ...patch,
-    // Chave ausente quando não há corretor: a coluna não é tocada.
-    ...(brokerId ? { assignedUserId: brokerId } : {}),
-  });
-
-  if (!updated) return { ok: false, reason: "lead-nao-encontrado" };
-  return { ok: true, brokerId, lead: updated };
+  const assign = async (tx: EscalationExecutor): Promise<AssignResult> => {
+    const [lead] = await tx.select().from(leads).where(and(eq(leads.tenantId, tenantId), eq(leads.id, leadId))).for("update");
+    if (!lead) return { ok: false, reason: "lead-nao-encontrado" };
+    let brokerId = lead.assignedUserId;
+    if (!brokerId) brokerId = assignBroker(selectForEscalation(await getBrokerCandidates(tenantId, tx), at));
+    const updated = await updateLeadFromAgent(tenantId, leadId, {
+      ...patch,
+      // Chave ausente quando não há corretor: a coluna não é tocada.
+      ...(brokerId ? { assignedUserId: brokerId } : {}),
+    }, tx);
+    if (!updated) return { ok: false, reason: "lead-nao-encontrado" };
+    return { ok: true, brokerId, lead: updated };
+  };
+  // T23 já mantém lead→episódio na transação externa; nunca abrir savepoint aqui.
+  return executor ? assign(executor) : db.transaction(assign);
 }
 
 export interface CreateAgentLeadInput {
