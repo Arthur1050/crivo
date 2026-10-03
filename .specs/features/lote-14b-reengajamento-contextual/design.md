@@ -533,6 +533,18 @@ persistente, sem regra não documentada de “último evento vence”. Replay n�
 cria mensagem ou muda lastInboundAt. Categoria diversa não entra na franquia de serviço;
 FEP é isenção separada. Classificação não afirma valor final de fatura.
 
+T9 implementa o serviço com contexto de origem opaque registrado no servidor.
+A factory recebe AuthResult da autenticação existente e prova de configuração
+servidor do forwarder: workflow/versão ativa/versão do trigger, data da prova,
+HMAC SHA256 sobre corpo bruto, rejeição de assinatura inválida e hash da
+credencial autenticada correspondente. Nenhum campo verified do payload
+concede esse contexto. Ausência de prova é recusa; T43/T49 só concedem a
+capacidade após o gate factual instalado. Fixtures não são prova desse gate.
+Lote é validado integralmente antes de escrever; canal é relido sob lock.
+Bulk insert/select FOR UPDATE em ordem de wamid/bulk update conservam vínculo,
+firstSeen/expiração e lastSeen monotônico. Replay sem nova evidência não muda
+linha. Imports de persistência são tardios para manter o reducer puro testável.
+
 ## Consumo mensal
 
 ### Consulta e normalização

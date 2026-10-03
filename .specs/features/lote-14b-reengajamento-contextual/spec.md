@@ -342,13 +342,13 @@ de qualquer prova real, conforme L-051. Não enviar 1.001 mensagens para fabrica
 | REEN-03 | P1: Envio único e válido | Execute | Partial — T3/T4 reset/chave/consumo modelados; imutabilidade/CAS/uma chamada pendentes |
 | REEN-04 | P1: Continuidade da memória | Execute | Partial — T3 projeção/T4 referências de ponte; reconstrução/invalidação pendentes |
 | REEN-05 | P1: Desfecho às 48h | Execute | Partial — T4 eixo de escalonamento modelado; transição/gate 48h pendentes |
-| PRECO-01 | P1: Classificação de entrega | Execute | Partial — T5 modelo/T8 reducer de preço e evidência; persistência/autenticidade/apresentação pendentes |
-| PRECO-02 | P1: Autenticidade e correlação | Execute | Partial — T5 FKs/T7 identidade/T8 redução idempotente, ordem e conflito; autenticação/ingestão/correlação pendentes |
+| PRECO-01 | P1: Classificação de entrega | Execute | Partial — T5 modelo/T8 reducer/T9 evidência persistida; transporte real/apresentação pendentes |
+| PRECO-02 | P1: Autenticidade e correlação | Execute | Partial — T5 FKs/T7 identidade/T8 reducer/T9 origem opaca, lote/replay/ordem; HMAC instalado/correlação posterior pendentes |
 | USO-01 | P1: Saldo mensal estimado | Execute | Partial — T1/T2/T6 modelos/T7 gate Analytics; prova externa/consulta/reducer pendentes |
 | USO-02 | P1: Atualização e indisponibilidade | Execute | Partial — T2 coordenação/T6 tentativa versus sucesso modelados; lease/CAS/serviço pendentes |
 | USO-03 | P1: Superfícies e permissões | Tasks | Planned |
 | USO-04 | P1: Aviso sem bloqueio | Tasks | Planned |
-| L14B-01 | P1: Isolamento e operação | Execute | Partial — T1–T6 modelos/T7 segredo servidor e contexto autorizado; demais fronteiras/retention pendentes |
+| L14B-01 | P1: Isolamento e operação | Execute | Partial — T1–T6 modelos/T7 segredo servidor/T9 contexto, isolamento e log limitado; demais fronteiras/retention pendentes |
 | PROVA-01 | P1: Evidência integrada | Execute | Partial — T8 fixtures de preço 999/1000/1001/FEP/replay; demais provas integradas/virada/real pendentes |
 
 **Coverage:** 13/13 requisitos e 95/95 critérios mapeados individualmente em [tasks.md](tasks.md).
@@ -362,7 +362,11 @@ as 50 linhas de erro anteriores sem diferenças. Ressalva e evidência em
 [phase-1-verification.md](phase-1-verification.md). São 7/68 tarefas concluídas;
 T8 implementada: Quick28/28, 225ms, reducer determinístico com read/entrega,
 pricing parcial e conflito persistente. Adequação em [t8-verification.md](t8-verification.md).
-São 8/68 tarefas concluídas; T9–T68, gates externos e verifier global continuam pendentes.
+T9 implementada: Full75/75 (16 novos+59 regressões), 61,79s, ingestão validada,
+replay/ordem/isolamento sob locks reais e origem opaca servidor. Primeiro gate
+74/75 teve somente medição de PID autocommit da fixture corrigida para tx real,
+com todas as asserções preservadas. Adequação em [t9-verification.md](t9-verification.md).
+São 9/68 tarefas concluídas; T10–T68, gates externos e verifier global continuam pendentes.
 
 ## Success Criteria
 
