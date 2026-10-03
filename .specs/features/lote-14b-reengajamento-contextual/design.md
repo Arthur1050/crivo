@@ -156,6 +156,18 @@ Sem dependências novas propostas. Guia instalado de Route Handlers do Next 16.2
 `node_modules/next/dist/docs/01-app/01-getting-started/15-route-handlers.md`; handlers seguem
 Request/Response e parâmetros dinâmicos assíncronos.
 
+T15 concretiza a política compartilhada em evaluateReengagement: recebe lead,
+anchor(messageId/sentAt), phase, channel(phoneNumberId), destination MSISDN,
+now e settings. Retorna action prepare/omit/escalate/null e reason interno:
+eligible/too-early/window-closed/outside-contact-hours/ineligible/unknown-data/
+silence-expired. Cada ação e motivo são afirmados integralmente nos testes.
+Conduction/business-hours continuam donos das regras humanas e do horário SP.
+Enums exigem strings literais; marcas humanas/opt-out exigem null ou timestamp
+válido; fase/âncora/canal/destino ilegíveis fecham contato. O CRM confirma
+propriedade, canal e âncora antes de fornecer os fatos, e revalida sob lock.
+Omit>=24h e escalate>=48h são decisões internas independentes de horário,
+Analytics ou token. Consumo da tentativa, transições e efeitos são dos serviços.
+
 ## Components and Interfaces
 
 Localizações novas abaixo são propostas. Separar serviços de domínio do DAL geral para

@@ -337,11 +337,11 @@ de qualquer prova real, conforme L-051. Não enviar 1.001 mensagens para fabrica
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| REEN-01 | P1: Momento permitido | Execute | Partial — T3 fase desconhecida/T7 canal confiável; seleção e demais gates pendentes |
+| REEN-01 | P1: Momento permitido | Execute | Partial — T3 fase desconhecida/T7 canal confiável/T15 política pura22h–24h, horário e exclusões; seleção/efeitos e demais gates pendentes |
 | REEN-02 | P1: Texto contextual | Tasks | Planned |
 | REEN-03 | P1: Envio único e válido | Execute | Partial — T3/T4 reset/chave/consumo modelados; imutabilidade/CAS/uma chamada pendentes |
 | REEN-04 | P1: Continuidade da memória | Execute | Partial — T3 projeção/T4 referências de ponte; reconstrução/invalidação pendentes |
-| REEN-05 | P1: Desfecho às 48h | Execute | Partial — T4 eixo de escalonamento modelado; transição/gate 48h pendentes |
+| REEN-05 | P1: Desfecho às 48h | Execute | Partial — T4 eixo de escalonamento/T15 política48h independente do horário; transição e concorrência pendentes |
 | PRECO-01 | P1: Classificação de entrega | Execute | Partial — T5 modelo/T8 reducer/T9 evidência persistida/T10 saída humana e agente; transporte real/apresentação pendentes |
 | PRECO-02 | P1: Autenticidade e correlação | Execute | Partial — T5 FKs/T7 identidade/T8 reducer/T9 origem opaca, lote/replay/ordem/T10 correlação antes e depois por carteira; HMAC instalado/integrações de envio pendentes |
 | USO-01 | P1: Saldo mensal estimado | Execute | Partial — T1/T2/T6 modelos/T7 gate Analytics/T11 mês civil/T12 adapter condicionado/T13 snapshot substituível; prova externa integral/tick pendentes |
@@ -395,7 +395,12 @@ timeouts históricos autorizados: npm test fresco 2612/2614, exit1, somente
 DOCLIM-01 AC8, nenhuma falha nova; todas as 142 adições passaram. Lint/build
 exit0, tsc exit2 com os mesmos 50 erros anteriores e delta vazio. Evidência em
 [phase-2-verification.md](phase-2-verification.md); Whole não é integralmente verde.
-São 14/68 tarefas concluídas; T15–T68, gates externos e verifier global continuam pendentes.
+T15 implementada: Quick pelo root 88/88, 44 novos+44 regressões, 677ms.
+Política pura diferencia fronteiras22h/24h/48h e horário SP, fecha dados críticos
+ilegíveis sem coerção de enum/marcas. Adequação em [t15-verification.md](t15-verification.md).
+Somente essa parcela de REEN-01 AC1/2/3/5/6 e REEN-05 AC2 está provada;
+seleção, efeitos persistidos e integração continuam pendentes. São 15/68 tarefas
+concluídas; T16–T68, gates externos e verifier global continuam pendentes.
 
 ## Success Criteria
 

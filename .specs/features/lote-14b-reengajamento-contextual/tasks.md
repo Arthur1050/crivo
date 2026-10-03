@@ -8,7 +8,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 
 **Design:** [design.md](design.md), aprovado em 2026-10-02: “Aprovo. Vá para as tarefas”.
 
-**Status:** Approved — usuário em 2026-10-02: “Aprovo. Gere o prompt de execução para que a fase de execução seja iniciado em outra janela de contexto”. 68 tarefas em 9 fases; T1–T14 concluídas localmente (14/68), fases 1/2 e lotes A/B fechados com a ressalva autorizada dos dois timeouts históricos, conforme evidências individuais e phase-2-verification.md.
+**Status:** Approved — usuário em 2026-10-02: “Aprovo. Gere o prompt de execução para que a fase de execução seja iniciado em outra janela de contexto”. 68 tarefas em 9 fases; T1–T15 concluídas localmente (15/68), fases 1/2 e lotes A/B fechados com a ressalva autorizada dos dois timeouts históricos, conforme evidências individuais e phase-2-verification.md. Fase3/loteC em andamento; T15 provada em t15-verification.md.
 
 **Escopo:** 13 requisitos e 95 ACs aprovados. Uma retomada >=22h/<24h, continuidade restrita, desfecho >=48h, classificação após entrega e saldo mensal estimado. Sem modal/bloqueio financeiro.
 
@@ -1082,10 +1082,10 @@ Fase2 fechada sob a ressalva autorizada: npm test fresco exit1, 158/159 arquivos
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: 21:59:59.999/22h/23:59:59.999/24h; início incluso/fim exclusivo; fim de semana/fallback; agendado/escalado/encerrada/opt-out/takeover; ausência de âncora/canal/fase; 48h independente de horário.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **14 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Quick passou: `npx vitest run n8n/src/__tests__/reengagement.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: 21:59:59.999/22h/23:59:59.999/24h; início incluso/fim exclusivo; fim de semana/fallback; agendado/escalado/encerrada/opt-out/takeover; ausência de âncora/canal/fase; 48h independente de horário.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, **44 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Quick passou pelo root: 88/88 testes, 3/3 arquivos, 44 novos+44 regressões, 677ms em 2026-10-03 08:03:29 São Paulo. Resultados e adequação forward/reverse em [t15-verification.md](t15-verification.md). ESLint exit0; tsc exit2/50 erros anteriores, delta vazio; strict/whitespace exit0.
 
 **Tests**: unit — `n8n/src/__tests__/reengagement.test.ts`; matriz: Domínio puro.
 
