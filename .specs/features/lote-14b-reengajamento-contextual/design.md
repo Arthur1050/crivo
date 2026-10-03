@@ -289,6 +289,16 @@ revisão na mesma transação; depois o principal publica o novo estado. Falha d
 impede automação proativa, sem bloquear canal humano. Bootstrap de leads anteriores lê estado
 real do n8n com as mesmas verificações; ausência nunca vira `qualificando` por suposição.
 
+T16 concretiza publishAgentState(AuthResult, leadId, input): primeira publicação
+expectedRevision0 cria revision1; mudança exige revisão corrente e incrementa
+uma vez. Replay de payload idêntico permite current/current−1, somente após
+validar âncora e reset correntes, sem escrever timestamp/revisão. Revisão
+arbitrária recusa. Encerrada não reabre na mesma âncora/reset. O primeiro lock
+é lead; query messages/conversations restringe tenant/lead/sender=lead e ordena
+sentAt/id decrescentes. Campos/reset são Date internos; parsing HTTP será T35.
+Nenhuma publicação altera lead, pipeline, condução ou thread. Invalidação
+automática por inbound permanece T27, sem antecipar o writer integrado.
+
 ### `reengagement_episodes`
 
 Chave única `(tenant_id, lead_id, phone_number_id, anchor_message_id)`. Campos:

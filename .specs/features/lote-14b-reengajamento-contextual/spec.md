@@ -337,10 +337,10 @@ de qualquer prova real, conforme L-051. Não enviar 1.001 mensagens para fabrica
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| REEN-01 | P1: Momento permitido | Execute | Partial — T3 fase desconhecida/T7 canal confiável/T15 política pura22h–24h, horário e exclusões; seleção/efeitos e demais gates pendentes |
+| REEN-01 | P1: Momento permitido | Execute | Partial — T3 fase desconhecida/T7 canal confiável/T15 política pura22h–24h/T16 projeção revisada sobre âncora corrente, sem reabrir encerrada; seleção/efeitos e demais gates pendentes |
 | REEN-02 | P1: Texto contextual | Tasks | Planned |
-| REEN-03 | P1: Envio único e válido | Execute | Partial — T3/T4 reset/chave/consumo modelados; imutabilidade/CAS/uma chamada pendentes |
-| REEN-04 | P1: Continuidade da memória | Execute | Partial — T3 projeção/T4 referências de ponte; reconstrução/invalidação pendentes |
+| REEN-03 | P1: Envio único e válido | Execute | Partial — T3/T4 reset/chave/consumo/T16 publicação com âncora/reset/CAS e replay; autorização, cancelamento integrado e uma chamada pendentes |
+| REEN-04 | P1: Continuidade da memória | Execute | Partial — T3 projeção/T4 referências/T16 reset observado corrente na publicação; ponte, reconstrução e invalidação integradas pendentes |
 | REEN-05 | P1: Desfecho às 48h | Execute | Partial — T4 eixo de escalonamento/T15 política48h independente do horário; transição e concorrência pendentes |
 | PRECO-01 | P1: Classificação de entrega | Execute | Partial — T5 modelo/T8 reducer/T9 evidência persistida/T10 saída humana e agente; transporte real/apresentação pendentes |
 | PRECO-02 | P1: Autenticidade e correlação | Execute | Partial — T5 FKs/T7 identidade/T8 reducer/T9 origem opaca, lote/replay/ordem/T10 correlação antes e depois por carteira; HMAC instalado/integrações de envio pendentes |
@@ -400,7 +400,14 @@ Política pura diferencia fronteiras22h/24h/48h e horário SP, fecha dados crít
 ilegíveis sem coerção de enum/marcas. Adequação em [t15-verification.md](t15-verification.md).
 Somente essa parcela de REEN-01 AC1/2/3/5/6 e REEN-05 AC2 está provada;
 seleção, efeitos persistidos e integração continuam pendentes. São 15/68 tarefas
-concluídas; T16–T68, gates externos e verifier global continuam pendentes.
+concluídas até T15. T16 implementada: Full pelo root 130/130, 20 novos+110
+regressões, 77,32s; projeção sobre âncora/reset correntes, revisão e replay
+sob lock real. Fase unknown não autoriza contato; encerrada não reabre na
+mesma âncora/reset. Pipeline/thread/condução preservados e rollback permite
+takeover humano. Adequação em [t16-verification.md](t16-verification.md).
+Invalidação automática de inbound/reset/ponte e writers/workflows seguem
+pendentes. São 16/68 tarefas concluídas; T17–T68, gates externos e verifier
+global continuam pendentes, sem antecipar qualquer AC integral do produto.
 
 ## Success Criteria
 

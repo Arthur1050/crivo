@@ -8,7 +8,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 
 **Design:** [design.md](design.md), aprovado em 2026-10-02: “Aprovo. Vá para as tarefas”.
 
-**Status:** Approved — usuário em 2026-10-02: “Aprovo. Gere o prompt de execução para que a fase de execução seja iniciado em outra janela de contexto”. 68 tarefas em 9 fases; T1–T15 concluídas localmente (15/68), fases 1/2 e lotes A/B fechados com a ressalva autorizada dos dois timeouts históricos, conforme evidências individuais e phase-2-verification.md. Fase3/loteC em andamento; T15 provada em t15-verification.md.
+**Status:** Approved — usuário em 2026-10-02: “Aprovo. Gere o prompt de execução para que a fase de execução seja iniciado em outra janela de contexto”. 68 tarefas em 9 fases; T1–T16 concluídas localmente (16/68), fases 1/2 e lotes A/B fechados com a ressalva autorizada dos dois timeouts históricos, conforme evidências individuais e phase-2-verification.md. Fase3/loteC em andamento; T15/T16 provadas em seus relatórios individuais.
 
 **Escopo:** 13 requisitos e 95 ACs aprovados. Uma retomada >=22h/<24h, continuidade restrita, desfecho >=48h, classificação após entrega e saldo mensal estimado. Sem modal/bloqueio financeiro.
 
@@ -1111,10 +1111,10 @@ Fase2 fechada sob a ressalva autorizada: npm test fresco exit1, 158/159 arquivos
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: fase válida; unknown não qualifica; execução antiga; inbound fora de ordem; reset; encerramento; expectedRevision errado; replay; tenant; falha não bloqueia humano.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **10 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/server/reengagement/__tests__/agent-state.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: fase válida; unknown não qualifica; execução antiga; inbound fora de ordem; reset; encerramento; expectedRevision errado; replay; tenant; falha não bloqueia humano.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, **20 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full pelo root: 130/130 testes, 6/6 arquivos, 20 novos+110 regressões, 77,32s em 2026-10-03 08:14:50 São Paulo. Dois PIDs medidos dentro BEGIN, dois esperando lock, uma revisão e um conflito persistidos. Adequação em [t16-verification.md](t16-verification.md); ESLint0, tsc2/50 erros anteriores sem delta, strict/whitespace0.
 
 **Tests**: integration — `src/server/reengagement/__tests__/agent-state.test.ts`; matriz: Serviço/repositório.
 
