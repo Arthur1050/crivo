@@ -1420,10 +1420,12 @@ Fechamento da fase: TS2339 na inspeção de query.mock.calls corrigido com argum
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: ponte aceita; resposta <48h/=48h; pending antes/depois 2min; resultado incerto não presume aceite; cold start; reset; exclusão de buffer; histórico apagado; tenant; leitura falha sem semeadura presumida.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **10 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/server/reengagement/__tests__/session-frame.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: ponte aceita; resposta <48h/=48h; pending antes/depois 2min; resultado incerto não presume aceite; cold start; reset; exclusão de buffer; histórico apagado; tenant; leitura falha sem semeadura presumida.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **10 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou: `npx vitest run src/server/reengagement/__tests__/session-frame.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+
+**Evidence**: `node node_modules/vitest/vitest.mjs run src/server/reengagement/__tests__/session-frame.test.ts src/server/reengagement/__tests__/prepare-frame.test.ts n8n/src/__tests__/session.test.ts` PASS 84/84, 3 arquivos, exit0, 271.05s; 21 novos + 63 regressões, ponte/pending/cap50/buffer/reset e expiração pelo último inbound provados, sem desvio.
 
 **Tests**: integration — `src/server/reengagement/__tests__/session-frame.test.ts`; matriz: Serviço/repositório.
 

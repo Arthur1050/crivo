@@ -3,7 +3,7 @@ import { and, desc, eq, gte } from "drizzle-orm";
 import { FIELD_LABELS, nextFieldToAsk } from "../../../n8n/src/phase.mjs";
 import { evaluateReengagement } from "../../../n8n/src/reengagement.mjs";
 import { toWhatsAppMsisdn } from "../../../n8n/src/phone.mjs";
-import { selectOriginSessionFrame } from "../../../n8n/src/session.mjs";
+import { isSessionExpired, requiresSessionRebuild, selectOriginSessionFrame, selectSeedMessages } from "../../../n8n/src/session.mjs";
 import { db } from "../../db";
 import { conversations, leadAgentState, leads, messages, reengagementEpisodes, tenants, whatsappChannels } from "../../db/schema";
 import type { AuthResult } from "../integration/auth";
@@ -78,6 +78,83 @@ export async function prepareFrame(
         pendingField: nextFieldToAsk([...agent.askedFields, ...confirmed]), origin: { startMessageId: origin.startMessageId, endMessageId: origin.endMessageId }, history: origin.messages };
       await tx.update(reengagementEpisodes).set({ originSessionStartMessageId: origin.startMessageId, originSessionEndMessageId: origin.endMessageId }).where(eq(reengagementEpisodes.id, episodeId));
       return { ok: true, frame };
+    });
+  } catch { return { ok: false, reason: "context-read-failed" }; }
+}
+
+type SessionFrame = import("../../../n8n/src/session.mjs").SessionFrame;
+export type GetSessionFrameResult = {
+  ok: true; frame: SessionFrame;
+  /** Carga pronta: seleção factual completa já ocorreu antes do teto/exclusão. */
+  history: HistoryMessage[];
+  requiresRebuild: boolean; pendingAcceptance: { episodeId: string; deadline: string } | null;
+  anchor: { id: string; sentAt: string } | null; agentStateRevision: number | null;
+} | { ok: false; reason: "invalid-input" | "invalid-buffer" | "lead-not-found" | "context-read-failed" };
+
+/** Leitura consistente, sem renovar/consumir episódios nem semear aceite presumido. */
+export async function getSessionFrame(
+  context: AuthResult, leadId: string, input: { bufferMessageIds?: string[] } = {},
+  options: { now?: () => Date; database?: Pick<typeof db, "transaction"> } = {},
+): Promise<GetSessionFrameResult> {
+  if (!UUID.test(leadId)) return { ok: false, reason: "invalid-input" };
+  const buffer = input.bufferMessageIds ?? [];
+  if (!Array.isArray(buffer) || buffer.length > 50 || buffer.some((id) => typeof id !== "string" || !UUID.test(id))) return { ok: false, reason: "invalid-buffer" };
+  try {
+    return await (options.database ?? db).transaction(async (tx): Promise<GetSessionFrameResult> => {
+      const [lead] = await tx.select().from(leads).where(and(eq(leads.tenantId, context.tenantId), eq(leads.id, leadId))).for("update");
+      if (!lead) return { ok: false, reason: "lead-not-found" };
+      const episodes = await tx.select().from(reengagementEpisodes).where(and(eq(reengagementEpisodes.tenantId, context.tenantId), eq(reengagementEpisodes.leadId, leadId)))
+        .orderBy(desc(reengagementEpisodes.createdAt), desc(reengagementEpisodes.id)).for("update");
+      const now = (options.now ?? (() => new Date()))();
+      if (!finite(now) || !finite(lead.memoryResetRequestedAt)) return { ok: false, reason: "context-read-failed" };
+      const [current] = await tx.select({ id: messages.id, sentAt: messages.sentAt, conversationId: messages.conversationId, phoneNumberId: messages.whatsappPhoneNumberId }).from(messages)
+        .innerJoin(conversations, and(eq(conversations.tenantId, messages.tenantId), eq(conversations.id, messages.conversationId)))
+        .where(and(eq(messages.tenantId, context.tenantId), eq(conversations.leadId, leadId), eq(messages.sender, "lead"))).orderBy(desc(messages.sentAt), desc(messages.id)).limit(1);
+      if (current && !finite(current.sentAt)) return { ok: false, reason: "context-read-failed" };
+      const [agent] = await tx.select().from(leadAgentState).where(and(eq(leadAgentState.tenantId, context.tenantId), eq(leadAgentState.leadId, leadId)));
+      const rows = current ? await tx.select({ id: messages.id, sender: messages.sender, content: messages.content, sentAt: messages.sentAt,
+        authorName: messages.authorName, phoneNumberId: messages.whatsappPhoneNumberId }).from(messages)
+        .where(and(eq(messages.tenantId, context.tenantId), eq(messages.conversationId, current.conversationId))).orderBy(messages.sentAt, messages.id) : [];
+      if (rows.some((message) => !finite(message.sentAt) || typeof message.content !== "string")) return { ok: false, reason: "context-read-failed" };
+      if (buffer.some((id) => !rows.some((message) => message.id === id && message.sender === "lead"))) return { ok: false, reason: "invalid-buffer" };
+      const history = rows.map((message) => ({ id: message.id, sender: message.sender, content: message.content,
+        authorName: message.authorName, sentAt: message.sentAt.toISOString() }));
+      const frame: SessionFrame = { revision: 0, resetRequestedAt: lead.memoryResetRequestedAt?.toISOString() ?? null, bridge: null };
+      let pendingAcceptance: { episodeId: string; deadline: string } | null = null;
+      const [channel] = lead.whatsappPhoneNumberId ? await tx.select().from(whatsappChannels).where(and(eq(whatsappChannels.tenantId, context.tenantId), eq(whatsappChannels.phoneNumberId, lead.whatsappPhoneNumberId))) : [];
+      const conduction = current && lead.status === "em_qualificacao" && lead.optedOutAt === null && lead.humanTakeoverAt === null
+        && channel?.ownershipVerifiedAt && finite(channel.ownershipVerifiedAt) && current.phoneNumberId === channel.phoneNumberId
+        && agent?.anchorMessageId === current.id && agent.phase !== "encerrada" && sameTime(agent.resetObservedAt, lead.memoryResetRequestedAt);
+      if (conduction && current && channel) for (const episode of episodes) {
+        if (episode.phoneNumberId !== channel.phoneNumberId || episode.bridgeInvalidatedAt || !sameTime(episode.resetObservedAt, lead.memoryResetRequestedAt)
+            || !Number.isSafeInteger(episode.bridgeRevision) || episode.bridgeRevision < 1 || !finite(episode.anchorSentAt)
+            || !episode.dispatchAuthorizedAt || !finite(episode.dispatchAuthorizedAt)) continue;
+        const anchor = rows.find((message) => message.id === episode.anchorMessageId), first = rows.find((message) => message.id === episode.firstInboundMessageId);
+        const start = rows.find((message) => message.id === episode.originSessionStartMessageId), end = rows.find((message) => message.id === episode.originSessionEndMessageId);
+        if (!anchor || !first || !start || !end || anchor.sender !== "lead" || first.sender !== "lead"
+            || [anchor, first, start, end].some((message) => message.phoneNumberId !== channel.phoneNumberId)
+            || !sameTime(anchor.sentAt, episode.anchorSentAt) || start.sentAt.getTime() > anchor.sentAt.getTime() || end.sentAt.getTime() < anchor.sentAt.getTime()
+            || first.sentAt.getTime() <= anchor.sentAt.getTime() || first.sentAt.getTime() >= anchor.sentAt.getTime() + 48 * 3600000
+            || (lead.memoryResetRequestedAt && start.sentAt.getTime() < lead.memoryResetRequestedAt.getTime())) continue;
+        if (["authorized", "accepted_pending_record"].includes(episode.state) && episode.dispatchCompletionDeadline
+            && finite(episode.dispatchCompletionDeadline) && now.getTime() < episode.dispatchCompletionDeadline.getTime()) {
+          pendingAcceptance = { episodeId: episode.id, deadline: episode.dispatchCompletionDeadline.toISOString() };
+          frame.revision = episode.bridgeRevision; break;
+        }
+        const resume = rows.find((message) => message.id === episode.messageId);
+        if (episode.state !== "accepted" || !resume || resume.sender !== "agente" || resume.phoneNumberId !== channel.phoneNumberId
+            || !episode.bridgeLastInboundAt || !sameTime(episode.bridgeLastInboundAt, current.sentAt)
+            || episode.bridgeLastInboundAt.getTime() < first.sentAt.getTime() || isSessionExpired(episode.bridgeLastInboundAt.toISOString(), now.toISOString())) continue;
+        frame.revision = episode.bridgeRevision;
+        frame.bridge = { state: "accepted", bridgeRevision: episode.bridgeRevision, bridgeInvalidatedAt: null, resetObservedAt: episode.resetObservedAt?.toISOString() ?? null,
+          anchorMessageId: anchor.id, anchorSentAt: anchor.sentAt.toISOString(), originSessionStartMessageId: start.id, originSessionEndMessageId: end.id,
+          messageId: resume.id, firstInboundMessageId: first.id, firstInboundSentAt: first.sentAt.toISOString(), bridgeLastInboundAt: episode.bridgeLastInboundAt.toISOString() };
+        break;
+      }
+      const active = current && !isSessionExpired(current.sentAt.toISOString(), now.toISOString());
+      return { ok: true, frame, history: pendingAcceptance || !active ? [] : selectSeedMessages(history, now.toISOString(), { frame, excludeMessageIds: buffer }),
+        requiresRebuild: requiresSessionRebuild(frame, buffer), pendingAcceptance,
+        anchor: current ? { id: current.id, sentAt: current.sentAt.toISOString() } : null, agentStateRevision: agent?.revision ?? null };
     });
   } catch { return { ok: false, reason: "context-read-failed" }; }
 }
