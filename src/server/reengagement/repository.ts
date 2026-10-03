@@ -7,7 +7,7 @@ import { db } from "../../db";
 import { conversations, leadAgentState, leads, messages, reengagementEpisodes, tenants, whatsappChannels } from "../../db/schema";
 import type { AuthResult } from "../integration/auth";
 import { HUMAN_TEXT_MAX_LENGTH } from "../chats/human-send";
-import { serviceScope } from "../data";
+import { assignBrokerForEscalation, serviceScope } from "../data";
 import { attachReceipt } from "../whatsapp/statuses";
 
 export interface ReengagementCandidate {
@@ -350,5 +350,75 @@ export async function reconcileAcceptance(
       bridgeRevision: episode.bridgeRevision + (!episode.bridgeInvalidatedAt && invalidated ? 1 : 0),
       ...(!invalidated && latestCandidate ? { bridgeLastInboundAt: latestCandidate.sentAt } : {}) }).where(eq(reengagementEpisodes.id, episodeId));
     return { ok: true, recorded: true, replay: false, episodeId, messageId: message.id };
+  });
+}
+
+type SilenceResult = "accepted" | "refused" | "uncertain" | "omitted";
+export type EpisodeExpiryResult =
+  | { ok: true; action: "omitted" | "unchanged"; episodeId: string }
+  | { ok: true; action: "escalated"; episodeId: string; brokerId: string | null; result: SilenceResult }
+  | { ok: false; reason: "invalid-input" | "lead-not-found" | "context-changed" | "not-eligible" | "not-due" | "human-status-lock"; policyReason?: string };
+
+/** Omissão/escalada são internas e independem de transporte/Analytics. */
+export async function expireEpisode(
+  context: AuthResult, leadId: string, input: { anchorMessageId: string },
+  options: { now?: () => Date; database?: Pick<typeof db, "transaction"> } = {},
+): Promise<EpisodeExpiryResult> {
+  if (typeof input.anchorMessageId !== "string" || !UUID.test(input.anchorMessageId)) return { ok: false, reason: "invalid-input" };
+  return (options.database ?? db).transaction(async (tx): Promise<EpisodeExpiryResult> => {
+    const [lead] = await tx.select().from(leads).where(and(eq(leads.tenantId, context.tenantId), eq(leads.id, leadId))).for("update");
+    if (!lead) return { ok: false, reason: "lead-not-found" };
+    const [expected] = await tx.select({ id: messages.id, sentAt: messages.sentAt, phoneNumberId: messages.whatsappPhoneNumberId }).from(messages)
+      .innerJoin(conversations, and(eq(conversations.id, messages.conversationId), eq(conversations.tenantId, messages.tenantId)))
+      .where(and(eq(messages.tenantId, context.tenantId), eq(messages.id, input.anchorMessageId), eq(conversations.leadId, leadId), eq(messages.sender, "lead")));
+    if (!expected) return { ok: false, reason: "context-changed" };
+    let [episode] = await tx.select().from(reengagementEpisodes).where(and(eq(reengagementEpisodes.tenantId, context.tenantId),
+      eq(reengagementEpisodes.leadId, leadId), eq(reengagementEpisodes.anchorMessageId, expected.id), eq(reengagementEpisodes.phoneNumberId, expected.phoneNumberId ?? ""))).for("update");
+    const now = (options.now ?? (() => new Date()))();
+    if (!Number.isFinite(now.getTime())) return { ok: false, reason: "invalid-input" };
+    if (episode?.escalatedAt) return { ok: true, action: "unchanged", episodeId: episode.id };
+    const [anchor] = await tx.select({ id: messages.id, sentAt: messages.sentAt }).from(messages)
+      .innerJoin(conversations, and(eq(conversations.id, messages.conversationId), eq(conversations.tenantId, messages.tenantId)))
+      .where(and(eq(messages.tenantId, context.tenantId), eq(conversations.leadId, leadId), eq(messages.sender, "lead")))
+      .orderBy(desc(messages.sentAt), desc(messages.id)).limit(1);
+    const [agent] = await tx.select().from(leadAgentState).where(and(eq(leadAgentState.tenantId, context.tenantId), eq(leadAgentState.leadId, leadId)));
+    const [channel] = await tx.select().from(whatsappChannels).where(and(eq(whatsappChannels.tenantId, context.tenantId), eq(whatsappChannels.phoneNumberId, expected.phoneNumberId ?? "")));
+    async function cancel(reasonCode: string) {
+      if (episode?.state === "preparing" && !episode.dispatchAuthorizedAt) await tx.update(reengagementEpisodes).set({ state: "cancelled", reasonCode,
+        claimToken: null, claimExpiresAt: null, updatedAt: now }).where(eq(reengagementEpisodes.id, episode.id));
+    }
+    if (anchor?.id !== expected.id || !agent || agent.anchorMessageId !== expected.id
+        || lead.memoryResetRequestedAt?.getTime() !== agent.resetObservedAt?.getTime()
+        || (episode && episode.anchorSentAt.getTime() !== expected.sentAt.getTime())
+        || !channel?.ownershipVerifiedAt || !Number.isFinite(channel.ownershipVerifiedAt.getTime()) || lead.whatsappPhoneNumberId !== channel.phoneNumberId) {
+      await cancel("context-changed"); return { ok: false, reason: "context-changed" };
+    }
+    if (lead.statusChangedBy === "humano") return { ok: false, reason: "human-status-lock" };
+    const decision = evaluateReengagement({ lead, anchor: { messageId: anchor.id, sentAt: anchor.sentAt }, phase: agent.phase,
+      channel, destination: toWhatsAppMsisdn(lead.externalId), now });
+    if (decision.action !== "omit" && decision.action !== "escalate") {
+      if (decision.reason === "ineligible" || decision.reason === "unknown-data") { await cancel(decision.reason); return { ok: false, reason: "not-eligible", policyReason: decision.reason }; }
+      return { ok: false, reason: "not-due" };
+    }
+    const created = !episode;
+    if (!episode) [episode] = await tx.insert(reengagementEpisodes).values({ tenantId: context.tenantId, leadId, phoneNumberId: channel.phoneNumberId,
+      anchorMessageId: anchor.id, anchorSentAt: anchor.sentAt, resetObservedAt: agent.resetObservedAt, agentStateRevision: agent.revision,
+      state: "omitted", reasonCode: "window-closed", createdAt: now, updatedAt: now }).returning();
+    if (decision.action === "omit") {
+      if (created) return { ok: true, action: "omitted", episodeId: episode.id };
+      if (episode.dispatchAuthorizedAt || episode.state === "omitted" || episode.state === "cancelled") return { ok: true, action: "unchanged", episodeId: episode.id };
+      await tx.update(reengagementEpisodes).set({ state: "omitted", reasonCode: "window-closed", claimToken: null, claimExpiresAt: null, updatedAt: now }).where(eq(reengagementEpisodes.id, episode.id));
+      return { ok: true, action: "omitted", episodeId: episode.id };
+    }
+    const result: SilenceResult = ["accepted", "accepted_pending_record"].includes(episode.state) ? "accepted"
+      : episode.state === "refused" ? "refused" : episode.dispatchAuthorizedAt ? "uncertain" : "omitted";
+    const reason = `Ausência de resposta por 48h; retomada ${result === "accepted" ? "aceita" : result === "refused" ? "recusada" : result === "uncertain" ? "incerta" : "omitida"}.`;
+    const assigned = await assignBrokerForEscalation(context.tenantId, leadId, now, { status: "escalado_humano", escalationReason: reason }, tx);
+    if (!assigned.ok) throw new Error("escalation-lead-not-found");
+    await tx.update(reengagementEpisodes).set({ escalatedAt: now, escalationResult: result, escalationReasonCode: "silence-48h", updatedAt: now,
+      ...(!episode.dispatchAuthorizedAt ? { state: "omitted" as const, reasonCode: "window-closed", claimToken: null, claimExpiresAt: null } : {}),
+      ...(episode.state === "authorized" && episode.dispatchCompletionDeadline && Number.isFinite(episode.dispatchCompletionDeadline.getTime())
+        && episode.dispatchCompletionDeadline.getTime() <= now.getTime() ? { state: "uncertain" as const, reasonCode: "dispatch-unresolved" } : {}) }).where(eq(reengagementEpisodes.id, episode.id));
+    return { ok: true, action: "escalated", episodeId: episode.id, brokerId: assigned.brokerId, result };
   });
 }

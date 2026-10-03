@@ -1324,14 +1324,16 @@ Fase2 fechada sob a ressalva autorizada: npm test fresco exit1, 158/159 arquivos
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: 47:59:59.999/48h/+1ms; aceita/recusada/incerta/omitida; sem episódio; fora de horário; inbound/takeover/agendamento antes do commit; trava statusChangedBy humano; concorrência; responsável; motivo real sem enviar ao lead.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **12 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/server/reengagement/__tests__/expire.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: 47:59:59.999/48h/+1ms; aceita/recusada/incerta/omitida; sem episódio; fora de horário; inbound/takeover/agendamento antes do commit; trava statusChangedBy humano; concorrência; responsável; motivo real sem enviar ao lead.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, **37 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou pelo root: 70/70 testes em 3/3 arquivos, Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
 
 **Tests**: integration — `src/server/reengagement/__tests__/expire.test.ts`; matriz: Serviço/repositório.
 
 **Gate**: Full; Build no fechamento da fase.
+
+**Evidence**: `node node_modules/vitest/vitest.mjs run src/server/reengagement/__tests__/expire.test.ts src/server/data/__tests__/escalation-executor.test.ts src/server/reengagement/__tests__/candidates.test.ts` — 70/70, 3/3 arquivos, exit0, 178.96s, início 14:26:12; 37 novos+33 regressões. Criação/replay corrigida antes do gate; consumo/identidade preservados, omissão e escalada sem transporte/Analytics; rollback e locks reais lead→episódio. Sem desvio.
 
 **Commit**: `feat(l14b): omitir ou escalar episódio por silêncio` (docs para mudança exclusivamente contratual).
 
