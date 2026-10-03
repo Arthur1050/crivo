@@ -1266,6 +1266,50 @@ export async function updateTenantSettings(
 
 export type StatusActor = "humano" | "agente";
 
+type ConductionTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+type ConductionOptions = { now?: () => Date; database?: Pick<typeof db, "transaction"> };
+
+async function lockConduction(tx: ConductionTransaction, scope: LeadScope, leadId: string) {
+  const [lead] = await tx.select().from(leads)
+    .where(and(eq(leads.tenantId, scope.tenantId), eq(leads.id, leadId), assignedTo(scope))).for("update");
+  if (!lead) return null;
+  const episodes = await tx.select().from(reengagementEpisodes)
+    .where(and(eq(reengagementEpisodes.tenantId, scope.tenantId), eq(reengagementEpisodes.leadId, leadId)))
+    .orderBy(asc(reengagementEpisodes.id)).for("update");
+  return { lead, episodes };
+}
+
+function conductionClock(clock: () => Date): Date {
+  const now = clock();
+  if (!(now instanceof Date) || !Number.isFinite(now.getTime())) throw new Error("invalid clock");
+  return now;
+}
+
+/** Locks já adquiridos: invalidação preserva a identidade e toda evidência pós-autorização. */
+async function invalidateConduction(
+  tx: ConductionTransaction,
+  locked: NonNullable<Awaited<ReturnType<typeof lockConduction>>>,
+  now: Date,
+  reason: string,
+  reset = false,
+) {
+  for (const episode of locked.episodes) {
+    const cancel = episode.state === "preparing" && episode.dispatchAuthorizedAt === null;
+    if (!cancel && episode.bridgeInvalidatedAt !== null) continue;
+    await tx.update(reengagementEpisodes).set({
+      ...(cancel ? { state: "cancelled" as const, reasonCode: reason, claimToken: null, claimExpiresAt: null, submittedText: null } : {}),
+      ...(episode.bridgeInvalidatedAt === null ? { bridgeInvalidatedAt: now, bridgeRevision: episode.bridgeRevision + 1 } : {}),
+      updatedAt: now,
+    }).where(and(eq(reengagementEpisodes.tenantId, locked.lead.tenantId), eq(reengagementEpisodes.id, episode.id)));
+  }
+  await tx.update(leadAgentState).set({
+    phase: null,
+    revision: sql`${leadAgentState.revision} + 1`,
+    ...(reset ? { askedFields: [], openingHistory: [] } : {}),
+    updatedAt: now,
+  }).where(and(eq(leadAgentState.tenantId, locked.lead.tenantId), eq(leadAgentState.leadId, locked.lead.id)));
+}
+
 /**
  * Move um lead entre colunas do Kanban (lote-3 — PIPE-02): `WHERE tenant_id
  * AND id AND assignedTo(scope)` (mesmo filtro de carteira que a leitura usa
@@ -1283,16 +1327,20 @@ export async function updateLeadStatus(
   scope: LeadScope,
   leadId: string,
   status: LeadStatus,
-  actor: StatusActor = "humano"
+  actor: StatusActor = "humano",
+  options: ConductionOptions = {},
 ): Promise<Lead | null> {
-  const rows = await db
-    .update(leads)
-    .set({ status, statusChangedBy: actor, updatedAt: new Date() })
-    .where(
-      and(eq(leads.tenantId, scope.tenantId), eq(leads.id, leadId), assignedTo(scope))
-    )
-    .returning();
-  return rows[0] ?? null;
+  return (options.database ?? db).transaction(async (tx) => {
+    const locked = await lockConduction(tx, scope, leadId);
+    if (!locked) return null;
+    const now = conductionClock(options.now ?? (() => new Date()));
+    if (locked.lead.status !== status || locked.lead.statusChangedBy !== actor) {
+      await invalidateConduction(tx, locked, now, "status-changed");
+    }
+    const [lead] = await tx.update(leads).set({ status, statusChangedBy: actor, updatedAt: now })
+      .where(eq(leads.id, leadId)).returning();
+    return lead;
+  });
 }
 
 /**
@@ -1362,10 +1410,9 @@ export async function setMeetingAttendance(
 
 // --- Condução humana (lote-14 — ASSUMIR-01, DEVOLVER-01, OPTHUM-01) -------
 //
-// Escritas com escopo de sessão (`assignedTo(scope)`), cada uma numa única
-// instrução SQL: o WHERE decide e grava de uma vez, sem janela entre ler e
-// escrever. Quando nada é gravado, uma leitura no mesmo escopo explica o
-// motivo — e lead fora do escopo é indistinguível de lead inexistente.
+// Escritas com escopo de sessão: locks lead→episódios também serializam a
+// autorização proativa. As guardas são relidas sob lock; fora do escopo
+// continua indistinguível de inexistente. Replay não reinvalida projeções.
 
 export type TakeOverResult =
   | { outcome: "assumido"; lead: Lead }
@@ -1384,28 +1431,20 @@ export async function takeOverConversation(
   scope: LeadScope,
   leadId: string,
   userId: string,
-  now: Date
+  now: Date,
+  options: ConductionOptions = {},
 ): Promise<TakeOverResult> {
-  const rows = await db
-    .update(leads)
-    .set({ humanTakeoverAt: now, humanTakeoverBy: userId, updatedAt: now })
-    .where(
-      and(
-        eq(leads.tenantId, scope.tenantId),
-        eq(leads.id, leadId),
-        assignedTo(scope),
-        isNull(leads.optedOutAt),
-        isNull(leads.humanTakeoverAt),
-        sql`${leads.status} <> 'escalado_humano'`
-      )
-    )
-    .returning();
-  if (rows[0]) return { outcome: "assumido", lead: rows[0] };
-
-  const lead = await getLead(scope, leadId);
-  if (!lead) return { outcome: "fora-do-escopo" };
-  if (lead.optedOutAt) return { outcome: "opt-out" };
-  return { outcome: "ja-humano", lead };
+  return (options.database ?? db).transaction(async (tx): Promise<TakeOverResult> => {
+    const locked = await lockConduction(tx, scope, leadId);
+    if (!locked) return { outcome: "fora-do-escopo" };
+    const clock = conductionClock(options.now ?? (() => now));
+    if (locked.lead.optedOutAt) return { outcome: "opt-out" };
+    if (locked.lead.humanTakeoverAt || locked.lead.status === "escalado_humano") return { outcome: "ja-humano", lead: locked.lead };
+    await invalidateConduction(tx, locked, clock, "human-takeover");
+    const [lead] = await tx.update(leads).set({ humanTakeoverAt: clock, humanTakeoverBy: userId, updatedAt: clock })
+      .where(eq(leads.id, leadId)).returning();
+    return { outcome: "assumido", lead };
+  });
 }
 
 export type ReturnResult =
@@ -1416,7 +1455,7 @@ export type ReturnResult =
 
 /**
  * Devolver a conversa ao agente (DEVOLVER-01 AC1–AC4, AC8; design.md C1),
- * numa única `UPDATE`: limpa a marca, `escalado_humano` passa a
+ * numa transação com invalidação do episódio: limpa a marca, `escalado_humano` passa a
  * `em_qualificacao` (os outros status ficam), `status_changed_by` vai a nulo
  * (libera a trava humana para o agente agendar) e grava o pedido de
  * reconstrução da memória. Só vale para lead conduzido por humano: num lead
@@ -1426,34 +1465,23 @@ export type ReturnResult =
 export async function returnConversationToAgent(
   scope: LeadScope,
   leadId: string,
-  now: Date
+  now: Date,
+  options: ConductionOptions = {},
 ): Promise<ReturnResult> {
-  const rows = await db
-    .update(leads)
-    .set({
-      humanTakeoverAt: null,
-      humanTakeoverBy: null,
-      status: sql`case when ${leads.status} = 'escalado_humano' then 'em_qualificacao'::lead_status else ${leads.status} end`,
-      statusChangedBy: null,
-      memoryResetRequestedAt: now,
-      updatedAt: now,
-    })
-    .where(
-      and(
-        eq(leads.tenantId, scope.tenantId),
-        eq(leads.id, leadId),
-        assignedTo(scope),
-        isNull(leads.optedOutAt),
-        or(isNotNull(leads.humanTakeoverAt), eq(leads.status, "escalado_humano"))
-      )
-    )
-    .returning();
-  if (rows[0]) return { outcome: "devolvido", lead: rows[0] };
-
-  const lead = await getLead(scope, leadId);
-  if (!lead) return { outcome: "fora-do-escopo" };
-  if (lead.optedOutAt) return { outcome: "opt-out" };
-  return { outcome: "ja-agente", lead };
+  return (options.database ?? db).transaction(async (tx): Promise<ReturnResult> => {
+    const locked = await lockConduction(tx, scope, leadId);
+    if (!locked) return { outcome: "fora-do-escopo" };
+    const clock = conductionClock(options.now ?? (() => now));
+    if (locked.lead.optedOutAt) return { outcome: "opt-out" };
+    if (!locked.lead.humanTakeoverAt && locked.lead.status !== "escalado_humano") return { outcome: "ja-agente", lead: locked.lead };
+    await invalidateConduction(tx, locked, clock, "memory-reset", true);
+    const [lead] = await tx.update(leads).set({
+      humanTakeoverAt: null, humanTakeoverBy: null,
+      status: locked.lead.status === "escalado_humano" ? "em_qualificacao" : locked.lead.status,
+      statusChangedBy: null, memoryResetRequestedAt: clock, updatedAt: clock,
+    }).where(eq(leads.id, leadId)).returning();
+    return { outcome: "devolvido", lead };
+  });
 }
 
 export interface HumanOptOutResult {
@@ -1467,41 +1495,24 @@ export interface HumanOptOutResult {
  * `optOutLead` (`lgpd.ts`): `COALESCE(opted_out_at, now)` preserva o instante
  * original numa segunda chamada. Quando o opt-out é novo, grava também o
  * pedido de reconstrução da memória, que o n8n consome para purgar a sessão
- * (OPTHUM-01 AC6). Uma única instrução: a CTE trava a linha e guarda o valor
- * anterior, para dizer se o opt-out é novo. `null` fora do escopo.
+ * (OPTHUM-01 AC6). Lead e episódios são travados antes de decidir se o
+ * opt-out é novo; replay preserva as revisões. `null` fora do escopo.
  */
 export async function optOutLeadByHuman(
   scope: LeadScope,
   leadId: string,
-  now: Date
+  now: Date,
+  options: ConductionOptions = {},
 ): Promise<HumanOptOutResult | null> {
-  const scopeFilter =
-    scope.assignedUserId === null
-      ? sql``
-      : sql` and assigned_user_id = ${scope.assignedUserId}`;
-  const result = await db.execute<{ opted_out_at: Date | string; previous: Date | string | null }>(sql`
-    with prev as (
-      select id, opted_out_at as previous
-      from leads
-      where tenant_id = ${scope.tenantId} and id = ${leadId}${scopeFilter}
-      for update
-    )
-    update leads
-    set opted_out_at = coalesce(leads.opted_out_at, ${now}),
-        memory_reset_requested_at = case
-          when leads.opted_out_at is null then ${now}
-          else leads.memory_reset_requested_at
-        end
-    from prev
-    where leads.id = prev.id
-    returning leads.opted_out_at, prev.previous
-  `);
-  const row = result.rows[0];
-  if (!row) return null;
-  return {
-    optedOutAt: new Date(row.opted_out_at),
-    newlyOptedOut: row.previous === null,
-  };
+  return (options.database ?? db).transaction(async (tx) => {
+    const locked = await lockConduction(tx, scope, leadId);
+    if (!locked) return null;
+    const clock = conductionClock(options.now ?? (() => now));
+    if (locked.lead.optedOutAt) return { optedOutAt: locked.lead.optedOutAt, newlyOptedOut: false };
+    await invalidateConduction(tx, locked, clock, "opt-out", true);
+    await tx.update(leads).set({ optedOutAt: clock, memoryResetRequestedAt: clock }).where(eq(leads.id, leadId));
+    return { optedOutAt: clock, newlyOptedOut: true };
+  });
 }
 
 // --- Envio humano (lote-14 — ENVIO-01, JANELA-01; design.md C4) ----------

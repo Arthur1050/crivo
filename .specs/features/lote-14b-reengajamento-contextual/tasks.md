@@ -1482,16 +1482,19 @@ Fechamento da fase: TS2339 na inspeção de query.mock.calls corrigido com argum
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: tomada antes/depois da autorização; devolução não rearma; reset invalida ponte/fase; opt-out idempotente; status encerrado/agendado; humano trava pipeline; replay; tenant; histórico não reaparece; writer concorrente; mensagens humanas sem inbound.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **12 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/server/data/__tests__/conduction-reengagement.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: tomada antes/depois da autorização; devolução não rearma; reset invalida ponte/fase; opt-out idempotente; status encerrado/agendado; humano trava pipeline; replay; tenant; histórico não reaparece; writer concorrente; mensagens humanas sem inbound.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **12 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou: `npx vitest run src/server/data/__tests__/conduction-reengagement.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
 
 **Tests**: integration — `src/server/data/__tests__/conduction-reengagement.test.ts`; matriz: DAL/mutação.
 
 **Gate**: Full; Build no fechamento da fase.
 
 **Commit**: `feat(l14b): invalidar episódio nos escritores de condução` (docs para mudança exclusivamente contratual).
+
+**Evidence**: `node node_modules/vitest/vitest.mjs run src/server/data/__tests__/conduction-reengagement.test.ts src/server/data/__tests__/conversation-conduction.test.ts src/server/data/__tests__/mutations.test.ts src/server/integration/__tests__/leads.test.ts`: 81/82, exit1, 190.81s (63/63 regressões; falha de fixture humana sem autoria no CHECK).
+Correção somente da autoria factual da fixture; regate `node node_modules/vitest/vitest.mjs run src/server/data/__tests__/conduction-reengagement.test.ts`: 19/19, exit0, 144.66s; 82 casos validados ao total (19 novos +63 regressões), implementação/asserts intactos, sem desvio.
 
 ---
 
