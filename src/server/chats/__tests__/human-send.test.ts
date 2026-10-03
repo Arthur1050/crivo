@@ -10,10 +10,14 @@ import {
   messages,
   tenants,
   users,
+  whatsappChannels,
+  whatsappMessageReceipts,
+  whatsappUsage,
 } from "../../../db/schema";
 import type { LeadScope } from "../../../lib/lead-scope";
 import {
   HUMAN_SEND_MESSAGES,
+  deliverHumanText,
   sendHumanMessage,
   type HumanSendContext,
   type HumanSendFailure,
@@ -94,9 +98,12 @@ describe("chats/human-send — sendHumanMessage (lote-14, T16)", () => {
   afterAll(async () => {
     const tenantIds = [tenantAId, tenantBId];
     await db.delete(humanMessageSends).where(inArray(humanMessageSends.tenantId, tenantIds));
+    await db.delete(whatsappMessageReceipts).where(inArray(whatsappMessageReceipts.tenantId, tenantIds));
+    await db.delete(whatsappUsage).where(inArray(whatsappUsage.tenantId, tenantIds));
     await db.delete(messages).where(inArray(messages.tenantId, tenantIds));
     await db.delete(conversations).where(inArray(conversations.tenantId, tenantIds));
     await db.delete(leads).where(inArray(leads.tenantId, tenantIds));
+    await db.delete(whatsappChannels).where(inArray(whatsappChannels.tenantId, tenantIds));
     await db.delete(tenants).where(inArray(tenants.id, tenantIds));
     await db.delete(users).where(inArray(users.id, [authorId, otherBrokerId]));
     await db.$client.end();
@@ -521,6 +528,108 @@ describe("chats/human-send — sendHumanMessage (lote-14, T16)", () => {
       expect(HUMAN_SEND_MESSAGES["entregue-sem-registro"]).toBe(
         "A mensagem foi entregue ao lead, mas não ficou registrada aqui."
       );
+    });
+  });
+
+  describe("T32 — canal usado e envio independente de Analytics", () => {
+    async function channel() {
+      const phoneNumberId = BigInt(`0x${randomUUID().replaceAll("-", "").slice(0, 16)}`).toString();
+      await db.insert(whatsappChannels).values({ tenantId: tenantAId, phoneNumberId, ownershipVerifiedAt: NOW });
+      return phoneNumberId;
+    }
+
+    async function usage(phoneNumberId: string, kind: "volume999" | "volume1000" | "unknown" | "stale" | "failure") {
+      const observed = kind === "stale" || kind === "failure" ? new Date(NOW.getTime() - HOUR) : NOW;
+      return (await db.insert(whatsappUsage).values({
+        tenantId: tenantAId, phoneNumberId, configurationRevision: 1, accountTimezone: "UTC",
+        monthStart: new Date("2026-10-01T00:00:00Z"), monthEnd: new Date("2026-11-01T00:00:00Z"),
+        freeServiceVolume: kind === "unknown" ? null : kind === "volume1000" ? 1000 : 999,
+        queryEnd: kind === "unknown" ? null : observed, lastSuccessAt: kind === "unknown" ? null : observed,
+        lastAttemptAt: NOW, failureCode: kind === "failure" ? "analytics-unavailable" : null,
+      }).returning())[0];
+    }
+
+    it.each(["volume999", "volume1000", "unknown", "stale", "failure"] as const)("snapshot%s não bloqueia envio nem altera consumo factual", async (kind) => {
+      const phoneNumberId = await channel(), snapshot = await usage(phoneNumberId, kind), leadId = await createLead({ phoneNumberId });
+      const fakeFetch = okFetch(), result = await sendHumanMessage(context, { leadId, text: "Envio humano independente", requestId: randomUUID() }, NOW, { fetch: fakeFetch });
+      const stored = await humanMessagesOf(leadId);
+      expect(result).toEqual({ ok: true, message: stored[0] }); expect(stored[0].whatsappPhoneNumberId).toBe(phoneNumberId);
+      expect(fakeFetch).toHaveBeenCalledTimes(1); expect(fakeFetch.mock.calls[0][0]).toBe(`https://graph.facebook.com/v25.0/${phoneNumberId}/messages`);
+      expect(await db.select().from(whatsappUsage).where(and(eq(whatsappUsage.tenantId, tenantAId), eq(whatsappUsage.phoneNumberId, phoneNumberId)))).toEqual([snapshot]);
+      expect(await db.select().from(whatsappMessageReceipts).where(eq(whatsappMessageReceipts.wamid, stored[0].externalId!))).toEqual([]);
+      expect((await reservationsOf(leadId))[0].state).toBe("enviada");
+    });
+
+    it("canal que muda durante o fetch não substitui o número efetivamente usado no registro", async () => {
+      const originalChannel = await channel(), nextChannel = await channel(), leadId = await createLead({ phoneNumberId: originalChannel });
+      const fakeFetch = vi.fn<typeof fetch>(async (url) => {
+        expect(url).toBe(`https://graph.facebook.com/v25.0/${originalChannel}/messages`);
+        await db.update(leads).set({ whatsappPhoneNumberId: nextChannel }).where(eq(leads.id, leadId));
+        return new Response(JSON.stringify({ messages: [{ id: `fixture-channel-${randomUUID()}` }] }), { status: 200 });
+      });
+      const result = await sendHumanMessage(context, { leadId, text: "Texto no canal original", requestId: randomUUID() }, NOW, { fetch: fakeFetch });
+      if (!result.ok) throw new Error("Envio ausente");
+      expect(result.message.whatsappPhoneNumberId).toBe(originalChannel); expect((await humanMessagesOf(leadId))[0]).toEqual(result.message);
+      expect((await db.select().from(leads).where(eq(leads.id, leadId)))[0].whatsappPhoneNumberId).toBe(nextChannel);
+      expect(fakeFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it("status chega antes do registro e vincula exatamente ao canal usado, com autoria humana", async () => {
+      const phoneNumberId = await channel(), leadId = await createLead({ phoneNumberId }), wamid = `fixture-status-${randomUUID()}`;
+      const fakeFetch = vi.fn<typeof fetch>(async () => {
+        await db.insert(whatsappMessageReceipts).values({ tenantId: tenantAId, phoneNumberId, wamid, deliveredAt: NOW, classification: "free_service", pricingModel: "PMP", category: "service", pricingType: "free_customer_service", billable: false });
+        return new Response(JSON.stringify({ messages: [{ id: wamid }] }), { status: 200 });
+      });
+      const result = await sendHumanMessage(context, { leadId, text: "Resposta humana com recibo", requestId: randomUUID() }, NOW, { fetch: fakeFetch });
+      if (!result.ok) throw new Error("Envio ausente");
+      const [receipt] = await db.select().from(whatsappMessageReceipts).where(eq(whatsappMessageReceipts.wamid, wamid));
+      expect(receipt).toMatchObject({ tenantId: tenantAId, phoneNumberId, messageId: result.message.id, orphanExpiresAt: null, classification: "free_service" });
+      expect(result.message).toMatchObject({ sender: "humano", authorUserId: authorId, authorName: "Ana Corretora", whatsappPhoneNumberId: phoneNumberId, externalId: wamid });
+      expect((await reservationsOf(leadId))[0]).toMatchObject({ state: "enviada", messageId: result.message.id });
+    });
+
+    it("objeto input mutado durante fetch não muda canal já capturado para envio/registro", async () => {
+      const originalChannel = await channel(), nextChannel = await channel(), leadId = await createLead({ phoneNumberId: originalChannel });
+      const input = { tenantId: tenantAId, leadId, requestId: randomUUID(), user: context.user, body: "Texto factual", phoneNumberId: originalChannel, to: MSISDN };
+      const fakeFetch = vi.fn<typeof fetch>(async (url) => {
+        expect(url).toBe(`https://graph.facebook.com/v25.0/${originalChannel}/messages`);
+        input.phoneNumberId = nextChannel;
+        return new Response(JSON.stringify({ messages: [{ id: `fixture-mutable-${randomUUID()}` }] }), { status: 200 });
+      });
+      const result = await deliverHumanText(input, NOW, { fetch: fakeFetch });
+      if (!result.ok) throw new Error("Envio ausente");
+      expect(input.phoneNumberId).toBe(nextChannel); expect(result.message.whatsappPhoneNumberId).toBe(originalChannel);
+      expect(fakeFetch).toHaveBeenCalledTimes(1); expect((await humanMessagesOf(leadId))[0]).toEqual(result.message);
+    });
+
+    it("replay após trocar cadastro de canal conserva mensagem/recibo e não chama Meta novamente", async () => {
+      const originalChannel = await channel(), nextChannel = await channel(), leadId = await createLead({ phoneNumberId: originalChannel });
+      const requestId = randomUUID(), fakeFetch = okFetch(), first = await sendHumanMessage(context, { leadId, text: "Original", requestId }, NOW, { fetch: fakeFetch });
+      if (!first.ok) throw new Error("Envio ausente");
+      const [receipt] = await db.insert(whatsappMessageReceipts).values({ tenantId: tenantAId, phoneNumberId: originalChannel, wamid: first.message.externalId!, messageId: first.message.id, orphanExpiresAt: null, deliveredAt: NOW, classification: "free_service", pricingModel: "PMP", category: "service", pricingType: "free_customer_service", billable: false }).returning();
+      const before = await reservationsOf(leadId);
+      await db.update(leads).set({ whatsappPhoneNumberId: nextChannel }).where(eq(leads.id, leadId));
+      const second = await sendHumanMessage({ ...context, user: { id: otherBrokerId, name: "Outra autora" } }, { leadId, text: "Não substituir original", requestId }, NOW, { fetch: fakeFetch });
+      expect(second).toEqual(first); expect(fakeFetch).toHaveBeenCalledTimes(1); expect(await reservationsOf(leadId)).toEqual(before);
+      expect(await db.select().from(whatsappMessageReceipts).where(eq(whatsappMessageReceipts.wamid, first.message.externalId!))).toEqual([receipt]);
+      expect(await humanMessagesOf(leadId)).toEqual([first.message]);
+    });
+
+    it("sem cadastro Analytics ou status n8n, grava número usado sem fabricar recibo/gratuidade", async () => {
+      const phoneNumberId = "731000000000099", leadId = await createLead({ phoneNumberId }), fakeFetch = okFetch();
+      const result = await sendHumanMessage(context, { leadId, text: "Registro independente", requestId: randomUUID() }, NOW, { fetch: fakeFetch });
+      if (!result.ok) throw new Error("Envio ausente");
+      expect(result.message.whatsappPhoneNumberId).toBe(phoneNumberId); expect(result).toEqual({ ok: true, message: (await humanMessagesOf(leadId))[0] });
+      expect(await db.select().from(whatsappChannels).where(and(eq(whatsappChannels.tenantId, tenantAId), eq(whatsappChannels.phoneNumberId, phoneNumberId)))).toEqual([]);
+      expect(await db.select().from(whatsappMessageReceipts).where(eq(whatsappMessageReceipts.wamid, result.message.externalId!))).toEqual([]);
+      expect(await db.select().from(whatsappUsage).where(and(eq(whatsappUsage.tenantId, tenantAId), eq(whatsappUsage.phoneNumberId, phoneNumberId)))).toEqual([]);
+      expect(fakeFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it.each(["opt-out", "agent", "window"] as const)("snapshot sem uso livre nunca remove proteção%s do composer", async (kind) => {
+      const phoneNumberId = await channel(); await usage(phoneNumberId, "volume1000");
+      const leadId = await createLead({ phoneNumberId, optedOut: kind === "opt-out", takenOver: kind !== "agent", lastLeadMessageAgeMs: kind === "window" ? 24 * HOUR : HOUR });
+      await expectRefused(leadId, "Resposta protegida", kind === "opt-out" ? "lead-com-opt-out" : kind === "agent" ? "conversa-com-agente" : "janela-fechada");
     });
   });
 });

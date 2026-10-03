@@ -1607,16 +1607,18 @@ Correção somente da autoria factual da fixture; regate `node node_modules/vite
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: saldo positivo/zero/unknown/stale; n8n/Analytics falha; status antes do registro; canal mudou; replay; rótulo pendente sem segredo; composer mantém proteções.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **8 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/server/chats/__tests__/human-send.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: saldo positivo/zero/unknown/stale; n8n/Analytics falha; status antes do registro; canal mudou; replay; rótulo pendente sem segredo; composer mantém proteções.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **8 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou: `npx vitest run src/server/chats/__tests__/human-send.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
 
 **Tests**: integration — `src/server/chats/__tests__/human-send.test.ts`; matriz: Serviço/repositório.
 
 **Gate**: Full; Build no fechamento da fase.
 
 **Commit**: `feat(l14b): persistir canal usado no envio humano` (docs para mudança exclusivamente contratual).
+
+**Evidence**: `node node_modules/vitest/vitest.mjs run src/server/chats/__tests__/human-send.test.ts src/server/chats/__tests__/human-opt-out.test.ts`: 42/42, 2 arquivos, exit0, 86.22s; 13 novos PG +29 regressões preservadas; canal capturado antes dos awaits, envio independente de snapshots Analytics sem inferir saldo/gratuidade; UI USO04 segue deferida autorizada ao L14c.
 
 ---
 

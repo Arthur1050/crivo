@@ -112,14 +112,14 @@ export async function deliverHumanText(
   now: Date,
   deps: HumanSendDependencies = {}
 ): Promise<HumanSendResult> {
-  const { tenantId, leadId, requestId } = input;
+  const { tenantId, leadId, requestId, phoneNumberId } = input;
 
   const reservation = await reserveHumanSend(tenantId, leadId, input.user.id, requestId, now);
   if (reservation.outcome === "ja-enviada") return { ok: true, message: reservation.message };
   if (reservation.outcome === "envio-em-andamento") return refuse("envio-em-andamento");
 
   const sent = await sendWhatsAppText(
-    { phoneNumberId: input.phoneNumberId, to: input.to, body: input.body },
+    { phoneNumberId, to: input.to, body: input.body },
     deps
   );
 
@@ -150,6 +150,7 @@ export async function deliverHumanText(
       content: input.body,
       wamid: sent.wamid,
       sentAt: now,
+      whatsappPhoneNumberId: phoneNumberId,
     });
   } catch {
     message = null;
