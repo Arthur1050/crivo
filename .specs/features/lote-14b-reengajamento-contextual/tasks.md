@@ -1231,14 +1231,16 @@ Fase2 fechada sob a ressalva autorizada: npm test fresco exit1, 158/159 arquivos
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: disputa real; inbound/reset/opt-out/takeover/fase antes do commit; 24h durante geração; horário encerrou; texto trim vazio/4096/4097 UTF-16; token/canal/revisão; crash depois do commit não libera; lock lead antes de episódio; âncora autoritativa.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **14 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/server/reengagement/__tests__/dispatch-authorize.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: disputa real; inbound/reset/opt-out/takeover/fase antes do commit; 24h durante geração; horário encerrou; texto trim vazio/4096/4097 UTF-16; token/canal/revisão; crash depois do commit não libera; lock lead antes de episódio; âncora autoritativa.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, **30 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou pelo root: 76/76 testes em 3/3 arquivos, Postgres real com fixtures próprias e disputa em conexões independentes.
 
 **Tests**: integration — `src/server/reengagement/__tests__/dispatch-authorize.test.ts`; matriz: Serviço/repositório.
 
 **Gate**: Full; Build no fechamento da fase.
+
+**Evidence**: `node node_modules/vitest/vitest.mjs run src/server/reengagement/__tests__/dispatch-authorize.test.ts src/server/reengagement/__tests__/preparation-failure.test.ts src/server/reengagement/__tests__/preparation-claim.test.ts` — 76/76, 3/3 arquivos, exit0, 257.17s, início13:12:56; 30 novos+46 regressões. Snapshot de canal interno obrigatório; token exclusivo e marker permanente sob locks reais. Sem desvio.
 
 **Commit**: `feat(l14b): autorizar uma chamada externa` (docs para mudança exclusivamente contratual).
 

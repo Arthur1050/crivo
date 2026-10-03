@@ -6,6 +6,7 @@ import { toWhatsAppMsisdn } from "../../../n8n/src/phone.mjs";
 import { db } from "../../db";
 import { conversations, leadAgentState, leads, messages, reengagementEpisodes, tenants, whatsappChannels } from "../../db/schema";
 import type { AuthResult } from "../integration/auth";
+import { HUMAN_TEXT_MAX_LENGTH } from "../chats/human-send";
 
 export interface ReengagementCandidate {
   leadId: string; anchorMessageId: string; anchorSentAt: string; phoneNumberId: string;
@@ -205,5 +206,72 @@ export async function releasePreparationFailure(
     await tx.update(reengagementEpisodes).set({ claimToken: null, claimExpiresAt: null, submittedText: null,
       reasonCode: input.code, updatedAt: now }).where(eq(reengagementEpisodes.id, episode.id));
     return { ok: true, released: true, episodeId };
+  });
+}
+
+export type DispatchAuthorizationResult =
+  | { ok: true; authorized: true; episodeId: string; text: string; phoneNumberId: string; destination: string; dispatchAuthorizedAt: Date; dispatchCompletionDeadline: Date }
+  | { ok: true; authorized: false; episodeId: string; state: typeof reengagementEpisodes.$inferSelect["state"] }
+  | { ok: false; reason: "invalid-input" | "invalid-text" | "invalid-channel-snapshot" | "lead-not-found" | "episode-not-found" | "claim-conflict" | "claim-expired" | "context-changed" | "not-eligible"; policyReason?: string };
+
+/**
+ * T34 resolve transporte/canal no servidor antes de chamar esta fronteira.
+ * Snapshot interno nunca vem do corpo/modelo. Só authorized:true pode enviar.
+ * A transação persiste texto/consumo antes de devolver essa permissão única.
+ */
+export async function authorizeDispatch(
+  context: AuthResult, leadId: string, episodeId: string,
+  input: { claimToken: string; text: string },
+  options: { expectedChannelRevision?: number; now?: () => Date; database?: Pick<typeof db, "transaction"> } = {},
+): Promise<DispatchAuthorizationResult> {
+  if (!UUID.test(episodeId) || typeof input.claimToken !== "string" || !UUID.test(input.claimToken)) return { ok: false, reason: "invalid-input" };
+  if (typeof input.text !== "string" || !input.text.trim() || input.text.trim().length > HUMAN_TEXT_MAX_LENGTH) return { ok: false, reason: "invalid-text" };
+  if (!Number.isSafeInteger(options.expectedChannelRevision) || options.expectedChannelRevision! < 1) return { ok: false, reason: "invalid-channel-snapshot" };
+  const text = input.text.trim();
+  return (options.database ?? db).transaction(async (tx): Promise<DispatchAuthorizationResult> => {
+    const [lead] = await tx.select().from(leads).where(and(eq(leads.tenantId, context.tenantId), eq(leads.id, leadId))).for("update");
+    if (!lead) return { ok: false, reason: "lead-not-found" };
+    const [episode] = await tx.select().from(reengagementEpisodes).where(and(eq(reengagementEpisodes.tenantId, context.tenantId),
+      eq(reengagementEpisodes.leadId, leadId), eq(reengagementEpisodes.id, episodeId))).for("update");
+    if (!episode) return { ok: false, reason: "episode-not-found" };
+    if (episode.dispatchAuthorizedAt || episode.state !== "preparing") return { ok: true, authorized: false, episodeId, state: episode.state };
+    if (episode.claimToken !== input.claimToken) return { ok: false, reason: "claim-conflict" };
+    const [channel] = await tx.select().from(whatsappChannels).where(and(eq(whatsappChannels.tenantId, context.tenantId),
+      eq(whatsappChannels.phoneNumberId, episode.phoneNumberId))).for("update");
+    const [anchor] = await tx.select({ id: messages.id, sentAt: messages.sentAt, phoneNumberId: messages.whatsappPhoneNumberId }).from(messages)
+      .innerJoin(conversations, and(eq(conversations.id, messages.conversationId), eq(conversations.tenantId, messages.tenantId)))
+      .where(and(eq(messages.tenantId, context.tenantId), eq(conversations.leadId, leadId), eq(messages.sender, "lead")))
+      .orderBy(desc(messages.sentAt), desc(messages.id)).limit(1);
+    const [agent] = await tx.select().from(leadAgentState).where(and(eq(leadAgentState.tenantId, context.tenantId), eq(leadAgentState.leadId, leadId)));
+    const [settings] = await tx.select({ meetingDays: tenants.meetingDays, meetingHoursStart: tenants.meetingHoursStart, meetingHoursEnd: tenants.meetingHoursEnd })
+      .from(tenants).where(eq(tenants.id, context.tenantId));
+    const now = (options.now ?? (() => new Date()))();
+    if (!Number.isFinite(now.getTime()) || !episode.claimExpiresAt || !Number.isFinite(episode.claimExpiresAt.getTime())
+        || episode.claimExpiresAt.getTime() <= now.getTime()) return { ok: false, reason: "claim-expired" };
+    async function cancel(reasonCode: string, state: "cancelled" | "omitted" = "cancelled") {
+      await tx.update(reengagementEpisodes).set({ state, reasonCode, claimToken: null, claimExpiresAt: null, submittedText: null, updatedAt: now })
+        .where(eq(reengagementEpisodes.id, episodeId));
+    }
+    if (!anchor || anchor.id !== episode.anchorMessageId || anchor.sentAt.getTime() !== episode.anchorSentAt.getTime()
+        || !agent || agent.anchorMessageId !== anchor.id || agent.revision !== episode.agentStateRevision
+        || lead.memoryResetRequestedAt?.getTime() !== episode.resetObservedAt?.getTime()
+        || agent.resetObservedAt?.getTime() !== episode.resetObservedAt?.getTime()
+        || !channel || channel.configurationRevision !== options.expectedChannelRevision
+        || lead.whatsappPhoneNumberId !== channel.phoneNumberId || anchor.phoneNumberId !== channel.phoneNumberId
+        || !channel.ownershipVerifiedAt || !Number.isFinite(channel.ownershipVerifiedAt.getTime())) {
+      await cancel("context-changed"); return { ok: false, reason: "context-changed" };
+    }
+    const destination = toWhatsAppMsisdn(lead.externalId);
+    const decision = evaluateReengagement({ lead, anchor: { messageId: anchor.id, sentAt: anchor.sentAt }, phase: agent.phase, channel, destination, now, settings });
+    if (decision.action !== "prepare") {
+      if (decision.reason === "ineligible" || decision.reason === "unknown-data") await cancel(decision.reason);
+      if (decision.action === "omit" || decision.action === "escalate") await cancel("window-closed", "omitted");
+      return { ok: false, reason: "not-eligible", policyReason: decision.reason };
+    }
+    const dispatchCompletionDeadline = new Date(now.getTime() + 120000);
+    await tx.update(reengagementEpisodes).set({ state: "authorized", submittedText: text, dispatchAuthorizedAt: now,
+      dispatchCompletionDeadline, reasonCode: null, updatedAt: now }).where(eq(reengagementEpisodes.id, episodeId));
+    return { ok: true, authorized: true, episodeId, text, phoneNumberId: channel.phoneNumberId, destination,
+      dispatchAuthorizedAt: now, dispatchCompletionDeadline };
   });
 }
