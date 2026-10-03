@@ -173,3 +173,37 @@ export async function claimPreparation(
     return { ok: true, acquired: true, episodeId: claimed.id, claimToken, claimExpiresAt, agentStateRevision: agent.revision };
   });
 }
+
+export const PREPARATION_FAILURE_CODES = ["generation-failed", "generation-timeout", "context-read-failed", "invalid-text"] as const;
+export type PreparationFailureCode = typeof PREPARATION_FAILURE_CODES[number];
+export type PreparationFailureResult = { ok: true; released: true; episodeId: string }
+  | { ok: false; reason: "invalid-input" | "lead-not-found" | "episode-not-found" | "episode-consumed" | "claim-conflict" | "claim-expired" };
+
+/** Falha anterior ao despacho nunca desfaz autorização nem libera outro worker. */
+export async function releasePreparationFailure(
+  context: AuthResult,
+  leadId: string,
+  episodeId: string,
+  input: { claimToken: string; code: PreparationFailureCode },
+  options: { now?: () => Date; database?: Pick<typeof db, "transaction"> } = {},
+): Promise<PreparationFailureResult> {
+  if (!UUID.test(episodeId) || typeof input.claimToken !== "string" || !UUID.test(input.claimToken)
+      || !PREPARATION_FAILURE_CODES.includes(input.code)) return { ok: false, reason: "invalid-input" };
+  return (options.database ?? db).transaction(async (tx): Promise<PreparationFailureResult> => {
+    const [lead] = await tx.select({ id: leads.id }).from(leads)
+      .where(and(eq(leads.tenantId, context.tenantId), eq(leads.id, leadId))).for("update");
+    if (!lead) return { ok: false, reason: "lead-not-found" };
+    const [episode] = await tx.select().from(reengagementEpisodes)
+      .where(and(eq(reengagementEpisodes.tenantId, context.tenantId), eq(reengagementEpisodes.leadId, leadId),
+        eq(reengagementEpisodes.id, episodeId))).for("update");
+    if (!episode) return { ok: false, reason: "episode-not-found" };
+    if (episode.dispatchAuthorizedAt || episode.state !== "preparing") return { ok: false, reason: "episode-consumed" };
+    if (episode.claimToken !== input.claimToken) return { ok: false, reason: "claim-conflict" };
+    const now = (options.now ?? (() => new Date()))();
+    if (!Number.isFinite(now.getTime()) || !episode.claimExpiresAt || !Number.isFinite(episode.claimExpiresAt.getTime())
+        || episode.claimExpiresAt.getTime() <= now.getTime()) return { ok: false, reason: "claim-expired" };
+    await tx.update(reengagementEpisodes).set({ claimToken: null, claimExpiresAt: null, submittedText: null,
+      reasonCode: input.code, updatedAt: now }).where(eq(reengagementEpisodes.id, episode.id));
+    return { ok: true, released: true, episodeId };
+  });
+}

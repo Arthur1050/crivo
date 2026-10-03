@@ -1200,14 +1200,16 @@ Fase2 fechada sob a ressalva autorizada: npm test fresco exit1, 158/159 arquivos
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: falha de geração; texto inválido; token velho; claim expirada; despacho já consumido; próximo tick elegível; replay/tenant sem envio.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **7 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/server/reengagement/__tests__/preparation-failure.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: falha de geração; texto inválido; token velho; claim expirada; despacho já consumido; próximo tick elegível; replay/tenant sem envio.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **7 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou: `npx vitest run src/server/reengagement/__tests__/preparation-failure.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
 
 **Tests**: integration — `src/server/reengagement/__tests__/preparation-failure.test.ts`; matriz: Serviço/repositório.
 
 **Gate**: Full; Build no fechamento da fase.
+
+**Evidence**: `node node_modules/vitest/vitest.mjs run src/server/reengagement/__tests__/preparation-failure.test.ts src/server/reengagement/__tests__/preparation-claim.test.ts` — 46/46, 2/2 arquivos, exit0, 146.02s; 17 novos. Postgres real, token substituído sob lock e replay; sem desvio.
 
 **Commit**: `feat(l14b): encerrar falha anterior ao despacho` (docs para mudança exclusivamente contratual).
 
