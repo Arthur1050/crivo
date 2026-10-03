@@ -1262,14 +1262,16 @@ Fase2 fechada sob a ressalva autorizada: npm test fresco exit1, 158/159 arquivos
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: aceite; falha de persistência e ack repetido; status órfão; inbound concorrente antes/depois do despacho; mesmo segundo da Meta; wamid perdido continua incerto; replay; tenant; lastInboundAt inalterado; tentativa consumida.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **10 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/server/reengagement/__tests__/acceptance.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: aceite; falha de persistência e ack repetido; status órfão; inbound concorrente antes/depois do despacho; mesmo segundo da Meta; wamid perdido continua incerto; replay; tenant; lastInboundAt inalterado; tentativa consumida.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, **29 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou pelo root: regate 38/38 em 2/2 arquivos; 30 regressões de autorização passaram no gate inicial e ficaram intactas. Postgres real e disputa em conexões independentes.
 
 **Tests**: integration — `src/server/reengagement/__tests__/acceptance.test.ts`; matriz: Serviço/repositório.
 
 **Gate**: Full; Build no fechamento da fase.
+
+**Evidence**: `node node_modules/vitest/vitest.mjs run src/server/reengagement/__tests__/acceptance.test.ts src/server/whatsapp/__tests__/statuses-attach.test.ts` — regate38/38, 2/2 arquivos, exit0, 220.93s, início13:48:07; 29 novos+9 regressões. Inicial67/68, exit1, 332.27s: DateInvalid ao regravar Infinity; correção omite bridgeLastInboundAt inválido do SET, preserva valor PG e invalida ponte, sem enfraquecer testes; authorize30/30 preservado. Ponte admite projeção invalidada por inbound factual; writer integrado permanece T27.
 
 **Commit**: `feat(l14b): registrar aceite sem reenviar` (docs para mudança exclusivamente contratual).
 

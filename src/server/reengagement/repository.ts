@@ -1,12 +1,14 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { evaluateReengagement } from "../../../n8n/src/reengagement.mjs";
 import { toWhatsAppMsisdn } from "../../../n8n/src/phone.mjs";
 import { db } from "../../db";
 import { conversations, leadAgentState, leads, messages, reengagementEpisodes, tenants, whatsappChannels } from "../../db/schema";
 import type { AuthResult } from "../integration/auth";
 import { HUMAN_TEXT_MAX_LENGTH } from "../chats/human-send";
+import { serviceScope } from "../data";
+import { attachReceipt } from "../whatsapp/statuses";
 
 export interface ReengagementCandidate {
   leadId: string; anchorMessageId: string; anchorSentAt: string; phoneNumberId: string;
@@ -273,5 +275,80 @@ export async function authorizeDispatch(
       dispatchCompletionDeadline, reasonCode: null, updatedAt: now }).where(eq(reengagementEpisodes.id, episodeId));
     return { ok: true, authorized: true, episodeId, text, phoneNumberId: channel.phoneNumberId, destination,
       dispatchAuthorizedAt: now, dispatchCompletionDeadline };
+  });
+}
+
+export type AcceptanceResult =
+  | { ok: true; recorded: true; replay: boolean; episodeId: string; messageId: string }
+  | { ok: true; recorded: false; episodeId: string; state: "uncertain" | "accepted" }
+  | { ok: false; reason: "invalid-input" | "lead-not-found" | "episode-not-found" | "not-authorized" | "identity-conflict" | "anchor-not-found" };
+
+/** Identidade vem do transporte/ack; esta função nunca chama Meta. */
+export async function reconcileAcceptance(
+  context: AuthResult, leadId: string, episodeId: string,
+  input: { wamid?: string | null; acceptedAt?: Date | null },
+  options: { now?: () => Date; database?: Pick<typeof db, "transaction"> } = {},
+): Promise<AcceptanceResult> {
+  if (!UUID.test(episodeId) || (input.wamid != null && (typeof input.wamid !== "string" || !input.wamid.trim()))
+      || (input.acceptedAt != null && (!(input.acceptedAt instanceof Date) || !Number.isFinite(input.acceptedAt.getTime())))) return { ok: false, reason: "invalid-input" };
+  return (options.database ?? db).transaction(async (tx): Promise<AcceptanceResult> => {
+    const [lead] = await tx.select().from(leads).where(and(eq(leads.tenantId, context.tenantId), eq(leads.id, leadId))).for("update");
+    if (!lead) return { ok: false, reason: "lead-not-found" };
+    const [episode] = await tx.select().from(reengagementEpisodes).where(and(eq(reengagementEpisodes.tenantId, context.tenantId),
+      eq(reengagementEpisodes.leadId, leadId), eq(reengagementEpisodes.id, episodeId))).for("update");
+    if (!episode) return { ok: false, reason: "episode-not-found" };
+    if (!episode.dispatchAuthorizedAt || !episode.submittedText || ["preparing", "cancelled", "omitted", "refused"].includes(episode.state)) return { ok: false, reason: "not-authorized" };
+    if (episode.wamid && input.wamid && episode.wamid !== input.wamid) return { ok: false, reason: "identity-conflict" };
+    if (episode.state === "accepted") return episode.messageId
+      ? { ok: true, recorded: true, replay: true, episodeId, messageId: episode.messageId }
+      : { ok: true, recorded: false, episodeId, state: "accepted" };
+    const now = (options.now ?? (() => new Date()))(), wamid = episode.wamid ?? input.wamid;
+    if (!Number.isFinite(now.getTime())) return { ok: false, reason: "invalid-input" };
+    if (!wamid) {
+      await tx.update(reengagementEpisodes).set({ state: "uncertain", reasonCode: "acceptance-identity-missing", updatedAt: now }).where(eq(reengagementEpisodes.id, episodeId));
+      return { ok: true, recorded: false, episodeId, state: "uncertain" };
+    }
+    const acceptedAt = episode.acceptedAt ?? input.acceptedAt;
+    if (!acceptedAt || !Number.isFinite(acceptedAt.getTime())) return { ok: false, reason: "invalid-input" };
+    const [anchor] = await tx.select({ id: messages.id, conversationId: messages.conversationId }).from(messages)
+      .innerJoin(conversations, and(eq(conversations.id, messages.conversationId), eq(conversations.tenantId, messages.tenantId)))
+      .where(and(eq(messages.tenantId, context.tenantId), eq(messages.id, episode.anchorMessageId), eq(conversations.leadId, leadId), eq(messages.sender, "lead")));
+    if (!anchor) return { ok: false, reason: "anchor-not-found" };
+    await tx.insert(messages).values({ tenantId: context.tenantId, conversationId: anchor.conversationId, sender: "agente",
+      content: episode.submittedText, sentAt: acceptedAt, externalId: wamid, whatsappPhoneNumberId: episode.phoneNumberId }).onConflictDoNothing();
+    const [message] = await tx.select().from(messages).where(and(eq(messages.tenantId, context.tenantId), eq(messages.externalId, wamid)));
+    if (!message || message.conversationId !== anchor.conversationId || message.sender !== "agente" || message.content !== episode.submittedText
+        || message.whatsappPhoneNumberId !== episode.phoneNumberId) return { ok: false, reason: "identity-conflict" };
+    await attachReceipt(serviceScope(context.tenantId), message.id, tx);
+    const [agent] = await tx.select({ phase: leadAgentState.phase, anchorMessageId: leadAgentState.anchorMessageId, revision: leadAgentState.revision, resetObservedAt: leadAgentState.resetObservedAt })
+      .from(leadAgentState).where(and(eq(leadAgentState.tenantId, context.tenantId), eq(leadAgentState.leadId, leadId)));
+    const references = [episode.originSessionStartMessageId, episode.originSessionEndMessageId, episode.firstInboundMessageId, agent?.anchorMessageId ?? null].filter((id): id is string => id !== null);
+    const related = references.length ? await tx.select({ id: messages.id, sender: messages.sender, sentAt: messages.sentAt, phoneNumberId: messages.whatsappPhoneNumberId })
+      .from(messages).where(and(eq(messages.tenantId, context.tenantId), eq(messages.conversationId, anchor.conversationId), inArray(messages.id, references))).limit(4) : [];
+    const start = related.find((item) => item.id === episode.originSessionStartMessageId), end = related.find((item) => item.id === episode.originSessionEndMessageId);
+    const first = related.find((item) => item.id === episode.firstInboundMessageId);
+    const validOrigin = !!start && !!end && Number.isFinite(start.sentAt.getTime()) && Number.isFinite(end.sentAt.getTime())
+      && Number.isFinite(episode.anchorSentAt.getTime()) && start.sentAt.getTime() <= episode.anchorSentAt.getTime() && end.sentAt.getTime() >= episode.anchorSentAt.getTime();
+    const validFirst = !episode.firstInboundMessageId || (!!first && first.sender === "lead" && first.phoneNumberId === episode.phoneNumberId
+      && Number.isFinite(first.sentAt.getTime()) && first.sentAt.getTime() > episode.anchorSentAt.getTime() && first.sentAt.getTime() < episode.anchorSentAt.getTime() + 48 * 3600000);
+    const [channel] = await tx.select().from(whatsappChannels).where(and(eq(whatsappChannels.tenantId, context.tenantId), eq(whatsappChannels.phoneNumberId, episode.phoneNumberId)));
+    const currentInbound = related.find((item) => item.id === agent?.anchorMessageId);
+    const validCurrentInbound = !!currentInbound && currentInbound.sender === "lead" && currentInbound.phoneNumberId === episode.phoneNumberId
+      && Number.isFinite(currentInbound.sentAt.getTime()) && currentInbound.sentAt.getTime() >= episode.anchorSentAt.getTime();
+    const candidateInvalidatedPhase = !!first && validFirst && validCurrentInbound && currentInbound.sentAt.getTime() >= first.sentAt.getTime() && agent?.phase === null
+      && agent.revision > episode.agentStateRevision && agent.resetObservedAt?.getTime() === episode.resetObservedAt?.getTime();
+    const latestCandidate = first && validFirst ? (validCurrentInbound && currentInbound.sentAt.getTime() >= first.sentAt.getTime() ? currentInbound : first) : null;
+    const validRecordedLast = episode.bridgeLastInboundAt === null || (!!latestCandidate && Number.isFinite(episode.bridgeLastInboundAt.getTime())
+      && episode.bridgeLastInboundAt.getTime() <= latestCandidate.sentAt.getTime());
+    const validContext = validCurrentInbound && !!channel?.ownershipVerifiedAt && Number.isFinite(channel.ownershipVerifiedAt.getTime())
+      && (agent?.phase === "qualificando" || agent?.phase === "agendando" || candidateInvalidatedPhase)
+      && lead.memoryResetRequestedAt?.getTime() === episode.resetObservedAt?.getTime()
+      && lead.optedOutAt === null && lead.humanTakeoverAt === null && lead.status === "em_qualificacao" && lead.whatsappPhoneNumberId === episode.phoneNumberId;
+    const invalidated = !validOrigin || !validFirst || !validContext || !validRecordedLast;
+    await tx.update(reengagementEpisodes).set({ state: "accepted", acceptedAt, wamid, messageId: message.id, reasonCode: null, updatedAt: now,
+      bridgeInvalidatedAt: episode.bridgeInvalidatedAt ?? (invalidated ? now : null),
+      bridgeRevision: episode.bridgeRevision + (!episode.bridgeInvalidatedAt && invalidated ? 1 : 0),
+      ...(!invalidated && latestCandidate ? { bridgeLastInboundAt: latestCandidate.sentAt } : {}) }).where(eq(reengagementEpisodes.id, episodeId));
+    return { ok: true, recorded: true, replay: false, episodeId, messageId: message.id };
   });
 }
