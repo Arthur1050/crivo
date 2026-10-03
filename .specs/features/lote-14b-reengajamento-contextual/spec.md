@@ -344,12 +344,12 @@ de qualquer prova real, conforme L-051. Não enviar 1.001 mensagens para fabrica
 | REEN-05 | P1: Desfecho às 48h | Execute | Partial — T4 eixo de escalonamento modelado; transição/gate 48h pendentes |
 | PRECO-01 | P1: Classificação de entrega | Execute | Partial — T5 modelo/T8 reducer/T9 evidência persistida/T10 saída humana e agente; transporte real/apresentação pendentes |
 | PRECO-02 | P1: Autenticidade e correlação | Execute | Partial — T5 FKs/T7 identidade/T8 reducer/T9 origem opaca, lote/replay/ordem/T10 correlação antes e depois por carteira; HMAC instalado/integrações de envio pendentes |
-| USO-01 | P1: Saldo mensal estimado | Execute | Partial — T1/T2/T6 modelos/T7 gate Analytics; prova externa/consulta/reducer pendentes |
+| USO-01 | P1: Saldo mensal estimado | Execute | Partial — T1/T2/T6 modelos/T7 gate Analytics/T11 mês civil e normalizador; prova externa/consulta/sincronização pendentes |
 | USO-02 | P1: Atualização e indisponibilidade | Execute | Partial — T2 coordenação/T6 tentativa versus sucesso modelados; lease/CAS/serviço pendentes |
 | USO-03 | P1: Superfícies e permissões | Tasks | Planned |
 | USO-04 | P1: Aviso sem bloqueio | Tasks | Planned |
 | L14B-01 | P1: Isolamento e operação | Execute | Partial — T1–T6 modelos/T7 segredo servidor/T9 contexto, isolamento e log limitado/T10 vínculo e cascade; demais fronteiras/retention pendentes |
-| PROVA-01 | P1: Evidência integrada | Execute | Partial — T8 fixtures de preço 999/1000/1001/FEP/replay; demais provas integradas/virada/real pendentes |
+| PROVA-01 | P1: Evidência integrada | Execute | Partial — T8 fixtures de preço 999/1000/1001/FEP/replay/T11 volume e fuso; provas integradas/virada real pendentes |
 
 **Coverage:** 13/13 requisitos e 95/95 critérios mapeados individualmente em [tasks.md](tasks.md).
 Spec, Design, Tasks/matriz/ferramentas e agentes sequenciais aprovados. T1 preflight local implementado, Quick15/15; T2 modelo aditivo, Full13/13 (8 novos+5 anteriores); T3 projeção mínima, Full20/20 (7 novos+13 anteriores); T4 episódio durável, Full30/30 (10 novos+20 anteriores); T5 recibos/canal nullable, Full38/38 (8 novos+30 anteriores); T6 snapshot mensal, Full46/46 (8 novos+38 anteriores). Evidência/adequação e mapa reverso nas seções individuais de tasks.md. USO-01 AC1/6/7/8 e L14B-01 AC2/4 têm somente a parcela preflight provada; REEN-03 AC8/L14B-01 AC3 têm a parcela de modelo T4, sem antecipar CAS/serviços. PRECO-02 AC2/L14B-01 AC5 ganham modelo/FKs/ciclo T5, sem antecipar autenticação/reducer. T6 prova período/revisão/volume nullable e tentativa/sucesso separados, sem comprovar acesso externo ou Analytics. Nenhum AC integral do produto ou gate factual externo é marcado como concluído.
@@ -370,7 +370,12 @@ T10 implementada: Full70/70 (9 novos e 61 regressões), 85,52s, correlação de
 saídas antes/depois por tenant/canal/wamid/carteira; replay e rollback preservam
 evidência, exclusão cascade evita órfão permanente. Adequação em
 [t10-verification.md](t10-verification.md).
-São 10/68 tarefas concluídas; T11–T68, gates externos e verifier global continuam pendentes.
+T11 implementada: Quick 56/56 (28 novos + 28 T8), 548ms; Full auxiliar 11/11
+(3 novos + 8 T6), 31,18s. Mês inteiro inclui overlap/gap; CHECK corrigido sem
+mudar SQL T6 histórico. Normalizador de volume/cobertura/identidade/partições
+recusa capacidade sem prova, vazio desconhecido e dupla contagem. Adequação em
+[t11-verification.md](t11-verification.md).
+São 11/68 tarefas concluídas; T12–T68, gates externos e verifier global continuam pendentes.
 
 ## Success Criteria
 

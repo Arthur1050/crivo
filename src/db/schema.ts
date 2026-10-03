@@ -540,8 +540,14 @@ export const whatsappUsage = pgTable(
     foreignKey({ name: "whatsapp_usage_tenant_channel_fk", columns: [table.tenantId, table.phoneNumberId], foreignColumns: [whatsappChannels.tenantId, whatsappChannels.phoneNumberId] }),
     check("whatsapp_usage_revision_sequence", sql`${table.configurationRevision} > 0 and ${table.querySequence} >= 0`),
     check("whatsapp_usage_nonnegative_volume", sql`${table.freeServiceVolume} >= 0`),
-    // Postgres interpreta o período no fuso armazenado, sem usar o fuso do servidor.
-    check("whatsapp_usage_civil_month", sql`(${table.monthStart} at time zone ${table.accountTimezone}) = date_trunc('month', ${table.monthStart} at time zone ${table.accountTimezone}) and ${table.monthEnd} = ((date_trunc('month', ${table.monthStart} at time zone ${table.accountTimezone}) + interval '1 month') at time zone ${table.accountTimezone})`),
+    // Primeiro instante do mês civil, incluindo meia-noite repetida ou inexistente.
+    check("whatsapp_usage_civil_month", sql`
+      date_trunc('second', ${table.monthStart}) = ${table.monthStart}
+      and date_trunc('second', ${table.monthEnd}) = ${table.monthEnd}
+      and date_trunc('month', (${table.monthStart} - interval '1 microsecond') at time zone ${table.accountTimezone}) = date_trunc('month', ${table.monthStart} at time zone ${table.accountTimezone}) - interval '1 month'
+      and date_trunc('month', ${table.monthEnd} at time zone ${table.accountTimezone}) = date_trunc('month', ${table.monthStart} at time zone ${table.accountTimezone}) + interval '1 month'
+      and date_trunc('month', (${table.monthEnd} - interval '1 microsecond') at time zone ${table.accountTimezone}) = date_trunc('month', ${table.monthStart} at time zone ${table.accountTimezone})
+    `),
     check("whatsapp_usage_query_period", sql`${table.queryEnd} >= ${table.monthStart} and ${table.queryEnd} <= ${table.monthEnd}`),
     check("whatsapp_usage_success_fields", sql`(${table.freeServiceVolume} is null) = (${table.lastSuccessAt} is null) and (${table.queryEnd} is null) = (${table.lastSuccessAt} is null)`),
   ],

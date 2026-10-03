@@ -369,11 +369,16 @@ lastSuccessAt presentes juntos. queryEnd representa o corte da última resposta
 mensal aceita, dentro do período; tentativa/falha subsequente preserva esse corte
 e volume. lastAttemptAt/failureCode são campos independentes. Sequência não
 negativa e UUID responseToken identificam a resposta; lease continua no canal.
-T12/T13 validarão safe integer, proveniência da resposta e CAS da sequência.
+T11 valida safe integer; T12/T13 conferem proveniência da resposta e CAS da sequência.
 
 O período tem accountTimezone sem default e fronteiras civis verificadas com
 AT TIME ZONE no Postgres, inclusive DST; isso não comprova o fuso real da conta.
-T7 resolverá a evidência registrada; T11 calculará as fronteiras do mês corrente.
+T11 corrige o CHECK para o primeiro instante do mês civil: instante anterior
+(1 microsegundo) ainda no mês anterior, fim no próximo mês com instante anterior
+no corrente. Fronteiras têm segundos inteiros. Aceita gap que pula meia-noite
+e primeira ocorrência no overlap, sem incluir hora do novo mês no anterior.
+Intl calcula essas fronteiras, verificadas com oráculos SQL independentes.
+T7 resolve a evidência registrada; T11 calcula as fronteiras do mês corrente.
 FK tenant/canal e PK de período/revisão impedem mistura; revisão positiva não
 afirma ser a configuração corrente, gate transacional que pertence à T13.
 
@@ -574,6 +579,15 @@ Vazio sem prova de zero, agregado sem discriminação, sobreposição, paginaç�
 contrato desconhecido não publicam saldo. Representação real de zero é gate de conta;
 ausência de ponto não significa zero. Se contrato inviabilizar snapshot aprovado, registrar
 evidência e revisar spec com usuário antes de substituir fonte.
+
+T11 recebe envelope semântico interno, sem afirmar o JSON Meta. Capacidade
+opaca servidor exige prova versionada configurada; default ausente recusa.
+Envelope contém identidade, filtros, start/end, integralidade e paginação,
+pontos com país null (total) ou ISO alpha2 uppercase, intervalo e volume inteiro.
+Decoder T12 só produz esse envelope com contrato comprovado, sem converter
+aliases de país silenciosamente. Total+detalhe e sobreposições são recusados;
+partições temporais de cada país devem cobrir o corte integralmente. Vazio só
+é zero com prova específica servidor. Fixtures são sintéticas, não prova externa.
 
 Fronteiras civis no fuso IANA confirmado, usando AT TIME ZONE no Postgres ou equivalente
 verificado; armazenar UTC. Não assumir o fuso SP do contato como fuso da conta. QueryEnd é

@@ -237,3 +237,29 @@ Full real T6/T5/T4/T3/canais/humano exclusivamente pelo root passou: seis arquiv
 `node node_modules/vitest/vitest.mjs run src/db/__tests__/schema-whatsapp-usage.test.ts src/db/__tests__/schema-whatsapp-receipts.test.ts src/db/__tests__/schema-reengagement.test.ts src/db/__tests__/schema-agent-state.test.ts src/db/__tests__/schema-whatsapp-channels.test.ts src/db/__tests__/schema-humano.test.ts`.
 Testes conectaram a branch test real; cinco aplicações não são cinco execuções
 da suíte. T6 concluída, sem mudar testes anteriores. Build de fase permanece T7.
+
+### T11 — correção revisada, aplicada e validada das fronteiras civis
+
+Delta em [t11-schema.sql](t11-schema.sql), SHA256
+`7036a9a035e1b899b2fb3be92ac49da5fd8dc866ad15c7dd0c4ac2e141f5e053`.
+Uma transação DROP/ADD do mesmo CHECK whatsapp_usage_civil_month; nenhuma
+coluna, dado, índice ou chave alterados. t6-schema.sql histórico preservado.
+Root revisou o delta e verificou nos cinco alvos o CHECK antigo, zero linhas e
+zero violações do CHECK novo. Aplicou exatamente dois DDL do hash acima em
+cinco transações, todas isError=false. Alvos exclusivamente test/test-worker-1/2/3/4
+da tabela inicial; main/produção excluídas. Cinco aplicações não são cinco gates.
+
+SQL read-only do root confirmou Havana: primeiro instante de novembro/2026
+04Z, segunda meia-noite 05Z. O CHECK anterior aceitava fim de outubro em 05Z,
+incluindo uma hora de novembro. Em Amman abril/2011 começa em 22Z de 31/mar,
+local 01h após gap; a comparação anterior com meia-noite local recusava esse
+primeiro instante. Correção identifica a transição pelo mês local do instante
+e de 1 microsegundo antes, start/end inteiros em segundos e fim no mês seguinte.
+Não transporta volume nem modifica modelo de ausência/sucesso/falha.
+
+Três regressões novas de banco preservam os oito casos T6: overlap/gap e atraso
+de 1ms, com valores literais independentes do helper Intl. Full auxiliar pelo root
+exit0, 1/1 arquivo, 11/11 testes, 31,18s, início 2026-10-02 23:44:20
+America/Sao_Paulo. Quick do normalizador/T8 exit0, 56/56 testes, 548ms,
+início 23:44:35. ESLint exit0; tsc mantém as 50 linhas anteriores, diff vazio.
+Evidência e adequação compartilhada em [t11-verification.md](t11-verification.md).

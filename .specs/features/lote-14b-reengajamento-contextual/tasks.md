@@ -8,7 +8,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 
 **Design:** [design.md](design.md), aprovado em 2026-10-02: “Aprovo. Vá para as tarefas”.
 
-**Status:** Approved — usuário em 2026-10-02: “Aprovo. Gere o prompt de execução para que a fase de execução seja iniciado em outra janela de contexto”. 68 tarefas em 9 fases; T1–T10 concluídas localmente (10/68), fase 1/lote A fechados com a ressalva autorizada dos dois timeouts históricos, conforme evidências individuais abaixo.
+**Status:** Approved — usuário em 2026-10-02: “Aprovo. Gere o prompt de execução para que a fase de execução seja iniciado em outra janela de contexto”. 68 tarefas em 9 fases; T1–T11 concluídas localmente (11/68), fase 1/lote A fechados com a ressalva autorizada dos dois timeouts históricos, conforme evidências individuais abaixo.
 
 **Escopo:** 13 requisitos e 95 ACs aprovados. Uma retomada >=22h/<24h, continuidade restrita, desfecho >=48h, classificação após entrega e saldo mensal estimado. Sem modal/bloqueio financeiro.
 
@@ -895,7 +895,9 @@ novo/SPEC_DEVIATION. Adequação e gate em [t10-verification.md](t10-verificatio
 
 **What**: Criar normalizador de período/filtros/partições e cálculo da franquia, recusando resposta sem comprovação suficiente.
 
-**Where**: `src/server/whatsapp/analytics-contract.ts`
+**Where**: `src/server/whatsapp/analytics-contract.ts`; inclui correção auxiliar do CHECK civil descrita abaixo, fundamentada em USO-01 mês inteiro.
+
+**Correção auxiliar**: `src/db/schema.ts` e delta revisado `t11-schema.sql`; bug factual nas fronteiras overlap/gap revelado pelos oráculos de T11, sem mudança do SQL T6 histórico.
 
 **Depends on**: T10, T1
 
@@ -907,16 +909,29 @@ novo/SPEC_DEVIATION. Adequação e gate em [t10-verification.md](t10-verificatio
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: V=0/999/1000/1001; fuso com virada civil/DST; início do mês até queryEnd; FEP/template/inbound fora; países disjuntos; total+detalhe; vazio não provado; parcial/paginação; número divergente; volume inválido; sem somar webhook.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **14 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Quick passou: `npx vitest run src/server/whatsapp/__tests__/analytics-contract.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: V=0/999/1000/1001; fuso com virada civil/DST; início do mês até queryEnd; FEP/template/inbound fora; países disjuntos; total+detalhe; vazio não provado; parcial/paginação; número divergente; volume inválido; sem somar webhook.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **14 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Quick passou: `npx vitest run src/server/whatsapp/__tests__/analytics-contract.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
+- [x] Gate Full auxiliar schema-whatsapp-usage passou após aplicação do CHECK revisado nos cinco alvos de teste; todos os oito cenários T6 preservados, mais overlap/gap/atraso.
 
-**Tests**: unit — `src/server/whatsapp/__tests__/analytics-contract.test.ts`; matriz: Domínio/adapter puro.
+**Tests**: unit — `src/server/whatsapp/__tests__/analytics-contract.test.ts`; matriz: Domínio/adapter puro. Integração auxiliar da correção: `src/db/__tests__/schema-whatsapp-usage.test.ts`.
 
-**Gate**: Quick; Build no fechamento da fase.
+**Gate**: Quick; Full auxiliar da correção de schema; Build no fechamento da fase.
 
 **Commit**: `feat(l14b): normalizar analytics e mês civil` (docs para mudança exclusivamente contratual).
+
+**Resultado T11:** Quick root exit0, 56/56 testes, 2/2 arquivos, 548ms,
+início 2026-10-02 23:44:35 America/Sao_Paulo (28 novos + 28 T8). Full auxiliar
+exit0, 11/11 testes, 31,18s, início 23:44:20 (3 novos + 8 T6 preservados).
+Período civil inteiro verificado por oráculos SQL independentes, incluindo
+overlap Havana/gap Amman. Delta do mesmo CHECK revisado e aplicado em cinco
+transações de teste; SQL T6 histórico preservado, main excluída. Normalizador
+recusa contrato ausente, vazio não provado, cobertura insuficiente, alias de
+país e dupla contagem; max(0,1000−V), sem webhook. ESLint exit0; tsc mantém 50 erros iguais.
+Sem SPEC_DEVIATION. Adequação/gates em [t11-verification.md](t11-verification.md);
+hash/alvos em [test-schema-activation.md](test-schema-activation.md). Prova
+externa de fullmonth/zero/identidade da conta permanece pendente.
 
 ---
 

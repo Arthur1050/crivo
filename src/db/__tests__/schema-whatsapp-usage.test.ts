@@ -91,6 +91,36 @@ describe("T6 — snapshot mensal sem zero presumido (USO-01/02; Done when T6)", 
     }
   });
 
+  it("T11 Havana termina outubro e começa novembro na primeira meia-noite repetida", async () => {
+    const [october] = await db.insert(whatsappUsage).values({ ...await period(), accountTimezone: "America/Havana",
+      monthStart: new Date("2026-10-01T04:00:00Z"), monthEnd: new Date("2026-11-01T04:00:00Z") }).returning();
+    const [november] = await db.insert(whatsappUsage).values({ ...await period(), accountTimezone: "America/Havana",
+      monthStart: new Date("2026-11-01T04:00:00Z"), monthEnd: new Date("2026-12-01T05:00:00Z"),
+      queryEnd: new Date("2026-11-01T04:30:00Z"), lastSuccessAt: new Date("2026-11-01T04:30:15Z"), freeServiceVolume: 999 }).returning();
+    expect(october.monthEnd).toEqual(new Date("2026-11-01T04:00:00Z"));
+    expect(november.monthStart).toEqual(new Date("2026-11-01T04:00:00Z"));
+    expect(november.queryEnd).toEqual(new Date("2026-11-01T04:30:00Z"));
+    expect(november.freeServiceVolume).toBe(999);
+    expect(await codeOf(db.insert(whatsappUsage).values({ ...await period(), accountTimezone: "America/Havana",
+      monthStart: new Date("2026-10-01T04:00:00Z"), monthEnd: new Date("2026-11-01T05:00:00Z") }))).toBe("23514");
+    expect(await codeOf(db.insert(whatsappUsage).values({ ...await period(), accountTimezone: "America/Havana",
+      monthStart: new Date("2026-11-01T05:00:00Z"), monthEnd: new Date("2026-12-01T05:00:00Z") }))).toBe("23514");
+  });
+
+  it("T11 gap de Amman aceita primeiro instante local01 e recusa fronteira anterior", async () => {
+    const [row] = await db.insert(whatsappUsage).values({ ...await period(), accountTimezone: "Asia/Amman",
+      monthStart: new Date("2011-03-31T22:00:00Z"), monthEnd: new Date("2011-04-30T21:00:00Z") }).returning();
+    expect(row.monthStart).toEqual(new Date("2011-03-31T22:00:00Z"));
+    expect(row.monthEnd).toEqual(new Date("2011-04-30T21:00:00Z"));
+    expect(await codeOf(db.insert(whatsappUsage).values({ ...await period(), accountTimezone: "Asia/Amman",
+      monthStart: new Date("2011-03-31T21:00:00Z"), monthEnd: new Date("2011-04-30T21:00:00Z") }))).toBe("23514");
+  });
+
+  it("T11 fronteiras com um milissegundo de atraso não são mês civil inteiro", async () => {
+    expect(await codeOf(db.insert(whatsappUsage).values({ ...await period(), monthStart: new Date("2026-10-01T00:00:00.001Z") }))).toBe("23514");
+    expect(await codeOf(db.insert(whatsappUsage).values({ ...await period(), monthEnd: new Date("2026-11-01T00:00:00.001Z") }))).toBe("23514");
+  });
+
   it("tentativa/falha não são sucesso; atualizá-las preserva volume e queryEnd bem sucedidos", async () => {
     const input = await period();
     const [unknown] = await db.insert(whatsappUsage).values(input).returning();
