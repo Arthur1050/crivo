@@ -580,6 +580,11 @@ contrato desconhecido não publicam saldo. Representação real de zero é gate 
 ausência de ponto não significa zero. Se contrato inviabilizar snapshot aprovado, registrar
 evidência e revisar spec com usuário antes de substituir fonte.
 
+T13 corrige a validação de país canônico: além de alpha2 uppercase, Intl.Locale
+deve conservar a região. UK/GB e BU/MM são equivalentes, não partições disjuntas;
+aliases são recusados no predicate compartilhado do normalizador e decoder,
+sem conversão silenciosa ou nova interpretação de payload externo.
+
 T11 recebe envelope semântico interno, sem afirmar o JSON Meta. Capacidade
 opaca servidor exige prova versionada configurada; default ausente recusa.
 Envelope contém identidade, filtros, start/end, integralidade e paginação,
@@ -618,6 +623,19 @@ provados sem sobreposição de chamadas; worker atrasado confere token/prazo ant
 e antes da persistência. Não manter conexão Graph aberta depois do orçamento do worker.
 Persistência exige token/revisão/período atuais; consulta antiga não substitui snapshot mais
 recente nem de outro mês/número.
+
+T13 implementa syncUsage com orçamento interno 80s, abaixo da lease 90s. Claim
+sob lock grava tentativa/token/sequence e commita antes do HTTP; cadência 15min
+continua no canal após falha, troca de mês/revisão ou lease vencida. Guarda e
+publicação relêem capacidade viva, identidade, mês, revisão, token/prazo e
+sequence/responseToken e accountTimezone/monthEnd do snapshot após locks, com
+relógio interno como função. Mesmo início civil não comprova fuso/fim: outubro
+Amman/Atenas compartilha início 21Z, mas termina em 21Z/22Z respectivamente.
+Snapshot incompatível é recusado sem conversão ou Graph. Budget
+monotônico/timer/race sinaliza o adapter 15s; statement_timeout/lock_timeout
+são LOCAL ao tx, sem alterar Pool. Checks antes/depois das escritas fazem
+callback tardio rollback e impedem publicação obsoleta. Liberação também usa
+CAS do token, sem limpar lease nova. Falha conserva volume/queryEnd/sucesso.
 
 429, timeout/permissão registram código e conservam último snapshot do período corrente.
 Falha nunca publica zero. >60min sem sucesso mostra Dados desatualizados; exatamente 60min

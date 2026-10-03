@@ -167,4 +167,9 @@ describe("T11 — período civil e volume sem saldo presumido", () => {
     expect(normalizeAnalytics(response([point({ country: "BR" }), point({ country: "br" })]), query, contract)).toEqual({ ok: false, reason: "invalid-response" });
     expect(normalizeAnalytics(response([point({ country: "BR" }), point({ country: "Brazil" })]), query, contract)).toEqual({ ok: false, reason: "invalid-response" });
   });
+
+  it("T13 aliases ISO uppercase UK/GB e BU/MM não são países disjuntos", () => {
+    expect(normalizeAnalytics(response([point({ country: "GB" }), point({ country: "UK" })]), query, contract)).toEqual({ ok: false, reason: "invalid-response" });
+    expect(normalizeAnalytics(response([point({ country: "MM" }), point({ country: "BU" })]), query, contract)).toEqual({ ok: false, reason: "invalid-response" });
+  });
 });

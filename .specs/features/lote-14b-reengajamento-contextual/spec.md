@@ -344,8 +344,8 @@ de qualquer prova real, conforme L-051. Não enviar 1.001 mensagens para fabrica
 | REEN-05 | P1: Desfecho às 48h | Execute | Partial — T4 eixo de escalonamento modelado; transição/gate 48h pendentes |
 | PRECO-01 | P1: Classificação de entrega | Execute | Partial — T5 modelo/T8 reducer/T9 evidência persistida/T10 saída humana e agente; transporte real/apresentação pendentes |
 | PRECO-02 | P1: Autenticidade e correlação | Execute | Partial — T5 FKs/T7 identidade/T8 reducer/T9 origem opaca, lote/replay/ordem/T10 correlação antes e depois por carteira; HMAC instalado/integrações de envio pendentes |
-| USO-01 | P1: Saldo mensal estimado | Execute | Partial — T1/T2/T6 modelos/T7 gate Analytics/T11 mês civil/T12 adapter condicionado; prova externa integral/sincronização pendentes |
-| USO-02 | P1: Atualização e indisponibilidade | Execute | Partial — T2 coordenação/T6 tentativa versus sucesso/T12 timeout e erro limitado; lease/CAS/serviço pendentes |
+| USO-01 | P1: Saldo mensal estimado | Execute | Partial — T1/T2/T6 modelos/T7 gate Analytics/T11 mês civil/T12 adapter condicionado/T13 snapshot substituível; prova externa integral/tick pendentes |
+| USO-02 | P1: Atualização e indisponibilidade | Execute | Partial — T2/T6 modelos/T12 timeout/T13 cadência, lease e CAS com orçamento; leituras/tick pendentes |
 | USO-03 | P1: Superfícies e permissões | Tasks | Planned |
 | USO-04 | P1: Aviso sem bloqueio | Tasks | Planned |
 | L14B-01 | P1: Isolamento e operação | Execute | Partial — T1–T6 modelos/T7 segredo servidor/T9 contexto, isolamento e log limitado/T10 vínculo e cascade; demais fronteiras/retention pendentes |
@@ -380,7 +380,14 @@ com prova opaca/default recusa e orçamento total 15s incluindo JSON/decode
 síncrono. Adequação em [t12-verification.md](t12-verification.md); observação
 [da conta de teste](analytics-account-observation.md) não confirma mês integral
 ou zero nem habilita capacidade real.
-São 12/68 tarefas concluídas; T13–T68, gates externos e verifier global continuam pendentes.
+T13 implementada: regate Full 93/93 (22 adições + 71 anteriores), 122,64s; claim antes
+HTTP, cadência 15min/lease 90s/budget 80s e CAS vivo preservam snapshot sob falha e
+respostas invertidas. Dois backends reais, PIDs dentro BEGIN/dois locks/um Graph.
+Aliases ISO uppercase recusados no normalizador/decoder sem alterar testes antigos.
+Guardas de fuso/fim do snapshot impedem conversão Amman/Atenas no mesmo início;
+primeiro gate 92/92 passou e foi repetido após essa revisão final.
+Adequação em [t13-verification.md](t13-verification.md).
+São 13/68 tarefas concluídas; T14–T68, gates externos e verifier global continuam pendentes.
 
 ## Success Criteria
 

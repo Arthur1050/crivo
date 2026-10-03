@@ -8,7 +8,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 
 **Design:** [design.md](design.md), aprovado em 2026-10-02: “Aprovo. Vá para as tarefas”.
 
-**Status:** Approved — usuário em 2026-10-02: “Aprovo. Gere o prompt de execução para que a fase de execução seja iniciado em outra janela de contexto”. 68 tarefas em 9 fases; T1–T12 concluídas localmente (12/68), fase 1/lote A fechados com a ressalva autorizada dos dois timeouts históricos, conforme evidências individuais abaixo.
+**Status:** Approved — usuário em 2026-10-02: “Aprovo. Gere o prompt de execução para que a fase de execução seja iniciado em outra janela de contexto”. 68 tarefas em 9 fases; T1–T13 concluídas localmente (13/68), fase 1/lote A fechados com a ressalva autorizada dos dois timeouts históricos, conforme evidências individuais abaixo.
 
 **Escopo:** 13 requisitos e 95 ACs aprovados. Uma retomada >=22h/<24h, continuidade restrita, desfecho >=48h, classificação após entrega e saldo mensal estimado. Sem modal/bloqueio financeiro.
 
@@ -981,7 +981,9 @@ permanecem não comprovados, nenhuma capacidade real habilitada.
 
 **What**: Implementar syncUsage com CAS por canal, cadência de 15min, lease 90s e publicação somente da resposta corrente.
 
-**Where**: `src/server/whatsapp/analytics.ts`
+**Where**: `src/server/whatsapp/analytics.ts`; inclui correção auxiliar de país canônico descrita abaixo, fundamentada em USO-01 AC7.
+
+**Correção auxiliar**: predicate compartilhado em `src/server/whatsapp/analytics-contract.ts`; normalizador e decoder recusam aliases ISO uppercase UK/GB e BU/MM sem somar partições equivalentes. Bug encontrado na revisão factual T13, sem alterar contrato aprovado.
 
 **Depends on**: T12, T6
 
@@ -993,16 +995,30 @@ permanecem não comprovados, nenhuma capacidade real habilitada.
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: dois workers reais; 14:59.999/15min; falha mantém snapshot; interrupção/lease; worker vencido antes de fetch; resposta invertida; troca de mês/número/revisão; 429; timeout; queryEnd distinto; primeira consulta integral; sem número habilitado.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **12 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/server/whatsapp/__tests__/analytics-sync.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: dois workers reais; 14:59.999/15min; falha mantém snapshot; interrupção/lease; worker vencido antes de fetch; resposta invertida; troca de mês/número/revisão; 429; timeout; queryEnd distinto; primeira consulta integral; sem número habilitado.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **12 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou: `npx vitest run src/server/whatsapp/__tests__/analytics-sync.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa. Regate incluiu guarda auxiliar de fuso/fim do snapshot.
 
 **Tests**: integration — `src/server/whatsapp/__tests__/analytics-sync.test.ts`; matriz: Serviço/repositório.
 
 **Gate**: Full; Build no fechamento da fase.
 
 **Commit**: `feat(l14b): sincronizar snapshot sob lease` (docs para mudança exclusivamente contratual).
+
+**Resultado T13:** regate Full root exit0, 93/93 testes, 5/5 arquivos, 122,64s,
+início 2026-10-03 00:23:54 America/Sao_Paulo. 20 sync + 2 aliases novos e
+71 testes anteriores preservados. Claim commitado antes HTTP; cadência por canal
+15min, lease 90s e orçamento interno 80s; deadline monotônico/sinal Graph 15s e
+timeouts LOCAL à transação, sem mudar Pool. CAS vivo de token/revisão/mês/número/
+sequência/fuso/fim do snapshot antes do fetch e publicação; falha preserva sucesso anterior.
+Concorrência comprovada com dois PIDs dentro BEGIN, dois locks e um Graph.
+Correção auxiliar de aliases ISO evita dupla contagem, sem converter países.
+Primeiro gate 92/92 passou; revisão final acrescentou guarda/caso Amman/Atenas
+com mesmo início e fuso/fim distintos. Regate preservou todos os anteriores.
+ESLint exit0; tsc mantém 50 erros anteriores/diff vazio; sem schema novo ou
+SPEC_DEVIATION. Adequação/gate em [t13-verification.md](t13-verification.md).
+Conta real/fullmonth/zero e integração tick T44 continuam pendentes.
 
 ---
 

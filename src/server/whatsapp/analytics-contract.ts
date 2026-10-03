@@ -19,6 +19,11 @@ const record = (value: unknown): value is Record<string, unknown> => typeof valu
 const instant = (value: unknown): value is Date => value instanceof Date && Number.isFinite(value.getTime());
 const identifier = (value: unknown): value is string => typeof value === "string" && value.length > 0 && value.length <= 256 && value === value.trim();
 
+/** Recusa aliases ISO; não converte nem trata UK/GB como países disjuntos. */
+export function canonicalAnalyticsCountry(value: unknown): value is string {
+  return typeof value === "string" && /^[A-Z]{2}$/.test(value) && new Intl.Locale(`und-${value}`).region === value;
+}
+
 /** Primeiro instante do mês inteiro: ocorrência anterior no overlap, depois do gap. */
 function monthBoundary(format: Intl.DateTimeFormat, year: number, month: number): number {
   const wall = (epoch: number) => {
@@ -110,7 +115,7 @@ export function normalizeAnalytics(
   const selected: { country: string | null; start: number; end: number; volume: number }[] = [];
   for (const point of raw.partitions) {
     if (!record(point) || !identifier(point.metric) || !identifier(point.category) || !identifier(point.pricingType)
-      || (point.country !== null && (typeof point.country !== "string" || !/^[A-Z]{2}$/.test(point.country)))) return fail("invalid-response");
+      || (point.country !== null && !canonicalAnalyticsCountry(point.country))) return fail("invalid-response");
     if (point.phoneNumber !== query.phoneNumber) return fail("identity-mismatch");
     if (typeof point.volume !== "number" || !Number.isSafeInteger(point.volume) || point.volume < 0) return fail("invalid-volume");
     if (typeof point.start !== "number" || typeof point.end !== "number" || !Number.isSafeInteger(point.start) || !Number.isSafeInteger(point.end)

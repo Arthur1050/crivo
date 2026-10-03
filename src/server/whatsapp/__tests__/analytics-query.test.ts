@@ -180,4 +180,9 @@ describe("T12 — Graph comprovado com falha fechada e orçamento total", () => 
       .toEqual({ ok: false, reason: "timeout" });
     expect(signal!.aborted).toBe(true);
   });
+
+  it("T13 decoder recusa aliases ISO uppercase sem converter país silenciosamente", async () => {
+    expect(await queryAnalytics(query, adapter, { fetch: async () => response(payload({ country: "UK" })) })).toEqual({ ok: false, reason: "invalid-response" });
+    expect(await queryAnalytics(query, adapter, { fetch: async () => response(payload({ country: "BU" })) })).toEqual({ ok: false, reason: "invalid-response" });
+  });
 });
