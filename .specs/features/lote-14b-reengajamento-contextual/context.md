@@ -240,6 +240,23 @@ dependendo de autorização específica, conforme o escopo aprovado e a skill.
 
 ## Deferred Ideas
 
+### L14c — superfícies de consumo adiadas (2026-10-03)
+
+Por instrução posterior do usuário, USO-03/USO-04 relativos a saldo, barra e
+avisos de consumo (T57, T60, T61, T62) passam ao L14c. T58/T59 continuam
+somente para classificação por entrega (PRECO), sem previsão de saldo.
+Preflight real repetido: Graph v25.0 confirmou WABA `1000796702954808` como
+conta de teste; GET phone_numbers HTTP200 confirmou um número, ID
+`1321478747709350`. Pricing Analytics DAILY HTTP200 retornou apenas um ponto
+parcial [1790838000,1790924400), SHA256
+`cf034004d4f1a19dde5731ba777c16520d83ca0a311cc541d52771489e75bb93`.
+Workflow ativo `0B1nqjODu7xuYYKF`, versão `e3e25681-8cd1-4ea3-bc38-33d373cf6b80`,
+não expôs vínculo de conta/número de produção na leitura sanitizada. Somente a
+conta de teste foi comprovada acessível; conta/número efetivos de produção,
+tenant, IANA, cobertura mensal e zero permanecem não comprovados. Nenhum saldo
+é presumido: código de consumo mantém adapter ausente/usageEnabled=false e
+resultado “Consumo indisponível”. REEN, PRECO e provas continuam no L14b.
+
 ### Falha anterior adiada na execução (2026-10-02)
 
 Usuário: “Registre essa falha para que seja resolvido posteriormente. Por enquanto,
