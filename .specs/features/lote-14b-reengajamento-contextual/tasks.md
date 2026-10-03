@@ -1451,10 +1451,12 @@ Fechamento da fase: TS2339 na inspeção de query.mock.calls corrigido com argum
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: inbound novo/replay/atrasado; âncora sentAt/id; novo episódio; resposta antes/depois de autorização; mesmo segundo; <48h/48h; reset/canal errado; status não é inbound; saída com órfão; opt-out; concorrência real; texto efetivo.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **14 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/server/data/__tests__/messages-reengagement.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: inbound novo/replay/atrasado; âncora sentAt/id; novo episódio; resposta antes/depois de autorização; mesmo segundo; <48h/48h; reset/canal errado; status não é inbound; saída com órfão; opt-out; concorrência real; texto efetivo.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **14 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou: `npx vitest run src/server/data/__tests__/messages-reengagement.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+
+**Evidence**: `node node_modules/vitest/vitest.mjs run src/server/data/__tests__/messages-reengagement.test.ts src/server/integration/__tests__/messages.test.ts src/server/data/__tests__/first-response.test.ts src/server/reengagement/__tests__/acceptance.test.ts src/server/reengagement/__tests__/session-frame.test.ts n8n/src/__tests__/session.test.ts` PASS 139/139, 6 arquivos, exit0, 645.35s; 25 novos Postgres + 5 unitários, replay/colisão/locks/ponte factual e ordem invertida provados, sem desvio.
 
 **Tests**: integration — `src/server/data/__tests__/messages-reengagement.test.ts`; matriz: DAL/mutação.
 

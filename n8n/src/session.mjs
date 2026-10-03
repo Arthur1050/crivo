@@ -168,14 +168,17 @@ export function selectSeedMessages(
       || new Date(list[start].sentAt).getTime() > new Date(anchor.sentAt).getTime()
       || new Date(list[end].sentAt).getTime() < new Date(anchor.sentAt).getTime())) bridge = null;
   if (bridge && isSessionExpired(bridge.bridgeLastInboundAt, now, sessionGapHours)) return [];
+  const entryId = bridge ? list[Math.min(list.findIndex((message) => message.id === bridge.messageId),
+    list.findIndex((message) => message.id === bridge.firstInboundMessageId))].id : undefined;
 
   let sessionStart = 0;
   let previousMs = nowMs;
   let previousId;
   for (let i = list.length - 1; i >= 0; i--) {
     const currentMs = new Date(list[i].sentAt).getTime();
-    const specialGap = bridge && ((list[i].id === bridge.originSessionEndMessageId && previousId === bridge.messageId)
-      || (list[i].id === bridge.messageId && previousId === bridge.firstInboundMessageId));
+    const specialGap = bridge && ((list[i].id === bridge.originSessionEndMessageId && previousId === entryId)
+      || (list[i].id === bridge.messageId && previousId === bridge.firstInboundMessageId)
+      || (list[i].id === bridge.firstInboundMessageId && previousId === bridge.messageId));
     if (previousMs - currentMs > gapMs && !specialGap) {
       sessionStart = i + 1;
       break;

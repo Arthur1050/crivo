@@ -194,6 +194,31 @@ describe("REEN-04: ponte restrita e reconstrução de sessão (T24)", () => {
     expect(ids(selectSeedMessages(history, at(40), { frame: advanced }))).toEqual(ids(history.slice(1)));
   });
 
+  it("primeiro inbound com timestamp anterior à saída mantém origem sem alterar ordem factual", () => {
+    const inverse = [...source, msg("first", 22), msg("resume", 22, "agente", 1000)];
+    const inverseFrame = { ...frame, bridge: { ...frame.bridge, firstInboundSentAt: at(22), bridgeLastInboundAt: at(22) } };
+    expect(ids(selectSeedMessages(inverse, at(22, 2000), { frame: inverseFrame }))).toEqual(["source-start", "anchor", "source-end", "first", "resume"]);
+    expect(ids(selectSeedMessages(inverse, at(22, 2000), { frame: inverseFrame, excludeMessageIds: ["first"] }))).toEqual(["source-start", "anchor", "source-end", "resume"]);
+  });
+
+  it.each([["a-first", "z-resume"], ["z-first", "a-resume"]])("empate sentAt usa IDs %s/%s para a entrada factual da ponte", (firstId, resumeId) => {
+    const tie = [...source, msg(firstId, 22), msg(resumeId, 22, "agente")];
+    const tieFrame = { ...frame, bridge: { ...frame.bridge, messageId: resumeId, firstInboundMessageId: firstId, firstInboundSentAt: at(22), bridgeLastInboundAt: at(22) } };
+    expect(ids(selectSeedMessages(tie, at(22), { frame: tieFrame }))).toEqual(["source-start", "anchor", "source-end", ...[firstId, resumeId].sort()]);
+  });
+
+  it("intruso entre origem e entrada invertida corta origem, sem saltar mensagem intermediária", () => {
+    const inverse = [...source, msg("intruder", 20, "agente"), msg("first", 22), msg("resume", 22, "agente", 1000)];
+    const inverseFrame = { ...frame, bridge: { ...frame.bridge, firstInboundSentAt: at(22), bridgeLastInboundAt: at(22) } };
+    expect(ids(selectSeedMessages(inverse, at(22, 2000), { frame: inverseFrame }))).toEqual(["intruder", "first", "resume"]);
+  });
+
+  it("ordem invertida não perdoa gap posterior ao par da ponte", () => {
+    const inverse = [...source, msg("first", 22), msg("resume", 22, "agente", 1000), msg("next", 35)];
+    const inverseFrame = { ...frame, bridge: { ...frame.bridge, firstInboundSentAt: at(22), bridgeLastInboundAt: at(35) } };
+    expect(ids(selectSeedMessages(inverse, at(35), { frame: inverseFrame }))).toEqual(["next"]);
+  });
+
   it("sem ponte aceita ou com datas não finitas não presume continuidade", () => {
     const bad = { ...frame, bridge: { ...frame.bridge, firstInboundSentAt: "invalid" } };
     const pending = { ...frame, bridge: { ...frame.bridge, state: "uncertain" } };

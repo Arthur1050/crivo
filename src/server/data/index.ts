@@ -27,16 +27,20 @@ import {
   documents,
   humanMessageSends,
   integrationRefusals,
+  leadAgentState,
   leads,
   messages,
   properties,
+  reengagementEpisodes,
   serviceApiKeys,
   tenant_invitations,
   tenant_members,
   tenantApiKeys,
   tenants,
   users,
+  whatsappChannels,
 } from "../../db/schema";
+import { attachReceipt } from "../whatsapp/statuses";
 import { assignBroker, type BrokerLoad } from "../../lib/broker-assignment";
 import {
   selectForEscalation,
@@ -2270,12 +2274,17 @@ export interface IngestAgentMessageInput {
   sender: Message["sender"];
   content: string;
   sentAt: Date;
+  whatsappPhoneNumberId?: string | null;
 }
 
 export interface IngestAgentMessageResult {
   created: boolean;
   message: Message;
+  anchorMessageId: string | null;
+  agentStateRevision: number | null;
 }
+
+class MessageIdentityConflict extends Error {}
 
 /**
  * Ingestão idempotente de uma mensagem vinda do agente (lote-5 — INT-05),
@@ -2298,72 +2307,151 @@ export interface IngestAgentMessageResult {
 export async function ingestAgentMessage(
   tenantId: string,
   leadId: string,
-  input: IngestAgentMessageInput
+  input: IngestAgentMessageInput,
+  options: { now?: () => Date; database?: Pick<typeof db, "transaction"> } = {}
 ): Promise<IngestAgentMessageResult | null> {
-  return db.transaction(async (tx) => {
-    const leadRows = await tx
-      .select({ id: leads.id, firstResponseAt: leads.firstResponseAt })
-      .from(leads)
-      .where(and(eq(leads.tenantId, tenantId), eq(leads.id, leadId)))
-      .limit(1);
-    if (!leadRows[0]) return null;
-
-    const conversationRows = await tx
-      .select()
-      .from(conversations)
-      .where(
-        and(eq(conversations.tenantId, tenantId), eq(conversations.leadId, leadId))
-      )
-      .limit(1);
-
-    const conversation =
-      conversationRows[0] ??
-      (await tx.insert(conversations).values({ tenantId, leadId }).returning())[0];
-
-    const inserted = await tx
-      .insert(messages)
-      .values({
-        tenantId,
-        conversationId: conversation.id,
-        sender: input.sender,
-        content: input.content,
-        sentAt: input.sentAt,
-        externalId: input.externalId,
-      })
-      .onConflictDoNothing({
-        target: [messages.tenantId, messages.externalId],
-        where: sql`${messages.externalId} is not null`,
-      })
-      .returning();
-
-    if (inserted.length > 0) {
-      if (input.sender === "agente" && leadRows[0].firstResponseAt === null) {
-        await tx
-          .update(leads)
-          .set({ firstResponseAt: input.sentAt })
-          .where(and(eq(leads.tenantId, tenantId), eq(leads.id, leadId)));
+  if (!Number.isFinite(input.sentAt.getTime())) throw new Error("ingestAgentMessage: invalid timestamp");
+  try {
+    return await (options.database ?? db).transaction(async (tx) => {
+      const leadRows = await tx
+        .select()
+        .from(leads)
+        .where(and(eq(leads.tenantId, tenantId), eq(leads.id, leadId)))
+        .for("update");
+      if (!leadRows[0]) return null;
+      const lead = leadRows[0];
+      const anchorQuery = () => tx.select({ id: messages.id, sentAt: messages.sentAt }).from(messages)
+        .innerJoin(conversations, and(eq(conversations.id, messages.conversationId), eq(conversations.tenantId, messages.tenantId)))
+        .where(and(eq(messages.tenantId, tenantId), eq(conversations.leadId, leadId), eq(messages.sender, "lead")))
+        .orderBy(desc(messages.sentAt), desc(messages.id)).limit(1);
+      const [replay] = await tx.select().from(messages).where(and(eq(messages.tenantId, tenantId), eq(messages.externalId, input.externalId))).limit(1);
+      if (replay) {
+        const [owner] = await tx.select({ leadId: conversations.leadId }).from(conversations)
+          .where(and(eq(conversations.tenantId, tenantId), eq(conversations.id, replay.conversationId)));
+        if (owner?.leadId !== leadId) return null;
+        const [anchor] = await anchorQuery(), [agent] = await tx.select().from(leadAgentState).where(and(eq(leadAgentState.tenantId, tenantId), eq(leadAgentState.leadId, leadId)));
+        return { created: false, message: replay, anchorMessageId: anchor?.id ?? null, agentStateRevision: agent?.revision ?? null };
       }
-      return { created: true, message: inserted[0] };
-    }
+      const episodes = await tx.select().from(reengagementEpisodes).where(and(eq(reengagementEpisodes.tenantId, tenantId), eq(reengagementEpisodes.leadId, leadId)))
+        .orderBy(reengagementEpisodes.id).for("update");
+      const now = (options.now ?? (() => new Date()))();
+      if (!Number.isFinite(now.getTime())) throw new Error("ingestAgentMessage: invalid clock");
+      const [previousAnchor] = await anchorQuery();
 
-    const existing = await tx
-      .select()
-      .from(messages)
-      .where(
-        and(eq(messages.tenantId, tenantId), eq(messages.externalId, input.externalId))
-      )
-      .limit(1);
+      const conversationRows = await tx
+        .select()
+        .from(conversations)
+        .where(
+          and(eq(conversations.tenantId, tenantId), eq(conversations.leadId, leadId))
+        )
+        .limit(1);
 
-    if (!existing[0]) {
-      // Inalcançável em teoria: mesmo raciocínio de createAgentLead — o
-      // índice único parcial garante que existe uma linha correspondente.
-      throw new Error(
-        "ingestAgentMessage: onConflictDoNothing sem linha nova nem existente."
-      );
-    }
+      const conversation =
+        conversationRows[0] ??
+        (await tx.insert(conversations).values({ tenantId, leadId }).returning())[0];
 
-    return { created: false, message: existing[0] };
-  });
+      const inserted = await tx
+        .insert(messages)
+        .values({
+          tenantId,
+          conversationId: conversation.id,
+          sender: input.sender,
+          content: input.content,
+          sentAt: input.sentAt,
+          externalId: input.externalId,
+          whatsappPhoneNumberId: input.whatsappPhoneNumberId ?? null,
+        })
+        .onConflictDoNothing({
+          target: [messages.tenantId, messages.externalId],
+          where: sql`${messages.externalId} is not null`,
+        })
+        .returning();
+
+      if (inserted.length > 0) {
+        const message = inserted[0];
+        if (input.sender === "agente" && leadRows[0].firstResponseAt === null) {
+          await tx
+            .update(leads)
+            .set({ firstResponseAt: input.sentAt })
+            .where(and(eq(leads.tenantId, tenantId), eq(leads.id, leadId)));
+        }
+        const [anchor] = await anchorQuery();
+        let [agent] = await tx.select().from(leadAgentState).where(and(eq(leadAgentState.tenantId, tenantId), eq(leadAgentState.leadId, leadId)));
+        if (message.sender === "lead" && anchor?.id === message.id && previousAnchor?.id !== message.id) {
+          const previousPhase = agent?.phase;
+          const validPreviousProjection = !!agent && agent.anchorMessageId === previousAnchor?.id
+            && agent.resetObservedAt?.getTime() === lead.memoryResetRequestedAt?.getTime();
+          const projection = { anchorMessageId: message.id, phase: null, revision: (agent?.revision ?? 0) + 1,
+            resetObservedAt: lead.memoryResetRequestedAt, updatedAt: now };
+          [agent] = agent ? await tx.update(leadAgentState).set(projection).where(and(eq(leadAgentState.tenantId, tenantId), eq(leadAgentState.leadId, leadId))).returning()
+            : await tx.insert(leadAgentState).values({ tenantId, leadId, ...projection }).returning();
+          const [channel] = message.whatsappPhoneNumberId ? await tx.select().from(whatsappChannels).where(and(eq(whatsappChannels.tenantId, tenantId), eq(whatsappChannels.phoneNumberId, message.whatsappPhoneNumberId))) : [];
+          for (const episode of episodes) {
+            if (!episode.dispatchAuthorizedAt && episode.state === "preparing") {
+              await tx.update(reengagementEpisodes).set({ state: "cancelled", reasonCode: "new-inbound", claimToken: null, claimExpiresAt: null, submittedText: null, updatedAt: now }).where(eq(reengagementEpisodes.id, episode.id));
+              continue;
+            }
+            if (episode.bridgeInvalidatedAt || !["authorized", "accepted_pending_record", "accepted"].includes(episode.state)) continue;
+            const reset = lead.memoryResetRequestedAt?.getTime(), observed = episode.resetObservedAt?.getTime();
+            const eligible = lead.status === "em_qualificacao" && lead.optedOutAt === null && lead.humanTakeoverAt === null
+              && previousPhase !== "encerrada"
+              && validPreviousProjection
+              && channel?.ownershipVerifiedAt && Number.isFinite(channel.ownershipVerifiedAt.getTime())
+              && lead.whatsappPhoneNumberId === channel.phoneNumberId && episode.phoneNumberId === channel.phoneNumberId
+              && reset === observed && (reset === undefined || Number.isFinite(reset))
+              && Number.isFinite(episode.anchorSentAt.getTime()) && message.sentAt.getTime() > episode.anchorSentAt.getTime();
+            const first = !episode.firstInboundMessageId;
+            const originRefs = [episode.anchorMessageId, episode.originSessionStartMessageId, episode.originSessionEndMessageId, episode.messageId, episode.firstInboundMessageId].filter((id): id is string => id !== null);
+            const refs = originRefs.length ? await tx.select().from(messages).where(and(eq(messages.tenantId, tenantId), eq(messages.conversationId, message.conversationId), inArray(messages.id, originRefs))) : [];
+            const originAnchor = refs.find((row) => row.id === episode.anchorMessageId), start = refs.find((row) => row.id === episode.originSessionStartMessageId), end = refs.find((row) => row.id === episode.originSessionEndMessageId);
+            const resume = refs.find((row) => row.id === episode.messageId);
+            const firstInbound = refs.find((row) => row.id === episode.firstInboundMessageId);
+            const validOrigin = originAnchor?.sender === "lead" && start && end && [originAnchor, start, end].every((row) => Number.isFinite(row.sentAt.getTime()) && row.whatsappPhoneNumberId === episode.phoneNumberId)
+              && start.sentAt.getTime() <= episode.anchorSentAt.getTime() && end.sentAt.getTime() >= episode.anchorSentAt.getTime()
+              && originAnchor.sentAt.getTime() === episode.anchorSentAt.getTime()
+              && (reset === undefined || start.sentAt.getTime() >= reset)
+              && (first || (firstInbound?.sender === "lead" && firstInbound.whatsappPhoneNumberId === episode.phoneNumberId
+                && Number.isFinite(firstInbound.sentAt.getTime()) && firstInbound.sentAt.getTime() > episode.anchorSentAt.getTime()
+                && firstInbound.sentAt.getTime() < episode.anchorSentAt.getTime() + 48 * 3600000))
+              && (episode.state !== "accepted" || (resume?.sender === "agente" && resume.whatsappPhoneNumberId === episode.phoneNumberId && Number.isFinite(resume.sentAt.getTime())));
+            const continuous = first ? message.sentAt.getTime() < episode.anchorSentAt.getTime() + 48 * 3600000
+              : episode.bridgeLastInboundAt && Number.isFinite(episode.bridgeLastInboundAt.getTime()) && message.sentAt.getTime() - episode.bridgeLastInboundAt.getTime() <= 12 * 3600000;
+            if (!eligible || !validOrigin || !continuous) {
+              await tx.update(reengagementEpisodes).set({ bridgeInvalidatedAt: now, bridgeRevision: episode.bridgeRevision + 1, updatedAt: now }).where(eq(reengagementEpisodes.id, episode.id));
+            } else {
+              await tx.update(reengagementEpisodes).set({ ...(first ? { firstInboundMessageId: message.id } : {}), bridgeLastInboundAt: message.sentAt,
+                bridgeRevision: episode.bridgeRevision + 1, updatedAt: now }).where(eq(reengagementEpisodes.id, episode.id));
+            }
+          }
+        }
+        if (message.sender === "agente" || message.sender === "humano") await attachReceipt(serviceScope(tenantId), message.id, tx);
+        return { created: true, message, anchorMessageId: anchor?.id ?? null, agentStateRevision: agent?.revision ?? null };
+      }
+
+      const existing = await tx
+        .select()
+        .from(messages)
+        .where(
+          and(eq(messages.tenantId, tenantId), eq(messages.externalId, input.externalId))
+        )
+        .limit(1);
+
+      if (!existing[0]) {
+        // Inalcançável em teoria: mesmo raciocínio de createAgentLead — o
+        // índice único parcial garante que existe uma linha correspondente.
+        throw new Error(
+          "ingestAgentMessage: onConflictDoNothing sem linha nova nem existente."
+        );
+      }
+      const [owner] = await tx.select({ leadId: conversations.leadId }).from(conversations).where(and(eq(conversations.tenantId, tenantId), eq(conversations.id, existing[0].conversationId)));
+      if (owner?.leadId !== leadId) throw new MessageIdentityConflict("ingestAgentMessage: identity conflict");
+      const [anchor] = await anchorQuery(), [agent] = await tx.select().from(leadAgentState).where(and(eq(leadAgentState.tenantId, tenantId), eq(leadAgentState.leadId, leadId)));
+      return { created: false, message: existing[0], anchorMessageId: anchor?.id ?? null, agentStateRevision: agent?.revision ?? null };
+    });
+  } catch (error) {
+    if (error instanceof MessageIdentityConflict) return null;
+    throw error;
+  }
 }
 
 export interface CreateDocumentInput {
