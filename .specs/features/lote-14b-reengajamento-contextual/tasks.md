@@ -1358,10 +1358,12 @@ Fechamento da fase: TS2339 na inspeção de query.mock.calls corrigido com argum
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: memória warm/cold equivalente; 50/51; ordem sentAt/id; equipe→system; 12h/12h+1ms; <48h/48h; gaps de outros episódios; reset; buffer excluído; histórico apagado; sessão retomada ativa após 48h.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **14 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Quick passou: `npx vitest run n8n/src/__tests__/session.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: memória warm/cold equivalente; 50/51; ordem sentAt/id; equipe→system; 12h/12h+1ms; <48h/48h; gaps de outros episódios; reset; buffer excluído; histórico apagado; sessão retomada ativa após 48h.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **14 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Quick passou: `npx vitest run n8n/src/__tests__/session.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
+
+**Evidence**: `node node_modules/vitest/vitest.mjs run n8n/src/__tests__/session.test.ts` PASS 45/45 (24 novos + 21 anteriores), 1 arquivo, exit0, 242ms; cap50/orçamento0/NaN provados nos dois seletores, sem desvio.
 
 **Tests**: unit — `n8n/src/__tests__/session.test.ts`; matriz: Domínio puro.
 
