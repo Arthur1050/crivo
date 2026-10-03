@@ -545,6 +545,14 @@ Bulk insert/select FOR UPDATE em ordem de wamid/bulk update conservam vínculo,
 firstSeen/expiração e lastSeen monotônico. Replay sem nova evidência não muda
 linha. Imports de persistência são tardios para manter o reducer puro testável.
 
+T10 associa recibos a saídas existentes em bulk na ingestão e permite attach
+após a gravação, inclusive dentro da mesma transação do remetente. Attach usa
+LeadScope interno autorizado, trava lead/canal e revalida ownership. Tenant,
+conversa/lead, número e wamid devem coincidir; sender é agente ou humano.
+Carteira diversa, inbound e legado sem identidade não são associados.
+Vínculo remove apenas o TTL de órfão e preserva evidência/classificação;
+replay é idempotente e exclusão da saída remove seu recibo por cascade.
+
 ## Consumo mensal
 
 ### Consulta e normalização

@@ -1,6 +1,7 @@
 import "server-only";
 import { createHash, timingSafeEqual } from "node:crypto";
 import type { AuthResult } from "../integration/auth";
+import type { LeadScope } from "../../lib/lead-scope";
 
 export type ReceiptClassification = "pending" | "paid_service" | "free_service" | "free_entry_point" | "unavailable" | "not_delivered";
 export type ReceiptPricing = {
@@ -258,10 +259,76 @@ export async function ingestStatusBatch(
           pricingConflict: sql`excluded.pricing_conflict`, classification: sql`excluded.classification`, failureCode: sql`excluded.failure_code`, lastSeenAt: sql`excluded.last_seen_at`,
         },
       });
+      await linkReceiptBatch(tx, { tenantId: authorized.tenantId, assignedUserId: null }, channel.phoneNumberId, wamids);
       return { ok: true, processed: batch.statuses.length };
     });
     return result.ok ? result : refuse(result.reason);
   } catch {
     return refuse("persistence-failed");
   }
+}
+
+type ReceiptExecutor = Pick<typeof import("../../db").db, "select" | "execute">;
+
+/** Uma única atualização para todo lote; identidade vem da saída persistida. */
+async function linkReceiptBatch(
+  executor: ReceiptExecutor,
+  scope: LeadScope,
+  phoneNumberId: string,
+  wamids: string[],
+  messageId?: string,
+): Promise<number> {
+  if (!wamids.length) return 0;
+  const { sql } = await import("drizzle-orm");
+  const result = await executor.execute(sql`
+    UPDATE whatsapp_message_receipts AS receipt
+    SET message_id = message.id, orphan_expires_at = NULL
+    FROM messages AS message
+    JOIN conversations AS conversation ON conversation.id = message.conversation_id AND conversation.tenant_id = message.tenant_id
+    JOIN leads AS lead ON lead.id = conversation.lead_id AND lead.tenant_id = conversation.tenant_id
+    JOIN whatsapp_channels AS channel ON channel.tenant_id = message.tenant_id AND channel.phone_number_id = message.whatsapp_phone_number_id
+    WHERE receipt.tenant_id = ${scope.tenantId} AND receipt.phone_number_id = ${phoneNumberId}
+      AND receipt.wamid IN (${sql.join(wamids.map((wamid) => sql`${wamid}`), sql`, `)})
+      AND message.tenant_id = receipt.tenant_id AND message.whatsapp_phone_number_id = receipt.phone_number_id
+      AND message.external_id = receipt.wamid AND message.sender IN ('agente', 'humano')
+      AND channel.ownership_verified_at IS NOT NULL
+      AND (receipt.message_id IS NULL OR receipt.message_id = message.id)
+      ${scope.assignedUserId === null ? sql`` : sql`AND lead.assigned_user_id = ${scope.assignedUserId}`}
+      ${messageId === undefined ? sql`` : sql`AND message.id = ${messageId}`}
+    RETURNING receipt.message_id
+  `);
+  return result.rows.length;
+}
+
+/**
+ * Escopo vem da sessão ou serviceScope já autorizado. Não aceita identidade
+ * de mensagem/canal por inferência do telefone da lead. Executor permite
+ * compor com a transação de gravação, sem abrir uma transação aninhada.
+ */
+export async function attachReceipt(
+  scope: LeadScope,
+  messageId: string,
+  executor?: ReceiptExecutor,
+): Promise<boolean> {
+  if (!UUID.test(messageId)) return false;
+  const attach = async (tx: ReceiptExecutor): Promise<boolean> => {
+    const { and, eq, inArray } = await import("drizzle-orm");
+    const { messages, conversations, leads, whatsappChannels } = await import("../../db/schema");
+    const [message] = await tx.select({ phoneNumberId: messages.whatsappPhoneNumberId, wamid: messages.externalId })
+      .from(messages)
+      .innerJoin(conversations, and(eq(conversations.id, messages.conversationId), eq(conversations.tenantId, messages.tenantId)))
+      .innerJoin(leads, and(eq(leads.id, conversations.leadId), eq(leads.tenantId, conversations.tenantId)))
+      .where(and(eq(messages.tenantId, scope.tenantId), eq(messages.id, messageId), inArray(messages.sender, ["agente", "humano"]),
+        scope.assignedUserId === null ? undefined : eq(leads.assignedUserId, scope.assignedUserId)))
+      .for("update", { of: leads });
+    if (!message?.phoneNumberId || !message.wamid) return false;
+    const [channel] = await tx.select().from(whatsappChannels).where(and(
+      eq(whatsappChannels.tenantId, scope.tenantId), eq(whatsappChannels.phoneNumberId, message.phoneNumberId),
+    )).for("update");
+    if (!channel?.ownershipVerifiedAt) return false;
+    return (await linkReceiptBatch(tx, scope, message.phoneNumberId, [message.wamid], messageId)) > 0;
+  };
+  if (executor) return attach(executor);
+  const { db } = await import("../../db");
+  return db.transaction(attach);
 }

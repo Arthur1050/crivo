@@ -8,7 +8,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 
 **Design:** [design.md](design.md), aprovado em 2026-10-02: “Aprovo. Vá para as tarefas”.
 
-**Status:** Approved — usuário em 2026-10-02: “Aprovo. Gere o prompt de execução para que a fase de execução seja iniciado em outra janela de contexto”. 68 tarefas em 9 fases; T1–T9 concluídas localmente (9/68), fase 1/lote A fechados com a ressalva autorizada dos dois timeouts históricos, conforme evidências individuais abaixo.
+**Status:** Approved — usuário em 2026-10-02: “Aprovo. Gere o prompt de execução para que a fase de execução seja iniciado em outra janela de contexto”. 68 tarefas em 9 fases; T1–T10 concluídas localmente (10/68), fase 1/lote A fechados com a ressalva autorizada dos dois timeouts históricos, conforme evidências individuais abaixo.
 
 **Escopo:** 13 requisitos e 95 ACs aprovados. Uma retomada >=22h/<24h, continuidade restrita, desfecho >=48h, classificação após entrega e saldo mensal estimado. Sem modal/bloqueio financeiro.
 
@@ -870,16 +870,24 @@ Sem SPEC_DEVIATION/schema novo; HMAC instalado/ativação real continuam pendent
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: status antes/depois da mensagem; replay; outra carteira/tenant; outro canal; inbound excluído; legado sem identidade; exclusão da mensagem sem órfão permanente.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **8 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/server/whatsapp/__tests__/statuses-attach.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: status antes/depois da mensagem; replay; outra carteira/tenant; outro canal; inbound excluído; legado sem identidade; exclusão da mensagem sem órfão permanente.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **8 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou: `npx vitest run src/server/whatsapp/__tests__/statuses-attach.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
 
 **Tests**: integration — `src/server/whatsapp/__tests__/statuses-attach.test.ts`; matriz: Serviço/repositório.
 
 **Gate**: Full; Build no fechamento da fase.
 
 **Commit**: `feat(l14b): correlacionar recibo após mensagem` (docs para mudança exclusivamente contratual).
+
+**Resultado T10:** Full root exit0, 70/70 testes, 5/5 arquivos, 85,52s, início
+2026-10-02 23:22:02 America/Sao_Paulo. 9 novos e 61 regressões preservadas.
+Attach autorizado por carteira/tenant e identidade composta; ingest associa
+saídas existentes em bulk, sem criar bolha/inbound. Replay conserva evidências;
+executor permite rollback conjunto; exclusão cascade não deixa órfão permanente.
+ESLint exit0; tsc mantém as 50 linhas anteriores, sem diferenças. Sem schema
+novo/SPEC_DEVIATION. Adequação e gate em [t10-verification.md](t10-verification.md).
 
 ---
 
