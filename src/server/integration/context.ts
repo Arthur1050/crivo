@@ -1,9 +1,10 @@
 import "server-only";
 import { and, eq, gt, isNull, or, sql } from "drizzle-orm";
 import { db } from "../../db";
-import { documentCategories, documents } from "../../db/schema";
+import { documentCategories, documents, tenantDocumentContextLimits } from "../../db/schema";
 import {
   buildCanonicalContext,
+  measureCanonicalContext,
   type ContextBudgetDocument,
   type DocumentContextEnvelope,
   type DocumentModality,
@@ -17,7 +18,9 @@ export interface DirectContextQuery {
    * seja o definitivo quando a recuperação semântica existir.
    */
   question: string;
+  reservedContextBytes?: number;
 }
+export class DocumentContextBudgetExceeded extends Error {}
 
 /**
  * Corpus direto do tenant (DOCCTX-01, DOCLIM-01). Só entra documento `pronto`,
@@ -35,6 +38,7 @@ export async function getDirectDocumentContext(
   query: DirectContextQuery,
   now = new Date()
 ): Promise<DocumentContextEnvelope> {
+  if (query.reservedContextBytes !== undefined && (!Number.isSafeInteger(query.reservedContextBytes) || query.reservedContextBytes < 0)) throw new DocumentContextBudgetExceeded();
   const rows = await db
     .select({
       id: documents.id,
@@ -70,5 +74,12 @@ export async function getDirectDocumentContext(
         : null,
   }));
 
-  return buildCanonicalContext(corpus, query.modality);
+  const envelope = buildCanonicalContext(corpus, query.modality);
+  if (query.reservedContextBytes !== undefined) {
+    const [limit] = await db.select({ maxResponseBytes: tenantDocumentContextLimits.maxResponseBytes }).from(tenantDocumentContextLimits)
+      .where(and(eq(tenantDocumentContextLimits.tenantId, tenantId), eq(tenantDocumentContextLimits.queryModality, query.modality)));
+    const available = Math.max(0, (limit?.maxResponseBytes ?? 0) - query.reservedContextBytes);
+    if (measureCanonicalContext(envelope) > available) throw new DocumentContextBudgetExceeded();
+  }
+  return envelope;
 }

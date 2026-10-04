@@ -378,6 +378,12 @@ paths:
           $ref: "#/components/responses/NaoAutenticado"
         "413":
           $ref: "#/components/responses/CorpoGrandeDemais"
+        "503":
+          description: servico-indisponivel — leitura documental temporariamente indisponível.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
       security:
         - bearerAuth: []
         - serviceAuth: []
@@ -2590,6 +2596,11 @@ components:
             resposta nem gravada no registro de recusas.
           minLength: 1
           maxLength: 4096
+        reservedContextBytes:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+          description: Reserva interna proativa em bytes UTF-8 antes dos documentos. Opcional; o CRM desconta do teto publicado do tenant/modalidade e recusa 400 se o envelope inteiro não cabe. Ausência mantém comportamento normal; nunca amplia teto nem trunca documento.
     DocumentContextEntry:
       type: object
       required: [id, name, modality, category, contentMode, content]

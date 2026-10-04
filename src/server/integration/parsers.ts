@@ -516,6 +516,7 @@ export const MAX_CONTEXT_QUESTION_LENGTH = 4096;
 export interface ContextQueryDto {
   modality: (typeof modalityEnum.enumValues)[number];
   question: string;
+  reservedContextBytes?: number;
 }
 
 /**
@@ -557,5 +558,8 @@ export function parseContextQuery(json: unknown): ParseResult<ContextQueryDto> {
     };
   }
 
-  return { ok: true, dto: { modality, question } };
+  if (Object.hasOwn(json, "reservedContextBytes") && (!Number.isSafeInteger(json.reservedContextBytes) || (json.reservedContextBytes as number) < 0)) {
+    return { ok: false, detail: "reservedContextBytes deve ser um inteiro seguro não negativo." };
+  }
+  return { ok: true, dto: { modality, question, ...(Object.hasOwn(json, "reservedContextBytes") ? { reservedContextBytes: json.reservedContextBytes as number } : {}) } };
 }

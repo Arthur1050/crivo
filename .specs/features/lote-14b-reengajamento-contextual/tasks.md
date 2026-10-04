@@ -2080,13 +2080,18 @@ Regate `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: somente tools permitidas; sem responder/agenda/qualificação/escalada; sem Chat Memory; texto inválido; timeout total; orçamento; tenant/lead imutáveis; contexto falhou; prompt injection não adiciona efeitos; workflow gerado equivalente.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **10 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Quick passou: `npx vitest run n8n/workflows/__tests__/reengagement-contextual.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
-- [ ] Inliner executado, generated equivalente, wiring/nós exercitados e README/guia afetado atualizado no mesmo commit. Publicação remota depende de autorização posterior.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: somente tools permitidas; sem responder/agenda/qualificação/escalada; sem Chat Memory; texto inválido; timeout total; orçamento; tenant/lead imutáveis; contexto falhou; prompt injection não adiciona efeitos; workflow gerado equivalente.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **10 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Quick passou: `npx vitest run n8n/workflows/__tests__/reengagement-contextual.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
+- [x] Inliner executado, generated equivalente, wiring/nós exercitados e README/guia afetado atualizado no mesmo commit. Publicação remota depende de autorização posterior.
 
 **Tests**: unit — `n8n/workflows/__tests__/reengagement-contextual.test.ts`; matriz: Workflow/Code nodes.
+
+**Evidence**: `node scripts/n8n-inline.mjs`; `node node_modules/vitest/vitest.mjs run n8n/workflows/__tests__/reengagement-contextual.test.ts n8n/src/__tests__/reengagement-prompt.test.ts scripts/__tests__/n8n-inline.test.ts src/server/integration/__tests__/routes/context-post.test.ts src/server/integration/__tests__/parsers.test.ts src/server/integration/__tests__/openapi.test.ts src/server/documents/__tests__/context-budget.test.ts` 156/157, 6/7 arquivos PASS, exit 1, 36.63s, início runner 2026-10-04 19:02:05; única falha: IDs aleatórios do SDK na paridade, corrigidos por IDs estáveis na fonte, sem relaxar comparação.
+Regate `node node_modules/vitest/vitest.mjs run n8n/workflows/__tests__/reengagement-contextual.test.ts src/server/integration/__tests__/openapi.test.ts` 8/38, exit 1, 2.16s, início 19:04:27: edição CRLF duplicou YAML; restaurado HEAD T45 e reaplicada somente extensão /context com marcadores conferidos. Mesmo comando final PASS 38/38, 2 arquivos, exit 0, 3.07s, início runner 2026-10-04 19:05:32.
+157 testes verificados nos gates finais: 10 novos (8 grafo/Code + 2 PG de reserva/teto próprio) e 147 regressões; fonte/gerado equivalentes, contexto integral descontado do teto real sem expansão, deadline TOTAL120s e sem Chat Memory/escrita; README/guia/OpenAPI atualizados, sem publicação remota.
+Fechamento: seis chamadas POST dos dois testes PG recebem o segundo argumento exigido pelo wrapper, sem alterar asserções; regate `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__/routes/context-post.test.ts` PASS 25/25, 1 arquivo, exit0, 20.46s, início runner2026-10-04 19:25:03; lint do arquivo exit0; tsc final exit2/50 erros anteriores, delta semântico0 (posições de linha desconsideradas).
 
 **Gate**: Quick + Wiring; Build no fechamento da fase.
 

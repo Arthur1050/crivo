@@ -150,6 +150,9 @@ describe("docs/integration/openapi.yaml — SwaggerParser.validate()", () => {
       expect(post.requestBody.required).toBe(true);
       const schema = api.components.schemas.ContextQuery;
       expect(schema.required).toEqual(expect.arrayContaining(["modality", "question"]));
+      expect(schema.required).not.toContain("reservedContextBytes");
+      expect(schema.properties.reservedContextBytes).toMatchObject({ type: "integer", minimum: 0, maximum: Number.MAX_SAFE_INTEGER });
+      expect(post.responses["503"]).toBeDefined();
     });
 
     it("a pergunta documentada tem exatamente os limites que o handler aplica", async () => {

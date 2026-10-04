@@ -425,3 +425,12 @@ Reengajamento (varredura B) e escalonamento por silêncio (C) releem o lead (`HT
 ### Número de resposta e coluna nova
 
 O `POST /leads` do principal envia `whatsappPhoneNumberId` a cada mensagem recebida; é o número pelo qual o CRM responde ao lead. A coluna `memoryResetAt` de `conversa_estado` é criada por `add_data_table_column` antes da publicação dos workflows (ordem fixa: `drizzle-kit push` em produção → deploy do CRM → coluna → `tool-responder-lead` → `scheduler` → `principal`). Publicar o n8n antes do CRM faria o agente chamar rotas que ainda não existem e, pela falha fechada, ficar calado.
+
+
+## 16. Geração contextual somente leitura (L14b T47)
+
+Fonte: `n8n/workflows/reengagement-contextual.ts`; gerar com `node scripts/n8n-inline.mjs` e validar o grafo antes da publicação. O workflow interno recebe o frame preparado pelo CRM e tenantSlug do caller determinístico, lê a persona do tenant e usa o mesmo snapshot datado do principal. Somente consultar_documentos e buscar_imoveis são conectadas; não existe Chat Memory nem tool de envio/agenda/qualificação/escalada. IDs de nós são estáveis e callerPolicy restringe ao mesmo proprietário.
+
+O prazo total da execução é 120s, incluindo settings, modelo e tools. Deadline nasce no primeiro Code node; cada HTTP tem no máximo 15s e cada chamada de modelo usa só o restante. Não há retries do workflow ou tools. Resposta tardia, saída vazia/maior que 4096 unidades UTF-16 e observação de leitura inválida retornam falha sem texto substituto. O resultado público é somente ok/text ou ok/code; não transporta frame, identidade de canal ou credencial.
+
+A reserva overheadBytes é medida pelo adapter antes de documentos e enviada por expressão fixa como reservedContextBytes ao POST /context. O CRM desconta do teto publicado do próprio tenant/modalidade (inclusive teto antigo stale, sem expansão); envelope que não cabe é recusado integralmente. Ausência da reserva conserva o comportamento normal do principal. Falha da tool de leitura impede aceitar um texto que dependa dessa observação. Esta task cria/gera/valida a fonte local; nenhuma publicação remota foi feita.

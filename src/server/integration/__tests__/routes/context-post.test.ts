@@ -1,9 +1,10 @@
 import "dotenv/config";
 import { createHash, randomUUID } from "node:crypto";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { and, eq } from "drizzle-orm";
 import { db } from "../../../../db";
-import { documents, integrationRefusals, tenantApiKeys, tenants } from "../../../../db/schema";
+import { documents, integrationRefusals, tenantApiKeys, tenantDocumentContextLimits, tenants } from "../../../../db/schema";
+import * as contextService from "../../context";
 import { MAX_CONTEXT_QUESTION_LENGTH } from "../../parsers";
 import { POST } from "../../../../../app/api/v1/context/route";
 
@@ -61,6 +62,8 @@ describe("routes: POST /api/v1/context", () => {
   });
 
   afterAll(async () => {
+    await db.delete(tenantDocumentContextLimits).where(eq(tenantDocumentContextLimits.tenantId, tenantAId));
+    await db.delete(tenantDocumentContextLimits).where(eq(tenantDocumentContextLimits.tenantId, tenantBId));
     await db.delete(documents).where(eq(documents.tenantId, tenantAId));
     await db.delete(documents).where(eq(documents.tenantId, tenantBId));
     await db.delete(integrationRefusals).where(eq(integrationRefusals.tenantId, tenantAId));
@@ -69,6 +72,26 @@ describe("routes: POST /api/v1/context", () => {
     await db.delete(tenants).where(eq(tenants.id, tenantAId));
     await db.delete(tenants).where(eq(tenants.id, tenantBId));
     await db.$client.end();
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it("T47 reserva overhead no teto real: limite exato entrega íntegra, um byte abaixo recusa sem corte", async () => {
+    const body = { modality: "novo", question: QUESTION }, response = await POST(makeRequest(body, apiKeyA), undefined), original = await response.json(), measured = Buffer.byteLength(JSON.stringify(original), "utf8");
+    await db.insert(tenantDocumentContextLimits).values({ tenantId: tenantAId, queryModality: "novo", maxResponseBytes: measured + 13, modelId: "fixture", workflowVersion: "fixture", systemMessageHash: "fixture", toolsHash: "fixture", memoryWindow: 50, benchmarkedAt: new Date(), staleAt: new Date(), metrics: {} });
+    try {
+      const exact = await POST(makeRequest({ ...body, reservedContextBytes: 13 }, apiKeyA), undefined); expect(exact.status).toBe(200); expect(await exact.json()).toEqual(original);
+      await db.update(tenantDocumentContextLimits).set({ maxResponseBytes: measured + 12 }).where(eq(tenantDocumentContextLimits.tenantId, tenantAId));
+      const denied = await POST(makeRequest({ ...body, reservedContextBytes: 13 }, apiKeyA), undefined); expect(denied.status).toBe(400); expect(await denied.json()).toMatchObject({ code: "payload-invalido", detail: "Contexto documental excede o orçamento disponível após a reserva proativa." });
+      expect((await db.select().from(documents).where(eq(documents.tenantId, tenantAId))).every((document) => document.status === "pronto")).toBe(true);
+    } finally { await db.delete(tenantDocumentContextLimits).where(eq(tenantDocumentContextLimits.tenantId, tenantAId)); }
+  });
+  it("T47 reserva inválida/sem teto próprio/erro técnico recusa sem ampliar ou vazar outro tenant", async () => {
+    for (const reservedContextBytes of [-1, 1.5, "13", null, Number.MAX_SAFE_INTEGER + 1]) { const response = await POST(makeRequest({ modality: "novo", question: QUESTION, reservedContextBytes }, apiKeyA), undefined); expect(response.status).toBe(400); }
+    await db.insert(tenantDocumentContextLimits).values({ tenantId: tenantBId, queryModality: "novo", maxResponseBytes: 100000, modelId: "fixture", workflowVersion: "fixture", systemMessageHash: "fixture", toolsHash: "fixture", memoryWindow: 50, benchmarkedAt: new Date(), metrics: {} });
+    try { const response = await POST(makeRequest({ modality: "novo", question: QUESTION, reservedContextBytes: 0, tenantId: tenantBId }, apiKeyA), undefined); expect(response.status).toBe(400); expect(JSON.stringify(await response.json())).not.toContain("segredo exclusivo"); }
+    finally { await db.delete(tenantDocumentContextLimits).where(eq(tenantDocumentContextLimits.tenantId, tenantBId)); }
+    vi.spyOn(contextService, "getDirectDocumentContext").mockRejectedValueOnce(new Error("fixture-private-error"));
+    const response = await POST(makeRequest({ modality: "novo", question: QUESTION, reservedContextBytes: 13 }, apiKeyA), undefined); expect(response.status).toBe(503); expect(await response.json()).toMatchObject({ code: "servico-indisponivel", detail: "Leitura documental temporariamente indisponível." });
   });
 
   describe("autenticação e tenant (AC12)", () => {

@@ -1,5 +1,5 @@
 import { Buffer } from "node:buffer";
-import { getDirectDocumentContext } from "../../../../src/server/integration/context";
+import { DocumentContextBudgetExceeded, getDirectDocumentContext } from "../../../../src/server/integration/context";
 import {
   MAX_BODY_BYTES,
   parseContextQuery,
@@ -44,8 +44,13 @@ export const POST = withIntegrationRoute(async (request, auth) => {
     return problem(400, "payload-invalido", parsed.detail);
   }
 
-  const envelope = await getDirectDocumentContext(auth.tenantId, parsed.dto);
-  return Response.json(envelope, { headers: NO_STORE });
+  try {
+    const envelope = await getDirectDocumentContext(auth.tenantId, parsed.dto);
+    return Response.json(envelope, { headers: NO_STORE });
+  } catch (error) {
+    if (error instanceof DocumentContextBudgetExceeded) return problem(400, "payload-invalido", "Contexto documental excede o orçamento disponível após a reserva proativa.");
+    return problem(503, "servico-indisponivel", "Leitura documental temporariamente indisponível.");
+  }
 });
 
 /**
