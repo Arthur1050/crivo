@@ -82,7 +82,7 @@ O agendamento ainda pode responder `409` `sem-corretor-disponivel` (nenhum corre
 
 ## 6. Limites do v1
 
-- **Tamanho de corpo**: 100 KB por requisição. Acima disso, `413` `corpo-grande-demais`, sem gravar nada.
+- **Tamanho de corpo**: 100 KiB (102400 bytes UTF-8) por requisição. Acima disso, `413` `corpo-grande-demais`, sem gravar nada.
 - **Rate limiting**: não implementado no v1 — o piloto opera com 2 consumidores conhecidos e chaves revogáveis, o que é considerado suficiente para essa fase. Fica registrado aqui como evolução futura esperada antes de abrir o contrato a mais tenants/consumidores.
 - **Datas**: todo campo de data/hora (`firstContactAt`, `sentAt`, `meetingAt`) exige ISO-8601 completo (data + hora + timezone) — datas sem hora (`"2026-08-01"`) são rejeitadas com `400`.
 - **Enums**: todo campo de enum (`status`, `modality`, `propertyType`, `motivation`, `creditStatus`, `sender`) só aceita os valores exatos listados em `openapi.yaml`; qualquer outro valor responde `400` `payload-invalido` apontando o campo.
@@ -138,9 +138,9 @@ GET mantém o array legado e acrescenta headers `X-Crivo-Anchor-Message-Id` e `X
 
 - `GET /leads/{id}/messages` retorna a thread do lead em ordem cronológica
   crescente (`sentAt` ASC), no mesmo formato `Message` já usado pelo
-  `POST /leads/{id}/messages`. É esta rota que o fluxo do agente consulta a
-  cada turno para dar contexto ao modelo — nunca uma cópia paralela do
-  histórico do lado do consumidor.
+  `POST /leads/{id}/messages`. É uma leitura bruta do histórico. No L14b,
+  o fluxo usa `POST /leads/{id}/session-context` para o contexto autoritativo
+  de cada turno, com ponte/reset/buffer — veja seção 11.
 - **`limit`** (query, opcional): quantas mensagens mais recentes devolver,
   sempre em ordem crescente. Sem o parâmetro, o padrão é **50**. Faixa
   válida: inteiro de 1 a 100 — qualquer outro valor (incluindo `0`, negativo,
@@ -159,7 +159,7 @@ O corretor pode assumir uma conversa pelo Chats do CRM, responder ao lead e devo
 **Campos de condução no `Lead`** (em toda resposta que devolve o lead):
 
 - `humanTakeoverAt` (ISO 8601 ou `null`): a marca de condução humana. Preenchido, um humano conduz a conversa: o consumidor não deve enviar nenhuma mensagem ao lead e recebe `409 lead-conduzido-por-humano` se tentar mudar `status` ou `meetingAt`. O lead em `escalado_humano` também é conduzido por humano, com ou sem a marca.
-- `memoryResetRequestedAt` (ISO 8601 ou `null`): instante do último pedido do CRM para reconstruir a memória do agente (devolução ao agente ou opt-out registrado pela tela). O consumidor guarda o último pedido atendido e reconstrói a memória a partir de `GET /leads/{id}/messages` quando o pedido for mais novo.
+- `memoryResetRequestedAt` (ISO 8601 ou `null`): instante do último pedido do CRM para reconstruir a memória do agente (devolução ao agente ou opt-out registrado pela tela). O consumidor guarda o último pedido atendido e reconstrói a memória a partir de `POST /leads/{id}/session-context` quando o pedido for mais novo (L14b, seção 11).
 
 **`GET /leads/{id}`**: devolve o `Lead` do tenant da chave. É a leitura que o agente faz imediatamente antes de cada envio, para não falar com um lead que um humano acabou de assumir. Lead inexistente ou de outro tenant responde `404` `recurso-nao-encontrado`; sem chave, `401`. Se a leitura falhar, o consumidor não deve enviar.
 
@@ -172,3 +172,28 @@ O corretor pode assumir uma conversa pelo Chats do CRM, responder ao lead e devo
 - `GET /leads/{id}/messages` pode devolver `sender: "humano"`: mensagem escrita por um usuário do CRM e entregue ao lead pelo WhatsApp. O campo `authorName` traz o nome do autor no momento do envio (preservado mesmo se o usuário for removido depois); nas mensagens `agente` e `lead`, `authorName` é `null`.
 - `POST /leads/{id}/messages` aceita só `sender: "agente"` e `sender: "lead"`. `sender: "humano"` responde `400` `payload-invalido` e nada é gravado: a autoria humana nasce só pela tela, com usuário autenticado, nunca pela credencial de serviço.
 - Ao reconstruir a memória do agente, a mensagem `humano` deve entrar como fala da imobiliária, atribuída ao corretor, e nunca como fala do lead.
+
+## 11. Reengajamento e contexto (L14b)
+
+Todas as operações usam o wrapper autenticado e o tenant derivado da credencial; não aceitam tenant, destino, credencial de transporte ou parâmetros de Graph no corpo. IDs de path são UUID; recurso ausente/estrangeiro é 404, payload inválido é 400, corpo acima de 100 KiB é 413 e verbo não suportado é 405 com Allow. Erros usam application/problem+json e detalhes estáticos. O OpenAPI descreve os DTOs e códigos específicos.
+
+| Operação relativa a /api/v1 | Corpo/consulta | Resultado |
+| --- | --- | --- |
+| POST /leads/{id}/agent-state | Âncora, reset observado, expectedRevision, phase, até 8 askedFields e openingHistory | 200 replay/state; 409 quando âncora/reset/revisão/fase divergem |
+| GET /whatsapp/automation/candidates | limit 1–100 (padrão 100), cursor opaco até 1024 caracteres | Página de IDs/ação, cutoffAt e nextCursor; pode ser vazia com cursor |
+| POST /leads/{id}/reengagement/prepare | anchorMessageId | 201 claimToken/expiração/frame; 200 episódio já consumido sem token alheio; 409 lease ativa |
+| POST /leads/{id}/reengagement/{episodeId}/preparation-failure | claimToken e code permitido | 200 liberação; replay do token liberado retorna 409 e não libera lease substituta |
+| POST /leads/{id}/reengagement/{episodeId}/send | claimToken e text | 200 fato de envio/replay; marcador durável antes da única chamada Meta |
+| POST /leads/{id}/reengagement/{episodeId}/acknowledgement | wamid/acceptedAt opcionais ou nulos | Reconciliação factual, sem transporte; corpo vazio usa identidade durável, sem inventar aceite |
+| POST /leads/{id}/reengagement/expire | anchorMessageId | Omissão aos 24h/escalonamento aos 48h; replay preserva resultado e atribuição |
+| POST /leads/{id}/session-context | bufferMessageIds opcionais, até 50 IDs reais de inbound | frame/history/requiresRebuild/pendingAcceptance/anchor/agentStateRevision, sem mutação |
+| POST /whatsapp/statuses | phoneNumberId e 1–100 status normalizados | 200 processed idempotente; 403 sem origem comprovada ou canal verificado |
+| POST /whatsapp/usage/sync | phoneNumberId cadastrado | 200 synced/skipped/unavailable e snapshot permitido; 503 indisponibilidade técnica |
+
+No primeiro envio, text recebe trim e deve ter 1–4096 unidades UTF-16: caracteres astrais contam duas. O limite está na semântica de disparo, não no parser estrutural. Replay consumido retorna a identidade original mesmo com novo texto inválido ou transporte agora indisponível, sem nova chamada Meta. Refused/uncertain/accepted_pending_record também são resultados factuais 200; não reenviar um resultado indeterminado. Acknowledgement tardio reconcilia o aceite, mas reset/takeover não reativam uma ponte invalidada.
+
+A metadata aditiva de POST /messages é **corrente**: anchorMessageId/agentStateRevision não autorizam publicar uma projeção calculada para outra âncora. Guarde a âncora/revisão originais do turno e descarte saída obsoleta. GET /messages conserva o array e anuncia X-Crivo-Anchor-Message-Id/X-Crivo-Agent-State-Revision (literal null sem fato). Canal opcional/nulo mantém legado; replay conserva canal e autoria originais. A revisão do frame de sessão é da ponte, independente da revisão do agente. Use history já calculado pelo CRM sem recortar/semear novamente; pending exige aguardar/reconciliar, sem gerar a partir de contexto presumido.
+
+Status só recebem capacidade de origem a partir de prova de configuração servidor da versão instalada do forwarder: HMAC SHA256 sobre raw-body, rejeição de assinatura inválida e credencial autenticada correspondente. Body/header verified não concedem prova. O default permanece fechado até esse gate factual. Validação e persistência do lote são integrais; status nunca criam inbound/bolha/agente. Órfãos expiram em 30 dias; pricing ausente/desconhecido não presume gratuidade.
+
+Consumo usa cadência de 15min por número inclusive falha/troca de mês, lease de 90s e orçamento de 80s; Graph é montado no servidor. 429/timeout preservam o snapshot corrente válido e só registram reason limitado. Mês/configuração incompatíveis ficam indisponíveis; falha não publica zero. O preflight disponível é de conta de teste: adapter produtivo ausente, usageEnabled false e **Consumo indisponível**, sem saldo presumido. USO03/USO04 permanecem deferidos ao L14c; esta API não habilita essas superfícies.

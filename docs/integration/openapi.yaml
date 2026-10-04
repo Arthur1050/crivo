@@ -480,6 +480,703 @@ paths:
       security:
         - bearerAuth: []
         - serviceAuth: []
+  /leads/{id}/agent-state:
+    post:
+      operationId: publishAgentState
+      tags:
+        - whatsapp
+      summary: Publica projeção versionada calculada para a âncora/reset originais
+      description: >-
+        Publica projeção versionada calculada para a âncora/reset originais. Revisão 0 cria 1; replay idêntico
+        preserva fatos. Não reabre fase encerrada na mesma âncora/reset. A metadata de POST /messages é corrente
+        e não autoriza publicar saída calculada em âncora anterior.
+      parameters:
+        - $ref: "#/components/parameters/LeadId"
+        - $ref: "#/components/parameters/XCrivoTenant"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AgentStateInput"
+      x-max-body-bytes: 102400
+      responses:
+        "200":
+          description: Resultado factual/idempotente; ver semântica da operação.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentStateResponse"
+        "400":
+          description: payload-invalido
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: nao-autenticado ou tenant-nao-identificado
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: "recurso-nao-encontrado: lead ausente/UUID inválido/outro tenant."
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "405":
+          description: metodo-nao-suportado; Allow anuncia somente o verbo suportado.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: "contexto-alterado ou transicao-invalida: âncora/reset/revisão/fase divergente."
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "413":
+          description: "corpo-grande-demais: mais de 100 KiB UTF-8."
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      security:
+        - bearerAuth: []
+        - serviceAuth: []
+  /whatsapp/automation/candidates:
+    get:
+      operationId: listAutomationCandidates
+      tags:
+        - whatsapp
+      summary: Página de candidatos examinados no corte estável do servidor
+      description: >-
+        Página de candidatos examinados no corte estável do servidor. Cursor opaco vinculado ao tenant/corte;
+        pode haver página vazia com nextCursor. Não é snapshot MVCC. Consulta não reivindica nem autoriza envio.
+      parameters:
+        - $ref: "#/components/parameters/XCrivoTenant"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 100
+        - name: cursor
+          in: query
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 1024
+      responses:
+        "200":
+          description: Resultado factual/idempotente; ver semântica da operação.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CandidatePage"
+        "400":
+          description: payload-invalido
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: nao-autenticado ou tenant-nao-identificado
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: "recurso-nao-encontrado: tenant ausente."
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "405":
+          description: metodo-nao-suportado; Allow anuncia somente o verbo suportado.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      security:
+        - bearerAuth: []
+        - serviceAuth: []
+  /leads/{id}/reengagement/prepare:
+    post:
+      operationId: prepareReengagement
+      tags:
+        - reengagement
+      summary: Reserva lease própria e lê frame factual antes da geração
+      description: >-
+        Reserva lease própria e lê frame factual antes da geração. Novo claim retorna 201 com
+        claimToken/expiração/frame; 200 de episódio consumido não devolve token alheio. Falha de leitura libera
+        só o claim novo e nunca desfaz dispatch autorizado.
+      parameters:
+        - $ref: "#/components/parameters/LeadId"
+        - $ref: "#/components/parameters/XCrivoTenant"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnchorInput"
+      x-max-body-bytes: 102400
+      responses:
+        "200":
+          description: Resultado factual/idempotente; ver semântica da operação.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConsumedEpisode"
+        "201":
+          description: Claim novo reservado; frame transitório não é autorização Meta.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreparedEpisode"
+        "400":
+          description: payload-invalido
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: nao-autenticado ou tenant-nao-identificado
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: recurso-nao-encontrado
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "405":
+          description: metodo-nao-suportado; Allow anuncia somente o verbo suportado.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: >-
+            contexto-alterado, transicao-invalida, claim-expirada, episodio-consumido ou
+            estado-agente-desconhecido conforme a guarda do servidor. episodio-em-preparacao quando lease ativa.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "413":
+          description: "corpo-grande-demais: mais de 100 KiB UTF-8."
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "503":
+          description: "estado-agente-desconhecido: leitura técnica indisponível."
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      security:
+        - bearerAuth: []
+        - serviceAuth: []
+  /leads/{id}/reengagement/{episodeId}/preparation-failure:
+    post:
+      operationId: releasePreparationFailure
+      tags:
+        - reengagement
+      summary: Libera somente preparação sem marcador com o token atual
+      description: >-
+        Libera somente preparação sem marcador com o token atual. Depois de liberar, replay do token antigo é
+        409; não modifica estado consumido nem lease substituta.
+      parameters:
+        - $ref: "#/components/parameters/LeadId"
+        - name: episodeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/XCrivoTenant"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PreparationFailureInput"
+      x-max-body-bytes: 102400
+      responses:
+        "200":
+          description: Resultado factual/idempotente; ver semântica da operação.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreparationFailureResponse"
+        "400":
+          description: payload-invalido
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: nao-autenticado ou tenant-nao-identificado
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: recurso-nao-encontrado
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "405":
+          description: metodo-nao-suportado; Allow anuncia somente o verbo suportado.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: >-
+            contexto-alterado, transicao-invalida, claim-expirada, episodio-consumido ou
+            estado-agente-desconhecido conforme a guarda do servidor.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "413":
+          description: "corpo-grande-demais: mais de 100 KiB UTF-8."
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      security:
+        - bearerAuth: []
+        - serviceAuth: []
+  /leads/{id}/reengagement/{episodeId}/send:
+    post:
+      operationId: sendPreparedReengagement
+      tags:
+        - reengagement
+      summary: Servidor revalida contexto/canal/token e grava marcador durável antes da única chamada Meta
+      description: >-
+        Servidor revalida contexto/canal/token e grava marcador durável antes da única chamada Meta. Resultado
+        accepted/refused/uncertain/accepted_pending_record retorna 200 factual. Replay consumido não chama Meta
+        e devolve a mesma identidade; novo texto inválido ou configuração ausente não troca o fato original. Não
+        reenviar resultado indeterminado.
+      parameters:
+        - $ref: "#/components/parameters/LeadId"
+        - name: episodeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/XCrivoTenant"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReengagementSendInput"
+      x-max-body-bytes: 102400
+      responses:
+        "200":
+          description: Resultado factual/idempotente; ver semântica da operação.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReengagementSendResponse"
+        "400":
+          description: payload-invalido
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: nao-autenticado ou tenant-nao-identificado
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: recurso-nao-encontrado
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "405":
+          description: metodo-nao-suportado; Allow anuncia somente o verbo suportado.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: >-
+            contexto-alterado, transicao-invalida, claim-expirada, episodio-consumido ou
+            estado-agente-desconhecido conforme a guarda do servidor. canal-nao-vinculado para snapshot de canal
+            inválido.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "413":
+          description: "corpo-grande-demais: mais de 100 KiB UTF-8."
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "503":
+          description: "estado-agente-desconhecido: transporte não configurado/inválido antes do marcador."
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      security:
+        - bearerAuth: []
+        - serviceAuth: []
+  /leads/{id}/reengagement/{episodeId}/acknowledgement:
+    post:
+      operationId: acknowledgeReengagement
+      tags:
+        - reengagement
+      summary: Reconcilia somente fatos de aceite após marcador; nunca envia Meta
+      description: >-
+        Reconcilia somente fatos de aceite após marcador; nunca envia Meta. Corpo vazio/nulos usa identidade
+        durável existente. Sem identidade suficiente permanece uncertain sem bolha/ponte. Wamid novo exige
+        acceptedAt factual; conflito responde 409. Lease/deadline vencido não invalida o fato; reset/takeover
+        não reativam ponte.
+      parameters:
+        - $ref: "#/components/parameters/LeadId"
+        - name: episodeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/XCrivoTenant"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcknowledgementInput"
+      x-max-body-bytes: 102400
+      responses:
+        "200":
+          description: Resultado factual/idempotente; ver semântica da operação.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcknowledgementResponse"
+        "400":
+          description: payload-invalido
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: nao-autenticado ou tenant-nao-identificado
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: recurso-nao-encontrado
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "405":
+          description: metodo-nao-suportado; Allow anuncia somente o verbo suportado.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: episodio-consumido quando sem autorização; contexto-alterado para identidade/fatos incompatíveis.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "413":
+          description: "corpo-grande-demais: mais de 100 KiB UTF-8."
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      security:
+        - bearerAuth: []
+        - serviceAuth: []
+  /leads/{id}/reengagement/expire:
+    post:
+      operationId: expireReengagement
+      tags:
+        - reengagement
+      summary: >-
+        Omite aos 24h sem reenviar; aos 48h persiste escalonamento e motivo factual
+        accepted/refused/uncertain/omitted
+      description: >-
+        Omite aos 24h sem reenviar; aos 48h persiste escalonamento e motivo factual
+        accepted/refused/uncertain/omitted. Replay já escalado é unchanged sem nova atribuição. Preserva
+        marcador consumido e guardas de humano/opt-out/reset/âncora.
+      parameters:
+        - $ref: "#/components/parameters/LeadId"
+        - $ref: "#/components/parameters/XCrivoTenant"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnchorInput"
+      x-max-body-bytes: 102400
+      responses:
+        "200":
+          description: Resultado factual/idempotente; ver semântica da operação.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExpireResponse"
+        "400":
+          description: payload-invalido
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: nao-autenticado ou tenant-nao-identificado
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: recurso-nao-encontrado
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "405":
+          description: metodo-nao-suportado; Allow anuncia somente o verbo suportado.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: lead-travado-por-humano, contexto-alterado, estado-agente-desconhecido ou transicao-invalida.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "413":
+          description: "corpo-grande-demais: mais de 100 KiB UTF-8."
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      security:
+        - bearerAuth: []
+        - serviceAuth: []
+  /leads/{id}/session-context:
+    post:
+      operationId: readSessionContext
+      tags:
+        - whatsapp
+      summary: Leitura autoritativa sem escrita de pipeline/inbound
+      description: >-
+        Leitura autoritativa sem escrita de pipeline/inbound. Até 50 IDs de inbound reais do tenant excluem
+        buffer do history já calculado; não recortar/semear novamente no consumidor. Pending retorna history
+        vazio até o deadline sem presumir ponte. Reset/fase/ponte desconhecida não recuperam contexto presumido.
+        Revisão do frame é da ponte, independente de agentStateRevision.
+      parameters:
+        - $ref: "#/components/parameters/LeadId"
+        - $ref: "#/components/parameters/XCrivoTenant"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SessionContextInput"
+      x-max-body-bytes: 102400
+      responses:
+        "200":
+          description: Resultado factual/idempotente; ver semântica da operação.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionContextResponse"
+        "400":
+          description: payload-invalido
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: nao-autenticado ou tenant-nao-identificado
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: recurso-nao-encontrado
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "405":
+          description: metodo-nao-suportado; Allow anuncia somente o verbo suportado.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "413":
+          description: "corpo-grande-demais: mais de 100 KiB UTF-8."
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "503":
+          description: "estado-agente-desconhecido: leitura técnica indisponível."
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      security:
+        - bearerAuth: []
+        - serviceAuth: []
+  /whatsapp/statuses:
+    post:
+      operationId: ingestNormalizedStatuses
+      tags:
+        - whatsapp
+      summary: >-
+        Até 100 status normalizados, enviados pelo forwarder comprovado e autenticado; validação integral antes
+        da transação
+      description: >-
+        Até 100 status normalizados, enviados pelo forwarder comprovado e autenticado; validação integral antes
+        da transação. Prova vem de configuração servidor da versão instalada com HMAC SHA256 raw-body e rejeição
+        de assinatura inválida, nunca de body/header verified. Default fechado 403 enquanto prova factual
+        pendente. Replay não cria mensagem/inbound nem ativa agente; órfão dura 30 dias. Pricing desconhecido
+        fica indisponível, sem gratuidade presumida.
+      parameters:
+        - $ref: "#/components/parameters/XCrivoTenant"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatusBatchInput"
+      x-max-body-bytes: 102400
+      responses:
+        "200":
+          description: Resultado factual/idempotente; ver semântica da operação.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusBatchResponse"
+        "400":
+          description: payload-invalido
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: nao-autenticado ou tenant-nao-identificado
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "403":
+          description: "nao-autenticado: origem não comprovada; canal-nao-vinculado: número fora do tenant/não verificado."
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "405":
+          description: metodo-nao-suportado; Allow anuncia somente o verbo suportado.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "413":
+          description: "corpo-grande-demais: mais de 100 KiB UTF-8."
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "503":
+          description: "servico-indisponivel: rollback integral na falha de persistência."
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      security:
+        - bearerAuth: []
+        - serviceAuth: []
+  /whatsapp/usage/sync:
+    post:
+      operationId: syncMonthlyUsage
+      tags:
+        - whatsapp
+      summary: Sincroniza somente número cadastrado no tenant, com consulta Graph construída no servidor
+      description: >-
+        Sincroniza somente número cadastrado no tenant, com consulta Graph construída no servidor. 200
+        synced/skipped/unavailable e snapshot permitido do mês/configuração correntes. Cadência 15min inclusive
+        falha/troca de mês; lease 90s, orçamento 80s. 429/timeout conservam último snapshot válido e reason
+        limitado, nunca zero. Adapter produtivo ausente e usageEnabled false para conta de teste; Consumo
+        indisponível sem saldo presumido.
+      parameters:
+        - $ref: "#/components/parameters/XCrivoTenant"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UsageSyncInput"
+      x-max-body-bytes: 102400
+      responses:
+        "200":
+          description: Resultado factual/idempotente; ver semântica da operação.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsageSyncResponse"
+        "400":
+          description: payload-invalido
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: nao-autenticado ou tenant-nao-identificado
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "405":
+          description: metodo-nao-suportado; Allow anuncia somente o verbo suportado.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "413":
+          description: "corpo-grande-demais: mais de 100 KiB UTF-8."
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "503":
+          description: "servico-indisponivel: persistência ou leitura técnica indisponível."
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      security:
+        - bearerAuth: []
+        - serviceAuth: []
 components:
   securitySchemes:
     bearerAuth:
@@ -550,12 +1247,937 @@ components:
           schema:
             $ref: "#/components/schemas/Problem"
     CorpoGrandeDemais:
-      description: Corpo da requisição excede o limite de 100 KB.
+      description: Corpo da requisição excede 100 KiB (102400 bytes UTF-8).
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Problem"
   schemas:
+    AgentStateInput:
+      type: object
+      additionalProperties: false
+      required:
+        - anchorMessageId
+        - resetObservedAt
+        - expectedRevision
+        - phase
+        - askedFields
+        - openingHistory
+      properties:
+        anchorMessageId:
+          type: string
+          format: uuid
+        resetObservedAt:
+          type:
+            - string
+            - "null"
+          format: date-time
+        expectedRevision:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        phase:
+          type:
+            - string
+            - "null"
+          enum:
+            - qualificando
+            - agendando
+            - encerrada
+            - null
+        askedFields:
+          type: array
+          items:
+            type: string
+            enum:
+              - modality
+              - region
+              - propertyType
+              - budgetCents
+              - purchaseHorizon
+              - motivation
+              - creditStatus
+              - chainedOperation
+          maxItems: 8
+        openingHistory:
+          type: array
+          items:
+            type: string
+    AgentStateProjection:
+      type: object
+      additionalProperties: false
+      required:
+        - tenantId
+        - leadId
+        - anchorMessageId
+        - phase
+        - askedFields
+        - openingHistory
+        - resetObservedAt
+        - revision
+        - updatedAt
+      properties:
+        tenantId:
+          type: string
+          format: uuid
+        leadId:
+          type: string
+          format: uuid
+        anchorMessageId:
+          type: string
+          format: uuid
+        phase:
+          type:
+            - string
+            - "null"
+          enum:
+            - qualificando
+            - agendando
+            - encerrada
+            - null
+        askedFields:
+          type: array
+          items:
+            type: string
+            enum:
+              - modality
+              - region
+              - propertyType
+              - budgetCents
+              - purchaseHorizon
+              - motivation
+              - creditStatus
+              - chainedOperation
+          maxItems: 8
+        openingHistory:
+          type: array
+          items:
+            type: string
+        resetObservedAt:
+          type:
+            - string
+            - "null"
+          format: date-time
+        revision:
+          type: integer
+          minimum: 1
+        updatedAt:
+          type: string
+          format: date-time
+    AgentStateResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - replay
+        - state
+      properties:
+        replay:
+          type: boolean
+        state:
+          $ref: "#/components/schemas/AgentStateProjection"
+    EpisodeState:
+      type: string
+      enum:
+        - preparing
+        - cancelled
+        - omitted
+        - authorized
+        - accepted_pending_record
+        - accepted
+        - refused
+        - uncertain
+    Anchor:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - sentAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        sentAt:
+          type: string
+          format: date-time
+    AnchorInput:
+      type: object
+      additionalProperties: false
+      required:
+        - anchorMessageId
+      properties:
+        anchorMessageId:
+          type: string
+          format: uuid
+    ContextHistoryMessage:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - sender
+        - content
+        - sentAt
+        - authorName
+      properties:
+        id:
+          type: string
+          format: uuid
+        sender:
+          $ref: "#/components/schemas/Sender"
+        content:
+          type: string
+        sentAt:
+          type: string
+          format: date-time
+        authorName:
+          type:
+            - string
+            - "null"
+    Candidate:
+      type: object
+      additionalProperties: false
+      required:
+        - leadId
+        - anchorMessageId
+        - anchorSentAt
+        - phoneNumberId
+        - action
+      properties:
+        leadId:
+          type: string
+          format: uuid
+        anchorMessageId:
+          type: string
+          format: uuid
+        anchorSentAt:
+          type: string
+          format: date-time
+        phoneNumberId:
+          type: string
+        action:
+          type: string
+          enum:
+            - prepare
+            - omit
+            - escalate
+    CandidatePage:
+      type: object
+      additionalProperties: false
+      required:
+        - candidates
+        - cutoffAt
+        - nextCursor
+      properties:
+        candidates:
+          type: array
+          items:
+            $ref: "#/components/schemas/Candidate"
+          maxItems: 100
+        cutoffAt:
+          type: string
+          format: date-time
+        nextCursor:
+          type:
+            - string
+            - "null"
+    PreparationFrame:
+      type: object
+      additionalProperties: false
+      required:
+        - tenantId
+        - leadId
+        - episodeId
+        - phoneNumberId
+        - channelRevision
+        - preparedAt
+        - anchor
+        - resetObservedAt
+        - agent
+        - facts
+        - pendingField
+        - origin
+        - history
+      properties:
+        tenantId:
+          type: string
+          format: uuid
+        leadId:
+          type: string
+          format: uuid
+        episodeId:
+          type: string
+          format: uuid
+        phoneNumberId:
+          type: string
+        channelRevision:
+          type: integer
+          minimum: 1
+        preparedAt:
+          type: string
+          format: date-time
+        anchor:
+          $ref: "#/components/schemas/Anchor"
+        resetObservedAt:
+          type:
+            - string
+            - "null"
+          format: date-time
+        agent:
+          type: object
+          additionalProperties: false
+          required:
+            - phase
+            - revision
+            - askedFields
+            - openingHistory
+          properties:
+            phase:
+              type: string
+              enum:
+                - qualificando
+                - agendando
+            revision:
+              type: integer
+              minimum: 1
+            askedFields:
+              type: array
+              items:
+                type: string
+                enum:
+                  - modality
+                  - region
+                  - propertyType
+                  - budgetCents
+                  - purchaseHorizon
+                  - motivation
+                  - creditStatus
+                  - chainedOperation
+              maxItems: 8
+            openingHistory:
+              type: array
+              items:
+                type: string
+        facts:
+          type: object
+          additionalProperties: false
+          required:
+            - name
+            - modality
+            - region
+            - budgetCents
+            - propertyType
+            - purchaseHorizon
+            - motivation
+            - creditStatus
+            - chainedOperation
+            - executiveSummary
+          properties:
+            name:
+              type: string
+            modality:
+              type:
+                - string
+                - "null"
+              enum:
+                - novo
+                - usado
+                - ambos
+                - null
+            region:
+              type:
+                - string
+                - "null"
+            budgetCents:
+              type:
+                - string
+                - "null"
+              description: Centavos, serializado como string (bigint não é JSON-safe).
+            propertyType:
+              type:
+                - string
+                - "null"
+              enum:
+                - casa
+                - apartamento
+                - null
+            purchaseHorizon:
+              type:
+                - string
+                - "null"
+            motivation:
+              type:
+                - string
+                - "null"
+              enum:
+                - investidor
+                - morador
+                - null
+            creditStatus:
+              type:
+                - string
+                - "null"
+              enum:
+                - pre_aprovado
+                - recurso_proprio
+                - fgts
+                - null
+            chainedOperation:
+              type:
+                - boolean
+                - "null"
+            executiveSummary:
+              type:
+                - string
+                - "null"
+        pendingField:
+          type:
+            - string
+            - "null"
+          enum:
+            - modality
+            - region
+            - propertyType
+            - budgetCents
+            - purchaseHorizon
+            - motivation
+            - creditStatus
+            - chainedOperation
+            - null
+        origin:
+          type: object
+          additionalProperties: false
+          required:
+            - startMessageId
+            - endMessageId
+          properties:
+            startMessageId:
+              type: string
+              format: uuid
+            endMessageId:
+              type: string
+              format: uuid
+        history:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContextHistoryMessage"
+          maxItems: 50
+    PreparedEpisode:
+      type: object
+      additionalProperties: false
+      required:
+        - episodeId
+        - claimToken
+        - claimExpiresAt
+        - agentStateRevision
+        - frame
+      properties:
+        episodeId:
+          type: string
+          format: uuid
+        claimToken:
+          type: string
+          format: uuid
+        claimExpiresAt:
+          type: string
+          format: date-time
+        agentStateRevision:
+          type: integer
+          minimum: 1
+        frame:
+          $ref: "#/components/schemas/PreparationFrame"
+    ConsumedEpisode:
+      type: object
+      additionalProperties: false
+      required:
+        - episodeId
+        - state
+      properties:
+        episodeId:
+          type: string
+          format: uuid
+        state:
+          $ref: "#/components/schemas/EpisodeState"
+    PreparationFailureInput:
+      type: object
+      additionalProperties: false
+      required:
+        - claimToken
+        - code
+      properties:
+        claimToken:
+          type: string
+          format: uuid
+        code:
+          type: string
+          enum:
+            - generation-failed
+            - generation-timeout
+            - context-read-failed
+            - invalid-text
+    PreparationFailureResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - released
+        - episodeId
+      properties:
+        released:
+          const: true
+        episodeId:
+          type: string
+          format: uuid
+    ReengagementSendInput:
+      type: object
+      additionalProperties: false
+      required:
+        - claimToken
+        - text
+      properties:
+        claimToken:
+          type: string
+          format: uuid
+        text:
+          type: string
+          description: >-
+            No primeiro disparo: trim e 1–4096 unidades UTF-16 (astral conta 2). Replay consumido retorna o fato
+            original mesmo se o novo texto exceder esse limite; a validação estrutural aceita string.
+          x-first-dispatch-max-utf16-code-units: 4096
+          x-first-dispatch-min-utf16-code-units: 1
+    ReengagementSendResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - episodeId
+        - state
+        - replay
+      properties:
+        episodeId:
+          type: string
+          format: uuid
+        state:
+          type: string
+          enum:
+            - accepted
+            - accepted_pending_record
+            - refused
+            - uncertain
+        replay:
+          type: boolean
+        wamid:
+          type: string
+        acceptedAt:
+          type: string
+          format: date-time
+        messageId:
+          type: string
+          format: uuid
+    AcknowledgementInput:
+      type: object
+      additionalProperties: false
+      required: []
+      properties:
+        wamid:
+          type:
+            - string
+            - "null"
+          pattern: \S
+        acceptedAt:
+          type:
+            - string
+            - "null"
+          format: date-time
+    AcknowledgementResponse:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required:
+            - recorded
+            - replay
+            - episodeId
+            - messageId
+          properties:
+            recorded:
+              const: true
+            replay:
+              type: boolean
+            episodeId:
+              type: string
+              format: uuid
+            messageId:
+              type: string
+              format: uuid
+        - type: object
+          additionalProperties: false
+          required:
+            - recorded
+            - episodeId
+            - state
+          properties:
+            recorded:
+              const: false
+            episodeId:
+              type: string
+              format: uuid
+            state:
+              type: string
+              enum:
+                - uncertain
+                - accepted
+    ExpireResponse:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required:
+            - action
+            - episodeId
+          properties:
+            action:
+              type: string
+              enum:
+                - omitted
+                - unchanged
+            episodeId:
+              type: string
+              format: uuid
+        - type: object
+          additionalProperties: false
+          required:
+            - action
+            - episodeId
+            - brokerId
+            - result
+          properties:
+            action:
+              const: escalated
+            episodeId:
+              type: string
+              format: uuid
+            brokerId:
+              type: string
+              format: uuid
+            result:
+              type: string
+              enum:
+                - accepted
+                - refused
+                - uncertain
+                - omitted
+    SessionContextInput:
+      type: object
+      additionalProperties: false
+      required: []
+      properties:
+        bufferMessageIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          maxItems: 50
+    SessionBridge:
+      type: object
+      additionalProperties: false
+      required:
+        - state
+        - bridgeRevision
+        - bridgeInvalidatedAt
+        - resetObservedAt
+        - anchorMessageId
+        - anchorSentAt
+        - originSessionStartMessageId
+        - originSessionEndMessageId
+        - messageId
+        - firstInboundMessageId
+        - firstInboundSentAt
+        - bridgeLastInboundAt
+      properties:
+        state:
+          const: accepted
+        bridgeRevision:
+          type: integer
+          minimum: 1
+        bridgeInvalidatedAt:
+          type:
+            - string
+            - "null"
+          format: date-time
+        resetObservedAt:
+          type:
+            - string
+            - "null"
+          format: date-time
+        anchorMessageId:
+          type: string
+          format: uuid
+        anchorSentAt:
+          type: string
+          format: date-time
+        originSessionStartMessageId:
+          type: string
+          format: uuid
+        originSessionEndMessageId:
+          type: string
+          format: uuid
+        messageId:
+          type: string
+          format: uuid
+        firstInboundMessageId:
+          type:
+            - string
+            - "null"
+          format: uuid
+        firstInboundSentAt:
+          type:
+            - string
+            - "null"
+          format: date-time
+        bridgeLastInboundAt:
+          type:
+            - string
+            - "null"
+          format: date-time
+    SessionFrame:
+      type: object
+      additionalProperties: false
+      required:
+        - revision
+        - resetRequestedAt
+        - bridge
+      properties:
+        revision:
+          type: integer
+          minimum: 0
+        resetRequestedAt:
+          type:
+            - string
+            - "null"
+          format: date-time
+        bridge:
+          anyOf:
+            - $ref: "#/components/schemas/SessionBridge"
+            - type: "null"
+    SessionContextResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - frame
+        - history
+        - requiresRebuild
+        - pendingAcceptance
+        - anchor
+        - agentStateRevision
+      properties:
+        frame:
+          $ref: "#/components/schemas/SessionFrame"
+        history:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContextHistoryMessage"
+          maxItems: 50
+        requiresRebuild:
+          type: boolean
+        pendingAcceptance:
+          type:
+            - object
+            - "null"
+          additionalProperties: false
+          required:
+            - episodeId
+            - deadline
+          properties:
+            episodeId:
+              type: string
+              format: uuid
+            deadline:
+              type: string
+              format: date-time
+        anchor:
+          anyOf:
+            - $ref: "#/components/schemas/Anchor"
+            - type: "null"
+        agentStateRevision:
+          type:
+            - integer
+            - "null"
+          minimum: 1
+    ReceiptPricing:
+      type: object
+      additionalProperties: false
+      required: []
+      properties:
+        pricingModel:
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 128
+        category:
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 128
+        pricingType:
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 128
+        billable:
+          type:
+            - boolean
+            - "null"
+    NormalizedStatus:
+      type: object
+      additionalProperties: false
+      required:
+        - wamid
+        - status
+        - timestamp
+      properties:
+        wamid:
+          type: string
+          minLength: 1
+          maxLength: 2048
+        status:
+          type: string
+          enum:
+            - sent
+            - delivered
+            - read
+            - failed
+        timestamp:
+          type: string
+          format: date-time
+        pricing:
+          anyOf:
+            - $ref: "#/components/schemas/ReceiptPricing"
+            - type: "null"
+        failureCode:
+          type: integer
+          minimum: 0
+          maximum: 2147483647
+    StatusBatchInput:
+      type: object
+      additionalProperties: false
+      required:
+        - phoneNumberId
+        - statuses
+      properties:
+        phoneNumberId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        statuses:
+          type: array
+          items:
+            $ref: "#/components/schemas/NormalizedStatus"
+          maxItems: 100
+          minItems: 1
+    StatusBatchResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - processed
+      properties:
+        processed:
+          type: integer
+          minimum: 1
+          maximum: 100
+    UsageSyncInput:
+      type: object
+      additionalProperties: false
+      required:
+        - phoneNumberId
+      properties:
+        phoneNumberId:
+          type: string
+          pattern: ^\s*[0-9]{1,32}\s*$
+    UsageSnapshot:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required:
+            - state
+            - label
+          properties:
+            state:
+              type: string
+              enum:
+                - unavailable
+                - unknown-number
+            label:
+              type: string
+        - type: object
+          additionalProperties: false
+          required:
+            - state
+            - phoneLabel
+            - monthLabel
+            - used
+            - remaining
+            - queriedAt
+            - stale
+            - updateFailed
+            - estimated
+          properties:
+            state:
+              const: available
+            phoneLabel:
+              type: string
+            monthLabel:
+              type: string
+            used:
+              type: integer
+              minimum: 0
+            remaining:
+              type: integer
+              minimum: 0
+            queriedAt:
+              type: string
+              format: date-time
+            stale:
+              type: boolean
+            updateFailed:
+              type: boolean
+            estimated:
+              const: true
+    UsageSyncResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - result
+        - snapshot
+      properties:
+        result:
+          type: string
+          enum:
+            - synced
+            - skipped
+            - unavailable
+        reason:
+          type: string
+          enum:
+            - usage-disabled
+            - configuration-changed
+            - cadence
+            - lease-active
+            - superseded
+            - contract-unverified
+            - invalid-response
+            - incomplete-response
+            - invalid-volume
+            - credential-missing
+            - permission-denied
+            - rate-limited
+            - transport-failed
+            - timeout
+            - request-obsolete
+            - identity-mismatch
+            - period-mismatch
+            - filters-mismatch
+            - overlapping-partitions
+            - zero-unverified
+        snapshot:
+          $ref: "#/components/schemas/UsageSnapshot"
     ProblemCode:
       type: string
       description: Código estável da regra violada — citado 1:1 no guia de integração.

@@ -1,9 +1,11 @@
 import "dotenv/config";
 import path from "node:path";
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import SwaggerParser from "@apidevtools/swagger-parser";
-import { senderEnum } from "../../../db/schema";
-import { AGENT_WRITABLE_SENDERS, MAX_CONTEXT_QUESTION_LENGTH } from "../parsers";
+import { agentPhaseEnum, reengagementStateEnum, senderEnum } from "../../../db/schema";
+import { AGENT_WRITABLE_SENDERS, MAX_BODY_BYTES, MAX_CONTEXT_QUESTION_LENGTH, parseAgentState, parseAutomationCandidatesQuery, parsePreparationFailure, parseReengagementAcknowledgement, parseReengagementPrepare, parseReengagementSend, parseSessionContext, parseUsageSync } from "../parsers";
+import { FIELD_LABELS } from "../../../../n8n/src/phase.mjs";
 import { TITLES } from "../problem";
 
 const OPENAPI_PATH = path.resolve(
@@ -329,5 +331,90 @@ describe("docs/integration/openapi.yaml — paridade e presença (lote-14 — CO
     expect(Object.keys(create.properties ?? {})).toContain("whatsappPhoneNumberId");
     expect(create.required).not.toContain("whatsappPhoneNumberId");
     expect(create.properties?.whatsappPhoneNumberId.pattern).toBe("^[0-9]{1,32}$");
+  });
+});
+
+
+// Dez cenários novos: paridade de método/handler/DTO e limites discriminantes por operação.
+describe("L14b T45 — contrato dos dez endpoints", () => {
+  type Node = { [key: string]: Node };
+  type Api = { paths: Record<string, Record<string, Node>>; components: { schemas: Record<string, Node> } };
+  const id = "00000000-0000-4000-8000-000000000001";
+  const cases: [string, string, string, string[]][] = [
+    ["/leads/{id}/agent-state", "post", "AgentStateInput", ["200", "400", "401", "404", "409", "413", "405"]],
+    ["/whatsapp/automation/candidates", "get", "", ["200", "400", "401", "404", "405"]],
+    ["/leads/{id}/reengagement/prepare", "post", "AnchorInput", ["200", "201", "400", "401", "404", "409", "413", "503", "405"]],
+    ["/leads/{id}/reengagement/{episodeId}/preparation-failure", "post", "PreparationFailureInput", ["200", "400", "401", "404", "409", "413", "405"]],
+    ["/leads/{id}/reengagement/{episodeId}/send", "post", "ReengagementSendInput", ["200", "400", "401", "404", "409", "413", "503", "405"]],
+    ["/leads/{id}/reengagement/{episodeId}/acknowledgement", "post", "AcknowledgementInput", ["200", "400", "401", "404", "409", "413", "405"]],
+    ["/leads/{id}/reengagement/expire", "post", "AnchorInput", ["200", "400", "401", "404", "409", "413", "405"]],
+    ["/leads/{id}/session-context", "post", "SessionContextInput", ["200", "400", "401", "404", "413", "503", "405"]],
+    ["/whatsapp/statuses", "post", "StatusBatchInput", ["200", "400", "401", "403", "413", "503", "405"]],
+    ["/whatsapp/usage/sync", "post", "UsageSyncInput", ["200", "400", "401", "413", "503", "405"]],
+  ];
+  it.each(cases)("%s compara handler, método, DTO e semântica", async (apiPath, method, inputName, statuses) => {
+    const api = await SwaggerParser.validate(OPENAPI_PATH) as unknown as Api, schemas = api.components.schemas, operation = api.paths[apiPath][method];
+    expect(Object.keys(api.paths[apiPath])).toEqual([method]);
+    const routePath = path.resolve(__dirname, "../../../../app/api/v1", apiPath.slice(1).replaceAll("{id}", "[id]").replaceAll("{episodeId}", "[episodeId]"), "route.ts");
+    const source = readFileSync(routePath, "utf8");
+    expect(source).toContain("export const " + method.toUpperCase() + " = withIntegrationRoute");
+    expect(source).toContain('methodNotAllowed(["' + method.toUpperCase() + '"])');
+    expect(operation.security).toEqual([{ bearerAuth: [] }, { serviceAuth: [] }]);
+    expect(Object.keys(operation.responses).sort()).toEqual(statuses.sort());
+    for (const status of statuses.filter((value) => Number(value) >= 400)) expect(operation.responses[status].content["application/problem+json"].schema).toBeDefined();
+    const response = operation.responses["200"].content["application/json"].schema;
+    for (const forbidden of ["claimToken", "text", "credential", "destination", "usageSyncToken", "responseToken"]) expect(Object.keys(response.properties ?? {})).not.toContain(forbidden);
+    if (inputName) {
+      expect(operation["x-max-body-bytes"]).toBe(MAX_BODY_BYTES); expect(source).toContain("MAX_BODY_BYTES");
+      expect(operation.requestBody.required).toBe(true); expect(operation.requestBody.content["application/json"].schema).toEqual(schemas[inputName]);
+      expect(schemas[inputName].additionalProperties).toBe(false);
+      for (const forbidden of ["tenantId", "destination", "adapter", "wabaId", "token"]) expect(Object.keys(schemas[inputName].properties)).not.toContain(forbidden);
+    }
+    if (inputName === "AgentStateInput") {
+      expect(schemas.AgentStateInput.required).toEqual(["anchorMessageId", "resetObservedAt", "expectedRevision", "phase", "askedFields", "openingHistory"]);
+      expect(schemas.AgentStateInput.properties.phase.enum).toEqual([...agentPhaseEnum.enumValues, null]);
+      expect(schemas.AgentStateInput.properties.askedFields.maxItems).toBe(8); expect(schemas.AgentStateInput.properties.askedFields.items.enum).toEqual(Object.keys(FIELD_LABELS));
+      const input = { anchorMessageId: id, resetObservedAt: null, expectedRevision: 0, phase: null, askedFields: [], openingHistory: [] };
+      expect(parseAgentState(input).ok).toBe(true); expect(parseAgentState({ ...input, askedFields: Array(9).fill("modality") }).ok).toBe(false);
+      expect(operation.description).toMatch(/âncora anterior/); expect(schemas.AgentStateProjection.properties.revision.minimum).toBe(1);
+    } else if (method === "get") {
+      const parameters = operation.parameters as unknown as { name?: string; schema?: { maximum?: number; default?: number; maxLength?: number } }[];
+      expect(parameters.find((p) => p.name === "limit")?.schema).toMatchObject({ maximum: 100, default: 100 }); expect(parameters.find((p) => p.name === "cursor")?.schema?.maxLength).toBe(1024);
+      expect(parseAutomationCandidatesQuery(new URL("http://fixture?limit=100")).ok).toBe(true); expect(parseAutomationCandidatesQuery(new URL("http://fixture?limit=101")).ok).toBe(false);
+      expect(Object.keys(schemas.Candidate.properties)).toEqual(["leadId", "anchorMessageId", "anchorSentAt", "phoneNumberId", "action"]); expect(operation.description).toMatch(/página vazia/);
+    } else if (apiPath.endsWith("/prepare")) {
+      expect(parseReengagementPrepare({ anchorMessageId: id }).ok).toBe(true); expect(Object.keys(schemas.AnchorInput.properties)).toEqual(["anchorMessageId"]);
+      expect(Object.keys(operation.responses["201"].content["application/json"].schema.properties)).toEqual(["episodeId", "claimToken", "claimExpiresAt", "agentStateRevision", "frame"]);
+      expect(Object.keys(response.properties)).toEqual(["episodeId", "state"]); expect(schemas.EpisodeState.enum).toEqual(reengagementStateEnum.enumValues);
+      expect(schemas.PreparationFrame.properties.history.maxItems).toBe(50); expect(schemas.PreparationFrame.properties.pendingField.enum).toContain(null);
+      expect(schemas.ContextHistoryMessage.properties.sender.enum).toEqual(senderEnum.enumValues); expect(schemas.ContextHistoryMessage.required).toContain("authorName");
+    } else if (inputName === "PreparationFailureInput") {
+      const codes = ["generation-failed", "generation-timeout", "context-read-failed", "invalid-text"];
+      expect(schemas.PreparationFailureInput.properties.code.enum).toEqual(codes); for (const code of codes) expect(parsePreparationFailure({ claimToken: id, code }).ok).toBe(true);
+      expect(parsePreparationFailure({ claimToken: id, code: "private-text" }).ok).toBe(false); expect(response.properties.released.const).toBe(true); expect(operation.description).toMatch(/replay.*409/);
+    } else if (inputName === "ReengagementSendInput") {
+      expect(schemas.ReengagementSendInput.properties.text["x-first-dispatch-max-utf16-code-units"]).toBe(4096); expect(schemas.ReengagementSendInput.properties.text.maxLength).toBeUndefined();
+      expect(parseReengagementSend({ claimToken: id, text: "😀".repeat(4097) }).ok).toBe(true); expect(schemas.ReengagementSendInput.properties.text.description).toMatch(/astral conta 2/);
+      expect(response.properties.state.enum).toEqual(["accepted", "accepted_pending_record", "refused", "uncertain"]); expect(operation.description).toMatch(/Não reenviar resultado indeterminado/);
+    } else if (inputName === "AcknowledgementInput") {
+      expect(Object.keys(schemas.AcknowledgementInput.properties)).toEqual(["wamid", "acceptedAt"]); expect(schemas.AcknowledgementInput.required).toEqual([]);
+      expect(parseReengagementAcknowledgement({}).ok).toBe(true); expect(parseReengagementAcknowledgement({ acceptedAt: "2026-02-30T15:00:00Z" }).ok).toBe(false);
+      const variants = response.oneOf as unknown as Node[]; expect(variants[1].properties.state.enum).toEqual(["uncertain", "accepted"]); expect(operation.description).toMatch(/nunca envia Meta/);
+    } else if (apiPath.endsWith("/expire")) {
+      expect(Object.keys(schemas.AnchorInput.properties)).toEqual(["anchorMessageId"]); const variants = response.oneOf as unknown as Node[];
+      expect(variants[0].properties.action.enum).toEqual(["omitted", "unchanged"]); expect(variants[1].properties.result.enum).toEqual(["accepted", "refused", "uncertain", "omitted"]); expect(operation.description).toMatch(/24h.*48h/);
+    } else if (inputName === "SessionContextInput") {
+      expect(schemas.SessionContextInput.required).toEqual([]); expect(schemas.SessionContextInput.properties.bufferMessageIds.maxItems).toBe(50);
+      expect(parseSessionContext({ bufferMessageIds: Array(50).fill(id) }).ok).toBe(true); expect(parseSessionContext({ bufferMessageIds: Array(51).fill(id) }).ok).toBe(false);
+      expect(Object.keys(response.properties)).toEqual(["frame", "history", "requiresRebuild", "pendingAcceptance", "anchor", "agentStateRevision"]); expect(response.properties.history.maxItems).toBe(50); expect(operation.description).toMatch(/independente de agentStateRevision/);
+    } else if (inputName === "StatusBatchInput") {
+      expect(schemas.StatusBatchInput.properties.statuses).toMatchObject({ minItems: 1, maxItems: 100 }); expect(schemas.NormalizedStatus.properties.status.enum).toEqual(["sent", "delivered", "read", "failed"]);
+      expect(operation.description).toMatch(/Default fechado 403/); expect(source).toContain("createStatusForwardingContext(auth, request)"); expect(operation.description).toMatch(/órfão dura 30 dias/); expect(Object.keys(response.properties)).toEqual(["processed"]);
+      expect(schemas.NormalizedStatus.additionalProperties).toBe(false); expect(schemas.ReceiptPricing.required).toEqual([]);
+    } else if (inputName === "UsageSyncInput") {
+      expect(Object.keys(schemas.UsageSyncInput.properties)).toEqual(["phoneNumberId"]); expect(parseUsageSync({ phoneNumberId: " 123 " }).ok).toBe(true); expect(parseUsageSync({ phoneNumberId: "123", start: 0 }).ok).toBe(false);
+      expect(response.properties.result.enum).toEqual(["synced", "skipped", "unavailable"]); expect(response.properties.reason.enum).toEqual(expect.arrayContaining(["rate-limited", "timeout", "zero-unverified", "contract-unverified"]));
+      expect(operation.description).toMatch(/Adapter produtivo ausente/); expect(operation.description).toMatch(/usageEnabled false/); const variants = schemas.UsageSnapshot.oneOf as unknown as Node[]; expect(variants[1].properties.estimated.const).toBe(true);
+    }
   });
 });

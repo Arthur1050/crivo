@@ -2018,12 +2018,14 @@ Regate `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: cada endpoint compara handler/schema/método; limite texto UTF-16; corpos <=100KiB; IDs/100status/50buffer; replay; recusas; indeterminado; legado; autorização; DTO sem token.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **10 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/server/integration/__tests__/openapi.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: cada endpoint compara handler/schema/método; limite texto UTF-16; corpos <=100KiB; IDs/100status/50buffer; replay; recusas; indeterminado; legado; autorização; DTO sem token.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **10 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou: `npx vitest run src/server/integration/__tests__/openapi.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
 
 **Tests**: integration — `src/server/integration/__tests__/openapi.test.ts`; matriz: Contrato OpenAPI.
+
+**Evidence**: `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__/openapi.test.ts src/server/integration/__tests__/problem.test.ts src/server/integration/__tests__/parsers.test.ts` PASS 84/84 (10 novos + 74 regressões), 3 arquivos, exit 0, 6.34s, início runner 2026-10-04 18:44:17; dez operações comparadas com handlers/parsers/enums reais, SwaggerParser 3.1 válido, DTOs/limites/replay e guia atualizados sem segredo; nenhum gate factual produtivo presumido.
 
 **Gate**: Full; Build no fechamento da fase.
 
