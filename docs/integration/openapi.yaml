@@ -575,6 +575,10 @@ components:
         - lead-conduzido-por-humano
         - canal-nao-vinculado
         - contexto-alterado
+        - episodio-em-preparacao
+        - claim-expirada
+        - episodio-consumido
+        - estado-agente-desconhecido
     Problem:
       type: object
       description: application/problem+json (RFC 9457).

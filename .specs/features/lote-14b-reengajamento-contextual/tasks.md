@@ -1766,16 +1766,19 @@ Regate `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: 201/200 replay; disputa 409; tenant/ID; âncora/reset; 22h/24h; horário; frame falho libera só preparação; >100KiB; token próprio; nenhum efeito do modelo.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **10 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/server/integration/__tests__/routes/reengagement-prepare-post.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: 201/200 replay; disputa 409; tenant/ID; âncora/reset; 22h/24h; horário; frame falho libera só preparação; >100KiB; token próprio; nenhum efeito do modelo.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **10 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou: `npx vitest run src/server/integration/__tests__/routes/reengagement-prepare-post.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
 
 **Tests**: integration — `src/server/integration/__tests__/routes/reengagement-prepare-post.test.ts`; matriz: Handlers.
 
 **Gate**: Full; Build no fechamento da fase.
 
 **Commit**: `feat(l14b): endpoint de preparação e frame` (docs para mudança exclusivamente contratual).
+
+**Evidence**: `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__/routes/reengagement-prepare-post.test.ts src/server/reengagement/__tests__/preparation-claim.test.ts src/server/reengagement/__tests__/prepare-frame.test.ts src/server/reengagement/__tests__/preparation-failure.test.ts src/server/integration/__tests__/problem.test.ts src/server/integration/__tests__/openapi.test.ts src/server/integration/__tests__/route-instrumentation.test.ts src/server/integration/__tests__/parsers.test.ts` — 163/164, 7/8 arquivos, exit1, 305.47s, início 2026-10-04 13:18:24; somente fixture de horário, 139 regressões PASS.
+Regate `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__/routes/reengagement-prepare-post.test.ts` — 25/25 novos, 1 arquivo, exit0, 85.37s, início 13:24:15. Fixture configura dias/início/fim e restaura null; nenhuma asserção ou serviço alterado; docs de contrato T45.
 
 ---
 

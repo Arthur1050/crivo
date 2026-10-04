@@ -35,7 +35,11 @@ export type ProblemCode =
   // contrato não muda `status` nem `meetingAt` enquanto um humano conduz.
   | "lead-conduzido-por-humano"
   | "canal-nao-vinculado"
-  | "contexto-alterado";
+  | "contexto-alterado"
+  | "episodio-em-preparacao"
+  | "claim-expirada"
+  | "episodio-consumido"
+  | "estado-agente-desconhecido";
 
 // Exportada para o teste de paridade com o `ProblemCode` do openapi.yaml.
 export const TITLES: Record<ProblemCode, string> = {
@@ -54,6 +58,10 @@ export const TITLES: Record<ProblemCode, string> = {
   "lead-conduzido-por-humano": "Lead conduzido por um humano",
   "canal-nao-vinculado": "Número não vinculado ao tenant",
   "contexto-alterado": "Contexto da conversa alterado",
+  "episodio-em-preparacao": "Episódio já em preparação",
+  "claim-expirada": "Prazo de preparação expirado",
+  "episodio-consumido": "Episódio já consumido",
+  "estado-agente-desconhecido": "Estado do agente indisponível",
 };
 
 export const PROBLEM_CONTENT_TYPE = "application/problem+json";

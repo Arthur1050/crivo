@@ -110,6 +110,14 @@ export function parseAutomationCandidatesQuery(url: URL): ParseResult<{ cursor?:
   return { ok: true, dto: { limit, ...(cursor === null ? {} : { cursor }) } };
 }
 
+export function parseReengagementPrepare(value: unknown): ParseResult<{ anchorMessageId: string }> {
+  if (!isPlainObject(value) || Object.keys(value).some((key) => key !== "anchorMessageId")
+      || typeof value.anchorMessageId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value.anchorMessageId)) {
+    return { ok: false, detail: "Preparação exige somente anchorMessageId UUID." };
+  }
+  return { ok: true, dto: { anchorMessageId: value.anchorMessageId } };
+}
+
 function nonEmptyTrimmed(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
   const trimmed = value.trim();
