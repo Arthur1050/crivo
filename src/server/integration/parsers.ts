@@ -19,6 +19,7 @@ import {
 } from "../../db/schema";
 import { FIELD_LABELS } from "../../../n8n/src/phase.mjs";
 import type { PublishAgentStateInput } from "../reengagement/agent-state";
+import type { PreparationFailureCode } from "../reengagement/repository";
 
 // Limite de tamanho de corpo (design.md — Tech Decisions; Edge Cases: 413).
 // O corte em si é responsabilidade do handler (Content-Length/tamanho do
@@ -116,6 +117,16 @@ export function parseReengagementPrepare(value: unknown): ParseResult<{ anchorMe
     return { ok: false, detail: "Preparação exige somente anchorMessageId UUID." };
   }
   return { ok: true, dto: { anchorMessageId: value.anchorMessageId } };
+}
+
+export function parsePreparationFailure(value: unknown): ParseResult<{ claimToken: string; code: PreparationFailureCode }> {
+  const codes: readonly PreparationFailureCode[] = ["generation-failed", "generation-timeout", "context-read-failed", "invalid-text"];
+  if (!isPlainObject(value) || Object.keys(value).some((key) => key !== "claimToken" && key !== "code")
+      || typeof value.claimToken !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value.claimToken)
+      || typeof value.code !== "string" || !codes.includes(value.code as PreparationFailureCode)) {
+    return { ok: false, detail: "Falha exige claimToken UUID e um código de preparação permitido." };
+  }
+  return { ok: true, dto: { claimToken: value.claimToken, code: value.code as PreparationFailureCode } };
 }
 
 function nonEmptyTrimmed(value: unknown): string | undefined {

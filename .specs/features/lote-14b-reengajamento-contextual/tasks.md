@@ -1798,16 +1798,18 @@ Regate `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: release; replay; token errado; episódio/lead/tenant divergente; código inválido; autorização já consumida; autenticação/corpo.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **7 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/server/integration/__tests__/routes/reengagement-preparation-failure-post.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: release; replay; token errado; episódio/lead/tenant divergente; código inválido; autorização já consumida; autenticação/corpo.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **7 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou: `npx vitest run src/server/integration/__tests__/routes/reengagement-preparation-failure-post.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
 
 **Tests**: integration — `src/server/integration/__tests__/routes/reengagement-preparation-failure-post.test.ts`; matriz: Handlers.
 
 **Gate**: Full; Build no fechamento da fase.
 
 **Commit**: `feat(l14b): endpoint de falha de preparação` (docs para mudança exclusivamente contratual).
+
+**Evidence**: `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__/routes/reengagement-preparation-failure-post.test.ts src/server/reengagement/__tests__/preparation-failure.test.ts src/server/integration/__tests__/parsers.test.ts src/server/integration/__tests__/route-instrumentation.test.ts` — 85/85, 4 arquivos, exit0, 136.10s, início 2026-10-04 13:32:44; 18 novos +67 regressões. Quatro códigos, replay/conflito sem mutação e preservação de token recuperado/marker; serviços intactos, sem desvio.
 
 ---
 
