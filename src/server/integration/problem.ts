@@ -39,7 +39,8 @@ export type ProblemCode =
   | "episodio-em-preparacao"
   | "claim-expirada"
   | "episodio-consumido"
-  | "estado-agente-desconhecido";
+  | "estado-agente-desconhecido"
+  | "servico-indisponivel";
 
 // Exportada para o teste de paridade com o `ProblemCode` do openapi.yaml.
 export const TITLES: Record<ProblemCode, string> = {
@@ -62,6 +63,7 @@ export const TITLES: Record<ProblemCode, string> = {
   "claim-expirada": "Prazo de preparação expirado",
   "episodio-consumido": "Episódio já consumido",
   "estado-agente-desconhecido": "Estado do agente indisponível",
+  "servico-indisponivel": "Serviço temporariamente indisponível",
 };
 
 export const PROBLEM_CONTENT_TYPE = "application/problem+json";

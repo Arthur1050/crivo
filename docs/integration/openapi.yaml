@@ -579,6 +579,7 @@ components:
         - claim-expirada
         - episodio-consumido
         - estado-agente-desconhecido
+        - servico-indisponivel
     Problem:
       type: object
       description: application/problem+json (RFC 9457).

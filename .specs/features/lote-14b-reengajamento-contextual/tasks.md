@@ -1955,12 +1955,14 @@ Regate `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: 200/replay; origem inválida; número/tenant divergente; 100/101; >100KiB; lote misto normalizado; órfão; pricing desconhecido; falha sem escrita parcial; nenhum agente.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **10 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/server/integration/__tests__/routes/whatsapp-statuses-post.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: 200/replay; origem inválida; número/tenant divergente; 100/101; >100KiB; lote misto normalizado; órfão; pricing desconhecido; falha sem escrita parcial; nenhum agente.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **10 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou: `npx vitest run src/server/integration/__tests__/routes/whatsapp-statuses-post.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
 
 **Tests**: integration — `src/server/integration/__tests__/routes/whatsapp-statuses-post.test.ts`; matriz: Handlers.
+
+**Evidence**: `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__/routes/whatsapp-statuses-post.test.ts src/server/whatsapp/__tests__/statuses-ingest.test.ts src/server/whatsapp/__tests__/statuses-attach.test.ts src/server/integration/__tests__/parsers.test.ts src/server/integration/__tests__/route-instrumentation.test.ts src/server/integration/__tests__/problem.test.ts src/server/integration/__tests__/openapi.test.ts` PASS 125/125 (24 novos + 101 regressões), 7 arquivos, exit 0, 114.47s, início 2026-10-04 17:54:31; default403 fechado sem prova factual produtiva, positivos apenas com configuração servidor sintética/factory real, rollback PG integral.
 
 **Gate**: Full; Build no fechamento da fase.
 
