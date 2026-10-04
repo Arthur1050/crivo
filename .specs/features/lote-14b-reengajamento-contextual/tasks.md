@@ -2149,13 +2149,16 @@ Adequação A–D/necessidade: `whatsapp-events.test.ts:15/:20/:24/:31/:37` `.to
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: grafo impede buffer/memória/classifier/agente; mixed preserva inbound; batching; retry somente POST idempotente; vínculo errado; falha de status isolada; serializer gerado; assinatura na versão instalada como gate; configuração não comprovada impede publicação; replay; sent/read; segredo fora de logs.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **12 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Quick passou: `npx vitest run n8n/workflows/__tests__/principal-whatsapp-statuses.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
-- [ ] Inliner executado, generated equivalente, wiring/nós exercitados e README/guia afetado atualizado no mesmo commit. Publicação remota depende de autorização posterior.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: grafo impede buffer/memória/classifier/agente; mixed preserva inbound; batching; retry somente POST idempotente; vínculo errado; falha de status isolada; serializer gerado; assinatura na versão instalada como gate; configuração não comprovada impede publicação; replay; sent/read; segredo fora de logs.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **12 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Quick passou: `npx vitest run n8n/workflows/__tests__/principal-whatsapp-statuses.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
+- [x] Inliner executado, generated equivalente, wiring/nós exercitados e README/guia afetado atualizado no mesmo commit. Publicação remota depende de autorização posterior.
 
 **Tests**: unit — `n8n/workflows/__tests__/principal-whatsapp-statuses.test.ts`; matriz: Workflow/Code nodes.
+
+**Evidence**: `node scripts/n8n-inline.mjs` exit0; Quick Vitest (principal-whatsapp-statuses, whatsapp-events, normalize-event, principal-modelo, principal-opt-out-natural, principal-reset-memoria) PASS114/114, 6 arquivos, exit0, 3.53s, início runner2026-10-04 19:43:39; 19 novos, 95 regressões. ESLint próprios exit0; IDs estáveis corrigem primeira paridade SDK falha sem alterar asserção integral nem testes anteriores.
+Adequação A–D/necessidade: `principal-whatsapp-statuses.test.ts:25–30` arestas/reachable exatos; `:34/:37/:43/:44` mixed/replay/batches íntegros; `:48–55/:59–67/:70–77` vínculo/body/tenant/erro isolado/retry/segredos/serializer com valores exatos; `:80–88` prova ausente/versão/HMAC/config incorretos recusam payload publicável. Todos ligados ao Done when/PRECO-02AC7/8; README exige guarda antes de publicação T67; prova HMAC instalada continua pendente e CRM fechado.
 
 **Gate**: Quick + Wiring; Build no fechamento da fase.
 

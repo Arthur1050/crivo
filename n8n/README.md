@@ -1,5 +1,21 @@
 # n8n/ — Agente de Qualificação (Fase 8 / Lote 6)
 
+**L14b T49, publicação do principal:** gerar pelo inliner e passar o JSON do SDK por
+`preparePrincipalStatusPublication` de `scripts/n8n-status-publication.ts` antes de
+qualquer upload/publicação pelo script operacional de T67. O retorno desta função
+é o único payload autorizado pelo protocolo; erro encerra o processo antes do MCP/API.
+Fornecer workflowId/activeVersionId observados e evidência HMAC SHA256 do corpo bruto
+da versão instalada, aceite válido e rejeição de assinatura inválida, versão do trigger
+e hash da credencial do encaminhador. Fixture de teste e schema MCP não são provas.
+Sem evidência, a função rejeita; a rota CRM de status também continua desabilitada.
+Não publicar este principal enquanto esse gate factual estiver pendente.
+
+O trigger local seleciona `delivered/failed`. O splitter preserva todos os inbound e
+status de envelopes mistos, incluindo sent/read em replay, divide100 itens/100KiB e
+encaminha status por número/tenant configurado ao POST idempotente no CRM. Falha
+nesse ramo termina em resultado sanitizado e nunca alcança buffer, memória ou agente.
+Nenhuma credencial é interpolada no body/header de parâmetros ou no resultado.
+
 Runbook de setup + referência da camada n8n do Crivo. Cobre **todos os passos humanos** necessários antes/durante o Execute deste lote e os riscos R1–R3/R6 do design (`.specs/features/lote-6-agente-n8n-whatsapp/design.md`).
 
 > **Regra de ouro (AD-014)**: a UI do n8n **nunca** é editada à mão — nem os workflows (`n8n/workflows/*.ts` → `n8n/generated/*.ts` → publicado via MCP), nem as Data Tables (criadas via MCP `create_data_table`/`add_data_table_column`). O único trabalho manual na instância n8n é **credenciais** (Google/Meta exigem OAuth/tokens que só o dono da conta pode gerar) e **templates de mensagem** no painel da Meta (aprovação é um processo da Meta, não do n8n).

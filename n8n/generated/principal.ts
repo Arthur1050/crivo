@@ -83,7 +83,7 @@ const TENANT_CONFIG_TABLE_ID = "xRHckWWd6fxGeNta";
 const CONVERSA_ESTADO_TABLE_ID = "ZsplBxJjXv3kwKZ8";
 
 // ---------------------------------------------------------------------
-// 1. Entrada: WhatsApp Trigger -> Filter -> Code normalizeEvent
+// 1. Entrada: splitter -> ramos isolados de inbound/status
 // ---------------------------------------------------------------------
 
 const whatsAppInboundTrigger = trigger({
@@ -92,14 +92,9 @@ const whatsAppInboundTrigger = trigger({
   config: {
     name: "WhatsApp Trigger",
     position: [0, 0],
-    // messageStatusUpdates: [] evita que cada mudanca de status de entrega
-    // (enviado/entregue/lido) de uma mensagem do agente dispare uma execucao
-    // nova do workflow -- sem isso, 1 mensagem trocada produzia ate 7
-    // execucoes extras que morriam de proposito no filtro de statuses
-    // (achado real em producao, 2026-08-16, execucoes 682-689).
     parameters: {
       updates: ["messages"],
-      options: { messageStatusUpdates: [] },
+      options: { messageStatusUpdates: ["delivered", "failed"] },
     },
     credentials: {
       // Credencial WhatsApp Trigger criada pelo usuário (runbook README §2.1,
@@ -126,6 +121,55 @@ const whatsAppInboundTrigger = trigger({
       metadata: { display_phone_number: "15550001111", phone_number_id: "109876543210001" },
     },
   ],
+});
+
+const splitWhatsappEnvelopes = node({
+  type: "n8n-nodes-base.code", version: 2,
+  config: { name: "Code: separar WhatsApp messages/statuses", position: [120, -240], parameters: { mode: "runOnceForAllItems", language: "javaScript",
+    jsCode: "/** Splitter puro para change.value do Trigger e corpos entry/changes da Meta.\n * Status saem no DTO estrito do CRM; não autentica origem nem resolve WABA/tenant.\n * Inbound unitário preserva metadata/contacts e nunca contém statuses.\n * Erros não carregam payload bruto e não interrompem o ramo inbound.\n */\nfunction splitWhatsappEvents(input) {\n  const messages = [], statusBatches = [], statusErrors = [];\n  const grouped = new Map();\n  const record = (v) => v !== null && typeof v === \"object\" && !Array.isArray(v);\n  const bounded = (v, max) => typeof v === \"string\" && v.length > 0 && v.length <= max;\n\n  function normalizeStatus(raw) {\n    if (!record(raw) || !bounded(raw.id, 2048) || ![\"sent\", \"delivered\", \"read\", \"failed\"].includes(raw.status)) return null;\n    if ((typeof raw.timestamp !== \"string\" && typeof raw.timestamp !== \"number\") || !/^\\d+$/.test(String(raw.timestamp))) return null;\n    const date = new Date(Number(raw.timestamp) * 1000);\n    if (!Number.isFinite(date.getTime()) || date.getUTCFullYear() < 0 || date.getUTCFullYear() > 9999) return null;\n    const result = { wamid: raw.id, status: raw.status, timestamp: date.toISOString() };\n    if (raw.pricing !== undefined && raw.pricing !== null) {\n      if (!record(raw.pricing)) return null;\n      const p = raw.pricing;\n      for (const key of [\"pricing_model\", \"category\", \"type\"]) {\n        if (p[key] !== undefined && p[key] !== null && !bounded(p[key], 128)) return null;\n      }\n      if (p.billable !== undefined && p.billable !== null && typeof p.billable !== \"boolean\") return null;\n      result.pricing = { pricingModel: p.pricing_model ?? null, category: p.category ?? null, pricingType: p.type ?? null, billable: p.billable ?? null };\n    }\n    const code = raw.errors?.[0]?.code;\n    if (code !== undefined) {\n      if (!Number.isInteger(code) || code < 0 || code > 2147483647) return null;\n      result.failureCode = code;\n    }\n    return result;\n  }\n\n  function consume(value) {\n    if (!record(value)) return;\n    if (Array.isArray(value.messages)) {\n      const envelope = { ...value };\n      delete envelope.statuses;\n      delete envelope.messages;\n      for (const message of value.messages) {\n        if (record(message)) messages.push({ ...envelope, messages: [message] });\n      }\n    }\n    if (value.statuses === undefined) return;\n    const phoneNumberId = bounded(value.metadata?.phone_number_id, 128) ? value.metadata.phone_number_id : null;\n    if (!Array.isArray(value.statuses)) {\n      statusErrors.push({ phoneNumberId, reason: \"invalid-statuses\" });\n      return;\n    }\n    if (!value.statuses.length) return;\n    if (!phoneNumberId) {\n      statusErrors.push({ phoneNumberId, reason: \"missing-phone-number\" });\n      return;\n    }\n    for (const raw of value.statuses) {\n      const status = normalizeStatus(raw);\n      if (!status) {\n        statusErrors.push({ phoneNumberId, reason: \"invalid-status\" });\n        continue;\n      }\n      if (!grouped.has(phoneNumberId)) grouped.set(phoneNumberId, []);\n      grouped.get(phoneNumberId).push(status);\n    }\n  }\n\n  for (const item of Array.isArray(input) ? input : [input]) {\n    const payload = record(item) && Object.hasOwn(item, \"json\") ? item.json : item;\n    if (Array.isArray(payload?.entry)) {\n      for (const entry of payload.entry) {\n        if (Array.isArray(entry?.changes)) for (const change of entry.changes) consume(change?.value);\n      }\n    } else consume(payload);\n  }\n\n  // Sandbox Code node não precisa de Buffer/TextEncoder. JSON.stringify escapa\n  // surrogates isolados; cada code point abaixo conta seus bytes UTF-8 reais.\n  function bytes(batch) {\n    let total = 0;\n    for (const char of JSON.stringify(batch)) {\n      const point = char.codePointAt(0);\n      total += point <= 0x7f ? 1 : point <= 0x7ff ? 2 : point <= 0xffff ? 3 : 4;\n    }\n    return total;\n  }\n  for (const [phoneNumberId, statuses] of grouped) {\n    let batch = { phoneNumberId, statuses: [] };\n    for (const status of statuses) {\n      const next = { phoneNumberId, statuses: [...batch.statuses, status] };\n      if (batch.statuses.length && (next.statuses.length > 100 || bytes(next) > 100 * 1024)) {\n        statusBatches.push(batch);\n        batch = { phoneNumberId, statuses: [status] };\n      } else batch = next;\n    }\n    if (batch.statuses.length) statusBatches.push(batch);\n  }\n  return { messages, statusBatches, statusErrors };\n}" +
+      "\nconst split = splitWhatsappEvents($input.all());\n" +
+      "return [...split.messages.map(value => ({ json: { kind: 'message', ...value } })),\n" +
+      "  ...split.statusBatches.map(batch => ({ json: { kind: 'status', ...batch } })),\n" +
+      "  ...split.statusErrors.map(error => ({ json: { kind: 'status-error', ...error } }))];\n",
+  } }, output: [{ kind: "status", phoneNumberId: "109876543210001", statuses: [] }],
+});
+const routeWhatsappEnvelope = switchCase({
+  version: 3.2, config: { name: "WhatsApp: tipo de evento", position: [380, -240], parameters: { rules: { values: [
+    { outputKey: "message", conditions: { options: { caseSensitive: true, leftValue: "", typeValidation: "strict" }, combinator: "and", conditions: [{ leftValue: expr("{{ $json.kind }}"), operator: { type: "string", operation: "equals" }, rightValue: "message" }] } },
+    { outputKey: "status", conditions: { options: { caseSensitive: true, leftValue: "", typeValidation: "strict" }, combinator: "and", conditions: [{ leftValue: expr("{{ $json.kind }}"), operator: { type: "string", operation: "equals" }, rightValue: "status" }] } },
+  ] }, options: { fallbackOutput: "extra" } } }, output: [{ kind: "status" }],
+});
+const statusTenantLookup = node({
+  type: "n8n-nodes-base.dataTable", version: 1.1,
+  config: { name: "Data Table: tenant do status", position: [640, -400], onError: "continueRegularOutput", parameters: {
+    resource: "row", operation: "get", dataTableId: { __rl: true, mode: "id", value: TENANT_CONFIG_TABLE_ID },
+    filters: { conditions: [{ keyName: "phoneNumberId", condition: "eq", keyValue: expr("{{ $json.phoneNumberId }}") }] }, returnAll: false, limit: 1,
+  } }, output: [{ phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a" }],
+});
+const prepareStatusCrm = node({
+  type: "n8n-nodes-base.code", version: 2,
+  config: { name: "Code: preparar status CRM", position: [900, -400], parameters: { mode: "runOnceForEachItem", language: "javaScript", jsCode:
+    "const batch = $('WhatsApp: tipo de evento').item.json;\n" +
+    "if ($json.error || $json.phoneNumberId !== batch.phoneNumberId || typeof $json.tenantSlug !== 'string' || !/^[a-z0-9_-]{1,128}$/i.test($json.tenantSlug)) return null;\n" +
+    "return { json: { tenantSlug: $json.tenantSlug, batch: { phoneNumberId: batch.phoneNumberId, statuses: batch.statuses } } };\n",
+  } }, output: [{ tenantSlug: "imobiliaria-a", batch: { phoneNumberId: "109876543210001", statuses: [] } }],
+});
+const postStatusCrm = node({
+  type: "n8n-nodes-base.httpRequest", version: 4.4,
+  config: { name: "HTTP: POST /whatsapp/statuses", position: [1160, -400], onError: "continueRegularOutput", retryOnFail: true, maxTries: 3, waitBetweenTries: 1000,
+    parameters: { method: "POST", url: CRM_BASE_URL + "/whatsapp/statuses", authentication: "genericCredentialType", genericAuthType: "httpHeaderAuth", sendHeaders: true,
+      headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $json.tenantSlug }}") }] }, sendBody: true, contentType: "json", specifyBody: "json", jsonBody: expr("{{ $json.batch }}"),
+      options: { timeout: 10000, response: { response: { neverError: false, responseFormat: "json" } } },
+    }, credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
+  }, output: [{ processed: 1 }],
+});
+const statusSanitizedResult = node({
+  type: "n8n-nodes-base.code", version: 2,
+  config: { name: "Code: resultado status sanitizado", position: [1420, -400], parameters: { mode: "runOnceForEachItem", language: "javaScript", jsCode:
+    "return { json: !$json.error && Number.isInteger($json.processed) && $json.processed > 0\n" +
+    "  ? { statusForwarded: true, processed: $json.processed }\n" +
+    "  : { statusForwarded: false, code: 'status-forwarding-failed' } };\n",
+  } }, output: [{ statusForwarded: false, code: "status-forwarding-failed" }],
 });
 
 const onlyMessageEvents = node({
@@ -2287,10 +2331,21 @@ const debounceChain = conversaEstadoBeforeBuffer.to(
   )
 );
 
-export default workflow("crivo-agente-principal", "crivo-agente-principal")
+const principalWorkflow = workflow("crivo-agente-principal", "crivo-agente-principal")
   .add(whatsAppInboundTrigger)
   .to(
-    onlyMessageEvents.to(
-      normalizeEventCode.to(tenantConfigLookup.to(combineEventAndTenant.to(debounceChain)))
-    )
+    splitWhatsappEnvelopes.to(routeWhatsappEnvelope
+      .onCase(0, onlyMessageEvents.to(normalizeEventCode.to(tenantConfigLookup.to(combineEventAndTenant.to(debounceChain)))))
+      .onCase(1, statusTenantLookup.to(prepareStatusCrm.to(postStatusCrm.to(statusSanitizedResult))))
+      .onCase(2, statusSanitizedResult))
   );
+principalWorkflow.regenerateNodeIds(new Map([
+  ["WhatsApp Trigger", "140b0049-0000-4000-8000-000000000001"],
+  ["Code: separar WhatsApp messages/statuses", "140b0049-0000-4000-8000-000000000002"],
+  ["WhatsApp: tipo de evento", "140b0049-0000-4000-8000-000000000003"],
+  ["Data Table: tenant do status", "140b0049-0000-4000-8000-000000000004"],
+  ["Code: preparar status CRM", "140b0049-0000-4000-8000-000000000005"],
+  ["HTTP: POST /whatsapp/statuses", "140b0049-0000-4000-8000-000000000006"],
+  ["Code: resultado status sanitizado", "140b0049-0000-4000-8000-000000000007"],
+]));
+export default principalWorkflow;
