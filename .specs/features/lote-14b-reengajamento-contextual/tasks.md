@@ -1986,12 +1986,15 @@ Regate `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: primeira consulta; skip 15min; canal não habilitado; tenant; 429/timeout; snapshot preservado; troca de mês; parâmetros Graph não controlados pelo body; auth/corpo.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **9 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/server/integration/__tests__/routes/whatsapp-usage-sync-post.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: primeira consulta; skip 15min; canal não habilitado; tenant; 429/timeout; snapshot preservado; troca de mês; parâmetros Graph não controlados pelo body; auth/corpo.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **9 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou: `npx vitest run src/server/integration/__tests__/routes/whatsapp-usage-sync-post.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
 
 **Tests**: integration — `src/server/integration/__tests__/routes/whatsapp-usage-sync-post.test.ts`; matriz: Handlers.
+
+**Evidence**: `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__/routes/whatsapp-usage-sync-post.test.ts src/server/whatsapp/__tests__/analytics-sync.test.ts src/server/whatsapp/__tests__/analytics-query.test.ts src/server/data/__tests__/whatsapp.test.ts src/server/integration/__tests__/parsers.test.ts src/server/integration/__tests__/route-instrumentation.test.ts` 115/116, 5/6 arquivos PASS, exit 1, 151.28s, início runner 2026-10-04 18:32:20; única falha: fixture test com usageEnabled true rejeitada pela constraint, corrigida para false sem alterar asserções/serviço/schema.
+Regate `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__/routes/whatsapp-usage-sync-post.test.ts` PASS 9/9, 1 arquivo, exit 0, 48.30s, início runner 2026-10-04 18:35:12; 9 novos + 107 regressões verificados nos dois gates; helpers Analytics reutilizados, adapter produtivo ausente e sem saldo presumido.
 
 **Gate**: Full; Build no fechamento da fase.
 

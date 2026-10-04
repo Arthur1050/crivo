@@ -4,6 +4,7 @@ import { db } from "../../db";
 import { conversations, leads, messages, whatsappChannels, whatsappMessageReceipts, whatsappUsage } from "../../db/schema";
 import { can } from "../../lib/permissions";
 import type { AuthContext } from "../auth/session";
+import type { AuthResult } from "../integration/auth";
 import { createAnalyticsQuery } from "../whatsapp/analytics-contract";
 
 export type UsageView =
@@ -62,6 +63,10 @@ async function readUsage(tenantId: string, now: Date, phoneNumberId?: string): P
 export async function getSettingsUsage(context: AuthContext, options: ReadOptions = {}): Promise<UsageView[]> {
   if (!authorized(context, "configuracoes")) return [];
   return readUsage(context.tenantId, (options.now ?? (() => new Date()))());
+}
+/** Contexto já autenticado pelo wrapper de integração; leitura restrita ao número e tenant. */
+export async function getIntegrationUsage(context: AuthResult, phoneNumberId: string, options: ReadOptions = {}): Promise<UsageView> {
+  return (await readUsage(context.tenantId, (options.now ?? (() => new Date()))(), phoneNumberId))[0] ?? unavailable();
 }
 export async function getConversationUsage(context: AuthContext, conversationId: string, options: ReadOptions = {}): Promise<UsageView | null> {
   if (!authorized(context, "chats")) return null;

@@ -6,24 +6,15 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { db } from "../../../db";
 import * as schema from "../../../db/schema";
 import { tenants, whatsappChannels, whatsappUsage } from "../../../db/schema";
-import { createAnalyticsAdapter, syncUsage } from "../analytics";
+import { syncUsage } from "../analytics";
+import { analyticsFixtureAdapter, analyticsFixtureChannel, analyticsFixtureGraph as graph } from "./analytics-fixtures";
 
 const tenantA = randomUUID(); const tenantB = randomUUID();
 const base = new Date("2026-10-02T12:00:00Z");
-const adapter = createAnalyticsAdapter({ contract: { id: "fixture-sync-v25", graphVersion: "v25.0", sourceUrl: "https://example.invalid/fixture",
-  verifiedAt: base, responseSha256: "a".repeat(64) }, format: "meta-v25-pricing-analytics", phoneFilter: "normalized-number",
-  pagination: "single-page-no-paging", fullMonthSha256: "b".repeat(64), numberFilterSha256: "c".repeat(64), paginationSha256: "d".repeat(64) })!;
+const adapter = analyticsFixtureAdapter(base);
 function deferred<T>() { let resolve!: (value: T) => void; const promise = new Promise<T>((done) => { resolve = done; }); return { promise, resolve }; }
-function graph(address: RequestInfo | URL, volume = 999) {
-  const url = new URL(String(address));
-  return new Response(JSON.stringify({ data: [{ data_points: [{ start: Number(url.searchParams.get("start")), end: Number(url.searchParams.get("end")),
-    phone_number: JSON.parse(url.searchParams.get("phone_numbers")!)[0], country: "BR", pricing_type: "FREE_CUSTOMER_SERVICE", pricing_category: "SERVICE", volume }] }] }));
-}
 async function channel(patch: Partial<typeof whatsappChannels.$inferInsert> = {}) {
-  const [row] = await db.insert(whatsappChannels).values({ tenantId: tenantA, phoneNumberId: `fixture-${randomUUID()}`, accountKind: "production",
-    ownershipVerifiedAt: base, analyticsVerifiedAt: base, usageEnabled: true, wabaId: "1000000000000000", analyticsPhoneNumber: "5511999990000",
-    accountTimezone: "UTC", ...patch }).returning();
-  return row;
+  return analyticsFixtureChannel(tenantA, base, patch);
 }
 async function periods(phone: string) { return db.select().from(whatsappUsage).where(and(eq(whatsappUsage.tenantId, tenantA), eq(whatsappUsage.phoneNumberId, phone))); }
 async function liveChannel(phone: string) { return (await db.select().from(whatsappChannels).where(eq(whatsappChannels.phoneNumberId, phone)))[0]; }

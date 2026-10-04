@@ -26,6 +26,15 @@ import type { PreparationFailureCode } from "../reengagement/repository";
 // texto lido) — este módulo só exporta o número acordado no contrato.
 export const MAX_BODY_BYTES = 100 * 1024;
 
+/** Só a identidade cadastrada; parâmetros de Graph/configuração permanecem no servidor. */
+export function parseUsageSync(value: unknown): ParseResult<{ phoneNumberId: string }> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)
+      || Object.keys(value).some((key) => key !== "phoneNumberId")) return { ok: false, detail: "Informe apenas phoneNumberId." };
+  const phoneNumberId = (value as Record<string, unknown>).phoneNumberId;
+  if (typeof phoneNumberId !== "string" || !/^\d{1,32}$/.test(phoneNumberId.trim())) return { ok: false, detail: "phoneNumberId deve identificar um número cadastrado." };
+  return { ok: true, dto: { phoneNumberId: phoneNumberId.trim() } };
+}
+
 export type ParseResult<T> =
   | { ok: true; dto: T }
   | { ok: false; detail: string };
