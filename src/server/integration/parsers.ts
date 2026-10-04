@@ -51,6 +51,17 @@ function parseIsoDate(value: unknown): Date | undefined {
   return Number.isNaN(date.getTime()) ? undefined : date;
 }
 
+function parseExactIsoDate(value: unknown): Date | undefined {
+  const parsed = parseIsoDate(value);
+  if (!parsed || typeof value !== "string") return undefined;
+  const [year, month, day, hour, minute, second] = value.slice(0, 19).split(/[-T:]/).map(Number);
+  const calendar = new Date(0);
+  calendar.setUTCFullYear(year, month - 1, day); calendar.setUTCHours(hour, minute, second, 0);
+  if (calendar.getUTCFullYear() !== year || calendar.getUTCMonth() !== month - 1 || calendar.getUTCDate() !== day
+      || calendar.getUTCHours() !== hour || calendar.getUTCMinutes() !== minute || calendar.getUTCSeconds() !== second) return undefined;
+  return parsed;
+}
+
 /** Inteiro ≥ 0, aceito como `number` ou `string` numérica — gravado bigint
  * (bigint não é serializável em JSON, então nunca chega como tal). */
 function parseBudgetCents(value: unknown): bigint | undefined {
@@ -83,15 +94,8 @@ export function parseAgentState(value: unknown): ParseResult<PublishAgentStateIn
   }
   let resetObservedAt: Date | null = null;
   if (value.resetObservedAt !== null) {
-    const parsed = parseIsoDate(value.resetObservedAt);
-    if (!parsed || typeof value.resetObservedAt !== "string") return { ok: false, detail: "Reset observado deve ser um instante ISO válido ou null." };
-    const [year, month, day, hour, minute, second] = value.resetObservedAt.slice(0, 19).split(/[-T:]/).map(Number);
-    const calendar = new Date(0);
-    calendar.setUTCFullYear(year, month - 1, day); calendar.setUTCHours(hour, minute, second, 0);
-    if (calendar.getUTCFullYear() !== year || calendar.getUTCMonth() !== month - 1 || calendar.getUTCDate() !== day
-        || calendar.getUTCHours() !== hour || calendar.getUTCMinutes() !== minute || calendar.getUTCSeconds() !== second) {
-      return { ok: false, detail: "Reset observado deve ser um instante ISO válido ou null." };
-    }
+    const parsed = parseExactIsoDate(value.resetObservedAt);
+    if (!parsed) return { ok: false, detail: "Reset observado deve ser um instante ISO válido ou null." };
     resetObservedAt = parsed;
   }
   return { ok: true, dto: { anchorMessageId, resetObservedAt, expectedRevision: expectedRevision as number, phase, askedFields, openingHistory } };
@@ -137,6 +141,23 @@ export function parseReengagementSend(value: unknown): ParseResult<{ claimToken:
     return { ok: false, detail: "Envio exige somente claimToken UUID e texto string." };
   }
   return { ok: true, dto: { claimToken: value.claimToken, text: value.text } };
+}
+
+export function parseReengagementAcknowledgement(value: unknown): ParseResult<{ wamid?: string | null; acceptedAt?: Date | null }> {
+  if (!isPlainObject(value) || Object.keys(value).some((key) => key !== "wamid" && key !== "acceptedAt")) {
+    return { ok: false, detail: "Acknowledgement aceita somente wamid e acceptedAt opcionais." };
+  }
+  const dto: { wamid?: string | null; acceptedAt?: Date | null } = {};
+  if (Object.hasOwn(value, "wamid")) {
+    if (value.wamid !== null && (typeof value.wamid !== "string" || !value.wamid.trim())) return { ok: false, detail: "wamid deve ser uma identidade não vazia ou null." };
+    dto.wamid = value.wamid as string | null;
+  }
+  if (Object.hasOwn(value, "acceptedAt")) {
+    const acceptedAt = value.acceptedAt === null ? null : parseExactIsoDate(value.acceptedAt);
+    if (acceptedAt === undefined) return { ok: false, detail: "acceptedAt deve ser um instante ISO válido ou null." };
+    dto.acceptedAt = acceptedAt;
+  }
+  return { ok: true, dto };
 }
 
 function nonEmptyTrimmed(value: unknown): string | undefined {

@@ -1860,16 +1860,18 @@ Regate `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: aceite pendente; replay; wamid incorreto/conflito; token/tenant/episódio; corpo limitado; zero fetch; primeiro inbound preservado; sem identidade não fabrica ponte.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **8 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/server/integration/__tests__/routes/reengagement-acknowledgement-post.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: aceite pendente; replay; wamid incorreto/conflito; token/tenant/episódio; corpo limitado; zero fetch; primeiro inbound preservado; sem identidade não fabrica ponte.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **8 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou: `npx vitest run src/server/integration/__tests__/routes/reengagement-acknowledgement-post.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
 
 **Tests**: integration — `src/server/integration/__tests__/routes/reengagement-acknowledgement-post.test.ts`; matriz: Handlers.
 
 **Gate**: Full; Build no fechamento da fase.
 
 **Commit**: `feat(l14b): endpoint de acknowledgement` (docs para mudança exclusivamente contratual).
+
+**Evidence** (2026-10-04): `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__/routes/reengagement-acknowledgement-post.test.ts src/server/reengagement/__tests__/acceptance.test.ts src/server/integration/__tests__/routes/agent-state-post.test.ts src/server/integration/__tests__/parsers.test.ts src/server/integration/__tests__/route-instrumentation.test.ts` — 144/144, 5 arquivos, exit 0, 432.63s, início 13:57:04 (31 novos + 113 regressões); ack factual sem fetch, replay/primeiro inbound/marker preservados, identidade ausente sem mensagem/ponte; ISO civil estrito compartilhado com T35 e parser legado intacto.
 
 ---
 
