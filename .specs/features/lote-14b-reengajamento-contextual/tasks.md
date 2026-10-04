@@ -2049,12 +2049,14 @@ Regate `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: já informado não repergunta; nota da equipe; sem pendência inventada; vazio/4096/4097; sem inbound sintético; sem mutação de perguntados/abertura; identidade do system message; overhead antes de documentos; fonte de prompt compartilhada; sem texto substituto.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **10 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Quick passou: `npx vitest run n8n/src/__tests__/reengagement-prompt.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: já informado não repergunta; nota da equipe; sem pendência inventada; vazio/4096/4097; sem inbound sintético; sem mutação de perguntados/abertura; identidade do system message; overhead antes de documentos; fonte de prompt compartilhada; sem texto substituto.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **10 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Quick passou: `npx vitest run n8n/src/__tests__/reengagement-prompt.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
 
 **Tests**: unit — `n8n/src/__tests__/reengagement-prompt.test.ts`; matriz: Domínio puro.
+
+**Evidence**: `node node_modules/vitest/vitest.mjs run n8n/src/__tests__/reengagement-prompt.test.ts n8n/src/__tests__/system-message.test.ts n8n/src/__tests__/system-message-opt-out.test.ts n8n/src/__tests__/phase.test.ts n8n/src/__tests__/session.test.ts src/server/documents/__tests__/context-budget.test.ts src/server/documents/__tests__/benchmark-identity.test.ts` PASS 308/308 (10 novos + 298 regressões), 7 arquivos, exit 0, 1.68s, início runner 2026-10-04 18:50:35; fonte compartilhada intacta, overhead UTF-8 reservado antes do envelope integral, autoria preservada, nenhum inbound/efeito/contingência fixa.
 
 **Gate**: Quick; Build no fechamento da fase.
 
