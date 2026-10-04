@@ -1893,12 +1893,14 @@ Regate `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: 24h/48h; resultado do envio independente; novo inbound; humano trava; opt-out/agendado; replay; tenant; autenticação/corpo.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **8 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/server/integration/__tests__/routes/reengagement-expire-post.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: 24h/48h; resultado do envio independente; novo inbound; humano trava; opt-out/agendado; replay; tenant; autenticação/corpo.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **8 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou: `npx vitest run src/server/integration/__tests__/routes/reengagement-expire-post.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
 
 **Tests**: integration — `src/server/integration/__tests__/routes/reengagement-expire-post.test.ts`; matriz: Handlers.
+
+**Evidence**: `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__/routes/reengagement-expire-post.test.ts src/server/reengagement/__tests__/expire.test.ts src/server/integration/__tests__/parsers.test.ts src/server/integration/__tests__/route-instrumentation.test.ts` — 123/123 (37 novos +86 regressões), 4 arquivos, exit0, 241.96s, início runner2026-10-04 17:30:51; PG real/disputa com PIDs distintos, sem transporte; sem desvio.
 
 **Gate**: Full; Build no fechamento da fase.
 
