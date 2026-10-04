@@ -20,7 +20,7 @@ async function fixture(owner = tenantId, authorize = true) {
   const phoneNumberId = BigInt(`0x${randomUUID().replaceAll("-", "").slice(0, 16)}`).toString(), wamid = `fixture-${randomUUID()}`;
   await db.insert(whatsappChannels).values({ tenantId: owner, phoneNumberId, ownershipVerifiedAt: now, usageEnabled: false });
   const [lead] = await db.insert(leads).values({ tenantId: owner, name: "Fixture T40", phone: "+5534900000000", externalId: String(contact++), status: "em_qualificacao", firstContactAt: now,
-    whatsappPhoneNumberId: phoneNumberId, lastInboundAt: new Date(now.getTime() - 22 * hour) }).returning();
+    whatsappPhoneNumberId: phoneNumberId }).returning();
   const [conversation] = await db.insert(conversations).values({ tenantId: owner, leadId: lead.id }).returning();
   const [anchor] = await db.insert(messages).values({ tenantId: owner, conversationId: conversation.id, sender: "lead", content: "Inbound próprio T40", sentAt: new Date(now.getTime() - 22 * hour), whatsappPhoneNumberId: phoneNumberId }).returning();
   await db.insert(leadAgentState).values({ tenantId: owner, leadId: lead.id, anchorMessageId: anchor.id, phase: "qualificando" });

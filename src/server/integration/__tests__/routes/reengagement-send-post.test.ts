@@ -17,7 +17,7 @@ function json(status: number, payload: unknown) { return new Response(JSON.strin
 async function fixture(owner = tenantId, silence = 22 * hour) {
   const phoneNumberId = BigInt(`0x${randomUUID().replaceAll("-", "").slice(0, 16)}`).toString(), wamid = `fixture-${randomUUID()}`;
   await db.insert(whatsappChannels).values({ tenantId: owner, phoneNumberId, ownershipVerifiedAt: now, usageEnabled: false });
-  const [lead] = await db.insert(leads).values({ tenantId: owner, name: "Fixture T39", phone: "+5534900000000", externalId: String(contact++), status: "em_qualificacao", firstContactAt: now, whatsappPhoneNumberId: phoneNumberId, lastInboundAt: new Date(now.getTime() - silence) }).returning();
+  const [lead] = await db.insert(leads).values({ tenantId: owner, name: "Fixture T39", phone: "+5534900000000", externalId: String(contact++), status: "em_qualificacao", firstContactAt: now, whatsappPhoneNumberId: phoneNumberId }).returning();
   const [conversation] = await db.insert(conversations).values({ tenantId: owner, leadId: lead.id }).returning();
   const [anchor] = await db.insert(messages).values({ tenantId: owner, conversationId: conversation.id, sender: "lead", content: "Inbound próprio T39", sentAt: new Date(now.getTime() - silence), whatsappPhoneNumberId: phoneNumberId }).returning();
   await db.insert(leadAgentState).values({ tenantId: owner, leadId: lead.id, anchorMessageId: anchor.id, phase: "qualificando" });

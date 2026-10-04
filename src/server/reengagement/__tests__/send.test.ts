@@ -17,7 +17,7 @@ const text = "Retomada própria T34", acceptedAt = new Date(now.getTime() + 1000
 async function fixture(silence = 22 * hour) {
   const phoneNumberId = BigInt(`0x${randomUUID().replaceAll("-", "").slice(0, 16)}`).toString(), wamid = `fixture-${randomUUID()}`;
   const [channel] = await db.insert(whatsappChannels).values({ tenantId, phoneNumberId, ownershipVerifiedAt: now, usageEnabled: false }).returning();
-  const [lead] = await db.insert(leads).values({ tenantId, name: "Fixture T34", phone: "+5534900000000", externalId: String(contact++), status: "em_qualificacao", firstContactAt: now, whatsappPhoneNumberId: phoneNumberId, lastInboundAt: new Date(now.getTime() - silence) }).returning();
+  const [lead] = await db.insert(leads).values({ tenantId, name: "Fixture T34", phone: "+5534900000000", externalId: String(contact++), status: "em_qualificacao", firstContactAt: now, whatsappPhoneNumberId: phoneNumberId }).returning();
   const [conversation] = await db.insert(conversations).values({ tenantId, leadId: lead.id }).returning();
   const [anchor] = await db.insert(messages).values({ tenantId, conversationId: conversation.id, sender: "lead", content: "Inbound próprio T34", sentAt: new Date(now.getTime() - silence), whatsappPhoneNumberId: phoneNumberId }).returning();
   await db.insert(leadAgentState).values({ tenantId, leadId: lead.id, anchorMessageId: anchor.id, phase: "qualificando" });
