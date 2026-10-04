@@ -1641,16 +1641,18 @@ Fechamento: import literal do grafo puxava 9 erros SDK para o build; carga dinâ
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: preflight sem fetch; wamid aceito; recusa explícita; timeout; 5xx ambíguo; resposta sem identidade; crash/interrupção; uma invocação sem retry; UTF-16; códigos humanos preservados.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **10 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Quick passou: `npx vitest run src/server/whatsapp/__tests__/cloud-api.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: preflight sem fetch; wamid aceito; recusa explícita; timeout; 5xx ambíguo; resposta sem identidade; crash/interrupção; uma invocação sem retry; UTF-16; códigos humanos preservados.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **10 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Quick passou: `npx vitest run src/server/whatsapp/__tests__/cloud-api.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
 
 **Tests**: unit — `src/server/whatsapp/__tests__/cloud-api.test.ts`; matriz: Domínio/adapter puro.
 
 **Gate**: Quick; Build no fechamento da fase.
 
 **Commit**: `feat(l14b): resultado tipado do transporte proativo` (docs para mudança exclusivamente contratual).
+
+**Evidence**: `node node_modules/vitest/vitest.mjs run src/server/whatsapp/__tests__/cloud-api.test.ts` — 50/50, 1 arquivo, exit0, 317ms, início 2026-10-04 12:22:08; 38 novos +12 humanos preservados. Preflight sem fetch, resultados tipados, redirects bloqueados e nenhuma repetição; sem desvio.
 
 ---
 
