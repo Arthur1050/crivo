@@ -1526,6 +1526,7 @@ Correção somente da autoria factual da fixture; regate `node node_modules/vite
 **Commit**: `feat(l14b): invalidar ponte no opt-out da integração` (docs para mudança exclusivamente contratual).
 
 **Evidence**: `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__/lgpd-reengagement.test.ts src/server/integration/__tests__/lgpd.test.ts src/server/integration/__tests__/routes/leads-opt-out.test.ts`: 23/23, 3 arquivos, exit0, 104.23s; 12 novos PG +11 regressões preservadas, sem desvio.
+Fechamento: import literal do grafo puxava 9 erros SDK para o build; carga dinâmica conforme padrão existente preserva todas as asserções. Regate `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__/lgpd-reengagement.test.ts`: 12/12, exit0, 99.42s; build exit0, tsc voltou aos 50 erros anteriores/delta0, lint do arquivo exit0.
 
 ---
 
@@ -1556,7 +1557,7 @@ Correção somente da autoria factual da fixture; regate `node node_modules/vite
 
 **Commit**: `feat(l14b): contrato aditivo de ingestão` (docs para mudança exclusivamente contratual).
 
-**Evidence**: `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__/messages.test.ts src/server/integration/__tests__/routes/leads-messages-post.test.ts src/server/integration/__tests__/routes/leads-messages-get.test.ts src/server/integration/__tests__/parsers.test.ts src/server/integration/__tests__/openapi.test.ts src/server/integration/__tests__/problem.test.ts src/server/data/__tests__/lead-messages.test.ts`: 142/142, 7 arquivos, exit0, 116.63s; 37 adições +105 regressões preservadas, OpenAPI raw input alinhado antes do gate, sem desvio.
+**Evidence**: `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__/messages.test.ts src/server/integration/__tests__/routes/leads-messages-post.test.ts src/server/integration/__tests__/routes/leads-messages-get.test.ts src/server/integration/__tests__/parsers.test.ts src/server/integration/__tests__/openapi.test.ts src/server/integration/__tests__/problem.test.ts src/server/data/__tests__/lead-messages.test.ts`: 142/142, 7 arquivos, exit0, 116.63s; 36 adições +106 regressões preservadas (contagem corrigida no fechamento: 15 PG+10 parser+11 contratos HTTP/OpenAPI), OpenAPI raw input alinhado antes do gate, sem desvio.
 
 ---
 

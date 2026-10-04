@@ -4,7 +4,6 @@ import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import type { PoolClient } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import principal from "../../../../n8n/workflows/principal";
 import { db } from "../../../db";
 import * as schema from "../../../db/schema";
 import { conversations, leadAgentState, leads, messages, reengagementEpisodes, tenants, whatsappChannels, whatsappMessageReceipts } from "../../../db/schema";
@@ -65,6 +64,10 @@ afterAll(async () => {
 
 describe("T29 — opt-out da integração invalida ponte no mesmo commit", () => {
   it.each(["HTTP: POST /leads/{id}/opt-out", "HTTP: POST /leads/{id}/opt-out (linguagem natural)"])("%s usa mesmo serviço factual de descarte", async (name) => {
+    // Keep the workflow SDK outside the application's type-check boundary,
+    // as in scripts/opt-out-measurement.ts; still load the real graph at runtime.
+    const principalPath = "../../../../n8n/workflows/principal.ts";
+    const { default: principal } = await import(principalPath) as { default: { toJSON(): unknown } };
     const graph = principal.toJSON() as unknown as { nodes: { name: string; parameters: { method: string; url: string; headerParameters: { parameters: { name: string; value: string }[] } } }[] };
     const node = graph.nodes.find((candidate) => candidate.name === name);
     expect(node).toBeDefined();
