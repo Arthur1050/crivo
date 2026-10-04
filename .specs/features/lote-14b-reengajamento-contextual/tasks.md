@@ -1735,16 +1735,18 @@ Regate `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: prepare/omit/escalate; cursor válido/inválido; limit 100/101; tenant; sem canal/fase; nenhum conteúdo pessoal; autenticação; corte estável.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **8 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/server/integration/__tests__/routes/automation-candidates-get.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: prepare/omit/escalate; cursor válido/inválido; limit 100/101; tenant; sem canal/fase; nenhum conteúdo pessoal; autenticação; corte estável.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **8 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou: `npx vitest run src/server/integration/__tests__/routes/automation-candidates-get.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
 
 **Tests**: integration — `src/server/integration/__tests__/routes/automation-candidates-get.test.ts`; matriz: Handlers.
 
 **Gate**: Full; Build no fechamento da fase.
 
 **Commit**: `feat(l14b): endpoint de candidatos` (docs para mudança exclusivamente contratual).
+
+**Evidence**: `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__/routes/automation-candidates-get.test.ts src/server/reengagement/__tests__/candidates.test.ts src/server/integration/__tests__/parsers.test.ts src/server/integration/__tests__/route-instrumentation.test.ts` — 92/92, 4 arquivos, exit0, 74.24s, início 2026-10-04 13:07:36; 18 novos +74 regressões. Paginação HTTP real101=100+1, corte estável e DTO limitado; docs de contrato T45; sem desvio.
 
 ---
 

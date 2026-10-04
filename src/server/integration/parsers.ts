@@ -96,6 +96,20 @@ export function parseAgentState(value: unknown): ParseResult<PublishAgentStateIn
   return { ok: true, dto: { anchorMessageId, resetObservedAt, expectedRevision: expectedRevision as number, phase, askedFields, openingHistory } };
 }
 
+export function parseAutomationCandidatesQuery(url: URL): ParseResult<{ cursor?: string; limit: number }> {
+  const keys = [...url.searchParams.keys()];
+  if (keys.some((key) => key !== "cursor" && key !== "limit") || new Set(keys).size !== keys.length) {
+    return { ok: false, detail: "Parâmetros de candidatos inválidos." };
+  }
+  const cursor = url.searchParams.get("cursor"), rawLimit = url.searchParams.get("limit");
+  const limit = rawLimit === null ? 100 : Number(rawLimit);
+  if ((rawLimit !== null && !/^\d+$/.test(rawLimit)) || !Number.isSafeInteger(limit) || limit < 1 || limit > 100
+      || (cursor !== null && (!cursor || cursor.length > 1024))) {
+    return { ok: false, detail: "Cursor inválido ou limit fora de 1–100." };
+  }
+  return { ok: true, dto: { limit, ...(cursor === null ? {} : { cursor }) } };
+}
+
 function nonEmptyTrimmed(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
   const trimmed = value.trim();
