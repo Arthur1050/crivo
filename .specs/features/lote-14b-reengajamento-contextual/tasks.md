@@ -2215,13 +2215,16 @@ Adequação A–D/necessidade: `principal-agent-state.test.ts:27/:30/:34/:38/:42
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: warm/cold; pending até 2min; incerto sem ponte; 48h exatas; gaps posteriores 12h/+1ms; exclusão do buffer; reset/purga D; equipe system; teto50; falha de leitura não inventa contexto; ausência de ponte mantém normal; memória apagada.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **12 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Quick passou: `npx vitest run n8n/workflows/__tests__/principal-reengagement-bridge.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
-- [ ] Inliner executado, generated equivalente, wiring/nós exercitados e README/guia afetado atualizado no mesmo commit. Publicação remota depende de autorização posterior.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: warm/cold; pending até 2min; incerto sem ponte; 48h exatas; gaps posteriores 12h/+1ms; exclusão do buffer; reset/purga D; equipe system; teto50; falha de leitura não inventa contexto; ausência de ponte mantém normal; memória apagada.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **12 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Quick passou: `npx vitest run n8n/workflows/__tests__/principal-reengagement-bridge.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
+- [x] Inliner executado, generated equivalente, wiring/nós exercitados e README/guia afetado atualizado no mesmo commit. Publicação remota depende de autorização posterior.
 
 **Tests**: unit — `n8n/workflows/__tests__/principal-reengagement-bridge.test.ts`; matriz: Workflow/Code nodes.
+
+**Evidence**: Inliner exit0; Quick Vitest (principal-reengagement-bridge, session, principal-reset-memoria, principal-agent-state, principal-opt-out-natural, principal-modelo, principal-conducao-humana, principal-whatsapp-statuses, principal-classificador) PASS198/198, 9 arquivos, exit0, 6.05s, início runner2026-10-04 20:08:39; 16 novos, 182 regressões. ESLint próprios exit0, whitespace limpo; nenhuma asserção anterior alterada.
+Adequação A–D/necessidade: `principal-reengagement-bridge.test.ts:31–69` payload/warm/cold/ordem/autoria/pending→frame final; `:71–104` revisão/reset/48h/12h/+1ms/teto50/exclusão com valores exatos; `:106–129` indisponibilidade→throw sanitizado/arestas, buffer>50/ID ausente recusados sem limpar, corte normal e paridade. Todos casos correspondem ao Done when/REEN-04; checkpoint único governa expiração/semeadura, cache persona preservado na reconstrução warm, erro fica observável sem contexto presumido.
 
 **Gate**: Quick + Wiring; Build no fechamento da fase.
 

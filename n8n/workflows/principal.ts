@@ -876,6 +876,51 @@ const conversationMemory = memory({
   },
 });
 
+const startSessionContextRead = node({
+  type: "n8n-nodes-base.code", version: 2,
+  config: { name: "Code: iniciar leitura session-context", position: [4820, 170], parameters: { mode: "runOnceForEachItem", jsCode:
+    "const ctx = $('Code: gate').first().json; const externalIds = [...new Set((ctx.bufferArray || []).map(m => m.messageId))];\n" +
+    "const persisted = $('HTTP: POST /leads/{id}/messages (lead)').all().map(i => i.json);\n" +
+    "const bufferMessageIds = externalIds.map(externalId => persisted.find(m => m.externalId === externalId && m.sender === 'lead')?.id);\n" +
+    "if (bufferMessageIds.length > 50 || bufferMessageIds.some(id => typeof id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))) throw new Error('session-buffer-invalid');\n" +
+    "return { json: { deadline: Date.now() + 120000, bufferMessageIds, tenantSlug: ctx.tenantSlug, leadId: ctx.id } };\n",
+  } }, output: [{ deadline: 0, bufferMessageIds: [], tenantSlug: "imobiliaria-a", leadId: "" }],
+});
+const postSessionContextRead = node({
+  type: "n8n-nodes-base.httpRequest", version: 4.4,
+  config: { name: "HTTP: POST /leads/{id}/session-context", position: [4860, 170], onError: "continueRegularOutput", parameters: {
+    method: "POST", url: expr(CRM_BASE_URL + "/leads/{{ $('Code: iniciar leitura session-context').first().json.leadId }}/session-context"), authentication: "genericCredentialType", genericAuthType: "httpHeaderAuth", sendHeaders: true,
+    headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: iniciar leitura session-context').first().json.tenantSlug }}") }] }, sendBody: true, contentType: "json", specifyBody: "json",
+    jsonBody: expr("{{ { bufferMessageIds: $json.bufferMessageIds || $('Code: iniciar leitura session-context').first().json.bufferMessageIds } }}"),
+    options: { timeout: expr("{{ Math.max(1, Math.min(10000, $('Code: iniciar leitura session-context').first().json.deadline - Date.now())) }}") },
+  }, credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") } }, output: [{ frame: { revision: 0, resetRequestedAt: null, bridge: null }, history: [], requiresRebuild: false, pendingAcceptance: null }],
+});
+const sessionContextReady = node({
+  type: "n8n-nodes-base.code", version: 2,
+  config: { name: "Code: session-context pronto", position: [4900, 170], parameters: { mode: "runOnceForEachItem", jsCode:
+    '__INLINE(session.mjs)__' +
+    "\nconst init = $('Code: iniciar leitura session-context').first().json; const unavailable = { available: false, pending: false, frame: null, history: [], requiresRebuild: false, bufferMessageIds: init.bufferMessageIds };\n" +
+    "if ($json.error || !$json.frame || !Number.isSafeInteger($json.frame.revision) || $json.frame.revision < 0 || !Array.isArray($json.history) || $json.history.length > 50 || typeof $json.requiresRebuild !== 'boolean' || !($json.frame.resetRequestedAt === null || Number.isFinite(Date.parse($json.frame.resetRequestedAt))) || $json.history.some(m => !m || typeof m.id !== 'string' || typeof m.content !== 'string' || !['lead','agente','humano'].includes(m.sender) || !Number.isFinite(Date.parse(m.sentAt)))) return { json: unavailable };\n" +
+    "let frame = { ...$json.frame }, history = $json.history.filter(m => !init.bufferMessageIds.includes(m.id));\n" +
+    "if (frame.bridge && !requiresSessionRebuild(frame, [frame.bridge.firstInboundMessageId])) { frame.bridge = null; history = []; }\n" +
+    "let pending = false; if ($json.pendingAcceptance) { const deadline = Date.parse($json.pendingAcceptance.deadline); if (!Number.isFinite(deadline)) return { json: unavailable }; pending = Date.now() < Math.min(deadline, init.deadline); frame = { ...frame, bridge: null }; history = []; }\n" +
+    "const requiresRebuild = !pending && $json.requiresRebuild && requiresSessionRebuild(frame, init.bufferMessageIds);\n" +
+    "return { json: { available: true, pending, frame, history, requiresRebuild, bufferMessageIds: init.bufferMessageIds } };\n",
+  } }, output: [{ available: false, pending: false, frame: null, history: [], requiresRebuild: false, bufferMessageIds: [] }],
+});
+const sessionAcceptancePending = ifElse({ version: 2.3, config: { name: "Aceite da retomada pendente?", position: [4940, 170], parameters: { conditions: {
+  combinator: "and", options: { caseSensitive: true, leftValue: "", typeValidation: "strict" }, conditions: [{ leftValue: expr("{{ $json.pending }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }],
+} } } });
+const waitForSessionAcceptance = node({ type: "n8n-nodes-base.wait", version: 1.1, config: { name: "Aguardar aceite da retomada", position: [4940, 100], parameters: { resume: "timeInterval", amount: 1, unit: "seconds" } }, output: [{}] });
+const sessionContextAvailable = ifElse({ version: 2.3, config: { name: "Session-context disponível?", position: [4980, 170], parameters: { conditions: {
+  combinator: "and", options: { caseSensitive: true, leftValue: "", typeValidation: "strict" }, conditions: [{ leftValue: expr("{{ $json.available }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }],
+} } } });
+const sessionContextUnavailable = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: session-context indisponível", position: [5100, 100], parameters: { mode: "runOnceForEachItem", jsCode: "throw new Error('session-context-unavailable');" } }, output: [{}] });
+const rebuildWarmBridgeMemory = node({ type: "@n8n/n8n-nodes-langchain.memoryManager", version: 1.1, config: { name: "Chat Memory Manager: reconstruir ponte warm", position: [5480, 100], parameters: { mode: "delete", deleteMode: "all" }, subnodes: { memory: conversationMemory } }, output: [{ success: true }] });
+const rebuildWarmBridgeIf = ifElse({ version: 2.3, config: { name: "Reconstruir memória warm da ponte?", position: [5100, 170], parameters: { conditions: {
+  combinator: "and", options: { caseSensitive: true, leftValue: "", typeValidation: "strict" }, conditions: [{ leftValue: expr("{{ $json.bridgeRebuild && !$json.resetDue && !$json.sessionExpired }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }],
+} } } });
+
 const checkSessionExpired = node({
   type: "n8n-nodes-base.code",
   version: 2,
@@ -897,11 +942,14 @@ const checkSessionExpired = node({
         // pela mesma purga da sessão expirada. Devido só quando o pedido do
         // lead é mais novo que o já atendido (`memoryResetAt`), então a
         // segunda mensagem depois da devolução não reconstrói de novo.
-        "const requestedAt = $('Code: gate').first().json.memoryResetRequestedAt || null;\n" +
+        "let context = $input.first()?.json?.available === true ? $input.first().json : null;\n" +
+        "if (!context) { try { context = $('Code: session-context pronto').first().json; } catch {} }\n" +
+        "const requestedAt = context?.frame ? context.frame.resetRequestedAt : ($('Code: gate').first().json.memoryResetRequestedAt || null);\n" +
         "const honoredAt = $('Data Table: conversa_estado (antes do buffer)').first().json.memoryResetAt || null;\n" +
-        "const sessionExpired = isSessionExpired(lastInboundAt, now);\n" +
+        "const sessionExpired = isSessionExpired(lastInboundAt, now, 12, { frame: context?.frame });\n" +
         "const resetDue = memoryResetDue(requestedAt, honoredAt);\n" +
-        "return [{ json: { expired: sessionExpired || resetDue, sessionExpired, resetDue } }];\n",
+        "const bridgeRebuild = !!context?.requiresRebuild && requiresSessionRebuild(context.frame, context.bufferMessageIds);\n" +
+        "return [{ json: { expired: sessionExpired || resetDue, sessionExpired, resetDue, bridgeRebuild, sessionContext: context } }];\n",
     },
   },
   output: [{ expired: false }],
@@ -1007,31 +1055,19 @@ const isMemoryEmptyIf = ifElse({
   },
 });
 
-// MEM-03 AC5/AC6: cold start com histórico no CRM -> semeia; falha ou
-// histórico vazio -> segue com memória vazia (onError: continueRegularOutput
-// + alwaysOutputData), nunca aborta o turno.
+// T51: semeadura reutiliza o snapshot observado pela expiração, sem novo
+// fetch ou novo corte. Nome histórico preservado para referências existentes.
 const getMessagesForSeed = node({
-  type: "n8n-nodes-base.httpRequest",
-  version: 4.4,
+  type: "n8n-nodes-base.code",
+  version: 2,
   config: {
     name: "HTTP: GET /leads/{id}/messages (semeadura)",
     position: [6520, 200],
-    retryOnFail: true,
-    maxTries: 3,
-    waitBetweenTries: 2000,
-    onError: "continueRegularOutput",
-    alwaysOutputData: true,
     parameters: {
-      method: "GET",
-      url: expr(`${CRM_BASE_URL}/leads/{{ $('Code: gate').first().json.id }}/messages`),
-      sendQuery: true,
-      queryParameters: { parameters: [{ name: "limit", value: "100" }] },
-      authentication: "genericCredentialType",
-      genericAuthType: "httpHeaderAuth",
-      sendHeaders: true,
-      headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }] },
+      mode: "runOnceForAllItems", language: "javaScript", jsCode:
+        "const context = $('Code: sessão expirada?').first().json.sessionContext;\n" +
+        "return context?.available && context.history.length ? context.history.map(m => ({ json: m })) : [{ json: {} }];\n",
     },
-    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
   },
   output: [{ id: "4fa85f64-5717-4562-b3fc-2c963f66afa7", externalId: "wamid.EXEMPLO", sender: "lead", content: "Oi, vi o anúncio do apartamento", sentAt: "2026-08-05T12:10:00.000Z" }],
 });
@@ -1055,6 +1091,8 @@ const buildSeedMessages = node({
       jsCode:
         '__INLINE(session.mjs)__' +
         "\n\n" +
+        "let context = null; try { context = $('Code: sessão expirada?').first().json.sessionContext; } catch {}\n" +
+        "if (context) { const selected = context.available ? context.history : []; const items = selected.map(m => toSeedMemoryItem(m)).filter(it => it !== null).map(it => ({ json: { type: it.type, message: it.message, nadaParaSemear: false } })); return items.length ? items : [{ json: { nadaParaSemear: true } }]; }\n" +
         // Degradação defensiva (MEM-03 AC6): `HTTP: GET /leads/{id}/messages
         // (semeadura)` roda com onError:continueRegularOutput +
         // alwaysOutputData — em falha, o item resultante não tem o formato
@@ -2395,13 +2433,15 @@ const agentTurnWired = buildAgentSystemMessage.to(prepareAskedAgentState.to(hasA
   .onTrue(postAskedAgentState.to(askedStateConfirmedWired)).onFalse(askedStateConfirmedWired)));
 routeFora.to(agentTurnWired);
 
-const conversaBranch = getSettings.to(
-  checkSessionExpired.to(
-    isSessionExpiredIf
+const normalSessionExpiryWired = isSessionExpiredIf
       .onTrue(purgeMemoryOnExpiry.to(purgeConversaEstadoOnExpiry.to(afterLoadMemory)))
-      .onFalse(afterLoadMemory)
-  )
-);
+      .onFalse(afterLoadMemory);
+const sessionContextCheckedWired = checkSessionExpired.to(rebuildWarmBridgeIf
+  .onTrue(rebuildWarmBridgeMemory.to(afterLoadMemory)).onFalse(normalSessionExpiryWired));
+const sessionContextResolvedWired = sessionContextReady.to(sessionAcceptancePending
+  .onTrue(waitForSessionAcceptance.to(postSessionContextRead))
+  .onFalse(sessionContextAvailable.onTrue(sessionContextCheckedWired).onFalse(sessionContextUnavailable)));
+const conversaBranch = getSettings.to(startSessionContextRead.to(postSessionContextRead.to(sessionContextResolvedWired)));
 
 const routeSwitchRouted = routeSwitch
   .onCase(0, optOutBranch)

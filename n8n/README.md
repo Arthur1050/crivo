@@ -25,6 +25,17 @@ antiga; o reset de opt-out só vem de seu próprio POST aceito.
 409, falha ou âncora de outro turno não autorizam o cache: a fase fica `unknown`.
 Ausência de fase observada no bootstrap publica null, nunca `qualificando` presumido.
 
+**L14b T51:** o principal chama session-context com os IDs internos dos inbound deste
+buffer. Buffer>50 ou registro sem ID interrompe antes da chamada e conserva o buffer.
+Resultado pending aguarda até o menor prazo entre o deadline CRM e120s locais;
+resultado incerto nunca ganha ponte. Falha técnica de leitura interrompe geração
+com `session-context-unavailable`, conservando o buffer e acionando o error-handler.
+Expiração captura o frame corrente do poll e a semeadura reutiliza esse snapshot,
+incluindo sua revisão e history já selecionada/excluída/teto50, sem segundo corte.
+Primeira resposta<48h com ponte válida apaga memória warm e reconstrói mesmo histórico
+do cold start, conservando qualificação/persona. Depois vale gap normal>12h; reset
+invalida a ponte e usa purga normal. Falas humanas entram como system da equipe.
+
 Runbook de setup + referência da camada n8n do Crivo. Cobre **todos os passos humanos** necessários antes/durante o Execute deste lote e os riscos R1–R3/R6 do design (`.specs/features/lote-6-agente-n8n-whatsapp/design.md`).
 
 > **Regra de ouro (AD-014)**: a UI do n8n **nunca** é editada à mão — nem os workflows (`n8n/workflows/*.ts` → `n8n/generated/*.ts` → publicado via MCP), nem as Data Tables (criadas via MCP `create_data_table`/`add_data_table_column`). O único trabalho manual na instância n8n é **credenciais** (Google/Meta exigem OAuth/tokens que só o dono da conta pode gerar) e **templates de mensagem** no painel da Meta (aprovação é um processo da Meta, não do n8n).
