@@ -36,6 +36,12 @@ Primeira resposta<48h com ponte válida apaga memória warm e reconstrói mesmo 
 do cold start, conservando qualificação/persona. Depois vale gap normal>12h; reset
 invalida a ponte e usa purga normal. Falas humanas entram como system da equipe.
 
+**L14b T52:** responder_lead registra o wamid aceito e o número da invocação
+que alimentou o transporte, mesmo se o canal do lead mudar antes do registro.
+Falha de persistência repete apenas o POST idempotente do CRM; não repete Meta.
+Canal ausente continua legado sem inferência. Receipt antecipado correlaciona
+por tenant/número/wamid na ingestão; saída não muda lastInboundAt nem consumo.
+
 Runbook de setup + referência da camada n8n do Crivo. Cobre **todos os passos humanos** necessários antes/durante o Execute deste lote e os riscos R1–R3/R6 do design (`.specs/features/lote-6-agente-n8n-whatsapp/design.md`).
 
 > **Regra de ouro (AD-014)**: a UI do n8n **nunca** é editada à mão — nem os workflows (`n8n/workflows/*.ts` → `n8n/generated/*.ts` → publicado via MCP), nem as Data Tables (criadas via MCP `create_data_table`/`add_data_table_column`). O único trabalho manual na instância n8n é **credenciais** (Google/Meta exigem OAuth/tokens que só o dono da conta pode gerar) e **templates de mensagem** no painel da Meta (aprovação é um processo da Meta, não do n8n).

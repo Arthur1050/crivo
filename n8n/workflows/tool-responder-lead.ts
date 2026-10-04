@@ -324,7 +324,7 @@ const registerAgentMessage = node({
       contentType: "json",
       specifyBody: "json",
       jsonBody: expr(
-        "{{ { externalId: $json.messages[0].id, sender: 'agente', content: $('Code: normalizar destinatario do envio').first().json.mensagem, sentAt: $now.toISO() } }}"
+        "{{ { externalId: $json.messages[0].id, sender: 'agente', content: $('Code: normalizar destinatario do envio').first().json.mensagem, sentAt: $now.toISO(), whatsappPhoneNumberId: $('Code: normalizar destinatario do envio').first().json.phoneNumberId } }}"
       ),
     },
     credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },

@@ -2248,13 +2248,16 @@ Adequação A–D/necessidade: `principal-reengagement-bridge.test.ts:31–69` p
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: aceite; status antes do CRM; falha de registro; canal trocado; legado; identidade do transporte não do modelo; replay; sem efeito em lastInboundAt/consumo.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **8 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Quick passou: `npx vitest run n8n/workflows/__tests__/tool-responder-channel.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
-- [ ] Inliner executado, generated equivalente, wiring/nós exercitados e README/guia afetado atualizado no mesmo commit. Publicação remota depende de autorização posterior.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: aceite; status antes do CRM; falha de registro; canal trocado; legado; identidade do transporte não do modelo; replay; sem efeito em lastInboundAt/consumo.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **8 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Quick passou: `npx vitest run n8n/workflows/__tests__/tool-responder-channel.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
+- [x] Inliner executado, generated equivalente, wiring/nós exercitados e README/guia afetado atualizado no mesmo commit. Publicação remota depende de autorização posterior.
 
 **Tests**: unit — `n8n/workflows/__tests__/tool-responder-channel.test.ts`; matriz: Workflow/Code nodes.
+
+**Evidence**: Inliner exit0; Quick Vitest (n8n/workflows/__tests__/tool-responder-channel.test.ts, tool-responder-lead.test.ts; src/server/integration/__tests__/messages.test.ts; src/server/whatsapp/__tests__/statuses-attach.test.ts; scripts/__tests__/n8n-inline.test.ts) PASS81/81, 5 arquivos, exit0, 94.17s, início runner2026-10-04 20:12:25; 8 novos. Gate isolado dos dois workflows+inliner PASS39/39, 3 arquivos, exit0, 2.31s, início20:13:57; ESLint próprios exit0, whitespace limpo, testes anteriores intactos.
+Adequação A–D/necessidade: `tool-responder-channel.test.ts:21–31` payload/parser/chave tenant-canal-wamid; `:33–50` retry somente CRM/arestas/canal trocado/legado; `:52–68` identidade factual/replay/wamid ausente recusado/sem inbound ou consumo/paridade. Valores exatos correspondem ao Done when/PRECO-01/02; registro usa o snapshot que alimentou o envio, e ingestão/attach reais passaram sem estado ou cobrança fabricados.
 
 **Gate**: Quick + Wiring; Build no fechamento da fase.
 
