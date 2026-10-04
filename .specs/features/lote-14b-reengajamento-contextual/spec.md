@@ -337,9 +337,9 @@ de qualquer prova real, conforme L-051. Não enviar 1.001 mensagens para fabrica
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| REEN-01 | P1: Momento permitido | Execute | Partial — T15–T20 política, seleção, claim e autorização com revalidação sob locks; integração proativa e gates externos pendentes |
-| REEN-02 | P1: Texto contextual | Tasks | Planned |
-| REEN-03 | P1: Envio único e válido | Execute | Partial — T18–T21 lease, marcador e aceite sem reenvio; T27–T29 ingestão/condução/opt-out invalidam sob locks; transporte e workflows pendentes |
+| REEN-01 | P1: Momento permitido | Execute | Partial — T15–T20 política/locks; T33–T39 transporte e endpoints preservam janela/horário antes da autorização; tick e prova integrada pendentes |
+| REEN-02 | P1: Texto contextual | Execute | Partial — T25/T37 frame factual; T33/T34/T39 texto trim/UTF-16 limitado, falha libera só preparação própria e replay não reenvia; prompt/geração/workflow pendentes |
+| REEN-03 | P1: Envio único e válido | Execute | Partial — T18–T21 lease/marcador/aceite; T27–T29 invalidação; T33–T40 transporte único, resultados duráveis, replay e ack sem fetch; workflows/prova integrada pendentes |
 | REEN-04 | P1: Continuidade da memória | Execute | Partial — T24–T29 sessão/frame factuais, semeadura limitada, reset e invalidação atômicos; T30 metadata consistente; integração no principal pendente |
 | REEN-05 | P1: Desfecho às 48h | Execute | Partial — T22/T23 omissão e escalonamento transacionais, resultado real, trava humana, responsável, rollback e disputa; endpoint/tick/prova integrada pendentes |
 | PRECO-01 | P1: Classificação de entrega | Execute | Partial — T8–T10 reducer/recibos; T27/T30–T32 canal factual no histórico e envio humano, sem gratuidade inferida; apresentação/transporte proativo pendentes |
@@ -348,7 +348,7 @@ de qualquer prova real, conforme L-051. Não enviar 1.001 mensagens para fabrica
 | USO-02 | P1: Atualização e indisponibilidade | Execute | Partial — T2/T6 modelos/T12 timeout/T13 cadência, lease e CAS com orçamento/T14 leituras stale e falha; UI/tick pendentes |
 | USO-03 | P1: Superfícies e permissões | Execute | Deferred UI → L14c por preflight restrito à conta de teste; T14 DAL preservada, consumo indisponível; ver context.md Deferred Ideas |
 | USO-04 | P1: Aviso sem bloqueio | Execute | Deferred UI → L14c por preflight restrito à conta de teste; T32 prova envio humano independente de Analytics, sem presumir saldo/gratuidade; consumo indisponível |
-| L14B-01 | P1: Isolamento e operação | Execute | Partial — T7–T17 fronteiras existentes; T24–T32 locks, rollback, replay, autoria/canal e metadata por tenant; endpoints/workflows/retenção pendentes |
+| L14B-01 | P1: Isolamento e operação | Execute | Partial — T7–T17 fronteiras; T24–T32 locks/rollback/autoria; T35–T40 auth, scope, corpo limitado e DTOs factuais; demais endpoints/workflows/retenção pendentes |
 | PROVA-01 | P1: Evidência integrada | Execute | Partial — T8 fixtures de preço 999/1000/1001/FEP/replay/T11 volume e fuso; provas integradas/virada real pendentes |
 
 **Coverage:** 13/13 requisitos e 95/95 critérios mapeados individualmente em [tasks.md](tasks.md).

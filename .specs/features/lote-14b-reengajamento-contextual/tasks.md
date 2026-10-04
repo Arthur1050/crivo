@@ -1746,7 +1746,7 @@ Regate `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__
 
 **Commit**: `feat(l14b): endpoint de candidatos` (docs para mudança exclusivamente contratual).
 
-**Evidence**: `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__/routes/automation-candidates-get.test.ts src/server/reengagement/__tests__/candidates.test.ts src/server/integration/__tests__/parsers.test.ts src/server/integration/__tests__/route-instrumentation.test.ts` — 92/92, 4 arquivos, exit0, 74.24s, início 2026-10-04 13:07:36; 18 novos +74 regressões. Paginação HTTP real101=100+1, corte estável e DTO limitado; docs de contrato T45; sem desvio.
+**Evidence**: `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__/routes/automation-candidates-get.test.ts src/server/reengagement/__tests__/candidates.test.ts src/server/integration/__tests__/parsers.test.ts src/server/integration/__tests__/route-instrumentation.test.ts` — 92/92, 4 arquivos, exit0, 74.24s, início 2026-10-04 13:07:36; 17 novos +75 regressões (contagem corrigida por coleta). Paginação HTTP real101=100+1, corte estável e DTO limitado; docs de contrato T45; sem desvio.
 
 ---
 
