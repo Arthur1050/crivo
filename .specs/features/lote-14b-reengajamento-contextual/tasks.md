@@ -2117,12 +2117,15 @@ Fechamento: seis chamadas POST dos dois testes PG recebem o segundo argumento ex
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: inbound só; status só; misto; múltiplos números; delivered/failed; sent/read em replay; >100; >100KiB com divisão; campos desconhecidos; nenhum inbound sintético; sem WABA inventada; erro de status não descarta inbound.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **12 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Quick passou: `npx vitest run n8n/src/__tests__/whatsapp-events.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: inbound só; status só; misto; múltiplos números; delivered/failed; sent/read em replay; >100; >100KiB com divisão; campos desconhecidos; nenhum inbound sintético; sem WABA inventada; erro de status não descarta inbound.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **12 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Quick passou: `npx vitest run n8n/src/__tests__/whatsapp-events.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
 
 **Tests**: unit — `n8n/src/__tests__/whatsapp-events.test.ts`; matriz: Domínio puro.
+
+**Evidence**: `node node_modules/vitest/vitest.mjs run n8n/src/__tests__/whatsapp-events.test.ts n8n/src/__tests__/normalize-event.test.ts` PASS 26/26, 2 arquivos, exit0, 452ms, início runner2026-10-04 19:36:29; 19 novos e 7 regressões, nenhuma asserção anterior alterada. ESLint próprios exit0; diff whitespace limpo.
+Adequação A–D/necessidade: `whatsapp-events.test.ts:15/:20/:24/:31/:37` `.toEqual` inbound/mixed/números/ausência de inbound sintético; `:44/:52/:53` DTO/pricing/failed/replay; `:59/:60` `[100,1]` e todas identidades; `:67/:68` bytes≤102400 e preservação integral; `:73/:80/:84/:90/:94/:98` extras/WABA/erros isolados com valores exatos. Todos cenários correspondem ao Done when e PRECO-02AC7; identidade continua resolvida no servidor, sem prova remota presumida.
 
 **Gate**: Quick; Build no fechamento da fase.
 
