@@ -2182,13 +2182,16 @@ Adequação A–D/necessidade: `principal-whatsapp-statuses.test.ts:25–30` are
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: após buffer; fase mudou; encerramento; opt-out; execução antiga 409; replay; erro deixa unknown proativo; principal não presume último turno como âncora; cache não reabre; bootstrap observado.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **10 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Quick passou: `npx vitest run n8n/workflows/__tests__/principal-agent-state.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
-- [ ] Inliner executado, generated equivalente, wiring/nós exercitados e README/guia afetado atualizado no mesmo commit. Publicação remota depende de autorização posterior.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: após buffer; fase mudou; encerramento; opt-out; execução antiga 409; replay; erro deixa unknown proativo; principal não presume último turno como âncora; cache não reabre; bootstrap observado.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **10 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Quick passou: `npx vitest run n8n/workflows/__tests__/principal-agent-state.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
+- [x] Inliner executado, generated equivalente, wiring/nós exercitados e README/guia afetado atualizado no mesmo commit. Publicação remota depende de autorização posterior.
 
 **Tests**: unit — `n8n/workflows/__tests__/principal-agent-state.test.ts`; matriz: Workflow/Code nodes.
+
+**Evidence**: Inliner exit0; Quick Vitest (principal-agent-state, principal-whatsapp-statuses, principal-modelo, principal-opt-out-natural, principal-reset-memoria, principal-conducao-humana, principal-classificador) PASS131/131, 7 arquivos, exit0, 5.08s, início runner2026-10-04 19:55:16; 13 novos, 118 regressões. ESLint próprios exit0, whitespace limpo; nenhuma asserção antiga alterada. Canal real acompanha POST inbound, ligação T30 exigida para a âncora elegível.
+Adequação A–D/necessidade: `principal-agent-state.test.ts:27/:30/:34/:38/:42–46/:49` payload canal/CAS/arrays/identidade comprovada/grafo antes cache/replay/409; `:54/:55/:60/:65/:69/:70/:75/:76` revisão própria/âncora nova/encerramento/reset/observação/concorrência; `:79–90` todos escritores→CAS→cache confirmado ou unknown, paridade e falha de leitura. Valores exatos derivam do Done when/REEN-01/03/04; releitura não concede revisão de outro executor nem presume fase, HMAC/publicação seguem pendentes.
 
 **Gate**: Quick + Wiring; Build no fechamento da fase.
 

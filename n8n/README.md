@@ -16,6 +16,15 @@ encaminha status por número/tenant configurado ao POST idempotente no CRM. Falh
 nesse ramo termina em resultado sanitizado e nunca alcança buffer, memória ou agente.
 Nenhuma credencial é interpolada no body/header de parâmetros ou no resultado.
 
+**L14b T50:** depois de persistir todo buffer, o principal captura a âncora do CRM
+apenas quando seu ID corresponde a inbound real desse buffer. Publica phase/askedFields/
+openingHistory por CAS antes do cache de perguntados e antes de todos os fechamentos.
+O fechamento relê headers do histórico(limit1), mas conserva âncora, revisão do seu
+próprio CAS e reset observado pelo turno. Revisão de outro executor não autoriza fase
+antiga; o reset de opt-out só vem de seu próprio POST aceito.
+409, falha ou âncora de outro turno não autorizam o cache: a fase fica `unknown`.
+Ausência de fase observada no bootstrap publica null, nunca `qualificando` presumido.
+
 Runbook de setup + referência da camada n8n do Crivo. Cobre **todos os passos humanos** necessários antes/durante o Execute deste lote e os riscos R1–R3/R6 do design (`.specs/features/lote-6-agente-n8n-whatsapp/design.md`).
 
 > **Regra de ouro (AD-014)**: a UI do n8n **nunca** é editada à mão — nem os workflows (`n8n/workflows/*.ts` → `n8n/generated/*.ts` → publicado via MCP), nem as Data Tables (criadas via MCP `create_data_table`/`add_data_table_column`). O único trabalho manual na instância n8n é **credenciais** (Google/Meta exigem OAuth/tokens que só o dono da conta pode gerar) e **templates de mensagem** no painel da Meta (aprovação é um processo da Meta, não do n8n).

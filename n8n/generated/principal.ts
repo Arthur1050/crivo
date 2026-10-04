@@ -535,12 +535,102 @@ const postBufferedMessage = node({
       contentType: "json",
       specifyBody: "json",
       jsonBody: expr(
-        "{{ { externalId: $json.bufferArray.messageId, sender: 'lead', content: $json.bufferArray.text, sentAt: $json.bufferArray.sentAt } }}"
+        "{{ { externalId: $json.bufferArray.messageId, sender: 'lead', content: $json.bufferArray.text, sentAt: $json.bufferArray.sentAt, whatsappPhoneNumberId: $json.phoneNumberId } }}"
       ),
     },
     credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
   },
   output: [{ id: "4fa85f64-5717-4562-b3fc-2c963f66afa7", externalId: "wamid.EXEMPLO", sender: "lead", content: "Oi", sentAt: "2026-08-05T12:10:00.000Z" }],
+});
+
+const captureAgentStateIdentity = node({
+  type: "n8n-nodes-base.code", version: 2,
+  config: { name: "Code: estado CRM após buffer", position: [4030, -120], parameters: { mode: "runOnceForAllItems", jsCode:
+    "const ctx = $('Code: contexto do lead').first().json; const responses = $input.all().map(i => i.json); const last = responses.at(-1);\n" +
+    "const cache = $('Data Table: conversa_estado (antes do buffer)').first().json;\n" +
+    "const ids = new Set((ctx.bufferArray || []).map(m => m.messageId)); const anchor = responses.find(m => m.id === last?.anchorMessageId && m.sender === 'lead' && ids.has(m.externalId));\n" +
+    "const revision = last?.agentStateRevision === null ? 0 : last?.agentStateRevision;\n" +
+    "const valid = anchor && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(anchor.id) && Number.isSafeInteger(revision) && revision >= 0;\n" +
+    "return [{ json: { anchorMessageId: valid ? anchor.id : null, expectedRevision: valid ? revision : null, resetObservedAt: ctx.memoryResetRequestedAt ?? null, cache } }];\n",
+  } }, output: [{ anchorMessageId: null, expectedRevision: null, resetObservedAt: null, cache: {} }],
+});
+
+const prepareAskedAgentState = node({
+  type: "n8n-nodes-base.code", version: 2,
+  config: { name: "Code: preparar agent-state perguntados", position: [7660, 430], parameters: { mode: "runOnceForEachItem", jsCode:
+    "const observed = $('Code: estado CRM após buffer').first().json; const ctx = $('Code: contexto do lead').first().json;\n" +
+    "let openingHistory = []; try { openingHistory = JSON.parse(observed.cache.aberturasJson || '[]'); } catch {}\n" +
+    "const askedFields = JSON.parse($json.perguntadosJson);\n" +
+    "const payload = observed.anchorMessageId ? { anchorMessageId: observed.anchorMessageId, resetObservedAt: observed.resetObservedAt, expectedRevision: observed.expectedRevision, phase: $json.phase, askedFields, openingHistory } : null;\n" +
+    "return { json: { desired: $json, payload, tenantSlug: ctx.tenantSlug, leadId: ctx.id } };\n",
+  } }, output: [{ desired: {}, payload: null, tenantSlug: "imobiliaria-a", leadId: "" }],
+});
+const hasAskedAgentState = ifElse({ version: 2.3, config: { name: "Agent-state perguntados publicável?", position: [7730, 430], parameters: { conditions: {
+  combinator: "and", options: { caseSensitive: true, leftValue: "", typeValidation: "strict" }, conditions: [{ leftValue: expr("{{ $json.payload !== null }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }],
+} } } });
+const postAskedAgentState = node({
+  type: "n8n-nodes-base.httpRequest", version: 4.4,
+  config: { name: "HTTP: publicar agent-state perguntados", position: [7810, 430], onError: "continueRegularOutput", retryOnFail: true, maxTries: 3, waitBetweenTries: 1000, parameters: {
+    method: "POST", url: expr(CRM_BASE_URL + "/leads/{{ $json.leadId }}/agent-state"), authentication: "genericCredentialType", genericAuthType: "httpHeaderAuth", sendHeaders: true,
+    headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $json.tenantSlug }}") }] }, sendBody: true, contentType: "json", specifyBody: "json", jsonBody: expr("{{ $json.payload }}"), options: { timeout: 10000 },
+  }, credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") } }, output: [{ replay: false, state: {} }],
+});
+const agentStateConfirmationCode =
+  "const p = prepared.payload, state = $json.state;\n" +
+  "const sameReset = state && (state.resetObservedAt === p?.resetObservedAt || Date.parse(state.resetObservedAt) === Date.parse(p?.resetObservedAt));\n" +
+  "const confirmed = !!p && !$json.error && state?.anchorMessageId === p.anchorMessageId && sameReset && state.phase === p.phase && Number.isSafeInteger(state.revision) && [p.expectedRevision, p.expectedRevision + 1].includes(state.revision) && JSON.stringify(state.askedFields) === JSON.stringify(p.askedFields) && JSON.stringify(state.openingHistory) === JSON.stringify(p.openingHistory);\n";
+const confirmAskedAgentState = node({
+  type: "n8n-nodes-base.code", version: 2,
+  config: { name: "Code: agent-state perguntados confirmado", position: [7880, 430], parameters: { mode: "runOnceForEachItem", jsCode:
+    "const prepared = $('Code: preparar agent-state perguntados').first().json;\n" + agentStateConfirmationCode +
+    "return { json: { confirmed, phase: confirmed ? state.phase : null, revision: confirmed ? state.revision : null } };\n",
+  } }, output: [{ confirmed: false, phase: null, revision: null }],
+});
+const askedAgentStateConfirmed = ifElse({ version: 2.3, config: { name: "Agent-state perguntados confirmado?", position: [7970, 430], parameters: { conditions: {
+  combinator: "and", options: { caseSensitive: true, leftValue: "", typeValidation: "strict" }, conditions: [{ leftValue: expr("{{ $json.confirmed }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }],
+} } } });
+
+const readFinalAgentStateMetadata = node({
+  type: "n8n-nodes-base.httpRequest", version: 4.4,
+  config: { name: "HTTP: metadados CRM no fechamento", position: [5780, -130], onError: "continueRegularOutput", parameters: {
+    method: "GET", url: expr(CRM_BASE_URL + "/leads/{{ $('Code: gate').first().json.id }}/messages"), authentication: "genericCredentialType", genericAuthType: "httpHeaderAuth", sendHeaders: true,
+    headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }] }, sendQuery: true, queryParameters: { parameters: [{ name: "limit", value: "1" }] },
+    options: { timeout: 10000, response: { response: { fullResponse: true } } },
+  }, credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") } }, output: [{ body: [], headers: {} }],
+});
+const prepareFinalAgentState = node({
+  type: "n8n-nodes-base.code", version: 2,
+  config: { name: "Code: preparar agent-state final", position: [5850, -130], parameters: { mode: "runOnceForEachItem", jsCode:
+    "const observed = $('Code: estado CRM após buffer').first().json; const ctx = $('Code: gate').first().json;\n" +
+    "let desired; for (const name of ['Code: preparar clear de buffer (envio fixo)','Code: preparar clear de buffer (turno do agente)','Code: finalizar somente-registrar (sem envio)']) { try { desired = $(name).first().json; break; } catch {} }\n" +
+    "let phase = ['qualificando','agendando','encerrada'].includes(observed.cache.fase) ? observed.cache.fase : null; let askedFields = [], openingHistory = [];\n" +
+    "try { askedFields = JSON.parse(observed.cache.perguntadosJson || '[]'); } catch {} try { openingHistory = JSON.parse(observed.cache.aberturasJson || '[]'); } catch {}\n" +
+    "try { const earlier = $('Code: preparar agent-state perguntados').first().json.desired; phase = earlier.phase; askedFields = JSON.parse(earlier.perguntadosJson); } catch {}\n" +
+    "let resetObservedAt = observed.resetObservedAt, ownOptOut = false; if (desired.fase === 'encerrada') phase = 'encerrada';\n" +
+    "let expectedRevision = observed.expectedRevision; try { const own = $('Code: agent-state perguntados confirmado').first().json; if (own.confirmed) expectedRevision = own.revision; } catch {}\n" +
+    "try { if ($('Code: finalizar opt-out').first().json.fase === 'encerrada') { phase = 'encerrada'; askedFields = []; openingHistory = []; for (const name of ['HTTP: POST /leads/{id}/opt-out','HTTP: POST /leads/{id}/opt-out (natural)']) { try { const result = $(name).first().json; if (result.memoryResetRequestedAt) { resetObservedAt = result.memoryResetRequestedAt; ownOptOut = true; } break; } catch {} } } } catch {}\n" +
+    "const anchor = $json.headers?.['x-crivo-anchor-message-id']; const rawRevision = $json.headers?.['x-crivo-agent-state-revision']; const revision = rawRevision === 'null' ? 0 : Number(rawRevision);\n" +
+    "const valid = !$json.error && !!observed.anchorMessageId && anchor === observed.anchorMessageId && rawRevision !== undefined && Number.isSafeInteger(revision) && revision >= 0 && (ownOptOut || [expectedRevision, expectedRevision + 1].includes(revision));\n" +
+    "const payload = valid ? { anchorMessageId: anchor, resetObservedAt, expectedRevision: ownOptOut ? revision : expectedRevision, phase, askedFields, openingHistory } : null;\n" +
+    "return { json: { desired, payload, tenantSlug: ctx.tenantSlug, leadId: ctx.id } };\n",
+  } }, output: [{ desired: {}, payload: null, tenantSlug: "imobiliaria-a", leadId: "" }],
+});
+const hasFinalAgentState = ifElse({ version: 2.3, config: { name: "Agent-state final publicável?", position: [5920, -130], parameters: { conditions: {
+  combinator: "and", options: { caseSensitive: true, leftValue: "", typeValidation: "strict" }, conditions: [{ leftValue: expr("{{ $json.payload !== null }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }],
+} } } });
+const postFinalAgentState = node({
+  type: "n8n-nodes-base.httpRequest", version: 4.4,
+  config: { name: "HTTP: publicar agent-state final", position: [5990, -130], onError: "continueRegularOutput", retryOnFail: true, maxTries: 3, waitBetweenTries: 1000, parameters: {
+    method: "POST", url: expr(CRM_BASE_URL + "/leads/{{ $json.leadId }}/agent-state"), authentication: "genericCredentialType", genericAuthType: "httpHeaderAuth", sendHeaders: true,
+    headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $json.tenantSlug }}") }] }, sendBody: true, contentType: "json", specifyBody: "json", jsonBody: expr("{{ $json.payload }}"), options: { timeout: 10000 },
+  }, credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") } }, output: [{ replay: false, state: {} }],
+});
+const confirmFinalAgentState = node({
+  type: "n8n-nodes-base.code", version: 2,
+  config: { name: "Code: agent-state final confirmado", position: [6060, -130], parameters: { mode: "runOnceForEachItem", jsCode:
+    "const prepared = $('Code: preparar agent-state final').first().json;\n" + agentStateConfirmationCode +
+    "return { json: { tenantSlug: prepared.desired.tenantSlug, waId: prepared.desired.waId, fase: confirmed && state.phase ? state.phase : 'unknown' } };\n",
+  } }, output: [{ tenantSlug: "imobiliaria-a", waId: "5534999990001", fase: "unknown" }],
 });
 
 const decideRoute = node({
@@ -2189,11 +2279,15 @@ const clearBufferAndFinalize = node({
 // mesmo mecanismo do padrão "fan_in" da referência do SDK).
 // ---------------------------------------------------------------------
 
+const finalAgentStateWired = readFinalAgentStateMetadata.to(prepareFinalAgentState.to(hasFinalAgentState
+  .onTrue(postFinalAgentState.to(confirmFinalAgentState.to(clearBufferAndFinalize)))
+  .onFalse(confirmFinalAgentState)));
+
 const fixedReplyWired = normalizeFixedReplyRecipient.to(
-  sendFixedReply.to(registerFixedReply.to(prepBufferClearAfterSend.to(clearBufferAndFinalize)))
+  sendFixedReply.to(registerFixedReply.to(prepBufferClearAfterSend.to(finalAgentStateWired)))
 );
 
-const clearAfterAgentTurnWired = prepClearAfterAgentTurn.to(clearBufferAndFinalize);
+const clearAfterAgentTurnWired = prepClearAfterAgentTurn.to(finalAgentStateWired);
 
 // lote-13 (T11): `optOutTailWired` é o alvo ÚNICO dos dois registros de
 // opt-out (palavra-chave e linguagem natural) — fan-in, mesma regra do topo
@@ -2205,7 +2299,7 @@ const optOutTailWired = finalizeOptOut.to(
   )
 );
 const optOutBranch = postOptOut.to(optOutTailWired);
-const somenteRegistrarBranch = finalizeSomenteRegistrar.to(clearBufferAndFinalize);
+const somenteRegistrarBranch = finalizeSomenteRegistrar.to(finalAgentStateWired);
 const midiaBranch = finalizeMedia.to(fixedReplyWired);
 
 // T10: a rota `conversa` agora atravessa o bloco de memória inteiro (purga
@@ -2260,9 +2354,7 @@ postOptOutNatural.onError(guideSairOnFailure.to(fixedReplyWired));
 optOutClassifier.output(3).to(routeFora);
 optOutClassifier.output(4).to(routeFora);
 
-const agentTurnWired = buildAgentSystemMessage.to(
-    persistPerguntados.to(
-      aiAgent.to(
+const aiAgentTurnWired = aiAgent.to(
         // `clearAfterAgentTurnWired` é o alvo ÚNICO das duas saídas do IF
         // (mesma regra de fan-in do topo desta seção: wiring de saída
         // definida uma vez só, nunca duplicada por branch).
@@ -2296,9 +2388,11 @@ const agentTurnWired = buildAgentSystemMessage.to(
                 )
             )
         )
-      )
-    )
   );
+const askedStateConfirmedWired = confirmAskedAgentState.to(askedAgentStateConfirmed
+  .onTrue(persistPerguntados.to(aiAgentTurnWired)).onFalse(aiAgentTurnWired));
+const agentTurnWired = buildAgentSystemMessage.to(prepareAskedAgentState.to(hasAskedAgentState
+  .onTrue(postAskedAgentState.to(askedStateConfirmedWired)).onFalse(askedStateConfirmedWired)));
 routeFora.to(agentTurnWired);
 
 const conversaBranch = getSettings.to(
@@ -2317,7 +2411,7 @@ const routeSwitchRouted = routeSwitch
 
 const syncCrmAndGate = postLeadIdempotent.to(
   attachTenantToLeadResponse.to(
-    splitBufferedMessages.to(postBufferedMessage.to(decideRoute.to(routeSwitchRouted)))
+    splitBufferedMessages.to(postBufferedMessage.to(captureAgentStateIdentity.to(decideRoute.to(routeSwitchRouted))))
   )
 );
 
