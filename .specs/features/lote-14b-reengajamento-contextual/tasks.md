@@ -1924,12 +1924,14 @@ Regate `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: 50/51; IDs inválidos; pending; cold/warm; reset; outro tenant; fase/ponte desconhecida; autenticação/corpo; nenhum efeito de pipeline/inbound.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **9 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/server/integration/__tests__/routes/session-context-post.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: 50/51; IDs inválidos; pending; cold/warm; reset; outro tenant; fase/ponte desconhecida; autenticação/corpo; nenhum efeito de pipeline/inbound.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **9 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou: `npx vitest run src/server/integration/__tests__/routes/session-context-post.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
 
 **Tests**: integration — `src/server/integration/__tests__/routes/session-context-post.test.ts`; matriz: Handlers.
+
+**Evidence**: `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__/routes/session-context-post.test.ts src/server/reengagement/__tests__/session-frame.test.ts src/server/integration/__tests__/parsers.test.ts src/server/integration/__tests__/route-instrumentation.test.ts` PASS 98/98 (27 novos + 71 regressões), 4 arquivos, exit 0, 278.34s, início 2026-10-04 17:40:42; PG real, buffer 50/51, carga pronta e leitura sem mutações.
 
 **Gate**: Full; Build no fechamento da fase.
 

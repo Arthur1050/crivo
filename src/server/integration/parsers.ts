@@ -115,6 +115,18 @@ export function parseAutomationCandidatesQuery(url: URL): ParseResult<{ cursor?:
   return { ok: true, dto: { limit, ...(cursor === null ? {} : { cursor }) } };
 }
 
+export function parseSessionContext(value: unknown): ParseResult<{ bufferMessageIds?: string[] }> {
+  if (!isPlainObject(value) || Object.keys(value).some((key) => key !== "bufferMessageIds")) {
+    return { ok: false, detail: "Contexto aceita somente bufferMessageIds opcional." };
+  }
+  if (!Object.hasOwn(value, "bufferMessageIds")) return { ok: true, dto: {} };
+  const ids = value.bufferMessageIds;
+  if (!Array.isArray(ids) || ids.length > 50 || ids.some((id) => typeof id !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))) {
+    return { ok: false, detail: "Buffer deve conter até 50 IDs UUID de inbound." };
+  }
+  return { ok: true, dto: { bufferMessageIds: ids } };
+}
+
 export function parseReengagementPrepare(value: unknown): ParseResult<{ anchorMessageId: string }> {
   if (!isPlainObject(value) || Object.keys(value).some((key) => key !== "anchorMessageId")
       || typeof value.anchorMessageId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value.anchorMessageId)) {
