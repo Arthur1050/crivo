@@ -129,6 +129,16 @@ export function parsePreparationFailure(value: unknown): ParseResult<{ claimToke
   return { ok: true, dto: { claimToken: value.claimToken, code: value.code as PreparationFailureCode } };
 }
 
+/** Text semantics belong to sendPreparedEpisode so consumed replays stay factual. */
+export function parseReengagementSend(value: unknown): ParseResult<{ claimToken: string; text: string }> {
+  if (!isPlainObject(value) || Object.keys(value).some((key) => key !== "claimToken" && key !== "text")
+      || typeof value.claimToken !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value.claimToken)
+      || typeof value.text !== "string") {
+    return { ok: false, detail: "Envio exige somente claimToken UUID e texto string." };
+  }
+  return { ok: true, dto: { claimToken: value.claimToken, text: value.text } };
+}
+
 function nonEmptyTrimmed(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
   const trimmed = value.trim();

@@ -1829,16 +1829,18 @@ Regate `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: aceite; replay; refused/uncertain; preparação expirada; tenant/IDs; trim/4096/4097; janela fechou; opted-out/takeover; resposta perdida; log limitado; accepted_pending_record; autenticação/corpo.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **12 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/server/integration/__tests__/routes/reengagement-send-post.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: aceite; replay; refused/uncertain; preparação expirada; tenant/IDs; trim/4096/4097; janela fechou; opted-out/takeover; resposta perdida; log limitado; accepted_pending_record; autenticação/corpo.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **12 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou: `npx vitest run src/server/integration/__tests__/routes/reengagement-send-post.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
 
 **Tests**: integration — `src/server/integration/__tests__/routes/reengagement-send-post.test.ts`; matriz: Handlers.
 
 **Gate**: Full; Build no fechamento da fase.
 
 **Commit**: `feat(l14b): endpoint de envio protegido` (docs para mudança exclusivamente contratual).
+
+**Evidence**: `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__/routes/reengagement-send-post.test.ts src/server/reengagement/__tests__/send.test.ts src/server/whatsapp/__tests__/cloud-api.test.ts src/server/integration/__tests__/parsers.test.ts src/server/integration/__tests__/route-instrumentation.test.ts` — 155/155, 5 arquivos, exit0, 284.39s, início 2026-10-04 13:42:02; 26 novos +129 regressões. Parser estrutural mantém trim/UTF-16/liberação em T34, preservando replay factual de consumidos; fetch simulado, identidade real para ack, sem reenvio/desvio.
 
 ---
 
