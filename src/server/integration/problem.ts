@@ -34,7 +34,8 @@ export type ProblemCode =
   // lote-14 — SILENCIO-01 AC9: o lead tem a marca de condução humana; o
   // contrato não muda `status` nem `meetingAt` enquanto um humano conduz.
   | "lead-conduzido-por-humano"
-  | "canal-nao-vinculado";
+  | "canal-nao-vinculado"
+  | "contexto-alterado";
 
 // Exportada para o teste de paridade com o `ProblemCode` do openapi.yaml.
 export const TITLES: Record<ProblemCode, string> = {
@@ -52,6 +53,7 @@ export const TITLES: Record<ProblemCode, string> = {
   "conflito-de-agenda": "Conflito de agenda",
   "lead-conduzido-por-humano": "Lead conduzido por um humano",
   "canal-nao-vinculado": "Número não vinculado ao tenant",
+  "contexto-alterado": "Contexto da conversa alterado",
 };
 
 export const PROBLEM_CONTENT_TYPE = "application/problem+json";

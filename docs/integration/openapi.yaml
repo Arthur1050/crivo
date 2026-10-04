@@ -574,6 +574,7 @@ components:
         - conflito-de-agenda
         - lead-conduzido-por-humano
         - canal-nao-vinculado
+        - contexto-alterado
     Problem:
       type: object
       description: application/problem+json (RFC 9457).

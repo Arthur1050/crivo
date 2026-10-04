@@ -17,6 +17,8 @@ import {
   propertyTypeEnum,
   senderEnum,
 } from "../../db/schema";
+import { FIELD_LABELS } from "../../../n8n/src/phase.mjs";
+import type { PublishAgentStateInput } from "../reengagement/agent-state";
 
 // Limite de tamanho de corpo (design.md — Tech Decisions; Edge Cases: 413).
 // O corte em si é responsabilidade do handler (Content-Length/tamanho do
@@ -62,6 +64,36 @@ function parseBudgetCents(value: unknown): bigint | undefined {
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/** Only the projection calculated for the supplied anchor/revision is accepted. */
+export function parseAgentState(value: unknown): ParseResult<PublishAgentStateInput> {
+  const fields = ["anchorMessageId", "resetObservedAt", "expectedRevision", "phase", "askedFields", "openingHistory"];
+  if (!isPlainObject(value) || Object.keys(value).some((key) => !fields.includes(key))) {
+    return { ok: false, detail: "Estado do agente contém campos inválidos." };
+  }
+  const { anchorMessageId, expectedRevision, phase, askedFields, openingHistory } = value;
+  if (typeof anchorMessageId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(anchorMessageId)
+      || !Number.isSafeInteger(expectedRevision) || (expectedRevision as number) < 0
+      || (phase !== null && phase !== "qualificando" && phase !== "agendando" && phase !== "encerrada")
+      || !Array.isArray(askedFields) || askedFields.length > 8 || !askedFields.every((field) => typeof field === "string" && Object.hasOwn(FIELD_LABELS, field))
+      || !Array.isArray(openingHistory) || !openingHistory.every((opening) => typeof opening === "string")) {
+    return { ok: false, detail: "Âncora, revisão ou projeção do agente inválida." };
+  }
+  let resetObservedAt: Date | null = null;
+  if (value.resetObservedAt !== null) {
+    const parsed = parseIsoDate(value.resetObservedAt);
+    if (!parsed || typeof value.resetObservedAt !== "string") return { ok: false, detail: "Reset observado deve ser um instante ISO válido ou null." };
+    const [year, month, day, hour, minute, second] = value.resetObservedAt.slice(0, 19).split(/[-T:]/).map(Number);
+    const calendar = new Date(0);
+    calendar.setUTCFullYear(year, month - 1, day); calendar.setUTCHours(hour, minute, second, 0);
+    if (calendar.getUTCFullYear() !== year || calendar.getUTCMonth() !== month - 1 || calendar.getUTCDate() !== day
+        || calendar.getUTCHours() !== hour || calendar.getUTCMinutes() !== minute || calendar.getUTCSeconds() !== second) {
+      return { ok: false, detail: "Reset observado deve ser um instante ISO válido ou null." };
+    }
+    resetObservedAt = parsed;
+  }
+  return { ok: true, dto: { anchorMessageId, resetObservedAt, expectedRevision: expectedRevision as number, phase, askedFields, openingHistory } };
 }
 
 function nonEmptyTrimmed(value: unknown): string | undefined {

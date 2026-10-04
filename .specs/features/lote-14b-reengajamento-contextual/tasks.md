@@ -1703,16 +1703,19 @@ Fechamento: import literal do grafo puxava 9 erros SDK para o build; carga dinâ
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: 200; replay; revisão 409; tenant/401/404; corpo inválido; >100KiB; âncora antiga; reset/fase incompatível.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **8 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/server/integration/__tests__/routes/agent-state-post.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: 200; replay; revisão 409; tenant/401/404; corpo inválido; >100KiB; âncora antiga; reset/fase incompatível.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **8 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou: `npx vitest run src/server/integration/__tests__/routes/agent-state-post.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
 
 **Tests**: integration — `src/server/integration/__tests__/routes/agent-state-post.test.ts`; matriz: Handlers.
 
 **Gate**: Full; Build no fechamento da fase.
 
 **Commit**: `feat(l14b): endpoint de estado do agente` (docs para mudança exclusivamente contratual).
+
+**Evidence**: `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__/routes/agent-state-post.test.ts src/server/reengagement/__tests__/agent-state.test.ts src/server/integration/__tests__/parsers.test.ts src/server/integration/__tests__/problem.test.ts src/server/integration/__tests__/openapi.test.ts src/server/integration/__tests__/route-instrumentation.test.ts`: 97/130, 5/6 arquivos, exit1, 88.52s, início 2026-10-04 12:50:41 (fixture sem status); fix exclusivo no INSERT preservou asserções e 96 regressões PASS.
+Regate `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__/routes/agent-state-post.test.ts`: 34/34 novos, 1 arquivo, exit0, 52.07s, início 12:53:13. OpenAPI só enum para paridade; endpoint/schema/guia T45; sem desvio funcional.
 
 ---
 
