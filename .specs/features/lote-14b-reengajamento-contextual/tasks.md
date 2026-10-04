@@ -1672,16 +1672,18 @@ Fechamento: import literal do grafo puxava 9 erros SDK para o build; carga dinâ
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: replay retorna estado; falha pré-fetch permite preparação; corrida; recusa; timeout/crash; wamid e registro falho devolve accepted_pending_record; ack só persiste; identidade perdida incerta; deadline 2min; humano/opt-out/janela; logs sem texto; lastInboundAt preservado.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **12 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/server/reengagement/__tests__/send.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: replay retorna estado; falha pré-fetch permite preparação; corrida; recusa; timeout/crash; wamid e registro falho devolve accepted_pending_record; ack só persiste; identidade perdida incerta; deadline 2min; humano/opt-out/janela; logs sem texto; lastInboundAt preservado.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **12 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou: `npx vitest run src/server/reengagement/__tests__/send.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
 
 **Tests**: integration — `src/server/reengagement/__tests__/send.test.ts`; matriz: Serviço/repositório.
 
 **Gate**: Full; Build no fechamento da fase.
 
 **Commit**: `feat(l14b): orquestrar envio protegido` (docs para mudança exclusivamente contratual).
+
+**Evidence**: `node node_modules/vitest/vitest.mjs run src/server/reengagement/__tests__/send.test.ts src/server/reengagement/__tests__/dispatch-authorize.test.ts src/server/reengagement/__tests__/acceptance.test.ts` — 88/88, 3 arquivos, exit0, 463.41s, início 2026-10-04 12:33:32; 29 novos +59 regressões. Conflito factual corrigido antes do gate; marker/deadline permanentes e ack sem reenvio; sem desvio.
 
 ---
 
