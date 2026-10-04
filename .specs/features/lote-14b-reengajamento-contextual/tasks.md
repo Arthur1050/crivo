@@ -1900,7 +1900,7 @@ Regate `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__
 
 **Tests**: integration — `src/server/integration/__tests__/routes/reengagement-expire-post.test.ts`; matriz: Handlers.
 
-**Evidence**: `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__/routes/reengagement-expire-post.test.ts src/server/reengagement/__tests__/expire.test.ts src/server/integration/__tests__/parsers.test.ts src/server/integration/__tests__/route-instrumentation.test.ts` — 123/123 (37 novos +86 regressões), 4 arquivos, exit0, 241.96s, início runner2026-10-04 17:30:51; PG real/disputa com PIDs distintos, sem transporte; sem desvio.
+**Evidence**: `node node_modules/vitest/vitest.mjs run src/server/integration/__tests__/routes/reengagement-expire-post.test.ts src/server/reengagement/__tests__/expire.test.ts src/server/integration/__tests__/parsers.test.ts src/server/integration/__tests__/route-instrumentation.test.ts` — 123/123 (36 novos +87 regressões, contagem conferida no fechamento), 4 arquivos, exit0, 241.96s, início runner2026-10-04 17:30:51; PG real/disputa com PIDs distintos, sem transporte; sem desvio funcional.
 
 **Gate**: Full; Build no fechamento da fase.
 
