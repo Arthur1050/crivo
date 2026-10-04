@@ -2281,13 +2281,16 @@ Adequação A–D/necessidade: `tool-responder-channel.test.ts:21–31` payload/
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: opt-out confirmação; contingência; aceite; falha de registro; número correto; não inferir histórico antigo; mesmas regras de receipt/autoria sem alterar exclusividade de confirmação.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **7 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Quick passou: `npx vitest run n8n/workflows/__tests__/principal-outgoing-channel.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
-- [ ] Inliner executado, generated equivalente, wiring/nós exercitados e README/guia afetado atualizado no mesmo commit. Publicação remota depende de autorização posterior.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: opt-out confirmação; contingência; aceite; falha de registro; número correto; não inferir histórico antigo; mesmas regras de receipt/autoria sem alterar exclusividade de confirmação.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **7 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Quick passou: `npx vitest run n8n/workflows/__tests__/principal-outgoing-channel.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
+- [x] Inliner executado, generated equivalente, wiring/nós exercitados e README/guia afetado atualizado no mesmo commit. Publicação remota depende de autorização posterior.
 
 **Tests**: unit — `n8n/workflows/__tests__/principal-outgoing-channel.test.ts`; matriz: Workflow/Code nodes.
+
+**Evidence**: Inliner exit0; Quick Vitest (n8n/workflows/__tests__/principal-outgoing-channel.test.ts, principal-opt-out-natural.test.ts, principal-conducao-humana.test.ts, principal-agent-state.test.ts, principal-reengagement-bridge.test.ts; scripts/__tests__/n8n-inline.test.ts) PASS97/97, 6 arquivos, exit0, 4.63s, início runner2026-10-04 20:17:47; 8 novos, 89 regressões. ESLint próprios exit0, whitespace limpo; testes anteriores intactos.
+Adequação A–D/necessidade: `principal-outgoing-channel.test.ts:20–32` confirmação única/purgas/canal da contingência; `:34–52` payload factual/autoria/aceite/retry só CRM/arestas/canal trocado/legado; `:54–67` correlação/ausência inbound e consumo/IDs e nós completos com expectativa expandida pelo inliner. Valores exatos derivam do Done when/PRECO-01/02; somente campo aditivo do snapshot de transporte, nenhum envio remoto.
 
 **Gate**: Quick + Wiring; Build no fechamento da fase.
 

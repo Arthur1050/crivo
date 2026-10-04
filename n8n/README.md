@@ -42,6 +42,11 @@ Falha de persistência repete apenas o POST idempotente do CRM; não repete Meta
 Canal ausente continua legado sem inferência. Receipt antecipado correlaciona
 por tenant/número/wamid na ingestão; saída não muda lastInboundAt nem consumo.
 
+**L14b T53:** opt-out, mídia, orientação de falha e contingência compartilham
+o registro fixo, que captura canal do snapshot usado pelo send e wamid aceito.
+As regras de autoria, confirmação única e retry apenas de persistência são
+mantidas; histórico sem canal continua sem inferência.
+
 Runbook de setup + referência da camada n8n do Crivo. Cobre **todos os passos humanos** necessários antes/durante o Execute deste lote e os riscos R1–R3/R6 do design (`.specs/features/lote-6-agente-n8n-whatsapp/design.md`).
 
 > **Regra de ouro (AD-014)**: a UI do n8n **nunca** é editada à mão — nem os workflows (`n8n/workflows/*.ts` → `n8n/generated/*.ts` → publicado via MCP), nem as Data Tables (criadas via MCP `create_data_table`/`add_data_table_column`). O único trabalho manual na instância n8n é **credenciais** (Google/Meta exigem OAuth/tokens que só o dono da conta pode gerar) e **templates de mensagem** no painel da Meta (aprovação é um processo da Meta, não do n8n).

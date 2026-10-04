@@ -2230,7 +2230,7 @@ const registerFixedReply = node({
       contentType: "json",
       specifyBody: "json",
       jsonBody: expr(
-        "{{ { externalId: $json.messages[0].id, sender: 'agente', content: $('Code: destinatário do envio fixo').first().json.mensagens[0], sentAt: $now.toISO() } }}"
+        "{{ { externalId: $json.messages[0].id, sender: 'agente', content: $('Code: destinatário do envio fixo').first().json.mensagens[0], sentAt: $now.toISO(), whatsappPhoneNumberId: $('Code: destinatário do envio fixo').first().json.phoneNumberId } }}"
       ),
     },
     credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
