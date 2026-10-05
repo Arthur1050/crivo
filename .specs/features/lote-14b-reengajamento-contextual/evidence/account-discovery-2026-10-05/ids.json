@@ -1,0 +1,77 @@
+{
+  "observedAt": "2026-10-05T19:20:14.198Z",
+  "source": "Chrome extension / visible UI",
+  "neon": {
+    "projectId": "green-queen-03125718",
+    "branchId": "br-proud-wind-av7m0aq2",
+    "branchName": "main",
+    "queryMode": "BEGIN READ ONLY / SELECT id,name,slug FROM public.tenants / COMMIT"
+  },
+  "tenants": [
+    {
+      "id": "a0744420-585f-4c83-a096-2c348cb57511",
+      "name": "Crivo Demo",
+      "slug": "crivo-demo"
+    },
+    {
+      "id": "7c6882c6-18da-4ce9-8724-c2236a15fe08",
+      "name": "Triângulo Imóveis",
+      "slug": "triangulo"
+    },
+    {
+      "id": "c4252d4c-150f-449d-ad60-004b3302d37f",
+      "name": "Imobiliária Vale do Uberaba",
+      "slug": "vale-uberaba"
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Test WhatsApp Business Account",
+      "wabaId": "1000796702954808",
+      "phoneNumberId": "1321478747709350",
+      "accountTimezone": "America/Los_Angeles",
+      "kind": "test",
+      "phoneStatus": "Conectado"
+    },
+    {
+      "name": "Monowave",
+      "wabaId": "226674610529541",
+      "phoneNumberId": "241928238997110",
+      "kindObserved": "Aplicativo WhatsApp Business",
+      "accountTimezone": null,
+      "phoneStatus": "Offline"
+    }
+  ],
+  "tenantChannelBinding": {
+    "observedAt": "2026-10-05T19:29:53.065Z",
+    "phoneNumberId": "1321478747709350",
+    "tenantSlug": "triangulo",
+    "tenantId": "7c6882c6-18da-4ce9-8724-c2236a15fe08",
+    "dataTableId": "xRHckWWd6fxGeNta",
+    "rowId": 2,
+    "workflowId": "0B1nqjODu7xuYYKF",
+    "sources": [
+      "n8n Data Table visible row",
+      "n8n principal editor visible node parameters",
+      "Neon main tenants SELECT"
+    ],
+    "editorLookup": {
+      "operation": "Get",
+      "filterColumn": "phoneNumberId",
+      "condition": "Equals",
+      "filterValue": "{{ $json.phoneNumberId }}"
+    },
+    "activeVersionVerified": false
+  },
+  "productionCloudApiCapability": "unverified",
+  "captures": [
+    "monowave-account.jpg",
+    "monowave-phone-number-id.jpg",
+    "tenants-main.jpg",
+    "n8n-tenant-binding.jpg",
+    "n8n-installed-tenant-lookup.jpg"
+  ],
+  "ignoredAccounts": [
+    "Monowave"
+  ]
+}
