@@ -2610,12 +2610,17 @@ Aviso inicial de hidratação Timestamp en-US/pt-BR preexistente; prova feita ap
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: 30d-1ms/30d/30d+1ms; receipt vinculado; órfão expira; histórico excluído; tombstone protege âncora; sessão ativa >30d; reset; texto transitório removido; snapshot antigo; tenant sem cruzamento.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **10 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run src/server/reengagement/__tests__/retention.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: 30d-1ms/30d/30d+1ms; receipt vinculado; órfão expira; histórico excluído; tombstone protege âncora; sessão ativa >30d; reset; texto transitório removido; snapshot antigo; tenant sem cruzamento.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **10 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou: `npx vitest run src/server/reengagement/__tests__/retention.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
 
 **Tests**: integration — `src/server/reengagement/__tests__/retention.test.ts`; matriz: Serviço/repositório.
+
+**Evidência**: 2026-10-05 — `node node_modules/vitest/vitest.mjs run src/server/reengagement/__tests__/retention.test.ts src/server/reengagement/__tests__/acceptance.test.ts src/server/reengagement/__tests__/send.test.ts src/server/reengagement/__tests__/session-frame.test.ts src/server/reengagement/__tests__/preparation-claim.test.ts src/server/whatsapp/__tests__/statuses-ingest.test.ts src/server/whatsapp/__tests__/statuses-attach.test.ts src/server/whatsapp/__tests__/analytics-sync.test.ts`: 163/163,8 arquivos,exit0,827.99s.
+Versão final fortalecida: `node node_modules/vitest/vitest.mjs run src/server/reengagement/__tests__/retention.test.ts`: 10/10,1 arquivo,exit0,81.40s; nenhum teste anterior alterado.
+PG real/fixtures próprias: fronteiras30d, receipts vinculados/exclusão, tombstone/replay, ponte ativa>30d/reset, texto pendente/reconciliação, snapshot corrente/revisão e isolamento; disputa em PIDs independentes e rollback observados.
+Locks lead→episódio→canal→receipt; marcador/deadline preservados, sem histórico paralelo/schema/generated. Correções só de fixture (firstContactAt/dias elegíveis/revisão); wiring diário reservado a T64.
 
 **Gate**: Full; Build no fechamento da fase.
 
