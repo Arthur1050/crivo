@@ -4,7 +4,7 @@
   "window_days": 45,
   "quarantine_threshold": 2,
   "prune_requires_confirmation": true,
-  "next_id": 56,
+  "next_id": 59,
   "lessons": [
     {
       "id": "L-001",
@@ -908,6 +908,60 @@
       ],
       "created": "2026-10-02T05:49:48Z",
       "last_seen": "2026-10-02T05:49:48Z"
+    },
+    {
+      "id": "L-056",
+      "key": "ac_gap::no whatsapp comprove canal de producao tenant fuso iana e cobertura mensal da conta real antes de habilitar analytics resposta daily parcial de conta de teste nao concede essa capacidade",
+      "text": "No WhatsApp, comprove canal de produção, tenant, fuso IANA e cobertura mensal da conta real antes de habilitar Analytics; resposta DAILY parcial de conta de teste não concede essa capacidade.",
+      "signal": "ac_gap",
+      "scope": "whatsapp/analytics",
+      "status": "candidate",
+      "features": [
+        "lote-14b-reengajamento-contextual"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "validation.md G1/G4; USO-01 AC1 (whatsapp/analytics)"
+      ],
+      "created": "2026-10-05T15:55:40Z",
+      "last_seen": "2026-10-05T15:55:40Z"
+    },
+    {
+      "id": "L-057",
+      "key": "ac_gap::em provas conversacionais do agente avalie o texto produzido pelo modelo efetivo contra pendencia e fatos conhecidos instrucoes de prompt e respostas de generate fake nao provam coerencia nem ausencia de repergunta",
+      "text": "Em provas conversacionais do agente, avalie o texto produzido pelo modelo efetivo contra pendência e fatos conhecidos; instruções de prompt e respostas de generate fake não provam coerência nem ausência de repergunta.",
+      "signal": "ac_gap",
+      "scope": "n8n/agent",
+      "status": "candidate",
+      "features": [
+        "lote-14b-reengajamento-contextual"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "validation.md G2; REEN-02 AC1/AC2 (n8n/agent)"
+      ],
+      "created": "2026-10-05T15:55:41Z",
+      "last_seen": "2026-10-05T15:55:41Z"
+    },
+    {
+      "id": "L-058",
+      "key": "ac_gap::mantenha o consumidor de status whatsapp fechado ate um probe instalado comprovar hmac sobre raw body credencial e activeversionid do forwarder proofs de fixture nao concedem autenticacao de origem",
+      "text": "Mantenha o consumidor de status WhatsApp fechado até um probe instalado comprovar HMAC sobre raw-body, credencial e activeVersionId do forwarder; proofs de fixture não concedem autenticação de origem.",
+      "signal": "ac_gap",
+      "scope": "whatsapp/statuses",
+      "status": "candidate",
+      "features": [
+        "lote-14b-reengajamento-contextual"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "validation.md G3; PRECO-01 AC1/AC2/AC3/AC6/AC7 (whatsapp/statuses)"
+      ],
+      "created": "2026-10-05T15:55:42Z",
+      "last_seen": "2026-10-05T15:55:42Z"
     }
   ]
 }

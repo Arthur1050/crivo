@@ -337,7 +337,7 @@ de qualquer prova real, conforme L-051. Não enviar 1.001 mensagens para fabrica
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| REEN-01 | P1: Momento permitido | Execute | Partial — política/seleção/locks e scheduler implementados; T68 prova por fixture antes/exato/+1ms em 22/24/48h; instalação/prova externa e Verifier pendentes |
+| REEN-01 | P1: Momento permitido | Execute | Partial — política/seleção/locks e scheduler implementados; T68 prova por fixture antes/exato/+1ms em 22/24/48h; instalação/prova externa pendentes; Verifier documentado em validation.md |
 | REEN-02 | P1: Texto contextual | Execute | Partial — frame factual, prompt e geração readonly/deadline ligados ao scheduler; T66 identidade/teto preservados e T68 ligação integrada; texto efetivo do modelo e prova conversacional pendentes |
 | REEN-03 | P1: Envio único e válido | Execute | Partial — consumo de despacho/aceite/ack, invalidação e reconciliação implementados; T63/T64 retenção não rearma envio; T68 disputa PG independente, takeover/inbound e aceite sem registro; instalação/prova externa pendentes |
 | REEN-04 | P1: Continuidade da memória | Execute | Partial — sessão/frame/reset/invalidação e ponte no principal; T68 Code nodes efetivos provam equivalência warm/cold por fixture e exclusão do buffer; publicação/prova real pendentes |
@@ -349,11 +349,11 @@ de qualquer prova real, conforme L-051. Não enviar 1.001 mensagens para fabrica
 | USO-03 | P1: Superfícies e permissões | Execute | Deferred UI → L14c por instrução posterior do usuário, T57/T60/T61/T62; T14 DAL preservada, consumo indisponível; ver context.md Deferred Ideas |
 | USO-04 | P1: Aviso sem bloqueio | Execute | Deferred UI → L14c por instrução posterior do usuário; envio humano permanece independente de Analytics, sem presumir saldo/gratuidade |
 | L14B-01 | P1: Isolamento e operação | Execute | Partial — fronteiras/endpoints/locks/rollback/autoria e integração local preservados; T63/T64 retenção/manutenção, T65 bootstrap diagnóstico e T67 protocolo seguro; produção/instalação/prova operacional pendentes |
-| PROVA-01 | P1: Evidência integrada | Execute | Partial — T68 Full 12/12/regressões 149/149 por PG/fixture e persistência antes de cleanup; fase 9 suíte 3580/3580, 204 arquivos, lint/build 0, tsc 50 anteriores/delta 0; Verifier/sensor e provas externas/conversacionais aplicáveis pendentes |
+| PROVA-01 | P1: Evidência integrada | Execute | Partial — T68 Full 12/12/regressões 149/149 por PG/fixture e persistência antes de cleanup; fase 9 suíte 3580/3580, 204 arquivos, lint/build 0, tsc 50 anteriores/delta 0; Verifier FAIL (70 PASS/8 GAP/15 parcelas UI deferidas/2 condicionais); sensor 10/10 morto; provas externas/conversacionais aplicáveis pendentes |
 
 **Coverage:** 13/13 requisitos e 95/95 critérios mapeados individualmente em [tasks.md](tasks.md); mapeamento não equivale a PASS do produto.
 Implementação local: T1–T56/T58/T59/T63–T68 (64/68 tarefas), último commit de task `4ef2248`; as quatro tarefas de consumo UI foram adiadas para L14c conforme [context.md](context.md). Evidências históricas permanecem nas seções das tasks, sem arquivamento enquanto a validação estiver pendente.
-Fase 9: 53 cenários novos, total 1178 no L14b; `npm test` exit 0,3580/3580 testes e 204/204 arquivos,1094,81s, início 2026-10-05 12:20:19. Lint exit 0/9 avisos anteriores; build exit 0/avisos BetterAuth anteriores; tsc nativo 2 / 50 erros anteriores, nenhum acréscimo semântico; strict spec/tasks 0/0. Nenhuma prova de capacidade externa, texto efetivo do modelo ou conclusão integral do lote é inferida desses gates.
+Fase 9: 53 cenários novos, total 1178 no L14b; `npm test` exit 0,3580/3580 testes e 204/204 arquivos,1094,81s, início 2026-10-05 12:20:19. Lint exit 0/9 avisos anteriores; build exit 0/avisos BetterAuth anteriores; tsc nativo 2 / 50 erros anteriores, nenhum acréscimo semântico; strict spec/tasks 0/0. [validation.md](validation.md) registra 95 ACs, veredito FAIL e quatro grupos de gaps G1–G4. Sensor: baseline 40/40 e 10/10 mutações mortas, árvore preservada. `validate_state.py` exit 1 reconhece FAIL; não há sobrevivente nem defeito novo de código diagnosticado. Nenhuma prova de capacidade externa, texto efetivo do modelo ou conclusão integral do lote é inferida desses gates.
 
 ## Success Criteria
 

@@ -312,6 +312,24 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: OPTKEY-01 AC3 (sem file:line) (spec,tasks)
 - last seen: 2026-09-30T00:32:11Z
 
+### L-056 - No WhatsApp, comprove canal de produção, tenant, fuso IANA e cobertura mensal da conta real antes de habilitar Analytics; resposta DAILY parcial de conta de teste não concede essa capacidade.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `whatsapp/analytics` · harmful: 0
+- features: lote-14b-reengajamento-contextual
+- evidence: validation.md G1/G4; USO-01 AC1 (whatsapp/analytics)
+- last seen: 2026-10-05T15:55:40Z
+
+### L-057 - Em provas conversacionais do agente, avalie o texto produzido pelo modelo efetivo contra pendência e fatos conhecidos; instruções de prompt e respostas de generate fake não provam coerência nem ausência de repergunta.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `n8n/agent` · harmful: 0
+- features: lote-14b-reengajamento-contextual
+- evidence: validation.md G2; REEN-02 AC1/AC2 (n8n/agent)
+- last seen: 2026-10-05T15:55:41Z
+
+### L-058 - Mantenha o consumidor de status WhatsApp fechado até um probe instalado comprovar HMAC sobre raw-body, credencial e activeVersionId do forwarder; proofs de fixture não concedem autenticação de origem.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `whatsapp/statuses` · harmful: 0
+- features: lote-14b-reengajamento-contextual
+- evidence: validation.md G3; PRECO-01 AC1/AC2/AC3/AC6/AC7 (whatsapp/statuses)
+- last seen: 2026-10-05T15:55:42Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
