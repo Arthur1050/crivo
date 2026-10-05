@@ -11,6 +11,7 @@ import {
   reconcileTenantDocumentAdmission,
 } from "../documents/repository";
 import { toDocumentStorageError, type DocumentStorage } from "../documents/storage";
+import { purgeReengagementMetadata } from "../reengagement/retention";
 
 export interface OptOutResult {
   optedOutAt: Date;
@@ -189,6 +190,12 @@ export interface DailyMaintenanceResult extends ExpireDocumentsResult {
   reservationsDeleted: number;
   /** `true` quando a purga de reservas falhou; os demais grupos seguem. */
   reservationsPurgeFailed: boolean;
+  /** Contagens operacionais L14b, sem saldo nem volume de consumo. */
+  reengagementReceiptsDeleted: number;
+  reengagementSnapshotsDeleted: number;
+  reengagementEpisodesCompacted: number;
+  /** Falha isolada da retenção L14b; os grupos anteriores já foram executados. */
+  reengagementPurgeFailed: boolean;
 }
 
 const emptyExpiry: ExpireDocumentsResult = {
@@ -211,9 +218,10 @@ async function runGroup<T>(fallback: T, group: () => Promise<T>): Promise<[T, bo
 
 /**
  * Rotina diária de manutenção (lote-9 — SAUDE-03; lote-12 — DOCLIFE-01; lote-14).
- * Cinco grupos independentes rodam em sequência, cada um com resultado e
+ * Seis grupos independentes rodam em sequência, cada um com resultado e
  * `catch` próprios: expiração, retry de tombstones, compensação de intenções
- * vencidas, purga de recusas e purga de reservas de envio humano. Uma falha de storage não impede a purga de recusas, e uma
+ * vencidas, purga de recusas, purga de reservas de envio humano e retenção L14b.
+ * Uma falha de storage não impede a purga de recusas, e uma
  * falha da purga não impede a expiração (AC3). Nenhum grupo propaga exceção.
  */
 export async function runDailyMaintenance(
@@ -242,6 +250,11 @@ export async function runDailyMaintenance(
     () => purgeHumanSendReservations(now)
   );
 
+  const [reengagement, reengagementPurgeFailed] = await runGroup(
+    { receiptsDeleted: 0, snapshotsDeleted: 0, episodesCompacted: 0 },
+    () => purgeReengagementMetadata(now)
+  );
+
   return {
     ...expiry,
     expiryFailed,
@@ -255,5 +268,9 @@ export async function runDailyMaintenance(
     refusalsPurgeFailed,
     reservationsDeleted: reservations.deleted,
     reservationsPurgeFailed,
+    reengagementReceiptsDeleted: reengagement.receiptsDeleted,
+    reengagementSnapshotsDeleted: reengagement.snapshotsDeleted,
+    reengagementEpisodesCompacted: reengagement.episodesCompacted,
+    reengagementPurgeFailed,
   };
 }
