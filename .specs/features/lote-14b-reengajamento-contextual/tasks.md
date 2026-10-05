@@ -2749,17 +2749,23 @@ Desvios: nenhum; paidCalls 0, nenhuma escrita no banco ou nova medição.
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: fonte/gerado/publicado diferentes; status selection real; garantia HMAC instalada; execução antiga/template pendente; handlers/schema compatíveis; gate de conta pendente; rollback sem template; nenhuma publicação/alteração do relatório.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **8 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Quick passou: `npx vitest run scripts/__tests__/reengagement-publication-check.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
-- [ ] Evidência sanitizada diferencia confirmado/pendente; dry run/relatório não altera conta, workflow, banco de produção ou env. Aplicação externa é gate posterior.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: fonte/gerado/publicado diferentes; status selection real; garantia HMAC instalada; execução antiga/template pendente; handlers/schema compatíveis; gate de conta pendente; rollback sem template; nenhuma publicação/alteração do relatório.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **8 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Quick passou: `npx vitest run scripts/__tests__/reengagement-publication-check.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
+- [x] Evidência sanitizada diferencia confirmado/pendente; dry run/relatório não altera conta, workflow, banco de produção ou env. Aplicação externa é gate posterior.
 
 **Tests**: unit — `scripts/__tests__/reengagement-publication-check.test.ts`; matriz: Scripts operacionais.
 
 **Gate**: Quick; Build no fechamento da fase.
 
 **Commit**: `feat(l14b): protocolo reproduzível de publicação` (docs para mudança exclusivamente contratual).
+
+**Evidência**: Quick: 62/62, 5 arquivos, oito novos, exit 0 (3,93s).
+Gate: `node node_modules/vitest/vitest.mjs run scripts/__tests__/reengagement-publication-check.test.ts n8n/workflows/__tests__/principal-whatsapp-statuses.test.ts n8n/workflows/__tests__/scheduler-reengagement.test.ts n8n/workflows/__tests__/scheduler-silence-expire.test.ts n8n/workflows/__tests__/scheduler-whatsapp-usage.test.ts`.
+Readonly MCP 2026-10-05T11:08:30Z: principal `0B1nqjODu7xuYYKF` ativo, histórico `e3e25681-8cd1-4ea3-bc38-33d373cf6b80`; new/running/waiting/unknown: count 0, estimated false; activeVersionId atual ausente.
+Auditoria exit 0 (1,65s): equivalência local true, ready false; serializer/status/HMAC/template/compatibilidade/conta pendentes, mutations 0; rollback conserva tombstones/consumo/ack, sem restaurar template.
+Desvios: nenhum de contrato; fixture inicial do runner corrigida, assertions preservadas; nenhuma ação externa.
 
 ---
 
