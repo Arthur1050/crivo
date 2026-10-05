@@ -383,209 +383,26 @@ const nextPageB = node({ type: "n8n-nodes-base.code", version: 2, config: { name
 const hasNextPageB = ifElse({ version: 2.3, config: { name: "Há próxima página B?", position: [900, 0], parameters: { conditions: { combinator: "and", options: { caseSensitive: true, leftValue: "", typeValidation: "strict" }, conditions: [{ leftValue: expr("{{ " + "$json.cursor !== null" + " }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }] } } } });
 
 // =======================================================================
-// Varredura C — Escalonamento por silêncio (design.md; AGT-05 AC2,
-// motivo fixo "ausência de resposta")
-// =======================================================================
-
-const getSilentReengaged = node({
-  type: "n8n-nodes-base.dataTable",
-  version: 1.1,
-  config: {
-    name: "Data Table: reengajadas silenciosas 48h (conversa_estado)",
-    position: [260, 400],
-    parameters: {
-      resource: "row",
-      operation: "get",
-      dataTableId: { __rl: true, mode: "id", value: CONVERSA_ESTADO_TABLE_ID },
-      matchType: "allConditions",
-      filters: {
-        conditions: [
-          { keyName: "reengaged", condition: "eq", keyValue: "true" },
-          { keyName: "lastInboundAt", condition: "lt", keyValue: expr("{{ $now.minus({ hours: 48 }).toISO() }}") },
-        ],
-      },
-      returnAll: true,
-    },
-  },
-  output: [{ tenantSlug: "vale-do-uberaba", waId: "5534999990001", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando", reengaged: true, lastInboundAt: "2026-08-03T10:00:00.000Z" }],
-});
-
-const excludeClosedForEscalation = node({
-  type: "n8n-nodes-base.filter",
-  version: 2.3,
-  config: {
-    name: "Filter: exclui encerradas (escalonamento)",
-    position: [520, 400],
-    parameters: {
-      conditions: {
-        combinator: "and",
-        options: { caseSensitive: true, leftValue: "", typeValidation: "strict" },
-        conditions: [{ leftValue: expr("{{ $json.fase }}"), operator: { type: "string", operation: "notEquals" }, rightValue: "encerrada" }],
-      },
-    },
-  },
-  output: [{ tenantSlug: "vale-do-uberaba", waId: "5534999990001", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
-});
-
-// lote-14 (T26 — SILENCIO-01 AC6/AC7): relê o lead ao vivo antes do contato
-// proativo. `fase` em `conversa_estado` não sabe da marca de condução humana
-// (gravada pelo CRM), então só o CRM decide. Falha da leitura: saída de erro
-// sem ligação — o item cai sem contato e as outras varreduras do tick seguem.
-const getLeadForEscalation = node({
-  type: "n8n-nodes-base.httpRequest",
-  version: 4.4,
-  config: {
-    name: "HTTP: GET /leads/{id} (escalonamento)",
-    position: [650, 250],
-    retryOnFail: true,
-    maxTries: 3,
-    waitBetweenTries: 2000,
-    onError: "continueErrorOutput",
-    parameters: {
-      method: "GET",
-      url: expr(`${CRM_BASE_URL}/leads/{{ $json.leadId }}`),
-      authentication: "genericCredentialType",
-      genericAuthType: "httpHeaderAuth",
-      sendHeaders: true,
-      headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $json.tenantSlug }}") }] },
-    },
-    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
-  },
-  output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", status: "em_qualificacao", optedOutAt: null, humanTakeoverAt: null, memoryResetRequestedAt: null }],
-});
-
-const conductionForEscalation = node({
-  type: "n8n-nodes-base.code",
-  version: 2,
-  config: {
-    name: "Code: condução ao vivo (escalonamento)",
-    position: [780, 250],
-    parameters: {
-      mode: "runOnceForEachItem",
-      language: "javaScript",
-      jsCode:
-        '__INLINE(conduction.mjs)__' +
-        "\n\n" +
-        "const conversa = $('Filter: exclui encerradas (escalonamento)').item.json;\n" +
-        "const lead = $json;\n" +
-        "return { json: { ...conversa, podeContatar: canAgentContactProactively({ status: lead.status, humanTakeoverAt: lead.humanTakeoverAt, optedOutAt: lead.optedOutAt }) } };\n",
-    },
-  },
-  output: [{ tenantSlug: "vale-do-uberaba", waId: "5534999990001", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando", podeContatar: true }],
-});
-
-const canContactForEscalation = node({
-  type: "n8n-nodes-base.filter",
-  version: 2.3,
-  config: {
-    name: "Filter: agente pode contatar (escalonamento)",
-    position: [910, 250],
-    parameters: {
-      conditions: {
-        combinator: "and",
-        options: { caseSensitive: true, leftValue: "", typeValidation: "strict" },
-        conditions: [{ leftValue: expr("{{ $json.podeContatar }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }],
-      },
-    },
-  },
-  output: [{ tenantSlug: "vale-do-uberaba", waId: "5534999990001", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando", podeContatar: true }],
-});
-
-const lookupTenantForEscalation = node({
-  type: "n8n-nodes-base.dataTable",
-  version: 1.1,
-  config: {
-    name: "Data Table: tenant do escalonamento",
-    position: [780, 400],
-    parameters: {
-      resource: "row",
-      operation: "get",
-      dataTableId: { __rl: true, mode: "id", value: TENANT_CONFIG_TABLE_ID },
-      matchType: "allConditions",
-      filters: {
-        conditions: [{ keyName: "tenantSlug", condition: "eq", keyValue: expr("{{ $json.tenantSlug }}") }],
-      },
-      returnAll: false,
-      limit: 1,
-    },
-  },
-  output: [{ phoneNumberId: "109876543210001", tenantSlug: "vale-do-uberaba" }],
-});
-
-const mergeEscalationContext = node({
-  type: "n8n-nodes-base.code",
-  version: 2,
-  config: {
-    name: "Code: combinar escalonamento e tenant",
-    position: [1040, 400],
-    parameters: {
-      mode: "runOnceForEachItem",
-      language: "javaScript",
-      jsCode:
-        "const conversa = $('Filter: exclui encerradas (escalonamento)').item.json;\n" +
-        "return { json: { tenantSlug: conversa.tenantSlug, waId: conversa.waId, leadId: conversa.leadId } };\n",
-    },
-  },
-  output: [{ tenantSlug: "vale-do-uberaba", waId: "5534999990001", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6" }],
-});
-
-const patchEscalateSilence = node({
-  type: "n8n-nodes-base.httpRequest",
-  version: 4.4,
-  config: {
-    name: "HTTP: PATCH /leads/{id} (silencio 48h)",
-    position: [1300, 400],
-    retryOnFail: true,
-    maxTries: 3,
-    waitBetweenTries: 2000,
-    // AGT-07 AC1: mesmo tratamento de 409 do principal.ts — segue sem
-    // travar a execução (não há retentativa da mesma transição depois).
-    onError: "continueRegularOutput",
-    parameters: {
-      method: "PATCH",
-      url: expr(`${CRM_BASE_URL}/leads/{{ $json.leadId }}`),
-      authentication: "genericCredentialType",
-      genericAuthType: "httpHeaderAuth",
-      sendHeaders: true,
-      headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $json.tenantSlug }}") }] },
-      sendBody: true,
-      contentType: "json",
-      specifyBody: "json",
-      jsonBody: expr(
-        "{{ { status: 'escalado_humano', escalationReason: 'ausência de resposta', executiveSummary: 'Lead silencioso por mais de 48h após reengajamento único.' } }}"
-      ),
-    },
-    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
-  },
-  output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", status: "escalado_humano" }],
-});
-
-const markEscalatedLocally = node({
-  type: "n8n-nodes-base.dataTable",
-  version: 1.1,
-  config: {
-    name: "Data Table: marcar escalado localmente",
-    position: [1560, 400],
-    parameters: {
-      resource: "row",
-      operation: "update",
-      dataTableId: { __rl: true, mode: "id", value: CONVERSA_ESTADO_TABLE_ID },
-      matchType: "allConditions",
-      filters: {
-        conditions: [
-          { keyName: "tenantSlug", condition: "eq", keyValue: expr("{{ $('Code: combinar escalonamento e tenant').first().json.tenantSlug }}") },
-          { keyName: "waId", condition: "eq", keyValue: expr("{{ $('Code: combinar escalonamento e tenant').first().json.waId }}") },
-        ],
-      },
-      columns: {
-        mappingMode: "defineBelow",
-        value: { fase: "encerrada" },
-        schema: [{ id: "fase", displayName: "fase", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: true }],
-      },
-    },
-  },
-  output: [{ id: 1 }],
-});
+// Varredura C — Expire CRM independente de retomada/horário.
+const getTenantsForC = node({ type: "n8n-nodes-base.dataTable", version: 1.1, config: { name: "Data Table: tenants C", position: [260, 0], parameters: { resource: "row", operation: "get", dataTableId: { __rl: true, mode: "id", value: TENANT_CONFIG_TABLE_ID }, returnAll: true } }, output: [{}] });
+const uniqueTenantsC = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: tenants únicos C", position: [700, 0], parameters: { mode: "runOnceForAllItems", jsCode: "const seen = new Set(); return $input.all().filter(item => { const slug = item.json.tenantSlug; if (typeof slug !== 'string' || !/^[a-z0-9_-]{1,128}$/i.test(slug) || seen.has(slug)) return false; seen.add(slug); return true; }).map(item => ({ json: { tenantSlug: item.json.tenantSlug, cursor: null, cutoffAt: null } }));" } }, output: [{}] });
+const tenantsLoopC = splitInBatches({ version: 3, config: { name: "Loop: tenants C", position: [400, 0], parameters: { batchSize: 1 } } });
+const cursorC = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: cursor C", position: [700, 0], parameters: { mode: "runOnceForEachItem", jsCode: "return { json: $json }; " } }, output: [{}] });
+const candidatesC = node({ type: "n8n-nodes-base.httpRequest", version: 4.4, config: { name: "HTTP: candidatos C", position: [1100, 0], onError: "continueRegularOutput",  parameters: { method: "GET", url: expr(CRM_BASE_URL + "/whatsapp/automation/candidates?limit=100{{ $json.cursor ? '&cursor=' + encodeURIComponent($json.cursor) : '' }}"), authentication: "genericCredentialType", genericAuthType: "httpHeaderAuth", sendHeaders: true, headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: cursor C').item.json.tenantSlug }}") }] },  options: { timeout: 15000 } }, credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") } }, output: [{}] });
+const pageC = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: página C pronta", position: [700, 0], parameters: { mode: "runOnceForAllItems", jsCode: '__INLINE(scheduler-reengagement.mjs)__' + "\nreturn candidatePageJobs($input.first().json, $('Code: cursor C').item.json).map(json => ({ json }));" } }, output: [{}] });
+const candidatesLoopC = splitInBatches({ version: 3, config: { name: "Loop: candidatos C", position: [600, 0], parameters: { batchSize: 1, options: { reset: expr("{{ $json.pageStart === true }}") } } } });
+const candidateC = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: candidato C", position: [700, 0], parameters: { mode: "runOnceForEachItem", jsCode: "return { json: $json }; " } }, output: [{}] });
+const getLeadForEscalation = node({ type: "n8n-nodes-base.httpRequest", version: 4.4, config: { name: "HTTP: GET /leads/{id} (escalonamento)", position: [900, 0], onError: "continueErrorOutput", parameters: { method: "GET", url: expr(CRM_BASE_URL + "/leads/{{ $json.leadId }}"), authentication: "genericCredentialType", genericAuthType: "httpHeaderAuth", sendHeaders: true, headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $json.tenantSlug }}") }] } }, credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") } }, output: [{}] });
+const conductionForEscalation = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: condução ao vivo (escalonamento)", position: [700, 0], parameters: { mode: "runOnceForEachItem", jsCode: '__INLINE(conduction.mjs)__' + "\nconst conversa = $('Code: candidato C').item.json; const lead = $json; return { json: { ...conversa, podeContatar: canAgentContactProactively({ status: lead.status, optedOutAt: lead.optedOutAt, humanTakeoverAt: lead.humanTakeoverAt }) } }; " } }, output: [{}] });
+const canContactForEscalation = ifElse({ version: 2.3, config: { name: "Filter: agente pode contatar (escalonamento)", position: [900, 0], parameters: { conditions: { combinator: "and", options: { caseSensitive: true, leftValue: "", typeValidation: "strict" }, conditions: [{ leftValue: expr("{{ " + "$json.podeContatar" + " }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }] } } } });
+const nextPageC = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: próxima página C", position: [700, 0], parameters: { mode: "runOnceForAllItems", jsCode: "const last = $input.all().at(-1)?.json; if (!last) throw new Error('candidate-page-unavailable'); return [{ json: { tenantSlug: last.tenantSlug, cursor: last.nextCursor, cutoffAt: last.cutoffAt } }];" } }, output: [{}] });
+const hasNextPageC = ifElse({ version: 2.3, config: { name: "Há próxima página C?", position: [900, 0], parameters: { conditions: { combinator: "and", options: { caseSensitive: true, leftValue: "", typeValidation: "strict" }, conditions: [{ leftValue: expr("{{ " + "$json.cursor !== null" + " }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }] } } } });
+const candidateRouteC = switchCase({ version: 3.4, config: { name: "Switch: ação C", position: [800, 400], parameters: { mode: "rules", rules: { values: [{ conditions: { options: { caseSensitive: true, leftValue: "", typeValidation: "strict" }, conditions: [{ leftValue: expr("{{ $json.action }}"), operator: { type: "string", operation: "equals" }, rightValue: "escalate" }], combinator: "and" } }] }, options: { fallbackOutput: "extra" } } } });
+const expireC = node({ type: "n8n-nodes-base.httpRequest", version: 4.4, config: { name: "HTTP: expirar C", position: [1100, 400], retryOnFail: true, maxTries: 3, waitBetweenTries: 2000, onError: "continueRegularOutput", parameters: { method: "POST", url: expr(CRM_BASE_URL + "/leads/{{ $json.leadId }}/reengagement/expire"), authentication: "genericCredentialType", genericAuthType: "httpHeaderAuth", sendHeaders: true, headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: candidato C').item.json.tenantSlug }}") }] }, sendBody: true, contentType: "json", specifyBody: "json", jsonBody: expr("{{ { anchorMessageId: $json.anchorMessageId } }}"), options: { timeout: 15000 } }, credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") } }, output: [{}] });
+const confirmedExpiryC = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: expiração C confirmada", position: [1300, 400], parameters: { mode: "runOnceForEachItem", jsCode: '__INLINE(scheduler-reengagement.mjs)__' + "\nreturn { json: silenceExpiryResult($json, $('Code: candidato C').item.json) };" } }, output: [{}] });
+const committedExpiryC = ifElse({ version: 2.3, config: { name: "Escalada C confirmada?", position: [1450, 400], parameters: { conditions: { combinator: "and", options: { caseSensitive: true, leftValue: "", typeValidation: "strict" }, conditions: [{ leftValue: expr("{{ $json.committed }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }] } } } });
+const mirrorExpiryC = node({ type: "n8n-nodes-base.dataTable", version: 1.1, config: { name: "Data Table: marcar escalado localmente", position: [1600, 400], retryOnFail: true, maxTries: 3, waitBetweenTries: 2000, parameters: { resource: "row", operation: "update", dataTableId: { __rl: true, mode: "id", value: CONVERSA_ESTADO_TABLE_ID }, matchType: "allConditions", filters: { conditions: [{ keyName: "tenantSlug", condition: "eq", keyValue: expr("{{ $json.tenantSlug }}") }, { keyName: "leadId", condition: "eq", keyValue: expr("{{ $json.leadId }}") }] }, columns: { mappingMode: "defineBelow", value: { fase: "encerrada" }, schema: [{ id: "fase", displayName: "fase", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: true }] } } }, output: [{}] });
+const endC = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: concluir candidato C", position: [1800, 400], parameters: { mode: "runOnceForEachItem", jsCode: "const candidate = $('Code: candidato C').item.json; return { json: { ...candidate, pageStart: false, outcome: $json.error ? 'crm-unavailable' : ($json.outcome || ($json.podeContatar === false ? 'contact-denied' : 'processed')) } };" } }, output: [{}] });
 
 // =======================================================================
 // Varredura D — Purga pedida pelo CRM (lote-14 — T27; OPTHUM-01 AC6,
@@ -828,19 +645,12 @@ const candidateBWired = candidateB.to(candidateRouteB.onCase(0, contactBWired).o
 const pageBWired = candidatesLoopB.onEachBatch(candidateBWired).onDone(nextPageB.to(hasNextPageB.onTrue(cursorB).onFalse(nextBatch(tenantsLoopB))));
 const reengajamentoChain = getTenantsForB.to(uniqueTenantsB.to(tenantsLoopB.onEachBatch(cursorB.to(candidatesB.to(pageB.to(pageBWired))))));
 
-const escalonamentoChain = getSilentReengaged.to(
-  excludeClosedForEscalation.to(
-    getLeadForEscalation.to(
-      conductionForEscalation.to(
-        canContactForEscalation.to(
-          lookupTenantForEscalation.to(
-            mergeEscalationContext.to(patchEscalateSilence.to(markEscalatedLocally))
-          )
-        )
-      )
-    )
-  )
-);
+const endCWired = endC.to(nextBatch(candidatesLoopC));
+const expireCWired = expireC.to(confirmedExpiryC.to(committedExpiryC.onTrue(mirrorExpiryC.to(endCWired)).onFalse(endCWired)));
+const contactCWired = getLeadForEscalation.to(conductionForEscalation.to(canContactForEscalation.onTrue(expireCWired).onFalse(endCWired))).onError(endCWired);
+const candidateCWired = candidateC.to(candidateRouteC.onCase(0, contactCWired).onCase(1, endCWired));
+const pageCWired = candidatesLoopC.onEachBatch(candidateCWired).onDone(nextPageC.to(hasNextPageC.onTrue(cursorC).onFalse(nextBatch(tenantsLoopC))));
+const escalonamentoChain = getTenantsForC.to(uniqueTenantsC.to(tenantsLoopC.onEachBatch(cursorC.to(candidatesC.to(pageC.to(pageCWired))))));
 
 scheduleEveryFifteenMinutes.to(lembretesChain);
 scheduleEveryFifteenMinutes.to(reengajamentoChain);

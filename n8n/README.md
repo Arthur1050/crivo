@@ -55,6 +55,13 @@ removido. Texto vazio ou maior que4096 após trim libera preparação sem fallba
 Send é chamado uma vez; acknowledgement repete só registro, usando wamid e
 acceptedAt recebidos do send. Lembretes A e reset D conservam seus caminhos.
 
+**L14b T55:** C consulta candidatos por âncora e chama expire quando o CRM
+indica escalada, independentemente da retomada B e do horário. Expire decide
+responsável/status/motivo sob locks e não envia mensagem. Só a resposta
+`action=escalated` íntegra permite espelhar faseencerrada por tenant/leadId.
+409, omissão ou `unchanged` não comprovam escalada; replay do espelhamento usa
+a mesma resposta confirmada. Condução/status humano permanecem protegidos.
+
 Runbook de setup + referência da camada n8n do Crivo. Cobre **todos os passos humanos** necessários antes/durante o Execute deste lote e os riscos R1–R3/R6 do design (`.specs/features/lote-6-agente-n8n-whatsapp/design.md`).
 
 > **Regra de ouro (AD-014)**: a UI do n8n **nunca** é editada à mão — nem os workflows (`n8n/workflows/*.ts` → `n8n/generated/*.ts` → publicado via MCP), nem as Data Tables (criadas via MCP `create_data_table`/`add_data_table_column`). O único trabalho manual na instância n8n é **credenciais** (Google/Meta exigem OAuth/tokens que só o dono da conta pode gerar) e **templates de mensagem** no painel da Meta (aprovação é um processo da Meta, não do n8n).
@@ -481,8 +488,9 @@ Um turno do agente pode estar em andamento quando o corretor clica em "Assumir".
 
 Reengajamento B e escalonamento C releem o lead e seguem somente com
 `canAgentContactProactively`. Erro do GET em B conclui o candidato sem contato;
-C conserva a saída de erro sem ligação. B ainda passa pelos locks de prepare/send
-CRM antes do contato contextual. Lembretes A continuam durante condução humana.
+C também conclui o candidato sem efeito após erro de leitura. B passa pelos locks
+de prepare/send antes do contato; C passa pelos locks de expire antes do cache.
+Lembretes A continuam durante condução humana.
 O `PATCH` de status/reunião no CRM mantém a proteção da marca humana.
 
 ### Número de resposta e coluna nova

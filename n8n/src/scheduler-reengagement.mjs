@@ -41,3 +41,10 @@ export function acknowledgementForSend(response, claim) {
     && typeof response.wamid === "string" && response.wamid.trim() === response.wamid && response.wamid.length > 0 && response.wamid.length <= 2048 && bDate(response.acceptedAt);
   return { ...claim, needsAck: valid, ...(valid ? { acknowledgement: { wamid: response.wamid, acceptedAt: response.acceptedAt } } : {}), outcome: typeof response?.state === "string" ? response.state : "uncertain" };
 }
+
+/** Only the committed expiry DTO grants a cache mirror; it never authorizes contact. */
+export function silenceExpiryResult(response, candidate) {
+  const committed = !response?.error && response?.action === "escalated" && B_UUID.test(response.episodeId)
+    && (response.brokerId === null || B_UUID.test(response.brokerId)) && ["accepted", "omitted", "refused", "uncertain"].includes(response.result);
+  return { ...candidate, committed, ...(committed ? { episodeId: response.episodeId, brokerId: response.brokerId, result: response.result } : {}), outcome: committed ? "escalated" : "expiry-unconfirmed" };
+}

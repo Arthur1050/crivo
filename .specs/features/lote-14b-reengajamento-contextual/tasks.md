@@ -2347,13 +2347,17 @@ Adequação A–D/necessidade: `principal-outgoing-channel.test.ts:20–32` conf
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: >=48h mesmo aceita/omitida/recusada/incerta; fora de horário; replay; 409 contexto mudou; responsável; statusChangedBy humano; cache após commit; nenhum envio ao lead; A/D preservados.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **10 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Quick passou: `npx vitest run n8n/workflows/__tests__/scheduler-silence-expire.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
-- [ ] Inliner executado, generated equivalente, wiring/nós exercitados e README/guia afetado atualizado no mesmo commit. Publicação remota depende de autorização posterior.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: >=48h mesmo aceita/omitida/recusada/incerta; fora de horário; replay; 409 contexto mudou; responsável; statusChangedBy humano; cache após commit; nenhum envio ao lead; A/D preservados.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **10 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Quick passou: `npx vitest run n8n/workflows/__tests__/scheduler-silence-expire.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
+- [x] Inliner executado, generated equivalente, wiring/nós exercitados e README/guia afetado atualizado no mesmo commit. Publicação remota depende de autorização posterior.
 
 **Tests**: unit — `n8n/workflows/__tests__/scheduler-silence-expire.test.ts`; matriz: Workflow/Code nodes.
+
+**Evidência**: 2026-10-05 00:24:42 — Quick + regressões 113/113, 5 arquivos, exit 0, 123,35s; 10 cenários novos, incluindo expire PostgreSQL, condução B/C e inliner.
+C pagina candidatos por tenant e espelha cache somente após DTO `escalated` confirmado; `unchanged`/409 não fecham cache, sem envio ao lead; A/D/B preservados.
+Inliner e diff check passaram; generated equivalente e README atualizado, sem publicação remota.
 
 **Gate**: Quick + Wiring; Build no fechamento da fase.
 
