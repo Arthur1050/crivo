@@ -2448,13 +2448,18 @@ Inliner/grafo equivalente, README e rotas reais autenticadas; tick15min reconcil
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: pago; franquia; FEP; pendente; indisponível; não entregue; inbound sem rótulo; texto sem valor de fatura/promessa de gratuidade.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **8 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Quick passou: `npx vitest run src/components/chats/__tests__/message-pricing.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
-- [ ] Astryx discover/frame/props e guias Next aplicáveis conferidos; self-check sem novo div/span de layout, style, CSS ou valores arbitrários; fluxo local inspecionado com evidência, sem remount do composer.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: pago; franquia; FEP; pendente; indisponível; não entregue; inbound sem rótulo; texto sem valor de fatura/promessa de gratuidade.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **8 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Quick passou: `npx vitest run src/components/chats/__tests__/message-pricing.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
+- [x] Astryx discover/frame/props e guias Next aplicáveis conferidos; self-check sem novo div/span de layout, style, CSS ou valores arbitrários; fluxo local inspecionado com evidência, sem remount do composer.
 
 **Tests**: unit — `src/components/chats/__tests__/message-pricing.test.ts`; matriz: Apresentação.
+
+**Evidência**: 2026-10-05 01:19:09 — `node node_modules/vitest/vitest.mjs run src/components/chats/__tests__/message-pricing.test.ts`: 8/8, 1 arquivo, exit0, 631ms; seis frases, inbound vazio, cópia sem fatura/promessa e fallback indisponível.
+Astryx discover/template/props/layout/tokens e guias Next conferidos; Text com wrap em ChatMessageMetadata/footer, sem layout/CSS/valores manuais, import type do DTO.
+Preview reproduzível `npx tsx scripts/preview-message-pricing.tsx`; IAB real320x500, uma captura por seis classificações +inbound em evidence/t58/*.jpg; revisão das sete imagens, servidor/navegador encerrados.
+Componente ainda sem consumidor de produção (T59); nenhum teste anterior, composer ou fonte n8n alterado.
 
 **Gate**: Quick; Build no fechamento da fase.
 
