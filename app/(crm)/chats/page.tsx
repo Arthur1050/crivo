@@ -33,6 +33,7 @@ import {
 } from "@/src/server/data";
 import { getLeadScope, verifySession } from "@/src/server/auth/session";
 import { getActiveTenantId } from "@/src/server/tenant";
+import { getMessageClassifications } from "@/src/server/data/whatsapp";
 
 interface ChatsPageProps {
   searchParams: Promise<{ conversa?: string }>;
@@ -69,12 +70,13 @@ export default async function ChatsPage({ searchParams }: ChatsPageProps) {
   // telefone): `getConversationSummaries` não carrega o telefone, e
   // `getLead` já é tenant-scoped, então nenhuma consulta nova precisa nascer
   // na DAL.
-  const [messages, selectedLead, tenant, session, lastLeadMessageAt] = await Promise.all([
+  const session = await verifySession();
+  const [messages, selectedLead, tenant, lastLeadMessageAt, pricingViews] = await Promise.all([
     selectedSummary ? getMessages(scope, selectedSummary.id) : [],
     selectedSummary ? getLead(scope, selectedSummary.leadId) : null,
     getTenant(tenantId),
-    verifySession(),
     selectedSummary ? getLastLeadMessageAt(tenantId, selectedSummary.leadId) : null,
+    selectedSummary ? getMessageClassifications(session, selectedSummary.id) : [],
   ]);
 
   // Lote-14 (design.md C6): janela e controles calculados no servidor; o
@@ -163,6 +165,7 @@ export default async function ChatsPage({ searchParams }: ChatsPageProps) {
                 <VStack padding={4} height="100%">
                   <MessageThread
                     messages={messages}
+                    pricingViews={pricingViews}
                     leadName={selectedSummary.leadName || "Lead"}
                     emptyTitle="Nenhuma mensagem ainda"
                     emptyDescription="Esta conversa ainda não tem mensagens registradas."

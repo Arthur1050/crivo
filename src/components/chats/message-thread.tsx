@@ -9,12 +9,15 @@ import {
 } from "@astryxdesign/core/Chat";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { Timestamp } from "@astryxdesign/core/Timestamp";
-import { buildChatThread } from "@/src/lib/chat-thread";
+import { buildChatThread } from "../../lib/chat-thread";
 import type { Message } from "@/src/server/data";
+import type { MessagePricingView } from "../../server/data/whatsapp";
 import { Text } from "@astryxdesign/core/Text";
+import { MessagePricing } from "./message-pricing";
 
 interface MessageThreadProps {
   messages: Message[];
+  pricingViews?: MessagePricingView[];
   /** Nome do lead — rótulo e avatar das bolhas ghost à esquerda. */
   leadName: string;
   emptyTitle: string;
@@ -37,6 +40,7 @@ interface MessageThreadProps {
  */
 export function MessageThread({
   messages,
+  pricingViews = [],
   leadName,
   emptyTitle,
   emptyDescription,
@@ -44,6 +48,8 @@ export function MessageThread({
   if (messages.length === 0) {
     return <EmptyState title={emptyTitle} description={emptyDescription} />;
   }
+
+  const pricingByMessage = new Map(pricingViews.map((pricing) => [pricing.messageId, pricing]));
 
   const days = buildChatThread(
     messages.map((message) => ({
@@ -101,7 +107,17 @@ export function MessageThread({
                       ) : undefined
                     }
                     metadata={
-                      index === lastIndex ? (
+                      !isLead ? (
+                        <MessagePricing
+                          sender={group.sender}
+                          pricing={pricingByMessage.get(bubble.id)}
+                          timestamp={
+                            index === lastIndex ? (
+                              <Timestamp value={bubble.sentAt} format="time" />
+                            ) : undefined
+                          }
+                        />
+                      ) : index === lastIndex ? (
                         <ChatMessageMetadata
                           timestamp={
                             <Timestamp value={bubble.sentAt} format="time" />

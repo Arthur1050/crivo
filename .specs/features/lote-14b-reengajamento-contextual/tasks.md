@@ -2483,13 +2483,18 @@ Componente ainda sem consumidor de produção (T59); nenhum teste anterior, comp
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: primeira e última saída do grupo; humano/agente/retomada; inbound; autor existente; receipt atualizado pelo refresh; FEP depois de aviso de custo; classificação desconhecida.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **8 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Quick passou: `npx vitest run src/components/chats/__tests__/message-thread.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
-- [ ] Astryx discover/frame/props e guias Next aplicáveis conferidos; self-check sem novo div/span de layout, style, CSS ou valores arbitrários; fluxo local inspecionado com evidência, sem remount do composer.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: primeira e última saída do grupo; humano/agente/retomada; inbound; autor existente; receipt atualizado pelo refresh; FEP depois de aviso de custo; classificação desconhecida.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **8 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Quick passou: `npx vitest run src/components/chats/__tests__/message-thread.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
+- [x] Astryx discover/frame/props e guias Next aplicáveis conferidos; self-check sem novo div/span de layout, style, CSS ou valores arbitrários; fluxo local inspecionado com evidência, sem remount do composer.
 
 **Tests**: unit — `src/components/chats/__tests__/message-thread.test.ts`; matriz: Apresentação.
+
+**Evidência**: 2026-10-05 01:34:21 — Quick+regressões47/47,4 arquivos,exit0,24.94s (thread8,pricing8,chat-thread15,DAL16); após retirar checks novos de substring, thread8/8,exit0,476ms,início01:40:19. Nenhum teste anterior alterado.
+Cada saída recebe metadata por messageId; inbound, autores, timestamp/agrupamento preservados; RSC consulta lote autorizado uma vez, sem Graph e com chave estável do composer. Astryx/guias Next/self-check e revisão React conferidos.
+App real dev:test isolado: POST de recibo200, polling5s trocou pending→FEP; nó AX66 focado, draft exato e Enviar habilitado preservados, sem envio/reload. Capturas únicas evidence/t59/{pending-before-refresh,fep-after-refresh}.jpg revisadas antes de cleanup200; helper/dev/aba encerrados.
+Aviso inicial de hidratação Timestamp en-US/pt-BR preexistente; prova feita após recuperação. RequestId privado não inspecionado; consumo/aviso financeiro T62 continuam adiados.
 
 **Gate**: Quick; Build no fechamento da fase.
 
