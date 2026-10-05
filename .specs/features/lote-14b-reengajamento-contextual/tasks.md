@@ -2713,17 +2713,23 @@ Desvios: nenhum; aplicação pertence ao gate posterior, nenhuma escrita/seed/ro
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: hash anterior/novo; prompt efetivo principal/proativo; teto existente não expandido; overhead deduzido; estado stale; sem resultado medido não habilita; check sem chamadas pagas e medição somente autorizada.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **7 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Quick passou: `npx vitest run scripts/__tests__/document-context-benchmark.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
-- [ ] Se identidade compartilhada mudar, remedição autorizada concluída e anexada antes de habilitar; se não mudar, evidência de igualdade e orçamento do proativo registrada, sem fingir nova medição.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: hash anterior/novo; prompt efetivo principal/proativo; teto existente não expandido; overhead deduzido; estado stale; sem resultado medido não habilita; check sem chamadas pagas e medição somente autorizada.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **7 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Quick passou: `npx vitest run scripts/__tests__/document-context-benchmark.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
+- [x] Se identidade compartilhada mudar, remedição autorizada concluída e anexada antes de habilitar; se não mudar, evidência de igualdade e orçamento do proativo registrada, sem fingir nova medição.
 
 **Tests**: unit — `scripts/__tests__/document-context-benchmark.test.ts`; matriz: Scripts operacionais.
 
 **Gate**: Quick; Build no fechamento da fase.
 
 **Commit**: `feat(l14b): identidade e orçamento do benchmark` (docs para mudança exclusivamente contratual).
+
+**Evidência**: Quick: 70/70, 5 arquivos, sete novos, exit 0 (1,32s).
+Gate: `node node_modules/vitest/vitest.mjs run scripts/__tests__/document-context-benchmark.test.ts src/server/documents/__tests__/benchmark-identity.test.ts src/server/documents/__tests__/context-ceiling.test.ts src/server/documents/__tests__/context-budget.test.ts n8n/src/__tests__/reengagement-prompt.test.ts`.
+Hash compartilhado anterior/atual `b38f4928cd281edcaa85f4514460e2b5aa0e7c573694729cfabf520d94cd348d`; identidade/paridade iguais, proveniência Git `5d937b9` do registro medido 2026-10-01.
+Auditoria local exit 0 (0,67s), frame sintético: novo/usado/ambos tetos 106898/119714/106720, overhead 1554, restantes 105344/118160/105166 bytes; sem expansão.
+Desvios: nenhum; paidCalls 0, nenhuma escrita no banco ou nova medição.
 
 ---
 
