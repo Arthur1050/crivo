@@ -2678,17 +2678,22 @@ Desvios: nenhum; cron/agendamento existente reutilizado.
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: fase real versus ausente; âncora/reset/revisão antiga; WABA de teste marcada; canal/fuso/Analytics sem prova permanecem desabilitados; dry run não escreve; tenant explícito; replay não reabre; credencial fora da saída; sem seed/rotação de chaves.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **9 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Quick passou: `npx vitest run scripts/__tests__/reengagement-bootstrap.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
-- [ ] Evidência sanitizada diferencia confirmado/pendente; dry run/relatório não altera conta, workflow, banco de produção ou env. Aplicação externa é gate posterior.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: fase real versus ausente; âncora/reset/revisão antiga; WABA de teste marcada; canal/fuso/Analytics sem prova permanecem desabilitados; dry run não escreve; tenant explícito; replay não reabre; credencial fora da saída; sem seed/rotação de chaves.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **9 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Quick passou: `npx vitest run scripts/__tests__/reengagement-bootstrap.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
+- [x] Evidência sanitizada diferencia confirmado/pendente; dry run/relatório não altera conta, workflow, banco de produção ou env. Aplicação externa é gate posterior.
 
 **Tests**: unit — `scripts/__tests__/reengagement-bootstrap.test.ts`; matriz: Scripts operacionais.
 
 **Gate**: Quick; Build no fechamento da fase.
 
 **Commit**: `feat(l14b): bootstrap explícito de canal e fase observada` (docs para mudança exclusivamente contratual).
+
+**Evidência**: Quick: 37/37 testes, 3 arquivos, exit 0 (12,23s); exatamente nove cenários novos.
+Gate: `node node_modules/vitest/vitest.mjs run scripts/__tests__/reengagement-bootstrap.test.ts scripts/__tests__/whatsapp-account-preflight.test.ts n8n/workflows/__tests__/principal-agent-state.test.ts`.
+Dry run readonly, tenant explícito, âncora/reset/revisão revalidados; cache legado e capacidades sem prova permanecem pendentes, saída sanitizada.
+Desvios: nenhum; aplicação pertence ao gate posterior, nenhuma escrita/seed/rotação ou ação externa executada.
 
 ---
 
