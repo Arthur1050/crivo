@@ -1,5 +1,5 @@
 /**
- * crivo-agente-scheduler — 3 varreduras completas (T11).
+ * crivo-agente-scheduler — varreduras A–E no mesmo tick de 15 minutos.
  *
  * Fonte versionada do workflow único de varreduras agendadas (design.md —
  * "Scheduler"; AGT-05 AC2, AGT-06, AGT-07 AC3, LGPD-03 AC2). Texto de
@@ -17,23 +17,9 @@
  * saída, em vez de sobrescrever) — é o que preserva a matemática de R3 (1
  * execução por tick cobre as 3 varreduras, não 3).
  *
- * Simplificação documentada (Agent's Discretion, context.md — "estrutura
- * interna da memória"): a varredura de Reengajamento e a de Escalonamento
- * por silêncio filtram "sem opt-out"/"não travado por humano" via
- * `fase !== 'encerrada'` em `conversa_estado`, sem re-consultar o CRM ao
- * vivo — válido porque `principal.ts` (T10) grava `fase: 'encerrada'`
- * exatamente nos dois casos que importam aqui (opt-out e escalado_humano;
- * ver `Code: finalizar opt-out` e `Code: finalizar escalado`). A varredura
- * de Lembretes, ao contrário, SEMPRE re-consulta `optedOutAt` ao vivo via
- * `POST /leads` — design.md exige explicitamente esse re-check "fresco"
- * (o intervalo entre agendar e a hora da reunião é longo o bastante para o
- * lead ter dado opt-out nesse meio-tempo).
- *
- * lote-14 (T26): a marca de condução humana é gravada pelo CRM e não passa
- * por `fase`, então Reengajamento e Escalonamento passam a reler o lead ao
- * vivo (`GET /leads/{id}`) depois do filtro de `fase` e só seguem com
- * `canAgentContactProactively` (`n8n/src/conduction.mjs`). Lembretes não
- * mudam (SILENCIO-01 AC8).
+ * L14b: B/C paginam candidatos autoritativos e relêem condução no CRM.
+ * E repara somente persistência e sincroniza canais habilitados pelo CRM,
+ * inclusive sem leads. Graph e transporte não pertencem a esse ramo.
  */
 import { workflow, trigger, node, ifElse, switchCase, newCredential, expr, splitInBatches, nextBatch } from "@n8n/workflow-sdk";
 
@@ -612,7 +598,22 @@ const purgeConversaEstadoOnCrmReset = node({
 });
 
 // =======================================================================
-// Montagem do grafo — 1 trigger, 3 ramos independentes (fan-out)
+// Varredura E — CRM reconcilia persistência; sincroniza números habilitados mesmo sem leads.
+const getTenantsForE = node({ type: "n8n-nodes-base.dataTable", version: 1.1, config: { name: "Data Table: tenants E", position: [260, 1200], parameters: { resource: "row", operation: "get", dataTableId: { __rl: true, mode: "id", value: TENANT_CONFIG_TABLE_ID }, returnAll: true } }, output: [{}] });
+const uniqueTenantsE = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: tenants únicos E", position: [400, 1200], parameters: { mode: "runOnceForAllItems", jsCode: "const seen = new Set(); return $input.all().filter(item => { const slug = item.json.tenantSlug; if (typeof slug !== 'string' || !/^[a-z0-9_-]{1,128}$/i.test(slug) || seen.has(slug)) return false; seen.add(slug); return true; }).map(item => ({ json: { tenantSlug: item.json.tenantSlug } }));" } }, output: [{}] });
+const tenantsLoopE = splitInBatches({ version: 3, config: { name: "Loop: tenants E", position: [600, 1200], parameters: { batchSize: 1 } } });
+const tenantE = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: tenant E", position: [800, 1200], parameters: { mode: "runOnceForEachItem", jsCode: "return { json: { tenantSlug: $json.tenantSlug } };" } }, output: [{}] });
+const reconcileE = node({ type: "n8n-nodes-base.httpRequest", version: 4.4, config: { name: "HTTP: reconciliar E sem transporte", position: [1000, 1100], onError: "continueRegularOutput", parameters: { method: "POST", url: CRM_BASE_URL + "/whatsapp/automation/reconcile", authentication: "genericCredentialType", genericAuthType: "httpHeaderAuth", sendHeaders: true, headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: tenant E').item.json.tenantSlug }}") }] }, sendBody: true, contentType: "json", specifyBody: "json", jsonBody: "{}", options: { timeout: 120000 } }, credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") } }, output: [{}] });
+const reconcileResultE = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: resultado reconciliação E", position: [1200, 1100], parameters: { mode: "runOnceForEachItem", jsCode: "const tenant = $('Code: tenant E').item.json; const counts = ['recorded', 'uncertain', 'failed']; const valid = !$json.error && counts.every(key => Number.isSafeInteger($json[key]) && $json[key] >= 0); return { json: { tenantSlug: tenant.tenantSlug, outcome: valid ? 'reconciled' : 'reconciliation-unavailable', ...(valid ? { recorded: $json.recorded, uncertain: $json.uncertain, failed: $json.failed } : {}) } };" } }, output: [{}] });
+const channelsE = node({ type: "n8n-nodes-base.httpRequest", version: 4.4, config: { name: "HTTP: canais habilitados E", position: [1000, 1300], onError: "continueRegularOutput", parameters: { method: "GET", url: CRM_BASE_URL + "/whatsapp/automation/channels", authentication: "genericCredentialType", genericAuthType: "httpHeaderAuth", sendHeaders: true, headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: tenant E').item.json.tenantSlug }}") }] }, options: { timeout: 15000 } }, credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") } }, output: [{}] });
+const channelJobsE = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: canais E prontos", position: [1200, 1300], parameters: { mode: "runOnceForAllItems", jsCode: '__INLINE(scheduler-automation.mjs)__' + "\nreturn automationChannelJobs($input.first().json, $('Code: tenant E').item.json).map(json => ({ json, pairedItem: { item: 0 } }));" } }, output: [{}] });
+const channelsLoopE = splitInBatches({ version: 3, config: { name: "Loop: canais E", position: [1400, 1300], parameters: { batchSize: 1, options: { reset: expr("{{ $json.channelDone !== true }}") } } } });
+const channelE = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: canal E", position: [1600, 1300], parameters: { mode: "runOnceForEachItem", jsCode: "return { json: $json };" } }, output: [{}] });
+const enabledChannelE = ifElse({ version: 2.3, config: { name: "Canal E habilitado?", position: [1800, 1300], parameters: { conditions: { combinator: "and", options: { caseSensitive: true, leftValue: "", typeValidation: "strict" }, conditions: [{ leftValue: expr("{{ $json.enabled }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }] } } } });
+const syncUsageE = node({ type: "n8n-nodes-base.httpRequest", version: 4.4, config: { name: "HTTP: sincronizar consumo E", position: [2000, 1300], onError: "continueRegularOutput", parameters: { method: "POST", url: CRM_BASE_URL + "/whatsapp/usage/sync", authentication: "genericCredentialType", genericAuthType: "httpHeaderAuth", sendHeaders: true, headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: canal E').item.json.tenantSlug }}") }] }, sendBody: true, contentType: "json", specifyBody: "json", jsonBody: expr("{{ { phoneNumberId: $json.phoneNumberId } }}"), options: { timeout: 120000 } }, credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") } }, output: [{}] });
+const endChannelE = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: concluir canal E", position: [2200, 1300], parameters: { mode: "runOnceForEachItem", jsCode: '__INLINE(scheduler-automation.mjs)__' + "\nreturn { json: { ...automationSyncResult($json, $('Code: canal E').item.json), channelDone: true } };" } }, output: [{}] });
+
+// Montagem do grafo — 1 trigger, ramos independentes (fan-out)
 // =======================================================================
 
 const markSentWired = registerReminderMessage.to(markReminderSent);
@@ -669,6 +670,14 @@ const purgaPedidaChain = getTenantsForPurge.to(
   )
 );
 scheduleEveryFifteenMinutes.to(purgaPedidaChain);
+
+const endEWired = endChannelE.to(nextBatch(channelsLoopE));
+const channelEWired = channelE.to(enabledChannelE.onTrue(syncUsageE.to(endEWired)).onFalse(endEWired));
+const channelsEWired = channelsE.to(channelJobsE.to(channelsLoopE.onEachBatch(channelEWired).onDone(nextBatch(tenantsLoopE))));
+tenantE.to(reconcileE.to(reconcileResultE));
+tenantE.to(channelsEWired);
+const automationChain = getTenantsForE.to(uniqueTenantsE.to(tenantsLoopE.onEachBatch(tenantE)));
+scheduleEveryFifteenMinutes.to(automationChain);
 
 const schedulerWorkflow = workflow("crivo-agente-scheduler", "crivo-agente-scheduler").add(scheduleEveryFifteenMinutes);
 schedulerWorkflow.regenerateNodeIds(new Map());

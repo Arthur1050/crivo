@@ -287,7 +287,7 @@ export type AcceptanceResult =
 export async function reconcileAcceptance(
   context: AuthResult, leadId: string, episodeId: string,
   input: { wamid?: string | null; acceptedAt?: Date | null },
-  options: { now?: () => Date; database?: Pick<typeof db, "transaction"> } = {},
+  options: { now?: () => Date; database?: Pick<typeof db, "transaction">; resolveAbandoned?: boolean } = {},
 ): Promise<AcceptanceResult> {
   if (!UUID.test(episodeId) || (input.wamid != null && (typeof input.wamid !== "string" || !input.wamid.trim()))
       || (input.acceptedAt != null && (!(input.acceptedAt instanceof Date) || !Number.isFinite(input.acceptedAt.getTime())))) return { ok: false, reason: "invalid-input" };
@@ -304,6 +304,11 @@ export async function reconcileAcceptance(
       : { ok: true, recorded: false, episodeId, state: "accepted" };
     const now = (options.now ?? (() => new Date()))(), wamid = episode.wamid ?? input.wamid;
     if (!Number.isFinite(now.getTime())) return { ok: false, reason: "invalid-input" };
+    if (options.resolveAbandoned && (!wamid || !episode.acceptedAt)) {
+      if (!episode.dispatchCompletionDeadline || episode.dispatchCompletionDeadline.getTime() > now.getTime()) return { ok: false, reason: "not-authorized" };
+      await tx.update(reengagementEpisodes).set({ state: "uncertain", reasonCode: "dispatch-unresolved", updatedAt: now }).where(eq(reengagementEpisodes.id, episodeId));
+      return { ok: true, recorded: false, episodeId, state: "uncertain" };
+    }
     if (!wamid) {
       await tx.update(reengagementEpisodes).set({ state: "uncertain", reasonCode: "acceptance-identity-missing", updatedAt: now }).where(eq(reengagementEpisodes.id, episodeId));
       return { ok: true, recorded: false, episodeId, state: "uncertain" };

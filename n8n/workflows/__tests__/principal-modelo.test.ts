@@ -50,9 +50,40 @@ const MEMORY_NODE = "Postgres Chat Memory";
  * Code; +1 erro do GET → fechamento; +1 Code → IF; +1 IF verdadeiro →
  * preparar envio; +1 IF falso → fechamento) → 73/95, medido por
  * `principal.toJSON()`.
+ * L14b (T49–T51): status, publicação agent-state e session-context adicionam
+ * 26 nós e 33 conexões autorizados → 99/128. O inventário explícito abaixo
+ * fixa essas adições; modelo, tools e memória conservam suas asserções.
  */
-const NOS_ESPERADOS = 73;
-const CONEXOES_ESPERADAS = 95;
+const NOS_ESPERADOS = 99;
+const CONEXOES_ESPERADAS = 128;
+const NOS_ADICIONADOS_L14B = [
+  "Code: separar WhatsApp messages/statuses",
+  "WhatsApp: tipo de evento",
+  "Data Table: tenant do status",
+  "Code: preparar status CRM",
+  "HTTP: POST /whatsapp/statuses",
+  "Code: resultado status sanitizado",
+  "Code: estado CRM após buffer",
+  "Code: preparar agent-state perguntados",
+  "Agent-state perguntados publicável?",
+  "HTTP: publicar agent-state perguntados",
+  "Code: agent-state perguntados confirmado",
+  "Agent-state perguntados confirmado?",
+  "HTTP: metadados CRM no fechamento",
+  "Code: preparar agent-state final",
+  "Agent-state final publicável?",
+  "HTTP: publicar agent-state final",
+  "Code: agent-state final confirmado",
+  "Code: iniciar leitura session-context",
+  "HTTP: POST /leads/{id}/session-context",
+  "Code: session-context pronto",
+  "Aceite da retomada pendente?",
+  "Aguardar aceite da retomada",
+  "Session-context disponível?",
+  "Code: session-context indisponível",
+  "Chat Memory Manager: reconstruir ponte warm",
+  "Reconstruir memória warm da ponte?",
+];
 
 const TOOLS = [
   "registrar_qualificacao",
@@ -155,9 +186,11 @@ describe("a troca de modelo não mexeu em mais nada do grafo (MOD-01 AC2)", () =
     );
   });
 
-  it("o grafo continua com 73 nós e 95 conexões — as contagens medidas depois da T23 do lote-14", () => {
+  it("o grafo conserva 99 nós e 128 conexões, com as 26 adições autorizadas do L14b", () => {
     expect(workflow.nodes).toHaveLength(NOS_ESPERADOS);
     expect(contarConexoes()).toBe(CONEXOES_ESPERADAS);
+    expect(NOS_ADICIONADOS_L14B).toHaveLength(26);
+    for (const name of NOS_ADICIONADOS_L14B) expect(nodeByName(name)).toBeDefined();
   });
 });
 

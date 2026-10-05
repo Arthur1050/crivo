@@ -62,6 +62,17 @@ responsável/status/motivo sob locks e não envia mensagem. Só a resposta
 409, omissão ou `unchanged` não comprovam escalada; replay do espelhamento usa
 a mesma resposta confirmada. Condução/status humano permanecem protegidos.
 
+**L14b T56:** E roda no mesmo tick de15min e por tenant configurado. O POST
+`/whatsapp/automation/reconcile`, com body `{}`, pagina até100 episódios por
+vez no CRM: aceite com wamid/acceptedAt duráveis repete só persistência;
+autorização sem identidade após2min vira uncertain. Nunca chama transporte.
+Cada registro falho é isolado, sem copiar payload para o resultado.
+O GET `/whatsapp/automation/channels` retorna apenas números usageEnabled do
+tenant, inclusive sem leads. E chama `/whatsapp/usage/sync` uma vez por número,
+isolando falhas e conservando A–D. O CRM determina mês/fuso, lease/cadência e
+gate de analytics; polling/retry de persistência não consulta Graph. Produção
+continua indisponível sem provas reais de WABA/número/tenant/fuso/acesso.
+
 Runbook de setup + referência da camada n8n do Crivo. Cobre **todos os passos humanos** necessários antes/durante o Execute deste lote e os riscos R1–R3/R6 do design (`.specs/features/lote-6-agente-n8n-whatsapp/design.md`).
 
 > **Regra de ouro (AD-014)**: a UI do n8n **nunca** é editada à mão — nem os workflows (`n8n/workflows/*.ts` → `n8n/generated/*.ts` → publicado via MCP), nem as Data Tables (criadas via MCP `create_data_table`/`add_data_table_column`). O único trabalho manual na instância n8n é **credenciais** (Google/Meta exigem OAuth/tokens que só o dono da conta pode gerar) e **templates de mensagem** no painel da Meta (aprovação é um processo da Meta, não do n8n).

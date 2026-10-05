@@ -2381,13 +2381,18 @@ Inliner e diff check passaram; generated equivalente e README atualizado, sem pu
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: cadência15min; números sem leads; falha isolada; ack conhecido; >2min vira incerto sem reenvio; canal desabilitado; sem Graph por poll; troca de mês; ramos A/D preservados.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **9 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Quick passou: `npx vitest run n8n/workflows/__tests__/scheduler-whatsapp-usage.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
-- [ ] Inliner executado, generated equivalente, wiring/nós exercitados e README/guia afetado atualizado no mesmo commit. Publicação remota depende de autorização posterior.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: cadência15min; números sem leads; falha isolada; ack conhecido; >2min vira incerto sem reenvio; canal desabilitado; sem Graph por poll; troca de mês; ramos A/D preservados.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **9 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Quick passou: `npx vitest run n8n/workflows/__tests__/scheduler-whatsapp-usage.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
+- [x] Inliner executado, generated equivalente, wiring/nós exercitados e README/guia afetado atualizado no mesmo commit. Publicação remota depende de autorização posterior.
 
 **Tests**: unit — `n8n/workflows/__tests__/scheduler-whatsapp-usage.test.ts`; matriz: Workflow/Code nodes.
+
+**Evidência**: 2026-10-05 00:49:39 — `node node_modules/vitest/vitest.mjs run n8n/workflows/__tests__/scheduler-whatsapp-usage.test.ts` + scheduler-reengagement/silence-expire/conducao e scripts/__tests__/n8n-inline.test.ts: 85/85, 5 arquivos, exit0, 3,45s.
+`node node_modules/vitest/vitest.mjs run src/server/reengagement/__tests__/tick.test.ts`: PostgreSQL5/5, exit0, 32,33s, início00:48:49; 9 cenários n8n +5 CRM.
+Regressões acceptance.test.ts e src/server/integration/__tests__/routes/whatsapp-usage-sync-post.test.ts: 38/38; quatro falhas da fixture nova corrigidas com firstContactAt, sem alterar asserções.
+Inliner/grafo equivalente, README e rotas reais autenticadas; tick15min reconcilia sem transporte e sincroniza canais sem leads, preservando indisponibilidade e A–D; gates da fase no Handoff.
 
 **Gate**: Quick + Wiring; Build no fechamento da fase.
 
