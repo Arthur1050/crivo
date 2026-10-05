@@ -2785,11 +2785,17 @@ Desvios: nenhum de contrato; fixture inicial do runner corrigida, assertions pre
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: scheduler→frame→texto→send→CRM→receipt→UI; duas conexões Postgres reais; remover ligação quebra prova; 999/1000/1001/FEP/replay/mês; warm/cold; opt-out/humano; janela 22h/24h/48h; takeover/inbound antes do commit; versões/filas; falha aceita sem registro; modo real captura entrada/resultado/tela antes da limpeza; benchmark condicionado e nenhuma rajada de 1001 envios.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **12 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Full passou: `npx vitest run scripts/__tests__/reengagement-proof.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
-- [ ] Prova real somente após autorização: guardar versões/filas, entrada, resultado e captura em arquivo versionado antes da limpeza; conta de teste não prova tarifa real. Uma entrega autorizada basta para transporte; casos999/1000/1001 usam fixtures documentadas.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: scheduler→frame→texto→send→CRM→receipt→UI; duas conexões Postgres reais; remover ligação quebra prova; 999/1000/1001/FEP/replay/mês; warm/cold; opt-out/humano; janela 22h/24h/48h; takeover/inbound antes do commit; versões/filas; falha aceita sem registro; modo real captura entrada/resultado/tela antes da limpeza; benchmark condicionado e nenhuma rajada de 1001 envios.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **12 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Full passou: `npx vitest run scripts/__tests__/reengagement-proof.test.ts` + regressões diretamente afetadas. Integração usa Postgres real de teste, fixtures próprias e conexões independentes nos casos de disputa.
+- [x] Prova real somente após autorização: guardar versões/filas, entrada, resultado e captura em arquivo versionado antes da limpeza; conta de teste não prova tarifa real. Uma entrega autorizada basta para transporte; casos999/1000/1001 usam fixtures documentadas.
+
+**Evidência T68 (2026-10-05):** `scripts/reengagement-proof.ts` e `scripts/__tests__/reengagement-proof.test.ts`, exatamente 12 cenários; fixture não é prova externa.
+- Full `npx vitest run scripts/__tests__/reengagement-proof.test.ts`: 12/12, exit 0, 139,26s, handle 45739 terminado; recheck final após imports runtime/tipos.
+- Regressões diretamente afetadas: 149/149, 8 arquivos, exit 0, 625,32s, handle 31292 terminado (scheduler, principal-bridge, send, session-frame, messages-reengagement, message-thread, whatsapp, statuses-ingest).
+- PG real, fixtures próprias, PIDs independentes/locks, adapters e Code nodes efetivos; captura/artefato conferidos antes da limpeza; falha conserva fixture, nenhuma cobertura anterior removida.
+- Prova real permanece pendente pelos gates de instalação/canal/handlers; nenhuma execução externa/Meta/paga. UI de consumo T57/T60/T61/T62 deferida para L14c; PROVA-01 externa não declarada concluída.
 
 **Tests**: integration — `scripts/__tests__/reengagement-proof.test.ts`; matriz: Prova integrada.
 
