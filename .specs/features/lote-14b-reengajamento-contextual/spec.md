@@ -337,85 +337,23 @@ de qualquer prova real, conforme L-051. Não enviar 1.001 mensagens para fabrica
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| REEN-01 | P1: Momento permitido | Execute | Partial — T15–T20 política/locks; T33–T39 gates de transporte; T54 tick por tenant com claim/frame/geração e autorização viva; publicação/prova integrada pendentes |
-| REEN-02 | P1: Texto contextual | Execute | Partial — T25/T37 frame factual; T33–T40 texto limitado/replay/ack; T46–T47 geração readonly/deadline total; T54 geração ligada ao scheduler B sem texto fixo; publicação/prova real pendentes |
-| REEN-03 | P1: Envio único e válido | Execute | Partial — T18–T21 lease/marcador/aceite; T27–T29 invalidação; T33–T40 transporte/resultados duráveis; T54 envio único/ack factual e T56 reconciliação durável sem transporte; publicação/prova integrada pendentes |
-| REEN-04 | P1: Continuidade da memória | Execute | Partial — T24–T30 sessão/frame/reset/invalidação; T42 leitura HTTP e T46–T47 geração sem Chat Memory; T50 publicação CAS e T51 ponte warm/cold ligada ao principal com buffer excluído; publicação/prova integrada pendentes |
-| REEN-05 | P1: Desfecho às 48h | Execute | Partial — T22/T23 omissão/escalonamento transacionais e T41 endpoint autenticado; T55 scheduler C independente de reengaged/horário/resultado, cache só após escalada confirmada e nenhum envio ao lead; publicação/prova integrada pendentes |
-| PRECO-01 | P1: Classificação de entrega | Execute | Partial — T8–T10 reducer/recibos; T27/T30–T32 canal factual no histórico/envio humano; T49 ramo de status e T52–T53 snapshot de canal nas saídas do agente; T58/T59 seis classificações por saída, autoria/horário/grupos e refresh com draft preservados por fixtures; prova integrada real pendente |
-| PRECO-02 | P1: Autenticidade e correlação | Execute | Partial — T7–T10 identidade/origem/replay/correlação; T27/T30–T32 recibo atômico; T48 splitter, T49 ramo isolado de status e guard de publicação fechado sem prova; HMAC instalado/publicação/prova real pendentes |
-| USO-01 | P1: Saldo mensal estimado | Execute | Partial — T1/T2/T6 modelos/T7 gate Analytics/T11 mês civil/T12 adapter condicionado/T13 snapshot substituível; T56 tick de canais habilitados mesmo sem leads, mês decidido pelo CRM; prova externa integral pendente, consumo indisponível |
-| USO-02 | P1: Atualização e indisponibilidade | Execute | Partial — T12–T14 timeout/cadência/lease/CAS/snapshot; T44 sync autenticado com adapter padrão ausente; T56 tick15min/falhas isoladas/skip e indisponibilidade factuais sem Graph por polling; UI adiada para L14c |
-| USO-03 | P1: Superfícies e permissões | Execute | Deferred UI → L14c por preflight restrito à conta de teste; T14 DAL preservada, consumo indisponível; ver context.md Deferred Ideas |
-| USO-04 | P1: Aviso sem bloqueio | Execute | Deferred UI → L14c por preflight restrito à conta de teste; T32 prova envio humano independente de Analytics, sem presumir saldo/gratuidade; consumo indisponível |
-| L14B-01 | P1: Isolamento e operação | Execute | Partial — T7–T32 fronteiras/locks/rollback/autoria; T35–T44 endpoints autenticados; T47 tools readonly/deadline e T48–T56 integração local por tenant/DTO, A–D preservados; publicação/prova operacional/retenção integrada pendentes |
-| PROVA-01 | P1: Evidência integrada | Execute | Partial — preço/volume/fuso em fixtures; fase8 suíte3527/3527,199/199 arquivos,16 adições e UI PRECO real em fixtures isoladas; lint/build0 (9 avisos lint), tsc50 erros anteriores sem delta; prova real/Verifier independente/sensor de mutantes pendentes |
+| REEN-01 | P1: Momento permitido | Execute | Partial — política/seleção/locks e scheduler implementados; T68 prova por fixture antes/exato/+1ms em 22/24/48h; instalação/prova externa e Verifier pendentes |
+| REEN-02 | P1: Texto contextual | Execute | Partial — frame factual, prompt e geração readonly/deadline ligados ao scheduler; T66 identidade/teto preservados e T68 ligação integrada; texto efetivo do modelo e prova conversacional pendentes |
+| REEN-03 | P1: Envio único e válido | Execute | Partial — consumo de despacho/aceite/ack, invalidação e reconciliação implementados; T63/T64 retenção não rearma envio; T68 disputa PG independente, takeover/inbound e aceite sem registro; instalação/prova externa pendentes |
+| REEN-04 | P1: Continuidade da memória | Execute | Partial — sessão/frame/reset/invalidação e ponte no principal; T68 Code nodes efetivos provam equivalência warm/cold por fixture e exclusão do buffer; publicação/prova real pendentes |
+| REEN-05 | P1: Desfecho às 48h | Execute | Partial — omissão/escalada transacionais e scheduler C independente; T68 limites e replay sem envio; publicação/prova real pendentes |
+| PRECO-01 | P1: Classificação de entrega | Execute | Partial — reducer/canal/recibos e classificação por saída T58/T59; T68 fixtures 999/1000/1001/FEP e volume independente, replay/CRM/thread; entrega/status instalado reais pendentes |
+| PRECO-02 | P1: Autenticidade e correlação | Execute | Partial — origem/correlação/replay/ramo isolado e retenção segura implementados; T67 exige serializer/seleção/HMAC instalados separadamente; sem prova instalada, endpoint permanece fechado |
+| USO-01 | P1: Saldo mensal estimado | Execute | Partial — modelo/canal/mês civil/adapter condicionado/snapshot/tick implementados; T68 mês por IANA, stale e estado desconhecido por fixture; conta de produção/mês integral/zero reais não comprovados, consumo indisponível |
+| USO-02 | P1: Atualização e indisponibilidade | Execute | Partial — timeout/cadência/lease/CAS/falhas isoladas/retenção e indisponibilidade implementados; backend exercitado sem presumir Graph, adapter padrão ausente; UI adiada para L14c |
+| USO-03 | P1: Superfícies e permissões | Execute | Deferred UI → L14c por instrução posterior do usuário, T57/T60/T61/T62; T14 DAL preservada, consumo indisponível; ver context.md Deferred Ideas |
+| USO-04 | P1: Aviso sem bloqueio | Execute | Deferred UI → L14c por instrução posterior do usuário; envio humano permanece independente de Analytics, sem presumir saldo/gratuidade |
+| L14B-01 | P1: Isolamento e operação | Execute | Partial — fronteiras/endpoints/locks/rollback/autoria e integração local preservados; T63/T64 retenção/manutenção, T65 bootstrap diagnóstico e T67 protocolo seguro; produção/instalação/prova operacional pendentes |
+| PROVA-01 | P1: Evidência integrada | Execute | Partial — T68 Full 12/12/regressões 149/149 por PG/fixture e persistência antes de cleanup; fase 9 suíte 3580/3580, 204 arquivos, lint/build 0, tsc 50 anteriores/delta 0; Verifier/sensor e provas externas/conversacionais aplicáveis pendentes |
 
-**Coverage:** 13/13 requisitos e 95/95 critérios mapeados individualmente em [tasks.md](tasks.md).
-Spec, Design, Tasks/matriz/ferramentas e agentes sequenciais aprovados. T1 preflight local implementado, Quick15/15; T2 modelo aditivo, Full13/13 (8 novos+5 anteriores); T3 projeção mínima, Full20/20 (7 novos+13 anteriores); T4 episódio durável, Full30/30 (10 novos+20 anteriores); T5 recibos/canal nullable, Full38/38 (8 novos+30 anteriores); T6 snapshot mensal, Full46/46 (8 novos+38 anteriores). Evidência/adequação e mapa reverso nas seções individuais de tasks.md. USO-01 AC1/6/7/8 e L14B-01 AC2/4 têm somente a parcela preflight provada; REEN-03 AC8/L14B-01 AC3 têm a parcela de modelo T4, sem antecipar CAS/serviços. PRECO-02 AC2/L14B-01 AC5 ganham modelo/FKs/ciclo T5, sem antecipar autenticação/reducer. T6 prova período/revisão/volume nullable e tentativa/sucesso separados, sem comprovar acesso externo ou Analytics. Nenhum AC integral do produto ou gate factual externo é marcado como concluído.
-
-Fase 1/lote A fechados: T7 Full43/43 (14 novos+29 regressões), módulo server-only
-e consumo separado da identidade. npm test de fase exit1, 151/152 arquivos e
-2470/2472 testes; apenas dois timeouts DOCLIM-01 AC8 já adiados pelo usuário,
-nenhuma falha nova. Todas as 70 adições passaram. Lint/build passaram; tsc mantém
-as 50 linhas de erro anteriores sem diferenças. Ressalva e evidência em
-[phase-1-verification.md](phase-1-verification.md). São 7/68 tarefas concluídas;
-T8 implementada: Quick28/28, 225ms, reducer determinístico com read/entrega,
-pricing parcial e conflito persistente. Adequação em [t8-verification.md](t8-verification.md).
-T9 implementada: Full75/75 (16 novos+59 regressões), 61,79s, ingestão validada,
-replay/ordem/isolamento sob locks reais e origem opaca servidor. Primeiro gate
-74/75 teve somente medição de PID autocommit da fixture corrigida para tx real,
-com todas as asserções preservadas. Adequação em [t9-verification.md](t9-verification.md).
-T10 implementada: Full70/70 (9 novos e 61 regressões), 85,52s, correlação de
-saídas antes/depois por tenant/canal/wamid/carteira; replay e rollback preservam
-evidência, exclusão cascade evita órfão permanente. Adequação em
-[t10-verification.md](t10-verification.md).
-T11 implementada: Quick 56/56 (28 novos + 28 T8), 548ms; Full auxiliar 11/11
-(3 novos + 8 T6), 31,18s. Mês inteiro inclui overlap/gap; CHECK corrigido sem
-mudar SQL T6 histórico. Normalizador de volume/cobertura/identidade/partições
-recusa capacidade sem prova, vazio desconhecido e dupla contagem. Adequação em
-[t11-verification.md](t11-verification.md).
-T12 implementada: Quick 86/86 (18 novos + 68 regressões), 1,51s, adapter v25
-com prova opaca/default recusa e orçamento total 15s incluindo JSON/decode
-síncrono. Adequação em [t12-verification.md](t12-verification.md); observação
-[da conta de teste](analytics-account-observation.md) não confirma mês integral
-ou zero nem habilita capacidade real.
-T13 implementada: regate Full 93/93 (22 adições + 71 anteriores), 122,64s; claim antes
-HTTP, cadência 15min/lease 90s/budget 80s e CAS vivo preservam snapshot sob falha e
-respostas invertidas. Dois backends reais, PIDs dentro BEGIN/dois locks/um Graph.
-Aliases ISO uppercase recusados no normalizador/decoder sem alterar testes antigos.
-Guardas de fuso/fim do snapshot impedem conversão Amman/Atenas no mesmo início;
-primeiro gate 92/92 passou e foi repetido após essa revisão final.
-Adequação em [t13-verification.md](t13-verification.md).
-T14 passou regate Full 79/79 (18 novos + 61 regressões). Leituras autorizadas
-conferem tenant/carteira/canal/período/revisão; queryEnd e lastSuccessAt têm
-semânticas separadas, sem segredo no DTO ou Graph por leitura. Adequação em
-[t14-verification.md](t14-verification.md). Fase2 fechada sob a ressalva dos dois
-timeouts históricos autorizados: npm test fresco 2612/2614, exit1, somente
-DOCLIM-01 AC8, nenhuma falha nova; todas as 142 adições passaram. Lint/build
-exit0, tsc exit2 com os mesmos 50 erros anteriores e delta vazio. Evidência em
-[phase-2-verification.md](phase-2-verification.md); Whole não é integralmente verde.
-T15 implementada: Quick pelo root 88/88, 44 novos+44 regressões, 677ms.
-Política pura diferencia fronteiras22h/24h/48h e horário SP, fecha dados críticos
-ilegíveis sem coerção de enum/marcas. Adequação em [t15-verification.md](t15-verification.md).
-Somente essa parcela de REEN-01 AC1/2/3/5/6 e REEN-05 AC2 está provada;
-seleção, efeitos persistidos e integração continuam pendentes. São 15/68 tarefas
-concluídas até T15. T16 implementada: Full pelo root 130/130, 20 novos+110
-regressões, 77,32s; projeção sobre âncora/reset correntes, revisão e replay
-sob lock real. Fase unknown não autoriza contato; encerrada não reabre na
-mesma âncora/reset. Pipeline/thread/condução preservados e rollback permite
-takeover humano. Adequação em [t16-verification.md](t16-verification.md).
-Invalidação automática de inbound/reset/ponte e writers/workflows seguem
-pendentes. T17 implementada: regate Full pelo root151/151, 7/7 arquivos,
-25 novos+126 regressões, 139,13s. Seleção22h/24h/48h por corte/cursor,
-limite real de101 linhas para102 leads, páginas100+2 sem perda e página
-vazia continuável; DTO somente IDs/âncora/ação e canal real da âncora.
-Falha inicial131/150 por timestamps rawstring do driver foi corrigida com
-decoder explícito e cenário PostgreSQL infinity que falha fechado, sem
-enfraquecer os24 casos anteriores. Adequação em [t17-verification.md](t17-verification.md).
-Claim, omissão/escalada persistidas, integração e revalidação final seguem
-pendentes. São 17/68 tarefas concluídas; T18–T68, gates externos e verifier
-global continuam pendentes, sem antecipar qualquer AC integral do produto.
+**Coverage:** 13/13 requisitos e 95/95 critérios mapeados individualmente em [tasks.md](tasks.md); mapeamento não equivale a PASS do produto.
+Implementação local: T1–T56/T58/T59/T63–T68 (64/68 tarefas), último commit de task `4ef2248`; as quatro tarefas de consumo UI foram adiadas para L14c conforme [context.md](context.md). Evidências históricas permanecem nas seções das tasks, sem arquivamento enquanto a validação estiver pendente.
+Fase 9: 53 cenários novos, total 1178 no L14b; `npm test` exit 0,3580/3580 testes e 204/204 arquivos,1094,81s, início 2026-10-05 12:20:19. Lint exit 0/9 avisos anteriores; build exit 0/avisos BetterAuth anteriores; tsc nativo 2 / 50 erros anteriores, nenhum acréscimo semântico; strict spec/tasks 0/0. Nenhuma prova de capacidade externa, texto efetivo do modelo ou conclusão integral do lote é inferida desses gates.
 
 ## Success Criteria
 

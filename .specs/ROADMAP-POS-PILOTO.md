@@ -208,7 +208,7 @@ humano escreveu no CRM" — descreve algo que nunca aconteceu, porque não há c
 Tasks/matriz/ferramentas e agentes sequenciais aprovados: 68 tarefas em nove fases e 95 ACs
 mapeados; prompt para outra janela em `features/lote-14b-reengajamento-contextual/EXECUTE-PROMPT.md`. WABA `1000796702954808`
 identificada pela extensão e confirmada pela API como conta de teste. Analytics, vínculo
-número/tenant/fuso e transporte instalado ainda precisam de prova. Implementação não iniciada.
+número/tenant/fuso e transporte instalado ainda precisam de prova. Implementação local das fases 1–9 entregue em 2026-10-05 (64/68 tarefas); T57/T60/T61/T62 adiadas para L14c. Suíte 3580/3580; Verifier/sensor e provas externas/conversacionais ainda pendentes, lote em Execute.
 **Correção da premissa de custo:** o [FAQ oficial do WhatsApp Business](https://whatsappbusiness.com/resources/faq/)
 informa cobrança de mensagens de serviço desde 2026-10-01 após a franquia de 1.000 por número
 por mês. Enviar dentro da janela não garante gratuidade. O usuário aprovou a retomada sem
