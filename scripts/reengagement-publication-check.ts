@@ -166,9 +166,9 @@ export async function readLocalPublicationArtifacts(): Promise<LocalPublicationA
   for (const role of roles) {
     const source = readFileSync(`n8n/workflows/${role}.ts`, "utf8");
     const generated = readFileSync(`n8n/generated/${role}.ts`, "utf8");
-    const module = role === "principal" ? await import("../n8n/generated/principal")
-      : role === "scheduler" ? await import("../n8n/generated/scheduler") : await import("../n8n/generated/reengagement-contextual");
-    const graph = module.default.toJSON() as unknown as Graph;
+    const generatedPath = `../n8n/generated/${role}`;
+    const workflowModule = await import(generatedPath) as { default: { toJSON(): Graph } };
+    const graph = workflowModule.default.toJSON();
     artifacts.push({ role, sourceHash: textDigest(source), expectedGeneratedHash: textDigest(inlineWorkflowSource(source)),
       generatedHash: textDigest(generated), operationsHash: workflowOperationsDigest(graph), graph });
   }

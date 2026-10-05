@@ -72,7 +72,7 @@ export async function diagnoseReengagementBootstrap(input: { tenantId?: string; 
   }
   let current: CrmSnapshot | null;
   try { current = await deps.readCrm(tenantId); } catch { current = null; }
-  const validCurrent = scoped(current, tenantId);
+  const liveSnapshot = scoped(current, tenantId) ? current : null;
   const leads = initial.leads.map((lead, index) => {
     const observation = observations[index];
     const row = observation.state === "observed" ? observation.row : null;
@@ -80,7 +80,7 @@ export async function diagnoseReengagementBootstrap(input: { tenantId?: string; 
     const observedRevision = row && Number.isSafeInteger(row.expectedRevision) && Number(row.expectedRevision) >= 0 ? Number(row.expectedRevision) : null;
     const observedAnchor = row && typeof row.anchorMessageId === "string" && UUID.test(row.anchorMessageId) ? row.anchorMessageId : null;
     const observedReset = row && Object.hasOwn(row, "resetObservedAt") ? date(row.resetObservedAt) : undefined;
-    const live = validCurrent ? current.leads.find((candidate) => candidate.id === lead.id) : undefined;
+    const live = liveSnapshot?.leads.find((candidate) => candidate.id === lead.id);
     let result = gate("state-read-pending");
     if (observation.state === "absent") result = gate("phase-absent");
     else if (row) {
