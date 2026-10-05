@@ -47,6 +47,14 @@ o registro fixo, que captura canal do snapshot usado pelo send e wamid aceito.
 As regras de autoria, confirmação única e retry apenas de persistência são
 mantidas; histórico sem canal continua sem inferência.
 
+**L14b T54:** B consulta candidatos CRM por tenant e cursor opaco, conservando
+o corte inclusive em páginas vazias. Prepare e send revalidam o contexto no
+CRM; geração usa o JSON completo de `generated/reengagement-contextual`, com
+deadline compartilhado de até120s e apenas tools readonly. O template B foi
+removido. Texto vazio ou maior que4096 após trim libera preparação sem fallback.
+Send é chamado uma vez; acknowledgement repete só registro, usando wamid e
+acceptedAt recebidos do send. Lembretes A e reset D conservam seus caminhos.
+
 Runbook de setup + referência da camada n8n do Crivo. Cobre **todos os passos humanos** necessários antes/durante o Execute deste lote e os riscos R1–R3/R6 do design (`.specs/features/lote-6-agente-n8n-whatsapp/design.md`).
 
 > **Regra de ouro (AD-014)**: a UI do n8n **nunca** é editada à mão — nem os workflows (`n8n/workflows/*.ts` → `n8n/generated/*.ts` → publicado via MCP), nem as Data Tables (criadas via MCP `create_data_table`/`add_data_table_column`). O único trabalho manual na instância n8n é **credenciais** (Google/Meta exigem OAuth/tokens que só o dono da conta pode gerar) e **templates de mensagem** no painel da Meta (aprovação é um processo da Meta, não do n8n).
@@ -159,8 +167,8 @@ Fase 8: 2 linhas para os 2 tenants reais do seed de produção + 1 linha extra c
 | `bufferJson` | string | buffer de debounce, JSON de `[{messageId,text,sentAt}]` |
 | `camposJson` | string | cache dos campos de qualificação já coletados |
 | `fase` | string | `qualificando` \| `agendando` \| `encerrada` |
-| `lastInboundAt` | date | última mensagem recebida — base da janela de 24h e do reengajamento |
-| `reengaged` | boolean | true após o único reengajamento (AGT-05 AC2) |
+| `lastInboundAt` | date | cache da última mensagem recebida; B usa a âncora real do CRM |
+| `reengaged` | boolean | legado; B controla episódio e despacho no CRM |
 | `perguntadosJson` | string | **NOVO (lote-6c)** — JSON array dos campos obrigatórios já perguntados (`phase.mjs` — `REQUIRED_FIELDS`); "perguntado" é permanente, não depende do lead ter respondido (QLF-02) |
 | `aberturasJson` | string | **NOVO (lote-6c)** — JSON array das aberturas de turno já usadas pelo agente nesta sessão (`voice.mjs` — `checkOpening`), para barrar repetição (VOZ-01 AC2) |
 | `memoryResetAt` | string | **NOVO (lote-14)** — ISO do último pedido de reconstrução da memória já atendido (`leads.memory_reset_requested_at` do CRM). O reset é devido quando o pedido do CRM é mais novo que este valor (`memoryResetDue` em `conduction.mjs`). Criada por `add_data_table_column`; ver §15 |
@@ -224,7 +232,9 @@ Se o ambiente for reseedado por qualquer outro motivo depois deste passo, a `ten
 
 ## 5. Templates Meta (envio proativo fora da janela de 24h)
 
-Toda mensagem proativa do produto (lembrete de reunião, reengajamento) acontece, por definição, **fora** da janela de resposta gratuita de 24h da Cloud API — a Meta exige uma **template message** pré-aprovada nesse caso (texto livre é rejeitado). Criar em **WhatsApp Manager → Gerenciador de modelos de mensagem** no painel da Meta, categoria **Utilitário** (não Marketing — evita revisão mais lenta e custo maior):
+Lembretes A fora da janela usam o template abaixo. Desde L14b, B usa texto contextual
+somente quando o CRM autoriza silêncio≥22h e<24h dentro do horário comercial.
+O aceite não comprova entrega ou gratuidade; classificação depende do receipt observado.
 
 ### `lembrete_reuniao`
 
@@ -233,16 +243,18 @@ Toda mensagem proativa do produto (lembrete de reunião, reengajamento) acontece
   > Olá! Passando para confirmar sua reunião hoje às {{1}}. Link do Google Meet: {{2}}
 - **Variáveis**: `{{1}}` = horário formatado (`HH:MM`, `America/Sao_Paulo`), `{{2}}` = `meetLink` do evento (Data Table `agenda_envios`).
 
-### `reengajamento`
+### `reengajamento` (legado, removido da varredura B no L14b)
 
 - **Categoria**: Utility.
 - **Corpo** (pt-BR), 1 variável:
   > Oi! Aqui é {{1}}, da imobiliária. Ainda tem interesse em continuar nossa conversa sobre o imóvel? É só responder por aqui.
 - **Variável**: `{{1}}` = `agentName` do tenant (`GET /api/v1/settings`).
 
-**Aprovação é da Meta, não do n8n** — normalmente minutos a poucas horas para categoria Utility com conteúdo direto. Sem aprovação, o scheduler tenta enviar e a chamada `sendTemplate` falha — cai no tratamento de erro do design (marca tentativa, `crivo-agente-erros` notifica, nunca bloqueia o fluxo principal). Confirmar o status de aprovação das 2 templates é passo humano fora do alcance de qualquer ferramenta MCP disponível aqui — reportado como pendência, não assumido como feito.
+Confirmar aprovação do template de lembrete é um passo operacional antes da publicação.
+O template histórico de reengajamento não é chamado pela varredura B contextual.
 
-**Atualização pós-submissão (relatada pelo usuário, Worker 3)**: a Meta aprovou `reengajamento` na categoria **Marketing**, não Utility como planejado acima — decisão da própria revisão da Meta, não uma escolha de ninguém do time. `lembrete_reuniao` presumivelmente permaneceu Utility (não confirmado por nenhuma ferramenta MCP disponível — status de categoria de template vive só no painel da Meta; conferir lá). Implicação é **só de custo**: a Meta cobra conversas de categoria Marketing mais caro que Utility — nenhuma mudança de código ou parâmetro do `sendTemplate` é necessária, porque a categoria é uma propriedade do template já aprovado, não um parâmetro que o fluxo escolhe por chamada. LGPD-03 AC2 (nunca enviar a lead com `optedOutAt` preenchido) já é reforçado independente da categoria/texto do template, então não há gap de compliance aqui — só o custo por conversa de reengajamento fica mais alto do que o orçado.
+**Registro histórico (relato do usuário, Worker3):** `reengajamento` foi aprovado como
+Marketing. Essa informação histórica não autoriza envio ou classificação de preço no L14b.
 
 ---
 
@@ -287,7 +299,7 @@ Isso é **só** o scheduler — soma com toda execução do `crivo-agente-princi
 | Workflow | Onde normaliza | Nós de envio |
 | -------- | -------------- | ------------ |
 | `principal.ts` | `Code: destinatário do envio` (convergência de todas as rotas antes do envio) | `WhatsApp: enviar resposta` |
-| `scheduler.ts` | `Code: combinar lembrete e tenant` / `Code: combinar reengajamento e tenant` | lembrete texto livre, lembrete template, reengajamento template |
+| `scheduler.ts` | `Code: combinar lembrete e tenant`; B valida transporte no CRM | lembrete texto livre/template; B por send CRM |
 
 **O `waId` cru continua sendo a chave de tudo o mais** — Data Tables `conversa_estado`/`agenda_envios` e `externalId` do lead no CRM — porque é nesse formato que a Meta sempre entrega os eventos recebidos. Só o campo `recipientPhoneNumber` usa o valor normalizado (`recipientMsisdn`). Nunca "consertar" o `wa_id` na entrada: isso quebraria o casamento com as mensagens seguintes.
 
@@ -467,7 +479,11 @@ Um turno do agente pode estar em andamento quando o corretor clica em "Assumir".
 
 ### Scheduler
 
-Reengajamento (varredura B) e escalonamento por silêncio (C) releem o lead (`HTTP: GET /leads/{id} (reengajamento|escalonamento)`) e só seguem com `canAgentContactProactively`: lead conduzido por humano não recebe template nem é escalado. Erro da leitura não tem saída ligada: aquele lead não é contatado no tick. Os lembretes de reunião (A) não mudaram e continuam saindo durante a condução humana. O `PATCH` de status ou reunião num lead com a marca responde `409 lead-conduzido-por-humano` no CRM, a segunda proteção.
+Reengajamento B e escalonamento C releem o lead e seguem somente com
+`canAgentContactProactively`. Erro do GET em B conclui o candidato sem contato;
+C conserva a saída de erro sem ligação. B ainda passa pelos locks de prepare/send
+CRM antes do contato contextual. Lembretes A continuam durante condução humana.
+O `PATCH` de status/reunião no CRM mantém a proteção da marca humana.
 
 ### Número de resposta e coluna nova
 

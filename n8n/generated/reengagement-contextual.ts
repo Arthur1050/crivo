@@ -2,12 +2,13 @@ import { workflow, node, trigger, languageModel, tool, newCredential, expr } fro
 
 const CRM_BASE_URL = "https://crivo-arthur1050s-projects.vercel.app/api/v1";
 const input = trigger({ type: "n8n-nodes-base.executeWorkflowTrigger", version: 1.2,
-  config: { name: "Frame verificado", position: [0, 0], parameters: { inputSource: "workflowInputs", workflowInputs: { values: [{ name: "frame", type: "object" }, { name: "tenantSlug", type: "string" }] } } }, output: [{}] });
+  config: { name: "Frame verificado", position: [0, 0], parameters: { inputSource: "workflowInputs", workflowInputs: { values: [{ name: "frame", type: "object" }, { name: "tenantSlug", type: "string" }, { name: "deadline", type: "number" }] } } }, output: [{}] });
 const identity = node({ type: "n8n-nodes-base.code", version: 2,
   config: { name: "Code: identidade fixa", position: [240, 0], parameters: { mode: "runOnceForEachItem", jsCode:
     "const input = $json; const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;\n" +
     "if (!input.frame || !['tenantId','leadId','episodeId'].every(key => typeof input.frame[key] === 'string' && uuid.test(input.frame[key])) || typeof input.tenantSlug !== 'string' || !/^[a-z0-9_-]{1,128}$/i.test(input.tenantSlug)) throw new Error('context-read-failed');\n" +
-    "return { json: { frame: input.frame, tenantSlug: input.tenantSlug, leadId: input.frame.leadId, episodeId: input.frame.episodeId, deadline: Date.now() + 120000 } };" } }, output: [{}] });
+    "if (input.deadline !== undefined && (typeof input.deadline !== 'number' || !Number.isFinite(input.deadline))) throw new Error('generation-timeout'); const deadline = input.deadline === undefined ? Date.now() + 120000 : Math.min(input.deadline, Date.now() + 120000); if (deadline <= Date.now()) throw new Error('generation-timeout');\n" +
+    "return { json: { frame: input.frame, tenantSlug: input.tenantSlug, leadId: input.frame.leadId, episodeId: input.frame.episodeId, deadline } };" } }, output: [{}] });
 const remaining = "(() => { const remaining = $('Code: identidade fixa').first().json.deadline - Date.now(); if (remaining <= 0) throw new Error('generation-timeout'); return Math.min(15000, remaining); })()";
 const settings = node({ type: "n8n-nodes-base.httpRequest", version: 4.5,
   config: { name: "HTTP: persona do tenant", position: [480, 0], parameters: { method: "GET", url: CRM_BASE_URL + "/settings", authentication: "genericCredentialType", genericAuthType: "httpHeaderAuth", sendHeaders: true,

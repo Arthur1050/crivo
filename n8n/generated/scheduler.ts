@@ -35,7 +35,9 @@
  * `canAgentContactProactively` (`n8n/src/conduction.mjs`). Lembretes não
  * mudam (SILENCIO-01 AC8).
  */
-import { workflow, trigger, node, ifElse, switchCase, newCredential, expr } from "@n8n/workflow-sdk";
+import { workflow, trigger, node, ifElse, switchCase, newCredential, expr, splitInBatches, nextBatch } from "@n8n/workflow-sdk";
+
+import readonlyGeneration from "../generated/reengagement-contextual";
 
 const CRM_BASE_URL = "https://crivo-arthur1050s-projects.vercel.app/api/v1";
 const TENANT_CONFIG_TABLE_ID = "xRHckWWd6fxGeNta";
@@ -347,262 +349,38 @@ const markReminderSent = node({
 });
 
 // =======================================================================
-// Varredura B — Reengajamento (design.md; AGT-05 AC2)
-// =======================================================================
+// Varredura B — CRM autoritativo, preparação readonly e envio sem retry.
 
-const getStaleConversations = node({
-  type: "n8n-nodes-base.dataTable",
-  version: 1.1,
-  config: {
-    name: "Data Table: conversas paradas 24h (conversa_estado)",
-    position: [260, 0],
-    parameters: {
-      resource: "row",
-      operation: "get",
-      dataTableId: { __rl: true, mode: "id", value: CONVERSA_ESTADO_TABLE_ID },
-      matchType: "allConditions",
-      filters: {
-        conditions: [
-          { keyName: "lastInboundAt", condition: "lt", keyValue: expr("{{ $now.minus({ hours: 24 }).toISO() }}") },
-          { keyName: "reengaged", condition: "eq", keyValue: "false" },
-        ],
-      },
-      returnAll: true,
-    },
-  },
-  output: [{ tenantSlug: "vale-do-uberaba", waId: "5534999990001", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando", reengaged: false, lastInboundAt: "2026-08-04T10:00:00.000Z" }],
-});
 
-const excludeClosedForReengagement = node({
-  type: "n8n-nodes-base.filter",
-  version: 2.3,
-  config: {
-    name: "Filter: exclui encerradas (reengajamento)",
-    position: [520, 0],
-    parameters: {
-      conditions: {
-        combinator: "and",
-        options: { caseSensitive: true, leftValue: "", typeValidation: "strict" },
-        conditions: [{ leftValue: expr("{{ $json.fase }}"), operator: { type: "string", operation: "notEquals" }, rightValue: "encerrada" }],
-      },
-    },
-  },
-  output: [{ tenantSlug: "vale-do-uberaba", waId: "5534999990001", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
-});
 
-// lote-14 (T26 — SILENCIO-01 AC6/AC7): relê o lead ao vivo antes do contato
-// proativo. `fase` em `conversa_estado` não sabe da marca de condução humana
-// (gravada pelo CRM), então só o CRM decide. Falha da leitura: saída de erro
-// sem ligação — o item cai sem contato e as outras varreduras do tick seguem.
-const getLeadForReengagement = node({
-  type: "n8n-nodes-base.httpRequest",
-  version: 4.4,
-  config: {
-    name: "HTTP: GET /leads/{id} (reengajamento)",
-    position: [650, -150],
-    retryOnFail: true,
-    maxTries: 3,
-    waitBetweenTries: 2000,
-    onError: "continueErrorOutput",
-    parameters: {
-      method: "GET",
-      url: expr(`${CRM_BASE_URL}/leads/{{ $json.leadId }}`),
-      authentication: "genericCredentialType",
-      genericAuthType: "httpHeaderAuth",
-      sendHeaders: true,
-      headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $json.tenantSlug }}") }] },
-    },
-    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
-  },
-  output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", status: "em_qualificacao", optedOutAt: null, humanTakeoverAt: null, memoryResetRequestedAt: null }],
-});
-
-const conductionForReengagement = node({
-  type: "n8n-nodes-base.code",
-  version: 2,
-  config: {
-    name: "Code: condução ao vivo (reengajamento)",
-    position: [780, -150],
-    parameters: {
-      mode: "runOnceForEachItem",
-      language: "javaScript",
-      jsCode:
-        "/**\n * Regra única de condução da conversa (lote-14 — design.md C2; AD-034).\n * Funções puras, sem I/O, sem dependências: rodam inline nos Code nodes do\n * n8n e são importadas pelo CRM (`src/lib/conversation-control.ts`), para que\n * a regra \"quem conduz\" tenha uma fonte só.\n */\n\n/**\n * @typedef {{status?: unknown, humanTakeoverAt?: unknown, optedOutAt?: unknown}} ConductionLead\n */\n\n/**\n * Conduzido por humano: tem a marca de condução humana **ou** está em\n * `escalado_humano` (ASSUMIR-01 AC7).\n * @param {ConductionLead} lead\n * @returns {boolean}\n */\nfunction isHumanConducted({ status, humanTakeoverAt }) {\n  return Boolean(humanTakeoverAt) || status === \"escalado_humano\";\n}\n\n/**\n * O agente pode enviar dentro do turno em andamento (SILENCIO-01 AC4)?\n * Olha só a marca e o opt-out. **Nunca** bloqueia por `escalado_humano`: o\n * agente que acabou de escalar ainda precisa enviar a mensagem de passagem\n * (`system-message.mjs`).\n * @param {ConductionLead} lead\n * @returns {boolean}\n */\nfunction canAgentSendInTurn({ optedOutAt, humanTakeoverAt }) {\n  return !optedOutAt && !humanTakeoverAt;\n}\n\n/**\n * O agente pode iniciar contato sem mensagem do lead (reengajamento,\n * escalonamento por silêncio — SILENCIO-01 AC6/AC7)?\n * @param {ConductionLead} lead\n * @returns {boolean}\n */\nfunction canAgentContactProactively(lead) {\n  return !lead.optedOutAt && !isHumanConducted(lead);\n}\n\n/**\n * @param {unknown} value\n * @returns {boolean}\n */\nfunction isAbsent(value) {\n  return value === null || value === undefined || value === \"\";\n}\n\n/**\n * @param {unknown} value\n * @returns {number}\n */\nfunction toTime(value) {\n  if (value instanceof Date) return value.getTime();\n  if (typeof value !== \"string\" && typeof value !== \"number\") return Number.NaN;\n  return new Date(value).getTime();\n}\n\n/**\n * O pedido de reconstrução da memória ainda não foi atendido? Devido só\n * quando o pedido é **estritamente** mais novo que o último atendido: pedido\n * igual ao atendido já foi consumido (DEVOLVER-01 AC7). Data inválida nunca\n * dispara a purga.\n * @param {unknown} requestedAt - `memoryResetRequestedAt` do lead no CRM\n * @param {unknown} honoredAt - `memoryResetAt` de `conversa_estado` no n8n\n * @returns {boolean}\n */\nfunction memoryResetDue(requestedAt, honoredAt) {\n  if (isAbsent(requestedAt)) return false;\n  const requested = toTime(requestedAt);\n  if (Number.isNaN(requested)) return false;\n  if (isAbsent(honoredAt)) return true;\n  const honored = toTime(honoredAt);\n  if (Number.isNaN(honored)) return false;\n  return requested > honored;\n}" +
-        "\n\n" +
-        "const conversa = $('Filter: exclui encerradas (reengajamento)').item.json;\n" +
-        "const lead = $json;\n" +
-        "return { json: { ...conversa, podeContatar: canAgentContactProactively({ status: lead.status, humanTakeoverAt: lead.humanTakeoverAt, optedOutAt: lead.optedOutAt }) } };\n",
-    },
-  },
-  output: [{ tenantSlug: "vale-do-uberaba", waId: "5534999990001", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando", podeContatar: true }],
-});
-
-const canContactForReengagement = node({
-  type: "n8n-nodes-base.filter",
-  version: 2.3,
-  config: {
-    name: "Filter: agente pode contatar (reengajamento)",
-    position: [910, -150],
-    parameters: {
-      conditions: {
-        combinator: "and",
-        options: { caseSensitive: true, leftValue: "", typeValidation: "strict" },
-        conditions: [{ leftValue: expr("{{ $json.podeContatar }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }],
-      },
-    },
-  },
-  output: [{ tenantSlug: "vale-do-uberaba", waId: "5534999990001", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando", podeContatar: true }],
-});
-
-const lookupTenantForReengagement = node({
-  type: "n8n-nodes-base.dataTable",
-  version: 1.1,
-  config: {
-    name: "Data Table: tenant do reengajamento",
-    position: [780, 0],
-    parameters: {
-      resource: "row",
-      operation: "get",
-      dataTableId: { __rl: true, mode: "id", value: TENANT_CONFIG_TABLE_ID },
-      matchType: "allConditions",
-      filters: {
-        conditions: [{ keyName: "tenantSlug", condition: "eq", keyValue: expr("{{ $json.tenantSlug }}") }],
-      },
-      returnAll: false,
-      limit: 1,
-    },
-  },
-  output: [{ phoneNumberId: "109876543210001", tenantSlug: "vale-do-uberaba" }],
-});
-
-const mergeReengagementContext = node({
-  type: "n8n-nodes-base.code",
-  version: 2,
-  config: {
-    name: "Code: combinar reengajamento e tenant",
-    position: [1040, 0],
-    parameters: {
-      mode: "runOnceForEachItem",
-      language: "javaScript",
-      jsCode:
-        "/**\n * Normalização do destinatário de envio no WhatsApp (nono dígito brasileiro).\n *\n * PROBLEMA REAL (execução 354 de `crivo-agente-principal`, confirmado contra\n * duas fontes): o webhook da Meta entrega o contato em `wa_id` no formato\n * LEGADO, sem o nono dígito — `553499532444` (12 dígitos) — enquanto a Cloud\n * API só aceita como destinatário o número atual, com o 9 — `5534999532444`\n * (13 dígitos, o mesmo valor que o painel da Meta usa no campo `to` do curl\n * de exemplo). Enviar o `wa_id` cru resulta em erro 131030 (\"Recipient phone\n * number not in allowed list\") — ou seja, TODA resposta do agente a um lead\n * brasileiro falha, não só a do número de teste.\n *\n * ESCOPO DELIBERADO: esta função normaliza SÓ o destinatário do envio. O\n * `wa_id` cru continua sendo a chave das Data Tables (`conversa_estado`,\n * `agenda_envios`) e o `externalId` do lead no CRM — mudar essas chaves\n * quebraria o casamento com os eventos recebidos da Meta, que sempre chegam\n * no formato legado.\n *\n * Função pura, sem I/O, sem dependências — roda dentro de um Code node do\n * n8n (sandbox: sem `require`, sem rede).\n */\n\n// Marca do país no formato E.164 sem o \"+\" (é como o `wa_id` chega da Meta).\nconst BRAZIL_COUNTRY_CODE = \"55\";\n\n// Comprimentos brasileiros: 55 + DDD(2) + 8 (formato legado, pré-nono-dígito)\n// e 55 + DDD(2) + 9 (formato atual). Só o primeiro precisa de conserto.\nconst BR_LEGACY_LENGTH = 12;\nconst BR_DDD_END_INDEX = 4; // fim de \"55\" + DDD\n\n// Discriminador celular x fixo (Anatel — Plano de Numeração Brasileiro,\n// cartilha do nono dígito): o 9 foi acrescentado SÓ aos números do Serviço\n// Móvel Pessoal, que no formato legado de 8 dígitos começavam com 6, 7, 8 ou\n// 9; a telefonia fixa também tem 8 dígitos, mas começa com 2, 3, 4 ou 5 e\n// NUNCA recebeu o nono dígito. Sem esse discriminador, um fixo de 8 dígitos\n// gravado como contato viraria um celular inexistente de 9 dígitos.\nconst BR_MOBILE_LOCAL_PREFIX = /^[6-9]/;\n\nconst NON_DIGIT_PATTERN = /\\D/g;\n\n/**\n * Converte um `wa_id` da Meta no MSISDN aceito pela Cloud API como\n * destinatário de envio.\n *\n * Regras (nesta ordem):\n * 1. Entrada não-string ou sem nenhum dígito (null/undefined/\"\"/lixo) → `\"\"`.\n *    Devolver string vazia (em vez do valor cru) evita que o nó de envio\n *    mande literalmente \"undefined\" para a Meta; o envio falha de forma\n *    explícita, que é o comportamento defensivo dos módulos vizinhos\n *    (`normalizeEvent` → null, `detectOptOut` → false).\n * 2. Caracteres não numéricos (`+`, espaço, hífen) são descartados — o\n *    `wa_id` da Meta é sempre só dígitos, mas o valor pode chegar de uma\n *    Data Table preenchida à mão.\n * 3. Número brasileiro (prefixo `55`) no formato legado (12 dígitos) cujo\n *    número local começa com 6-9 (celular) → insere `9` depois do DDD.\n * 4. Qualquer outro caso — brasileiro já com 13 dígitos, fixo brasileiro de\n *    8 dígitos locais, número de outro país, comprimento inesperado — volta\n *    inalterado. Nenhuma regra de outro país é inventada aqui.\n *\n * Idempotente por construção: o resultado da regra 3 tem 13 dígitos e cai na\n * regra 4 numa segunda aplicação.\n *\n * @param {unknown} waId - `wa_id` do contato no evento da Meta\n * @returns {string} MSISDN pronto para `recipientPhoneNumber`\n */\nfunction toWhatsAppMsisdn(waId) {\n  if (typeof waId !== \"string\") return \"\";\n\n  const digits = waId.replace(NON_DIGIT_PATTERN, \"\");\n  if (digits === \"\") return \"\";\n\n  if (!digits.startsWith(BRAZIL_COUNTRY_CODE)) return digits;\n  if (digits.length !== BR_LEGACY_LENGTH) return digits;\n\n  const ddd = digits.slice(0, BR_DDD_END_INDEX);\n  const local = digits.slice(BR_DDD_END_INDEX);\n  if (!BR_MOBILE_LOCAL_PREFIX.test(local)) return digits;\n\n  return `${ddd}9${local}`;\n}" +
-        "\n\n" +
-        "const conversa = $('Filter: exclui encerradas (reengajamento)').item.json;\n" +
-        "const tenant = $json;\n" +
-        "return { json: { tenantSlug: conversa.tenantSlug, waId: conversa.waId, recipientMsisdn: toWhatsAppMsisdn(conversa.waId), leadId: conversa.leadId, phoneNumberId: tenant.phoneNumberId } };\n",
-    },
-  },
-  output: [{ tenantSlug: "vale-do-uberaba", waId: "553499532444", recipientMsisdn: "5534999532444", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", phoneNumberId: "109876543210001" }],
-});
-
-const getSettingsForReengagement = node({
-  type: "n8n-nodes-base.httpRequest",
-  version: 4.4,
-  config: {
-    name: "HTTP: GET /settings (reengajamento)",
-    position: [1300, 0],
-    retryOnFail: true,
-    maxTries: 3,
-    waitBetweenTries: 2000,
-    parameters: {
-      method: "GET",
-      url: `${CRM_BASE_URL}/settings`,
-      authentication: "genericCredentialType",
-      genericAuthType: "httpHeaderAuth",
-      sendHeaders: true,
-      headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $json.tenantSlug }}") }] },
-    },
-    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
-  },
-  output: [{ agentName: "Ana" }],
-});
-
-const sendReengagementTemplate = node({
-  type: "n8n-nodes-base.whatsApp",
-  version: 1.1,
-  config: {
-    name: "WhatsApp: reengajamento (template)",
-    position: [1560, 0],
-    parameters: {
-      resource: "message",
-      operation: "sendTemplate",
-      phoneNumberId: expr("{{ $('Code: combinar reengajamento e tenant').first().json.phoneNumberId }}"),
-      // Mesmo motivo dos lembretes acima (n8n/src/phone.mjs): o `waId` cru da
-      // Meta vem sem o nono dígito e é rejeitado no envio (erro 131030).
-      recipientPhoneNumber: expr("{{ $('Code: combinar reengajamento e tenant').first().json.recipientMsisdn }}"),
-      template: "reengajamento",
-      components: {
-        component: [
-          {
-            type: "body",
-            bodyParameters: { parameter: [{ type: "text", text: expr("{{ $json.agentName }}") }] },
-          },
-        ],
-      },
-    },
-    // Mesmo achado documentado em n8n/workflows/principal.ts (WhatsApp send):
-    // placeholder "WhatsApp Send — Crivo" nunca resolveu, publish_workflow
-    // rejeitou o workflow com "Missing required credential: whatsAppApi" nos
-    // 3 nós abaixo até este fix — id copiado exatamente de `list_credentials`.
-    credentials: { whatsAppApi: newCredential("WhatsApp account") },
-  },
-  output: [{ messages: [{ id: "wamid.REENGAJAMENTO" }] }],
-});
-
-const registerReengagementMessage = node({
-  type: "n8n-nodes-base.httpRequest",
-  version: 4.4,
-  config: {
-    name: "HTTP: POST /leads/{id}/messages (reengajamento)",
-    position: [1820, 0],
-    retryOnFail: true,
-    maxTries: 3,
-    waitBetweenTries: 2000,
-    parameters: {
-      method: "POST",
-      url: expr(`${CRM_BASE_URL}/leads/{{ $('Code: combinar reengajamento e tenant').first().json.leadId }}/messages`),
-      authentication: "genericCredentialType",
-      genericAuthType: "httpHeaderAuth",
-      sendHeaders: true,
-      headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: combinar reengajamento e tenant').first().json.tenantSlug }}") }] },
-      sendBody: true,
-      contentType: "json",
-      specifyBody: "json",
-      jsonBody: expr(
-        "{{ { externalId: 'reengajamento-' + $('Code: combinar reengajamento e tenant').first().json.waId + '-' + $now.toFormat('yyyyMMdd'), sender: 'agente', content: 'Mensagem de reengajamento enviada (template)', sentAt: $now.toISO() } }}"
-      ),
-    },
-    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
-  },
-  output: [{ id: "8fa85f64-5717-4562-b3fc-2c963f66afab", sender: "agente" }],
-});
-
-const markReengaged = node({
-  type: "n8n-nodes-base.dataTable",
-  version: 1.1,
-  config: {
-    name: "Data Table: marcar reengajado",
-    position: [2080, 0],
-    parameters: {
-      resource: "row",
-      operation: "update",
-      dataTableId: { __rl: true, mode: "id", value: CONVERSA_ESTADO_TABLE_ID },
-      matchType: "allConditions",
-      filters: {
-        conditions: [
-          { keyName: "tenantSlug", condition: "eq", keyValue: expr("{{ $('Code: combinar reengajamento e tenant').first().json.tenantSlug }}") },
-          { keyName: "waId", condition: "eq", keyValue: expr("{{ $('Code: combinar reengajamento e tenant').first().json.waId }}") },
-        ],
-      },
-      columns: {
-        mappingMode: "defineBelow",
-        value: { reengaged: true },
-        schema: [{ id: "reengaged", displayName: "reengaged", required: false, defaultMatch: false, display: true, type: "boolean", canBeUsedToMatch: true }],
-      },
-    },
-  },
-  output: [{ id: 1 }],
-});
+const getTenantsForB = node({ type: "n8n-nodes-base.dataTable", version: 1.1, config: { name: "Data Table: tenants B", position: [260, 0], parameters: { resource: "row", operation: "get", dataTableId: { __rl: true, mode: "id", value: TENANT_CONFIG_TABLE_ID }, returnAll: true } }, output: [{}] });
+const uniqueTenantsB = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: tenants únicos B", position: [700, 0], parameters: { mode: "runOnceForAllItems", jsCode: "const seen = new Set(); return $input.all().filter(item => { const slug = item.json.tenantSlug; if (typeof slug !== 'string' || !/^[a-z0-9_-]{1,128}$/i.test(slug) || seen.has(slug)) return false; seen.add(slug); return true; }).map(item => ({ json: { tenantSlug: item.json.tenantSlug, cursor: null, cutoffAt: null } }));" } }, output: [{}] });
+const tenantsLoopB = splitInBatches({ version: 3, config: { name: "Loop: tenants B", position: [400, 0], parameters: { batchSize: 1 } } });
+const cursorB = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: cursor B", position: [700, 0], parameters: { mode: "runOnceForEachItem", jsCode: "return { json: $json }; " } }, output: [{}] });
+const candidatesB = node({ type: "n8n-nodes-base.httpRequest", version: 4.4, config: { name: "HTTP: candidatos B", position: [1100, 0], onError: "continueRegularOutput",  parameters: { method: "GET", url: expr(CRM_BASE_URL + "/whatsapp/automation/candidates?limit=100{{ $json.cursor ? '&cursor=' + encodeURIComponent($json.cursor) : '' }}"), authentication: "genericCredentialType", genericAuthType: "httpHeaderAuth", sendHeaders: true, headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: cursor B').item.json.tenantSlug }}") }] },  options: { timeout: 15000 } }, credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") } }, output: [{}] });
+const pageB = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: página B pronta", position: [700, 0], parameters: { mode: "runOnceForAllItems", jsCode: "const B_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;\nfunction bDate(value) { return typeof value === \"string\" && Number.isFinite(Date.parse(value)); }\n\n/** CRM owns eligibility and the opaque cursor; an empty page still advances. */\nfunction candidatePageJobs(response, page) {\n  if (response?.error || !Array.isArray(response?.candidates) || response.candidates.length > 100 || !bDate(response.cutoffAt)\n      || !(response.nextCursor === null || (typeof response.nextCursor === \"string\" && response.nextCursor.length > 0))\n      || (page.cutoffAt && page.cutoffAt !== response.cutoffAt) || (response.nextCursor && response.nextCursor === page.cursor)) throw new Error(\"candidate-page-unavailable\");\n  const context = { ...page, cutoffAt: response.cutoffAt, nextCursor: response.nextCursor };\n  const jobs = response.candidates.map(candidate => {\n    if (!candidate || !B_UUID.test(candidate.leadId) || !B_UUID.test(candidate.anchorMessageId) || !bDate(candidate.anchorSentAt)\n        || typeof candidate.phoneNumberId !== \"string\" || !/^\\d{1,32}$/.test(candidate.phoneNumberId) || ![\"prepare\", \"omit\", \"escalate\"].includes(candidate.action)) throw new Error(\"candidate-page-unavailable\");\n    return { ...context, leadId: candidate.leadId, anchorMessageId: candidate.anchorMessageId, anchorSentAt: candidate.anchorSentAt, phoneNumberId: candidate.phoneNumberId, action: candidate.action, pageStart: true };\n  });\n  return jobs.length ? jobs : [{ ...context, action: \"empty\", pageStart: true }];\n}\n\nfunction preparationClaim(response, candidate, now) {\n  if (response?.error || !B_UUID.test(response?.episodeId) || !B_UUID.test(response?.claimToken) || !bDate(response?.claimExpiresAt)\n      || Date.parse(response.claimExpiresAt) <= now || !response.frame || !B_UUID.test(response.frame.tenantId) || (candidate.tenantId && response.frame.tenantId !== candidate.tenantId) || response.frame.leadId !== candidate.leadId\n      || response.frame.episodeId !== response.episodeId || response.frame.phoneNumberId !== candidate.phoneNumberId\n      || response.frame.anchor?.id !== candidate.anchorMessageId || response.frame.anchor?.sentAt !== candidate.anchorSentAt\n      || !Number.isSafeInteger(response.agentStateRevision) || response.frame.agent?.revision !== response.agentStateRevision) return { ...candidate, claimed: false, outcome: \"claim-unavailable\" };\n  return { ...candidate, claimed: true, episodeId: response.episodeId, claimToken: response.claimToken, frame: response.frame, deadline: Math.min(now + 120000, Date.parse(response.claimExpiresAt)) };\n}\n\nfunction generationForDispatch(response, claim, now) {\n  let code = \"generation-failed\", text = typeof response?.text === \"string\" ? response.text.trim() : \"\";\n  if (now >= claim.deadline) code = \"generation-timeout\";\n  else if ([\"generation-timeout\", \"context-read-failed\", \"invalid-text\"].includes(response?.code)) code = response.code;\n  else if (response?.ok === true && !response.error) {\n    if (text && text.length <= 4096) return { ...claim, valid: true, text };\n    code = \"invalid-text\";\n  }\n  return { ...claim, valid: false, failureCode: code };\n}\n\n/** Acceptance identity comes only from send, never generation or the clock. */\nfunction acknowledgementForSend(response, claim) {\n  const valid = !response?.error && response?.episodeId === claim.episodeId && response.state === \"accepted_pending_record\"\n    && typeof response.wamid === \"string\" && response.wamid.trim() === response.wamid && response.wamid.length > 0 && response.wamid.length <= 2048 && bDate(response.acceptedAt);\n  return { ...claim, needsAck: valid, ...(valid ? { acknowledgement: { wamid: response.wamid, acceptedAt: response.acceptedAt } } : {}), outcome: typeof response?.state === \"string\" ? response.state : \"uncertain\" };\n}" + "\nreturn candidatePageJobs($input.first().json, $('Code: cursor B').item.json).map(json => ({ json }));" } }, output: [{}] });
+const candidatesLoopB = splitInBatches({ version: 3, config: { name: "Loop: candidatos B", position: [600, 0], parameters: { batchSize: 1, options: { reset: expr("{{ $json.pageStart === true }}") } } } });
+const candidateB = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: candidato B", position: [700, 0], parameters: { mode: "runOnceForEachItem", jsCode: "return { json: $json }; " } }, output: [{}] });
+const candidateRouteB = switchCase({ version: 3.4, config: { name: "Switch: ação B", position: [800, 0], parameters: { mode: "rules", rules: { values: ["prepare", "omit"].map(action => ({ conditions: { options: { caseSensitive: true, leftValue: "", typeValidation: "strict" }, conditions: [{ leftValue: expr("{{ $json.action }}"), operator: { type: "string", operation: "equals" }, rightValue: action }], combinator: "and" } })) }, options: { fallbackOutput: "extra" } } } });
+// Live conduction is an early read; prepare and send also revalidate under CRM locks.
+const getLeadForReengagement = node({ type: "n8n-nodes-base.httpRequest", version: 4.4, config: { name: "HTTP: GET /leads/{id} (reengajamento)", position: [900, 0], onError: "continueErrorOutput", parameters: { method: "GET", url: expr(CRM_BASE_URL + "/leads/{{ $json.leadId }}"), authentication: "genericCredentialType", genericAuthType: "httpHeaderAuth", sendHeaders: true, headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $json.tenantSlug }}") }] } }, credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") } }, output: [{}] });
+const conductionForReengagement = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: condução ao vivo (reengajamento)", position: [700, 0], parameters: { mode: "runOnceForEachItem", jsCode: "/**\n * Regra única de condução da conversa (lote-14 — design.md C2; AD-034).\n * Funções puras, sem I/O, sem dependências: rodam inline nos Code nodes do\n * n8n e são importadas pelo CRM (`src/lib/conversation-control.ts`), para que\n * a regra \"quem conduz\" tenha uma fonte só.\n */\n\n/**\n * @typedef {{status?: unknown, humanTakeoverAt?: unknown, optedOutAt?: unknown}} ConductionLead\n */\n\n/**\n * Conduzido por humano: tem a marca de condução humana **ou** está em\n * `escalado_humano` (ASSUMIR-01 AC7).\n * @param {ConductionLead} lead\n * @returns {boolean}\n */\nfunction isHumanConducted({ status, humanTakeoverAt }) {\n  return Boolean(humanTakeoverAt) || status === \"escalado_humano\";\n}\n\n/**\n * O agente pode enviar dentro do turno em andamento (SILENCIO-01 AC4)?\n * Olha só a marca e o opt-out. **Nunca** bloqueia por `escalado_humano`: o\n * agente que acabou de escalar ainda precisa enviar a mensagem de passagem\n * (`system-message.mjs`).\n * @param {ConductionLead} lead\n * @returns {boolean}\n */\nfunction canAgentSendInTurn({ optedOutAt, humanTakeoverAt }) {\n  return !optedOutAt && !humanTakeoverAt;\n}\n\n/**\n * O agente pode iniciar contato sem mensagem do lead (reengajamento,\n * escalonamento por silêncio — SILENCIO-01 AC6/AC7)?\n * @param {ConductionLead} lead\n * @returns {boolean}\n */\nfunction canAgentContactProactively(lead) {\n  return !lead.optedOutAt && !isHumanConducted(lead);\n}\n\n/**\n * @param {unknown} value\n * @returns {boolean}\n */\nfunction isAbsent(value) {\n  return value === null || value === undefined || value === \"\";\n}\n\n/**\n * @param {unknown} value\n * @returns {number}\n */\nfunction toTime(value) {\n  if (value instanceof Date) return value.getTime();\n  if (typeof value !== \"string\" && typeof value !== \"number\") return Number.NaN;\n  return new Date(value).getTime();\n}\n\n/**\n * O pedido de reconstrução da memória ainda não foi atendido? Devido só\n * quando o pedido é **estritamente** mais novo que o último atendido: pedido\n * igual ao atendido já foi consumido (DEVOLVER-01 AC7). Data inválida nunca\n * dispara a purga.\n * @param {unknown} requestedAt - `memoryResetRequestedAt` do lead no CRM\n * @param {unknown} honoredAt - `memoryResetAt` de `conversa_estado` no n8n\n * @returns {boolean}\n */\nfunction memoryResetDue(requestedAt, honoredAt) {\n  if (isAbsent(requestedAt)) return false;\n  const requested = toTime(requestedAt);\n  if (Number.isNaN(requested)) return false;\n  if (isAbsent(honoredAt)) return true;\n  const honored = toTime(honoredAt);\n  if (Number.isNaN(honored)) return false;\n  return requested > honored;\n}" + "\nconst conversa = $('Code: candidato B').item.json; const lead = $json; return { json: { ...conversa, podeContatar: canAgentContactProactively({ status: lead.status, optedOutAt: lead.optedOutAt, humanTakeoverAt: lead.humanTakeoverAt }) } }; " } }, output: [{}] });
+const canContactForReengagement = ifElse({ version: 2.3, config: { name: "Filter: agente pode contatar (reengajamento)", position: [900, 0], parameters: { conditions: { combinator: "and", options: { caseSensitive: true, leftValue: "", typeValidation: "strict" }, conditions: [{ leftValue: expr("{{ " + "$json.podeContatar" + " }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }] } } } });
+const prepareB = node({ type: "n8n-nodes-base.httpRequest", version: 4.4, config: { name: "HTTP: preparar B", position: [1100, 0], onError: "continueRegularOutput",  parameters: { method: "POST", url: expr(CRM_BASE_URL + "/leads/{{ $json.leadId }}/reengagement/prepare"), authentication: "genericCredentialType", genericAuthType: "httpHeaderAuth", sendHeaders: true, headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: candidato B').item.json.tenantSlug }}") }] }, sendBody: true, contentType: "json", specifyBody: "json", jsonBody: expr("{{ " + "{ anchorMessageId: $json.anchorMessageId }" + " }}"), options: { timeout: 15000 } }, credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") } }, output: [{}] });
+const claimB = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: claim B", position: [700, 0], parameters: { mode: "runOnceForEachItem", jsCode: "const B_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;\nfunction bDate(value) { return typeof value === \"string\" && Number.isFinite(Date.parse(value)); }\n\n/** CRM owns eligibility and the opaque cursor; an empty page still advances. */\nfunction candidatePageJobs(response, page) {\n  if (response?.error || !Array.isArray(response?.candidates) || response.candidates.length > 100 || !bDate(response.cutoffAt)\n      || !(response.nextCursor === null || (typeof response.nextCursor === \"string\" && response.nextCursor.length > 0))\n      || (page.cutoffAt && page.cutoffAt !== response.cutoffAt) || (response.nextCursor && response.nextCursor === page.cursor)) throw new Error(\"candidate-page-unavailable\");\n  const context = { ...page, cutoffAt: response.cutoffAt, nextCursor: response.nextCursor };\n  const jobs = response.candidates.map(candidate => {\n    if (!candidate || !B_UUID.test(candidate.leadId) || !B_UUID.test(candidate.anchorMessageId) || !bDate(candidate.anchorSentAt)\n        || typeof candidate.phoneNumberId !== \"string\" || !/^\\d{1,32}$/.test(candidate.phoneNumberId) || ![\"prepare\", \"omit\", \"escalate\"].includes(candidate.action)) throw new Error(\"candidate-page-unavailable\");\n    return { ...context, leadId: candidate.leadId, anchorMessageId: candidate.anchorMessageId, anchorSentAt: candidate.anchorSentAt, phoneNumberId: candidate.phoneNumberId, action: candidate.action, pageStart: true };\n  });\n  return jobs.length ? jobs : [{ ...context, action: \"empty\", pageStart: true }];\n}\n\nfunction preparationClaim(response, candidate, now) {\n  if (response?.error || !B_UUID.test(response?.episodeId) || !B_UUID.test(response?.claimToken) || !bDate(response?.claimExpiresAt)\n      || Date.parse(response.claimExpiresAt) <= now || !response.frame || !B_UUID.test(response.frame.tenantId) || (candidate.tenantId && response.frame.tenantId !== candidate.tenantId) || response.frame.leadId !== candidate.leadId\n      || response.frame.episodeId !== response.episodeId || response.frame.phoneNumberId !== candidate.phoneNumberId\n      || response.frame.anchor?.id !== candidate.anchorMessageId || response.frame.anchor?.sentAt !== candidate.anchorSentAt\n      || !Number.isSafeInteger(response.agentStateRevision) || response.frame.agent?.revision !== response.agentStateRevision) return { ...candidate, claimed: false, outcome: \"claim-unavailable\" };\n  return { ...candidate, claimed: true, episodeId: response.episodeId, claimToken: response.claimToken, frame: response.frame, deadline: Math.min(now + 120000, Date.parse(response.claimExpiresAt)) };\n}\n\nfunction generationForDispatch(response, claim, now) {\n  let code = \"generation-failed\", text = typeof response?.text === \"string\" ? response.text.trim() : \"\";\n  if (now >= claim.deadline) code = \"generation-timeout\";\n  else if ([\"generation-timeout\", \"context-read-failed\", \"invalid-text\"].includes(response?.code)) code = response.code;\n  else if (response?.ok === true && !response.error) {\n    if (text && text.length <= 4096) return { ...claim, valid: true, text };\n    code = \"invalid-text\";\n  }\n  return { ...claim, valid: false, failureCode: code };\n}\n\n/** Acceptance identity comes only from send, never generation or the clock. */\nfunction acknowledgementForSend(response, claim) {\n  const valid = !response?.error && response?.episodeId === claim.episodeId && response.state === \"accepted_pending_record\"\n    && typeof response.wamid === \"string\" && response.wamid.trim() === response.wamid && response.wamid.length > 0 && response.wamid.length <= 2048 && bDate(response.acceptedAt);\n  return { ...claim, needsAck: valid, ...(valid ? { acknowledgement: { wamid: response.wamid, acceptedAt: response.acceptedAt } } : {}), outcome: typeof response?.state === \"string\" ? response.state : \"uncertain\" };\n}" + "\nreturn { json: preparationClaim($json, $('Code: candidato B').item.json, Date.now()) }; " } }, output: [{}] });
+const claimedB = ifElse({ version: 2.3, config: { name: "Claim B adquirida?", position: [900, 0], parameters: { conditions: { combinator: "and", options: { caseSensitive: true, leftValue: "", typeValidation: "strict" }, conditions: [{ leftValue: expr("{{ " + "$json.claimed" + " }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }] } } } });
+const generateB = node({ type: "n8n-nodes-base.executeWorkflow", version: 1.3, config: { name: "Executar: geração B readonly", position: [1200, 0], onError: "continueRegularOutput", parameters: { source: "parameter", mode: "each", workflowJson: JSON.stringify(readonlyGeneration.toJSON()), options: { waitForSubWorkflow: true } } }, output: [{}] });
+const validateB = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: geração B validada", position: [700, 0], parameters: { mode: "runOnceForEachItem", jsCode: "const B_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;\nfunction bDate(value) { return typeof value === \"string\" && Number.isFinite(Date.parse(value)); }\n\n/** CRM owns eligibility and the opaque cursor; an empty page still advances. */\nfunction candidatePageJobs(response, page) {\n  if (response?.error || !Array.isArray(response?.candidates) || response.candidates.length > 100 || !bDate(response.cutoffAt)\n      || !(response.nextCursor === null || (typeof response.nextCursor === \"string\" && response.nextCursor.length > 0))\n      || (page.cutoffAt && page.cutoffAt !== response.cutoffAt) || (response.nextCursor && response.nextCursor === page.cursor)) throw new Error(\"candidate-page-unavailable\");\n  const context = { ...page, cutoffAt: response.cutoffAt, nextCursor: response.nextCursor };\n  const jobs = response.candidates.map(candidate => {\n    if (!candidate || !B_UUID.test(candidate.leadId) || !B_UUID.test(candidate.anchorMessageId) || !bDate(candidate.anchorSentAt)\n        || typeof candidate.phoneNumberId !== \"string\" || !/^\\d{1,32}$/.test(candidate.phoneNumberId) || ![\"prepare\", \"omit\", \"escalate\"].includes(candidate.action)) throw new Error(\"candidate-page-unavailable\");\n    return { ...context, leadId: candidate.leadId, anchorMessageId: candidate.anchorMessageId, anchorSentAt: candidate.anchorSentAt, phoneNumberId: candidate.phoneNumberId, action: candidate.action, pageStart: true };\n  });\n  return jobs.length ? jobs : [{ ...context, action: \"empty\", pageStart: true }];\n}\n\nfunction preparationClaim(response, candidate, now) {\n  if (response?.error || !B_UUID.test(response?.episodeId) || !B_UUID.test(response?.claimToken) || !bDate(response?.claimExpiresAt)\n      || Date.parse(response.claimExpiresAt) <= now || !response.frame || !B_UUID.test(response.frame.tenantId) || (candidate.tenantId && response.frame.tenantId !== candidate.tenantId) || response.frame.leadId !== candidate.leadId\n      || response.frame.episodeId !== response.episodeId || response.frame.phoneNumberId !== candidate.phoneNumberId\n      || response.frame.anchor?.id !== candidate.anchorMessageId || response.frame.anchor?.sentAt !== candidate.anchorSentAt\n      || !Number.isSafeInteger(response.agentStateRevision) || response.frame.agent?.revision !== response.agentStateRevision) return { ...candidate, claimed: false, outcome: \"claim-unavailable\" };\n  return { ...candidate, claimed: true, episodeId: response.episodeId, claimToken: response.claimToken, frame: response.frame, deadline: Math.min(now + 120000, Date.parse(response.claimExpiresAt)) };\n}\n\nfunction generationForDispatch(response, claim, now) {\n  let code = \"generation-failed\", text = typeof response?.text === \"string\" ? response.text.trim() : \"\";\n  if (now >= claim.deadline) code = \"generation-timeout\";\n  else if ([\"generation-timeout\", \"context-read-failed\", \"invalid-text\"].includes(response?.code)) code = response.code;\n  else if (response?.ok === true && !response.error) {\n    if (text && text.length <= 4096) return { ...claim, valid: true, text };\n    code = \"invalid-text\";\n  }\n  return { ...claim, valid: false, failureCode: code };\n}\n\n/** Acceptance identity comes only from send, never generation or the clock. */\nfunction acknowledgementForSend(response, claim) {\n  const valid = !response?.error && response?.episodeId === claim.episodeId && response.state === \"accepted_pending_record\"\n    && typeof response.wamid === \"string\" && response.wamid.trim() === response.wamid && response.wamid.length > 0 && response.wamid.length <= 2048 && bDate(response.acceptedAt);\n  return { ...claim, needsAck: valid, ...(valid ? { acknowledgement: { wamid: response.wamid, acceptedAt: response.acceptedAt } } : {}), outcome: typeof response?.state === \"string\" ? response.state : \"uncertain\" };\n}" + "\nreturn { json: generationForDispatch($json, $('Code: claim B').item.json, Date.now()) }; " } }, output: [{}] });
+const validB = ifElse({ version: 2.3, config: { name: "Texto B válido no prazo?", position: [900, 0], parameters: { conditions: { combinator: "and", options: { caseSensitive: true, leftValue: "", typeValidation: "strict" }, conditions: [{ leftValue: expr("{{ " + "$json.valid" + " }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }] } } } });
+const releaseB = node({ type: "n8n-nodes-base.httpRequest", version: 4.4, config: { name: "HTTP: liberar preparação B", position: [1100, 0], onError: "continueRegularOutput", retryOnFail: true, maxTries: 3, waitBetweenTries: 2000, parameters: { method: "POST", url: expr(CRM_BASE_URL + "/leads/{{ $json.leadId }}/reengagement/{{ $json.episodeId }}/preparation-failure"), authentication: "genericCredentialType", genericAuthType: "httpHeaderAuth", sendHeaders: true, headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: geração B validada').item.json.tenantSlug }}") }] }, sendBody: true, contentType: "json", specifyBody: "json", jsonBody: expr("{{ " + "{ claimToken: $json.claimToken, code: $json.failureCode }" + " }}"), options: { timeout: 15000 } }, credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") } }, output: [{}] });
+const sendB = node({ type: "n8n-nodes-base.httpRequest", version: 4.4, config: { name: "HTTP: enviar B uma vez", position: [1100, 0], onError: "continueRegularOutput",  parameters: { method: "POST", url: expr(CRM_BASE_URL + "/leads/{{ $json.leadId }}/reengagement/{{ $json.episodeId }}/send"), authentication: "genericCredentialType", genericAuthType: "httpHeaderAuth", sendHeaders: true, headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: geração B validada').item.json.tenantSlug }}") }] }, sendBody: true, contentType: "json", specifyBody: "json", jsonBody: expr("{{ " + "{ claimToken: $json.claimToken, text: $json.text }" + " }}"), options: { timeout: 15000 } }, credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") } }, output: [{}] });
+const sendResultB = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: resultado B", position: [700, 0], parameters: { mode: "runOnceForEachItem", jsCode: "const B_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;\nfunction bDate(value) { return typeof value === \"string\" && Number.isFinite(Date.parse(value)); }\n\n/** CRM owns eligibility and the opaque cursor; an empty page still advances. */\nfunction candidatePageJobs(response, page) {\n  if (response?.error || !Array.isArray(response?.candidates) || response.candidates.length > 100 || !bDate(response.cutoffAt)\n      || !(response.nextCursor === null || (typeof response.nextCursor === \"string\" && response.nextCursor.length > 0))\n      || (page.cutoffAt && page.cutoffAt !== response.cutoffAt) || (response.nextCursor && response.nextCursor === page.cursor)) throw new Error(\"candidate-page-unavailable\");\n  const context = { ...page, cutoffAt: response.cutoffAt, nextCursor: response.nextCursor };\n  const jobs = response.candidates.map(candidate => {\n    if (!candidate || !B_UUID.test(candidate.leadId) || !B_UUID.test(candidate.anchorMessageId) || !bDate(candidate.anchorSentAt)\n        || typeof candidate.phoneNumberId !== \"string\" || !/^\\d{1,32}$/.test(candidate.phoneNumberId) || ![\"prepare\", \"omit\", \"escalate\"].includes(candidate.action)) throw new Error(\"candidate-page-unavailable\");\n    return { ...context, leadId: candidate.leadId, anchorMessageId: candidate.anchorMessageId, anchorSentAt: candidate.anchorSentAt, phoneNumberId: candidate.phoneNumberId, action: candidate.action, pageStart: true };\n  });\n  return jobs.length ? jobs : [{ ...context, action: \"empty\", pageStart: true }];\n}\n\nfunction preparationClaim(response, candidate, now) {\n  if (response?.error || !B_UUID.test(response?.episodeId) || !B_UUID.test(response?.claimToken) || !bDate(response?.claimExpiresAt)\n      || Date.parse(response.claimExpiresAt) <= now || !response.frame || !B_UUID.test(response.frame.tenantId) || (candidate.tenantId && response.frame.tenantId !== candidate.tenantId) || response.frame.leadId !== candidate.leadId\n      || response.frame.episodeId !== response.episodeId || response.frame.phoneNumberId !== candidate.phoneNumberId\n      || response.frame.anchor?.id !== candidate.anchorMessageId || response.frame.anchor?.sentAt !== candidate.anchorSentAt\n      || !Number.isSafeInteger(response.agentStateRevision) || response.frame.agent?.revision !== response.agentStateRevision) return { ...candidate, claimed: false, outcome: \"claim-unavailable\" };\n  return { ...candidate, claimed: true, episodeId: response.episodeId, claimToken: response.claimToken, frame: response.frame, deadline: Math.min(now + 120000, Date.parse(response.claimExpiresAt)) };\n}\n\nfunction generationForDispatch(response, claim, now) {\n  let code = \"generation-failed\", text = typeof response?.text === \"string\" ? response.text.trim() : \"\";\n  if (now >= claim.deadline) code = \"generation-timeout\";\n  else if ([\"generation-timeout\", \"context-read-failed\", \"invalid-text\"].includes(response?.code)) code = response.code;\n  else if (response?.ok === true && !response.error) {\n    if (text && text.length <= 4096) return { ...claim, valid: true, text };\n    code = \"invalid-text\";\n  }\n  return { ...claim, valid: false, failureCode: code };\n}\n\n/** Acceptance identity comes only from send, never generation or the clock. */\nfunction acknowledgementForSend(response, claim) {\n  const valid = !response?.error && response?.episodeId === claim.episodeId && response.state === \"accepted_pending_record\"\n    && typeof response.wamid === \"string\" && response.wamid.trim() === response.wamid && response.wamid.length > 0 && response.wamid.length <= 2048 && bDate(response.acceptedAt);\n  return { ...claim, needsAck: valid, ...(valid ? { acknowledgement: { wamid: response.wamid, acceptedAt: response.acceptedAt } } : {}), outcome: typeof response?.state === \"string\" ? response.state : \"uncertain\" };\n}" + "\nreturn { json: acknowledgementForSend($json, $('Code: geração B validada').item.json) }; " } }, output: [{}] });
+const needsAckB = ifElse({ version: 2.3, config: { name: "Aceite B precisa registro?", position: [900, 0], parameters: { conditions: { combinator: "and", options: { caseSensitive: true, leftValue: "", typeValidation: "strict" }, conditions: [{ leftValue: expr("{{ " + "$json.needsAck" + " }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }] } } } });
+const acknowledgeB = node({ type: "n8n-nodes-base.httpRequest", version: 4.4, config: { name: "HTTP: acknowledgement B", position: [1100, 0], onError: "continueRegularOutput", retryOnFail: true, maxTries: 3, waitBetweenTries: 2000, parameters: { method: "POST", url: expr(CRM_BASE_URL + "/leads/{{ $json.leadId }}/reengagement/{{ $json.episodeId }}/acknowledgement"), authentication: "genericCredentialType", genericAuthType: "httpHeaderAuth", sendHeaders: true, headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: resultado B').item.json.tenantSlug }}") }] }, sendBody: true, contentType: "json", specifyBody: "json", jsonBody: expr("{{ " + "$json.acknowledgement" + " }}"), options: { timeout: 15000 } }, credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") } }, output: [{}] });
+const omitB = node({ type: "n8n-nodes-base.httpRequest", version: 4.4, config: { name: "HTTP: omitir B", position: [1100, 0], onError: "continueRegularOutput", retryOnFail: true, maxTries: 3, waitBetweenTries: 2000, parameters: { method: "POST", url: expr(CRM_BASE_URL + "/leads/{{ $json.leadId }}/reengagement/expire"), authentication: "genericCredentialType", genericAuthType: "httpHeaderAuth", sendHeaders: true, headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: candidato B').item.json.tenantSlug }}") }] }, sendBody: true, contentType: "json", specifyBody: "json", jsonBody: expr("{{ " + "{ anchorMessageId: $json.anchorMessageId }" + " }}"), options: { timeout: 15000 } }, credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") } }, output: [{}] });
+const endB = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: concluir candidato B", position: [700, 0], parameters: { mode: "runOnceForEachItem", jsCode: "const candidate = $('Code: candidato B').item.json; return { json: { ...candidate, pageStart: false, outcome: $json.error ? 'crm-unavailable' : ($json.outcome || ($json.podeContatar === false ? 'contact-denied' : 'processed')) } }; " } }, output: [{}] });
+const nextPageB = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: próxima página B", position: [700, 0], parameters: { mode: "runOnceForAllItems", jsCode: "const last = $input.all().at(-1)?.json; if (!last) throw new Error('candidate-page-unavailable'); return [{ json: { tenantSlug: last.tenantSlug, cursor: last.nextCursor, cutoffAt: last.cutoffAt } }];" } }, output: [{}] });
+const hasNextPageB = ifElse({ version: 2.3, config: { name: "Há próxima página B?", position: [900, 0], parameters: { conditions: { combinator: "and", options: { caseSensitive: true, leftValue: "", typeValidation: "strict" }, conditions: [{ leftValue: expr("{{ " + "$json.cursor !== null" + " }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }] } } } });
 
 // =======================================================================
 // Varredura C — Escalonamento por silêncio (design.md; AGT-05 AC2,
@@ -1040,23 +818,15 @@ const lembretesChain = getDueReminders.to(
   )
 );
 
-// lote-14 (T26): a saída de erro do GET fica sem ligação de propósito (o item
-// cai sem envio); só a saída 0 segue, e só com `podeContatar`.
-const reengajamentoChain = getStaleConversations.to(
-  excludeClosedForReengagement.to(
-    getLeadForReengagement.to(
-      conductionForReengagement.to(
-        canContactForReengagement.to(
-          lookupTenantForReengagement.to(
-            mergeReengagementContext.to(
-              getSettingsForReengagement.to(sendReengagementTemplate.to(registerReengagementMessage.to(markReengaged)))
-            )
-          )
-        )
-      )
-    )
-  )
-);
+// A single checkpoint belongs to each tenant/page/candidate run; no repeated .first reads.
+const endBWired = endB.to(nextBatch(candidatesLoopB));
+const acknowledgementBWired = sendResultB.to(needsAckB.onTrue(acknowledgeB.to(endBWired)).onFalse(endBWired));
+const dispatchBWired = validateB.to(validB.onTrue(sendB.to(acknowledgementBWired)).onFalse(releaseB.to(endBWired)));
+const prepareBWired = prepareB.to(claimB.to(claimedB.onTrue(generateB.to(dispatchBWired)).onFalse(endBWired)));
+const contactBWired = getLeadForReengagement.to(conductionForReengagement.to(canContactForReengagement.onTrue(prepareBWired).onFalse(endBWired))).onError(endBWired);
+const candidateBWired = candidateB.to(candidateRouteB.onCase(0, contactBWired).onCase(1, omitB.to(endBWired)).onCase(2, endBWired));
+const pageBWired = candidatesLoopB.onEachBatch(candidateBWired).onDone(nextPageB.to(hasNextPageB.onTrue(cursorB).onFalse(nextBatch(tenantsLoopB))));
+const reengajamentoChain = getTenantsForB.to(uniqueTenantsB.to(tenantsLoopB.onEachBatch(cursorB.to(candidatesB.to(pageB.to(pageBWired))))));
 
 const escalonamentoChain = getSilentReengaged.to(
   excludeClosedForEscalation.to(
@@ -1090,4 +860,6 @@ const purgaPedidaChain = getTenantsForPurge.to(
 );
 scheduleEveryFifteenMinutes.to(purgaPedidaChain);
 
-export default workflow("crivo-agente-scheduler", "crivo-agente-scheduler").add(scheduleEveryFifteenMinutes);
+const schedulerWorkflow = workflow("crivo-agente-scheduler", "crivo-agente-scheduler").add(scheduleEveryFifteenMinutes);
+schedulerWorkflow.regenerateNodeIds(new Map());
+export default schedulerWorkflow;

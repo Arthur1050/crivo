@@ -35,7 +35,9 @@
  * `canAgentContactProactively` (`n8n/src/conduction.mjs`). Lembretes não
  * mudam (SILENCIO-01 AC8).
  */
-import { workflow, trigger, node, ifElse, switchCase, newCredential, expr } from "@n8n/workflow-sdk";
+import { workflow, trigger, node, ifElse, switchCase, newCredential, expr, splitInBatches, nextBatch } from "@n8n/workflow-sdk";
+
+import readonlyGeneration from "../generated/reengagement-contextual";
 
 const CRM_BASE_URL = "https://crivo-arthur1050s-projects.vercel.app/api/v1";
 const TENANT_CONFIG_TABLE_ID = "xRHckWWd6fxGeNta";
@@ -347,262 +349,38 @@ const markReminderSent = node({
 });
 
 // =======================================================================
-// Varredura B — Reengajamento (design.md; AGT-05 AC2)
-// =======================================================================
+// Varredura B — CRM autoritativo, preparação readonly e envio sem retry.
 
-const getStaleConversations = node({
-  type: "n8n-nodes-base.dataTable",
-  version: 1.1,
-  config: {
-    name: "Data Table: conversas paradas 24h (conversa_estado)",
-    position: [260, 0],
-    parameters: {
-      resource: "row",
-      operation: "get",
-      dataTableId: { __rl: true, mode: "id", value: CONVERSA_ESTADO_TABLE_ID },
-      matchType: "allConditions",
-      filters: {
-        conditions: [
-          { keyName: "lastInboundAt", condition: "lt", keyValue: expr("{{ $now.minus({ hours: 24 }).toISO() }}") },
-          { keyName: "reengaged", condition: "eq", keyValue: "false" },
-        ],
-      },
-      returnAll: true,
-    },
-  },
-  output: [{ tenantSlug: "vale-do-uberaba", waId: "5534999990001", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando", reengaged: false, lastInboundAt: "2026-08-04T10:00:00.000Z" }],
-});
 
-const excludeClosedForReengagement = node({
-  type: "n8n-nodes-base.filter",
-  version: 2.3,
-  config: {
-    name: "Filter: exclui encerradas (reengajamento)",
-    position: [520, 0],
-    parameters: {
-      conditions: {
-        combinator: "and",
-        options: { caseSensitive: true, leftValue: "", typeValidation: "strict" },
-        conditions: [{ leftValue: expr("{{ $json.fase }}"), operator: { type: "string", operation: "notEquals" }, rightValue: "encerrada" }],
-      },
-    },
-  },
-  output: [{ tenantSlug: "vale-do-uberaba", waId: "5534999990001", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
-});
 
-// lote-14 (T26 — SILENCIO-01 AC6/AC7): relê o lead ao vivo antes do contato
-// proativo. `fase` em `conversa_estado` não sabe da marca de condução humana
-// (gravada pelo CRM), então só o CRM decide. Falha da leitura: saída de erro
-// sem ligação — o item cai sem contato e as outras varreduras do tick seguem.
-const getLeadForReengagement = node({
-  type: "n8n-nodes-base.httpRequest",
-  version: 4.4,
-  config: {
-    name: "HTTP: GET /leads/{id} (reengajamento)",
-    position: [650, -150],
-    retryOnFail: true,
-    maxTries: 3,
-    waitBetweenTries: 2000,
-    onError: "continueErrorOutput",
-    parameters: {
-      method: "GET",
-      url: expr(`${CRM_BASE_URL}/leads/{{ $json.leadId }}`),
-      authentication: "genericCredentialType",
-      genericAuthType: "httpHeaderAuth",
-      sendHeaders: true,
-      headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $json.tenantSlug }}") }] },
-    },
-    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
-  },
-  output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", status: "em_qualificacao", optedOutAt: null, humanTakeoverAt: null, memoryResetRequestedAt: null }],
-});
-
-const conductionForReengagement = node({
-  type: "n8n-nodes-base.code",
-  version: 2,
-  config: {
-    name: "Code: condução ao vivo (reengajamento)",
-    position: [780, -150],
-    parameters: {
-      mode: "runOnceForEachItem",
-      language: "javaScript",
-      jsCode:
-        '__INLINE(conduction.mjs)__' +
-        "\n\n" +
-        "const conversa = $('Filter: exclui encerradas (reengajamento)').item.json;\n" +
-        "const lead = $json;\n" +
-        "return { json: { ...conversa, podeContatar: canAgentContactProactively({ status: lead.status, humanTakeoverAt: lead.humanTakeoverAt, optedOutAt: lead.optedOutAt }) } };\n",
-    },
-  },
-  output: [{ tenantSlug: "vale-do-uberaba", waId: "5534999990001", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando", podeContatar: true }],
-});
-
-const canContactForReengagement = node({
-  type: "n8n-nodes-base.filter",
-  version: 2.3,
-  config: {
-    name: "Filter: agente pode contatar (reengajamento)",
-    position: [910, -150],
-    parameters: {
-      conditions: {
-        combinator: "and",
-        options: { caseSensitive: true, leftValue: "", typeValidation: "strict" },
-        conditions: [{ leftValue: expr("{{ $json.podeContatar }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }],
-      },
-    },
-  },
-  output: [{ tenantSlug: "vale-do-uberaba", waId: "5534999990001", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando", podeContatar: true }],
-});
-
-const lookupTenantForReengagement = node({
-  type: "n8n-nodes-base.dataTable",
-  version: 1.1,
-  config: {
-    name: "Data Table: tenant do reengajamento",
-    position: [780, 0],
-    parameters: {
-      resource: "row",
-      operation: "get",
-      dataTableId: { __rl: true, mode: "id", value: TENANT_CONFIG_TABLE_ID },
-      matchType: "allConditions",
-      filters: {
-        conditions: [{ keyName: "tenantSlug", condition: "eq", keyValue: expr("{{ $json.tenantSlug }}") }],
-      },
-      returnAll: false,
-      limit: 1,
-    },
-  },
-  output: [{ phoneNumberId: "109876543210001", tenantSlug: "vale-do-uberaba" }],
-});
-
-const mergeReengagementContext = node({
-  type: "n8n-nodes-base.code",
-  version: 2,
-  config: {
-    name: "Code: combinar reengajamento e tenant",
-    position: [1040, 0],
-    parameters: {
-      mode: "runOnceForEachItem",
-      language: "javaScript",
-      jsCode:
-        '__INLINE(phone.mjs)__' +
-        "\n\n" +
-        "const conversa = $('Filter: exclui encerradas (reengajamento)').item.json;\n" +
-        "const tenant = $json;\n" +
-        "return { json: { tenantSlug: conversa.tenantSlug, waId: conversa.waId, recipientMsisdn: toWhatsAppMsisdn(conversa.waId), leadId: conversa.leadId, phoneNumberId: tenant.phoneNumberId } };\n",
-    },
-  },
-  output: [{ tenantSlug: "vale-do-uberaba", waId: "553499532444", recipientMsisdn: "5534999532444", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", phoneNumberId: "109876543210001" }],
-});
-
-const getSettingsForReengagement = node({
-  type: "n8n-nodes-base.httpRequest",
-  version: 4.4,
-  config: {
-    name: "HTTP: GET /settings (reengajamento)",
-    position: [1300, 0],
-    retryOnFail: true,
-    maxTries: 3,
-    waitBetweenTries: 2000,
-    parameters: {
-      method: "GET",
-      url: `${CRM_BASE_URL}/settings`,
-      authentication: "genericCredentialType",
-      genericAuthType: "httpHeaderAuth",
-      sendHeaders: true,
-      headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $json.tenantSlug }}") }] },
-    },
-    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
-  },
-  output: [{ agentName: "Ana" }],
-});
-
-const sendReengagementTemplate = node({
-  type: "n8n-nodes-base.whatsApp",
-  version: 1.1,
-  config: {
-    name: "WhatsApp: reengajamento (template)",
-    position: [1560, 0],
-    parameters: {
-      resource: "message",
-      operation: "sendTemplate",
-      phoneNumberId: expr("{{ $('Code: combinar reengajamento e tenant').first().json.phoneNumberId }}"),
-      // Mesmo motivo dos lembretes acima (n8n/src/phone.mjs): o `waId` cru da
-      // Meta vem sem o nono dígito e é rejeitado no envio (erro 131030).
-      recipientPhoneNumber: expr("{{ $('Code: combinar reengajamento e tenant').first().json.recipientMsisdn }}"),
-      template: "reengajamento",
-      components: {
-        component: [
-          {
-            type: "body",
-            bodyParameters: { parameter: [{ type: "text", text: expr("{{ $json.agentName }}") }] },
-          },
-        ],
-      },
-    },
-    // Mesmo achado documentado em n8n/workflows/principal.ts (WhatsApp send):
-    // placeholder "WhatsApp Send — Crivo" nunca resolveu, publish_workflow
-    // rejeitou o workflow com "Missing required credential: whatsAppApi" nos
-    // 3 nós abaixo até este fix — id copiado exatamente de `list_credentials`.
-    credentials: { whatsAppApi: newCredential("WhatsApp account") },
-  },
-  output: [{ messages: [{ id: "wamid.REENGAJAMENTO" }] }],
-});
-
-const registerReengagementMessage = node({
-  type: "n8n-nodes-base.httpRequest",
-  version: 4.4,
-  config: {
-    name: "HTTP: POST /leads/{id}/messages (reengajamento)",
-    position: [1820, 0],
-    retryOnFail: true,
-    maxTries: 3,
-    waitBetweenTries: 2000,
-    parameters: {
-      method: "POST",
-      url: expr(`${CRM_BASE_URL}/leads/{{ $('Code: combinar reengajamento e tenant').first().json.leadId }}/messages`),
-      authentication: "genericCredentialType",
-      genericAuthType: "httpHeaderAuth",
-      sendHeaders: true,
-      headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: combinar reengajamento e tenant').first().json.tenantSlug }}") }] },
-      sendBody: true,
-      contentType: "json",
-      specifyBody: "json",
-      jsonBody: expr(
-        "{{ { externalId: 'reengajamento-' + $('Code: combinar reengajamento e tenant').first().json.waId + '-' + $now.toFormat('yyyyMMdd'), sender: 'agente', content: 'Mensagem de reengajamento enviada (template)', sentAt: $now.toISO() } }}"
-      ),
-    },
-    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
-  },
-  output: [{ id: "8fa85f64-5717-4562-b3fc-2c963f66afab", sender: "agente" }],
-});
-
-const markReengaged = node({
-  type: "n8n-nodes-base.dataTable",
-  version: 1.1,
-  config: {
-    name: "Data Table: marcar reengajado",
-    position: [2080, 0],
-    parameters: {
-      resource: "row",
-      operation: "update",
-      dataTableId: { __rl: true, mode: "id", value: CONVERSA_ESTADO_TABLE_ID },
-      matchType: "allConditions",
-      filters: {
-        conditions: [
-          { keyName: "tenantSlug", condition: "eq", keyValue: expr("{{ $('Code: combinar reengajamento e tenant').first().json.tenantSlug }}") },
-          { keyName: "waId", condition: "eq", keyValue: expr("{{ $('Code: combinar reengajamento e tenant').first().json.waId }}") },
-        ],
-      },
-      columns: {
-        mappingMode: "defineBelow",
-        value: { reengaged: true },
-        schema: [{ id: "reengaged", displayName: "reengaged", required: false, defaultMatch: false, display: true, type: "boolean", canBeUsedToMatch: true }],
-      },
-    },
-  },
-  output: [{ id: 1 }],
-});
+const getTenantsForB = node({ type: "n8n-nodes-base.dataTable", version: 1.1, config: { name: "Data Table: tenants B", position: [260, 0], parameters: { resource: "row", operation: "get", dataTableId: { __rl: true, mode: "id", value: TENANT_CONFIG_TABLE_ID }, returnAll: true } }, output: [{}] });
+const uniqueTenantsB = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: tenants únicos B", position: [700, 0], parameters: { mode: "runOnceForAllItems", jsCode: "const seen = new Set(); return $input.all().filter(item => { const slug = item.json.tenantSlug; if (typeof slug !== 'string' || !/^[a-z0-9_-]{1,128}$/i.test(slug) || seen.has(slug)) return false; seen.add(slug); return true; }).map(item => ({ json: { tenantSlug: item.json.tenantSlug, cursor: null, cutoffAt: null } }));" } }, output: [{}] });
+const tenantsLoopB = splitInBatches({ version: 3, config: { name: "Loop: tenants B", position: [400, 0], parameters: { batchSize: 1 } } });
+const cursorB = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: cursor B", position: [700, 0], parameters: { mode: "runOnceForEachItem", jsCode: "return { json: $json }; " } }, output: [{}] });
+const candidatesB = node({ type: "n8n-nodes-base.httpRequest", version: 4.4, config: { name: "HTTP: candidatos B", position: [1100, 0], onError: "continueRegularOutput",  parameters: { method: "GET", url: expr(CRM_BASE_URL + "/whatsapp/automation/candidates?limit=100{{ $json.cursor ? '&cursor=' + encodeURIComponent($json.cursor) : '' }}"), authentication: "genericCredentialType", genericAuthType: "httpHeaderAuth", sendHeaders: true, headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: cursor B').item.json.tenantSlug }}") }] },  options: { timeout: 15000 } }, credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") } }, output: [{}] });
+const pageB = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: página B pronta", position: [700, 0], parameters: { mode: "runOnceForAllItems", jsCode: '__INLINE(scheduler-reengagement.mjs)__' + "\nreturn candidatePageJobs($input.first().json, $('Code: cursor B').item.json).map(json => ({ json }));" } }, output: [{}] });
+const candidatesLoopB = splitInBatches({ version: 3, config: { name: "Loop: candidatos B", position: [600, 0], parameters: { batchSize: 1, options: { reset: expr("{{ $json.pageStart === true }}") } } } });
+const candidateB = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: candidato B", position: [700, 0], parameters: { mode: "runOnceForEachItem", jsCode: "return { json: $json }; " } }, output: [{}] });
+const candidateRouteB = switchCase({ version: 3.4, config: { name: "Switch: ação B", position: [800, 0], parameters: { mode: "rules", rules: { values: ["prepare", "omit"].map(action => ({ conditions: { options: { caseSensitive: true, leftValue: "", typeValidation: "strict" }, conditions: [{ leftValue: expr("{{ $json.action }}"), operator: { type: "string", operation: "equals" }, rightValue: action }], combinator: "and" } })) }, options: { fallbackOutput: "extra" } } } });
+// Live conduction is an early read; prepare and send also revalidate under CRM locks.
+const getLeadForReengagement = node({ type: "n8n-nodes-base.httpRequest", version: 4.4, config: { name: "HTTP: GET /leads/{id} (reengajamento)", position: [900, 0], onError: "continueErrorOutput", parameters: { method: "GET", url: expr(CRM_BASE_URL + "/leads/{{ $json.leadId }}"), authentication: "genericCredentialType", genericAuthType: "httpHeaderAuth", sendHeaders: true, headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $json.tenantSlug }}") }] } }, credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") } }, output: [{}] });
+const conductionForReengagement = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: condução ao vivo (reengajamento)", position: [700, 0], parameters: { mode: "runOnceForEachItem", jsCode: '__INLINE(conduction.mjs)__' + "\nconst conversa = $('Code: candidato B').item.json; const lead = $json; return { json: { ...conversa, podeContatar: canAgentContactProactively({ status: lead.status, optedOutAt: lead.optedOutAt, humanTakeoverAt: lead.humanTakeoverAt }) } }; " } }, output: [{}] });
+const canContactForReengagement = ifElse({ version: 2.3, config: { name: "Filter: agente pode contatar (reengajamento)", position: [900, 0], parameters: { conditions: { combinator: "and", options: { caseSensitive: true, leftValue: "", typeValidation: "strict" }, conditions: [{ leftValue: expr("{{ " + "$json.podeContatar" + " }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }] } } } });
+const prepareB = node({ type: "n8n-nodes-base.httpRequest", version: 4.4, config: { name: "HTTP: preparar B", position: [1100, 0], onError: "continueRegularOutput",  parameters: { method: "POST", url: expr(CRM_BASE_URL + "/leads/{{ $json.leadId }}/reengagement/prepare"), authentication: "genericCredentialType", genericAuthType: "httpHeaderAuth", sendHeaders: true, headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: candidato B').item.json.tenantSlug }}") }] }, sendBody: true, contentType: "json", specifyBody: "json", jsonBody: expr("{{ " + "{ anchorMessageId: $json.anchorMessageId }" + " }}"), options: { timeout: 15000 } }, credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") } }, output: [{}] });
+const claimB = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: claim B", position: [700, 0], parameters: { mode: "runOnceForEachItem", jsCode: '__INLINE(scheduler-reengagement.mjs)__' + "\nreturn { json: preparationClaim($json, $('Code: candidato B').item.json, Date.now()) }; " } }, output: [{}] });
+const claimedB = ifElse({ version: 2.3, config: { name: "Claim B adquirida?", position: [900, 0], parameters: { conditions: { combinator: "and", options: { caseSensitive: true, leftValue: "", typeValidation: "strict" }, conditions: [{ leftValue: expr("{{ " + "$json.claimed" + " }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }] } } } });
+const generateB = node({ type: "n8n-nodes-base.executeWorkflow", version: 1.3, config: { name: "Executar: geração B readonly", position: [1200, 0], onError: "continueRegularOutput", parameters: { source: "parameter", mode: "each", workflowJson: JSON.stringify(readonlyGeneration.toJSON()), options: { waitForSubWorkflow: true } } }, output: [{}] });
+const validateB = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: geração B validada", position: [700, 0], parameters: { mode: "runOnceForEachItem", jsCode: '__INLINE(scheduler-reengagement.mjs)__' + "\nreturn { json: generationForDispatch($json, $('Code: claim B').item.json, Date.now()) }; " } }, output: [{}] });
+const validB = ifElse({ version: 2.3, config: { name: "Texto B válido no prazo?", position: [900, 0], parameters: { conditions: { combinator: "and", options: { caseSensitive: true, leftValue: "", typeValidation: "strict" }, conditions: [{ leftValue: expr("{{ " + "$json.valid" + " }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }] } } } });
+const releaseB = node({ type: "n8n-nodes-base.httpRequest", version: 4.4, config: { name: "HTTP: liberar preparação B", position: [1100, 0], onError: "continueRegularOutput", retryOnFail: true, maxTries: 3, waitBetweenTries: 2000, parameters: { method: "POST", url: expr(CRM_BASE_URL + "/leads/{{ $json.leadId }}/reengagement/{{ $json.episodeId }}/preparation-failure"), authentication: "genericCredentialType", genericAuthType: "httpHeaderAuth", sendHeaders: true, headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: geração B validada').item.json.tenantSlug }}") }] }, sendBody: true, contentType: "json", specifyBody: "json", jsonBody: expr("{{ " + "{ claimToken: $json.claimToken, code: $json.failureCode }" + " }}"), options: { timeout: 15000 } }, credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") } }, output: [{}] });
+const sendB = node({ type: "n8n-nodes-base.httpRequest", version: 4.4, config: { name: "HTTP: enviar B uma vez", position: [1100, 0], onError: "continueRegularOutput",  parameters: { method: "POST", url: expr(CRM_BASE_URL + "/leads/{{ $json.leadId }}/reengagement/{{ $json.episodeId }}/send"), authentication: "genericCredentialType", genericAuthType: "httpHeaderAuth", sendHeaders: true, headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: geração B validada').item.json.tenantSlug }}") }] }, sendBody: true, contentType: "json", specifyBody: "json", jsonBody: expr("{{ " + "{ claimToken: $json.claimToken, text: $json.text }" + " }}"), options: { timeout: 15000 } }, credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") } }, output: [{}] });
+const sendResultB = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: resultado B", position: [700, 0], parameters: { mode: "runOnceForEachItem", jsCode: '__INLINE(scheduler-reengagement.mjs)__' + "\nreturn { json: acknowledgementForSend($json, $('Code: geração B validada').item.json) }; " } }, output: [{}] });
+const needsAckB = ifElse({ version: 2.3, config: { name: "Aceite B precisa registro?", position: [900, 0], parameters: { conditions: { combinator: "and", options: { caseSensitive: true, leftValue: "", typeValidation: "strict" }, conditions: [{ leftValue: expr("{{ " + "$json.needsAck" + " }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }] } } } });
+const acknowledgeB = node({ type: "n8n-nodes-base.httpRequest", version: 4.4, config: { name: "HTTP: acknowledgement B", position: [1100, 0], onError: "continueRegularOutput", retryOnFail: true, maxTries: 3, waitBetweenTries: 2000, parameters: { method: "POST", url: expr(CRM_BASE_URL + "/leads/{{ $json.leadId }}/reengagement/{{ $json.episodeId }}/acknowledgement"), authentication: "genericCredentialType", genericAuthType: "httpHeaderAuth", sendHeaders: true, headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: resultado B').item.json.tenantSlug }}") }] }, sendBody: true, contentType: "json", specifyBody: "json", jsonBody: expr("{{ " + "$json.acknowledgement" + " }}"), options: { timeout: 15000 } }, credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") } }, output: [{}] });
+const omitB = node({ type: "n8n-nodes-base.httpRequest", version: 4.4, config: { name: "HTTP: omitir B", position: [1100, 0], onError: "continueRegularOutput", retryOnFail: true, maxTries: 3, waitBetweenTries: 2000, parameters: { method: "POST", url: expr(CRM_BASE_URL + "/leads/{{ $json.leadId }}/reengagement/expire"), authentication: "genericCredentialType", genericAuthType: "httpHeaderAuth", sendHeaders: true, headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: candidato B').item.json.tenantSlug }}") }] }, sendBody: true, contentType: "json", specifyBody: "json", jsonBody: expr("{{ " + "{ anchorMessageId: $json.anchorMessageId }" + " }}"), options: { timeout: 15000 } }, credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") } }, output: [{}] });
+const endB = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: concluir candidato B", position: [700, 0], parameters: { mode: "runOnceForEachItem", jsCode: "const candidate = $('Code: candidato B').item.json; return { json: { ...candidate, pageStart: false, outcome: $json.error ? 'crm-unavailable' : ($json.outcome || ($json.podeContatar === false ? 'contact-denied' : 'processed')) } }; " } }, output: [{}] });
+const nextPageB = node({ type: "n8n-nodes-base.code", version: 2, config: { name: "Code: próxima página B", position: [700, 0], parameters: { mode: "runOnceForAllItems", jsCode: "const last = $input.all().at(-1)?.json; if (!last) throw new Error('candidate-page-unavailable'); return [{ json: { tenantSlug: last.tenantSlug, cursor: last.nextCursor, cutoffAt: last.cutoffAt } }];" } }, output: [{}] });
+const hasNextPageB = ifElse({ version: 2.3, config: { name: "Há próxima página B?", position: [900, 0], parameters: { conditions: { combinator: "and", options: { caseSensitive: true, leftValue: "", typeValidation: "strict" }, conditions: [{ leftValue: expr("{{ " + "$json.cursor !== null" + " }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }] } } } });
 
 // =======================================================================
 // Varredura C — Escalonamento por silêncio (design.md; AGT-05 AC2,
@@ -1040,23 +818,15 @@ const lembretesChain = getDueReminders.to(
   )
 );
 
-// lote-14 (T26): a saída de erro do GET fica sem ligação de propósito (o item
-// cai sem envio); só a saída 0 segue, e só com `podeContatar`.
-const reengajamentoChain = getStaleConversations.to(
-  excludeClosedForReengagement.to(
-    getLeadForReengagement.to(
-      conductionForReengagement.to(
-        canContactForReengagement.to(
-          lookupTenantForReengagement.to(
-            mergeReengagementContext.to(
-              getSettingsForReengagement.to(sendReengagementTemplate.to(registerReengagementMessage.to(markReengaged)))
-            )
-          )
-        )
-      )
-    )
-  )
-);
+// A single checkpoint belongs to each tenant/page/candidate run; no repeated .first reads.
+const endBWired = endB.to(nextBatch(candidatesLoopB));
+const acknowledgementBWired = sendResultB.to(needsAckB.onTrue(acknowledgeB.to(endBWired)).onFalse(endBWired));
+const dispatchBWired = validateB.to(validB.onTrue(sendB.to(acknowledgementBWired)).onFalse(releaseB.to(endBWired)));
+const prepareBWired = prepareB.to(claimB.to(claimedB.onTrue(generateB.to(dispatchBWired)).onFalse(endBWired)));
+const contactBWired = getLeadForReengagement.to(conductionForReengagement.to(canContactForReengagement.onTrue(prepareBWired).onFalse(endBWired))).onError(endBWired);
+const candidateBWired = candidateB.to(candidateRouteB.onCase(0, contactBWired).onCase(1, omitB.to(endBWired)).onCase(2, endBWired));
+const pageBWired = candidatesLoopB.onEachBatch(candidateBWired).onDone(nextPageB.to(hasNextPageB.onTrue(cursorB).onFalse(nextBatch(tenantsLoopB))));
+const reengajamentoChain = getTenantsForB.to(uniqueTenantsB.to(tenantsLoopB.onEachBatch(cursorB.to(candidatesB.to(pageB.to(pageBWired))))));
 
 const escalonamentoChain = getSilentReengaged.to(
   excludeClosedForEscalation.to(
@@ -1090,4 +860,6 @@ const purgaPedidaChain = getTenantsForPurge.to(
 );
 scheduleEveryFifteenMinutes.to(purgaPedidaChain);
 
-export default workflow("crivo-agente-scheduler", "crivo-agente-scheduler").add(scheduleEveryFifteenMinutes);
+const schedulerWorkflow = workflow("crivo-agente-scheduler", "crivo-agente-scheduler").add(scheduleEveryFifteenMinutes);
+schedulerWorkflow.regenerateNodeIds(new Map());
+export default schedulerWorkflow;

@@ -2314,13 +2314,16 @@ Adequação A–D/necessidade: `principal-outgoing-channel.test.ts:20–32` conf
 
 **Done when**:
 
-- [ ] Entrega implementada no artefato principal e contrato do Design preservado.
-- [ ] Casos de resultado cobertos: 22h/24h e horário; candidato omitido; claim disputa; geração falha; 120s total; trim/4096/4097; inbound durante geração; replay send; ack só registro; versão gerada; template desativado; ausência de tools de escrita; remover cada aresta crítica faz prova falhar; lembrete A/reset D preservados.
-- [ ] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **14 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
-- [ ] Gate Quick passou: `npx vitest run n8n/workflows/__tests__/scheduler-reengagement.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
-- [ ] Inliner executado, generated equivalente, wiring/nós exercitados e README/guia afetado atualizado no mesmo commit. Publicação remota depende de autorização posterior.
+- [x] Entrega implementada no artefato principal e contrato do Design preservado.
+- [x] Casos de resultado cobertos: 22h/24h e horário; candidato omitido; claim disputa; geração falha; 120s total; trim/4096/4097; inbound durante geração; replay send; ack só registro; versão gerada; template desativado; ausência de tools de escrita; remover cada aresta crítica faz prova falhar; lembrete A/reset D preservados.
+- [x] Testes co-localizados escritos/atualizados nesta tarefa; todos os ACs atribuídos e ramos de erro cobertos, pelo menos **14 cenários discriminantes passando**, mais toda a cobertura existente preservada (sem exclusões silenciosas).
+- [x] Gate Quick passou: `npx vitest run n8n/workflows/__tests__/scheduler-reengagement.test.ts` + regressões diretamente afetadas. Resultados derivam da spec; não apenas da implementação.
+- [x] Inliner executado, generated equivalente, wiring/nós exercitados e README/guia afetado atualizado no mesmo commit. Publicação remota depende de autorização posterior.
 
 **Tests**: unit — `n8n/workflows/__tests__/scheduler-reengagement.test.ts`; matriz: Workflow/Code nodes.
+
+**Evidence**: `node scripts/n8n-inline.mjs` exit0; Vitest scheduler-reengagement, scheduler-conducao, reengagement-contextual, scripts/n8n-inline, n8n/src/reengagement PASS118/118, 5 arquivos, exit0, 3.06s, início runner2026-10-05 00:17:34; 16 cenários novos conservados. Vitest src/server/reengagement/__tests__/{preparation-claim,dispatch-authorize,send}.test.ts PASS88/88, 3 arquivos, exit0, 357.05s, início00:13:04; whitespace limpo.
+` scheduler-reengagement.test.ts:42–71/:72–108/:109–133` comprovam paginação/corte/tenant, claim/deadline120/4096/inbound/replay, ack factual/readonly/37 arestas/paridade A-D; guards PG provam locks e janela22–24h. Migração autorizada das expectativas B mantém os dez desfechos de condução; fixture T47 remove somente deadline0 agora declarado, asserções originais intactas. Template B removido, envio sem retry, nenhum efeito remoto.
 
 **Gate**: Quick + Wiring; Build no fechamento da fase.
 

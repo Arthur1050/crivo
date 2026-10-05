@@ -64,12 +64,12 @@ function runEachItem(name: string, pairedNodes: Record<string, unknown>, json: u
 const SWEEPS = [
   {
     label: "reengajamento (AC6)",
-    phaseFilter: "Filter: exclui encerradas (reengajamento)",
+    phaseFilter: "Switch: ação B",
     get: "HTTP: GET /leads/{id} (reengajamento)",
     code: "Code: condução ao vivo (reengajamento)",
     filter: "Filter: agente pode contatar (reengajamento)",
-    next: "Data Table: tenant do reengajamento",
-    effect: "WhatsApp: reengajamento (template)",
+    next: "HTTP: preparar B",
+    effect: "HTTP: enviar B uma vez",
   },
   {
     label: "escalonamento por silêncio (AC7)",
@@ -101,9 +101,9 @@ for (const sweep of SWEEPS) {
       expect(reachable(TRIGGER, sweep.filter).has(sweep.effect)).toBe(false);
     });
 
-    it("falha do GET não envia nem escala: continueErrorOutput com a saída de erro sem ligação", () => {
+    it("falha do GET não envia nem escala", () => {
       expect(nodeByName(sweep.get).onError).toBe("continueErrorOutput");
-      expect(mainTargets(sweep.get, 1)).toEqual([]);
+      expect(mainTargets(sweep.get, 1)).toEqual(sweep.label === "reengajamento (AC6)" ? [{ node: "Code: concluir candidato B", type: "main", index: 0 }] : []);
     });
 
     it("o GET lê o lead do item da conversa, com o tenant do item", () => {
@@ -120,22 +120,23 @@ for (const sweep of SWEEPS) {
     });
 
     it("lead com a marca → podeContatar false; a linha da conversa segue no item", () => {
-      const out = runEachItem(sweep.code, { [sweep.phaseFilter]: CONVERSA }, { status: "em_qualificacao", humanTakeoverAt: "2026-10-01T12:00:00.000Z", optedOutAt: null });
+      const out = runEachItem(sweep.code, { [sweep.label === "reengajamento (AC6)" ? "Code: candidato B" : sweep.phaseFilter]: CONVERSA }, { status: "em_qualificacao", humanTakeoverAt: "2026-10-01T12:00:00.000Z", optedOutAt: null });
       expect(out.json).toEqual({ ...CONVERSA, podeContatar: false });
     });
 
     it("lead em escalado_humano ou com opt-out → podeContatar false", () => {
-      expect(runEachItem(sweep.code, { [sweep.phaseFilter]: CONVERSA }, { status: "escalado_humano", humanTakeoverAt: null, optedOutAt: null }).json.podeContatar).toBe(false);
-      expect(runEachItem(sweep.code, { [sweep.phaseFilter]: CONVERSA }, { status: "em_qualificacao", humanTakeoverAt: null, optedOutAt: "2026-10-01T12:00:00.000Z" }).json.podeContatar).toBe(false);
+      const paired = { [sweep.label === "reengajamento (AC6)" ? "Code: candidato B" : sweep.phaseFilter]: CONVERSA };
+      expect(runEachItem(sweep.code, paired, { status: "escalado_humano", humanTakeoverAt: null, optedOutAt: null }).json.podeContatar).toBe(false);
+      expect(runEachItem(sweep.code, paired, { status: "em_qualificacao", humanTakeoverAt: null, optedOutAt: "2026-10-01T12:00:00.000Z" }).json.podeContatar).toBe(false);
     });
 
     it("lead conduzido pelo agente, sem opt-out → podeContatar true", () => {
-      expect(runEachItem(sweep.code, { [sweep.phaseFilter]: CONVERSA }, { status: "em_qualificacao", humanTakeoverAt: null, optedOutAt: null }).json.podeContatar).toBe(true);
+      expect(runEachItem(sweep.code, { [sweep.label === "reengajamento (AC6)" ? "Code: candidato B" : sweep.phaseFilter]: CONVERSA }, { status: "em_qualificacao", humanTakeoverAt: null, optedOutAt: null }).json.podeContatar).toBe(true);
     });
 
     it("o filtro deixa passar só podeContatar verdadeiro", () => {
       const conditions = JSON.stringify(nodeByName(sweep.filter).parameters.conditions);
-      expect(nodeByName(sweep.filter).type).toBe("n8n-nodes-base.filter");
+      expect(nodeByName(sweep.filter).type).toBe(sweep.label === "reengajamento (AC6)" ? "n8n-nodes-base.if" : "n8n-nodes-base.filter");
       expect(conditions).toContain("{{ $json.podeContatar }}");
       expect(conditions).toContain('"operation":"true"');
     });

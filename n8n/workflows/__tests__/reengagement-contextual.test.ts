@@ -8,7 +8,7 @@ type Graph = { nodes: Node[]; connections: Record<string, unknown>; settings: { 
 const graph = generated.toJSON() as unknown as Graph;
 function node(name: string, data = graph) { const result = data.nodes.find((entry) => entry.name === name); if (!result) throw new Error(name); return result; }
 const now = Date.parse("2026-10-02T12:00:00Z");
-function fixture() { const frame = reengagementFixtureFrame(); frame.tenantId = "00000000-0000-4000-8000-000000000001"; frame.leadId = "00000000-0000-4000-8000-000000000002"; frame.episodeId = "00000000-0000-4000-8000-000000000003"; return { frame, tenantSlug: "fixture", leadId: "forged", deadline: 0 }; }
+function fixture() { const frame = reengagementFixtureFrame(); frame.tenantId = "00000000-0000-4000-8000-000000000001"; frame.leadId = "00000000-0000-4000-8000-000000000002"; frame.episodeId = "00000000-0000-4000-8000-000000000003"; return { frame, tenantSlug: "fixture", leadId: "forged" }; }
 function execute(name: string, input: unknown, contexts: Record<string, unknown> = {}) {
   const $ = (key: string) => ({ first: () => ({ json: contexts[key] }) });
   return new Function("$json", "$", node(name).parameters.jsCode as string)(input, $).json;
