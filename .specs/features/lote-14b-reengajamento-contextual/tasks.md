@@ -527,6 +527,11 @@ A leitura Graph dentro do sandbox resultou em `transport-failure`; não é respo
 HEAD `08f6fc6`, treze statements em t4-schema.sql. ESLint dos dois arquivos passou;
 tsc mantém os 50 erros herdados, sem novos; whitespace passou. Root revisou e aplicou o hash autorizado em cinco transações MCP, todas isError=false, exclusivamente nos alvos de teste documentados. Nenhum teste anterior mudou. Build de fase permanece T7.
 
+**Reparo local de fechamento (2026-10-06):** Full inicial falhou no hook do seed por FK da âncora (23503), 30 casos não executados.
+`src/db/seed.ts` exclui filhos operacionais antes dos pais; regressão AC1.3 em `src/db/__tests__/seed.test.ts` exige mesmos IDs e filhos removidos.
+Recheck 1: seed30 + retenção10, 40/40, exit0; recheck 2: seed31 + retenção10 + isolamento/primeira resposta/manutenção, 96/96, cinco arquivos,262,23s,exit0.
+Assertions/timeouts anteriores preservados; ESLint pontual e whitespace exit0. Nenhuma task nova ou execução de seed em produção.
+
 **Adequação A/B/D:** dez cenários de constraints e resultados persistidos em
 Postgres, sem mocks; valores de estado explícitos do Design, sem importar lista
 esperada da implementação. Fixtures próprias, limpeza começa pelos episódios

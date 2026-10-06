@@ -10,11 +10,15 @@ import {
   leads,
   messages,
   properties,
+  reengagementEpisodes,
   serviceApiKeys,
   tenant_members,
   tenantApiKeys,
   tenants,
   users,
+  whatsappChannels,
+  whatsappMessageReceipts,
+  whatsappUsage,
 } from "./schema";
 import { normalizeForSearch } from "../lib/normalize-text";
 
@@ -974,6 +978,12 @@ export async function runSeed(): Promise<SeedResult> {
     // referencia `document_categories` (category_id), então precisa ser
     // apagada antes das categorias. `tenant_api_keys` referencia `tenants`,
     // então precisa ser apagada antes dos tenants também.
+    // O reseed substitui o dataset inteiro. Os filhos operacionais do L14b
+    // têm FKs restritivas para mensagens/canais e vêm antes desses pais.
+    await tx.delete(reengagementEpisodes);
+    await tx.delete(whatsappMessageReceipts);
+    await tx.delete(whatsappUsage);
+    await tx.delete(whatsappChannels);
     await tx.delete(messages);
     await tx.delete(conversations);
     await tx.delete(documentUploadIntents);

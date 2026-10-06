@@ -10,12 +10,16 @@ import {
   leads,
   messages,
   properties,
+  reengagementEpisodes,
   serviceApiKeys,
   tenant_members,
   tenantApiKeys,
   tenants,
   users,
   accounts,
+  whatsappChannels,
+  whatsappMessageReceipts,
+  whatsappUsage,
 } from "../schema";
 import { runSeed } from "../seed";
 
@@ -96,6 +100,27 @@ describe("db/seed", () => {
 
   afterAll(async () => {
     await db.$client.end();
+  });
+
+  it("reseed preserva idempotência com filhos operacionais do L14b presentes (AC 1.3)", async () => {
+    const demo = await tenantBySlug(DEMO_SLUG);
+    const [lead] = await db.select().from(leads).where(eq(leads.tenantId, demo.id)).limit(1);
+    const [conversation] = await db.select().from(conversations).where(eq(conversations.leadId, lead.id)).limit(1);
+    const [anchor] = await db.select().from(messages).where(and(eq(messages.conversationId, conversation.id), eq(messages.sender, "lead"))).limit(1);
+    const before = await snapshotIds();
+    const phoneNumberId = "1234567890000000";
+    const at = new Date("2026-10-06T12:00:00Z");
+    await db.insert(whatsappChannels).values({ tenantId: demo.id, phoneNumberId });
+    await db.insert(reengagementEpisodes).values({ tenantId: demo.id, leadId: lead.id, phoneNumberId, anchorMessageId: anchor.id, anchorSentAt: anchor.sentAt, agentStateRevision: 1 });
+    await db.insert(whatsappMessageReceipts).values({ tenantId: demo.id, phoneNumberId, wamid: "wamid.fixture.seed", firstSeenAt: at, lastSeenAt: at, orphanExpiresAt: new Date(at.getTime() + 30 * 86400000) });
+    await db.insert(whatsappUsage).values({ tenantId: demo.id, phoneNumberId, monthStart: new Date("2026-10-01T00:00:00Z"), monthEnd: new Date("2026-11-01T00:00:00Z"), accountTimezone: "UTC", configurationRevision: 1, expiresAt: new Date("2026-12-01T00:00:00Z") });
+
+    await runSeed();
+
+    expect(await snapshotIds()).toEqual(before);
+    for (const table of [reengagementEpisodes, whatsappMessageReceipts, whatsappUsage, whatsappChannels]) {
+      expect(await db.select().from(table).where(eq(table.tenantId, demo.id))).toEqual([]);
+    }
   });
 
   it("cria exatamente 3 tenants, com slug preenchido nos três (lote-7 — REAL-01 AC1/AC6)", async () => {
