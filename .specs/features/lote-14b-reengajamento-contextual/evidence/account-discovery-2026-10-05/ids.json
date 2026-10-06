@@ -64,12 +64,63 @@
     "activeVersionVerified": false
   },
   "productionCloudApiCapability": "unverified",
+  "crmActivation": {
+    "observedAt": "2026-10-06T01:26:01Z",
+    "schemaCommit": "81a30b2887a8d144185f8aec0c125faea5ce9404",
+    "migration": {
+      "branchId": "br-proud-wind-av7m0aq2",
+      "database": "neondb",
+      "endpointId": "ep-gentle-brook-avgrg8ez",
+      "source": "Drizzle live additive plan; same-plan recheck; one transaction",
+      "statementCount": 35,
+      "planSha256": "0cbac20b11415ad6d8d4df51d6797e2fb2838d5be7c2fcc0612d3199a870b8d6",
+      "hasDataLoss": false,
+      "tablesVerified": 5,
+      "newTableColumnsVerified": 88,
+      "validatedForeignKeys": 13,
+      "validatedChecks": 19,
+      "messageChannelColumnVerified": true,
+      "unrelatedIndexChangesApplied": false,
+      "postCommitApiIntrospection": "Failed on parameterized catalog query (42P02); direct readonly catalog verification passed with no missing objects"
+    },
+    "deployment": {
+      "deploymentId": "dpl_FUYUXpCyDX48hFZDq4WA755ZNsQw",
+      "state": "READY",
+      "commit": "81a30b2887a8d144185f8aec0c125faea5ce9404",
+      "handlerHash": "fcf8b9dbc7a551ecd2fc7ab0530a2ecc7048dec44a41b2046ad532fef014d87a",
+      "schemaHash": "5095c00c75eb6fe5411429e5a395ca0d37b7c91b334588a635bb4ea2a8b942ec",
+      "observedGets": { "whatsapp/statuses": 405, "whatsapp/usage/sync": 405, "whatsapp/automation/candidates": 401 }
+    }
+  },
+  "n8nActivation": {
+    "principal": { "workflowId": "0B1nqjODu7xuYYKF", "publishedVersionIdObservedInUi": "e3e25681-8cd1-4ea3-bc38-33d373cf6b80", "statusBranch": "legacy discards statuses", "l14bPublished": false },
+    "scheduler": {
+      "workflowId": "gmIWxiRrHGIdtPub",
+      "previousPublishedVersionIdObservedInUi": "e8b97f8b-9890-4191-a8d2-b42aa3c8ebb8",
+      "activeVersionId": "57705ac5-03e9-4d8d-b9b5-b173976a78ed",
+      "source": "MCP publish_workflow + visible Published version",
+      "templateBDisabled": true,
+      "legacyBInputDisconnected": true,
+      "pendingExecutionCountBeforeAndAfter": 0,
+      "estimated": false,
+      "newContextualBConnected": false
+    },
+    "generation": { "workflowId": "q3GKsdptqp58Hq6O", "preparedNodeCount": 9, "sdkValidated": true, "credentialReferencesObserved": true, "modelResourceObserved": "gpt-5.4-nano-2026-03-17", "published": false, "modelProof": "generation-proof-before-fix.json", "modelProofVerdict": "FAIL" }
+  },
   "captures": [
     "monowave-account.jpg",
     "monowave-phone-number-id.jpg",
     "tenants-main.jpg",
     "n8n-tenant-binding.jpg",
-    "n8n-installed-tenant-lookup.jpg"
+    "n8n-installed-tenant-lookup.jpg",
+    "schema-main-before.jpg",
+    "schema-main-after.jpg",
+    "n8n-generation-prepared.jpg",
+    "n8n-generation-3301.jpg",
+    "n8n-generation-3302.jpg",
+    "n8n-generation-3303.jpg",
+    "n8n-generation-3304.jpg",
+    "n8n-scheduler-template-b-paused.jpg"
   ],
   "ignoredAccounts": [
     "Monowave"
