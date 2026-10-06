@@ -326,7 +326,7 @@
 - **Trade-off**: A semeadura e a expiração passam a considerar metadado de continuidade do episódio, inclusive após restart; o Design precisa garantir paridade entre memória aquecida e reconstruída e impedir que reset reative uma ponte antiga.
 - **Scope**: Sessões abrangidas pelo reengajamento contextual do L14b e sua primeira resposta elegível. Emenda a AD-019 somente para essa continuidade; CRM como fonte de verdade, purga, corte normal e salvaguarda permanecem ativos.
 - **Date**: 2026-10-02
-- **Status**: active — decisão aprovada; implementação pendente
+- **Status**: active — implementação local entregue no L14b; ativação/prova de produção Deferred → L14c (2026-10-06)
 
 ### AD-037
 - **Decision**: A entrada da Meta permanece no WhatsApp Trigger do n8n. Status verificados seguem ramo separado, sem agente, para o contrato autenticado do CRM. O CRM/Postgres é dono durável dos episódios de retomada, proteção de despacho, classificação das mensagens e snapshots de consumo. O tick n8n mantém a cadência de 15min e chama a sincronização do CRM; o envio humano continua direto, conforme AD-035.
@@ -334,15 +334,15 @@
 - **Trade-off**: Status consomem execuções curtas do n8n e podem atrasar se ele cair; o saldo fica desatualizado quando o tick falha. A persistência e o canal humano permanecem independentes. Acesso real a Analytics e comportamento do trigger instalado ainda precisam de prova; aprovação arquitetural não os comprova.
 - **Scope**: Fronteiras de automação/entrega/consumo WhatsApp a partir do L14b. Design detalhado aprovado pelo usuário em 2026-10-02; detalhes em design.md e tarefas planejadas em tasks.md.
 - **Date**: 2026-10-02
-- **Status**: active — arquitetura aprovada; implementação pendente
+- **Status**: active — implementação local entregue no L14b; status instalados/Analytics/ativação Deferred → L14c (2026-10-06)
 
 ## Handoff
 
-- **Status**: L14b Execute; implementação local das fases 1–9, 64/68 tarefas (T57/T60/T61/T62 adiadas para L14c); última task T68 `4ef2248`, main, sem push; Verifier final FAIL: 70 PASS, 8 GAP, 15 parcelas UI deferidas, 2 condicionais; lote não concluído.
-- **Fase 9**: `npm test` exit 0, 3580/3580 testes, 204/204 arquivos, 1094,81s, início 2026-10-05 12:20:19; 53 adições / 1178 no L14b. Lint exit 0 / 9 avisos anteriores; build exit 0 / avisos BetterAuth anteriores; tsc nativo 2 / 50 erros anteriores, delta semântico 0. Strict spec/tasks 0/0; DOCLIM AC8 passou.
-- **Entrega**: T63/T64 retenção/manutenção sem rearmar envio; T65 bootstrap diagnóstico sem aplicação; T66 identidade/teto preservados; T67 publicação/rollback verificáveis, ready=false; T68 Full 12/12 e regressões 149/149, PG independente/fluxo integrado por fixture, sem prova externa. Correções de tipos/runtime `b46d0eb`, recheck 17/17.
-- **Próximo**: reiniciar sessão lendo este Handoff, EXECUTE-PROMPT e validation.md G1–G4; obter IDs/vínculo factual tenant/WABA/número de produção e provar conta/entrega/modelo/HMAC/Analytics instalados. Autorizações mantidas; não repetir gates sem alteração/falha. Não arquivar/concluir sem PASS verificável.
-- **Protocolo**: evidência≤5 linhas/task; documentos só no fechamento de fase; Handoff≤10 linhas; gates pontuais por task e globais uma vez/fase; sem novos *.local.* ou SQL offline; generated nunca aberto, principal só trechos; quatro EOL-dirty fora dos commits.
-- **Autorização**: implementação/commits locais e agentes sequenciais aprovados; usuário autorizou qualquer ação necessária ao L14b sem repetir aprovação. Autorização não substitui fatos, versões/filas/HMAC/conta e prova conversacional.
-- **Fatos externos**: WABA 1000796702954808 / número 1321478747709350 são de teste; DAILY parcial, produção/tenant/IANA/mês/zero desconhecidos, consumo indisponível. MCP 2026-10-05T11:08:30Z alvo 0B1nqjODu7xuYYKF ativo / histórico e3e25681-8cd1-4ea3-bc38-33d373cf6b80 / filas 0; activeVersionId fresco ausente, HMAC instalado sem prova. Não repetir/contornar developers.facebook.com negado; nenhum envio/publicação/deploy/DDL de produção nesta fase.
-- **Validação/workspace**: validation.md com 95 linhas/citações existentes; validate_state exit 1 reconhece FAIL. Sensor scratch 40/40 e 10/10 mutações mortas, cleanup confirmado, HEAD/porcelain idênticos; nenhum processo ativo. L-056/057/058 candidatas, sem promoção/remoção. Quatro generated EOL-dirty intocados; logs anteriores permanecem locais.
+- **Status**: L14b executado no escopo local ajustado em 2026-10-06; Verifier independente PASS (78 outcomes locais/15 UI deferidas/2 condicionais), 67/71 tarefas existentes; main, sem push.
+- **Gates**: Full única exit 1, 3548 PASS/4 timeouts/30 não executados; duas iterações locais, rechecks 40/40 e 96/96 (5 arquivos); G2 independente 57/57; nenhuma Full após reparos.
+- **Qualidade**: lint/build exit 0 antes dos reparos (9 avisos lint); ESLint pontual exit 0 após; tsc exit 2/50 erros, nenhum nos três arquivos alterados; sensor local 1/1 morto, HEAD/porcelain preservados.
+- **Entrega/commits**: escopo 1fa0a50; reseed/fixture FK aadd33b; varredura de retenção 83c7d00, sem enfraquecer testes/timeouts ou criar tasks; docs de fechamento e arquivamento AD-029 locais.
+- **Arquivo**: spec/context/design/validation vivos em features/lote-14b-reengajamento-contextual; tasks/prompt/anexos/provas rastreadas em archive/lote-14b-reengajamento-contextual; ponteiro ARCHIVED.md, INDEX/ROADMAP atualizados; validate_state exit 0 e validadores após movimentação.
+- **Deferred → L14c**: G1/G3/G4 (conta/ativação/status autênticos/Analytics real) + T57/T60/T61/T62 (telas de consumo); conta WhatsApp de produção ainda não existe, consumo indisponível sem adapter/saldo presumido.
+- **Limites**: sem n8n/Graph/deploy/DDL produção/WhatsApp/workflow temporário nesta sessão; scheduler de produção permanece no L14 revertido pelo usuário; nunca ler .env/manipular token, sem trailers; ativação futura exige fatos e autorização específica.
+- **Workspace/lições**: evidências não rastreadas e quatro generated EOL-dirty intocados; alterações herdadas em LESSONS.md/lessons.json fora dos commits; L-056/057/058 candidatas revisadas, sem promoção; nenhum teste/processo deste fechamento ativo; próximo é L14c condicionado à conta.

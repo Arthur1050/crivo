@@ -203,12 +203,17 @@ humano escreveu no CRM" — descreve algo que nunca aconteceu, porque não há c
 
 ## L14b — Reengajamento contextual dentro da janela
 
-**Planejamento (2026-10-02):** contexto e especificação em
-`features/lote-14b-reengajamento-contextual/`; 13 requisitos, spec e Design aprovados.
-Tasks/matriz/ferramentas e agentes sequenciais aprovados: 68 tarefas em nove fases e 95 ACs
-mapeados; prompt para outra janela em `features/lote-14b-reengajamento-contextual/EXECUTE-PROMPT.md`. WABA `1000796702954808`
-identificada pela extensão e confirmada pela API como conta de teste. Analytics, vínculo
-número/tenant/fuso e transporte instalado ainda precisam de prova. Implementação local das fases 1–9 entregue em 2026-10-05 (64/68 tarefas); T57/T60/T61/T62 adiadas para L14c. Suíte 3580/3580; Verifier FAIL (95 ACs auditados, 8 GAP); sensor 10/10 morto e provas externas/conversacionais ainda pendentes, lote em Execute.
+**Executado (2026-10-06), escopo local ajustado:** 13 requisitos e 95 ACs;
+67/71 tarefas existentes entregues, incluindo G2 corrigida e Quick independente 57/57.
+[Verifier PASS local](features/lote-14b-reengajamento-contextual/validation.md):
+78 outcomes locais, 15 parcelas UI deferidas e 2 condicionais; sensor local 1/1 morto.
+Full única inicialmente FAIL (3548 PASS/4 timeouts/30 não executados); reparos locais e
+recheck final 96/96, sem nova Full. Lint/build0 antes dos reparos e ESLint pontual exit 0 após;
+tsc mantém 50 erros, nenhum nos três arquivos alterados. Arquivamento AD-029 em
+[ARCHIVED.md](features/lote-14b-reengajamento-contextual/ARCHIVED.md), validate_state exit 0.
+Por decisão do usuário, G1/G3/G4 e T57/T60/T61/T62 passam ao L14c: a conta WhatsApp
+de produção ainda não existe. Não há saldo presumido nem ativação declarada. O scheduler
+de produção foi revertido pelo usuário ao L14 e não foi republicado neste fechamento.
 **Correção da premissa de custo:** o [FAQ oficial do WhatsApp Business](https://whatsappbusiness.com/resources/faq/)
 informa cobrança de mensagens de serviço desde 2026-10-01 após a franquia de 1.000 por número
 por mês. Enviar dentro da janela não garante gratuidade. O usuário aprovou a retomada sem
@@ -242,6 +247,27 @@ um caminho no fluxo principal que rode o agente sem mensagem do lead, com prova 
 
 **Depende de L14**: a checagem de condução ao vivo no scheduler (SILENCIO-01) e a regra única de
 `n8n/src/conduction.mjs`.
+
+---
+
+## L14c — Ativação em produção e telas de consumo
+
+**Deferred**, por decisão do usuário em 2026-10-06. Depende da futura conta WhatsApp
+de produção e de autorização específica para ações externas. Escopo vindo de
+[L14b § Deferred Ideas](features/lote-14b-reengajamento-contextual/context.md#deferred-ideas).
+
+- G1: vínculo real tenant/WABA/número/fuso, versões/filas/schema/handlers e entrega
+  contextual autorizada; ativar REEN e continuidade somente após os gates de produção.
+- G3: HMAC raw-body, rejeição de assinatura inválida e forwarder instalado até
+  classificação/recibo/thread; status autênticos para PRECO.
+- G4: Analytics real do mês integral, filtros, paginação e zero antes de habilitar
+  saldo; manter indisponibilidade enquanto a conta e o contrato não forem comprovados.
+- Telas já adiadas T57/T60/T61/T62: componente de consumo, carga/grupo em Configurações
+  e resumo/aviso persistente no Chats, com permissões, estados e acessibilidade aprovados.
+
+Não foram criadas tasks novas. O backend e PRECO T58/T59 ficam entregues no L14b;
+fixtures locais não substituem essas provas futuras. Nenhuma ação externa foi executada
+para antecipar o L14c; o scheduler de produção permanece no L14 revertido pelo usuário.
 
 ---
 
@@ -362,7 +388,7 @@ imobiliária". Catálogo estruturado + documentos legíveis já entregam essa fr
 
 ## Ordem
 
-L10 → L11 → L12 → L13 → L14 → L14b → L15 → **L16 por último**.
+L10 → L11 → L12 → L13 → L14 → L14b → L14c (condicionado à conta de produção) → L15 → **L16 por último**.
 
 Ressalva única: **L11 pode subir na frente do L10** se a janela comercial pedir — o catálogo tem o
 único sinal de cliente real do backlog, e o custo de trocar é adiar a AD-015, aberta desde

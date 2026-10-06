@@ -5,7 +5,7 @@ Nenhuma implementação do L14b existia ao executar os comandos abaixo.
 
 | Gate | Resultado observado |
 | --- | --- |
-| `validate_spec.py spec.md --strict` | 0 erros, 0 avisos |
+| `validate_spec.py ../../features/lote-14b-reengajamento-contextual/spec.md --strict` | 0 erros, 0 avisos |
 | `validate_tasks.py tasks.md --strict` | 0 erros, 0 avisos |
 | Whitespace do planejamento | PASS após remover uma linha vazia final do prompt |
 | `npm run lint` | exit 0; 0 erros, 5 avisos anteriores |

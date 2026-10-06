@@ -47,15 +47,15 @@ iniciado em outra janela de contexto”**.
    de .specs/STATE.md. Prioridade para AD-014 (commits/workflow-as-code), AD-018/019,
    AD-022/023, AD-026/027, AD-028/029, AD-031/032/033/034/035/036/037.
    Carregar somente lições confirmadas via lessons.py.
-3. Ler spec.md, context.md e design.md desta feature; em tasks.md carregar protocolo,
+3. Ler ../../features/lote-14b-reengajamento-contextual/spec.md, ../../features/lote-14b-reengajamento-contextual/context.md e ../../features/lote-14b-reengajamento-contextual/design.md desta feature; em tasks.md carregar protocolo,
    matriz/gates, ferramentas, execução, rastreabilidade e definições do lote atual.
    Carregar tarefas de outros lotes somente se forem dependências concretas. Manter
    o contexto relevante perto do orçamento da skill, sem reler as 68 definições a cada worker.
 4. Reconciliar branch, HEAD, git status --porcelain, commits recentes e status de tarefas
    antes de editar. Referência da entrega do prompt: **main / acde7b5**, nenhuma tarefa
    implementada, nenhum worker despachado e nenhum commit de planejamento criado.
-5. Mudanças esperadas são documentos: STATE.md, ROADMAP-POS-PILOTO.md e context.md,
-   spec.md, design.md, tasks.md, EXECUTE-PROMPT.md desta feature. O diretório da feature
+5. Mudanças esperadas são documentos: STATE.md, ROADMAP-POS-PILOTO.md e ../../features/lote-14b-reengajamento-contextual/context.md,
+   ../../features/lote-14b-reengajamento-contextual/spec.md, ../../features/lote-14b-reengajamento-contextual/design.md, tasks.md, EXECUTE-PROMPT.md desta feature. O diretório da feature
    estava untracked; essas mudanças são o planejamento aprovado. Preservar tudo.
    Mudanças adicionais precisam ser atribuídas ao trabalho atual antes de incluir em commit.
 6. Executar validate_spec.py e validate_tasks.py com --strict, e conferir whitespace.
@@ -196,7 +196,7 @@ mutações de limite22h/24h/48h, despacho único/CAS, takeover/inbound/reset, po
 status fora de ordem, mês/lease e autorização de carteira. Conferir porcelain antes/depois.
 Surviving mutants são correções; no máximo três ciclos fix→reverify antes de escalar.
 
-Persistir validation.md e rodar validate_state.py. Sem PASS verificável, não declarar lote
+Persistir ../../features/lote-14b-reengajamento-contextual/validation.md e rodar validate_state.py. Sem PASS verificável, não declarar lote
 concluído. Revisar lições conforme AD-028; promoção/remoção exige decisão do usuário.
 Fazer higiene documental AD-029 e reconciliar links/INDEX/roadmap. Em qualquer handoff,
 atualizar somente a seção Handoff de STATE.md com tarefa/hash/gates/pendências/próximo passo.
@@ -206,5 +206,5 @@ atualizar somente a seção Handoff de STATE.md com tarefa/hash/gates/pendência
 ## Retomada após a fase 9 (2026-10-05)
 
 T1–T56/T58/T59/T63–T68 têm implementação local (64/68 tarefas); T57/T60/T61/T62 foram adiadas para L14c por instrução posterior do usuário. Última task: T68 `4ef2248`; baseline de planejamento: `c65b186`. Consulte somente o Handoff atual antes de retomar; a instrução histórica de começar T1 acima já foi cumprida.
-Gates da fase 9: suíte 3580/3580, 204/204 arquivos, exit 0; lint/build exit 0, tsc nativo 2 com 50 erros anteriores e delta semântico 0. Verifier novo `/root/verifier_l14b` terminou: validation.md FAIL, 70 PASS/8 GAP/15 parcelas UI deferidas/2 condicionais; sensor baseline 40/40 e 10/10 mutações mortas, scratch removido e árvore real preservada. validate_state.py exit 1 reconheceu FAIL. L-056/L-057/L-058 candidatas, sem promoção/remoção.
-Continuar pelos grupos G1–G4 de validation.md e pelos dados factuais faltantes, sem repetir gates completos sem mudança/falha que justifique. Conta de produção, versões/HMAC instalados e resultado conversacional do modelo continuam sem prova; nenhuma conclusão integral do lote nem capacidade externa é presumida. A condição de prova real de PROVA-01 AC5 segue separada das fixtures. Nenhum arquivamento enquanto não houver fechamento verificável.
+Gates da fase 9: suíte 3580/3580, 204/204 arquivos, exit 0; lint/build exit 0, tsc nativo 2 com 50 erros anteriores e delta semântico 0. Verifier novo `/root/verifier_l14b` terminou: ../../features/lote-14b-reengajamento-contextual/validation.md FAIL, 70 PASS/8 GAP/15 parcelas UI deferidas/2 condicionais; sensor baseline 40/40 e 10/10 mutações mortas, scratch removido e árvore real preservada. validate_state.py exit 1 reconheceu FAIL. L-056/L-057/L-058 candidatas, sem promoção/remoção.
+Continuar pelos grupos G1–G4 de ../../features/lote-14b-reengajamento-contextual/validation.md e pelos dados factuais faltantes, sem repetir gates completos sem mudança/falha que justifique. Conta de produção, versões/HMAC instalados e resultado conversacional do modelo continuam sem prova; nenhuma conclusão integral do lote nem capacidade externa é presumida. A condição de prova real de PROVA-01 AC5 segue separada das fixtures. Nenhum arquivamento enquanto não houver fechamento verificável.

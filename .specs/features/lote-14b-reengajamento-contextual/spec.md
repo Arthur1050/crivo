@@ -4,9 +4,9 @@
 
 **Complexidade:** Complex
 
-**Status:** Execute — fechamento local com escopo ajustado pelo usuário em 2026-10-06; reverificação independente pendente.
+**Status:** Executed — PASS independente do escopo local ajustado em 2026-10-06. G1/G3/G4 e telas de consumo Deferred → L14c; sem ativação de produção.
 
-**Contexto:** [context.md](context.md). Implementação local e correções T69/T70/T71 entregues. G1/G3/G4 e T57/T60/T61/T62: **Deferred → L14c** por decisão do usuário; não há conta WhatsApp de produção. Histórico em [tasks.md](tasks.md).
+**Contexto:** [context.md](context.md). Implementação local e correções T69/T70/T71 entregues. G1/G3/G4 e T57/T60/T61/T62: **Deferred → L14c** por decisão do usuário; não há conta WhatsApp de produção. Histórico em [tasks.md](../../archive/lote-14b-reengajamento-contextual/tasks.md).
 
 ## Problem Statement
 
@@ -18,11 +18,11 @@ gratuidade depois das primeiras 1.000 entregas do número no mês.
 
 ## Goals
 
-- [ ] Enviar no máximo uma retomada contextual por episódio elegível de silêncio.
-- [ ] Preservar o assunto no disparo proativo e na sessão retomada pelo lead.
-- [ ] Mostrar consumo mensal estimado por número e previsão de cobrança no Chats.
-- [ ] Classificar cada mensagem pela informação de entrega da Meta, sem inferir gratuidade.
-- [ ] Preservar opt-out, condução humana, isolamento e escalonamento por silêncio.
+- [x] Enviar no máximo uma retomada contextual por episódio elegível de silêncio, nos contratos locais; ativação Deferred → L14c.
+- [x] Preservar o assunto no disparo proativo e na sessão retomada pelo lead, comprovados localmente.
+- [ ] Mostrar consumo mensal estimado por número e previsão de cobrança no Chats — Deferred → L14c.
+- [x] Classificação local por entrega sem inferir gratuidade; status autênticos instalados Deferred → L14c.
+- [x] Preservar opt-out, condução humana, isolamento e escalonamento por silêncio, nos cenários locais.
 
 ## Out of Scope
 
@@ -337,23 +337,23 @@ de qualquer prova real, conforme L-051. Não enviar 1.001 mensagens para fabrica
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| REEN-01 | P1: Momento permitido | Execute | Implementado localmente — política/seleção/locks e limites 22/24/48h; instalação/prova externa G1 Deferred → L14c |
-| REEN-02 | P1: Texto contextual | Execute | Implementado — frame factual, geração readonly/deadline e prova integrada; G2 corrigida em b92caeb/116b52b/e92035c (T69/T70/T71), provas históricas do modelo preservadas; ativação G1 Deferred → L14c |
-| REEN-03 | P1: Envio único e válido | Execute | Implementado localmente — despacho/aceite/ack, disputa PG, invalidação/reconciliação e retenção; transporte em produção G1 Deferred → L14c |
-| REEN-04 | P1: Continuidade da memória | Execute | Implementado localmente — sessão/frame/reset/ponte e equivalência warm/cold; ativação/prova de transporte G1 Deferred → L14c |
-| REEN-05 | P1: Desfecho às 48h | Execute | Implementado localmente — omissão/escalada, limites e replay; ativação G1 Deferred → L14c |
-| PRECO-01 | P1: Classificação de entrega | Execute | Implementado localmente — reducer/persistência/replay/UI PRECO T58/T59; origem instalada e entrega reais de AC1/AC2/AC3/AC6/AC7 (G3) Deferred → L14c |
-| PRECO-02 | P1: Autenticidade e correlação | Execute | Implementado localmente — origem/correlação/replay/isolamento/retenção; autenticação instalada de AC1 (G3) Deferred → L14c; endpoint sem proof permanece fechado |
-| USO-01 | P1: Saldo mensal estimado | Execute | Backend implementado — mês/snapshot/adapter condicionado; consulta/ativação real de AC1 (G4) e UI de AC8 Deferred → L14c; consumo indisponível |
-| USO-02 | P1: Atualização e indisponibilidade | Execute | Backend implementado — timeout/cadência/lease/CAS/falhas/retenção; UI AC4/AC5/AC7 Deferred → L14c; adapter padrão ausente |
-| USO-03 | P1: Superfícies e permissões | Execute | UI AC1…AC6 Deferred → L14c, T57/T60/T61/T62; DAL preservada; AC7 atualização da classificação PRECO entregue |
-| USO-04 | P1: Aviso sem bloqueio | Execute | UI AC1…AC5 Deferred → L14c; envio humano independente de Analytics; AC6 classificação PRECO entregue |
-| L14B-01 | P1: Isolamento e operação | Execute | Implementado localmente — fronteiras/locks/rollback/autoria/retenção/diagnóstico; vínculo de produção de AC2 e prova instalada (G1/G4) Deferred → L14c |
-| PROVA-01 | P1: Evidência integrada | Execute | Provas automatizadas locais e modelo histórico entregues; ativação/conta/entrega de produção G1/A12 Deferred → L14c; AC5/AC6 continuam condicionais; reverificação do escopo ajustado em validation.md |
+| REEN-01 | P1: Momento permitido | Verified local | Implementado localmente — política/seleção/locks e limites 22/24/48h; instalação/prova externa G1 Deferred → L14c |
+| REEN-02 | P1: Texto contextual | Verified local | Implementado — frame factual, geração readonly/deadline e prova integrada; G2 corrigida em b92caeb/116b52b/e92035c (T69/T70/T71), provas históricas do modelo preservadas; ativação G1 Deferred → L14c |
+| REEN-03 | P1: Envio único e válido | Verified local | Implementado localmente — despacho/aceite/ack, disputa PG, invalidação/reconciliação e retenção; transporte em produção G1 Deferred → L14c |
+| REEN-04 | P1: Continuidade da memória | Verified local | Implementado localmente — sessão/frame/reset/ponte e equivalência warm/cold; ativação/prova de transporte G1 Deferred → L14c |
+| REEN-05 | P1: Desfecho às 48h | Verified local | Implementado localmente — omissão/escalada, limites e replay; ativação G1 Deferred → L14c |
+| PRECO-01 | P1: Classificação de entrega | Verified local | Implementado localmente — reducer/persistência/replay/UI PRECO T58/T59; origem instalada e entrega reais de AC1/AC2/AC3/AC6/AC7 (G3) Deferred → L14c |
+| PRECO-02 | P1: Autenticidade e correlação | Verified local | Implementado localmente — origem/correlação/replay/isolamento/retenção; autenticação instalada de AC1 (G3) Deferred → L14c; endpoint sem proof permanece fechado |
+| USO-01 | P1: Saldo mensal estimado | Verified local | Backend implementado — mês/snapshot/adapter condicionado; consulta/ativação real de AC1 (G4) e UI de AC8 Deferred → L14c; consumo indisponível |
+| USO-02 | P1: Atualização e indisponibilidade | Verified local | Backend implementado — timeout/cadência/lease/CAS/falhas/retenção; UI AC4/AC5/AC7 Deferred → L14c; adapter padrão ausente |
+| USO-03 | P1: Superfícies e permissões | Verified local | UI AC1…AC6 Deferred → L14c, T57/T60/T61/T62; DAL preservada; AC7 atualização da classificação PRECO entregue |
+| USO-04 | P1: Aviso sem bloqueio | Verified local | UI AC1…AC5 Deferred → L14c; envio humano independente de Analytics; AC6 classificação PRECO entregue |
+| L14B-01 | P1: Isolamento e operação | Verified local | Implementado localmente — fronteiras/locks/rollback/autoria/retenção/diagnóstico; vínculo de produção de AC2 e prova instalada (G1/G4) Deferred → L14c |
+| PROVA-01 | P1: Evidência integrada | Verified local | Provas automatizadas locais e modelo histórico entregues; ativação/conta/entrega de produção G1/A12 Deferred → L14c; AC5/AC6 continuam condicionais; reverificação do escopo ajustado em validation.md |
 
-**Coverage:** 13/13 requisitos e 95/95 critérios mapeados individualmente em [tasks.md](tasks.md); mapeamento não equivale a PASS do produto.
+**Coverage:** 13/13 requisitos e 95/95 critérios mapeados individualmente em [tasks.md](../../archive/lote-14b-reengajamento-contextual/tasks.md); mapeamento não equivale a PASS do produto.
 Implementação local: T1–T56/T58/T59/T63–T71 (67/71 tarefas existentes), último commit de task `e92035c`; T57/T60/T61/T62 permanecem Deferred → L14c. Não criar tasks novas neste fechamento.
-Histórico: fase 9 suíte 3580/3580 e sensor 10/10; relatório de 2026-10-05 FAIL por G1–G4. G2 foi corrigida e comprovada em T69/T70/T71. Fechamento de 2026-10-06: executar suíte completa/lint/build uma vez e Verifier independente local; resultados autoritativos em [validation.md](validation.md). Nenhuma prova de produção é inferida de fixtures ou gates locais.
+Histórico: fase 9 suíte 3580/3580 e sensor 10/10; relatório de 2026-10-05 FAIL por G1–G4. G2 corrigida em T69/T70/T71 e Quick independente 57/57. Fechamento de 2026-10-06: Full única exit 1 (3548 PASS/4 timeouts/30 não executados); duas iterações locais, recheck final 96/96 em cinco arquivos; lint/build exit 0 antes dos reparos, ESLint pontual exit 0 após, tsc exit 2/50 erros e nenhum nos três arquivos alterados. Verifier PASS local (78 outcomes locais/15 UI deferidas/2 condicionais), sensor 1/1 morto e validate_state exit 0. Não houve Full depois dos reparos; não é declarada verde. Evidência em [validation.md](validation.md); arquivo histórico em [ARCHIVED.md](ARCHIVED.md). Nenhuma prova de produção é inferida desses gates.
 
 ### Parcelas de ACs deferidas por decisão do usuário
 
@@ -376,19 +376,19 @@ por inferência. Ver [context.md § Deferred Ideas](context.md#deferred-ideas).
 
 ## Success Criteria
 
-- [ ] Zero envios duplicados nos cenários concorrentes do mesmo episódio.
-- [ ] Zero contatos proativos autorizados após opt-out, condução humana ou fechamento de janela.
-- [ ] Contexto equivalente na retomada com memória aquecida e em cold start.
-- [ ] Barra estimada sem dupla contagem, falso saldo inicial ou troca de tenant/número.
-- [ ] Cobrança prevista, pendente e confirmada distinguíveis nas telas aprovadas.
-- [ ] Falha de Analytics não bloqueia o canal humano nem transforma desconhecido em gratuito.
-- [ ] Gates por requisito, prova integrada e Verifier independente concluídos na execução.
+- [x] Zero envios duplicados nos cenários concorrentes locais do mesmo episódio.
+- [x] Zero contatos proativos autorizados após opt-out, condução humana ou fechamento de janela nos cenários locais.
+- [x] Contexto equivalente na retomada com memória aquecida e em cold start nos cenários locais.
+- [ ] Barra estimada sem dupla contagem, falso saldo inicial ou troca de tenant/número — UI e Analytics real Deferred → L14c; DAL local verificada.
+- [ ] Cobrança prevista, pendente e confirmada distinguíveis nas telas aprovadas — previsão Deferred → L14c; PRECO local entregue, origem instalada deferida.
+- [x] Falha de Analytics não bloqueia o canal humano nem transforma desconhecido em gratuito nos contratos locais.
+- [x] Gates consolidados, prova integrada local e Verifier independente concluídos; Full inicial FAIL e recuperação local preservados no relatório.
 
 ## Planning Handoff
 
 A especificação e os padrões A1–A13 foram aprovados. O usuário aprovou a arquitetura A,
 que mantém o canal humano independente do n8n (AD-035) e reutiliza a condução (AD-034).
-A emenda restrita de continuidade da AD-019 foi registrada na AD-036, sem implementação.
+A emenda restrita de continuidade da AD-019 foi registrada na AD-036 e implementada localmente; ativação em produção deferida ao L14c.
 
 O Design detalhado fecha interfaces, estados, ponte, cadência, UI e cobertura em `design.md`.
 Foram deferidos ao L14c o contrato real de Analytics e dos status, inclusive zero, permissões,

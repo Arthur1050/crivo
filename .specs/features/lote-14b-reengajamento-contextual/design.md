@@ -6,7 +6,7 @@
 
 **Escolha:** usuário em 2026-10-02: “Aprovo. Siga com a recomendação”.
 
-**Aprovação do Design:** “Aprovo. Vá para as tarefas. Quanto ao id: capture o navegador com a extensão e pegue o id”. [Tasks](tasks.md) posteriormente aprovadas; Execute em outra janela conforme [EXECUTE-PROMPT.md](EXECUTE-PROMPT.md).
+**Aprovação do Design:** “Aprovo. Vá para as tarefas. Quanto ao id: capture o navegador com a extensão e pegue o id”. [Tasks](../../archive/lote-14b-reengajamento-contextual/tasks.md) posteriormente aprovadas; Execute em outra janela conforme [EXECUTE-PROMPT.md](../../archive/lote-14b-reengajamento-contextual/EXECUTE-PROMPT.md).
 
 **Baseline:** `main` em `acde7b5`; somente documentos de planejamento alterados.
 
@@ -649,7 +649,7 @@ alpha2 uppercase, sem tratar null como agregado documentado. Qualquer paging
 fora da forma comprovada recusa, sem seguir next. Token só no header servidor;
 erro vira código limitado. Orçamento total 15s usa timer/race e deadline
 monotônico antes/depois das etapas, incluindo JSON/decode síncrono.
-[Observação da conta de teste](analytics-account-observation.md) comprova filtro
+[Observação da conta de teste](../../archive/lote-14b-reengajamento-contextual/analytics-account-observation.md) comprova filtro
 e shape básicos, mas os pontos são parciais e MONTHLY vazio não comprova zero.
 Nenhuma capacidade real é configurada com essas provas parciais.
 
@@ -843,7 +843,7 @@ obrigatório após implementação, conforme TLC; nenhuma prova do produto concl
    têm lista vazia. Confirmar serializer, seleção delivered/failed, assinatura e lotes mistos
    na versão efetiva antes de publicar. Fonte atual do nó não prova instalação do piloto.
 3. **Planejamento.** Design e Tasks aprovados; 68 tarefas em nove fases em
-   `tasks.md`, com os 95 ACs mapeados. Aprovação de planejamento
+   `../../archive/lote-14b-reengajamento-contextual/tasks.md`, com os 95 ACs mapeados. Aprovação de planejamento
    não publica workflow, aplica DB de produção, envia WhatsApp ou autoriza push.
 4. **Execução local posterior.** Migrações aditivas/provas de contratos/limites/concorrência/
    wiring/UI/OpenAPI. Bootstrap sem fase/saldo fabricados. Gates factuais precedem ativação;

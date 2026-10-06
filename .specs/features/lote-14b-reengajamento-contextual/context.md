@@ -1,7 +1,7 @@
 # Lote 14b — Reengajamento contextual dentro da janela
 
 **Gathered:** 2026-10-02
-**Status:** Implementação local entregue; fechamento com escopo ajustado em 2026-10-06.
+**Status:** Executed — PASS independente do fechamento local ajustado em 2026-10-06.
 G1/G3/G4 e telas de consumo Deferred → L14c; G2 corrigida. Ver Deferred Ideas abaixo.
 **Origem:** `../../ROADMAP-POS-PILOTO.md`, seção L14b; decisões do usuário registradas em `../lote-14-humano-no-laco/context.md`, seção Janela de 24h.
 
@@ -186,9 +186,9 @@ incluindo janela, continuidade, falhas, classificação por entrega, barra, avis
 A spec e a arquitetura A foram confirmadas. Design detalhado produzido com interfaces,
 estados duráveis, projeção mínima da fase no CRM, ponte warm/cold, consumo, UI e matriz de
 cobertura. Usuário aprovou o Design e solicitou Tasks: “Aprovo. Vá para as tarefas”.
-O plano em `tasks.md` contém 68 tarefas em nove fases, testes co-localizados e os 95 ACs
+O plano em `../../archive/lote-14b-reengajamento-contextual/tasks.md` contém 68 tarefas em nove fases, testes co-localizados e os 95 ACs
 mapeados individualmente. Tasks/matriz/ferramentas e agentes sequenciais posteriormente aprovados;
-próximo passo: iniciar Execute em outra janela com `EXECUTE-PROMPT.md`.
+próximo passo: iniciar Execute em outra janela com `../../archive/lote-14b-reengajamento-contextual/EXECUTE-PROMPT.md`.
 Nenhuma implementação iniciada.
 
 ### Evidência adicional do Design (2026-10-02)
@@ -233,7 +233,7 @@ Nenhuma implementação iniciada.
 O usuário respondeu “Aprovo. Gere o prompt de execução para que a fase de execução seja
 iniciado em outra janela de contexto” à proposta de tarefas, ferramentas e agentes por
 lotes sequenciais. A aprovação cobre os 68 itens, matriz/gates, perfis S/R/N/U e oferta de
-workers; não repetir essas confirmações na próxima janela. Gerado `EXECUTE-PROMPT.md`.
+workers; não repetir essas confirmações na próxima janela. Gerado `../../archive/lote-14b-reengajamento-contextual/EXECUTE-PROMPT.md`.
 Nenhuma tarefa executada, teste do produto rodado ou worker despachado nesta janela.
 Commits locais de implementação autorizados pela aprovação; ações externas continuam
 dependendo de autorização específica, conforme o escopo aprovado e a skill.
@@ -297,7 +297,7 @@ Usuário: “Registre essa falha para que seja resolvido posteriormente. Por enq
 foque nas tasks desse lote e finalize elas”. Registrar para correção posterior os
 timeouts de 30s de `DOCLIM-01 AC8` em `src/server/__tests__/actions.test.ts:1337`
 e `:1349`. Baseline repetido: 2400/2402 testes; build/lint passaram. Evidência e
-hipótese ainda não comprovada em [baseline.md](baseline.md). Não alterar nem
+hipótese ainda não comprovada em [baseline.md](../../archive/lote-14b-reengajamento-contextual/baseline.md). Não alterar nem
 pular esses testes neste lote. Prosseguir com as tarefas aprovadas, reportando
 esses dois resultados como ressalva e exigindo os gates das mudanças do L14b.
 

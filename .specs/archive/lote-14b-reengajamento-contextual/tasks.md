@@ -6,9 +6,9 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 
 **If the skill cannot be activated, STOP and tell the user — do not proceed without it.**
 
-**Design:** [design.md](design.md), aprovado em 2026-10-02: “Aprovo. Vá para as tarefas”.
+**Design:** [../../features/lote-14b-reengajamento-contextual/design.md](../../features/lote-14b-reengajamento-contextual/design.md), aprovado em 2026-10-02: “Aprovo. Vá para as tarefas”.
 
-**Status:** Approved — usuário em 2026-10-02: “Aprovo. Gere o prompt de execução para que a fase de execução seja iniciado em outra janela de contexto”. 68 tarefas em 9 fases; T1–T17 concluídas localmente (17/68), fases 1/2 e lotes A/B fechados com a ressalva autorizada dos dois timeouts históricos, conforme evidências individuais e phase-2-verification.md. Fase3/loteC em andamento; T15–T17 provadas em seus relatórios individuais.
+**Status:** Executed no escopo local ajustado — PASS independente em 2026-10-06; 67/71 tarefas existentes entregues, T57/T60/T61/T62 Deferred → L14c. G1/G3/G4 também deferidas por decisão do usuário. Histórico das fases/gates preservado abaixo; Full inicial FAIL recuperada por dois rechecks locais, sem nova Full. Ver [validation.md](../../features/lote-14b-reengajamento-contextual/validation.md).
 
 **Escopo:** 13 requisitos e 95 ACs aprovados. Uma retomada >=22h/<24h, continuidade restrita, desfecho >=48h, classificação após entrega e saldo mensal estimado. Sem modal/bloqueio financeiro.
 
@@ -51,7 +51,7 @@ timeouts anteriores de DOCLIM-01 AC8 (`actions.test.ts:1337` e `:1349`) e finali
 as tarefas deste lote. Continuam sendo executados, com resultado real reportado;
 essa ressalva não equivale a suíte integralmente verde nem dispensa qualquer
 teste/gate do L14b. Falhas novas ou diferentes continuam exigindo resolução.
-Registro durável em [baseline.md](baseline.md) e Deferred Ideas de [context.md](context.md).
+Registro durável em [baseline.md](baseline.md) e Deferred Ideas de [../../features/lote-14b-reengajamento-contextual/context.md](../../features/lote-14b-reengajamento-contextual/context.md).
 
 > Comandos descobertos em package.json, vitest.config.ts, scripts/test-suite.mjs, scripts/test-db-push.ts e n8n/README.md; confirmados na aprovação das tarefas.
 
@@ -2643,7 +2643,7 @@ Locks lead→episódio→canal→receipt; marcador/deadline preservados, sem his
 
 **Commit**: `feat(l14b): retenção operacional sem rearmar envio` (docs para mudança exclusivamente contratual).
 
-**Reparo local de fechamento (2026-10-06):** Full inicial teve quatro timeouts de30s nesta task; não há diagnóstico causal comprovado de latência.
+**Reparo local de fechamento (2026-10-06):** Full inicial teve quatro timeouts de 30s nesta task; não há diagnóstico causal comprovado de latência.
 Varredura passa a selecionar somente owners com metadados ainda candidatos à compactação; mantém releitura/locks, ponte ativa e chave consumida.
 Recheck1 seed+retenção40/40; recheck2 regressões diretas96/96 em cinco arquivos,exit0,262,23s; os10 casos de retenção passam sem alterar assertions ou timeout.
 ESLint pontual/whitespace0; duas iterações locais encerradas. Full global inicial permanece registrado comoFAIL, sem nova suíte completa.
