@@ -290,6 +290,30 @@ Corroborated across multiple features. Safe to apply as guidance.
 - evidence: Worker D, principal-modelo.test.ts 70/90 -> 73/95 (5a00dd8) (sub-agentes,testes)
 - last seen: 2026-10-02T05:49:48Z
 
+### L-056 - No WhatsApp, comprove canal de produção, tenant, fuso IANA e cobertura mensal da conta real antes de habilitar Analytics; resposta DAILY parcial de conta de teste não concede essa capacidade.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `whatsapp/analytics` · harmful: 0
+- features: lote-14b-reengajamento-contextual
+- evidence: validation.md G1/G4; USO-01 AC1 (whatsapp/analytics) (+1 more)
+- last seen: 2026-10-06T13:35:40Z
+
+### L-057 - Em provas conversacionais do agente, avalie o texto produzido pelo modelo efetivo contra pendência e fatos conhecidos; instruções de prompt e respostas de generate fake não provam coerência nem ausência de repergunta.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `n8n/agent` · harmful: 0
+- features: lote-14b-reengajamento-contextual
+- evidence: validation.md G2; REEN-02 AC1/AC2 (n8n/agent) (+1 more)
+- last seen: 2026-10-06T13:35:41Z
+
+### L-060 - Para testar recusa por identidade de ferramenta, use uma observação válida; um envelope inválido pode mascarar a remoção da allowlist.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `n8n` · harmful: 0
+- features: lote-14b-reengajamento-contextual
+- evidence: M5 / n8n/workflows/__tests__/reengagement-contextual.test.ts:91 (n8n)
+- last seen: 2026-10-06T13:35:41Z
+
+### L-061 - Ativação em produção é atômica por fluxo: nunca publique um workflow que desliga o comportamento antigo antes de o substituto estar publicado e conferido, e salve antes o JSON da versão publicada, porque o histórico do n8n pode já ter descartado a anterior.
+- signal: `spec_deviation` · recurrence: 1 feature(s) · scope: `n8n,producao,ativacao` · harmful: 0
+- features: lote-14b-reengajamento-contextual
+- evidence: Scheduler gmIWxiRrHGIdtPub publicado 57705ac5 em 2026-10-06: template B desligado sem o B contextual; escalonamento 48h parado; rollback f1c4ac52 (n8n,producao,ativacao)
+- last seen: 2026-10-06T16:06:45Z
+
 ## Candidates (under observation - do NOT load as guidance yet)
 
 Seen once or not yet corroborated. Tracked, not trusted.
@@ -312,23 +336,17 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: OPTKEY-01 AC3 (sem file:line) (spec,tasks)
 - last seen: 2026-09-30T00:32:11Z
 
-### L-056 - No WhatsApp, comprove canal de produção, tenant, fuso IANA e cobertura mensal da conta real antes de habilitar Analytics; resposta DAILY parcial de conta de teste não concede essa capacidade.
-- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `whatsapp/analytics` · harmful: 0
-- features: lote-14b-reengajamento-contextual
-- evidence: validation.md G1/G4; USO-01 AC1 (whatsapp/analytics)
-- last seen: 2026-10-05T15:55:40Z
-
-### L-057 - Em provas conversacionais do agente, avalie o texto produzido pelo modelo efetivo contra pendência e fatos conhecidos; instruções de prompt e respostas de generate fake não provam coerência nem ausência de repergunta.
-- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `n8n/agent` · harmful: 0
-- features: lote-14b-reengajamento-contextual
-- evidence: validation.md G2; REEN-02 AC1/AC2 (n8n/agent)
-- last seen: 2026-10-05T15:55:41Z
-
 ### L-058 - Mantenha o consumidor de status WhatsApp fechado até um probe instalado comprovar HMAC sobre raw-body, credencial e activeVersionId do forwarder; proofs de fixture não concedem autenticação de origem.
 - signal: `ac_gap` · recurrence: 1 feature(s) · scope: `whatsapp/statuses` · harmful: 0
 - features: lote-14b-reengajamento-contextual
-- evidence: validation.md G3; PRECO-01 AC1/AC2/AC3/AC6/AC7 (whatsapp/statuses)
-- last seen: 2026-10-05T15:55:42Z
+- evidence: validation.md G3; PRECO-01 AC1/AC2/AC3/AC6/AC7 (whatsapp/statuses) (+1 more)
+- last seen: 2026-10-06T13:35:41Z
+
+### L-059 - Nas tools HTTP do n8n, teste o tipo e a serialização exigidos pelo nó instalado, além do conteúdo decodificado dos filtros.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `n8n` · harmful: 0
+- features: lote-14b-reengajamento-contextual
+- evidence: T70 / n8n/workflows/reengagement-contextual.ts:29 (n8n)
+- last seen: 2026-10-06T13:35:41Z
 
 ## Quarantined (failed when applied - ignore)
 
