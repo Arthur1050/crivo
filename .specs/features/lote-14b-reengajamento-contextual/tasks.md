@@ -2643,6 +2643,11 @@ Locks lead→episódio→canal→receipt; marcador/deadline preservados, sem his
 
 **Commit**: `feat(l14b): retenção operacional sem rearmar envio` (docs para mudança exclusivamente contratual).
 
+**Reparo local de fechamento (2026-10-06):** Full inicial teve quatro timeouts de30s nesta task; não há diagnóstico causal comprovado de latência.
+Varredura passa a selecionar somente owners com metadados ainda candidatos à compactação; mantém releitura/locks, ponte ativa e chave consumida.
+Recheck1 seed+retenção40/40; recheck2 regressões diretas96/96 em cinco arquivos,exit0,262,23s; os10 casos de retenção passam sem alterar assertions ou timeout.
+ESLint pontual/whitespace0; duas iterações locais encerradas. Full global inicial permanece registrado comoFAIL, sem nova suíte completa.
+
 ---
 
 ### T64: Integrar manutenção diária existente

@@ -20,8 +20,16 @@ export async function purgeReengagementMetadata(
   return (options.database ?? db).transaction(async (tx) => {
     // Mesma ordem dos writers de inbound/reset/aceite. Releitura após o lock
     // impede compactar uma ponte que ganhou continuidade enquanto esperava.
+    // Episódios já compactados conservam a chave consumida para sempre, mas
+    // não precisam recarregar contexto em cada varredura diária. Pontes antigas
+    // ainda referenciadas continuam candidatas e são revalidadas após os locks.
     const owners = await tx.select().from(leads).where(sql`exists (
       select 1 from ${reengagementEpisodes} e where e.tenant_id = ${leads.tenantId} and e.lead_id = ${leads.id}
+      and (e.claim_token is not null or e.prepared_at is not null or e.submitted_text is not null
+        or (e.created_at <= ${cutoff} and (e.message_id is not null
+          or e.origin_session_start_message_id is not null or e.origin_session_end_message_id is not null
+          or e.first_inbound_message_id is not null or e.bridge_last_inbound_at is not null
+          or e.bridge_invalidated_at is null)))
     )`).orderBy(asc(leads.id)).for("update");
     let episodesCompacted = 0;
     for (const lead of owners) {
