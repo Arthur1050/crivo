@@ -1,8 +1,8 @@
 # Lote 14b — Reengajamento contextual dentro da janela
 
 **Gathered:** 2026-10-02
-**Status:** Spec, Design detalhado, Tasks/matriz/ferramentas e agentes sequenciais aprovados
-em 2026-10-02; implementação ainda não iniciada. Prompt de handoff em [EXECUTE-PROMPT.md](EXECUTE-PROMPT.md).
+**Status:** Implementação local entregue; fechamento com escopo ajustado em 2026-10-06.
+G1/G3/G4 e telas de consumo Deferred → L14c; G2 corrigida. Ver Deferred Ideas abaixo.
 **Origem:** `../../ROADMAP-POS-PILOTO.md`, seção L14b; decisões do usuário registradas em `../lote-14-humano-no-laco/context.md`, seção Janela de 24h.
 
 ## Feature Boundary
@@ -240,6 +240,39 @@ dependendo de autorização específica, conforme o escopo aprovado e a skill.
 
 ## Deferred Ideas
 
+### L14c — ativação em produção e provas externas (2026-10-06)
+
+Decisão explícita do usuário no fechamento: a conta WhatsApp de produção ainda não
+existe. G1 (conta/canal e instalação real), G3 (status autênticos instalados) e G4
+(Analytics real) de `validation.md` passam a **Deferred → L14c**, junto das telas
+de consumo T57/T60/T61/T62 já adiadas. O fechamento do L14b verifica a entrega
+local; não afirma ativação em produção nem converte fixtures em prova externa.
+
+- G1: A11/A12 e parcelas de instalação/transporte dos requisitos REEN-01…05,
+  L14B-01 e PROVA-01. L14c deve comprovar conta/número/tenant/fuso, versões e filas
+  instaladas, handlers e entrega autorizada antes de ativar o caminho contextual.
+- G3: PRECO-01 AC1/AC2/AC3/AC6/AC7, na parcela de origem e entrega reais, e
+  PRECO-02 AC1, na autenticação instalada. Reducer, persistência, isolamento,
+  replay e classificação local continuam entregues pelo L14b. L14c comprovará
+  HMAC raw-body/assinatura inválida e o forwarder instalado até a thread.
+- G4: USO-01 AC1, na consulta/ativação real do mês integral, e os vínculos de
+  conta/número/fuso de L14B-01 AC2. L14c comprovará cobertura mensal, filtros,
+  paginação e zero antes de habilitar Analytics e saldo.
+- Telas: USO-01 AC8; USO-02 AC4/AC5/AC7; USO-03 AC1…AC6; USO-04 AC1…AC5,
+  nas parcelas de UI. T57/T60/T61/T62 continuam adiadas; T58/T59 são PRECO.
+
+G2 permanece no L14b: correção `b92caeb`, serialização `116b52b` e sensor de
+identidade `e92035c` já entregues em T69/T70/T71. Conferir seus testes e a prova
+histórica versionada, sem executar novamente modelo, WhatsApp ou serviço externo.
+Não criar tarefas adicionais neste fechamento.
+
+Nesta sessão não há publicação/alteração n8n, deploy, DDL de produção, envio
+WhatsApp, leitura Graph nem workflow temporário. O usuário reverteu o scheduler
+de produção à versão L14; não republicar. Consumo permanece indisponível com
+adapter padrão ausente e sem saldo presumido. Nenhuma captura ou JSON novo entra
+em commit; evidências não rastreadas permanecem locais. L14c depende da futura
+conta de produção e de autorização específica para as ações externas.
+
 ### L14c — superfícies de consumo adiadas (2026-10-03)
 
 Por instrução posterior do usuário, USO-03/USO-04 relativos a saldo, barra e
@@ -255,7 +288,8 @@ não expôs vínculo de conta/número de produção na leitura sanitizada. Somen
 conta de teste foi comprovada acessível; conta/número efetivos de produção,
 tenant, IANA, cobertura mensal e zero permanecem não comprovados. Nenhum saldo
 é presumido: código de consumo mantém adapter ausente/usageEnabled=false e
-resultado “Consumo indisponível”. REEN, PRECO e provas continuam no L14b.
+resultado “Consumo indisponível”. REEN, PRECO e provas locais continuam no L14b;
+as parcelas externas G1/G3/G4 passam ao L14c pela decisão de 2026-10-06 acima.
 
 ### Falha anterior adiada na execução (2026-10-02)
 

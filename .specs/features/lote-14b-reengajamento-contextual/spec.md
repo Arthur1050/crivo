@@ -4,9 +4,9 @@
 
 **Complexidade:** Complex
 
-**Status:** Approved — usuário em 2026-10-02: "Aprovo".
+**Status:** Execute — fechamento local com escopo ajustado pelo usuário em 2026-10-06; reverificação independente pendente.
 
-**Contexto:** [context.md](context.md). Spec, Design e [tasks.md](tasks.md) aprovados; gates factuais externos pendentes. Implementação ainda não iniciada; handoff em [EXECUTE-PROMPT.md](EXECUTE-PROMPT.md).
+**Contexto:** [context.md](context.md). Implementação local e correções T69/T70/T71 entregues. G1/G3/G4 e T57/T60/T61/T62: **Deferred → L14c** por decisão do usuário; não há conta WhatsApp de produção. Histórico em [tasks.md](tasks.md).
 
 ## Problem Statement
 
@@ -54,8 +54,8 @@ A autorização anterior dos adicionais de consumo também está registrada no c
 | A8 — Fonte da barra | Snapshot mensal de Pricing Analytics; não somar eventos de webhook ao mesmo volume | API inclui entregas fora do CRM; evita dupla contagem sem inventar um cursor de conciliação | Sim, spec aprovada em 2026-10-02 |
 | A9 — Atualização | Sincronizar a cada 15min por número; marcar consulta desatualizada após mais de 60min sem sucesso | Aproveita cadência existente; não confunde consulta recente com latência da Meta | Sim, spec aprovada em 2026-10-02 |
 | A10 — Visibilidade | Administrador/gestor veem Configurações; usuários autorizados em Chats veem resumo agregado do número da conversa | Corretor precisa do aviso ao enviar sem ganhar acesso a outras conversas | Sim, spec aprovada em 2026-10-02 |
-| A11 — Implantação | Consultar mês corrente inteiro e mapear número, WABA, tenant e fuso antes de habilitar saldo | Implantação no meio do mês não significa consumo zero | Sim, spec aprovada em 2026-10-02 |
-| A12 — Prova | Usar eventos documentados para 999/1.000/1.001; comprovar conta real por leitura e entrega de teste autorizada, sem provocar 1.001 envios | Prova de tarifação não deve depender de gerar gasto em massa | Sim, spec aprovada em 2026-10-02 |
+| A11 — Implantação | Consultar mês corrente inteiro e mapear número, WABA, tenant e fuso antes de habilitar saldo | Implantação no meio do mês não significa consumo zero | Sim; ativação real Deferred → L14c em 2026-10-06 |
+| A12 — Prova | Usar eventos documentados para 999/1.000/1.001; comprovar conta real por leitura e entrega de teste autorizada, sem provocar 1.001 envios | Prova de tarifação não deve depender de gerar gasto em massa | Sim; conta/entrega de produção Deferred → L14c em 2026-10-06; fixtures locais permanecem no L14b |
 | A13 — Retenção | Metadados temporários e eventos órfãos por 30 dias; classificação vinculada à retenção da mensagem; sem payload bruto permanente | Segue o prazo operacional da AD-023 sem criar arquivo paralelo das conversas | Sim, spec aprovada em 2026-10-02 |
 
 **Open questions:** none — todas as ambiguidades de produto estão resolvidas ou registradas
@@ -337,23 +337,42 @@ de qualquer prova real, conforme L-051. Não enviar 1.001 mensagens para fabrica
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| REEN-01 | P1: Momento permitido | Execute | Partial — política/seleção/locks e scheduler implementados; T68 prova por fixture antes/exato/+1ms em 22/24/48h; instalação/prova externa pendentes; Verifier documentado em validation.md |
-| REEN-02 | P1: Texto contextual | Execute | Partial — frame factual, prompt e geração readonly/deadline ligados ao scheduler; T66 identidade/teto preservados e T68 ligação integrada; texto efetivo do modelo e prova conversacional pendentes |
-| REEN-03 | P1: Envio único e válido | Execute | Partial — consumo de despacho/aceite/ack, invalidação e reconciliação implementados; T63/T64 retenção não rearma envio; T68 disputa PG independente, takeover/inbound e aceite sem registro; instalação/prova externa pendentes |
-| REEN-04 | P1: Continuidade da memória | Execute | Partial — sessão/frame/reset/invalidação e ponte no principal; T68 Code nodes efetivos provam equivalência warm/cold por fixture e exclusão do buffer; publicação/prova real pendentes |
-| REEN-05 | P1: Desfecho às 48h | Execute | Partial — omissão/escalada transacionais e scheduler C independente; T68 limites e replay sem envio; publicação/prova real pendentes |
-| PRECO-01 | P1: Classificação de entrega | Execute | Partial — reducer/canal/recibos e classificação por saída T58/T59; T68 fixtures 999/1000/1001/FEP e volume independente, replay/CRM/thread; entrega/status instalado reais pendentes |
-| PRECO-02 | P1: Autenticidade e correlação | Execute | Partial — origem/correlação/replay/ramo isolado e retenção segura implementados; T67 exige serializer/seleção/HMAC instalados separadamente; sem prova instalada, endpoint permanece fechado |
-| USO-01 | P1: Saldo mensal estimado | Execute | Partial — modelo/canal/mês civil/adapter condicionado/snapshot/tick implementados; T68 mês por IANA, stale e estado desconhecido por fixture; conta de produção/mês integral/zero reais não comprovados, consumo indisponível |
-| USO-02 | P1: Atualização e indisponibilidade | Execute | Partial — timeout/cadência/lease/CAS/falhas isoladas/retenção e indisponibilidade implementados; backend exercitado sem presumir Graph, adapter padrão ausente; UI adiada para L14c |
-| USO-03 | P1: Superfícies e permissões | Execute | Deferred UI → L14c por instrução posterior do usuário, T57/T60/T61/T62; T14 DAL preservada, consumo indisponível; ver context.md Deferred Ideas |
-| USO-04 | P1: Aviso sem bloqueio | Execute | Deferred UI → L14c por instrução posterior do usuário; envio humano permanece independente de Analytics, sem presumir saldo/gratuidade |
-| L14B-01 | P1: Isolamento e operação | Execute | Partial — fronteiras/endpoints/locks/rollback/autoria e integração local preservados; T63/T64 retenção/manutenção, T65 bootstrap diagnóstico e T67 protocolo seguro; produção/instalação/prova operacional pendentes |
-| PROVA-01 | P1: Evidência integrada | Execute | Partial — T68 Full 12/12/regressões 149/149 por PG/fixture e persistência antes de cleanup; fase 9 suíte 3580/3580, 204 arquivos, lint/build 0, tsc 50 anteriores/delta 0; Verifier FAIL (70 PASS/8 GAP/15 parcelas UI deferidas/2 condicionais); sensor 10/10 morto; provas externas/conversacionais aplicáveis pendentes |
+| REEN-01 | P1: Momento permitido | Execute | Implementado localmente — política/seleção/locks e limites 22/24/48h; instalação/prova externa G1 Deferred → L14c |
+| REEN-02 | P1: Texto contextual | Execute | Implementado — frame factual, geração readonly/deadline e prova integrada; G2 corrigida em b92caeb/116b52b/e92035c (T69/T70/T71), provas históricas do modelo preservadas; ativação G1 Deferred → L14c |
+| REEN-03 | P1: Envio único e válido | Execute | Implementado localmente — despacho/aceite/ack, disputa PG, invalidação/reconciliação e retenção; transporte em produção G1 Deferred → L14c |
+| REEN-04 | P1: Continuidade da memória | Execute | Implementado localmente — sessão/frame/reset/ponte e equivalência warm/cold; ativação/prova de transporte G1 Deferred → L14c |
+| REEN-05 | P1: Desfecho às 48h | Execute | Implementado localmente — omissão/escalada, limites e replay; ativação G1 Deferred → L14c |
+| PRECO-01 | P1: Classificação de entrega | Execute | Implementado localmente — reducer/persistência/replay/UI PRECO T58/T59; origem instalada e entrega reais de AC1/AC2/AC3/AC6/AC7 (G3) Deferred → L14c |
+| PRECO-02 | P1: Autenticidade e correlação | Execute | Implementado localmente — origem/correlação/replay/isolamento/retenção; autenticação instalada de AC1 (G3) Deferred → L14c; endpoint sem proof permanece fechado |
+| USO-01 | P1: Saldo mensal estimado | Execute | Backend implementado — mês/snapshot/adapter condicionado; consulta/ativação real de AC1 (G4) e UI de AC8 Deferred → L14c; consumo indisponível |
+| USO-02 | P1: Atualização e indisponibilidade | Execute | Backend implementado — timeout/cadência/lease/CAS/falhas/retenção; UI AC4/AC5/AC7 Deferred → L14c; adapter padrão ausente |
+| USO-03 | P1: Superfícies e permissões | Execute | UI AC1…AC6 Deferred → L14c, T57/T60/T61/T62; DAL preservada; AC7 atualização da classificação PRECO entregue |
+| USO-04 | P1: Aviso sem bloqueio | Execute | UI AC1…AC5 Deferred → L14c; envio humano independente de Analytics; AC6 classificação PRECO entregue |
+| L14B-01 | P1: Isolamento e operação | Execute | Implementado localmente — fronteiras/locks/rollback/autoria/retenção/diagnóstico; vínculo de produção de AC2 e prova instalada (G1/G4) Deferred → L14c |
+| PROVA-01 | P1: Evidência integrada | Execute | Provas automatizadas locais e modelo histórico entregues; ativação/conta/entrega de produção G1/A12 Deferred → L14c; AC5/AC6 continuam condicionais; reverificação do escopo ajustado em validation.md |
 
 **Coverage:** 13/13 requisitos e 95/95 critérios mapeados individualmente em [tasks.md](tasks.md); mapeamento não equivale a PASS do produto.
-Implementação local: T1–T56/T58/T59/T63–T68 (64/68 tarefas), último commit de task `4ef2248`; as quatro tarefas de consumo UI foram adiadas para L14c conforme [context.md](context.md). Evidências históricas permanecem nas seções das tasks, sem arquivamento enquanto a validação estiver pendente.
-Fase 9: 53 cenários novos, total 1178 no L14b; `npm test` exit 0,3580/3580 testes e 204/204 arquivos,1094,81s, início 2026-10-05 12:20:19. Lint exit 0/9 avisos anteriores; build exit 0/avisos BetterAuth anteriores; tsc nativo 2 / 50 erros anteriores, nenhum acréscimo semântico; strict spec/tasks 0/0. [validation.md](validation.md) registra 95 ACs, veredito FAIL e quatro grupos de gaps G1–G4. Sensor: baseline 40/40 e 10/10 mutações mortas, árvore preservada. `validate_state.py` exit 1 reconhece FAIL; não há sobrevivente nem defeito novo de código diagnosticado. Nenhuma prova de capacidade externa, texto efetivo do modelo ou conclusão integral do lote é inferida desses gates.
+Implementação local: T1–T56/T58/T59/T63–T71 (67/71 tarefas existentes), último commit de task `e92035c`; T57/T60/T61/T62 permanecem Deferred → L14c. Não criar tasks novas neste fechamento.
+Histórico: fase 9 suíte 3580/3580 e sensor 10/10; relatório de 2026-10-05 FAIL por G1–G4. G2 foi corrigida e comprovada em T69/T70/T71. Fechamento de 2026-10-06: executar suíte completa/lint/build uma vez e Verifier independente local; resultados autoritativos em [validation.md](validation.md). Nenhuma prova de produção é inferida de fixtures ou gates locais.
+
+### Parcelas de ACs deferidas por decisão do usuário
+
+Os outcomes normativos permanecem acima. Esta tabela delimita o fechamento do L14b;
+um AC com parcela externa/UI deferida não é declarado integralmente provado.
+
+| AC / obrigação | Parcela preservada no L14b | Rastreabilidade da parcela adiada |
+| --- | --- | --- |
+| A11/A12; REEN-01…05; PROVA-01 AC4/AC5 | Política, geração, continuidade, concorrência e contratos de prova locais; texto histórico do modelo | Deferred → L14c — G1: conta/instalação/transporte de produção; AC5 permanece condicional |
+| PRECO-01 AC1/AC2/AC3/AC6/AC7 | Reducer, estado persistido e classificação PRECO na thread com fixtures | Deferred → L14c — G3: status autêntico instalado e entrega/falha reais |
+| PRECO-02 AC1 | Rejeição sem proof e contrato de autenticação local | Deferred → L14c — G3: HMAC raw-body/forwarder instalado |
+| USO-01 AC1 | Contrato mensal e bloqueio de resposta inválida/incompleta | Deferred → L14c — G4: consulta real do mês integral, zero/filtros/paginação |
+| L14B-01 AC2 | Resolução/autorização server-side e ausência de token no client | Deferred → L14c — G1/G4: vínculo real tenant/WABA/número/fuso |
+| USO-01 AC8; USO-02 AC4/AC5/AC7; USO-03 AC1…AC6; USO-04 AC1…AC5 | Contratos/DAL e independência do envio humano | Deferred → L14c — UI T57/T60/T61/T62 |
+
+Nesta sessão o scheduler de produção permanece na versão L14 revertida pelo usuário.
+L14b fecha a implementação local; L14c reúne ativação em produção e telas de consumo,
+dependendo da futura conta WhatsApp de produção. Não habilitar saldo nem origem instalada
+por inferência. Ver [context.md § Deferred Ideas](context.md#deferred-ideas).
 
 ## Success Criteria
 
@@ -372,11 +391,11 @@ que mantém o canal humano independente do n8n (AD-035) e reutiliza a condução
 A emenda restrita de continuidade da AD-019 foi registrada na AD-036, sem implementação.
 
 O Design detalhado fecha interfaces, estados, ponte, cadência, UI e cobertura em `design.md`.
-Permanecem pendentes o contrato real de Analytics e dos status, inclusive zero, permissões,
+Foram deferidos ao L14c o contrato real de Analytics e dos status, inclusive zero, permissões,
 vínculo e fuso. WABA `1000796702954808` descoberta pela extensão e confirmada por leitura
 Graph como `Test WhatsApp Business Account`, timezone_id=1; não representa prova de conta
 de produção nem tradução de fuso para IANA. Esses gates
-precedem ativação das partes afetadas e aprovação factual da integração; não serão declarados
+precedem ativação no L14c e aprovação factual da integração; não serão declarados
 satisfeitos apenas pela conclusão do desenho documental.
 Uma impossibilidade factual encontrada nessa etapa exige atualizar esta spec com evidência,
 sem substituir silenciosamente o consumo da conta por contagem apenas local.
