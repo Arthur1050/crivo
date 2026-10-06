@@ -158,6 +158,16 @@ T63 → T64 → T65 → T66 → T67 → T68
 
 ### Dependências adicionais e entre fases
 
+Fase corretiva 10 (G2 observado nas execuções reais): T69 corrige a pergunta inventada em 3302; T70 corrige o JSON Query que falhou em 3306/3308/3309. Escopo de REEN-02 já aprovado, sem nova capacidade ou substituição de Analytics. G2 só fecha depois da prova completa de T70 e do Verifier.
+
+```text
+T46 → T69
+T47 → T69
+T68 → T69
+T69 → T70
+T47 → T70
+```
+
 O diagrama abaixo inclui **todas** as dependências, inclusive as já mostradas na ordem de cada fase. A tabela de cross-check usa o mesmo conjunto completo.
 
 ```text
@@ -2802,6 +2812,71 @@ Desvios: nenhum de contrato; fixture inicial do runner corrigida, assertions pre
 **Gate**: Full; Build no fechamento da fase.
 
 **Commit**: `feat(l14b): runner de prova integrada e evidência` (docs para mudança exclusivamente contratual).
+
+---
+
+### Phase 10: Correção da prova conversacional G2
+
+### T69: Corrigir a retomada que inventa pergunta sem pendência
+
+**What**: A execução real 3302 perguntou sobre quartos com toda a qualificação informada. Reforçar a tarefa proativa para exigir retomada declarativa quando não houver pendência; conservar a única pergunta pertinente quando houver pendência e a retomada de agendamento sem horário inventado. A instrução específica é a correção mínima dentro do Design aprovado; trocar modelo ou adicionar outro classificador ampliaria a solução sem resolver o contrato factual já definido.
+
+**Where**: `n8n/src/reengagement-prompt.mjs`
+
+**Depends on**: T46, T47, T68
+
+**Reuses**: prompt compartilhado, modelo datado, inliner, workflow readonly e cenários sintéticos de `evidence/account-discovery-2026-10-05/generation-proof-before-fix.json`.
+
+**Requirement**: REEN-02 AC1/AC2; intenção contextual sem pergunta ou pendência inventada, incluindo fatos confirmados, nota humana, ausência de pendência e memória vazia.
+
+**Tools**: Perfil U — shell/Vitest/inliner, MCP n8n e extensão Chrome; ações necessárias já autorizadas pelo usuário no Execute.
+
+**Done when**:
+
+- [x] Instrução proativa corrigida sem alterar o system message compartilhado, as tools readonly, o modelo ou o transporte.
+- [x] Os 10 cenários existentes do domínio e os casos do grafo/Code nodes passam, preservando toda a cobertura anterior.
+- [x] Comparação efetiva do cenário sem pendência com 3302 confirma que o modelo deixa de abrir pergunta de qualificação; guardar versão, entrada, saída e captura. Demais cenários continuam necessários em T70: falha técnica de consulta não é contada como prova de texto contextual.
+- [x] Gate Quick/Wiring passa; adequação revisada pelo outcome real do modelo, sem frase literal obrigatória nem generate fake.
+
+**Tests**: unit — `n8n/src/__tests__/reengagement-prompt.test.ts`, `n8n/workflows/__tests__/reengagement-contextual.test.ts`; regressões de inliner, scheduler e prova; quatro cenários reais de geração por intenção, sem envio WhatsApp nem escrita de lead.
+
+**Gate**: Quick e Wiring; Build no fechamento da fase; Verifier independente do delta e dos outcomes.
+
+**Commit**: `fix(l14b): prevent new qualification questions without pending fields`
+
+**Evidence**: Quick/Wiring 55/55 (5 arquivos), exit 0; nenhum teste removido ou enfraquecido.
+Modelo real: 3302 abriu pergunta de quartos; 3307 retornou texto declarativo, `ok:true`, versão `4c2b2c55-d169-43de-84f9-58b571ce611a`.
+Entrada/saída/captura: `evidence/account-discovery-2026-10-05/generation-proof-t69.json` e `n8n-generation-3307.jpg`; retenção restaurada para none/none/manual=false.
+3306/3308/3309 continuam GAP técnico de consulta em T70; Build e Verifier pertencem ao fechamento da fase.
+
+---
+
+### T70: Serializar os filtros da consulta readonly como JSON de transporte
+
+**What**: As execuções reais 3306/3308/3309 recusaram a observação da tool com `JSON Query Parameters is not valid JSON`. Serializar os filtros fixos do frame como texto JSON aceito pelo nó instalado, conservando os filtros, tenant, ferramentas somente leitura e recusa de falhas. Corrige a fronteira real que o teste anterior avaliava apenas como objeto da expressão.
+
+**Where**: `n8n/workflows/reengagement-contextual.ts`
+
+**Depends on**: T69, T47
+
+**Reuses**: contrato GET `/properties`, schema MCP HTTP Request Tool 4.5, inliner, credenciais existentes e quatro cenários sintéticos versionados.
+
+**Requirement**: REEN-02 AC1/AC2/AC3/AC5; consulta real somente leitura, sem transformar falha técnica em contexto válido.
+
+**Tools**: Perfil U — shell/Vitest/inliner, MCP n8n e extensão Chrome; ações necessárias já autorizadas pelo usuário no Execute.
+
+**Done when**:
+
+- [ ] JSON Query transmitido é texto JSON válido, contendo exatamente os filtros já confirmados do frame; nenhuma escrita ou argumento fornecido pelo modelo é adicionado.
+- [ ] Teste de identidade/filtros anterior conserva suas asserções após decodificar o JSON de transporte; regressão exige a serialização efetiva, preservando toda a cobertura existente.
+- [ ] Consulta do inventário funciona pelo caminho real e os quatro cenários de geração passam pela intenção contextual, com entrada/resultado/versão/captura preservados antes de restaurar a retenção.
+- [ ] Gate Quick/Wiring e Build no fechamento da fase passam; Verifier independente confirma os outcomes, sem encerrar G1/G3/G4 por inferência.
+
+**Tests**: unit — `n8n/workflows/__tests__/reengagement-contextual.test.ts`; regressões de prompt/inliner/scheduler/publicação; quatro cenários reais por intenção, incluindo a leitura real do inventário.
+
+**Gate**: Quick e Wiring; Build no fechamento da fase; nenhuma fixture substitui o modelo ou o serviço real nesta prova.
+
+**Commit**: `fix(l14b): serialize readonly property query for n8n`
 
 ---
 

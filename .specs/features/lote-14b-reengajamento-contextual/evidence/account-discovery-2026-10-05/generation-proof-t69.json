@@ -1,0 +1,333 @@
+{
+  "task": "T69",
+  "scopeVerdict": "PASS observado para a correção sem pendência; G2 permanece aberto para T70/Verifier",
+  "workflowId": "q3GKsdptqp58Hq6O",
+  "workflowPublished": false,
+  "pinnedNodes": [
+    "Frame verificado"
+  ],
+  "model": "gpt-5.4-nano-2026-03-17",
+  "versionId": "4c2b2c55-d169-43de-84f9-58b571ce611a",
+  "capture": "n8n-generation-3307.jpg",
+  "technicalFailures": {
+    "executionIds": [
+      "3306",
+      "3308",
+      "3309"
+    ],
+    "tool": "buscar_imoveis",
+    "error": "The value in the JSON Query Parameters field is not valid JSON",
+    "nextTask": "T70"
+  },
+  "outcomes": [
+    {
+      "name": "pendencia-com-fatos-e-nota-humana",
+      "synthetic": true,
+      "expected": "Perguntar somente casa ou apartamento, preservando região, orçamento e duas vagas; sem expor nota interna nem inventar imóvel.",
+      "input": {
+        "frame": {
+          "tenantId": "7c6882c6-18da-4ce9-8724-c2236a15fe08",
+          "leadId": "140b0068-0000-4000-8000-000000000001",
+          "episodeId": "140b0068-0000-4000-8000-000000000101",
+          "phoneNumberId": "1321478747709350",
+          "channelRevision": 1,
+          "preparedAt": "2026-10-06T01:24:28.668Z",
+          "anchor": {
+            "id": "140b0068-0000-4000-8000-000000000201",
+            "sentAt": "2026-10-05T02:24:28.668Z"
+          },
+          "resetObservedAt": null,
+          "agent": {
+            "phase": "qualificando",
+            "revision": 1,
+            "askedFields": [
+              "modality",
+              "region"
+            ],
+            "openingHistory": [
+              "Vamos retomar"
+            ]
+          },
+          "facts": {
+            "name": "Pessoa Fixture L14b",
+            "modality": "usado",
+            "region": "Centro",
+            "propertyType": null,
+            "budgetCents": "50000000",
+            "purchaseHorizon": null,
+            "motivation": null,
+            "creditStatus": null,
+            "chainedOperation": null,
+            "executiveSummary": "Busca imóvel usado no Centro, até 500 mil reais, com duas vagas de garagem."
+          },
+          "pendingField": "propertyType",
+          "origin": {
+            "startMessageId": "140b0068-0000-4000-8000-000000000201",
+            "endMessageId": "140b0068-0000-4000-8000-000000000203"
+          },
+          "history": [
+            {
+              "id": "140b0068-0000-4000-8000-000000000201",
+              "sender": "lead",
+              "content": "Procuro imóvel usado no Centro, até 500 mil reais. Preciso de duas vagas de garagem.",
+              "sentAt": "2026-10-05T02:24:28.668Z"
+            },
+            {
+              "id": "140b0068-0000-4000-8000-000000000202",
+              "sender": "humano",
+              "authorName": "Ana Fixture",
+              "content": "Duas vagas de garagem confirmadas. Ainda falta definir se prefere casa ou apartamento.",
+              "sentAt": "2026-10-05T02:30:28.668Z"
+            },
+            {
+              "id": "140b0068-0000-4000-8000-000000000203",
+              "sender": "agente",
+              "content": "Certo, considerei o Centro e o limite de 500 mil reais.",
+              "sentAt": "2026-10-05T02:36:28.668Z"
+            }
+          ]
+        },
+        "tenantSlug": "triangulo"
+      },
+      "execution": {
+        "id": "3306",
+        "status": "success",
+        "startedAt": "2026-10-06T01:36:16.392Z",
+        "stoppedAt": "2026-10-06T01:36:23.570Z"
+      },
+      "output": {
+        "ok": false,
+        "code": "context-read-failed"
+      },
+      "model": "gpt-5.4-nano-2026-03-17",
+      "savedVersionIdObserved": "4c2b2c55-d169-43de-84f9-58b571ce611a",
+      "assessment": "GAP técnico: texto recusado após falha de JSON Query do inventário; não contar como conformidade conversacional."
+    },
+    {
+      "name": "sem-pendencia",
+      "synthetic": true,
+      "expected": "Retomar naturalmente sem repetir perguntas já respondidas nem inventar nova pendência, imóvel ou agendamento.",
+      "input": {
+        "frame": {
+          "tenantId": "7c6882c6-18da-4ce9-8724-c2236a15fe08",
+          "leadId": "140b0068-0000-4000-8000-000000000002",
+          "episodeId": "140b0068-0000-4000-8000-000000000102",
+          "phoneNumberId": "1321478747709350",
+          "channelRevision": 1,
+          "preparedAt": "2026-10-06T01:24:28.668Z",
+          "anchor": {
+            "id": "140b0068-0000-4000-8000-000000000201",
+            "sentAt": "2026-10-05T02:24:28.668Z"
+          },
+          "resetObservedAt": null,
+          "agent": {
+            "phase": "qualificando",
+            "revision": 1,
+            "askedFields": [
+              "modality",
+              "region",
+              "propertyType",
+              "budgetCents",
+              "purchaseHorizon",
+              "motivation",
+              "creditStatus",
+              "chainedOperation"
+            ],
+            "openingHistory": [
+              "Vamos retomar"
+            ]
+          },
+          "facts": {
+            "name": "Pessoa Fixture L14b",
+            "modality": "usado",
+            "region": "Centro",
+            "propertyType": "apartamento",
+            "budgetCents": "50000000",
+            "purchaseHorizon": "ate_6_meses",
+            "motivation": "morador",
+            "creditStatus": "recurso_proprio",
+            "chainedOperation": false,
+            "executiveSummary": "Busca imóvel usado no Centro, até 500 mil reais, com duas vagas de garagem."
+          },
+          "pendingField": null,
+          "origin": {
+            "startMessageId": "140b0068-0000-4000-8000-000000000201",
+            "endMessageId": "140b0068-0000-4000-8000-000000000203"
+          },
+          "history": [
+            {
+              "id": "140b0068-0000-4000-8000-000000000201",
+              "sender": "lead",
+              "content": "Quero apartamento usado no Centro, até 500 mil, com duas vagas. É para morar, em até seis meses; vou pagar com recurso próprio e não preciso vender outro imóvel.",
+              "sentAt": "2026-10-05T02:24:28.668Z"
+            },
+            {
+              "id": "140b0068-0000-4000-8000-000000000203",
+              "sender": "agente",
+              "content": "Anotei as preferências. Continuamos por aqui quando você quiser.",
+              "sentAt": "2026-10-05T02:36:28.668Z"
+            }
+          ]
+        },
+        "tenantSlug": "triangulo"
+      },
+      "execution": {
+        "id": "3307",
+        "status": "success",
+        "startedAt": "2026-10-06T01:39:20.095Z",
+        "stoppedAt": "2026-10-06T01:39:22.952Z"
+      },
+      "output": {
+        "ok": true,
+        "text": "Beleza, Pessoa Fixture L14b. Vou continuar por aqui com o seu foco em apartamento usado no Centro, até 500 mil, com duas vagas, para morar e com pagamento via recurso próprio em até seis meses."
+      },
+      "model": "gpt-5.4-nano-2026-03-17",
+      "savedVersionIdObserved": "4c2b2c55-d169-43de-84f9-58b571ce611a",
+      "assessment": "PASS observado: retomada declarativa sem nova pergunta; contrapõe a falha 3302."
+    },
+    {
+      "name": "memoria-vazia-com-fatos",
+      "synthetic": true,
+      "expected": "Usar os fatos do frame mesmo sem histórico; perguntar só casa ou apartamento, sem inventar fatos ou consultar documentos para uma pergunta de preferência.",
+      "input": {
+        "frame": {
+          "tenantId": "7c6882c6-18da-4ce9-8724-c2236a15fe08",
+          "leadId": "140b0068-0000-4000-8000-000000000003",
+          "episodeId": "140b0068-0000-4000-8000-000000000103",
+          "phoneNumberId": "1321478747709350",
+          "channelRevision": 1,
+          "preparedAt": "2026-10-06T01:24:28.668Z",
+          "anchor": {
+            "id": "140b0068-0000-4000-8000-000000000201",
+            "sentAt": "2026-10-05T02:24:28.668Z"
+          },
+          "resetObservedAt": null,
+          "agent": {
+            "phase": "qualificando",
+            "revision": 1,
+            "askedFields": [
+              "modality",
+              "region"
+            ],
+            "openingHistory": []
+          },
+          "facts": {
+            "name": "Pessoa Fixture L14b",
+            "modality": "usado",
+            "region": "Centro",
+            "propertyType": null,
+            "budgetCents": "50000000",
+            "purchaseHorizon": null,
+            "motivation": null,
+            "creditStatus": null,
+            "chainedOperation": null,
+            "executiveSummary": "Busca imóvel usado no Centro, até 500 mil reais, com duas vagas de garagem."
+          },
+          "pendingField": "propertyType",
+          "origin": {
+            "startMessageId": "140b0068-0000-4000-8000-000000000201",
+            "endMessageId": "140b0068-0000-4000-8000-000000000203"
+          },
+          "history": []
+        },
+        "tenantSlug": "triangulo"
+      },
+      "execution": {
+        "id": "3308",
+        "status": "success",
+        "startedAt": "2026-10-06T01:39:23.739Z",
+        "stoppedAt": "2026-10-06T01:39:28.170Z"
+      },
+      "output": {
+        "ok": false,
+        "code": "context-read-failed"
+      },
+      "model": "gpt-5.4-nano-2026-03-17",
+      "savedVersionIdObserved": "4c2b2c55-d169-43de-84f9-58b571ce611a",
+      "assessment": "GAP técnico: texto recusado após falha de JSON Query do inventário; não contar como conformidade conversacional."
+    },
+    {
+      "name": "agendamento-sem-horario-confirmado",
+      "synthetic": true,
+      "expected": "Retomar o agendamento com naturalidade, sem inventar horário ou reunião confirmada e sem voltar à qualificação.",
+      "input": {
+        "frame": {
+          "tenantId": "7c6882c6-18da-4ce9-8724-c2236a15fe08",
+          "leadId": "140b0068-0000-4000-8000-000000000004",
+          "episodeId": "140b0068-0000-4000-8000-000000000104",
+          "phoneNumberId": "1321478747709350",
+          "channelRevision": 1,
+          "preparedAt": "2026-10-06T01:24:28.668Z",
+          "anchor": {
+            "id": "140b0068-0000-4000-8000-000000000201",
+            "sentAt": "2026-10-05T02:24:28.668Z"
+          },
+          "resetObservedAt": null,
+          "agent": {
+            "phase": "agendando",
+            "revision": 1,
+            "askedFields": [
+              "modality",
+              "region",
+              "propertyType",
+              "budgetCents",
+              "purchaseHorizon",
+              "motivation",
+              "creditStatus",
+              "chainedOperation"
+            ],
+            "openingHistory": [
+              "Vamos retomar"
+            ]
+          },
+          "facts": {
+            "name": "Pessoa Fixture L14b",
+            "modality": "usado",
+            "region": "Centro",
+            "propertyType": "apartamento",
+            "budgetCents": "50000000",
+            "purchaseHorizon": "ate_6_meses",
+            "motivation": "morador",
+            "creditStatus": "recurso_proprio",
+            "chainedOperation": false,
+            "executiveSummary": "Busca imóvel usado no Centro, até 500 mil reais, com duas vagas de garagem."
+          },
+          "pendingField": null,
+          "origin": {
+            "startMessageId": "140b0068-0000-4000-8000-000000000201",
+            "endMessageId": "140b0068-0000-4000-8000-000000000203"
+          },
+          "history": [
+            {
+              "id": "140b0068-0000-4000-8000-000000000201",
+              "sender": "lead",
+              "content": "Quero conversar com a corretora sobre as opções. Ainda vou ver quando consigo.",
+              "sentAt": "2026-10-05T02:24:28.668Z"
+            },
+            {
+              "id": "140b0068-0000-4000-8000-000000000203",
+              "sender": "humano",
+              "authorName": "Ana Fixture",
+              "content": "Nenhum dia ou horário foi combinado. A pessoa quer conversar sobre as opções.",
+              "sentAt": "2026-10-05T02:36:28.668Z"
+            }
+          ]
+        },
+        "tenantSlug": "triangulo"
+      },
+      "execution": {
+        "id": "3309",
+        "status": "success",
+        "startedAt": "2026-10-06T01:39:28.803Z",
+        "stoppedAt": "2026-10-06T01:39:32.884Z"
+      },
+      "output": {
+        "ok": false,
+        "code": "context-read-failed"
+      },
+      "model": "gpt-5.4-nano-2026-03-17",
+      "savedVersionIdObserved": "4c2b2c55-d169-43de-84f9-58b571ce611a",
+      "assessment": "GAP técnico: texto recusado após falha de JSON Query do inventário; não contar como conformidade conversacional."
+    }
+  ]
+}
