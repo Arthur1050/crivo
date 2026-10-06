@@ -1,0 +1,353 @@
+{
+  "recordedAt": "2026-10-06T01:48:43.721Z",
+  "workflowId": "q3GKsdptqp58Hq6O",
+  "versionId": "aa38c5ea-d107-4bc0-ab1d-9d757ef13447",
+  "operationsHash": "26907add7e8fdcc9e80799d0bec7ded7277f5080dd15ff235b3a623458bd07ae",
+  "method": "Somente trigger com frame sintético fixado; modelo, persona e tools reais. Nenhum envio ou escrita de lead.",
+  "overall": "PASS-observed-generation",
+  "tests": {
+    "files": 5,
+    "tests": 56,
+    "exitCode": 0
+  },
+  "outcomes": [
+    {
+      "name": "pendencia-com-fatos-e-nota-humana",
+      "input": {
+        "frame": {
+          "tenantId": "7c6882c6-18da-4ce9-8724-c2236a15fe08",
+          "leadId": "140b0068-0000-4000-8000-000000000001",
+          "episodeId": "140b0068-0000-4000-8000-000000000101",
+          "phoneNumberId": "1321478747709350",
+          "channelRevision": 1,
+          "preparedAt": "2026-10-06T01:24:28.668Z",
+          "anchor": {
+            "id": "140b0068-0000-4000-8000-000000000201",
+            "sentAt": "2026-10-05T02:24:28.668Z"
+          },
+          "resetObservedAt": null,
+          "agent": {
+            "phase": "qualificando",
+            "revision": 1,
+            "askedFields": [
+              "modality",
+              "region"
+            ],
+            "openingHistory": [
+              "Vamos retomar"
+            ]
+          },
+          "facts": {
+            "name": "Pessoa Fixture L14b",
+            "modality": "usado",
+            "region": "Centro",
+            "propertyType": null,
+            "budgetCents": "50000000",
+            "purchaseHorizon": null,
+            "motivation": null,
+            "creditStatus": null,
+            "chainedOperation": null,
+            "executiveSummary": "Busca imóvel usado no Centro, até 500 mil reais, com duas vagas de garagem."
+          },
+          "pendingField": "propertyType",
+          "origin": {
+            "startMessageId": "140b0068-0000-4000-8000-000000000201",
+            "endMessageId": "140b0068-0000-4000-8000-000000000203"
+          },
+          "history": [
+            {
+              "id": "140b0068-0000-4000-8000-000000000201",
+              "sender": "lead",
+              "content": "Procuro imóvel usado no Centro, até 500 mil reais. Preciso de duas vagas de garagem.",
+              "sentAt": "2026-10-05T02:24:28.668Z"
+            },
+            {
+              "id": "140b0068-0000-4000-8000-000000000202",
+              "sender": "humano",
+              "authorName": "Ana Fixture",
+              "content": "Duas vagas de garagem confirmadas. Ainda falta definir se prefere casa ou apartamento.",
+              "sentAt": "2026-10-05T02:30:28.668Z"
+            },
+            {
+              "id": "140b0068-0000-4000-8000-000000000203",
+              "sender": "agente",
+              "content": "Certo, considerei o Centro e o limite de 500 mil reais.",
+              "sentAt": "2026-10-05T02:36:28.668Z"
+            }
+          ]
+        },
+        "tenantSlug": "triangulo"
+      },
+      "expected": "Perguntar somente casa ou apartamento, preservando região, orçamento e duas vagas; sem expor nota interna nem inventar imóvel.",
+      "execution": {
+        "id": "3311",
+        "status": "success",
+        "startedAt": "2026-10-06T01:46:55.434Z",
+        "stoppedAt": "2026-10-06T01:46:58.486Z"
+      },
+      "output": {
+        "ok": true,
+        "text": "Beleza, agora só me diz se você prefere casa ou apartamento no Centro."
+      },
+      "reads": [],
+      "assessment": {
+        "status": "PASS",
+        "basis": "Pergunta somente casa/apartamento, pendência factual; conserva Centro e contexto.",
+        "limitation": "Prova sintética de geração real; não autoriza envio nem comprova conta de produção."
+      },
+      "capture": "n8n-generation-3311.jpg"
+    },
+    {
+      "name": "sem-pendencia",
+      "input": {
+        "frame": {
+          "tenantId": "7c6882c6-18da-4ce9-8724-c2236a15fe08",
+          "leadId": "140b0068-0000-4000-8000-000000000002",
+          "episodeId": "140b0068-0000-4000-8000-000000000102",
+          "phoneNumberId": "1321478747709350",
+          "channelRevision": 1,
+          "preparedAt": "2026-10-06T01:24:28.668Z",
+          "anchor": {
+            "id": "140b0068-0000-4000-8000-000000000201",
+            "sentAt": "2026-10-05T02:24:28.668Z"
+          },
+          "resetObservedAt": null,
+          "agent": {
+            "phase": "qualificando",
+            "revision": 1,
+            "askedFields": [
+              "modality",
+              "region",
+              "propertyType",
+              "budgetCents",
+              "purchaseHorizon",
+              "motivation",
+              "creditStatus",
+              "chainedOperation"
+            ],
+            "openingHistory": [
+              "Vamos retomar"
+            ]
+          },
+          "facts": {
+            "name": "Pessoa Fixture L14b",
+            "modality": "usado",
+            "region": "Centro",
+            "propertyType": "apartamento",
+            "budgetCents": "50000000",
+            "purchaseHorizon": "ate_6_meses",
+            "motivation": "morador",
+            "creditStatus": "recurso_proprio",
+            "chainedOperation": false,
+            "executiveSummary": "Busca imóvel usado no Centro, até 500 mil reais, com duas vagas de garagem."
+          },
+          "pendingField": null,
+          "origin": {
+            "startMessageId": "140b0068-0000-4000-8000-000000000201",
+            "endMessageId": "140b0068-0000-4000-8000-000000000203"
+          },
+          "history": [
+            {
+              "id": "140b0068-0000-4000-8000-000000000201",
+              "sender": "lead",
+              "content": "Quero apartamento usado no Centro, até 500 mil, com duas vagas. É para morar, em até seis meses; vou pagar com recurso próprio e não preciso vender outro imóvel.",
+              "sentAt": "2026-10-05T02:24:28.668Z"
+            },
+            {
+              "id": "140b0068-0000-4000-8000-000000000203",
+              "sender": "agente",
+              "content": "Anotei as preferências. Continuamos por aqui quando você quiser.",
+              "sentAt": "2026-10-05T02:36:28.668Z"
+            }
+          ]
+        },
+        "tenantSlug": "triangulo"
+      },
+      "expected": "Retomar naturalmente sem repetir perguntas já respondidas nem inventar nova pendência, imóvel ou agendamento.",
+      "execution": {
+        "id": "3312",
+        "status": "success",
+        "startedAt": "2026-10-06T01:46:58.896Z",
+        "stoppedAt": "2026-10-06T01:47:03.687Z"
+      },
+      "output": {
+        "ok": true,
+        "text": "Boa, seguimos por aqui quando você quiser. Me diz só como você prefere continuar a conversa que eu te ajudo a chegar na melhor opção para morar no Centro."
+      },
+      "reads": [
+        {
+          "tool": "buscar_imoveis",
+          "validInventory": true,
+          "inventoryCount": 0
+        }
+      ],
+      "assessment": {
+        "status": "PASS",
+        "basis": "Retoma disponibilidade e forma de continuar a conversa, sem abrir campo de qualificação.",
+        "limitation": "Prova sintética de geração real; não autoriza envio nem comprova conta de produção."
+      },
+      "capture": "n8n-generation-3312.jpg"
+    },
+    {
+      "name": "memoria-vazia-com-fatos",
+      "input": {
+        "frame": {
+          "tenantId": "7c6882c6-18da-4ce9-8724-c2236a15fe08",
+          "leadId": "140b0068-0000-4000-8000-000000000003",
+          "episodeId": "140b0068-0000-4000-8000-000000000103",
+          "phoneNumberId": "1321478747709350",
+          "channelRevision": 1,
+          "preparedAt": "2026-10-06T01:24:28.668Z",
+          "anchor": {
+            "id": "140b0068-0000-4000-8000-000000000201",
+            "sentAt": "2026-10-05T02:24:28.668Z"
+          },
+          "resetObservedAt": null,
+          "agent": {
+            "phase": "qualificando",
+            "revision": 1,
+            "askedFields": [
+              "modality",
+              "region"
+            ],
+            "openingHistory": []
+          },
+          "facts": {
+            "name": "Pessoa Fixture L14b",
+            "modality": "usado",
+            "region": "Centro",
+            "propertyType": null,
+            "budgetCents": "50000000",
+            "purchaseHorizon": null,
+            "motivation": null,
+            "creditStatus": null,
+            "chainedOperation": null,
+            "executiveSummary": "Busca imóvel usado no Centro, até 500 mil reais, com duas vagas de garagem."
+          },
+          "pendingField": "propertyType",
+          "origin": {
+            "startMessageId": "140b0068-0000-4000-8000-000000000201",
+            "endMessageId": "140b0068-0000-4000-8000-000000000203"
+          },
+          "history": []
+        },
+        "tenantSlug": "triangulo"
+      },
+      "expected": "Usar os fatos do frame mesmo sem histórico; perguntar só casa ou apartamento, sem inventar fatos ou consultar documentos para uma pergunta de preferência.",
+      "execution": {
+        "id": "3313",
+        "status": "success",
+        "startedAt": "2026-10-06T01:47:04.028Z",
+        "stoppedAt": "2026-10-06T01:47:10.785Z"
+      },
+      "output": {
+        "ok": true,
+        "text": "Certo. Pra eu buscar certinho no Centro até 500 mil com 2 vagas: você está procurando apartamento ou casa?"
+      },
+      "reads": [
+        {
+          "tool": "buscar_imoveis",
+          "validInventory": true,
+          "inventoryCount": 0
+        },
+        {
+          "tool": "buscar_imoveis",
+          "validInventory": true,
+          "inventoryCount": 0
+        }
+      ],
+      "assessment": {
+        "status": "PASS",
+        "basis": "Pergunta somente casa/apartamento, pendência factual; conserva Centro e contexto.",
+        "limitation": "Prova sintética de geração real; não autoriza envio nem comprova conta de produção."
+      },
+      "capture": "n8n-generation-3313.jpg"
+    },
+    {
+      "name": "agendamento-sem-horario-confirmado",
+      "input": {
+        "frame": {
+          "tenantId": "7c6882c6-18da-4ce9-8724-c2236a15fe08",
+          "leadId": "140b0068-0000-4000-8000-000000000004",
+          "episodeId": "140b0068-0000-4000-8000-000000000104",
+          "phoneNumberId": "1321478747709350",
+          "channelRevision": 1,
+          "preparedAt": "2026-10-06T01:24:28.668Z",
+          "anchor": {
+            "id": "140b0068-0000-4000-8000-000000000201",
+            "sentAt": "2026-10-05T02:24:28.668Z"
+          },
+          "resetObservedAt": null,
+          "agent": {
+            "phase": "agendando",
+            "revision": 1,
+            "askedFields": [
+              "modality",
+              "region",
+              "propertyType",
+              "budgetCents",
+              "purchaseHorizon",
+              "motivation",
+              "creditStatus",
+              "chainedOperation"
+            ],
+            "openingHistory": [
+              "Vamos retomar"
+            ]
+          },
+          "facts": {
+            "name": "Pessoa Fixture L14b",
+            "modality": "usado",
+            "region": "Centro",
+            "propertyType": "apartamento",
+            "budgetCents": "50000000",
+            "purchaseHorizon": "ate_6_meses",
+            "motivation": "morador",
+            "creditStatus": "recurso_proprio",
+            "chainedOperation": false,
+            "executiveSummary": "Busca imóvel usado no Centro, até 500 mil reais, com duas vagas de garagem."
+          },
+          "pendingField": null,
+          "origin": {
+            "startMessageId": "140b0068-0000-4000-8000-000000000201",
+            "endMessageId": "140b0068-0000-4000-8000-000000000203"
+          },
+          "history": [
+            {
+              "id": "140b0068-0000-4000-8000-000000000201",
+              "sender": "lead",
+              "content": "Quero conversar com a corretora sobre as opções. Ainda vou ver quando consigo.",
+              "sentAt": "2026-10-05T02:24:28.668Z"
+            },
+            {
+              "id": "140b0068-0000-4000-8000-000000000203",
+              "sender": "humano",
+              "authorName": "Ana Fixture",
+              "content": "Nenhum dia ou horário foi combinado. A pessoa quer conversar sobre as opções.",
+              "sentAt": "2026-10-05T02:36:28.668Z"
+            }
+          ]
+        },
+        "tenantSlug": "triangulo"
+      },
+      "expected": "Retomar o agendamento com naturalidade, sem inventar horário ou reunião confirmada e sem voltar à qualificação.",
+      "execution": {
+        "id": "3314",
+        "status": "success",
+        "startedAt": "2026-10-06T01:47:11.121Z",
+        "stoppedAt": "2026-10-06T01:47:13.334Z"
+      },
+      "output": {
+        "ok": true,
+        "text": "Perfeito, Pessoa Fixture L14b. Então vamos combinar com a corretora para ela te mostrar as opções no Centro dentro do que você procura (apartamento usado, até 500 mil, com duas vagas). Quando você conseguir, me diz um horário que funcione melhor pra você para uma conversa rápida."
+      },
+      "reads": [],
+      "assessment": {
+        "status": "PASS",
+        "basis": "Retoma agendamento sem inventar dia ou horário confirmado.",
+        "limitation": "Prova sintética de geração real; não autoriza envio nem comprova conta de produção."
+      },
+      "capture": "n8n-generation-3314.jpg"
+    }
+  ]
+}

@@ -2867,16 +2867,22 @@ Entrada/saída/captura: `evidence/account-discovery-2026-10-05/generation-proof-
 
 **Done when**:
 
-- [ ] JSON Query transmitido é texto JSON válido, contendo exatamente os filtros já confirmados do frame; nenhuma escrita ou argumento fornecido pelo modelo é adicionado.
-- [ ] Teste de identidade/filtros anterior conserva suas asserções após decodificar o JSON de transporte; regressão exige a serialização efetiva, preservando toda a cobertura existente.
-- [ ] Consulta do inventário funciona pelo caminho real e os quatro cenários de geração passam pela intenção contextual, com entrada/resultado/versão/captura preservados antes de restaurar a retenção.
-- [ ] Gate Quick/Wiring e Build no fechamento da fase passam; Verifier independente confirma os outcomes, sem encerrar G1/G3/G4 por inferência.
+- [x] JSON Query transmitido é texto JSON válido, contendo exatamente os filtros já confirmados do frame; nenhuma escrita ou argumento fornecido pelo modelo é adicionado.
+- [x] Teste de identidade/filtros anterior conserva suas asserções após decodificar o JSON de transporte; regressão exige a serialização efetiva, preservando toda a cobertura existente.
+- [x] Consulta do inventário funciona pelo caminho real e os quatro cenários de geração passam pela intenção contextual, com entrada/resultado/versão/captura preservados antes de restaurar a retenção.
+- [x] Gate Quick/Wiring e Build no fechamento da fase passam; Verifier independente confirma os outcomes, sem encerrar G1/G3/G4 por inferência.
 
 **Tests**: unit — `n8n/workflows/__tests__/reengagement-contextual.test.ts`; regressões de prompt/inliner/scheduler/publicação; quatro cenários reais por intenção, incluindo a leitura real do inventário.
 
 **Gate**: Quick e Wiring; Build no fechamento da fase; nenhuma fixture substitui o modelo ou o serviço real nesta prova.
 
 **Commit**: `fix(l14b): serialize readonly property query for n8n`
+
+**Evidence**: Quick/Wiring 56/56 (5 arquivos), exit 0; lint/build exit 0; tsc manteve 50 erros anteriores, sem declaração de PASS.
+A asserção original mantém os mesmos filtros após JSON.parse; a regressão agora exige texto JSON aceito no transporte, sem reduzir cobertura.
+Modelo/serviços reais: 3311–3314, `ok:true`; inventário íntegro em 3312/3313, versão `aa38c5ea-d107-4bc0-ab1d-9d757ef13447`.
+Entradas/saídas/4 capturas: `evidence/account-discovery-2026-10-05/generation-proof-t70.json`; retenção none/none/manual=false restaurada.
+Full em andamento no fechamento da fase; Verifier independente avaliará adequação e gaps G1/G3/G4, sem publicação contextual ou envio.
 
 ---
 

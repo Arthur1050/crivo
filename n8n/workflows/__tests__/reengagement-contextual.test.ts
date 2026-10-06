@@ -42,7 +42,21 @@ describe("T47 — grafo real e Code nodes de geração somente leitura", () => {
     const contexts = { "Code: tarefa proativa": fixed }, body = expression(node("consultar_documentos").parameters.jsonBody, contexts);
     expect(body).toEqual({ modality: "novo", question: "Quero novo no Centro", reservedContextBytes: fixed.overheadBytes }); expect(fixed.overheadBytes).toBeGreaterThan(0);
     for (const name of ["consultar_documentos", "buscar_imoveis"]) { expect(JSON.stringify(node(name).parameters)).not.toMatch(/fromAI|fromAi/); const headers = node(name).parameters.headerParameters as { parameters: { value: string }[] }; expect(expression(headers.parameters[0].value, contexts)).toBe("fixture"); }
-    expect(expression(node("buscar_imoveis").parameters.jsonQuery, contexts)).toEqual({ modalidade: "novo" });
+    expect(JSON.parse(expression(node("buscar_imoveis").parameters.jsonQuery, contexts))).toEqual({ modalidade: "novo" });
+  });
+  it("consulta transmite JSON textual com somente modalidade/tipo confirmados, aceito pelo HTTP Request Tool", () => {
+    const fixed = prepared();
+    for (const [facts, expected] of [
+      [{ modality: "usado", propertyType: "casa" }, { modalidade: "usado", tipo: "casa" }],
+      [{ modality: "ambos", propertyType: "apartamento" }, { modalidade: "ambos", tipo: "apartamento" }],
+      [{ modality: "invalid", propertyType: "invalid" }, { modalidade: "ambos" }],
+    ]) {
+      const rendered = expression(node("buscar_imoveis").parameters.jsonQuery, {
+        "Code: tarefa proativa": { ...fixed, frame: { ...fixed.frame, facts: { ...fixed.frame.facts, ...facts } } },
+      });
+      expect(typeof rendered).toBe("string");
+      expect(JSON.parse(rendered)).toEqual(expected);
+    }
   });
   it("Code de preparação rejeita contexto inválido/expirado e não muta input nem cria inbound", () => {
     const input = fixture(), before = structuredClone(input); vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(now);
