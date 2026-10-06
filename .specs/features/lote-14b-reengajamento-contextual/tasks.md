@@ -166,6 +166,8 @@ T47 → T69
 T68 → T69
 T69 → T70
 T47 → T70
+T70 → T71
+T47 → T71
 ```
 
 O diagrama abaixo inclui **todas** as dependências, inclusive as já mostradas na ordem de cada fase. A tabela de cross-check usa o mesmo conjunto completo.
@@ -2883,6 +2885,39 @@ A asserção original mantém os mesmos filtros após JSON.parse; a regressão a
 Modelo/serviços reais: 3311–3314, `ok:true`; inventário íntegro em 3312/3313, versão `aa38c5ea-d107-4bc0-ab1d-9d757ef13447`.
 Entradas/saídas/4 capturas: `evidence/account-discovery-2026-10-05/generation-proof-t70.json`; retenção none/none/manual=false restaurada.
 Full em andamento no fechamento da fase; Verifier independente avaliará adequação e gaps G1/G3/G4, sem publicação contextual ou envio.
+
+---
+
+### T71: Discriminar a recusa por identidade de ferramenta proibida
+
+**What**: O sensor M5 removeu o guard de tools e o caso anterior continuou passando porque sua observação era inválida. Acrescentar cenário com envelope de leitura íntegro e ferramenta proibida; a identidade deve causar a recusa, independentemente de o conteúdo parecer válido. Preservar o cenário de envelope inválido e toda a cobertura anterior.
+
+**Where**: `n8n/workflows/__tests__/reengagement-contextual.test.ts`
+
+**Depends on**: T70, T47
+
+**Reuses**: execução dos Code nodes gerados, fixture existente e envelope de inventário válido.
+
+**Requirement**: REEN-02 AC3/AC4/AC5; tools somente leitura e recusa de observações de ferramentas proibidas.
+
+**Tools**: Perfil U — Vitest e Verifier independente em scratch; sem mudança remota.
+
+**Done when**:
+
+- [x] Ferramentas de escrita/estranhas com envelope íntegro são recusadas por identidade; caso anterior permanece ativo.
+- [x] Quick/Wiring passa; remover o guard no scratch causa falha de assertion do cenário novo.
+- [x] M1 é reportado como limitação de proteção automatizada do comportamento do modelo; nenhuma cópia de prosa é apresentada como garantia semântica.
+
+**Tests**: unit — Code final retorna context-read-failed para ferramentas proibidas mesmo com imoveis/total válidos; regressões de prompt, grafo, inliner, scheduler e publicação.
+
+**Gate**: Quick/Wiring; sensor independente; Full da fase em execução, Build já observado sem mudança de produto neste task.
+
+**Commit**: `test(l14b): discriminate forbidden tool identity from invalid results`
+
+**Evidence**: Quick/Wiring 57/57, 5 arquivos, exit 0; todos os casos anteriores preservados.
+Verifier independente: baseline do grafo 10/10; remover allowlist no scratch causou assertion fail no caso novo (M5 KILLED, exit 1).
+Conectar HTTP PATCH/leads ao agente também foi recusado pelo sensor estrutural (M7 KILLED).
+M1 continua limitação de regressão automatizada da intenção do modelo; prova real observada não foi convertida em garantia universal por cópia de prosa.
 
 ---
 
