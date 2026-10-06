@@ -8,13 +8,11 @@ Arquivo histórico: [../../archive/lote-14b-reengajamento-contextual/](../../arc
 
 - [tasks.md](../../archive/lote-14b-reengajamento-contextual/tasks.md): 71 tarefas existentes, evidências por tarefa e reparos locais do fechamento.
 - [EXECUTE-PROMPT.md](../../archive/lote-14b-reengajamento-contextual/EXECUTE-PROMPT.md): instruções da execução encerrada, sem autorização para novas ações externas.
-- [validation-phase10.md](../../archive/lote-14b-reengajamento-contextual/validation-phase10.md): relatório anterior preservado como histórico, substituído pelo relatório vigente.
-- Baseline, observação de conta, verificações de fases/tarefas e anexos históricos de schema: 54 arquivos já rastreados movidos sob AD-029.
-- `evidence/`: somente provas já rastreadas, com bytes idênticos. Nenhuma captura ou JSON novo foi adicionado; os caminhos originais embutidos nesses artefatos imutáveis correspondem ao mesmo sufixo no arquivo histórico.
+- [baseline.md](../../archive/lote-14b-reengajamento-contextual/baseline.md): baseline da execução e a decisão de adiar os dois timeouts do `DOCLIM-01 AC8`.
+- [analytics-account-observation.md](../../archive/lote-14b-reengajamento-contextual/analytics-account-observation.md): forma real do Pricing Analytics na conta de teste, base para o L14c.
+- `evidence/`: as provas de geração citadas em `validation.md` (`generation-proof-t69.json`, `generation-proof-t70.json`), o `ids.json` com as ações feitas em produção durante a execução e as capturas de UI das T58/T59.
 
-Os arquivos não rastreados de `evidence/` permanecem neste diretório e fora do commit.
-Helpers/logs ignorados também foram preservados. Nenhum anexo histórico foi apagado;
-as referências Markdown foram reconciliadas. Lições herdadas permanecem locais, sem promoção.
+**Limpeza de 2026-10-06** (decisão do usuário): removidos os relatórios de verificação por task e por fase, os SQL gerados offline, `test-schema-activation.md`, `validation-phase10.md` (superado pelo relatório vigente), as capturas da descoberta de conta e todos os arquivos `*.local.*` e evidências não rastreadas. O que era rastreado continua no histórico do git até `fc9ff9a`; os `*.local.*` e as evidências não rastreadas não existem mais. As referências a esses arquivos dentro do `tasks.md` arquivado ficam como histórico.
 
 Full executada uma vez: FAIL inicial, corrigido localmente com rechecks 40/40 e 96/96;
 G2 independente 57/57, sensor local 1/1 morto. Não houve Full após os reparos.
