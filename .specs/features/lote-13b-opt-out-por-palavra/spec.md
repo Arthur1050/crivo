@@ -133,9 +133,9 @@ existir só pela mensagem exata "sair", e o agente orienta o lead a enviá-la.
 | --- | --- | --- | --- |
 | SAIR-01 | P1: Turno sem classificador | Tasks | Implemented (T3) |
 | SAIR-02 | P1: Opt-out pela palavra "sair" | Tasks | Implemented (T2, T4) |
-| SAIR-03 | P1: Orientação preservada | Tasks | Implemented (T3); AC2 na prova real T9 |
+| SAIR-03 | P1: Orientação preservada | Tasks | Implemented (T3); AC2 provado na T9 |
 | SAIR-04 | P1: Medição e lock removidos | Tasks | Implemented (T5, T6, T8) |
-| SAIR-05 | P1: Hotfix com prova real | Tasks | T7, T8 feitas; AC3 na prova real T9 |
+| SAIR-05 | P1: Hotfix com prova real | Tasks | Implemented (T7, T8, T9) |
 
 **Coverage:** 5 total, 5 mapped to tasks.
 
