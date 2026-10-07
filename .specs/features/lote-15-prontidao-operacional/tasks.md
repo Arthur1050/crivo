@@ -562,7 +562,7 @@ Verifier Opus devolveu FAIL em 2026-10-07: gaps de teste, sem defeito de produto
 com os reivindicados), teste da guarda de estado da liberação e soma das recusas com e sem tenant de
 mesma `(code, rota)` no snapshot.
 **Requirement**: ALERTA-01 AC1/AC7, ALERTA-02 AC3, ALERTA-03 AC4
-**Status**: Done
+**Status**: Done b913b8d
 **Gate**: quick (`integration-health.test.ts` e `integration-alert.integration.test.ts`, 35/35); os 4 mutantes sobreviventes (janela 23h, e-mail com `plan.alert`, `sent = plan.alert.length`, liberação sem guarda de estado) agora morrem
 
 ### F2: Emendas de documento
@@ -570,7 +570,7 @@ mesma `(code, rota)` no snapshot.
 **What**: AD-039 registra o modo de perda do at-most-once (queda presa em `problema`) como trade-off
 aceito; spec.md ganha emendas para ALERTA-02 AC3 (soma por chave), ALERTA-04 AC2 e LIMPA-01 AC1.
 **Requirement**: DOC-01 AC3
-**Status**: Pending
+**Status**: Done
 **Gate**: registro
 
 ## Diagram-Definition Cross-Check

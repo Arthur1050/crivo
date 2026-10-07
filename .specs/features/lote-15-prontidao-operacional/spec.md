@@ -192,3 +192,18 @@ em data fixa): revogar "A" revoga 2, preserva a data da revogada; revogar "B" em
 - [ ] E-mail `[teste]` recebido pelo operador, com remetente no domínio verificado do `RESEND_FROM` de produção.
 - [ ] Primeira manutenção de produção após o deploy roda o grupo do alerta sem falha.
 - [ ] `db:revoke-service-key` recusa deixar zero chaves ativas.
+
+---
+
+## Emendas (2026-10-07, execução e Verifier)
+
+- **ALERTA-02 AC3:** as recusas com tenant e as sem tenant de mesma `(code, rota)` somam numa linha
+  só, como no Dashboard (`getIntegrationRefusalsSince`). Implementado e testado em F1.
+- **ALERTA-04 AC2:** a Phase 3 seguiu com a F2 (cron executou em produção) não comprovada, por decisão
+  do usuário em 2026-10-07 ("Considere validado a leitura de mais tarde até que ela realmente ocorre").
+  A F2 permanece registrada como parcial em `validation.md` até a leitura real dos logs.
+- **LIMPA-01 AC1:** a remoção das 2 linhas foi feita pelo executor, pela extensão do Chrome e com
+  autorização expressa do usuário (o MCP do n8n não remove linha), e não pelo usuário. Confirmação
+  registrada em `validation.md`.
+- **ALERTA-01 AC7 / AD-039:** o modo de perda do at-most-once (queda presa em `problema` sem e-mail
+  quando o processo cai entre a reivindicação e o envio) é trade-off aceito e está na AD-039.
