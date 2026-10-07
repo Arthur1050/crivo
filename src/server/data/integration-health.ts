@@ -42,24 +42,28 @@ export async function getTenantHealthSnapshots(since: Date): Promise<TenantHealt
     .groupBy(integrationRefusals.tenantId, integrationRefusals.code, integrationRefusals.route);
 
   const lastMessageByTenant = new Map(lastMessageRows.map((row) => [row.tenantId, row.lastSentAt]));
-  const tenantlessRefusals = refusalRows
-    .filter((row) => row.tenantId === null)
-    .map(({ code, route, count: total }) => ({ code, route, count: total }));
+  const tenantlessRefusals = refusalRows.filter((row) => row.tenantId === null);
 
-  return tenantRows.map((tenant) => ({
-    tenantId: tenant.id,
-    name: tenant.name,
-    slug: tenant.slug,
-    storedState: tenant.state,
-    storedChangedAt: tenant.changedAt,
-    lastAgentMessageAt: lastMessageByTenant.get(tenant.id) ?? null,
-    refusals: [
-      ...refusalRows
-        .filter((row) => row.tenantId === tenant.id)
-        .map(({ code, route, count: total }) => ({ code, route, count: total })),
-      ...tenantlessRefusals,
-    ],
-  }));
+  return tenantRows.map((tenant) => {
+    // Mesma conta do Dashboard: a recusa com tenant e a sem tenant de mesma
+    // (code, rota) somam numa linha só.
+    const merged = new Map<string, { code: string | null; route: string; count: number }>();
+    for (const row of [...refusalRows.filter((r) => r.tenantId === tenant.id), ...tenantlessRefusals]) {
+      const key = JSON.stringify([row.code, row.route]);
+      const current = merged.get(key);
+      if (current) current.count += row.count;
+      else merged.set(key, { code: row.code, route: row.route, count: row.count });
+    }
+    return {
+      tenantId: tenant.id,
+      name: tenant.name,
+      slug: tenant.slug,
+      storedState: tenant.state,
+      storedChangedAt: tenant.changedAt,
+      lastAgentMessageAt: lastMessageByTenant.get(tenant.id) ?? null,
+      refusals: [...merged.values()],
+    };
+  });
 }
 
 /** Grava estado e instante em tenants já conhecidos: inicialização e recuperação. */

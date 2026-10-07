@@ -144,6 +144,19 @@ describe("getTenantHealthSnapshots — ALERTA-01 AC1", () => {
     expect(theirs.some((r) => r.route.endsWith("/propria"))).toBe(false);
   });
 
+  it("recusa do tenant e recusa sem tenant da mesma (code, rota) somam numa linha só, como no Dashboard", async () => {
+    const id = await newTenant();
+    const at = new Date("2026-10-06T12:00:00.000Z");
+    await addRefusal(id, "mesma-chave", at);
+    await addRefusal(id, "mesma-chave", at);
+    await addRefusal(null, "mesma-chave", at);
+
+    const snapshot = await snapshotOf(id, SINCE);
+
+    const rows = snapshot!.refusals.filter((r) => r.route === `${ROUTE_PREFIX}/mesma-chave`);
+    expect(rows).toEqual([{ code: "invalid_token", route: `${ROUTE_PREFIX}/mesma-chave`, count: 3 }]);
+  });
+
   it("recusa exatamente em since conta; 1 ms antes não (L-023)", async () => {
     const id = await newTenant();
     await addRefusal(id, "no-limite", SINCE);
@@ -268,6 +281,18 @@ describe("releaseIntegrationProblems — liberação na falha (ALERTA-03 AC2)", 
     const row = await rowOf(id);
     expect(row.integrationHealthState).toBe("problema");
     expect(row.integrationHealthChangedAt?.toISOString()).toBe(D2.toISOString());
+  });
+
+  it("não desfaz quando outra execução gravou saudavel no mesmo instante da reivindicação", async () => {
+    const id = await newTenant({ integrationHealthState: "saudavel", integrationHealthChangedAt: D0 });
+    const claimed = await claimIntegrationProblems([id], D1);
+    await recordTenantHealthStates([{ tenantId: id, state: "saudavel", at: D1 }]);
+
+    await releaseIntegrationProblems(claimed);
+
+    const row = await rowOf(id);
+    expect(row.integrationHealthState).toBe("saudavel");
+    expect(row.integrationHealthChangedAt?.toISOString()).toBe(D1.toISOString());
   });
 
   it("não altera tenant fora da lista liberada", async () => {

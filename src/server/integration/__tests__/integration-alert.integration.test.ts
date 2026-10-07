@@ -1,9 +1,9 @@
 import "dotenv/config";
 import { randomUUID } from "node:crypto";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, like } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "../../../db";
-import { conversations, leads, messages, tenants } from "../../../db/schema";
+import { conversations, integrationRefusals, leads, messages, tenants } from "../../../db/schema";
 
 // Passa-direto com espião: o teste de corrida precisa interpor outra
 // reivindicação entre o plano e o compare-and-set desta execução.
@@ -29,6 +29,7 @@ const NOW = new Date("2033-05-05T03:00:00.000Z");
 const HOUR_MS = 3600000;
 const OPERATOR = "operador@fixture.test";
 const createdTenants: string[] = [];
+const ROUTE_PREFIX = `/api/v1/__test-integration-alert__/${randomUUID()}`;
 
 type Sent = { to: string; subject: string; text: string };
 const sent: Sent[] = [];
@@ -86,6 +87,7 @@ async function fallingTenant(label: string) {
 const mentioning = (tenant: { slug: string }) => sent.filter((message) => message.text.includes(tenant.slug));
 
 afterAll(async () => {
+  await db.delete(integrationRefusals).where(like(integrationRefusals.route, `${ROUTE_PREFIX}%`));
   if (createdTenants.length > 0) {
     await db.delete(messages).where(inArray(messages.tenantId, createdTenants));
     await db.delete(conversations).where(inArray(conversations.tenantId, createdTenants));
@@ -187,6 +189,43 @@ describe("runIntegrationAlert — transição e e-mail (ALERTA-01, ALERTA-02)", 
     expect(mentioning(tenant)).toHaveLength(0);
     expect(result.sent).toBe(0);
     expect((await stateOf(tenant.id)).integrationHealthState).toBe("problema");
+  });
+
+  it("recusa própria entra no alerta se ocorreu em agora − 24h exato; 1 ms antes não conta (ALERTA-01 AC1, L-023)", async () => {
+    const onBoundary = await newTenant("recusa-limite", { integrationHealthState: "saudavel", integrationHealthChangedAt: new Date("2033-04-01T03:00:00.000Z") });
+    const justBefore = await newTenant("recusa-antes", { integrationHealthState: "saudavel", integrationHealthChangedAt: new Date("2033-04-01T03:00:00.000Z") });
+    for (const tenant of [onBoundary, justBefore]) await addAgentMessage(tenant.id, new Date(NOW.getTime() - HOUR_MS));
+    const DAY_MS = 24 * HOUR_MS;
+    await db.insert(integrationRefusals).values([
+      { tenantId: onBoundary.id, route: `${ROUTE_PREFIX}/limite`, method: "POST", status: 401, code: "invalid_token", occurredAt: new Date(NOW.getTime() - DAY_MS) },
+      { tenantId: justBefore.id, route: `${ROUTE_PREFIX}/antes`, method: "POST", status: 401, code: "invalid_token", occurredAt: new Date(NOW.getTime() - DAY_MS - 1) },
+    ]);
+
+    await runIntegrationAlert(NOW, { operatorEmail: OPERATOR, send: sendOk });
+
+    expect(mentioning(onBoundary)).toHaveLength(1);
+    expect(mentioning(onBoundary)[0].text).toContain(`${ROUTE_PREFIX}/limite: 1`);
+    expect((await stateOf(onBoundary.id)).integrationHealthState).toBe("problema");
+    expect(mentioning(justBefore)).toHaveLength(0);
+    expect((await stateOf(justBefore.id)).integrationHealthState).toBe("saudavel");
+  });
+
+  it("reivindicação parcial: o e-mail cita e conta só os tenants que esta execução reivindicou (AC7, ALERTA-03 AC4)", async () => {
+    const taken = await fallingTenant("parcial-perdido");
+    const won = await fallingTenant("parcial-ganho");
+    const actual = await vi.importActual<typeof import("../../data/integration-health")>("../../data/integration-health");
+    mockedClaim.mockImplementationOnce(async (ids, at) => {
+      await actual.claimIntegrationProblems([taken.id], at); // a outra execução leva só um
+      return actual.claimIntegrationProblems(ids, at);
+    });
+
+    const result = await runIntegrationAlert(NOW, { operatorEmail: OPERATOR, send: sendOk });
+
+    expect(mentioning(taken)).toHaveLength(0);
+    expect(mentioning(won)).toHaveLength(1);
+    const listed = Number(/em (\d+) imobiliária/.exec(sent[0].subject)?.[1]);
+    expect(result.sent).toBe(listed);
+    expect(sent[0].text).not.toContain(taken.name);
   });
 
   it("evaluated conta os tenants avaliados e sent os do e-mail enviado com ok (ALERTA-03 AC4)", async () => {
