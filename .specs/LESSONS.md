@@ -141,10 +141,10 @@ Corroborated across multiple features. Safe to apply as guidance.
 - last seen: 2026-09-09T20:13:02Z
 
 ### L-026 - Para cada ligação entre peças testadas isoladamente — disparo entre etapas de um fluxo, cada gatilho de uma recomputação, o ponto de entrada que chama uma função extraída — escrever um teste que falhe se a chamada for removida; peças verdes não provam que uma chama a outra.
-- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `testing` · harmful: 0
-- features: lote-12-conteudo-de-documentos
-- evidence: tasks.md T30 (5ba0fdf) (testing) (+3 more)
-- last seen: 2026-09-25T01:16:14Z
+- signal: `ac_gap` · recurrence: 2 feature(s) · scope: `testing` · harmful: 0
+- features: lote-12-conteudo-de-documentos, lote-13b-opt-out-por-palavra
+- evidence: tasks.md T30 (5ba0fdf) (testing) (+4 more)
+- last seen: 2026-10-07T14:55:20Z
 
 ### L-027 - Fixture criada direto no banco pula as linhas que o caminho de produção cria junto (ex.: a intenção que referencia o documento por FK); para testar remoção, criar a fixture pelo caminho real ou com todas as linhas dependentes.
 - signal: `gate_fail` · recurrence: 1 feature(s) · scope: `testing` · harmful: 0
@@ -313,6 +313,18 @@ Corroborated across multiple features. Safe to apply as guidance.
 - features: lote-14b-reengajamento-contextual
 - evidence: Scheduler gmIWxiRrHGIdtPub publicado 57705ac5 em 2026-10-06: template B desligado sem o B contextual; escalonamento 48h parado; rollback f1c4ac52 (n8n,producao,ativacao)
 - last seen: 2026-10-06T16:06:45Z
+
+### L-062 - Em teste de grafo de um Switch do n8n, para cada onCase(i) afirmado, afirme também o rightValue da regra i igual ao valor exato que o nó anterior emite; afirmar só a aresta deixa a regra ser trocada em silêncio.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `n8n/workflows,testing` · harmful: 0
+- features: lote-13b-opt-out-por-palavra
+- evidence: validation.md M11h2/M11h3 n8n/workflows/principal.ts:664-665 (Switch: rota (gate)); corrigido em 5fc23db principal-sem-classificador.test.ts:148 (n8n/workflows,testing)
+- last seen: 2026-10-07T14:55:19Z
+
+### L-063 - Ao remover um mecanismo, rode git grep também pelos nomes dele em linguagem natural em comentários, README e docs, e corrija cada menção no mesmo lote; grep só de identificadores deixa documentação ativa contradizendo a decisão nova.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `docs,remocao` · harmful: 0
+- features: lote-13b-opt-out-por-palavra
+- evidence: validation.md gaps 3-4 (AC1 PASS com residuos): n8n/README.md:464, n8n/src/system-message.mjs:106-112, src/server/documents/benchmark-identity.ts:33 (docs,remocao)
+- last seen: 2026-10-07T14:55:20Z
 
 ## Candidates (under observation - do NOT load as guidance yet)
 

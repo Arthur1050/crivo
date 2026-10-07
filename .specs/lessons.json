@@ -4,7 +4,7 @@
   "window_days": 45,
   "quarantine_threshold": 2,
   "prune_requires_confirmation": true,
-  "next_id": 62,
+  "next_id": 64,
   "lessons": [
     {
       "id": "L-001",
@@ -428,18 +428,20 @@
       "scope": "testing",
       "status": "confirmed",
       "features": [
-        "lote-12-conteudo-de-documentos"
+        "lote-12-conteudo-de-documentos",
+        "lote-13b-opt-out-por-palavra"
       ],
-      "recurrence": 1,
+      "recurrence": 2,
       "harmful": 0,
       "evidence": [
         "tasks.md T30 (5ba0fdf) (testing)",
         "M9 src/server/actions/documents.ts:147; DOCLIM-01 AC8 (server-actions)",
         "validation.md ciclo 2 MA2 workflows/process-document.ts:53 (workflow/testing)",
-        "validation.md ciclo 2 M22 src/server/actions/documents.ts:126 (server-actions)"
+        "validation.md ciclo 2 M22 src/server/actions/documents.ts:126 (server-actions)",
+        "validation.md M13b/M13c n8n/workflows/principal.ts:649 (Code: gate chama gate() com optedOutAt/text alterados); corrigido em 5fc23db principal-conducao-humana.test.ts (n8n/workflows,testing)"
       ],
       "created": "2026-09-25T01:16:14Z",
-      "last_seen": "2026-09-25T01:16:14Z"
+      "last_seen": "2026-10-07T14:55:20Z"
     },
     {
       "id": "L-027",
@@ -1019,6 +1021,42 @@
       ],
       "created": "2026-10-06T16:06:45Z",
       "last_seen": "2026-10-06T16:06:45Z"
+    },
+    {
+      "id": "L-062",
+      "key": "surviving_mutant::em teste de grafo de um switch do n8n para cada oncase i afirmado afirme tambem o rightvalue da regra i igual ao valor exato que o no anterior emite afirmar so a aresta deixa a regra ser trocada em silencio",
+      "text": "Em teste de grafo de um Switch do n8n, para cada onCase(i) afirmado, afirme também o rightValue da regra i igual ao valor exato que o nó anterior emite; afirmar só a aresta deixa a regra ser trocada em silêncio.",
+      "signal": "surviving_mutant",
+      "scope": "n8n/workflows,testing",
+      "status": "confirmed",
+      "features": [
+        "lote-13b-opt-out-por-palavra"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "validation.md M11h2/M11h3 n8n/workflows/principal.ts:664-665 (Switch: rota (gate)); corrigido em 5fc23db principal-sem-classificador.test.ts:148 (n8n/workflows,testing)"
+      ],
+      "created": "2026-10-07T14:55:19Z",
+      "last_seen": "2026-10-07T14:55:19Z"
+    },
+    {
+      "id": "L-063",
+      "key": "ac_gap::ao remover um mecanismo rode git grep tambem pelos nomes dele em linguagem natural em comentarios readme e docs e corrija cada mencao no mesmo lote grep so de identificadores deixa documentacao ativa contradizendo a decisao nova",
+      "text": "Ao remover um mecanismo, rode git grep também pelos nomes dele em linguagem natural em comentários, README e docs, e corrija cada menção no mesmo lote; grep só de identificadores deixa documentação ativa contradizendo a decisão nova.",
+      "signal": "ac_gap",
+      "scope": "docs,remocao",
+      "status": "confirmed",
+      "features": [
+        "lote-13b-opt-out-por-palavra"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "validation.md gaps 3-4 (AC1 PASS com residuos): n8n/README.md:464, n8n/src/system-message.mjs:106-112, src/server/documents/benchmark-identity.ts:33 (docs,remocao)"
+      ],
+      "created": "2026-10-07T14:55:20Z",
+      "last_seen": "2026-10-07T14:55:20Z"
     }
   ]
 }
