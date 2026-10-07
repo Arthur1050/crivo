@@ -344,7 +344,17 @@
 - **Date**: 2026-10-07
 - **Status**: active
 
+### AD-039
+- **Decision**: O alerta ativo de queda da integração roda como grupo da manutenção diária existente (`/api/cron/expire-documents`, Vercel Cron 03:00 UTC), sem cron novo. Ele avalia cada imobiliária com a mesma regra do bloco de saúde do Dashboard (`resolveIntegrationHealth`, AD-023), compara com o último estado gravado em `tenants` (`integration_health_state`, `integration_health_changed_at`) e envia **um único e-mail consolidado, só ao operador da plataforma** (`CRIVO_OPERATOR_ALERT_EMAIL`, pelo adaptador Resend e `RESEND_FROM` dos convites), apenas na transição `saudavel` → `problema`. A primeira avaliação de uma imobiliária só grava o estado; a recuperação grava `saudavel` sem e-mail. A transição é reivindicada por compare-and-set antes do envio e liberada se o destinatário faltar ou o envio falhar, para a próxima execução tentar de novo. Nenhum workflow do n8n muda; `crivo-agente-erros` continua cobrindo falha de execução.
+- **Reason**: Decisões do usuário em 2026-10-07 (planejamento do L15): cron diário na transição, só o operador, sem e-mail de recuperação, canal e-mail. O plano Hobby da Vercel só aceita cron diário (±59 min). Silêncio e recusas do contrato não geram execução com erro no n8n e só apareciam na tela.
+- **Trade-off**: Detecção no pior caso em ~48h (24h de silêncio da AD-023 + até 24h até o cron). Silêncio sem leads também alerta (ruído aceito no piloto). Duas colunas novas em `tenants`. Se o cron da Vercel não rodar, não há alerta. Imobiliária não recebe aviso; só a tela.
+- **Scope**: Saúde da integração agente↔CRM, a partir do lote 15. Não altera a AD-023: a saúde segue inferida e o caminho de sucesso segue sem registro.
+- **Date**: 2026-10-07
+- **Status**: active
+
 ## Handoff
+
+- **Planejamento L15 (2026-10-07)**: spec, design e tasks do `lote-15-prontidao-operacional` aprovados pelo usuário; AD-039 registrada; `EXECUTE-PROMPT.md` no diretório do lote. Escopo: alerta ativo por e-mail ao operador, revogação de chave por rótulo, linhas inertes, roadmap. Fora: verificação Meta (→ L14c), baselines reais (deferido até haver imobiliária real), L4 Fix 1 (já em `f7e512f`). Execução em outra janela; nada executado.
 
 - **Status (2026-10-07, lote 13b)**: executado e verificado. T1–T9 concluídas; Verifier Opus independente PASS com ressalvas (17/17 ACs, sensor 22 mutantes: 17 mortos, 4 sobreviventes em código antigo do Switch/gate, 1 equivalente); `validate_state` exit 0. Full única exit 0: 200 arquivos, 3412 testes, sem timeout.
 - **Commits (main, sem push)**: T1 850817a, T2 f3859b5, T3 abe244a, T4 b9282aa, T5 204ea94, T6 b8a2cc0, T7 fea3306 (branch `hotfix/opt-out-so-sair`, já no origin), T8 395cbfd, T9 c5eac28; auditoria 72c278b, 7d9da63, d2f1ae4.
