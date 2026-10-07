@@ -454,7 +454,7 @@ T14 → T16
 **Depends on**: T10, T11, T12
 **Reuses**: —
 **Requirement**: ALERTA-04
-**Status**: Done
+**Status**: Done 5f942b3
 
 **Tools**:
 
@@ -507,7 +507,7 @@ T14 → T16
 **Depends on**: T0
 **Reuses**: —
 **Requirement**: LIMPA-01
-**Status**: Pending
+**Status**: Done
 
 **Tools**:
 

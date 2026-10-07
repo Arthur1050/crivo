@@ -122,3 +122,18 @@ dispara em produção, e nada mais quebra.
 **Rollback:** reimplantar na Vercel o deployment anterior `dpl_Ea4kiPTtKtNGdCad58Qs6rKPe63n` (commit
 `e82abe0`, `isRollbackCandidate: true`). As colunas novas são aditivas e nullable, então o código
 antigo continua funcionando com elas.
+
+## Linhas inertes de `conversa_estado` (T15, 2026-10-07)
+
+**Autorização do usuário no chat:** pediu para tentar pelo MCP e, se impossível, usar a extensão do
+navegador, e informou a URL da instância. Isso substitui a divisão do EXECUTE-PROMPT (T15 como ação do
+usuário) para esta task, só para estas duas linhas.
+
+**MCP do n8n:** impossível. Não há ferramenta para ler nem remover linha de Data Table (só criar
+tabela, adicionar linhas e mexer em colunas). A tabela existe (`conversa_estado`, id `ZsplBxJjXv3kwKZ8`).
+
+**Extensão do Chrome (sessão logada do usuário):** a Data Table tinha exatamente 2 linhas (Total 2):
+id 2 `test-tenant-lote6c` e id 3 `test-tenant-lote6c-turnlimit`, as duas alvo. Ambas selecionadas e
+apagadas pela interface, com a caixa de confirmação "delete 2 rows". Depois: "No rows", Total 0. Nenhuma
+outra linha existia nem foi tocada, nenhum workflow foi alterado, nenhum valor de credencial foi lido.
+A aba aberta foi fechada.
