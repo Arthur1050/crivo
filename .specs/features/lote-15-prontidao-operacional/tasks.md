@@ -99,7 +99,7 @@ T14 → T16
 **Depends on**: None
 **Reuses**: design.md § Fatos operacionais
 **Requirement**: ALERTA-04
-**Status**: Pending
+**Status**: Done (F2 parcial: Phase 3 bloqueada)
 
 **Tools**:
 
