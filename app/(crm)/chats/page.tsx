@@ -34,6 +34,7 @@ import {
 import { getLeadScope, verifySession } from "@/src/server/auth/session";
 import { getActiveTenantId } from "@/src/server/tenant";
 import { getMessageClassifications } from "@/src/server/data/whatsapp";
+import { statusClassificationEnabled } from "@/src/server/whatsapp/statuses";
 
 interface ChatsPageProps {
   searchParams: Promise<{ conversa?: string }>;
@@ -76,7 +77,7 @@ export default async function ChatsPage({ searchParams }: ChatsPageProps) {
     selectedSummary ? getLead(scope, selectedSummary.leadId) : null,
     getTenant(tenantId),
     selectedSummary ? getLastLeadMessageAt(tenantId, selectedSummary.leadId) : null,
-    selectedSummary ? getMessageClassifications(session, selectedSummary.id) : [],
+    selectedSummary && statusClassificationEnabled() ? getMessageClassifications(session, selectedSummary.id) : null,
   ]);
 
   // Lote-14 (design.md C6): janela e controles calculados no servidor; o

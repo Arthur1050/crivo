@@ -116,6 +116,16 @@ export type StatusForwarderProof = {
   rejectsInvalidSignatures: true;
   credentialSha256: string;
 };
+/**
+ * Prova do forwarder instalado (G3, Deferred → L14c). Enquanto for null, o
+ * Chats não mostra classificação por entrega: sem status chegando, todo rótulo
+ * seria "indisponível" ou "pendente". A rota de status continua fechada por
+ * não passar prova; ao habilitá-la no L14c, ela deve passar esta constante.
+ */
+export const STATUS_FORWARDER_PROOF: StatusForwarderProof | null = null;
+export function statusClassificationEnabled(proof: StatusForwarderProof | null = STATUS_FORWARDER_PROOF): boolean {
+  return proof !== null;
+}
 const verifiedOrigins = new WeakSet<object>();
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

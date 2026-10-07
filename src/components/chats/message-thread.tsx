@@ -17,7 +17,8 @@ import { MessagePricing } from "./message-pricing";
 
 interface MessageThreadProps {
   messages: Message[];
-  pricingViews?: MessagePricingView[];
+  /** `null` quando a classificação por entrega está desligada. */
+  pricingViews?: MessagePricingView[] | null;
   /** Nome do lead — rótulo e avatar das bolhas ghost à esquerda. */
   leadName: string;
   emptyTitle: string;
@@ -40,7 +41,7 @@ interface MessageThreadProps {
  */
 export function MessageThread({
   messages,
-  pricingViews = [],
+  pricingViews = null,
   leadName,
   emptyTitle,
   emptyDescription,
@@ -49,7 +50,11 @@ export function MessageThread({
     return <EmptyState title={emptyTitle} description={emptyDescription} />;
   }
 
-  const pricingByMessage = new Map(pricingViews.map((pricing) => [pricing.messageId, pricing]));
+  // null = classificação desligada (status ainda não chegam ao CRM): as bolhas
+  // de saída mantêm só o horário, como antes do L14b.
+  const pricingByMessage = pricingViews
+    ? new Map(pricingViews.map((pricing) => [pricing.messageId, pricing]))
+    : null;
 
   const days = buildChatThread(
     messages.map((message) => ({
@@ -107,7 +112,7 @@ export function MessageThread({
                       ) : undefined
                     }
                     metadata={
-                      !isLead ? (
+                      !isLead && pricingByMessage ? (
                         <MessagePricing
                           sender={group.sender}
                           pricing={pricingByMessage.get(bubble.id)}

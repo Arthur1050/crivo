@@ -4,6 +4,7 @@ import { ChatMessageBubble } from "@astryxdesign/core/Chat";
 import { describe, expect, it } from "vitest";
 import type { Message } from "../../../server/data";
 import type { MessagePricingView } from "../../../server/data/whatsapp";
+import { statusClassificationEnabled } from "../../../server/whatsapp/statuses";
 import { MessageThread } from "../message-thread";
 
 const at = new Date("2026-10-05T12:00:00Z");
@@ -96,6 +97,23 @@ describe("metadata da thread (L14b T59 / PRECO-01)", () => {
     expect(before).toContain("Cobrança pendente de confirmação");
     expect(after).toContain("Gratuita — janela de entrada gratuita");
     expect(after).not.toMatch(/Tarifável|Cobrança pendente de confirmação|R\$/);
+  });
+
+  it("classificação desligada (null) não rotula saídas e mantém o horário só na última bolha", () => {
+    const messages = [message("first"), message("last")];
+    const markup = renderToStaticMarkup(createElement(MessageThread, { messages, pricingViews: null, leadName: "Lead fixture",
+      emptyTitle: "Sem mensagens", emptyDescription: "Fixture vazia" }));
+    expect(markup).not.toMatch(/Classificação indisponível|Cobrança pendente|Tarifável|Gratuita|Não entregue/);
+    expect(metadata(markup)).toHaveLength(1);
+    // Divisor do dia + horário da última bolha, como antes do L14b.
+    expect(markup.match(/dateTime="2026-10-05T12:00:00.000Z"/g)).toHaveLength(2);
+    for (const { content } of messages) expect(markup).toContain(content);
+  });
+
+  it("sem prova do forwarder instalado, a classificação fica desligada", () => {
+    expect(statusClassificationEnabled()).toBe(false);
+    expect(statusClassificationEnabled({ workflowId: "wf", activeVersionId: "00000000-0000-4000-8000-000000000000", triggerVersion: 1,
+      verifiedAt: at, signatureAlgorithm: "hmac-sha256", signatureInput: "raw-body", rejectsInvalidSignatures: true, credentialSha256: "0".repeat(64) })).toBe(true);
   });
 
   it("saída desconhecida fica indisponível sem herdar classificação de outra mensagem", () => {
