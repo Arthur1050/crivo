@@ -11,7 +11,15 @@ import principal from "../principal";
 
 type Connection = { node: string; type: string; index: number };
 type WorkflowJson = {
-  nodes: { name: string; type: string; parameters: Record<string, unknown> }[];
+  nodes: {
+    name: string;
+    type: string;
+    onError?: string;
+    retryOnFail?: boolean;
+    maxTries?: number;
+    waitBetweenTries?: number;
+    parameters: Record<string, unknown>;
+  }[];
   connections: Record<string, Record<string, (Connection[] | null)[]>>;
 };
 
@@ -95,6 +103,22 @@ describe("ramo da palavra-chave inalterado (SAIR-02 AC1)", () => {
 
   it("o POST /opt-out tem o switch do gate como único predecessor (nenhum caminho natural)", () => {
     expect(predecessors(POST_OPT_OUT)).toEqual([SWITCH]);
+  });
+
+  it("falha do CRM segue o tratamento atual: 3 tentativas, 2 s de intervalo e sem saída de erro própria", () => {
+    const node = workflow.nodes.find((n) => n.name === POST_OPT_OUT);
+    expect(node?.retryOnFail).toBe(true);
+    expect(node?.maxTries).toBe(3);
+    expect(node?.waitBetweenTries).toBe(2000);
+    expect(node?.onError).toBeUndefined();
+    expect(workflow.connections[POST_OPT_OUT]?.main).toEqual([[{ node: FINALIZE_OPT_OUT, type: "main", index: 0 }]]);
+  });
+
+  it("o POST usa o lead e o tenant do gate, nunca do modelo", () => {
+    const node = workflow.nodes.find((n) => n.name === POST_OPT_OUT);
+    expect(node?.parameters.method).toBe("POST");
+    expect(String(node?.parameters.url)).toContain("/leads/{{ $('Code: gate').first().json.id }}/opt-out");
+    expect(JSON.stringify(node?.parameters.headerParameters)).toContain("$('Code: gate').first().json.tenantSlug");
   });
 });
 
