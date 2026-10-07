@@ -263,6 +263,7 @@ T7 → T8 → T9
 **Depends on**: T7
 **Reuses**: L-032, L-051
 **Requirement**: SAIR-04, SAIR-05
+**Status**: ✅ Done — HASH_T8 (publicado `ddb63ae8`, medição arquivada, branch enviado)
 
 **Tools**:
 
