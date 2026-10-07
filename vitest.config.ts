@@ -33,7 +33,13 @@ export default defineConfig({
     // its own copy and files run in parallel, one worker per branch.
     fileParallelism: endpoints.length > 0,
     maxWorkers: Math.max(endpoints.length, 1),
-    env: { TEST_DATABASE_WORKER_ENDPOINTS: endpoints.join(",") },
+    env: {
+      TEST_DATABASE_WORKER_ENDPOINTS: endpoints.join(","),
+      // Vazio de propósito (lote-15): o ambiente local pode trazer o destinatário
+      // real, e o carregador de variáveis não sobrescreve uma já definida. Sem
+      // isto, um teste da rota mandaria e-mail de verdade ao operador.
+      CRIVO_OPERATOR_ALERT_EMAIL: "",
+    },
     exclude: ["**/node_modules/**", "workflows/**"],
   },
   resolve: {

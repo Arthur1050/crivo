@@ -237,7 +237,7 @@ T14 → T16
 **Depends on**: T2, T3, T4
 **Reuses**: T2, T3, T4
 **Requirement**: ALERTA-01, ALERTA-02, ALERTA-03
-**Status**: Done
+**Status**: Done 1a8f6eb
 
 **Tools**:
 
@@ -270,7 +270,7 @@ T14 → T16
 **Depends on**: T5
 **Reuses**: `runGroup`, `createExpireDocumentsHandler`
 **Requirement**: ALERTA-03
-**Status**: Pending
+**Status**: Done
 
 **Tools**:
 

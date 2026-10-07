@@ -1,5 +1,7 @@
 import type { DocumentStorage } from "../../../../src/server/documents/storage";
 import { VercelBlobDocumentStorage } from "../../../../src/server/documents/vercel-blob-storage";
+import { sendIntegrationAlertEmail } from "../../../../src/server/auth/email";
+import type { IntegrationAlertDependencies } from "../../../../src/server/integration/integration-alert";
 import { runDailyMaintenance } from "../../../../src/server/integration/lgpd";
 import { problem } from "../../../../src/server/integration/problem";
 
@@ -21,7 +23,11 @@ import { problem } from "../../../../src/server/integration/problem";
  * (curl/CI), como o contrato original previa.
  */
 export function createExpireDocumentsHandler(
-  deps: { storage?: DocumentStorage; now?: () => Date } = {}
+  deps: {
+    storage?: DocumentStorage;
+    now?: () => Date;
+    integrationAlert?: IntegrationAlertDependencies;
+  } = {}
 ) {
   const now = deps.now ?? (() => new Date());
   return async function handleExpireDocuments(request: Request): Promise<Response> {
@@ -34,7 +40,22 @@ export function createExpireDocumentsHandler(
     }
 
     const storage = deps.storage ?? new VercelBlobDocumentStorage();
-    const result = await runDailyMaintenance(now(), { storage });
+    // O destinatário é lido a cada chamada, como o secret: ausente, o alerta
+    // não envia e reporta `destinatario-ausente` (lote-15 — ALERTA-03).
+    const integrationAlert = deps.integrationAlert ?? {
+      operatorEmail: process.env.CRIVO_OPERATOR_ALERT_EMAIL,
+      send: sendIntegrationAlertEmail,
+    };
+    const result = await runDailyMaintenance(now(), { storage, integrationAlert });
+    // Só contagens e flags, sem nome de tenant: o log de produção prova que o
+    // grupo rodou (ALERTA-04 AC6) sem carregar dado de imobiliária.
+    console.info("[manutencao] alerta", {
+      evaluated: result.integrationAlertEvaluated,
+      sent: result.integrationAlertSent,
+      skipped: result.integrationAlertSkipped,
+      sendFailed: result.integrationAlertSendFailed,
+      failed: result.integrationAlertFailed,
+    });
     return Response.json(result);
   };
 }

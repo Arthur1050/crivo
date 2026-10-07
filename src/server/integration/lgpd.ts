@@ -12,6 +12,11 @@ import {
 } from "../documents/repository";
 import { toDocumentStorageError, type DocumentStorage } from "../documents/storage";
 import { purgeReengagementMetadata } from "../reengagement/retention";
+import {
+  runIntegrationAlert,
+  type IntegrationAlertDependencies,
+  type IntegrationAlertResult,
+} from "./integration-alert";
 
 export interface OptOutResult {
   optedOutAt: Date;
@@ -57,6 +62,11 @@ export async function purgeHumanSendReservations(now: Date): Promise<{ deleted: 
 
 export interface DocumentMaintenanceDependencies {
   storage: DocumentStorage;
+}
+
+export interface DailyMaintenanceDependencies extends DocumentMaintenanceDependencies {
+  /** Ausente: o grupo do alerta não roda e não toca o banco (`sem-dependencia`). */
+  integrationAlert?: IntegrationAlertDependencies;
 }
 
 export interface ExpireDocumentsResult {
@@ -196,7 +206,19 @@ export interface DailyMaintenanceResult extends ExpireDocumentsResult {
   reengagementEpisodesCompacted: number;
   /** Falha isolada da retenção L14b; os grupos anteriores já foram executados. */
   reengagementPurgeFailed: boolean;
+  /** Alerta de queda da integração (lote-15, AD-039): tenants avaliados e
+   * tenants incluídos num e-mail enviado com `ok: true`. */
+  integrationAlertEvaluated: number;
+  integrationAlertSent: number;
+  integrationAlertSkipped: "destinatario-ausente" | "sem-dependencia" | null;
+  integrationAlertSendFailed: boolean;
+  /** `true` quando a avaliação do alerta lançou; os demais grupos não são afetados. */
+  integrationAlertFailed: boolean;
 }
+
+type AlertGroupResult = Omit<IntegrationAlertResult, "skipped"> & {
+  skipped: IntegrationAlertResult["skipped"] | "sem-dependencia";
+};
 
 const emptyExpiry: ExpireDocumentsResult = {
   deletedByTenant: {},
@@ -218,15 +240,16 @@ async function runGroup<T>(fallback: T, group: () => Promise<T>): Promise<[T, bo
 
 /**
  * Rotina diária de manutenção (lote-9 — SAUDE-03; lote-12 — DOCLIFE-01; lote-14).
- * Seis grupos independentes rodam em sequência, cada um com resultado e
+ * Sete grupos independentes rodam em sequência, cada um com resultado e
  * `catch` próprios: expiração, retry de tombstones, compensação de intenções
- * vencidas, purga de recusas, purga de reservas de envio humano e retenção L14b.
+ * vencidas, purga de recusas, purga de reservas de envio humano, retenção L14b
+ * e alerta de queda da integração (lote-15).
  * Uma falha de storage não impede a purga de recusas, e uma
  * falha da purga não impede a expiração (AC3). Nenhum grupo propaga exceção.
  */
 export async function runDailyMaintenance(
   now: Date,
-  dependencies: DocumentMaintenanceDependencies
+  dependencies: DailyMaintenanceDependencies
 ): Promise<DailyMaintenanceResult> {
   const [expiry, expiryFailed] = await runGroup(emptyExpiry, () => expireDocuments(now, dependencies));
 
@@ -255,6 +278,13 @@ export async function runDailyMaintenance(
     () => purgeReengagementMetadata(now)
   );
 
+  const noAlert: AlertGroupResult = { evaluated: 0, sent: 0, skipped: null, sendFailed: false };
+  const [alert, integrationAlertFailed] = await runGroup<AlertGroupResult>(noAlert, async () =>
+    dependencies.integrationAlert
+      ? runIntegrationAlert(now, dependencies.integrationAlert)
+      : { ...noAlert, skipped: "sem-dependencia" }
+  );
+
   return {
     ...expiry,
     expiryFailed,
@@ -272,5 +302,10 @@ export async function runDailyMaintenance(
     reengagementSnapshotsDeleted: reengagement.snapshotsDeleted,
     reengagementEpisodesCompacted: reengagement.episodesCompacted,
     reengagementPurgeFailed,
+    integrationAlertEvaluated: alert.evaluated,
+    integrationAlertSent: alert.sent,
+    integrationAlertSkipped: alert.skipped,
+    integrationAlertSendFailed: alert.sendFailed,
+    integrationAlertFailed,
   };
 }
