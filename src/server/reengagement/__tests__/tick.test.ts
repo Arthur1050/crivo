@@ -29,7 +29,7 @@ beforeAll(async () => {
   await db.insert(tenants).values([tenantId, foreignTenant].map(id => ({ id, slug: `fixture-${id}`, name: "Fixture T56", agentName: "Agente", supportedModality: "ambos" as const })));
   await db.insert(tenantApiKeys).values({ tenantId, label: "fixtureT56", keyHash: createHash("sha256").update(key).digest("hex") });
 });
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
 afterAll(async () => {
   const ids = [tenantId, foreignTenant];
   await db.delete(integrationRefusals).where(inArray(integrationRefusals.tenantId, ids)); await db.delete(whatsappMessageReceipts).where(inArray(whatsappMessageReceipts.tenantId, ids));
@@ -82,6 +82,9 @@ describe("T56 — fila durável de reconciliação sem transporte", () => {
     await db.update(reengagementEpisodes).set({ state: "refused" }).where(eq(reengagementEpisodes.id, bad.episode.id));
   });
   it("rotas autenticam tenant, canais sem leads excluem disabled/foreign; body não autoriza identidade/Graph", async () => {
+    // A rota usa o relógio do sistema; fixá-lo em `now` evita que episódios dos
+    // cenários anteriores (prazo now+120s) vençam conforme a data real avança.
+    vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(now);
     const enabled = await analyticsFixtureChannel(tenantId, now, { phoneNumberId: "430000000000011" });
     await analyticsFixtureChannel(tenantId, now, { phoneNumberId: "430000000000012", usageEnabled: false });
     await analyticsFixtureChannel(foreignTenant, now, { phoneNumberId: "430000000000013" });
