@@ -99,7 +99,7 @@ T14 → T16
 **Depends on**: None
 **Reuses**: design.md § Fatos operacionais
 **Requirement**: ALERTA-04
-**Status**: Done (F2 parcial: Phase 3 bloqueada)
+**Status**: Done 352e8cd (F2 parcial: Phase 3 bloqueada)
 
 **Tools**:
 
@@ -126,7 +126,7 @@ T14 → T16
 **Depends on**: T0
 **Reuses**: padrão de colunas aditivas de `tenants` (AD-004)
 **Requirement**: ALERTA-01
-**Status**: Pending
+**Status**: Done
 
 **Tools**:
 

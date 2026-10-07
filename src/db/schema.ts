@@ -182,11 +182,26 @@ export const tenants = pgTable(
     // sem uma tabela paralela ao lado de `tenants`.
     logo: text("logo"),
     metadata: text("metadata"),
+    // Último estado de saúde da integração agente↔CRM visto pelo alerta diário
+    // (lote-15, AD-039). Nullable e aditivas (AD-004): nulo = tenant ainda não
+    // avaliado, e a primeira avaliação só grava o estado, sem e-mail.
+    integrationHealthState: text("integration_health_state", {
+      enum: ["saudavel", "problema"],
+    }),
+    integrationHealthChangedAt: timestamp("integration_health_changed_at", {
+      withTimezone: true,
+    }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
-  (table) => [uniqueIndex("tenants_slug_idx").on(table.slug)]
+  (table) => [
+    uniqueIndex("tenants_slug_idx").on(table.slug),
+    check(
+      "tenants_integration_health_state_check",
+      sql`${table.integrationHealthState} in ('saudavel', 'problema')`
+    ),
+  ]
 );
 
 // L14b T2 — canal servidor e lease de Analytics. Não guarda credenciais.
