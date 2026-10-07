@@ -211,7 +211,7 @@ T14 → T16
 **Depends on**: T0
 **Reuses**: `send`, `EmailResult`
 **Requirement**: ALERTA-02
-**Status**: Done
+**Status**: Done 7fe4a74
 
 **Tools**:
 
@@ -237,7 +237,7 @@ T14 → T16
 **Depends on**: T2, T3, T4
 **Reuses**: T2, T3, T4
 **Requirement**: ALERTA-01, ALERTA-02, ALERTA-03
-**Status**: Pending
+**Status**: Done
 
 **Tools**:
 
