@@ -11,6 +11,8 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 **Spec**: `.specs/features/lote-13b-opt-out-por-palavra/spec.md` (Design dispensado: decisões na spec)
 **Status**: Approved
 
+**Desvios aceitos (auditoria de 2026-10-07):** T2 e T3 previam testes existentes "sem alteração de asserção", o que contradiz SAIR-02 AC2. Foram invertidas as asserções de "parar" (gate, gate-opt-out-escalado, gate-conducao-humana) e atualizada a contagem de `principal-modelo.test.ts` (99/128 → 91/114; 65/81 no hotfix). `lgpd-reengagement.test.ts` deixou de listar o nó natural. Justificativa nos commits f3859b5 e abe244a.
+
 **Regras deste lote (auditoria do L14b, `.specs/audits/2026-10-l14b.md`):**
 
 - Execução em linha, sem sub-agentes de task; só o Verifier final é sub-agente.
@@ -263,7 +265,7 @@ T7 → T8 → T9
 **Depends on**: T7
 **Reuses**: L-032, L-051
 **Requirement**: SAIR-04, SAIR-05
-**Status**: ✅ Done — HASH_T8 (publicado `ddb63ae8`, medição arquivada, branch enviado)
+**Status**: ✅ Done — 395cbfd (publicado `ddb63ae8`, medição arquivada, branch enviado)
 
 **Tools**:
 
