@@ -3,7 +3,7 @@ import { gate } from "../gate.mjs";
 
 /**
  * OPTKEY-01 AC3 (lote-13): com o lead em `escalado_humano`, a mensagem inteira
- * `sair`/`parar` ainda registra o opt-out. O opt-out pela palavra exata vence a
+ * `sair` ainda registra o opt-out. O opt-out pela palavra exata vence a
  * trava humana (`gate.mjs`, precedência 2 antes da 3). Arquivo separado porque
  * OPTKEY-01 AC2 exige `gate.test.ts` inalterado.
  */
@@ -14,8 +14,8 @@ describe("palavra exata com lead em escalado_humano (OPTKEY-01 AC3)", () => {
     expect(gate({ ...ESCALADO, text: "sair" })).toBe("opt-out");
   });
 
-  it('"parar" → opt-out', () => {
-    expect(gate({ ...ESCALADO, text: "parar" })).toBe("opt-out");
+  it('"parar" → somente-registrar (SAIR-02 AC2: não é mais opt-out)', () => {
+    expect(gate({ ...ESCALADO, text: "parar" })).toBe("somente-registrar");
   });
 
   it('"SAIR" com espaços → opt-out (mesma normalização do caminho comum)', () => {

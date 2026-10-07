@@ -8,7 +8,7 @@
 // decomposição NFD — escrita como escape \uXXXX (não caractere literal) de
 // propósito, para o padrão ficar legível e imune a mangling de encoding.
 const DIACRITICS_PATTERN = /[̀-ͯ]/g;
-const OPT_OUT_KEYWORDS = new Set(["sair", "parar"]);
+const OPT_OUT_KEYWORDS = new Set(["sair"]);
 
 /**
  * Remove acentos (via decomposição NFD + descarte dos diacríticos
@@ -24,7 +24,7 @@ function foldAccentsAndCase(text) {
 /**
  * Detecta opt-out (LGPD-03): a mensagem inteira, depois de normalizada
  * (minúsculas, sem acento, sem espaços nas bordas), precisa ser EXATAMENTE
- * "sair" ou "parar" — a palavra isolada, não uma frase que a contém. Isso é
+ * "sair" — a palavra isolada, não uma frase que a contém. Isso é
  * deliberado: "quero sair do apartamento" é uma frase sobre o imóvel, não um
  * comando de descadastro, e não pode disparar opt-out (spec.md — LGPD-03,
  * "Done when").

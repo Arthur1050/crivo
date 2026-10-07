@@ -73,7 +73,7 @@ T7 → T8 → T9
 **Depends on**: None
 **Reuses**: `scripts/reengagement-publication-check.ts` (comparação fonte/gerado/publicado), MCP n8n `get_workflow_version` (somente leitura)
 **Requirement**: SAIR-05
-**Status**: ✅ Done — HASH_T1 (equivalente; evidência em `evidence/paridade-e3e25681.md`)
+**Status**: ✅ Done — 850817a (equivalente; evidência em `evidence/paridade-e3e25681.md`)
 
 **Tools**:
 
@@ -97,6 +97,7 @@ T7 → T8 → T9
 **Depends on**: None
 **Reuses**: `foldAccentsAndCase`, `detectOptOut`
 **Requirement**: SAIR-02
+**Status**: ✅ Done — HASH_T2
 
 **Tools**:
 

@@ -34,8 +34,12 @@ describe("gate com a marca de condução humana (SILENCIO-01)", () => {
     expect(gate({ ...CONDUZIDO, text: "sair" })).toBe("opt-out");
   });
 
-  it('marca + "PARAR" com espaços → opt-out (AC3)', () => {
-    expect(gate({ ...CONDUZIDO, text: "  PARAR " })).toBe("opt-out");
+  it('marca + "SAIR" com espaços → opt-out (AC3)', () => {
+    expect(gate({ ...CONDUZIDO, text: "  SAIR " })).toBe("opt-out");
+  });
+
+  it('marca + "PARAR" → somente-registrar (SAIR-02 AC2: não é mais opt-out)', () => {
+    expect(gate({ ...CONDUZIDO, text: "  PARAR " })).toBe("somente-registrar");
   });
 
   it("marca + frase que contém sair → somente-registrar (não é a palavra exata)", () => {
