@@ -74,3 +74,29 @@ ALTER TABLE tenants DROP COLUMN integration_health_state, DROP COLUMN integratio
 Ação do usuário. O usuário confirmou no chat (2026-10-07) que criou `CRIVO_OPERATOR_ALERT_EMAIL` no
 ambiente Production da Vercel. O valor não foi lido, colado nem registrado; o executor não consultou
 o painel. Confirmação satisfaz ALERTA-04 AC5 antes do push.
+
+## Full e auditoria pré-push (2026-10-07)
+
+**Full (`npm test`), duas execuções, antes do push:**
+
+| Execução | Resultado |
+| --- | --- |
+| 1 | 3489 passaram, 3 falharam (207 arquivos): `actions.test.ts` e `mutations.test.ts`, nome duplicado de categoria de documento. Nenhuma das duas instabilidades conhecidas (`DOCLIM-01 AC8`, retenção). |
+| 2 (após reparo do banco de teste) | **207 arquivos, 3492 testes, exit 0.** |
+
+**Causa da falha 1:** o índice único `document_categories_tenant_id_lower_name_idx` não existia nos 5
+bancos de teste, e os 3 testes deixaram 6 linhas de fixture duplicadas em 2 deles. Nenhum código do
+lote toca categorias de documento. O momento em que o índice sumiu não foi estabelecido: o log do
+primeiro `db:push:test` do lote não guardou os statements, e os logs seguintes não trazem `DROP INDEX`.
+O `drizzle-kit push` não enxerga os índices únicos (propõe recriar 5 que existem), então não serve de
+prova nem de reparo. **Reparo:** apagadas só as fixtures duplicadas por id/nome (`Categoria Duplicada…`,
+`Categoria Case…`, sem documentos) e índice recriado nos 5 bancos com o DDL do `schema.ts`. Os dois
+arquivos passaram sozinhos (106 testes) e a Full 2 passou inteira. Nenhum teste foi alterado.
+
+**Gate de build:** `npm run lint` 0 erros (9 avisos antigos); `tsc` 50 erros, os mesmos de antes do lote.
+
+**Auditoria de trailer (AD-014), HEAD `a55bb39`:** `origin/main..HEAD` (17 commits) e `origin/main`
+inteiro (656 commits, `e82abe0`) sem `Co-Authored-By`, "Generated with" nem marca de atribuição.
+
+**Pendente antes do push:** F2 segue parcial (leitura dos logs do cron agendada para 2026-10-08
+03:22 UTC); autorização do usuário ao push com o hash e a lista de commits.
