@@ -266,6 +266,8 @@ de produção e de autorização específica para ações externas. Escopo vindo
   saldo; manter indisponibilidade enquanto a conta e o contrato não forem comprovados.
 - Telas já adiadas T57/T60/T61/T62: componente de consumo, carga/grupo em Configurações
   e resumo/aviso persistente no Chats, com permissões, estados e acessibilidade aprovados.
+- **Vindo do L15 (2026-10-07):** publicação do app Meta / business verification. Bloqueia números
+  e destinatários reais e anda junto da conta WhatsApp de produção, que ainda não existe.
 
 Não foram criadas tasks novas. O backend e PRECO T58/T59 ficam entregues no L14b;
 fixtures locais não substituem essas provas futuras. Nenhuma ação externa foi executada
@@ -273,12 +275,28 @@ para antecipar o L14c; o scheduler de produção permanece no L14 revertido pelo
 
 ---
 
-## L15 — Prontidão operacional do piloto real
+## L15 — Prontidão operacional do piloto real — ✅ EXECUTADO (2026-10-07)
 
-**Fecha**: #3, #23, baselines reais, e a limpeza de dívidas de `STATE.md` § Handoff.
+Spec, design e tasks em `features/lote-15-prontidao-operacional/` (AD-039). Escopo reduzido pelo
+usuário em 2026-10-07: dos oito itens originais, três saíram do lote (1, 3, 7), um fecha sem artefato (8).
 
-| # | Item |
-| --- | --- |
+| # | Item | Situação |
+| --- | --- | --- |
+| 1 | Publicação do app Meta / business verification | **Movido ao L14c**, junto da conta WhatsApp de produção |
+| 2 | Alerta ativo quando a integração cai | **Entregue** por e-mail ao operador, em grupo da manutenção diária, na transição saudável → problema (AD-039). WhatsApp e alerta à imobiliária ficaram fora |
+| 3 | Baselines reais das imobiliárias | **Deferido**, gatilho: primeira imobiliária real com números de antes do produto. Não há imobiliária real hoje |
+| 4 | `RESEND_FROM` na Vercel no domínio `usekrivo.online` | **Confirmado** (T0) e provado por envio real `[teste]` entregue com remetente no domínio |
+| 5 | Revogação de chave de serviço por rótulo | **Entregue**: `npm run db:revoke-service-key`, recusa deixar zero chaves ativas; `n8n/README.md` §12.3 sem o `UPDATE` manual |
+| 6 | 2 linhas inertes em `conversa_estado` | **Feito** (T15), apagadas pela interface do n8n; a tabela ficou vazia |
+| 7 | L4 Fix 1 (`deltaMinutesLine`/`deltaPercentLine`) | **Já entregue** em `f7e512f` (`formatResponseTimeDelta`/`formatQualificationDelta`, com teste em `src/lib/__tests__/format.test.ts`); só a documentação foi corrigida |
+| 8 | L4 Fix 2 | **Aceito sem artefato**: produzir a evidência exigiria uma camada de teste de UI que o projeto não tem |
+
+**Em produção:** colunas `integration_health_state` e `integration_health_changed_at` em `tenants`,
+`CRIVO_OPERATOR_ALERT_EMAIL` no Production e deploy `e2565ee`. **Pendente:** a primeira execução do
+cron com o alerta (T14) e a prova de que o cron executa em produção (F2); ambas dependem da leitura
+dos logs logo depois das 03:00 UTC.
+
+--- | --- |
 | 1 | Publicação do app Meta / business verification — **bloqueia números e destinatários reais** |
 | 2 | Alerta ativo (e-mail/WhatsApp) quando a integração cai |
 | 3 | Substituir os baselines fictícios pelos números reais das imobiliárias |

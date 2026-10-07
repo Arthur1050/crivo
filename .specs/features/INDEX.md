@@ -10,7 +10,7 @@ interstitiais. **100% executado** em 2026-08-30 (`STATE.md` § Handoff).
 
 Trabalho futuro: `../ROADMAP-POS-PILOTO.md` — lotes 10 a 16 a partir do backlog deferido e das
 frentes novas (catálogo de imóveis, vitrine pública), com o que foi descartado e por quê. **L10,
-L11, L12, L13, L14 e L14b já foram executados** (linhas abaixo); L14c (ativação em produção + telas de consumo), L15 e L16 seguem futuros.
+L11, L12, L13, L14, L14b e L15 já foram executados** (linhas abaixo); L14c (ativação em produção + telas de consumo, agora com a verificação Meta) e L16 seguem futuros.
 
 ---
 
@@ -54,6 +54,7 @@ fechamento segue a AD-029 e reconcilia todas as referências depois da movimenta
 | `lote-14-humano-no-laco` | — (novo, pós-piloto, `ROADMAP-POS-PILOTO.md` L14) | 10-01 | ✅ PASS (ciclo 2) + T40 aprovada | ASSUMIR-01, SILENCIO-01, ENVIO-01, JANELA-01, THREAD-01, DEVOLVER-01, OPTHUM-01, CONTRATO-01, CONTRATO-02, HUMPROVA-01, HUMDOC-01 | Condução humana como marca separada do status (AD-034): assumir, responder pelo CRM com envio direto pela Cloud API (AD-035) e reserva idempotente por compare-and-set, janela de 24h que bloqueia e explica, thread com autoria humana e atualização sem recarregar, devolver ao agente com a memória refeita a partir do CRM (fala do corretor como nota `system`, emenda D12 para o agente poder repeti-la), opt-out pela tela com purga pela varredura D do scheduler; gate `somente-registrar` e releitura do lead antes de cada envio do agente; contrato `openapi.yaml` com teste de paridade; prova por WhatsApp aprovada nos 4 casos; teto de contexto remedido sem mudança | Capturas da T40 não versionadas (ressalva aceita); filtro de lembretes do scheduler sem limite inferior; erro de hidratação do divisor de data, layout do Chats em celular e possível 500 com id não UUID em `context.md` § Deferred Ideas; reengajamento gratuito no L14b |
 | `lote-14b-reengajamento-contextual` | 1–10 (pós-piloto L14b) | 10-06 | ✅ PASS local ajustado; 95 ACs, sensor local 1/1 morto, validate_state exit 0 | REEN-01…05, PRECO-01/02, USO-01…04, L14B-01, PROVA-01 | 67/71 tarefas existentes: episódios/locks/contexto/ponte, backend de entrega/consumo, PRECO T58/T59; G2 corrigida, Quick 57/57; Full inicial FAIL recuperada localmente, recheck 96/96; arquivado AD-029 | **Deferred → L14c:** G1/G3/G4 (ativação em produção, status autênticos e Analytics real) + T57/T60/T61/T62 (telas de consumo); conta de produção ainda não existe, consumo indisponível; scheduler de produção permanece no L14 |
 | `lote-13b-opt-out-por-palavra` | 1–9 (pós-piloto, hotfix sobre L13/L14) | 10-07 | ✅ PASS com ressalvas (`validation.md`) | SAIR-01…05 | Remove o classificador de opt-out e a medição (AD-038, supersede AD-032); opt-out só pela mensagem exata `sair`; principal `0B1nqjODu7xuYYKF` publicado como hotfix sobre o L14 na versão `ddb63ae8` (branch `hotfix/opt-out-so-sair`, fea3306) sem ativar o L14b; prova real por WhatsApp aprovada (c5eac28); commits T1–T9 850817a…c5eac28, gaps do sensor fechados em 5fc23db, lições em 98b821f | **Deferido:** comentário de `n8n/src/system-message.mjs:106-112` ainda cita o classificador como vigente (mudá-lo exige republicar o system message no n8n); texto da L-026 mantido (argumentos alterados ficam para lição própria se recorrer); teste do branch de hotfix sem as asserções do POST de 7d9da63 (informativo) |
+| `lote-15-prontidao-operacional` | 0–16 (pós-piloto, prontidão do piloto) | 10-07 | em verificação (`validation.md`) | ALERTA-01…04, REVOGA-01, LIMPA-01, DOC-01 | Alerta diário de queda da integração por e-mail ao operador (AD-039): colunas em `tenants`, plano puro, DAL em lote com compare-and-set, grupo isolado em `runDailyMaintenance`; `db:revoke-service-key`; `alert:send-test`; schema e deploy `e2565ee` em produção; Full 207 arquivos/3492 testes | **Pendente:** T14 (primeira manutenção com o alerta) e F2 (cron executa em produção), à espera da leitura de logs após 03:00 UTC; verificação Meta movida ao L14c; baselines reais deferidos |
 
 ---
 
@@ -73,8 +74,9 @@ Lotes pós-piloto: `lote-10`, `lote-11` e `lote-13` em `## Deferred Ideas`; `lot
 teto, i18n da Astryx, hidratação do `Timestamp`, erros de `tsc` em testes). Esses itens não entram
 na contagem de 28 acima, que é a consolidação de 2026-08-30.
 
-Dívidas técnicas menores (linhas inertes em `conversa_estado`, `openapi.yaml` desatualizado,
-`n8n/README.md §4` obsoleto, `RESEND_FROM`) estão em `STATE.md` § Handoff, não aqui.
+Dívidas técnicas menores (`openapi.yaml` desatualizado, `n8n/README.md §4` obsoleto) estão em
+`STATE.md` § Handoff, não aqui. As linhas inertes de `conversa_estado` e o `RESEND_FROM` foram
+fechados no lote 15.
 
 ---
 

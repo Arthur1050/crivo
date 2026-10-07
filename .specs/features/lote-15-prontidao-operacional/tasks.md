@@ -507,7 +507,7 @@ T14 → T16
 **Depends on**: T0
 **Reuses**: —
 **Requirement**: LIMPA-01
-**Status**: Done
+**Status**: Done 64213d0
 
 **Tools**:
 
@@ -532,7 +532,7 @@ T14 → T16
 **Depends on**: T14
 **Reuses**: —
 **Requirement**: DOC-01
-**Status**: Pending
+**Status**: Done
 
 **Tools**:
 
