@@ -270,7 +270,7 @@ T14 → T16
 **Depends on**: T5
 **Reuses**: `runGroup`, `createExpireDocumentsHandler`
 **Requirement**: ALERTA-03
-**Status**: Done
+**Status**: Done d030e4b
 
 **Tools**:
 
@@ -298,7 +298,7 @@ T14 → T16
 **Depends on**: T2, T4
 **Reuses**: `formatIntegrationAlertEmail`, `sendIntegrationAlertEmail`
 **Requirement**: ALERTA-04
-**Status**: Pending
+**Status**: Done
 
 **Tools**:
 
