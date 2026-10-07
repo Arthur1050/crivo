@@ -51,5 +51,9 @@ if (isMain) {
     send: sendIntegrationAlertEmail,
     log: (line) => console.log(line),
     error: (line) => console.error(line),
-  }).then((code) => process.exit(code));
+  }).then((code) => {
+    // exitCode em vez de exit(): no Windows, exit() com o socket do provedor ainda
+    // fechando derruba o libuv (código 127) mesmo com o envio feito.
+    process.exitCode = code;
+  });
 }
