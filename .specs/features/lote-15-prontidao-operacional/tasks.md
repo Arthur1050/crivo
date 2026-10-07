@@ -403,7 +403,7 @@ T14 → T16
 **Depends on**: T6
 **Reuses**: procedimento do L14 (T38)
 **Requirement**: ALERTA-04
-**Status**: Done
+**Status**: Done 54329a1
 
 **Tools**:
 
@@ -429,7 +429,7 @@ T14 → T16
 **Depends on**: T0
 **Reuses**: —
 **Requirement**: ALERTA-04
-**Status**: Pending
+**Status**: Done
 
 **Tools**:
 

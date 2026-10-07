@@ -68,3 +68,9 @@ ALTER TABLE tenants DROP COLUMN integration_health_state, DROP COLUMN integratio
 ```
 
 (derrubar a coluna derruba o check junto). O script foi temporário e removido; nada foi versionado.
+
+## Variável do operador em produção (T12, 2026-10-07)
+
+Ação do usuário. O usuário confirmou no chat (2026-10-07) que criou `CRIVO_OPERATOR_ALERT_EMAIL` no
+ambiente Production da Vercel. O valor não foi lido, colado nem registrado; o executor não consultou
+o painel. Confirmação satisfaz ALERTA-04 AC5 antes do push.
