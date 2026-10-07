@@ -153,7 +153,7 @@ T14 → T16
 **Depends on**: T0
 **Reuses**: `resolveIntegrationHealth` (`src/lib/pilot-metrics.ts`)
 **Requirement**: ALERTA-01, ALERTA-02
-**Status**: Done
+**Status**: Done 5624094
 
 **Tools**:
 
@@ -181,7 +181,7 @@ T14 → T16
 **Depends on**: T1
 **Reuses**: filtros de `getLastAgentMessageAt` e `getIntegrationRefusalsSince`
 **Requirement**: ALERTA-01
-**Status**: Pending
+**Status**: Done
 
 **Tools**:
 
