@@ -1458,7 +1458,10 @@ components:
           type: string
           format: date-time
         phoneNumberId:
-          type: string
+          description: null somente em `escalate`, quando o número da lead ainda não tem canal verificado.
+          type:
+            - string
+            - "null"
         action:
           type: string
           enum:
@@ -1855,7 +1858,12 @@ components:
             action:
               const: escalated
             episodeId:
-              type: string
+              description: >-
+                null quando a lead foi escalada sem episódio gravado: o canal ainda não está verificado,
+                e a escalada por silêncio é interna e não depende dele.
+              type:
+                - string
+                - "null"
               format: uuid
             brokerId:
               type: string

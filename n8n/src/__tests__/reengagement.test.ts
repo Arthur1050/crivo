@@ -29,6 +29,29 @@ describe("evaluateReengagement — REEN-01 AC1/2, fronteiras do inbound real", (
   });
 });
 
+describe("evaluateReengagement — escalada e omissão são internas (auditoria L14b, M1)", () => {
+  const at = (silence: number) => ({ ...base.anchor, sentAt: new Date(Date.parse(NOW) - silence).toISOString() });
+  it.each([null, undefined])("fase não publicada (%s) ainda escala às 48h e omite às 24h", (phase) => {
+    expect(evaluateReengagement({ ...base, phase, anchor: at(48 * HOUR) })).toEqual({ action: "escalate", reason: "silence-expired" });
+    expect(evaluateReengagement({ ...base, phase, anchor: at(24 * HOUR) })).toEqual({ action: "omit", reason: "window-closed" });
+    expect(evaluateReengagement({ ...base, phase, anchor: at(22 * HOUR) })).toEqual({ action: null, reason: "unknown-data" });
+  });
+
+  it("canal e destino ausentes não impedem escalar nem omitir, mas impedem preparar", () => {
+    const missing = { ...base, channel: null, destination: "" };
+    expect(evaluateReengagement({ ...missing, anchor: at(48 * HOUR) })).toEqual({ action: "escalate", reason: "silence-expired" });
+    expect(evaluateReengagement({ ...missing, anchor: at(30 * HOUR) })).toEqual({ action: "omit", reason: "window-closed" });
+    expect(evaluateReengagement({ ...missing, anchor: at(23 * HOUR) })).toEqual({ action: null, reason: "unknown-data" });
+  });
+
+  it("fase encerrada, opt-out e condução humana continuam bloqueando a escalada", () => {
+    const anchor = at(48 * HOUR);
+    expect(evaluateReengagement({ ...base, anchor, phase: "encerrada" })).toEqual({ action: null, reason: "ineligible" });
+    expect(evaluateReengagement({ ...base, anchor, lead: { ...base.lead, optedOutAt: NOW } })).toEqual({ action: null, reason: "ineligible" });
+    expect(evaluateReengagement({ ...base, anchor, lead: { ...base.lead, humanTakeoverAt: NOW } })).toEqual({ action: null, reason: "ineligible" });
+  });
+});
+
 describe("evaluateReengagement — REEN-01 AC3, horário de contato A2", () => {
   it.each([
     ["2026-10-06T11:59:59.999Z", null],

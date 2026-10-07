@@ -9,7 +9,9 @@ export function candidatePageJobs(response, page) {
   const context = { ...page, cutoffAt: response.cutoffAt, nextCursor: response.nextCursor };
   const jobs = response.candidates.map(candidate => {
     if (!candidate || !B_UUID.test(candidate.leadId) || !B_UUID.test(candidate.anchorMessageId) || !bDate(candidate.anchorSentAt)
-        || typeof candidate.phoneNumberId !== "string" || !/^\d{1,32}$/.test(candidate.phoneNumberId) || !["prepare", "omit", "escalate"].includes(candidate.action)) throw new Error("candidate-page-unavailable");
+        || !["prepare", "omit", "escalate"].includes(candidate.action)
+        // Escalada é interna: o CRM a lista mesmo sem canal verificado (phoneNumberId null).
+        || !((typeof candidate.phoneNumberId === "string" && /^\d{1,32}$/.test(candidate.phoneNumberId)) || (candidate.action === "escalate" && candidate.phoneNumberId === null))) throw new Error("candidate-page-unavailable");
     return { ...context, leadId: candidate.leadId, anchorMessageId: candidate.anchorMessageId, anchorSentAt: candidate.anchorSentAt, phoneNumberId: candidate.phoneNumberId, action: candidate.action, pageStart: true };
   });
   return jobs.length ? jobs : [{ ...context, action: "empty", pageStart: true }];
@@ -44,7 +46,7 @@ export function acknowledgementForSend(response, claim) {
 
 /** Only the committed expiry DTO grants a cache mirror; it never authorizes contact. */
 export function silenceExpiryResult(response, candidate) {
-  const committed = !response?.error && response?.action === "escalated" && B_UUID.test(response.episodeId)
+  const committed = !response?.error && response?.action === "escalated" && (response.episodeId === null || B_UUID.test(response.episodeId))
     && (response.brokerId === null || B_UUID.test(response.brokerId)) && ["accepted", "omitted", "refused", "uncertain"].includes(response.result);
   return { ...candidate, committed, ...(committed ? { episodeId: response.episodeId, brokerId: response.brokerId, result: response.result } : {}), outcome: committed ? "escalated" : "expiry-unconfirmed" };
 }

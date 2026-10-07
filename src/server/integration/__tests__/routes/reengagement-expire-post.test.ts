@@ -127,16 +127,31 @@ describe("T41 — expire HTTP expõe omissão e escalada protegidas sem transpor
     const row = await fixture(48 * hour, "accepted", tenantId, patch), before = await episodes(row);
     await problem(await post(row), 409, "transicao-invalida"); expect(await episodes(row)).toEqual(before); expect(await storedLead(row)).toEqual(row.lead);
   });
-  it.each([null, "encerrada"] as const)("fase %s409 não escala", async (phase) => {
-    const row = await fixture(); await db.update(leadAgentState).set({ phase }).where(eq(leadAgentState.leadId, row.lead.id));
-    await problem(await post(row), 409, phase === null ? "estado-agente-desconhecido" : "transicao-invalida"); expect(await episodes(row)).toEqual([]); expect(await storedLead(row)).toEqual(row.lead);
+  it("fase encerrada409 não escala", async () => {
+    const row = await fixture(); await db.update(leadAgentState).set({ phase: "encerrada" }).where(eq(leadAgentState.leadId, row.lead.id));
+    await problem(await post(row), 409, "transicao-invalida"); expect(await episodes(row)).toEqual([]); expect(await storedLead(row)).toEqual(row.lead);
   });
-  it.each(["inbound", "reset", "anchor", "channel"])("contexto %s divergente409 impede mutações", async (change) => {
+  it("fase não publicada (turno do agente falhou) escala200: a rede de segurança não depende do agente", async () => {
+    const row = await fixture(); await db.update(leadAgentState).set({ phase: null }).where(eq(leadAgentState.leadId, row.lead.id));
+    const response = await post(row); expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ action: "escalated", episodeId: expect.any(String), brokerId, result: "omitted" });
+    expect(await storedLead(row)).toMatchObject({ status: "escalado_humano", assignedUserId: brokerId });
+  });
+  it.each([null, "accepted"] as const)("canal não verificado200 escala; episódio %s não é criado nem herdado", async (state) => {
+    const row = await fixture(48 * hour, state), before = await episodes(row);
+    await db.update(whatsappChannels).set({ ownershipVerifiedAt: null }).where(eq(whatsappChannels.phoneNumberId, row.phoneNumberId));
+    const response = await post(row); expect(response.status).toBe(200); const body = await response.json();
+    expect(body).toEqual({ action: "escalated", episodeId: state === null ? null : before[0].id, brokerId, result: state === null ? "omitted" : "accepted" });
+    expect(await storedLead(row)).toMatchObject({ status: "escalado_humano", assignedUserId: brokerId });
+    expect((await episodes(row)).length).toBe(before.length);
+    // Replay: com episódio gravado é "unchanged"; sem episódio, a lead já escalada fica inelegível.
+    const replay = await post(row); expect(replay.status).toBe(state === null ? 409 : 200); expect(await storedLead(row)).toMatchObject({ status: "escalado_humano" });
+  });
+  it.each(["inbound", "reset", "anchor"])("contexto %s divergente409 impede mutações", async (change) => {
     const row = await fixture(48 * hour, "accepted"), before = await episodes(row); let anchorMessageId = row.anchor.id;
     if (change === "inbound") await db.insert(messages).values({ tenantId, conversationId: row.conversation.id, sender: "lead", content: "Novo inbound", sentAt: now, whatsappPhoneNumberId: row.phoneNumberId });
     if (change === "reset") await db.update(leads).set({ memoryResetRequestedAt: now }).where(eq(leads.id, row.lead.id));
     if (change === "anchor") anchorMessageId = (await fixture()).anchor.id;
-    if (change === "channel") await db.update(whatsappChannels).set({ ownershipVerifiedAt: null }).where(eq(whatsappChannels.phoneNumberId, row.phoneNumberId));
     const lead = await storedLead(row), facts = await untouched(row); await problem(await post(row, { anchorMessageId }), 409, "contexto-alterado");
     expect(await episodes(row)).toEqual(before); expect(await storedLead(row)).toEqual(lead); expect(await untouched(row)).toEqual(facts);
   });

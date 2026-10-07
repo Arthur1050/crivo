@@ -245,3 +245,46 @@ describe("T17 — candidatos limitados pelo corte do tick", () => {
     }
   });
 });
+
+describe("escalada independe da fase publicada e do canal verificado (auditoria L14b, M1)", () => {
+  const phoneUnverified = BigInt(`0x${randomUUID().replaceAll("-", "").slice(0, 16)}`).toString();
+  beforeAll(async () => { await db.insert(whatsappChannels).values({ tenantId: tenantA, phoneNumberId: phoneUnverified }); });
+  async function mine(ids: string[]) {
+    const found = []; let cursor: string | null = null;
+    do {
+      const page = await run(cursor ? { cursor } : {});
+      if (!page.ok) throw new Error(page.reason);
+      found.push(...page.candidates.filter((candidate) => ids.includes(candidate.leadId))); cursor = page.nextCursor;
+    } while (cursor);
+    return found;
+  }
+
+  it("fase não publicada no inbound atual: escalate e omit entram; prepare não", async () => {
+    const late = await fixture(48 * hour, {}, null), open = await fixture(23 * hour, {}, null), closed = await fixture(30 * hour, {}, null);
+    expect(await mine([late, open, closed].map((row) => row.lead.id))).toEqual(expect.arrayContaining([
+      { leadId: late.lead.id, anchorMessageId: late.anchor.id, anchorSentAt: late.anchor.sentAt.toISOString(), phoneNumberId: phoneA, action: "escalate" },
+      { leadId: closed.lead.id, anchorMessageId: closed.anchor.id, anchorSentAt: closed.anchor.sentAt.toISOString(), phoneNumberId: phoneA, action: "omit" },
+    ]));
+    expect((await mine([open.lead.id]))).toEqual([]);
+  });
+
+  it("canal não verificado ou ausente: só escalate entra, com phoneNumberId null", async () => {
+    const unverifiedLate = await fixture(48 * hour, { whatsappPhoneNumberId: phoneUnverified }), unverifiedClosed = await fixture(30 * hour, { whatsappPhoneNumberId: phoneUnverified });
+    const noChannel = await fixture(49 * hour, { whatsappPhoneNumberId: null });
+    const found = await mine([unverifiedLate, unverifiedClosed, noChannel].map((row) => row.lead.id));
+    expect(found).toHaveLength(2);
+    expect(found).toEqual(expect.arrayContaining([
+      expect.objectContaining({ leadId: unverifiedLate.lead.id, phoneNumberId: null, action: "escalate" }),
+      expect.objectContaining({ leadId: noChannel.lead.id, phoneNumberId: null, action: "escalate" }),
+    ]));
+  });
+
+  it("sem projeção do inbound atual (lead anterior ao L14b) não escala por este caminho", async () => {
+    const legacy = await fixture(72 * hour);
+    await db.delete(leadAgentState).where(eq(leadAgentState.leadId, legacy.lead.id));
+    const stale = await fixture(72 * hour);
+    await db.insert(messages).values({ tenantId: tenantA, conversationId: stale.conversation.id, sender: "lead", content: "Inbound mais novo sem projeção",
+      sentAt: new Date(now.getTime() - 50 * hour), whatsappPhoneNumberId: phoneA });
+    expect(await mine([legacy.lead.id, stale.lead.id])).toEqual([]);
+  });
+});

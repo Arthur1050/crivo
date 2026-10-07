@@ -148,12 +148,19 @@ describe("T23 — omissão e escalada transacionais por silêncio", () => {
     expect(await expire(row)).toEqual({ ok: false, reason: "not-eligible", policyReason: "ineligible" });
     expect(await episodes(row)).toEqual(before); expect(await readLead(row)).toEqual(row.lead);
   });
-  it.each([null, "encerrada"] as const)("fase %s não escala e cancela somente preparação", async (phase) => {
+  it("fase encerrada não escala e cancela somente preparação", async () => {
     const row = await fixture(48 * hour, "preparing"), [before] = await episodes(row);
-    await db.update(leadAgentState).set({ phase }).where(eq(leadAgentState.leadId, row.lead.id));
-    const reason = phase === null ? "unknown-data" : "ineligible";
-    expect(await expire(row)).toEqual({ ok: false, reason: "not-eligible", policyReason: reason });
-    expect(await episodes(row)).toEqual([{ ...before, state: "cancelled", reasonCode: reason, claimToken: null, claimExpiresAt: null, updatedAt: now }]); expect(await readLead(row)).toEqual(row.lead);
+    await db.update(leadAgentState).set({ phase: "encerrada" }).where(eq(leadAgentState.leadId, row.lead.id));
+    expect(await expire(row)).toEqual({ ok: false, reason: "not-eligible", policyReason: "ineligible" });
+    expect(await episodes(row)).toEqual([{ ...before, state: "cancelled", reasonCode: "ineligible", claimToken: null, claimExpiresAt: null, updatedAt: now }]); expect(await readLead(row)).toEqual(row.lead);
+  });
+  it("fase não publicada (turno do agente falhou) escala e encerra a preparação pendente", async () => {
+    const row = await fixture(48 * hour, "preparing"), [before] = await episodes(row);
+    await db.update(leadAgentState).set({ phase: null }).where(eq(leadAgentState.leadId, row.lead.id));
+    expect(await expire(row)).toMatchObject({ ok: true, action: "escalated", episodeId: before.id, result: "omitted" });
+    expect(await episodes(row)).toEqual([{ ...before, state: "omitted", reasonCode: "window-closed", claimToken: null, claimExpiresAt: null,
+      escalatedAt: now, escalationResult: "omitted", escalationReasonCode: "silence-48h", updatedAt: now }]);
+    expect(await readLead(row)).toMatchObject({ status: "escalado_humano", escalationReason: "Ausência de resposta por 48h; retomada omitida." });
   });
   it("reset não observado bloqueia; observado não rearma marcador ou cria episódio", async () => {
     const row = await fixture(48 * hour, "accepted"), [before] = await episodes(row);
@@ -163,12 +170,15 @@ describe("T23 — omissão e escalada transacionais por silêncio", () => {
     expect(await expire(row)).toMatchObject({ ok: true, action: "escalated", result: "accepted" });
     expect(await episodes(row)).toEqual([{ ...before, escalatedAt: now, escalationResult: "accepted", escalationReasonCode: "silence-48h", updatedAt: now }]);
   });
-  it("tenant/âncora alheios e canal não comprovado não escrevem", async () => {
+  it("tenant/âncora alheios não escrevem; canal não comprovado escala sem episódio", async () => {
     const row = await fixture(48 * hour, null), other = await fixture(48 * hour, null);
     expect(await expireEpisode({ tenantId: emptyTenant }, row.lead.id, { anchorMessageId: row.anchor.id })).toEqual({ ok: false, reason: "lead-not-found" });
     expect(await expireEpisode({ tenantId }, row.lead.id, { anchorMessageId: other.anchor.id })).toEqual({ ok: false, reason: "context-changed" });
     await db.update(whatsappChannels).set({ ownershipVerifiedAt: null }).where(eq(whatsappChannels.phoneNumberId, row.phoneNumberId));
-    expect(await expire(row)).toEqual({ ok: false, reason: "context-changed" }); expect(await episodes(row)).toEqual([]); expect(await readLead(row)).toEqual(row.lead);
+    // Canal não comprovado não grava episódio, mas a escalada interna acontece.
+    expect(await expire(row)).toMatchObject({ ok: true, action: "escalated", episodeId: null, result: "omitted" });
+    expect(await episodes(row)).toEqual([]); expect(await readLead(row)).toMatchObject({ status: "escalado_humano" });
+    expect(await expire(row)).toEqual({ ok: false, reason: "not-eligible", policyReason: "ineligible" }); expect(await episodes(row)).toEqual([]);
   });
   it("âncora malformada e relógio não finito falham fechados sem escrita", async () => {
     const row = await fixture(48 * hour, "authorized"), before = await episodes(row);
@@ -176,9 +186,15 @@ describe("T23 — omissão e escalada transacionais por silêncio", () => {
     expect(await expire(row, new Date(NaN))).toEqual({ ok: false, reason: "invalid-input" });
     expect(await episodes(row)).toEqual(before); expect(await readLead(row)).toEqual(row.lead);
   });
-  it.each([null, "99999999999999999999999999999999"])("canal da mensagem %s não herda canal atual", async (phone) => {
+  it.each([null, "99999999999999999999999999999999"])("canal da mensagem %s não herda canal atual: escala sem episódio", async (phone) => {
     const row = await fixture(48 * hour, null);
     await db.update(messages).set({ whatsappPhoneNumberId: phone }).where(eq(messages.id, row.anchor.id));
+    expect(await expire(row)).toMatchObject({ ok: true, action: "escalated", episodeId: null, result: "omitted" });
+    expect(await episodes(row)).toEqual([]); expect(await readLead(row)).toMatchObject({ status: "escalado_humano" });
+  });
+  it("sem canal verificado, 24h a 48h não grava omissão (exige o canal do episódio)", async () => {
+    const row = await fixture(30 * hour, null);
+    await db.update(whatsappChannels).set({ ownershipVerifiedAt: null }).where(eq(whatsappChannels.phoneNumberId, row.phoneNumberId));
     expect(await expire(row)).toEqual({ ok: false, reason: "context-changed" }); expect(await episodes(row)).toEqual([]); expect(await readLead(row)).toEqual(row.lead);
   });
   it.each([null, "accepted"] as const)("rollback desfaz atribuição/status/motivo/timestamps e episódio %s", async (state) => {
