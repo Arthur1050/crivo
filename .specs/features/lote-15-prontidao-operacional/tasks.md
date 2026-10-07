@@ -126,7 +126,7 @@ T14 → T16
 **Depends on**: T0
 **Reuses**: padrão de colunas aditivas de `tenants` (AD-004)
 **Requirement**: ALERTA-01
-**Status**: Done
+**Status**: Done 83418d7
 
 **Tools**:
 
@@ -153,7 +153,7 @@ T14 → T16
 **Depends on**: T0
 **Reuses**: `resolveIntegrationHealth` (`src/lib/pilot-metrics.ts`)
 **Requirement**: ALERTA-01, ALERTA-02
-**Status**: Pending
+**Status**: Done
 
 **Tools**:
 
