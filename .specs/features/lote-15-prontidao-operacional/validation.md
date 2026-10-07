@@ -100,3 +100,25 @@ inteiro (656 commits, `e82abe0`) sem `Co-Authored-By`, "Generated with" nem marc
 
 **Pendente antes do push:** F2 segue parcial (leitura dos logs do cron agendada para 2026-10-08
 03:22 UTC); autorização do usuário ao push com o hash e a lista de commits.
+
+## Push e deploy (T13, 2026-10-07)
+
+**Autorização do usuário no chat:** "Autorizo o push de e2565ee." Hash enviado e aprovado: `e2565ee`.
+Antes do push: `origin/main` em `e82abe0`, 18 commits à frente e 0 atrás, trailers 0 no range e em
+`origin/main` inteiro, build gate verde, Full verde (seção anterior).
+
+**Push:** `git push origin main`, `e82abe0..e2565ee`.
+
+**Deploy:** `dpl_HJ8PLH3yG4MDj4mjjGCV8VzypLC1`, `target: production`, commit `e2565ee`, estado
+`READY`. Verificações de leitura depois do deploy: `GET /api/cron/expire-documents` sem secret
+devolve **401** (a rota continua protegida e não executou a manutenção) e a home responde 307 (login).
+
+**F2 (cron executa em produção): não comprovada, risco aceito pelo usuário.** O usuário decidiu
+seguir sem esperar a leitura dos logs ("Considere validado a leitura de mais tarde até que ela
+realmente ocorre. Quando ela ocorre, veremos o que fazer"). Este registro mantém F2 como **parcial**
+até a leitura real: ela fica agendada para 2026-10-08 03:22 UTC. Se o cron não aparecer, o alerta não
+dispara em produção, e nada mais quebra.
+
+**Rollback:** reimplantar na Vercel o deployment anterior `dpl_Ea4kiPTtKtNGdCad58Qs6rKPe63n` (commit
+`e82abe0`, `isRollbackCandidate: true`). As colunas novas são aditivas e nullable, então o código
+antigo continua funcionando com elas.
