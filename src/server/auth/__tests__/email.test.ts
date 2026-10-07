@@ -25,7 +25,11 @@ vi.mock("resend", () => ({
   },
 }));
 
-import { sendInvitationEmail, sendResetPasswordEmail } from "../email";
+import {
+  sendIntegrationAlertEmail,
+  sendInvitationEmail,
+  sendResetPasswordEmail,
+} from "../email";
 
 const INVITE = {
   to: "convidado@fixture.test",
@@ -141,5 +145,64 @@ describe("sendResetPasswordEmail", () => {
 
     expect(result.ok).toBe(false);
     expect(mocks.send).not.toHaveBeenCalled();
+  });
+});
+
+describe("sendIntegrationAlertEmail (L15 — ALERTA-02 AC1)", () => {
+  const ALERT = {
+    to: "operador@fixture.test",
+    subject: "[crivo] Integração com problema em 1 imobiliária(s)",
+    text: "corpo do alerta",
+  };
+  const originalFrom = process.env.RESEND_FROM;
+
+  afterEach(() => {
+    if (originalFrom === undefined) delete process.env.RESEND_FROM;
+    else process.env.RESEND_FROM = originalFrom;
+  });
+
+  it("envia ao destinatário recebido, com assunto e corpo, e remetente de RESEND_FROM", async () => {
+    process.env.RESEND_FROM = "Crivo <alertas@fixture.test>";
+    mocks.send.mockResolvedValue({ data: { id: "email_alert" }, error: null });
+
+    const result = await sendIntegrationAlertEmail(ALERT);
+
+    expect(result).toEqual({ ok: true, id: "email_alert" });
+    expect(mocks.send).toHaveBeenCalledTimes(1);
+    const payload = mocks.send.mock.calls[0][0];
+    expect(payload.to).toBe(ALERT.to);
+    expect(payload.subject).toBe(ALERT.subject);
+    expect(payload.text).toBe(ALERT.text);
+    expect(payload.from).toBe("Crivo <alertas@fixture.test>");
+  });
+
+  it("sem RESEND_FROM usa o remetente padrão do adaptador", async () => {
+    delete process.env.RESEND_FROM;
+    mocks.send.mockResolvedValue({ data: { id: "email_default" }, error: null });
+
+    await sendIntegrationAlertEmail(ALERT);
+
+    expect(mocks.send.mock.calls[0][0].from).toBe("Crivo <onboarding@resend.dev>");
+  });
+
+  it("erro do provedor vira ok: false sem lançar", async () => {
+    mocks.send.mockResolvedValue({
+      data: null,
+      error: { name: "validation_error", message: "Domínio não verificado" },
+    });
+
+    await expect(sendIntegrationAlertEmail(ALERT)).resolves.toEqual({
+      ok: false,
+      error: "Domínio não verificado",
+    });
+  });
+
+  it("exceção do SDK vira ok: false sem lançar", async () => {
+    mocks.send.mockRejectedValue(new Error("fetch failed"));
+
+    await expect(sendIntegrationAlertEmail(ALERT)).resolves.toEqual({
+      ok: false,
+      error: "fetch failed",
+    });
   });
 });

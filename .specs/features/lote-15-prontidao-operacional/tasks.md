@@ -181,7 +181,7 @@ T14 → T16
 **Depends on**: T1
 **Reuses**: filtros de `getLastAgentMessageAt` e `getIntegrationRefusalsSince`
 **Requirement**: ALERTA-01
-**Status**: Done
+**Status**: Done e49b3b1
 
 **Tools**:
 
@@ -211,7 +211,7 @@ T14 → T16
 **Depends on**: T0
 **Reuses**: `send`, `EmailResult`
 **Requirement**: ALERTA-02
-**Status**: Pending
+**Status**: Done
 
 **Tools**:
 

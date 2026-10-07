@@ -80,6 +80,20 @@ export async function sendResetPasswordEmail(
   });
 }
 
+export interface IntegrationAlertEmail {
+  /** Endereço do operador (`CRIVO_OPERATOR_ALERT_EMAIL`), lido por quem chama. */
+  to: string;
+  subject: string;
+  text: string;
+}
+
+/** Alerta de queda da integração ao operador (lote-15, AD-039). */
+export async function sendIntegrationAlertEmail(
+  alert: IntegrationAlertEmail
+): Promise<EmailResult> {
+  return send({ to: alert.to, subject: alert.subject, text: alert.text });
+}
+
 async function send(message: {
   to: string;
   subject: string;
