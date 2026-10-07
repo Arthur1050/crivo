@@ -35,3 +35,36 @@ Autorização: o usuário pediu a execução de `npm run alert:send-test` em 202
 Confirmação do usuário (2026-10-07): o e-mail chegou na caixa de entrada, com remetente no domínio
 `usekrivo.online`. T10 concluída. O gate F2 segue parcial: a leitura dos logs do cron está agendada
 para 2026-10-08 03:22 UTC.
+
+## Schema em produção (T11, 2026-10-07)
+
+Autorização do usuário no chat (2026-10-07): "aplicar à mão os dois ADD COLUMN e o check".
+
+**Por que não `drizzle-kit push`:** o plano dele traz ruído antigo (derruba e recria 9 FKs, recria 5
+índices únicos que já existem) e, sem terminal interativo, executa tudo sem pedir confirmação. Fora
+do que o lote prometia (só 2 colunas e o check), então a regra da T11 mandava parar; o usuário
+escolheu o caminho manual.
+
+**Alvo:** banco de produção (host `ep-gentle-brook-…`, distinto dos hosts de teste; o script abortava
+se coincidisse com `TEST_DATABASE_URL`). Estado antes: 3 tenants, nenhuma das colunas, nenhum check.
+
+**DDL aplicado numa transação, com `lock_timeout` de 5 s:**
+
+```sql
+ALTER TABLE "tenants" ADD COLUMN "integration_health_state" text;
+ALTER TABLE "tenants" ADD COLUMN "integration_health_changed_at" timestamp with time zone;
+ALTER TABLE "tenants" ADD CONSTRAINT "tenants_integration_health_state_check"
+  CHECK ("tenants"."integration_health_state" in ('saudavel', 'problema'));
+```
+
+**Estado depois:** as duas colunas existem e aceitam nulo (`text` e `timestamptz`), o check
+`tenants_integration_health_state_check` existe, os 3 tenants seguem lá. O código de produção atual
+não lê as colunas (aditivas, nullable), então o deploy atual não é afetado.
+
+**Rollback:**
+
+```sql
+ALTER TABLE tenants DROP COLUMN integration_health_state, DROP COLUMN integration_health_changed_at;
+```
+
+(derrubar a coluna derruba o check junto). O script foi temporário e removido; nada foi versionado.

@@ -376,7 +376,7 @@ T14 → T16
 **Depends on**: T7
 **Reuses**: T7
 **Requirement**: ALERTA-04
-**Status**: Done
+**Status**: Done 1ccdada
 
 **Tools**:
 
@@ -403,7 +403,7 @@ T14 → T16
 **Depends on**: T6
 **Reuses**: procedimento do L14 (T38)
 **Requirement**: ALERTA-04
-**Status**: Pending
+**Status**: Done
 
 **Tools**:
 
