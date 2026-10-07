@@ -127,6 +127,8 @@ agente recebe **o título do arquivo**.
 
 ## L13 — Opt-out por linguagem natural (LGPD) — ✅ EXECUTADO (2026-09-30)
 
+> **Emenda (2026-10-07, lote-13b, AD-038):** o classificador descrito abaixo foi removido; o opt-out existe só pela mensagem exata `sair`.
+
 **Status final**: PASS do Verifier independente no ciclo 2 — os 33 ACs automatizáveis com evidência,
 13/13 mutantes mortos; gate com 2.116 testes (2 falhas conhecidas de `DOCLIM-01 AC8`, por timeout).
 Um Text Classifier de três faixas roda depois da memória, com a última fala do agente como

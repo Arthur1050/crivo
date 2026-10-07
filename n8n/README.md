@@ -443,27 +443,11 @@ Cuidados que o benchmark de 2026-09-23 revelou:
 
 ---
 
-## 14. Opt-out: palavra exata e linguagem natural (lote-13)
+## 14. Opt-out só pela palavra "sair" (lote-13b, AD-038)
 
-Há dois caminhos até `POST /leads/{id}/opt-out`, e os dois terminam na **mesma cauda** (`Code: finalizar opt-out` → purga da memória → purga de `conversa_estado` → envio fixo). A confirmação é única e diz só o que o sistema cumpre: "Pronto, registramos seu pedido. Você não vai mais receber mensagens nossas por este número. Até mais!" (`n8n/src/opt-out-intent.mjs`, `OPT_OUT_CONFIRMATION`).
+O opt-out nasce só da mensagem inteira, normalizada, igual a `sair` (sem acento, minúsculas, sem espaços nas bordas; "sair." não conta): `gate.mjs` roteia `opt-out` antes de qualquer modelo, também para lead em `escalado_humano`. O ramo faz `POST /leads/{id}/opt-out` → `Code: finalizar opt-out` → purga da memória → purga de `conversa_estado` → envio fixo da confirmação "Pronto, registramos seu pedido. Você não vai mais receber mensagens nossas por este número. Até mais!" (`n8n/src/opt-out-intent.mjs`, `OPT_OUT_CONFIRMATION`, a mesma do opt-out pela tela do CRM).
 
-1. **Palavra exata (gate, antes de qualquer modelo).** A mensagem inteira normalizada é `sair` ou `parar` → `gate.mjs` roteia `opt-out`. Funciona com o modelo fora do ar e também para lead em `escalado_humano`. Não mudou no lote-13.
-2. **Linguagem natural (rota `conversa`).** Depois do bloco de memória, `Code: entrada do classificador` monta o texto (última fala do agente na sessão + mensagem do turno) e o `Classificador: opt-out` (`textClassifier` v1.1, modelo próprio `gpt-5.4-nano-2026-03-17`) decide a rota. Saídas: 0 `fora` e 1 `ambigua` → `Code: rota fora` → agente normal; 2 `explicita` → `Code: conferir pedido explícito` (trava determinística: "parar de mandar <conteúdo>" sem menção ao contato é rebaixado e também vai para `Code: rota fora`) → `HTTP: POST /leads/{id}/opt-out (linguagem natural)`; 3 `other` e 4 erro → agente normal. **Só o pedido explícito descadastra**: desde a decisão D11 (2026-09-30) o agente não pergunta mais ao lead desinteressado se ele quer parar de receber mensagens, porque a pergunta soava como convite para sair. O classificador continua com as três categorias porque a medição aprovada trava a configuração dele; `ambigua` só deixou de ter efeito próprio. Se o registro falhar depois de 3 tentativas, o lead recebe uma única orientação para responder `sair`, sem afirmar que as mensagens pararam. Lead e tenant vêm sempre de `$('Code: gate')`, nunca do modelo.
-
-**Armadilha do SDK**: `.onError()` liga à saída 1 de um nó. No classificador (5 saídas) a de erro é a 4, ligada com `.output(4)`.
-
-### Medição e trava de publicação
-
-O classificador só vai para o agente com medição de falso positivo aprovada (AD-032): zero `explicita` em frases ambíguas ou fora de escopo e ≥ 90% nas explícitas.
-
-- Workflow `crivo-medicao-opt-out` (`n8n/workflows/medicao-opt-out.ts`, id `n5iAMCl5nSM6jA6U`): webhook com `{ corpus: <n8n/fixtures/opt-out-corpus.json>, repeticoes: 3 }`, roda só o classificador e a trava, sem CRM, WhatsApp ou memória, e devolve o relatório.
-- Gravar o relatório em `.specs/features/lote-13-opt-out-linguagem-natural/medicao-opt-out-<data>.json` e carimbar com `npx tsx scripts/opt-out-measurement.ts stamp <arquivo>`.
-- A suíte falha (`principal-classificador.test.ts`) se a identidade do classificador em `principal.ts` (parâmetros do nó, do modelo e o fonte de `opt-out-intent.mjs`) não for a do relatório `APROVADO` mais recente. **Remedir sempre que mudar** categoria, descrição, template, modelo, `options` do modelo ou `opt-out-intent.mjs`.
-- Histórico (2026-09-29): v1 reprovou com 7 falsos positivos ("parar de mandar foto/áudio/casa"), v2 com 5, v3 com 2; v3 + trava aprovou (execução 2688, 231 classificações, 0 falso positivo, 84/84 explícitas).
-
-### Vazão (AD-031)
-
-Cada turno de conversa faz **uma** chamada extra ao modelo: cerca de 800 tokens de entrada e 24 de saída (medido na T2, execuções 2634/2635, template customizado: 739 + 24; a v3 do template é um pouco maior). Contra o limite de 200 mil tokens por minuto da organização, com a margem de 0,8 da AD-031 (40 mil de folga), isso dá espaço para ~50 turnos de conversa por minuto só no classificador. A fórmula do teto de contexto não muda.
+`parar` e frases como "quero sair do aluguel" seguem para o agente sem registro. Para pedido explícito em linguagem natural, o system message manda o agente orientar o lead a responder `sair`, sozinha, sem afirmar que as mensagens pararam. Não há classificador nem chamada extra ao modelo: um turno de conversa chama só o modelo do agente. A medição e o lock de publicação do classificador (AD-032) foram removidos.
 
 ### Depois de publicar
 

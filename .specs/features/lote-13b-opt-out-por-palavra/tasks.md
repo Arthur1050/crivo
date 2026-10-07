@@ -182,7 +182,7 @@ T7 → T8 → T9
 **Depends on**: T4
 **Reuses**: NONE
 **Requirement**: SAIR-04
-**Status**: ✅ Done — HASH_T5 (README ainda cita a medição; sai na T6)
+**Status**: ✅ Done — 204ea94 (README ainda cita a medição; sai na T6)
 
 **Tools**:
 
@@ -209,6 +209,7 @@ T7 → T8 → T9
 **Depends on**: T5
 **Reuses**: formato das ADs existentes
 **Requirement**: SAIR-04
+**Status**: ✅ Done — HASH_T6 (validate_state só acusa o validation.md do Verifier, esperado)
 
 **Tools**:
 
