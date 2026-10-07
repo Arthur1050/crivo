@@ -298,7 +298,7 @@ T14 → T16
 **Depends on**: T2, T4
 **Reuses**: `formatIntegrationAlertEmail`, `sendIntegrationAlertEmail`
 **Requirement**: ALERTA-04
-**Status**: Done
+**Status**: Done 1c97d36
 
 **Tools**:
 
@@ -324,7 +324,7 @@ T14 → T16
 **Depends on**: T0
 **Reuses**: `src/db/mint-service-key.ts` (formato do CLI)
 **Requirement**: REVOGA-01
-**Status**: Pending
+**Status**: Done
 
 **Tools**:
 
