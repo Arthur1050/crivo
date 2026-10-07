@@ -63,9 +63,9 @@ afterAll(async () => {
 });
 
 describe("T29 — opt-out da integração invalida ponte no mesmo commit", () => {
-  it.each(["HTTP: POST /leads/{id}/opt-out", "HTTP: POST /leads/{id}/opt-out (linguagem natural)"])("%s usa mesmo serviço factual de descarte", async (name) => {
-    // Keep the workflow SDK outside the application's type-check boundary,
-    // as in scripts/opt-out-measurement.ts; still load the real graph at runtime.
+  it.each(["HTTP: POST /leads/{id}/opt-out"])("%s usa mesmo serviço factual de descarte", async (name) => {
+    // Keep the workflow SDK outside the application's type-check boundary;
+    // still load the real graph at runtime.
     const principalPath = "../../../../n8n/workflows/principal.ts";
     const { default: principal } = await import(principalPath) as { default: { toJSON(): unknown } };
     const graph = principal.toJSON() as unknown as { nodes: { name: string; parameters: { method: string; url: string; headerParameters: { parameters: { name: string; value: string }[] } } }[] };

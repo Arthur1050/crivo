@@ -154,7 +154,7 @@ T7 → T8 → T9
 **Depends on**: T3
 **Reuses**: importação existente em `src/server/chats/human-opt-out.ts`
 **Requirement**: SAIR-02, SAIR-04
-**Status**: ✅ Done — HASH_T4
+**Status**: ✅ Done — b9282aa
 
 **Tools**:
 
@@ -182,6 +182,7 @@ T7 → T8 → T9
 **Depends on**: T4
 **Reuses**: NONE
 **Requirement**: SAIR-04
+**Status**: ✅ Done — HASH_T5 (README ainda cita a medição; sai na T6)
 
 **Tools**:
 
