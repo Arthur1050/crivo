@@ -2,7 +2,15 @@ import "dotenv/config";
 import { pathToFileURL } from "node:url";
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "./index";
-import { conversations, humanMessageSends, leads, messages, tenants } from "./schema";
+import {
+  conversations,
+  humanMessageSends,
+  leads,
+  messages,
+  reengagementEpisodes,
+  tenants,
+  whatsappMessageReceipts,
+} from "./schema";
 
 /**
  * Reset do lead de smoke no CRM — alvo 3 do checklist de limpeza
@@ -18,10 +26,12 @@ import { conversations, humanMessageSends, leads, messages, tenants } from "./sc
  * desacoplamento entre CRM e n8n (INT-08) vale nas duas direções — cada
  * sistema limpa o próprio estado.
  *
- * **Ordem obrigatória** `human_message_sends` → `messages` → `conversations` →
- * `leads`: as FKs não têm `onDelete` (a reserva do envio humano do lote-14
- * aponta para a mensagem e para o lead), então apagar fora de ordem é
- * rejeitado pelo banco. Tudo numa transação: metade apagada é estado pior do
+ * **Ordem obrigatória** `human_message_sends`, `reengagement_episodes` e
+ * `whatsapp_message_receipts` → `messages` → `conversations` → `leads`: essas
+ * FKs não têm `onDelete` (a reserva do envio humano do lote-14 aponta para a
+ * mensagem e para o lead; o episódio e o recibo do L14b apontam para a âncora,
+ * a retomada e o primeiro inbound), então apagar fora de ordem é rejeitado
+ * pelo banco. `lead_agent_state` sai em cascata com a mensagem e o lead. Tudo numa transação: metade apagada é estado pior do
  * que não ter apagado nada.
  *
  * Idempotente: rodar de novo sem lead nenhum não é erro, é `nada-a-apagar`.
@@ -80,6 +90,21 @@ export async function resetSmokeLead(options?: {
       .from(conversations)
       .where(eq(conversations.leadId, lead.id));
     const conversationIds = conversationRows.map((row) => row.id);
+
+    await tx
+      .delete(reengagementEpisodes)
+      .where(and(eq(reengagementEpisodes.tenantId, tenant.id), eq(reengagementEpisodes.leadId, lead.id)));
+    if (conversationIds.length > 0) {
+      await tx.delete(whatsappMessageReceipts).where(
+        and(
+          eq(whatsappMessageReceipts.tenantId, tenant.id),
+          inArray(
+            whatsappMessageReceipts.messageId,
+            tx.select({ id: messages.id }).from(messages).where(inArray(messages.conversationId, conversationIds))
+          )
+        )
+      );
+    }
 
     let deletedMessages = 0;
     if (conversationIds.length > 0) {

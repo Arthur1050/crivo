@@ -1,9 +1,19 @@
 import "dotenv/config";
 import { randomUUID } from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { db } from "../index";
-import { conversations, humanMessageSends, leads, messages, tenants } from "../schema";
+import {
+  conversations,
+  humanMessageSends,
+  leadAgentState,
+  leads,
+  messages,
+  reengagementEpisodes,
+  tenants,
+  whatsappChannels,
+  whatsappMessageReceipts,
+} from "../schema";
 import { resetSmokeLead } from "../smoke-reset";
 
 /**
@@ -18,6 +28,7 @@ describe("resetSmokeLead", () => {
   let tenantSlug: string;
   let tenantId: string;
   const fixtureExternalId = `fixture-${randomUUID()}`;
+  const channelIds: string[] = [];
 
   beforeEach(async () => {
     const [tenant] = await db.select().from(tenants).limit(1);
@@ -37,6 +48,8 @@ describe("resetSmokeLead", () => {
       );
     if (lead) {
       await db.delete(humanMessageSends).where(eq(humanMessageSends.leadId, lead.id));
+      await db.delete(reengagementEpisodes).where(eq(reengagementEpisodes.leadId, lead.id));
+      if (channelIds.length) await db.delete(whatsappMessageReceipts).where(inArray(whatsappMessageReceipts.phoneNumberId, channelIds));
       const convs = await db
         .select({ id: conversations.id })
         .from(conversations)
@@ -47,6 +60,7 @@ describe("resetSmokeLead", () => {
       await db.delete(conversations).where(eq(conversations.leadId, lead.id));
       await db.delete(leads).where(eq(leads.id, lead.id));
     }
+    if (channelIds.length) await db.delete(whatsappChannels).where(inArray(whatsappChannels.phoneNumberId, channelIds));
   });
 
   async function seedFixtureLead(messageCount: number): Promise<string> {
@@ -141,6 +155,45 @@ describe("resetSmokeLead", () => {
     expect(reservationsLeft).toEqual([]);
     const leadsLeft = await db.select({ id: leads.id }).from(leads).where(eq(leads.id, leadId));
     expect(leadsLeft).toEqual([]);
+  });
+
+  it("apaga também episódio de reengajamento e recibo do lead, sem violar FK (L14b)", async () => {
+    const leadId = await seedFixtureLead(0);
+    const [conversation] = await db
+      .select({ id: conversations.id })
+      .from(conversations)
+      .where(eq(conversations.leadId, leadId));
+    const phoneNumberId = BigInt(`0x${randomUUID().replaceAll("-", "").slice(0, 15)}`).toString();
+    channelIds.push(phoneNumberId);
+    await db.insert(whatsappChannels).values({ tenantId, phoneNumberId, ownershipVerifiedAt: new Date() });
+    const anchorAt = new Date(Date.now() - 22 * 3600000);
+    const [anchor] = await db
+      .insert(messages)
+      .values({ tenantId, conversationId: conversation.id, sender: "lead", content: "âncora de fixture", sentAt: anchorAt, whatsappPhoneNumberId: phoneNumberId })
+      .returning();
+    const wamid = `wamid.fixture-${randomUUID()}`;
+    const [resume] = await db
+      .insert(messages)
+      .values({ tenantId, conversationId: conversation.id, sender: "agente", content: "retomada de fixture", sentAt: new Date(), externalId: wamid, whatsappPhoneNumberId: phoneNumberId })
+      .returning();
+    await db.insert(leadAgentState).values({ tenantId, leadId, anchorMessageId: anchor.id, phase: "qualificando" });
+    const authorizedAt = new Date();
+    await db.insert(reengagementEpisodes).values({
+      tenantId, leadId, phoneNumberId, anchorMessageId: anchor.id, anchorSentAt: anchorAt, agentStateRevision: 1,
+      state: "accepted", submittedText: "retomada de fixture", dispatchAuthorizedAt: authorizedAt,
+      dispatchCompletionDeadline: new Date(authorizedAt.getTime() + 120000), wamid, acceptedAt: authorizedAt, messageId: resume.id,
+    });
+    await db.insert(whatsappMessageReceipts).values({
+      tenantId, phoneNumberId, wamid, messageId: resume.id, firstSeenAt: authorizedAt, lastSeenAt: authorizedAt, orphanExpiresAt: null,
+    });
+
+    const result = await resetSmokeLead({ tenantSlug, externalId: fixtureExternalId });
+
+    expect(result).toEqual({ outcome: "apagado", deletedMessages: 2, deletedConversations: 1 });
+    expect(await db.select().from(reengagementEpisodes).where(eq(reengagementEpisodes.leadId, leadId))).toEqual([]);
+    expect(await db.select().from(whatsappMessageReceipts).where(eq(whatsappMessageReceipts.wamid, wamid))).toEqual([]);
+    expect(await db.select().from(leadAgentState).where(eq(leadAgentState.leadId, leadId))).toEqual([]);
+    expect(await db.select({ id: leads.id }).from(leads).where(eq(leads.id, leadId))).toEqual([]);
   });
 
   it("é idempotente: rodar de novo sem lead devolve nada-a-apagar, não erro", async () => {
