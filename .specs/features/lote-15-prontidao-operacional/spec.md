@@ -174,13 +174,13 @@ em data fixa): revogar "A" revoga 2, preserva a data da revogada; revogar "B" em
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| ALERTA-01 | P1: Alerta de queda | Tasks | Pending |
-| ALERTA-02 | P1: Alerta de queda | Tasks | Pending |
-| ALERTA-03 | P1: Alerta de queda | Tasks | Pending |
-| ALERTA-04 | P1: Alerta em produção | Tasks | Pending |
-| REVOGA-01 | P2: Revogação | Tasks | Pending |
-| LIMPA-01 | P3: Limpeza e roadmap | Tasks | Pending |
-| DOC-01 | P3: Limpeza e roadmap | Tasks | Pending |
+| ALERTA-01 | P1: Alerta de queda | Tasks | Verified |
+| ALERTA-02 | P1: Alerta de queda | Tasks | Verified |
+| ALERTA-03 | P1: Alerta de queda | Tasks | Verified |
+| ALERTA-04 | P1: Alerta em produção | Tasks | Parcial: AC6 pendente (T14) |
+| REVOGA-01 | P2: Revogação | Tasks | Verified |
+| LIMPA-01 | P3: Limpeza e roadmap | Tasks | Verified |
+| DOC-01 | P3: Limpeza e roadmap | Tasks | Verified |
 
 **Coverage:** 7 total, 7 mapeados para tasks, 0 sem task.
 

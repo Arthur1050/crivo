@@ -1,6 +1,6 @@
 # Lote 15 — Validação
 
-**Verdict:** FAIL — o código está correto e 30 de 39 mutantes morreram, mas nenhum teste prova que o alerta conta recusas na janela agora − 24h (ALERTA-01 AC1): os mutantes 5d e 5e sobreviveram, e a ALERTA-04 AC6 (T14) segue pendente. Detalhe em "Verificação independente (Verifier Opus)".
+**Verdict:** PASS com ressalvas — na reverificação (iteração 1) os 6 sobreviventes não equivalentes e os 2 mutantes novos da soma morreram, e 121/121 testes passam. Ficam pendentes a ALERTA-04 AC6 (T14) e a F2, que dependem da leitura dos logs do cron depois das 03:00 UTC, por decisão do usuário. Detalhe em "Reverificação (iteração 1)".
 
 ## Gate de viabilidade (T0, 2026-10-07)
 
@@ -214,7 +214,7 @@ diff só amplia o import (`src/server/auth/__tests__/email.test.ts:28-32`) e acr
 | ALERTA-04 AC6 | T14 pendente (leitura dos logs agendada) | ❌ pendente |
 | LIMPA-01 AC1 | § Linhas inertes: 2 linhas apagadas, data registrada. Quem apagou foi o executor, pela extensão, com autorização (a spec dizia o usuário) | ✅ (ator mudou, autorizado) |
 | DOC-01 AC1 | `.specs/ROADMAP-POS-PILOTO.md:278` L15 `✅ EXECUTADO`; `:285` item 1 → L14c; `:287` item 3 deferido com gatilho; `:291` item 7 em `f7e512f`; item 8 aceito sem artefato na mesma tabela | ✅ |
-| DOC-01 AC2 | `n8n/README.md:410` passo 1 `db:mint-service-key`; `:413` passo 4 `db:revoke-service-key`; `git grep "UPDATE service_api_keys"` só encontra `tasks.md:362` (o próprio critério) | ✅ |
+| DOC-01 AC2 | `n8n/README.md:410` passo 1 `db:mint-service-key`; `:413` passo 4 `db:revoke-service-key`; `git grep "UPDATE service_api_keys"` só encontra o texto do próprio critério no `tasks.md` arquivado | ✅ |
 | DOC-01 AC3 | `.specs/STATE.md:347` AD-039 ativa; o Scope diz "Não altera a AD-023" e nada nela contradiz `:216-222` | ✅ |
 | DOC-01 AC4 | `.specs/features/INDEX.md:57` linha do lote 15 | ✅ |
 | Scripts | `package.json` `db:revoke-service-key` e `alert:send-test` (`tsx --conditions=react-server`) | ✅ |
@@ -366,3 +366,105 @@ usados `git stash`, `checkout` nem `reset`.
 - **C3 (de D1):** quando um AC fixa uma chave de agrupamento para o que se mostra (`por (code, rota)`)
   e a fonte junta duas origens (com e sem tenant), a spec diz se elas se somam, e o teste usa as
   duas origens na mesma chave.
+
+## Reverificação (iteração 1)
+
+**Data:** 2026-10-07 · **Verifier:** o mesmo sub-agente independente · **Diff desde o relatório:**
+`b913b8d` (correção da soma no DAL e testes novos) e `39177fd` (emendas da AD-039 e da spec).
+
+### Veredito
+
+**Result:** PASS com ressalvas (iteração 1; substitui o veredito do relatório anterior)
+
+**PASS com ressalvas.** As duas lacunas de teste (alta e média) estão fechadas, e os mutantes que
+as expunham morreram. O D1 foi corrigido no código. O modo de perda do D2 está registrado como
+trade-off aceito na AD-039 (`.specs/STATE.md:350`) e nas Emendas da spec. As ressalvas são externas:
+a ALERTA-04 AC6 (T14) e a F2 do gate, as duas pendentes da leitura dos logs do cron depois das
+03:00 UTC, por decisão do usuário.
+
+### Testes
+
+Os mesmos 10 arquivos, uma vez, no banco base: **10 arquivos, 121 testes, 121 passaram** (117 + 4
+novos), 210,9 s.
+
+Testes novos, com a asserção que fecha cada lacuna:
+
+- `src/server/integration/__tests__/integration-alert.integration.test.ts:194`: recusa própria em
+  `NOW − 24h` exato entra no e-mail (`:206` `toHaveLength(1)`, `:207` `toContain(".../limite: 1")`);
+  a de 1 ms antes não entra (`:209-210`, tenant segue `saudavel`). Fecha a ALERTA-01 AC1 e o edge
+  case de agora − 24h, ponta a ponta.
+- `integration-alert.integration.test.ts:213`: reivindicação parcial. O tenant levado pela "outra
+  execução" não aparece (`:224` `toHaveLength(0)`, `:228` `not.toContain(taken.name)`), e
+  `result.sent` = N do assunto (`:227`). Fecha a ALERTA-01 AC7 e a ALERTA-03 AC4.
+- `src/server/data/__tests__/integration-health.test.ts:147`: recusas com e sem tenant de mesma
+  `(code, rota)` saem numa linha com `count: 3` (`:157` `toEqual([...count: 3])`). Fecha a ALERTA-02
+  AC3 emendada.
+- `integration-health.test.ts:286`: a liberação não desfaz um `saudavel` gravado no mesmo instante da
+  reivindicação (`:295` `changedAt` = `D1`). Fecha o mutante 4b.
+
+**L-055:** `git diff e82abe0..HEAD` segue sem tocar `maintenance.integration.test.ts` e
+`routes/cron-expire-documents.test.ts`. Em `email.test.ts` a única linha removida é o import
+ampliado. Em `git diff 1ccdada..HEAD` dos dois testes do lote, as únicas linhas removidas são
+imports ampliados. Nenhuma asserção pré-existente mudou.
+
+### Sensor
+
+Cópias novas em scratch e baseline novo de SHA-256 e porcelain antes de começar (o DAL mudou em
+`b913b8d`). Um mutante por vez, restauração da cópia e conferência do hash após cada um.
+
+| # | Arquivo | Mutação | Resultado |
+| --- | --- | --- | --- |
+| 4b | `src/server/data/integration-health.ts` (release) | sem a guarda `state = 'problema'` | MORTO: `integration-health.test.ts:295` |
+| 5d | `src/server/integration/integration-alert.ts:11` | janela 24h → 23h | MORTO: `integration-alert.integration.test.ts:206` |
+| 5e | `integration-alert.ts:37` | `since = now` | MORTO: `integration-alert.integration.test.ts:206` |
+| x1 | `integration-alert.ts:65` | e-mail lista todo `plan.alert` | MORTO: `integration-alert.integration.test.ts:224` |
+| x2 | `integration-alert.ts:75` | `sent` = `plan.alert.length` | MORTO: `integration-alert.integration.test.ts:227` |
+| 9c (novo) | `integration-health.ts` (snapshot) | desfaz a soma: chave inclui `tenantId` | MORTO: `integration-health.test.ts:157` |
+| 9d (novo) | `integration-health.ts` (snapshot) | soma vira sobrescrita (`=` no lugar de `+=`) | MORTO: `integration-health.test.ts:157` |
+| 9a (redefinido) | `integration-health.ts` (snapshot) | recusas sem tenant fora do laço de soma | MORTO: `integration-health.test.ts:127`, `:157` |
+| 1a | `integration-health.ts` (claim) | select sem `state = 'saudavel'` | MORTO (regressão) |
+| 1c | `integration-health.ts` (claim) | sem a condição no select e no update | MORTO (regressão) |
+| 2 | `integration-health.ts` (claim) | sem `.for("update")` | MORTO (regressão) |
+| 3a / 3b | `integration-health.ts` (release) | grava `claimedAt` / `null` | MORTO / MORTO (regressão) |
+| 4a | `integration-health.ts` (release) | sem a guarda `changedAt = claimedAt` | MORTO (regressão) |
+| 5a / 5b / 5c | `integration-health.ts` (snapshot) | `gt`; `since ± 1 ms` | MORTO ×3 (regressão) |
+| 9b | `integration-health.ts` (snapshot) | sem `sender = 'agente'` | MORTO (regressão) |
+| 6a / 6b | `src/lib/integration-alert.ts:40` | gravado nulo alerta / inicializa sempre `saudavel` | MORTO / MORTO (regressão) |
+| 7 | `src/server/integration/lgpd.ts:282` | grupo fora do `runGroup` | MORTO (regressão) |
+| 8a / 8b / 8c | `integration-alert.ts` | claim antes do destinatário / sem release / `ok:false` como enviado | MORTO ×3 (regressão) |
+| 12a / 12b / 12c | `app/api/cron/expire-documents/route.ts:49`, `vitest.config.ts:41`, `route.ts:46` | sem ligação / sem `""` no Vitest / destinatário `undefined` | MORTO ×3 (regressão) |
+
+**Resultado:** 27 mutantes rodados nesta iteração, **27 mortos e 0 sobreviventes**: os 5 ex-sobreviventes
+não equivalentes, 3 do DAL novo (9a redefinido, 9c, 9d) e 19 de regressão. Os equivalentes 1b, 10c e
+11c continuam como estavam no relatório anterior. O 13d (`storedChangedAt` no corpo) continua vivo,
+aceito como lacuna de precisão da spec. Somando as duas rodadas, os 6 sobreviventes não equivalentes
+da primeira caíram para 1 aceito (13d).
+
+**Integridade do sensor:** `sha256sum -c` do baseline novo deu `OK` para os 7 arquivos, e o `git status
+--porcelain` final é idêntico ao baseline (os mesmos 4 arquivos modificados antes da verificação). O
+relatório só altera este `validation.md`. Não foram usados `git stash`, `checkout` nem `reset`.
+
+### D2 à luz da emenda
+
+A AD-039 (`.specs/STATE.md:350`) agora diz qual é o modo de perda (processo morre ou estoura o
+tempo entre a reivindicação e o envio, ou a liberação lança depois de `ok:false`), por que foi
+escolhido (contra o risco de e-mail duplicado) e qual a mitigação (log com `sendFailed` e `failed`;
+a tela segue mostrando o problema). A spec também registra isso nas Emendas. O ponto deixa de ser
+lacuna e passa a decisão registrada. Resta uma observação sem ação: no caso de o processo morrer
+entre a reivindicação e o envio, a rota não escreve log nenhum
+(`app/api/cron/expire-documents/route.ts:52`), e a única pista é a tela do Dashboard. A AD-039 aceita
+isso.
+
+### Lacunas restantes
+
+Nenhuma alta nem média. Ficam as baixas, aceitas pelo orquestrador sem teste novo:
+
+- `storedChangedAt` pode entrar no corpo sem que um teste falhe (mutante 13d,
+  `src/lib/integration-alert.ts:51`); a spec não proíbe o campo.
+- O motivo do `sendFailed` não é registrado (`src/server/integration/integration-alert.ts:67-79`,
+  `app/api/cron/expire-documents/route.ts:52-58`).
+- O rótulo é aparado antes de comparar (`src/db/revoke-service-key.ts:38`, `:48`).
+- A ligação do código de saída dos comandos de linha não tem teste (`src/db/revoke-service-key.ts:96-104`,
+  `scripts/send-test-integration-alert.ts:48-58`).
+
+Pendências externas (ressalvas do veredito): ALERTA-04 AC6 (T14) e F2.
