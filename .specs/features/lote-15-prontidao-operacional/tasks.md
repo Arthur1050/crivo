@@ -324,7 +324,7 @@ T14 → T16
 **Depends on**: T0
 **Reuses**: `src/db/mint-service-key.ts` (formato do CLI)
 **Requirement**: REVOGA-01
-**Status**: Done
+**Status**: Done de3f618
 
 **Tools**:
 
@@ -350,7 +350,7 @@ T14 → T16
 **Depends on**: T8
 **Reuses**: —
 **Requirement**: DOC-01
-**Status**: Pending
+**Status**: Done
 
 **Tools**:
 
