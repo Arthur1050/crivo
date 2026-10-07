@@ -131,11 +131,11 @@ existir só pela mensagem exata "sair", e o agente orienta o lead a enviá-la.
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| SAIR-01 | P1: Turno sem classificador | Tasks | Implemented (T3) |
-| SAIR-02 | P1: Opt-out pela palavra "sair" | Tasks | Implemented (T2, T4) |
-| SAIR-03 | P1: Orientação preservada | Tasks | Implemented (T3); AC2 provado na T9 |
-| SAIR-04 | P1: Medição e lock removidos | Tasks | Implemented (T5, T6, T8) |
-| SAIR-05 | P1: Hotfix com prova real | Tasks | Implemented (T7, T8, T9) |
+| SAIR-01 | P1: Turno sem classificador | Execute | ✅ Verified (T3; gate executado em 5fc23db) |
+| SAIR-02 | P1: Opt-out pela palavra "sair" | Execute | ✅ Verified (T2, T4; regras do Switch em 5fc23db) |
+| SAIR-03 | P1: Orientação preservada | Execute | ✅ Verified (T3; AC2 provado na T9) |
+| SAIR-04 | P1: Medição e lock removidos | Execute | ✅ Verified (T5, T6, T8) |
+| SAIR-05 | P1: Hotfix com prova real | Execute | ✅ Verified (T7, T8, T9) |
 
 **Coverage:** 5 total, 5 mapped to tasks.
 

@@ -351,6 +351,8 @@
 - **Produção**: principal `0B1nqjODu7xuYYKF` na versão `ddb63ae8` (65 nós, sem classificador), `versionId` = `activeVersionId`; rollback `e3e25681` em `evidence/rollback-e3e25681.json`; `crivo-medicao-opt-out` arquivado. L14b NÃO ativado. Prova real por WhatsApp: `parar`, linguagem natural e `sair` aprovados.
 - **Pendente**: push do main (aguarda ordem do usuário; auditar `origin/main` inteiro por trailer antes, AD-014). Gaps do Verifier a decidir: testar as regras do `Switch: rota (gate)` e executar o `Code: gate` com entradas de rota (mutantes M11h2/M11h3/M13b/M13c); README/comentários residuais (`system-message.mjs:106-112`, `benchmark-identity.ts:33`) sem tocar o system message publicado. Lições candidatas apresentadas ao usuário, nenhuma promovida (AD-028).
 
+- **Fechamento definitivo (2026-10-07, decisões delegadas)**: main publicado no origin; gaps M11h2/M11h3/M13b/M13c fechados em 5fc23db; L-062/L-063 promovidas e L-026 com evidência em 98b821f, texto da L-026 mantido (não estendido a "argumentos alterados": o `lessons.py` não edita texto, mudar a frase quebraria a deduplicação e juntaria dois sinais numa lição); comentários de `benchmark-identity.ts` corrigidos; worktree `crivo-hotfix-l13b` removido (branch segue no origin em fea3306); deferido no INDEX o comentário de `system-message.mjs:106-112` (exige republicar no n8n).
+
 - **Handoff anterior (L14b)**:
 - **Status**: L14b executado no escopo local ajustado em 2026-10-06; Verifier independente PASS (78 outcomes locais/15 UI deferidas/2 condicionais), 67/71 tarefas existentes; main, sem push.
 - **Gates**: Full única exit 1, 3548 PASS/4 timeouts/30 não executados; duas iterações locais, rechecks 40/40 e 96/96 (5 arquivos); G2 independente 57/57; nenhuma Full após reparos.
