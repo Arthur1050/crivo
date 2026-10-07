@@ -296,16 +296,6 @@ usuário em 2026-10-07: dos oito itens originais, três saíram do lote (1, 3, 7
 cron com o alerta (T14) e a prova de que o cron executa em produção (F2); ambas dependem da leitura
 dos logs logo depois das 03:00 UTC.
 
---- | --- |
-| 1 | Publicação do app Meta / business verification — **bloqueia números e destinatários reais** |
-| 2 | Alerta ativo (e-mail/WhatsApp) quando a integração cai |
-| 3 | Substituir os baselines fictícios pelos números reais das imobiliárias |
-| 4 | Confirmar `RESEND_FROM` na Vercel apontando para `usekrivo.online` |
-| 5 | Helper de revogação de chave de serviço por label na DAL |
-| 6 | Limpar as 2 linhas inertes em `conversa_estado` |
-| 7 | L4 Fix 1: extrair `deltaMinutesLine`/`deltaPercentLine` para `src/lib/format.ts` e cobrir com teste |
-| 8 | Fechar L4 Fix 2 como **aceito sem artefato** — produzir a evidência exigiria montar uma camada de teste de UI que o projeto não tem (zero `.test.tsx`) |
-
 ---
 
 ## L16 — Vitrine pública do catálogo *(último lote, por decisão do usuário)*
