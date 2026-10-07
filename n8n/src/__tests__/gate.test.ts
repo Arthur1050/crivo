@@ -14,12 +14,18 @@ describe("detectOptOut (LGPD-03)", () => {
     expect(detectOptOut("Sáir")).toBe(true);
   });
 
-  it("detecta 'PARAR ' (com espaço à direita)", () => {
-    expect(detectOptOut("PARAR ")).toBe(true);
+  it("detecta 'Saír' e ' SAIR ' (acento e espaços nas bordas — SAIR-02 AC1)", () => {
+    expect(detectOptOut("Saír")).toBe(true);
+    expect(detectOptOut(" SAIR ")).toBe(true);
   });
 
-  it("detecta 'parar' (minúsculas)", () => {
-    expect(detectOptOut("parar")).toBe(true);
+  it("NÃO detecta 'parar' nem 'PARAR ' (SAIR-02 AC2: segue para o agente)", () => {
+    expect(detectOptOut("parar")).toBe(false);
+    expect(detectOptOut("PARAR ")).toBe(false);
+  });
+
+  it("NÃO detecta 'sair.' (a pontuação não é removida)", () => {
+    expect(detectOptOut("sair.")).toBe(false);
   });
 
   it("detecta '  sair  ' (espaços nas duas bordas)", () => {
@@ -83,9 +89,14 @@ describe("gate — máquina de estados de roteamento (design.md, pipeline passo 
       expect(route).toBe("opt-out");
     });
 
-    it("texto 'parar' com mídia simultaneamente marcada -> opt-out (texto vence mídia)", () => {
-      const route = gate({ ...BASE, hasMedia: true, text: "parar" });
+    it("texto 'sair' com mídia simultaneamente marcada -> opt-out (texto vence mídia)", () => {
+      const route = gate({ ...BASE, hasMedia: true, text: "sair" });
       expect(route).toBe("opt-out");
+    });
+
+    it("texto 'parar' sem outra marca -> conversa (SAIR-02 AC2: sem opt-out)", () => {
+      const route = gate({ ...BASE, text: "parar" });
+      expect(route).toBe("conversa");
     });
   });
 

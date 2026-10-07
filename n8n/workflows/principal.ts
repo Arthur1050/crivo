@@ -578,8 +578,6 @@ const finalizeOptOut = node({
     parameters: {
       mode: "runOnceForAllItems",
       language: "javaScript",
-      // lote-13 (T11, OPTMSG-01): este nó serve os DOIS caminhos de opt-out
-      // (palavra-chave e linguagem natural), por isso lê só `$('Code: gate')`.
       // O texto vem de `opt-out-intent.mjs` e não promete retomada: nenhum
       // caminho do sistema reativa um lead descadastrado.
       jsCode:
@@ -593,59 +591,6 @@ const finalizeOptOut = node({
     },
   },
   output: [{ mensagens: ["confirmação de opt-out"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "encerrada" }],
-});
-
-// lote-13 (T11, OPTREG-01): registro do opt-out pedido em linguagem natural
-// (saída `explicita` do classificador). Mesmos parâmetros do nó da
-// palavra-chave (lead e tenant de `Code: gate`, nunca do modelo), mais uma
-// saída de erro: depois das 3 tentativas, a falha orienta a palavra `sair` em
-// vez de parar o turno (AC7). O nó da palavra-chave fica como estava
-// (OPTKEY-01 AC2): a falha dele continua indo para `crivo-agente-erros`.
-const postOptOutNatural = node({
-  type: "n8n-nodes-base.httpRequest",
-  version: 4.4,
-  config: {
-    name: "HTTP: POST /leads/{id}/opt-out (linguagem natural)",
-    position: [7820, 100],
-    retryOnFail: true,
-    maxTries: 3,
-    waitBetweenTries: 2000,
-    onError: "continueErrorOutput",
-    parameters: {
-      method: "POST",
-      url: expr(`${CRM_BASE_URL}/leads/{{ $('Code: gate').first().json.id }}/opt-out`),
-      authentication: "genericCredentialType",
-      genericAuthType: "httpHeaderAuth",
-      sendHeaders: true,
-      headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }] },
-    },
-    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
-  },
-  output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", optedOutAt: "2026-08-05T12:11:00.000Z" }],
-});
-
-// Falha do registro natural (OPTREG-01 AC7, AC10): `optedOutAt` segue nulo e
-// o lead recebe UMA mensagem pedindo a palavra `sair`, sem afirmar que as
-// mensagens pararam. Mesmo formato que `Code: destinatário do envio fixo`
-// espera das outras rotas fixas; a fase segue a regra da rota de mídia.
-const guideSairOnFailure = node({
-  type: "n8n-nodes-base.code",
-  version: 2,
-  config: {
-    name: "Code: orientar sair (falha do registro)",
-    position: [8080, 100],
-    parameters: {
-      mode: "runOnceForAllItems",
-      language: "javaScript",
-      jsCode:
-        '__INLINE(opt-out-intent.mjs)__' +
-        "\n\n" +
-        "const ctx = $('Code: gate').first().json;\n" +
-        "const mensagens = [OPT_OUT_REGISTRATION_FAILED];\n" +
-        "return [{ json: { mensagens, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, tenantSlug: ctx.tenantSlug, leadId: ctx.id, fase: ctx.fase || 'qualificando' } }];\n",
-    },
-  },
-  output: [{ mensagens: ["orientação para responder sair"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
 });
 
 // ---------------------------------------------------------------------
@@ -1020,166 +965,6 @@ const memoryReadyCheckpoint = node({
 });
 
 // ---------------------------------------------------------------------
-// 10b. Classificador de opt-out (lote-13 — T10; design.md). Decide a ROTA do
-//      turno antes do agente: `explicita` entra no ramo de opt-out (T11), e
-//      `ambigua`, `fora`, `other` (categoria não reconhecida) e erro seguem
-//      para o agente como antes (OPTREG-01 AC8: na dúvida, não descadastrar).
-//      Decisão D11 (2026-09-30): `ambigua` não gera mais pergunta de
-//      confirmação; o classificador continua com três categorias porque a
-//      identidade aprovada na medição v4 trava a configuração dele. O classificador só lê a
-//      mensagem do turno e a última fala do agente na sessão corrente; lead e
-//      tenant nunca passam por ele (OPTREG-01 AC2).
-// ---------------------------------------------------------------------
-
-// A sessão corrente é a carga da memória; a semeadura só roda em cold start
-// (`isExecuted` evita ler um nó que não executou neste turno). O texto do lead
-// é o mesmo buffer que vira `userMessage` do agente.
-const buildClassifierInputNode = node({
-  type: "n8n-nodes-base.code",
-  version: 2,
-  config: {
-    name: "Code: entrada do classificador",
-    position: [7430, 300],
-    parameters: {
-      mode: "runOnceForAllItems",
-      language: "javaScript",
-      jsCode:
-        '__INLINE(opt-out-intent.mjs)__' +
-        "\n\n" +
-        "const loaded = $('Chat Memory Manager: carregar sessão').first().json;\n" +
-        "const seedNode = $('Code: selecionar mensagens de semeadura');\n" +
-        "const seeded = seedNode.isExecuted ? seedNode.all().map((item) => item.json) : [];\n" +
-        "const buffer = $('Code: contexto do lead').first().json.bufferArray || [];\n" +
-        "const classifierInput = buildClassifierInput({ lastAgentMessage: lastAgentMessage({ loaded, seeded }), userMessage: buffer.map((m) => m.text) });\n" +
-        "return [{ json: { classifierInput } }];\n",
-    },
-  },
-  output: [{ classifierInput: "Última mensagem enviada ao lead: (nenhuma)\nMensagem do lead: Oi, vi o anúncio do apartamento" }],
-});
-
-// Parâmetros congelados na T2 (design.md, Tech Decisions), idênticos aos de
-// `medicao-opt-out.ts` byte a byte: a medição aprovada vale para este nó só
-// enquanto a identidade dos dois for a mesma (`principal-classificador.test.ts`).
-// Nó de modelo próprio, com o mesmo snapshot do agente (AD-026); o
-// `OpenAI Chat Model` do agente não muda.
-const classifierModel = languageModel({
-  type: "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-  version: 1.3,
-  config: {
-    name: "OpenAI Chat Model (classificador)",
-    position: [7560, 100],
-    parameters: {
-      model: {
-        __rl: true,
-        mode: "list",
-        value: "gpt-5.4-nano-2026-03-17",
-        cachedResultName: "gpt-5.4-nano-2026-03-17",
-      },
-      options: { reasoningEffort: "low", timeout: 20000 },
-    },
-    credentials: { openAiApi: newCredential("OpenAI account") },
-  },
-});
-
-const optOutClassifier = node({
-  type: "@n8n/n8n-nodes-langchain.textClassifier",
-  version: 1.1,
-  config: {
-    name: "Classificador: opt-out",
-    position: [7560, 300],
-    onError: "continueErrorOutput",
-    parameters: {
-      inputText: "={{ $json.classifierInput }}",
-      categories: {
-        categories: [
-          {
-            category: "fora",
-            description:
-              'A mensagem não pede para parar de receber mensagens nem para encerrar o contato. Inclui desinteresse num imóvel específico; pedido para parar de mandar só um tipo de conteúdo, formato ou filtro de busca (fotos, áudios, links, um tipo de imóvel, uma região, um número de quartos); usos de "parar" ou "sair" que se referem a outra coisa (o aluguel atual, o apartamento, a enrolação); e resposta negativa, como "não" ou "pode continuar", quando a última mensagem enviada perguntou se o lead quer parar de receber mensagens.',
-          },
-          {
-            category: "ambigua",
-            description:
-              'Desinteresse geral sem pedido de parar de receber mensagens (por exemplo, "não tenho interesse, obrigado"), ou aviso de número errado ou pessoa errada. Também vale para uma resposta ambígua quando a última mensagem enviada perguntou se o lead quer parar de receber mensagens.',
-          },
-          {
-            category: "explicita",
-            description:
-              "O lead pede para parar de receber mensagens desta imobiliária como um todo: parar de receber mensagens, não ser mais contatado, sair da lista ou não mandarem mais nada. Também vale para uma resposta afirmativa quando a última mensagem enviada perguntou se ele quer parar de receber mensagens. Não vale quando o que deve parar é só um tipo de conteúdo, formato ou filtro de busca.",
-          },
-        ],
-      },
-      options: {
-        multiClass: false,
-        fallback: "other",
-        systemPromptTemplate:
-          'Você classifica a mensagem de um lead de imobiliária no WhatsApp quanto a um pedido para parar de receber mensagens. Classifique o texto do usuário em uma destas categorias: {categories}. Use a última mensagem enviada ao lead só para entender respostas curtas, como "sim" ou "não". "Parar de mandar" seguido de um tipo de conteúdo, formato ou filtro de busca é fora; só é explicita quando o lead quer parar de receber as mensagens ou o contato em si. Se a última mensagem enviada perguntou se o lead quer parar de receber mensagens, "sim" é explicita e "não" ou um pedido para continuar é fora. Regra de desempate: na dúvida entre explicita e ambigua, escolha ambigua; na dúvida entre ambigua e fora, escolha fora. Não explique e responda somente o JSON, seguindo as instruções de formato abaixo.',
-        enableAutoFixing: true,
-      },
-    },
-    subnodes: { model: classifierModel },
-  },
-  output: [{ classifierInput: "..." }],
-});
-
-// lote-13 (T12d, decisão D3): trava determinística na saída `explicita`. A
-// medição v3 deixou falsos positivos aleatórios em "para de mandar <conteúdo>"
-// sem menção ao contato em si; `refineOptOutCategory` rebaixa esses turnos para
-// `ambigua`, que segue para o agente sem registro (D11). Lê o mesmo buffer do turno
-// que `Code: entrada do classificador`; lead e tenant não passam por aqui.
-const confirmExplicitOptOut = node({
-  type: "n8n-nodes-base.code",
-  version: 2,
-  config: {
-    name: "Code: conferir pedido explícito",
-    position: [7690, -100],
-    parameters: {
-      mode: "runOnceForAllItems",
-      language: "javaScript",
-      jsCode:
-        '__INLINE(opt-out-intent.mjs)__' +
-        "\n\n" +
-        "const buffer = $('Code: contexto do lead').first().json.bufferArray || [];\n" +
-        "const categoria = refineOptOutCategory({ categoria: 'explicita', userMessage: buffer.map((m) => m.text) });\n" +
-        "return [{ json: { optOutExplicito: categoria === 'explicita' } }];\n",
-    },
-  },
-  output: [{ optOutExplicito: true }],
-});
-
-const isExplicitOptOutIf = ifElse({
-  version: 2.3,
-  config: {
-    name: "Pedido explícito confirmado?",
-    position: [7820, -100],
-    parameters: {
-      conditions: {
-        combinator: "and",
-        options: { caseSensitive: true, leftValue: "", typeValidation: "strict" },
-        conditions: [{ leftValue: expr("{{ $json.optOutExplicito }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }],
-      },
-    },
-  },
-});
-
-// Recebe `fora` (saída 0), `ambigua` (1), `other` (3), erro (4) e o pedido
-// explícito rebaixado pela trava. Um item por turno.
-const routeFora = node({
-  type: "n8n-nodes-base.code",
-  version: 2,
-  config: {
-    name: "Code: rota fora",
-    position: [7690, 200],
-    parameters: {
-      mode: "runOnceForAllItems",
-      language: "javaScript",
-      jsCode: "return [{ json: {} }];\n",
-    },
-  },
-  output: [{}],
-});
-
-// ---------------------------------------------------------------------
 // 11. Nó AI Agent (T11) — modelo, memória (T10) e as 5 tools. QLF-02 (não
 //     atribuída a nenhuma task deste lote — gap real do tasks.md, ver nota
 //     do Handoff) é fechada aqui, no único ponto do fluxo onde "qual campo
@@ -1231,8 +1016,8 @@ const buildAgentSystemMessage = node({
         // quando `wasExpired` já zera a lista. É o sinal que faltava para o
         // agente cumprimentar e dizer quem é antes de perguntar.
         "const firstTurn = perguntados.length === 0;\n" +
-        // lote-13 (T10, D11): nada chega por `$json` de `Code: rota fora`;
-        // todo o turno continua lido dos ancestrais pelo nome.
+        // Nada chega por `$json` do checkpoint de memória; todo o turno é
+        // lido dos ancestrais pelo nome.
         "const systemMessage = buildSystemMessage({ settings, phase, perguntados: updatedPerguntados, businessHours, now, meetingAt, firstTurn });\n" +
         "const buffer = $('Code: contexto do lead').first().json.bufferArray || [];\n" +
         "const userMessage = buffer.map((m) => m.text).join('\\n');\n" +
@@ -2151,10 +1936,8 @@ const fixedReplyWired = normalizeFixedReplyRecipient.to(
 
 const clearAfterAgentTurnWired = prepClearAfterAgentTurn.to(clearBufferAndFinalize);
 
-// lote-13 (T11): `optOutTailWired` é o alvo ÚNICO dos dois registros de
-// opt-out (palavra-chave e linguagem natural) — fan-in, mesma regra do topo
-// desta seção. Por isso a confirmação, as purgas e o envio são os mesmos nós
-// nos dois caminhos (OPTMSG-01 AC1, OPTREG-01 AC3-AC5).
+// `optOutTailWired` é a cauda do opt-out pela palavra `sair`: confirmação,
+// purgas e envio.
 const optOutTailWired = finalizeOptOut.to(
   purgeMemoryOnOptOut.to(
     purgeConversaEstadoOnOptOut.to(restoreOptOutPayload.to(fixedReplyWired))
@@ -2197,24 +1980,9 @@ const afterLoadMemory = loadMemory.to(
 // nó AI Agent e a convergência final — única extensão feita aqui, nunca
 // uma reconexão do zero (mesma disciplina de T9/T10).
 //
-// lote-13 (T10): entre o checkpoint e o system message entra o classificador
-// de opt-out. `agentTurnWired` é o alvo único de `Code: rota fora`, a
-// única rota que segue para o agente (mesma regra do topo desta seção). A saída de erro do
-// classificador é a de índice 4 e é ligada com `.output(4)`, nunca com
-// `.onError()`: o SDK liga `.onError()` à saída 1, que aqui é `ambigua`
-// (achado da T2). A saída 2 (`explicita`) passa pela trava determinística
-// (T12d): pedido só de conteúdo vai para `Code: rota fora`; o resto entra no
-// ramo de opt-out (T11). O sucesso do HTTP natural cai na mesma cauda da
-// palavra-chave, e o erro (saída 1 do HTTP, nó de duas saídas, onde
-// `.onError()` é correto) orienta `sair` pelo envio fixo.
-memoryReadyCheckpoint.to(buildClassifierInputNode.to(optOutClassifier));
-optOutClassifier.output(0).to(routeFora);
-optOutClassifier.output(1).to(routeFora);
-optOutClassifier.output(2).to(confirmExplicitOptOut.to(isExplicitOptOutIf.onTrue(postOptOutNatural).onFalse(routeFora)));
-postOptOutNatural.to(optOutTailWired);
-postOptOutNatural.onError(guideSairOnFailure.to(fixedReplyWired));
-optOutClassifier.output(3).to(routeFora);
-optOutClassifier.output(4).to(routeFora);
+// lote-13b: o checkpoint de memória liga direto ao turno do agente. Não há
+// classificador de opt-out (AD-038): só a palavra exata `sair` registra, no
+// gate. `agentTurnWired` é definido abaixo e ligado ao checkpoint logo depois.
 
 const agentTurnWired = buildAgentSystemMessage.to(
     persistPerguntados.to(
@@ -2255,7 +2023,7 @@ const agentTurnWired = buildAgentSystemMessage.to(
       )
     )
   );
-routeFora.to(agentTurnWired);
+memoryReadyCheckpoint.to(agentTurnWired);
 
 const conversaBranch = getSettings.to(
   checkSessionExpired.to(

@@ -50,9 +50,12 @@ const MEMORY_NODE = "Postgres Chat Memory";
  * Code; +1 erro do GET → fechamento; +1 Code → IF; +1 IF verdadeiro →
  * preparar envio; +1 IF falso → fechamento) → 73/95, medido por
  * `principal.toJSON()`.
+ * lote-13b (hotfix): −8 nós (classificador, seu modelo e entrada, rota fora,
+ * conferir pedido explícito, IF do pedido explícito, HTTP de opt-out em
+ * linguagem natural, orientar sair) e −14 conexões → 65/81.
  */
-const NOS_ESPERADOS = 73;
-const CONEXOES_ESPERADAS = 95;
+const NOS_ESPERADOS = 65;
+const CONEXOES_ESPERADAS = 81;
 
 const TOOLS = [
   "registrar_qualificacao",
@@ -155,7 +158,7 @@ describe("a troca de modelo não mexeu em mais nada do grafo (MOD-01 AC2)", () =
     );
   });
 
-  it("o grafo continua com 73 nós e 95 conexões — as contagens medidas depois da T23 do lote-14", () => {
+  it("o grafo tem 65 nós e 81 conexões — as contagens do hotfix do lote-13b sobre o L14", () => {
     expect(workflow.nodes).toHaveLength(NOS_ESPERADOS);
     expect(contarConexoes()).toBe(CONEXOES_ESPERADAS);
   });
