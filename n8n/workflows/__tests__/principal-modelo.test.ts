@@ -53,9 +53,13 @@ const MEMORY_NODE = "Postgres Chat Memory";
  * L14b (T49–T51): status, publicação agent-state e session-context adicionam
  * 26 nós e 33 conexões autorizados → 99/128. O inventário explícito abaixo
  * fixa essas adições; modelo, tools e memória conservam suas asserções.
+ * lote-13b (T3): −8 nós (entrada do classificador, classificador, modelo do
+ * classificador, rota fora, conferir pedido explícito, IF do pedido explícito,
+ * HTTP de opt-out em linguagem natural, orientar sair) e −14 conexões (−15 das
+ * arestas desses nós; +1 memória pronta → system message) → 91/114.
  */
-const NOS_ESPERADOS = 99;
-const CONEXOES_ESPERADAS = 128;
+const NOS_ESPERADOS = 91;
+const CONEXOES_ESPERADAS = 114;
 const NOS_ADICIONADOS_L14B = [
   "Code: separar WhatsApp messages/statuses",
   "WhatsApp: tipo de evento",
@@ -186,7 +190,7 @@ describe("a troca de modelo não mexeu em mais nada do grafo (MOD-01 AC2)", () =
     );
   });
 
-  it("o grafo conserva 99 nós e 128 conexões, com as 26 adições autorizadas do L14b", () => {
+  it("o grafo conserva 91 nós e 114 conexões, com as 26 adições autorizadas do L14b", () => {
     expect(workflow.nodes).toHaveLength(NOS_ESPERADOS);
     expect(contarConexoes()).toBe(CONEXOES_ESPERADAS);
     expect(NOS_ADICIONADOS_L14B).toHaveLength(26);

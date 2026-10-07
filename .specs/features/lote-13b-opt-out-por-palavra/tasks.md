@@ -97,7 +97,7 @@ T7 → T8 → T9
 **Depends on**: None
 **Reuses**: `foldAccentsAndCase`, `detectOptOut`
 **Requirement**: SAIR-02
-**Status**: ✅ Done — HASH_T2
+**Status**: ✅ Done — f3859b5
 
 **Tools**:
 
@@ -125,6 +125,7 @@ T7 → T8 → T9
 **Depends on**: T2
 **Reuses**: `memoryReadyCheckpoint`, `agentTurnWired`, ramo da palavra-chave existente
 **Requirement**: SAIR-01, SAIR-03
+**Status**: ✅ Done — HASH_T3
 
 **Tools**:
 
