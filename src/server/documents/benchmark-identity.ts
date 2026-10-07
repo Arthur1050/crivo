@@ -29,8 +29,10 @@ function sha256(text: string) {
 
 /**
  * Id do modelo do nó do agente (`name: "OpenAI Chat Model"`): o snapshot
- * datado. Ancorado no nome, não no primeiro `lmChatOpenAi` do arquivo: desde o
- * lote-13 o classificador de opt-out tem o seu próprio nó de modelo.
+ * datado. Ancorado no nome, não no primeiro `lmChatOpenAi` do arquivo: do
+ * lote-13 ao lote-13b o classificador de opt-out teve o seu próprio nó de
+ * modelo (removido pela AD-038), e qualquer outro nó de modelo que volte ao
+ * arquivo não pode virar a identidade do agente.
  */
 export function extractModelId(principalSource: string): string {
   const at = principalSource.indexOf('name: "OpenAI Chat Model"');

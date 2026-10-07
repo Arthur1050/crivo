@@ -73,8 +73,9 @@ describe("benchmark identity (lote-12 T34)", () => {
 });
 
 describe("extractModelId ancorado no nó do agente (lote-13 T6)", () => {
-  // Um segundo `lmChatOpenAi` (o do classificador de opt-out) entra no mesmo
-  // arquivo. O modelo que conta para o teto de contexto é o do agente.
+  // Injeta um segundo `lmChatOpenAi` no arquivo (como o do classificador de
+  // opt-out, que existiu do lote-13 ao lote-13b e saiu pela AD-038). O modelo
+  // que conta para o teto de contexto continua sendo o do agente.
   const classifierModel = [
     "const classifierModel = languageModel({",
     '  type: "@n8n/n8n-nodes-langchain.lmChatOpenAi",',
