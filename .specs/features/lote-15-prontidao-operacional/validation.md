@@ -19,3 +19,19 @@ para destravar: o usuário abre os logs do cron no painel da Vercel logo depois 
 min) e confirma uma execução 200, ou autoriza a leitura pelo MCP dentro da janela de 1 h seguinte à
 execução. Produção hoje está no commit `e82abe0` (deployment `dpl_Ea4kiPTtKtNGdCad58Qs6rKPe63n`,
 READY), rollback candidate.
+
+## Envio de teste ao operador (T10, 2026-10-07)
+
+Autorização: o usuário pediu a execução de `npm run alert:send-test` em 2026-10-07, com
+`CRIVO_OPERATOR_ALERT_EMAIL` e `RESEND_FROM` no ambiente local. O endereço completo do operador não
+é registrado aqui.
+
+| Tentativa | Resultado |
+| --- | --- |
+| 1 | Resend recusou com 422: destinatário era um endereço de domínio de exemplo (valor de placeholder no ambiente local). Nada enviado. Corrigido pelo usuário. |
+| 2 | Aceito e `delivered`, mas com remetente padrão `onboarding@resend.dev` (sem `RESEND_FROM` local), que só entrega ao dono da conta e não prova o domínio verificado. O comando saiu com 127 por um assert do libuv no Windows (`process.exit` com socket fechando); corrigido em `310445b` (`process.exitCode`). |
+| 3 | Aceito, id do provedor `01a117b7-1556-77b9-b145-ae2467acb68c`, status `delivered` (MCP Resend `get-email`, leitura). Remetente `Crivo <support@usekrivo.online>`, domínio verificado na F3. Assunto `[teste] [crivo] Integração com problema em 1 imobiliária(s)`. Comando saiu com código 0. |
+
+Confirmação do usuário (2026-10-07): o e-mail chegou na caixa de entrada, com remetente no domínio
+`usekrivo.online`. T10 concluída. O gate F2 segue parcial: a leitura dos logs do cron está agendada
+para 2026-10-08 03:22 UTC.
