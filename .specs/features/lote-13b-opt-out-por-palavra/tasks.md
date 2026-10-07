@@ -293,7 +293,7 @@ T7 → T8 → T9
 **Depends on**: T8
 **Reuses**: `n8n/smoke/roteiro.md`, `src/db/smoke-reset.ts`
 **Requirement**: SAIR-01, SAIR-02, SAIR-03, SAIR-05
-**Status**: ✅ Done — HASH_T9 (3 casos aprovados; `evidence/prova-real.md`)
+**Status**: ✅ Done — c5eac28 (3 casos aprovados; `evidence/prova-real.md`)
 
 **Tools**:
 

@@ -461,7 +461,7 @@ O corretor assume uma conversa pelo Chats, responde pelo CRM (envio direto pela 
 
 ### Marca no gate
 
-`gate.mjs` recebe `humanTakeoverAt` (passado por `Code: gate` a partir do `POST /leads`). Com a marca, toda mensagem do lead vai para `somente-registrar`, no mesmo nível de `escalado_humano`: a mensagem é gravada no CRM e o agente não fala, inclusive em mídia sem texto. A palavra exata `sair`/`parar` continua vencendo a marca e segue para `opt-out`.
+`gate.mjs` recebe `humanTakeoverAt` (passado por `Code: gate` a partir do `POST /leads`). Com a marca, toda mensagem do lead vai para `somente-registrar`, no mesmo nível de `escalado_humano`: a mensagem é gravada no CRM e o agente não fala, inclusive em mídia sem texto. A palavra exata `sair` continua vencendo a marca e segue para `opt-out`.
 
 ### Releitura do lead antes de cada envio do agente
 
