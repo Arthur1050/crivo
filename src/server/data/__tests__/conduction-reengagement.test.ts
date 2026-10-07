@@ -106,10 +106,31 @@ describe("T28 — condução invalida episódio atomicamente", () => {
     expect(await agent(row)).toEqual({ ...previous, phase: null, askedFields: [], openingHistory: [], revision: previous.revision + 1, updatedAt: reset });
     expect((await agent(row)).anchorMessageId).toBe(first!.message.id); expect(await episode(row)).toEqual(before);
     const frame = await getSessionFrame({ tenantId }, row.lead.id, {}, { now: () => reset });
-    expect(frame).toMatchObject({ ok: true, frame: { bridge: null, resetRequestedAt: reset.toISOString() }, history: [] });
+    expect(frame).toMatchObject({ ok: true, frame: { bridge: null, resetRequestedAt: reset.toISOString() } });
+    // AD-034: a devolução ressemeia a sessão a partir do CRM, inclusive o que veio antes do pedido de reset.
+    if (!frame.ok) throw new Error("Frame ausente");
+    expect(frame.history.map((message) => message.id)).toContain(first!.message.id);
+    expect(frame.history.every((message) => Date.parse(message.sentAt) < reset.getTime())).toBe(true);
     const replayAgent = await agent(row), replayLead = await lead(row);
     expect(await returnConversationToAgent(scope, row.lead.id, new Date(reset.getTime() + 1))).toEqual({ outcome: "ja-agente", lead: replayLead });
     expect(await agent(row)).toEqual(replayAgent); expect(await episode(row)).toEqual(before); expect(await lead(row)).toEqual(replayLead);
+  });
+
+  it("fala do corretor anterior à devolução volta na semeadura pelo CRM, atribuída à equipe (AD-034 D12, auditoria L14b B1)", async () => {
+    const row = await fixture("accepted"), first = await inbound(row), clock = new Date(now.getTime() + 2 * hour);
+    await takeOverConversation(scope, row.lead.id, userId, clock);
+    const [human] = await db.insert(messages).values({ tenantId, conversationId: row.conversation.id, sender: "humano", authorUserId: userId,
+      authorName: "Corretora T28", content: "O apartamento tem 3 vagas", sentAt: new Date(clock.getTime() + 60000) }).returning();
+    const reset = new Date(clock.getTime() + 120000);
+    await returnConversationToAgent(scope, row.lead.id, reset);
+    const next = await inbound(row, new Date(reset.getTime() + 60000));
+    const frame = await getSessionFrame({ tenantId }, row.lead.id, { bufferMessageIds: [next!.message.id] }, { now: () => next!.message.sentAt });
+    if (!frame.ok) throw new Error("Frame ausente");
+    const ids = frame.history.map((message) => message.id);
+    expect(frame.frame.bridge).toBeNull();
+    expect(ids).toEqual(expect.arrayContaining([first!.message.id, human.id]));
+    expect(ids).not.toContain(next!.message.id);
+    expect(frame.history.find((message) => message.id === human.id)).toMatchObject({ sender: "humano", authorName: "Corretora T28", content: "O apartamento tem 3 vagas" });
   });
 
   it("reset seguido de publicação atual não reabre episódio cancelado da mesma âncora", async () => {
@@ -183,7 +204,7 @@ describe("T28 — condução invalida episódio atomicamente", () => {
     expect(await getSessionFrame({ tenantId }, row.lead.id, {}, { now: () => now })).toMatchObject({ ok: true, anchor: { id: row.anchor.id }, history: [] });
   });
 
-  it("histórico apagado/resetado não reaparece após novo inbound factual", async () => {
+  it("histórico apagado não reaparece; a devolução ressemeia a sessão viva do CRM (AD-034)", async () => {
     const row = await fixture("accepted");
     const [removed] = await db.insert(messages).values({ tenantId, conversationId: row.conversation.id, sender: "humano", authorUserId: userId, authorName: "Humana T28", content: "Histórico removido", sentAt: new Date(row.anchor.sentAt.getTime() - hour) }).returning();
     await inbound(row);
@@ -193,7 +214,9 @@ describe("T28 — condução invalida episódio atomicamente", () => {
     await db.delete(messages).where(eq(messages.id, removed.id));
     const next = await inbound(row, new Date(clock.getTime() + 1)), frame = await getSessionFrame({ tenantId }, row.lead.id, {}, { now: () => next!.message.sentAt });
     if (!frame.ok) throw new Error("Frame ausente");
-    expect(frame.frame.bridge).toBeNull(); expect(frame.history.map((message) => message.id)).toEqual([next!.message.id]);
+    const ids = frame.history.map((message) => message.id);
+    expect(frame.frame.bridge).toBeNull(); expect(ids).not.toContain(removed.id); expect(ids).toContain(next!.message.id);
+    expect(ids.length).toBeGreaterThan(1);
     expect((await episode(row)).dispatchAuthorizedAt).toEqual(state.dispatchAuthorizedAt); expect((await agent(row)).anchorMessageId).toBe(next!.message.id);
   });
 

@@ -149,8 +149,10 @@ export function selectSeedMessages(
 ) {
   const budget = messageBudget(maxMessages);
   if (budget === 0) return [];
-  const resetMs = frame?.resetRequestedAt ? new Date(frame.resetRequestedAt).getTime() : null;
-  const list = orderedMessages(messages).filter((message) => resetMs === null || new Date(message.sentAt).getTime() >= resetMs);
+  // O reset do CRM invalida a PONTE (validBridge), não o histórico: sem ponte
+  // vale o corte normal de 12h, e a devolução ao agente (AD-034) precisa
+  // ressemear a sessão com as falas da equipe anteriores ao pedido de reset.
+  const list = orderedMessages(messages);
   if (list.length === 0) return [];
 
   const gapMs = sessionGapHours * 60 * 60 * 1000;

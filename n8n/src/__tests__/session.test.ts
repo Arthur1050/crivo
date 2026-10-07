@@ -149,7 +149,20 @@ describe("REEN-04: ponte restrita e reconstrução de sessão (T24)", () => {
     expect(ids(selectSeedMessages([...history, next], next.sentAt, { frame: advanced }))).toEqual(["next"]);
   });
 
-  it("reset vigente elimina contexto antigo e revisão anterior não força reconstrução", () => {
+  it("devolução sem ponte ressemeia a sessão inteira, inclusive a fala da equipe anterior ao reset (AD-034, auditoria L14b B1)", () => {
+    const t = (minutes: number) => new Date(Date.UTC(2026, 9, 1, 14, minutes)).toISOString();
+    const session: HistoryMessage[] = [
+      { id: "a", sender: "lead", content: "tem vaga?", sentAt: t(0) },
+      { id: "b", sender: "agente", content: "vou verificar", sentAt: t(1) },
+      { id: "c", sender: "humano", content: "o apartamento tem 3 vagas", authorName: "Ana", sentAt: t(10) },
+      { id: "d", sender: "lead", content: "ótimo, obrigado", sentAt: t(12) },
+    ];
+    const devolvido = { revision: 0, resetRequestedAt: t(20), bridge: null };
+    expect(ids(selectSeedMessages(session, t(30), { frame: devolvido }))).toEqual(["a", "b", "c", "d"]);
+    expect(ids(selectSeedMessages(session, t(30), { frame: devolvido }))).toEqual(ids(selectSeedMessages(session, t(30))));
+  });
+
+  it("reset vigente invalida a ponte (sem ela vale o corte de 12h) e revisão anterior não força reconstrução", () => {
     const reset = { ...frame, resetRequestedAt: at(39) };
     expect(isSessionExpired(at(0), at(40), 12, { frame: reset })).toBe(true);
     expect(ids(selectSeedMessages(history, at(40), { frame: reset }))).toEqual(["first"]);

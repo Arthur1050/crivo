@@ -106,17 +106,21 @@ describe("T29 — opt-out da integração invalida ponte no mesmo commit", () =>
     expect(await getSessionFrame({ tenantId }, row.lead.id, {}, { now: () => now })).toMatchObject({ ok: true, frame: { bridge: null }, history: [] });
   });
 
-  it("ponte consumida perde continuidade e histórico antigo não retorna pelo novo inbound", async () => {
+  it("opt-out invalida a ponte; o novo inbound segue o corte normal de 12h do CRM (AD-019, REEN-04 AC6/AC8)", async () => {
     const row = await fixture("accepted"), firstAt = new Date(now.getTime() + hour);
     await ingestAgentMessage(tenantId, row.lead.id, { externalId: `fixture-first-${randomUUID()}`, sender: "lead", content: "Primeira resposta", sentAt: firstAt, whatsappPhoneNumberId: row.phoneNumberId }, { now: () => firstAt });
     expect(await getSessionFrame({ tenantId }, row.lead.id, {}, { now: () => firstAt })).toMatchObject({ ok: true, frame: { bridge: { state: "accepted" } } });
     const reset = new Date(firstAt.getTime() + hour); await optOutLead(tenantId, row.lead.id, { now: () => reset });
-    expect(await getSessionFrame({ tenantId }, row.lead.id, {}, { now: () => reset })).toMatchObject({ ok: true, frame: { bridge: null }, history: [] });
+    expect(await getSessionFrame({ tenantId }, row.lead.id, {}, { now: () => reset })).toMatchObject({ ok: true, frame: { bridge: null } });
     const clock = new Date(reset.getTime() + 1);
     const next = await ingestAgentMessage(tenantId, row.lead.id, { externalId: `fixture-next-${randomUUID()}`, sender: "lead", content: "Novo fato recebido", sentAt: clock, whatsappPhoneNumberId: row.phoneNumberId }, { now: () => clock });
     const frame = await getSessionFrame({ tenantId }, row.lead.id, {}, { now: () => clock });
     if (!frame.ok) throw new Error("Frame ausente");
-    expect(frame.frame.bridge).toBeNull(); expect(frame.history.map((message) => message.id)).toEqual([next!.message.id]);
+    const ids = frame.history.map((message) => message.id), sentAt = frame.history.map((message) => Date.parse(message.sentAt));
+    expect(frame.frame.bridge).toBeNull(); expect(ids).toContain(next!.message.id);
+    // Sem ponte, vale o corte normal: nenhuma mensagem separada da seguinte por mais de 12h entra na sessão.
+    expect(sentAt.every((value, index) => index === 0 || value - sentAt[index - 1] <= 12 * hour)).toBe(true);
+    expect(clock.getTime() - sentAt[0]).toBeLessThan(clock.getTime() - row.anchor.sentAt.getTime());
     expect((await episode(row)).bridgeInvalidatedAt).toEqual(reset); expect((await lead(row)).optedOutAt).toEqual(reset);
   });
 
