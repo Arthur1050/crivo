@@ -209,7 +209,7 @@ T7 → T8 → T9
 **Depends on**: T5
 **Reuses**: formato das ADs existentes
 **Requirement**: SAIR-04
-**Status**: ✅ Done — HASH_T6 (validate_state só acusa o validation.md do Verifier, esperado)
+**Status**: ✅ Done — b8a2cc0 (validate_state só acusa o validation.md do Verifier, esperado)
 
 **Tools**:
 
@@ -236,6 +236,7 @@ T7 → T8 → T9
 **Depends on**: None (fases 1 e 2 concluídas: paridade de T1 e mudança de T2/T3 no main)
 **Reuses**: mudanças de T2/T3; `scripts/n8n-inline.mjs`
 **Requirement**: SAIR-05
+**Status**: ✅ Done — fea3306 (branch `hotfix/opt-out-so-sair`, worktree `../crivo-hotfix-l13b`; nada publicado nem enviado)
 
 **Tools**:
 
