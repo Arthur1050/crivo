@@ -125,7 +125,7 @@ T7 → T8 → T9
 **Depends on**: T2
 **Reuses**: `memoryReadyCheckpoint`, `agentTurnWired`, ramo da palavra-chave existente
 **Requirement**: SAIR-01, SAIR-03
-**Status**: ✅ Done — HASH_T3
+**Status**: ✅ Done — abe244a
 
 **Tools**:
 
@@ -154,6 +154,7 @@ T7 → T8 → T9
 **Depends on**: T3
 **Reuses**: importação existente em `src/server/chats/human-opt-out.ts`
 **Requirement**: SAIR-02, SAIR-04
+**Status**: ✅ Done — HASH_T4
 
 **Tools**:
 
