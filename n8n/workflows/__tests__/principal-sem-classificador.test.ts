@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { readInlinedModule } from "../../../scripts/n8n-inline.mjs";
 import principal from "../principal";
 
 /**
@@ -135,5 +136,42 @@ describe("orientação do agente preservada (SAIR-03 AC1)", () => {
   it("o nó que monta o system message inlina o módulo que contém o texto", () => {
     const node = workflow.nodes.find((n) => n.name === SYSTEM_MESSAGE);
     expect(String(node?.parameters.jsCode)).toContain("__INLINE(system-message.mjs)__");
+  });
+});
+
+describe("regras do Switch e execução do gate (SAIR-01 AC3, SAIR-02)", () => {
+  const GATE_NODE = "Code: gate";
+
+  it("o Switch roteia as quatro rotas nesta ordem: opt-out, somente-registrar, midia, conversa", () => {
+    const node = workflow.nodes.find((n) => n.name === SWITCH);
+    const rules = (node?.parameters.rules as { values: { conditions: { conditions: { leftValue: string; rightValue: string }[] } }[] }).values;
+    expect(rules.map((rule) => rule.conditions.conditions[0].rightValue)).toEqual(["opt-out", "somente-registrar", "midia", "conversa"]);
+    expect(rules.every((rule) => rule.conditions.conditions[0].leftValue === "={{ $json.route }}")).toBe(true);
+  });
+
+  function runGate(ctx: Record<string, unknown>) {
+    const node = workflow.nodes.find((n) => n.name === GATE_NODE);
+    const code = String(node?.parameters.jsCode).replace(/'?__INLINE\(([a-zA-Z0-9_.-]+)\)__'?/g, (_m, file: string) => readInlinedModule(file));
+    const $ = (name: string) => {
+      if (name !== "Code: contexto do lead") throw new Error(`nó inesperado: ${name}`);
+      return { first: () => ({ json: ctx }) };
+    };
+    return (new Function("$", code)($) as { json: { route: string } }[])[0].json.route;
+  }
+  const BASE = { optedOutAt: null, status: "em_qualificacao", humanTakeoverAt: null, hasMedia: false };
+
+  it.each([
+    ["sair", "opt-out"],
+    [" SAIR ", "opt-out"],
+    ["parar", "conversa"],
+    ["não quero mais receber mensagens", "conversa"],
+    ["quero sair do aluguel", "conversa"],
+    ["sair.", "conversa"],
+  ])("texto %j → rota %s", (text, route) => {
+    expect(runGate({ ...BASE, text })).toBe(route);
+  });
+
+  it("lead já descadastrado que manda sair de novo → somente-registrar (sem segunda confirmação)", () => {
+    expect(runGate({ ...BASE, optedOutAt: "2026-10-07T12:00:00.000Z", text: "sair" })).toBe("somente-registrar");
   });
 });
