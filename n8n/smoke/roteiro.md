@@ -171,14 +171,14 @@ isso o lead ainda está `escalado_humano` e o gate nunca chega a avaliar o texto
 | Turno | Intenção do lead | O que precisa acontecer no sistema |
 | --- | --- | --- |
 | 1 | Interesse inicial qualquer, para a conversa existir e a memória ter conteúdo a purgar | Lead criado; agente responde normalmente |
-| 2 | **Literal**: a mensagem inteira é exatamente **`sair`** (ou **`parar`**) — nada além disso | `gate` roteia `opt-out`; `POST /leads/{id}/opt-out` grava `optedOutAt`; memória e `conversa_estado` purgadas no mesmo ramo (MEM-04); **uma** mensagem de confirmação é enviada |
+| 2 | **Literal**: a mensagem inteira é exatamente **`sair`** — nada além disso | `gate` roteia `opt-out`; `POST /leads/{id}/opt-out` grava `optedOutAt`; memória e `conversa_estado` purgadas no mesmo ramo (MEM-04); **uma** mensagem de confirmação é enviada |
 | 3 | Manda mais uma mensagem qualquer depois | `gate` roteia `somente-registrar` (`optedOutAt` vence tudo): mensagem gravada, **nenhuma resposta** |
 
 > **A palavra-chave é a mensagem inteira.** `detectOptOut` normaliza (minúsculas, sem acento, sem
-> espaços nas bordas) e compara com `sair`/`parar` **por igualdade** — "quero sair do apartamento"
-> **não** dispara o opt-out do gate, e isso é deliberado (`gate.mjs:24-38`). Frases passam pelo
-> classificador de opt-out do lote-13 e são provadas no cenário 5 (§6.1). Este cenário exige a
-> palavra isolada: se o turno 2 for escrito como frase, ele não foi executado — repita com `sair`.
+> espaços nas bordas) e compara com `sair` **por igualdade** — "quero sair do apartamento", "parar"
+> e "sair." **não** disparam o opt-out do gate, e isso é deliberado (`gate.mjs`, AD-038). Frases e
+> "parar" seguem para o agente e são provadas no cenário 5 (§6.1). Este cenário exige a palavra
+> isolada: se o turno 2 for escrito como frase, ele não foi executado — repita com `sair`.
 
 > **A confirmação única não é "resposta", é o contrato.** LGPD-03 AC1 exige exatamente uma mensagem
 > de descadastro. O silêncio exigido pelo desfecho começa **a partir do turno 3**, não no turno 2.
@@ -193,7 +193,7 @@ isso o lead ainda está `escalado_humano` e o gate nunca chega a avaliar o texto
    depois disso — a mensagem do turno 3 fica gravada e sem resposta.
 4. **(lote-13, regressão obrigatória — OPTKEY-01 AC4, OPTPROVA-01 AC4)** A confirmação tem
    exatamente o texto "Pronto, registramos seu pedido. Você não vai mais receber mensagens nossas por
-   este número. Até mais!" — a mesma do caminho em linguagem natural (OPTMSG-01). Nenhuma promessa de
+   este número. Até mais!" — a mesma do opt-out pela tela do CRM (OPTMSG-01). Nenhuma promessa de
    retomada.
 
 **Evidência a coletar**: id da execução do opt-out; id da execução do turno 3
@@ -238,55 +238,51 @@ dentro do próprio lote (risco nomeado no `design.md`); captura da conversa.
 
 ---
 
-## 6.1 Cenário 5 — opt-out por linguagem natural (lote-13, OPTPROVA-01)
+## 6.1 Cenário 5 — opt-out só pela palavra "sair" (lote-13b, SAIR-05 AC3)
 
-**Objetivo**: provar com conversa real que só o pedido explícito descadastra: pedido explícito
-registra no mesmo turno; desinteresse sem pedido explícito não registra e não gera pergunta sobre
-parar de receber mensagens; pedido fora de escopo não registra e a conversa segue.
-
-> **Decisão D11 (2026-09-30).** Até esta data, o caso 5b provava uma pergunta de confirmação para o
-> lead desinteressado ("você quer parar de receber mensagens?") e o registro no "sim" (execuções 2738
-> e 2744, que passaram). Depois dessa conversa, o usuário decidiu remover a pergunta: ela soava como
-> convite para o lead deixar de ser lead. O caso 5b abaixo prova o comportamento novo.
+**Objetivo**: provar com conversa real, no principal sem classificador (AD-038), que só a mensagem
+exata `sair` descadastra: `parar` e o pedido em linguagem natural são respondidos pelo agente sem
+registro, e o agente orienta responder `sair`.
 
 **Estado inicial exigido**: os três alvos do checklist (§9) limpos. Os três casos usam o mesmo
 número de teste, **em sequência, com `npm run smoke:reset` + `crivo-smoke-reset` e a confirmação do
 checklist entre um caso e outro** — cada reset apaga o lead, e o caso seguinte nasce com um lead novo.
 
-### Caso 5a — explícito (registra)
+### Caso 5a — `parar` (não registra)
+
+| Turno | Intenção do lead | O que precisa acontecer no sistema |
+| --- | --- | --- |
+| 1 | Interesse inicial qualquer | Lead criado; agente responde normalmente |
+| 2 | **Literal**: a mensagem inteira é exatamente **`parar`** | `gate` roteia `conversa`; o agente responde; **`optedOutAt` continua nulo**; nenhuma confirmação de descadastro |
+
+### Caso 5b — pedido em linguagem natural (agente orienta, não registra)
+
+| Turno | Intenção do lead | O que precisa acontecer no sistema |
+| --- | --- | --- |
+| 1 | Interesse inicial qualquer | Lead criado; agente responde normalmente |
+| 2 | Pedido explícito para parar de receber mensagens (ex.: "não quero mais receber mensagens") | O turno vai ao agente; **`optedOutAt` continua nulo**; o agente orienta responder com a palavra `sair`, sozinha, **sem** afirmar que as mensagens pararam |
+
+### Caso 5c — `sair` (registra, uma confirmação)
 
 | Turno | Intenção do lead | O que precisa acontecer no sistema |
 | --- | --- | --- |
 | 1 | Interesse inicial qualquer | Lead criado; agente responde normalmente; memória com conteúdo |
-| 2 | Pedido explícito em linguagem natural para parar de receber mensagens (ex.: "quero que você pare de me mandar mensagens") | Classificador: `explicita`; trava confirma; `POST /leads/{id}/opt-out` (linguagem natural) grava `optedOutAt`; memória e `conversa_estado` purgadas; **uma** confirmação com o texto de OPTMSG-01 |
+| 2 | **Literal**: a mensagem inteira é exatamente **`sair`** | `gate` roteia `opt-out`; `POST /leads/{id}/opt-out` grava `optedOutAt`; memória e `conversa_estado` purgadas; **uma** confirmação com o texto de OPTMSG-01 |
 | 3 | Qualquer mensagem depois | `gate` roteia `somente-registrar`: gravada, **sem resposta** |
 
-### Caso 5b — desinteresse sem pedido explícito (não registra, não pergunta)
+**Desfecho exigido — é isto que aprova ou reprova (SAIR-05 AC3):**
 
-| Turno | Intenção do lead | O que precisa acontecer no sistema |
-| --- | --- | --- |
-| 1 | Interesse inicial qualquer | Lead criado; agente responde normalmente |
-| 2 | Desinteresse geral, sem pedir para parar (ex.: "não tenho interesse, obrigado") | Classificador: `ambigua` ou `fora`, e o turno segue pela `Code: rota fora`; **`optedOutAt` continua nulo**; o agente responde normalmente, **sem** perguntar se o lead quer parar de receber mensagens e **sem** mencionar a palavra `sair` |
-
-### Caso 5c — fora de escopo (não registra)
-
-| Turno | Intenção do lead | O que precisa acontecer no sistema |
-| --- | --- | --- |
-| 1 | Interesse inicial qualquer | Lead criado; agente responde normalmente |
-| 2 | "pode parar de mandar foto" | Classificador: `fora` (ou trava rebaixando para `ambigua`); **`optedOutAt` continua nulo**; resposta normal do agente, sem pergunta sobre parar de receber mensagens |
-
-**Desfecho exigido — é isto que aprova ou reprova (OPTPROVA-01 AC2, AC3):**
-
-1. 5a: `optedOutAt` preenchido; sessão `"triangulo:553499532444"` em `n8n_chat_histories` vazia
+1. 5a: `optedOutAt` nulo depois do turno 2 e o agente respondeu.
+2. 5b: `optedOutAt` nulo depois do turno 2; o agente orientou responder `sair` e não disse que as
+   mensagens pararam.
+3. 5c: `optedOutAt` preenchido; sessão `"triangulo:553499532444"` em `n8n_chat_histories` vazia
    **antes** da limpeza manual; exatamente uma mensagem depois do pedido (a confirmação); turno 3 sem
    resposta.
-2. 5b: `optedOutAt` nulo depois do turno 2, e nenhuma mensagem do agente pergunta se o lead quer
-   parar de receber mensagens nem menciona a palavra `sair`.
-3. 5c: `optedOutAt` nulo.
 
 **Evidência a coletar**: id da execução de cada turno relevante, conferido por `get_execution` antes
-de citado (L-011), mostrando a saída do classificador; `optedOutAt` por lead; estado da sessão de
-memória. Nenhum telefone completo nem texto real além das frases roteirizadas.
+de citado (L-011), mostrando que **nenhuma execução tem o nó "Classificador: opt-out"**;
+`optedOutAt` por lead; estado da sessão de memória. Nenhum telefone completo nem texto real além das
+frases roteirizadas.
 
 ---
 
@@ -370,7 +366,7 @@ Calendar, no cenário 1). Nada que dependa de achar a conversa boa entra no vere
 | 2 — escalar | `status = escalado_humano` **e** responsável atribuído **e** a mensagem seguinte gravada sem nenhuma resposta do agente |
 | 3 — opt-out | `optedOutAt` preenchido **e** sessão de memória purgada pelo fluxo **e** exatamente uma confirmação enviada, com silêncio depois |
 | 4 — consulta de inventário | Turno 2 cita imóvel real (referência + preço batendo com o banco) **e** turno 3 declara ausência sem citar nenhum imóvel **e** nenhum dos dois cita endereço exato nem nome de captador |
-| 5 — opt-out por linguagem natural | 5a: `optedOutAt` preenchido, memória vazia, uma confirmação, silêncio depois **e** 5b: `optedOutAt` nulo e nenhuma mensagem pergunta se o lead quer parar de receber mensagens nem menciona `sair` (decisão D11) **e** 5c: `optedOutAt` nulo |
+| 5 — opt-out só por `sair` | 5a: `parar` com `optedOutAt` nulo e resposta do agente **e** 5b: pedido em linguagem natural com `optedOutAt` nulo, o agente orienta `sair` e não diz que parou **e** 5c: `sair` com `optedOutAt` preenchido, memória vazia, uma confirmação e silêncio depois |
 | 6 — humano no laço | 6a: mensagem do corretor entregue e gravada como `humano` com autor, resposta do lead no Chats em até 10 s sem recarregar **e** zero mensagem do agente depois da marca (thread e execuções `somente-registrar`) **e** 6b: depois da devolução o agente responde com o fato que só o corretor escreveu, sem atribuí-lo ao lead **e** 6c: `optedOutAt` preenchido, uma confirmação entregue, sessão de memória vazia em até 20 min e silêncio na mensagem seguinte **e** 6d: `sair` com a marca grava `optedOutAt` e envia a confirmação única |
 
 **Quantos turnos o cenário pode gastar**: o roteiro sugere a quantidade mínima, não um teto. Turnos a
