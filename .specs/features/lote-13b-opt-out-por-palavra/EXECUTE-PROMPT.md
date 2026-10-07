@@ -2,6 +2,13 @@
 
 Execute o lote 13b do Crivo com a skill `tlc-spec-driven` (ative pelo nome e siga o Execute e as Critical Rules). Responda sempre em português.
 
+## Modelo
+
+- **Sessão de execução: Claude Sonnet 5.5, esforço `medium`.** Lote curto, bem especificado e de baixa ambiguidade: é o cenário em que a Anthropic indica o Sonnet 5.5 como mais barato por tarefa que o Opus 5.5. A página de novidades do Sonnet 5.5 recomenda `medium` para codificação agêntica bem especificada.
+- **Não use `xhigh` nem `max`.** No esforço máximo, o Sonnet 5.5 gasta mais por tarefa que o Opus 5.5 (Artificial Analysis: US$ 7,67 contra US$ 5,98).
+- **Verifier: Claude Opus 5.5** (`model: "opus"` no sub-agente), porque projetar mutações para o sensor é trabalho adversarial.
+- Se a mesma task falhar duas vezes no gate pelo mesmo motivo, pare e avise o usuário antes de trocar de modelo ou subir o esforço.
+
 ## O que já está aprovado (não pergunte de novo)
 
 Spec e tasks aprovadas pelo usuário em 2026-10-07:
