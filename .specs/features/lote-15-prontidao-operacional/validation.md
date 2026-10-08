@@ -1,6 +1,6 @@
 # Lote 15 — Validação
 
-**Verdict:** PASS com ressalvas — na reverificação (iteração 1) os 6 sobreviventes não equivalentes e os 2 mutantes novos da soma morreram, e 121/121 testes passam. Ficam pendentes a ALERTA-04 AC6 (T14) e a F2, que dependem da leitura dos logs do cron depois das 03:00 UTC, por decisão do usuário. Detalhe em "Reverificação (iteração 1)".
+**Verdict:** PASS com ressalvas — na reverificação (iteração 1) os 6 sobreviventes não equivalentes e os 2 mutantes novos da soma morreram, e 121/121 testes passam. Ficam pendentes a ALERTA-04 AC6 (T14) e a F2, que dependem da leitura dos logs do cron depois das 03:00 UTC, por decisão do usuário. Detalhe em "Reverificação (iteração 1)". **Atualização 2026-10-08:** T14 e F2 confirmadas pelos logs de produção (seção "Primeira manutenção de produção"); as duas ressalvas estão fechadas.
 
 ## Gate de viabilidade (T0, 2026-10-07)
 
@@ -9,11 +9,11 @@ Nenhum valor de variável, token ou chave foi lido ou registrado.
 | Fato | Resultado | Fonte |
 | --- | --- | --- |
 | F1 — Hobby limita o cron a 1×/dia, ±59 min | Confirmado | Docs Vercel "Usage & Pricing for Cron Jobs", consultadas em 2026-10-07 (planejamento) |
-| F2 — `/api/cron/expire-documents` executou em produção nos últimos 3 dias | **Parcial: não comprovado** | Leitura de logs recusada pela API: o plano Hobby retém 1 h de log (`get_runtime_logs`, 400 `bad_request`, janela de 3 d). O usuário confirmou no painel (Settings > Cron Jobs) que o cron está **ativo**, mas não consegue ver execução recente |
+| F2 — `/api/cron/expire-documents` executou em produção nos últimos 3 dias | **Confirmado em 2026-10-08** (era parcial em 2026-10-07; ver "Primeira manutenção de produção") | Leitura de logs recusada pela API: o plano Hobby retém 1 h de log (`get_runtime_logs`, 400 `bad_request`, janela de 3 d). O usuário confirmou no painel (Settings > Cron Jobs) que o cron está **ativo**, mas não consegue ver execução recente |
 | F3 — domínio de `RESEND_FROM` verificado no Resend | Confirmado | MCP Resend `list-domains` (leitura autorizada pelo usuário): único domínio `usekrivo.online`, status `verified`, envio habilitado, região `sa-east-1`. O usuário confirmou que `RESEND_FROM` de produção usa `usekrivo.online` (o executor não lê o valor) |
 | F4 — `RESEND_FROM` existe no ambiente Production da Vercel | Confirmado | Conferência do usuário no painel, 2026-10-07 |
 
-**Consequência:** F2 não se confirma por evidência de execução. A Phase 3 (T10–T15) fica
+**Consequência (2026-10-07, superada em 2026-10-08):** F2 não se confirmava por evidência de execução. A Phase 3 (T10–T15) fica
 **bloqueada** até haver prova de que o cron roda em produção; as Phases 1–2 (T1–T9) seguem. Caminho
 para destravar: o usuário abre os logs do cron no painel da Vercel logo depois das 03:00 UTC (±59
 min) e confirma uma execução 200, ou autoriza a leitura pelo MCP dentro da janela de 1 h seguinte à
@@ -468,3 +468,35 @@ Nenhuma alta nem média. Ficam as baixas, aceitas pelo orquestrador sem teste no
   `scripts/send-test-integration-alert.ts:48-58`).
 
 Pendências externas (ressalvas do veredito): ALERTA-04 AC6 (T14) e F2.
+
+## Primeira manutenção de produção (T14 e F2, 2026-10-08)
+
+**Autorização:** leitura de logs pelo MCP da Vercel, dada pelo usuário em 2026-10-07 e executada pela
+leitura agendada de sessão em 2026-10-08 03:22 UTC (janela lida: 02:32 a 03:22 UTC, produção).
+
+**Evidência:** `GET /api/cron/expire-documents`, request `hzfpb-1791428487401-7359481d5350`,
+deployment `dpl_HJ8PLH3yG4MDj4mjjGCV8VzypLC1` (`e2565ee`, o deploy com o alerta), `region=iad1`,
+`runtime=nodejs24.x`, instante **2026-10-08T03:01:28Z**. Linha de log `[manutencao] alerta`:
+
+```
+evaluated: 3, sent: 0, skipped: null, sendFailed: false, failed: false
+```
+
+**Leitura:**
+
+- **ALERTA-04 AC6 atendido:** `integrationAlertFailed` é `false` (campo `failed`) e
+  `integrationAlertEvaluated` (campo `evaluated`) é 3, o número de tenants de produção registrado no
+  T11 (3). O grupo do alerta rodou sem falha.
+- **`sent: 0` é o esperado:** é a primeira avaliação de cada tenant (estado gravado nulo), que só
+  grava o estado e não envia e-mail (ALERTA-01 AC3). `skipped: null` confirma que o destinatário
+  existia no ambiente de produção (ALERTA-04 AC5); `sendFailed: false`.
+- **F2 confirmado:** o Vercel Cron executou a rota em produção às 03:01 UTC, dentro da janela de
+  ±59 min do plano Hobby e sobre o deploy novo. O cron roda sozinho em produção.
+- **Status HTTP:** o MCP de runtime logs não expõe o código de status. A execução passou a barreira
+  do `CRON_SECRET` (a manutenção rodou) e chegou ao `console.info` imediatamente antes do
+  `Response.json`, então a resposta é 200 por construção; o código em si não foi observado.
+- O aviso `SECURITY WARNING` do `pg` (modo SSL `prefer`) apareceu em `stderr` na mesma request: é do
+  driver, não afeta o alerta.
+
+Nenhum valor de variável, nome ou dado de tenant foi lido ou registrado. Com T14 e F2 fechadas, as
+ressalvas do veredito acima deixam de existir.

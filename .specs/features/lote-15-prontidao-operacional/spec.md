@@ -177,7 +177,7 @@ em data fixa): revogar "A" revoga 2, preserva a data da revogada; revogar "B" em
 | ALERTA-01 | P1: Alerta de queda | Tasks | Verified |
 | ALERTA-02 | P1: Alerta de queda | Tasks | Verified |
 | ALERTA-03 | P1: Alerta de queda | Tasks | Verified |
-| ALERTA-04 | P1: Alerta em produção | Tasks | Parcial: AC6 pendente (T14) |
+| ALERTA-04 | P1: Alerta em produção | Tasks | Verified |
 | REVOGA-01 | P2: Revogação | Tasks | Verified |
 | LIMPA-01 | P3: Limpeza e roadmap | Tasks | Verified |
 | DOC-01 | P3: Limpeza e roadmap | Tasks | Verified |
