@@ -360,6 +360,36 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: T70 / n8n/workflows/reengagement-contextual.ts:29 (n8n)
 - last seen: 2026-10-06T13:35:41Z
 
+### L-064 - Quando o chamador calcula a fronteira de uma janela (since = agora - X) e a passa a um DAL que já tem teste de fronteira próprio, teste a fronteira também pelo chamador; o teste do DAL com since dado não prova o X de quem chama.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `testing` · harmful: 0
+- features: lote-15-prontidao-operacional
+- evidence: validation.md Verificação independente, mutantes 5d/5e (integration-alert.ts:11, :37); teste da janela em src/server/integration/__tests__/integration-alert.integration.test.ts:206; commit b913b8d (testing)
+- last seen: 2026-10-08T21:06:04Z
+
+### L-065 - Um compare-and-set em lote pode vencer só parte das linhas: teste a vitória parcial e afirme que o efeito colateral (e-mail, contagem) usa só as linhas reivindicadas, não o plano inteiro.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `server/data,concorrencia` · harmful: 0
+- features: lote-15-prontidao-operacional
+- evidence: validation.md Verificação independente, mutantes x1/x2 (integration-alert.ts:65, :75); integration-alert.integration.test.ts:224, :227; commit b913b8d (server/data,concorrencia)
+- last seen: 2026-10-08T21:06:04Z
+
+### L-066 - Quando um AC fixa uma chave de agrupamento para o que se exibe e a fonte junta duas origens (com e sem tenant), diga na spec se elas se somam e teste com as duas origens na mesma chave.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `spec,testing` · harmful: 0
+- features: lote-15-prontidao-operacional
+- evidence: validation.md D1 e lacuna de precisão de ALERTA-02 AC3; src/server/data/integration-health.ts; commit b913b8d (spec,testing)
+- last seen: 2026-10-08T21:06:04Z
+
+### L-067 - Antes de fazer uma task depender de uma prova de execução, confirme que a fonte da prova existe: o plano Hobby da Vercel retém só 1 h de log, então 'o cron rodou nos últimos 3 dias' não era comprovável pelos logs.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `processo,gate` · harmful: 0
+- features: lote-15-prontidao-operacional
+- evidence: validation.md § Gate de viabilidade (T0) F2 e § Primeira manutenção de produção; commit 352e8cd (processo,gate)
+- last seen: 2026-10-08T21:06:05Z
+
+### L-068 - Num comando de preparação que chama uma ferramenta de schema, confira o estado final e saia com erro se falhar: o db:push:test imprimiu o erro do drizzle-kit e saiu com 0, deixando um check e um índice único sem aplicar e sem aviso.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `tooling,db` · harmful: 0
+- features: lote-15-prontidao-operacional
+- evidence: scripts/test-db-push.ts; validation.md § Full e auditoria pré-push (tooling,db)
+- last seen: 2026-10-08T21:06:05Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

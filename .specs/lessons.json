@@ -4,7 +4,7 @@
   "window_days": 45,
   "quarantine_threshold": 2,
   "prune_requires_confirmation": true,
-  "next_id": 64,
+  "next_id": 69,
   "lessons": [
     {
       "id": "L-001",
@@ -1057,6 +1057,96 @@
       ],
       "created": "2026-10-07T14:55:20Z",
       "last_seen": "2026-10-07T14:55:20Z"
+    },
+    {
+      "id": "L-064",
+      "key": "surviving_mutant::quando o chamador calcula a fronteira de uma janela since agora x e a passa a um dal que ja tem teste de fronteira proprio teste a fronteira tambem pelo chamador o teste do dal com since dado nao prova o x de quem chama",
+      "text": "Quando o chamador calcula a fronteira de uma janela (since = agora - X) e a passa a um DAL que já tem teste de fronteira próprio, teste a fronteira também pelo chamador; o teste do DAL com since dado não prova o X de quem chama.",
+      "signal": "surviving_mutant",
+      "scope": "testing",
+      "status": "candidate",
+      "features": [
+        "lote-15-prontidao-operacional"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "validation.md Verificação independente, mutantes 5d/5e (integration-alert.ts:11, :37); teste da janela em src/server/integration/__tests__/integration-alert.integration.test.ts:206; commit b913b8d (testing)"
+      ],
+      "created": "2026-10-08T21:06:04Z",
+      "last_seen": "2026-10-08T21:06:04Z"
+    },
+    {
+      "id": "L-065",
+      "key": "surviving_mutant::um compare and set em lote pode vencer so parte das linhas teste a vitoria parcial e afirme que o efeito colateral e mail contagem usa so as linhas reivindicadas nao o plano inteiro",
+      "text": "Um compare-and-set em lote pode vencer só parte das linhas: teste a vitória parcial e afirme que o efeito colateral (e-mail, contagem) usa só as linhas reivindicadas, não o plano inteiro.",
+      "signal": "surviving_mutant",
+      "scope": "server/data,concorrencia",
+      "status": "candidate",
+      "features": [
+        "lote-15-prontidao-operacional"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "validation.md Verificação independente, mutantes x1/x2 (integration-alert.ts:65, :75); integration-alert.integration.test.ts:224, :227; commit b913b8d (server/data,concorrencia)"
+      ],
+      "created": "2026-10-08T21:06:04Z",
+      "last_seen": "2026-10-08T21:06:04Z"
+    },
+    {
+      "id": "L-066",
+      "key": "spec_precision_gap::quando um ac fixa uma chave de agrupamento para o que se exibe e a fonte junta duas origens com e sem tenant diga na spec se elas se somam e teste com as duas origens na mesma chave",
+      "text": "Quando um AC fixa uma chave de agrupamento para o que se exibe e a fonte junta duas origens (com e sem tenant), diga na spec se elas se somam e teste com as duas origens na mesma chave.",
+      "signal": "spec_precision_gap",
+      "scope": "spec,testing",
+      "status": "candidate",
+      "features": [
+        "lote-15-prontidao-operacional"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "validation.md D1 e lacuna de precisão de ALERTA-02 AC3; src/server/data/integration-health.ts; commit b913b8d (spec,testing)"
+      ],
+      "created": "2026-10-08T21:06:04Z",
+      "last_seen": "2026-10-08T21:06:04Z"
+    },
+    {
+      "id": "L-067",
+      "key": "gate_fail::antes de fazer uma task depender de uma prova de execucao confirme que a fonte da prova existe o plano hobby da vercel retem so 1 h de log entao o cron rodou nos ultimos 3 dias nao era comprovavel pelos logs",
+      "text": "Antes de fazer uma task depender de uma prova de execução, confirme que a fonte da prova existe: o plano Hobby da Vercel retém só 1 h de log, então 'o cron rodou nos últimos 3 dias' não era comprovável pelos logs.",
+      "signal": "gate_fail",
+      "scope": "processo,gate",
+      "status": "candidate",
+      "features": [
+        "lote-15-prontidao-operacional"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "validation.md § Gate de viabilidade (T0) F2 e § Primeira manutenção de produção; commit 352e8cd (processo,gate)"
+      ],
+      "created": "2026-10-08T21:06:05Z",
+      "last_seen": "2026-10-08T21:06:05Z"
+    },
+    {
+      "id": "L-068",
+      "key": "gate_fail::num comando de preparacao que chama uma ferramenta de schema confira o estado final e saia com erro se falhar o db push test imprimiu o erro do drizzle kit e saiu com 0 deixando um check e um indice unico sem aplicar e sem aviso",
+      "text": "Num comando de preparação que chama uma ferramenta de schema, confira o estado final e saia com erro se falhar: o db:push:test imprimiu o erro do drizzle-kit e saiu com 0, deixando um check e um índice único sem aplicar e sem aviso.",
+      "signal": "gate_fail",
+      "scope": "tooling,db",
+      "status": "candidate",
+      "features": [
+        "lote-15-prontidao-operacional"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "scripts/test-db-push.ts; validation.md § Full e auditoria pré-push (tooling,db)"
+      ],
+      "created": "2026-10-08T21:06:05Z",
+      "last_seen": "2026-10-08T21:06:05Z"
     }
   ]
 }
