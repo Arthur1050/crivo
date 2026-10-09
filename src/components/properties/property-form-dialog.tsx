@@ -14,6 +14,7 @@ import { TextArea } from "@astryxdesign/core/TextArea";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import {
   createPropertyAction,
+  setPropertyFeaturedAction,
   updatePropertyAction,
 } from "@/src/server/actions/properties";
 import type {
@@ -133,6 +134,7 @@ function PropertyForm({ property, captadores, onClose }: PropertyFormProps) {
     property?.status ?? "disponivel"
   );
   const [published, setPublished] = useState(property?.published ?? false);
+  const [featured, setFeatured] = useState(property?.featured ?? false);
   const [street, setStreet] = useState(property?.street ?? "");
   const [number, setNumber] = useState(property?.number ?? "");
   const [complement, setComplement] = useState(property?.complement ?? "");
@@ -238,7 +240,19 @@ function PropertyForm({ property, captadores, onClose }: PropertyFormProps) {
           ...sharedFields,
         });
 
+    // Destaque da vitrine (lote-16a — VDEST-01): só existe na edição, porque a
+    // criação ainda não devolve o id do imóvel. Grava depois do imóvel, e só se mudou.
+    const featuredResult =
+      result.ok && isEditing && featured !== property.featured
+        ? await setPropertyFeaturedAction({ propertyId: property.id, featured })
+        : null;
+
     setIsSubmitting(false);
+
+    if (featuredResult && !featuredResult.ok) {
+      setBanner(featuredResult.error);
+      return;
+    }
 
     if (!result.ok) {
       // Erro devolvido pela action fica visível no diálogo sem fechá-lo
@@ -335,6 +349,13 @@ function PropertyForm({ property, captadores, onClose }: PropertyFormProps) {
                 width={220}
               />
               <Switch label="Publicado" value={published} onChange={setPublished} />
+              {isEditing && (
+                <Switch
+                  label="Destaque na vitrine"
+                  value={featured}
+                  onChange={setFeatured}
+                />
+              )}
             </HStack>
 
             <HStack gap={3} wrap="wrap">

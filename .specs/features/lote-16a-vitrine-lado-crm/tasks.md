@@ -497,7 +497,7 @@ T10 → T21
 **Depends on**: T17
 **Reuses**: carga de `getTenant` existente
 **Requirement**: VUI-01
-**Status**: Done
+**Status**: Done 399a177
 
 **Done when**:
 
@@ -518,6 +518,7 @@ T10 → T21
 **Depends on**: T14
 **Reuses**: padrão de campos do próprio diálogo
 **Requirement**: VUI-02
+**Status**: Done
 
 **Done when**:
 

@@ -7,11 +7,12 @@ import { AlertDialog } from "@astryxdesign/core/AlertDialog";
 import { Badge } from "@astryxdesign/core/Badge";
 import { Card } from "@astryxdesign/core/Card";
 import { DropdownMenu } from "@astryxdesign/core/DropdownMenu";
-import { HStack } from "@astryxdesign/core/Stack";
+import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { StatusDot } from "@astryxdesign/core/StatusDot";
 import { Table, pixel, proportional } from "@astryxdesign/core/Table";
 import type { TableColumn } from "@astryxdesign/core/Table";
 import { Text } from "@astryxdesign/core/Text";
+import { Token } from "@astryxdesign/core/Token";
 import { formatCurrencyBRL } from "@/src/lib/format";
 import { deletePropertyAction } from "@/src/server/actions/properties";
 import type { Property, PropertyKind, PropertyStatus } from "@/src/server/data";
@@ -48,6 +49,7 @@ interface PropertyRow extends Record<string, unknown> {
   bedrooms: number;
   status: PropertyStatus;
   published: boolean;
+  featured: boolean;
   property: Property;
 }
 
@@ -82,6 +84,7 @@ export function PropertiesTable({ properties, canWrite, onEdit }: PropertiesTabl
     bedrooms: property.bedrooms,
     status: property.status,
     published: property.published,
+    featured: property.featured,
     property,
   }));
 
@@ -111,9 +114,12 @@ export function PropertiesTable({ properties, canWrite, onEdit }: PropertiesTabl
       header: "Referência",
       width: pixel(110),
       renderCell: (row) => (
-        <Text type="body" weight="medium">
-          {row.reference}
-        </Text>
+        <VStack gap={1}>
+          <Text type="body" weight="medium">
+            {row.reference}
+          </Text>
+          {row.featured && <Token label="Destaque" color="yellow" size="sm" />}
+        </VStack>
       ),
     },
     {
