@@ -104,3 +104,27 @@ from public.properties p
 join public.tenants t on t.id = p.tenant_id
 join vitrine.lojas l on l.slug = t.slug
 where p.status = 'disponivel' and p.published;
+
+-- ---------------------------------------------------------------------------
+-- 3. Papel `crivo_vitrine` e grants (AD-040)
+--
+-- O papel nasce SÓ por SQL, nunca pelo console do Neon: o console o põe em
+-- `neon_superuser` e o isolamento cai sem ninguém notar. Não é membro de papel
+-- algum e não recebe nenhum privilégio em `public`; lê apenas as duas views.
+-- A senha não é definida aqui: nos bancos de teste o executor a aplica a partir
+-- da variável do ambiente local, e em produção o usuário a define à parte.
+-- ---------------------------------------------------------------------------
+do $$
+begin
+  if not exists (select 1 from pg_roles where rolname = 'crivo_vitrine') then
+    create role crivo_vitrine login;
+  end if;
+end
+$$;
+
+alter role crivo_vitrine login;
+alter role crivo_vitrine set default_transaction_read_only = on;
+alter role crivo_vitrine set statement_timeout = '5s';
+
+grant usage on schema vitrine to crivo_vitrine;
+grant select on vitrine.lojas, vitrine.imoveis to crivo_vitrine;

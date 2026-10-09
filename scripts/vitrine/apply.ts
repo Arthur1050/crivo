@@ -22,13 +22,25 @@ async function withClient<T>(url: string, run: (client: Client) => Promise<T>): 
   }
 }
 
-/** Aplica o SQL da vitrine no banco de `url`. Falha no primeiro erro, sem aplicar parte. */
-export async function applyVitrineSql(url: string): Promise<void> {
+/**
+ * Aplica o SQL da vitrine no banco de `url`. Falha no primeiro erro, sem aplicar
+ * parte. A senha do papel só é definida quando chega em `options.password` (nos
+ * bancos de teste, vinda do ambiente local); sem ela, a senha do papel fica como
+ * está — em produção quem a define é o usuário, à parte.
+ */
+export async function applyVitrineSql(
+  url: string,
+  options: { password?: string } = {}
+): Promise<void> {
   const sql = readFileSync(SQL_FILE, "utf8");
   await withClient(url, async (client) => {
     // Sem parâmetros o `pg` usa o protocolo simples: vários comandos numa
     // chamada, todos dentro de uma transação implícita.
     await client.query(sql);
+    if (options.password) {
+      // `ALTER ROLE ... PASSWORD` não aceita parâmetro; o literal é escapado pelo driver.
+      await client.query(`alter role crivo_vitrine password ${client.escapeLiteral(options.password)}`);
+    }
   });
 }
 

@@ -281,7 +281,7 @@ T10 → T21
 **Depends on**: T1
 **Reuses**: design.md § Views
 **Requirement**: VBANCO-01
-**Status**: Done
+**Status**: Done 5d217a8
 
 **Done when**:
 
@@ -304,6 +304,7 @@ T10 → T21
 **Depends on**: T7, T8
 **Reuses**: T7, T8
 **Requirement**: VBANCO-02
+**Status**: Done
 
 **Done when**:
 
