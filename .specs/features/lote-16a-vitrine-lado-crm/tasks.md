@@ -154,7 +154,7 @@ T10 → T21
 **Depends on**: T1
 **Reuses**: padrão de lib pura de `src/lib/permissions.ts`
 **Requirement**: VCFG-01, VBANCO-01
-**Status**: Done
+**Status**: Done a60c705
 
 **Done when**:
 
@@ -175,6 +175,7 @@ T10 → T21
 **Depends on**: T2
 **Reuses**: formato de recusa por campo das validações de imóvel
 **Requirement**: VCFG-02
+**Status**: Done
 
 **Done when**:
 
