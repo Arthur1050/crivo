@@ -175,7 +175,7 @@ T10 → T21
 **Depends on**: T2
 **Reuses**: formato de recusa por campo das validações de imóvel
 **Requirement**: VCFG-02
-**Status**: Done
+**Status**: Done 8a48f32
 
 **Done when**:
 
@@ -196,6 +196,7 @@ T10 → T21
 **Depends on**: T3
 **Reuses**: T3
 **Requirement**: VATIV-01
+**Status**: Done
 
 **Done when**:
 

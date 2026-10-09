@@ -181,3 +181,45 @@ export function validateStorefrontInput(input: StorefrontInput): StorefrontValid
     },
   };
 }
+
+// ---------------------------------------------------------------------------
+// Bloqueios de ativação (lote-16a — VATIV-01).
+// ---------------------------------------------------------------------------
+
+/** Pré-condições para ativar, nos nomes dos campos que a spec e a tela usam. */
+export type ActivationBlocker = "creci" | "razaoSocial" | "whatsappAgente";
+
+/** Ordem em que os bloqueios são listados (VATIV-01 AC4). */
+const ACTIVATION_ORDER: readonly ActivationBlocker[] = ["creci", "razaoSocial", "whatsappAgente"];
+
+/**
+ * Rótulo de cada bloqueio para a tela. Tipado por `Record<ActivationBlocker, string>`
+ * (L-029): bloqueio novo ou renomeado quebra a compilação em vez de cair numa
+ * mensagem genérica.
+ */
+export const ACTIVATION_BLOCKER_LABELS: Record<ActivationBlocker, string> = {
+  creci: "Informe o CRECI.",
+  razaoSocial: "Informe a razão social.",
+  whatsappAgente: "Informe o WhatsApp do agente nas configurações da imobiliária.",
+};
+
+function isBlank(value: string | null | undefined): boolean {
+  return (value ?? "").trim() === "";
+}
+
+/**
+ * Pré-condições que ainda faltam para ativar a vitrine, na ordem CRECI, razão
+ * social, WhatsApp do agente. Lista vazia = pode ativar. Só espaços conta como
+ * vazio.
+ */
+export function activationBlockers(input: {
+  storefront: { creci?: string | null; legalName?: string | null };
+  agentWhatsapp: string | null | undefined;
+}): ActivationBlocker[] {
+  const missing: Record<ActivationBlocker, boolean> = {
+    creci: isBlank(input.storefront.creci),
+    razaoSocial: isBlank(input.storefront.legalName),
+    whatsappAgente: isBlank(input.agentWhatsapp),
+  };
+  return ACTIVATION_ORDER.filter((blocker) => missing[blocker]);
+}

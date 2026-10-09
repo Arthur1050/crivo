@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  ACTIVATION_BLOCKER_LABELS,
+  activationBlockers,
   normalizeAccent,
   normalizeInstagram,
   normalizeOptionalText,
@@ -178,5 +180,53 @@ describe("normalizadores", () => {
   it("normalizePhoneDigits mantém só dígitos", () => {
     expect(normalizePhoneDigits("(11) 99999-1234")).toBe("11999991234");
     expect(normalizePhoneDigits("sem número")).toBeNull();
+  });
+});
+
+describe("L16a T4 — bloqueios de ativação (VATIV-01)", () => {
+  const complete = { creci: "CRECI 12345", legalName: "Imobiliária Ltda" };
+
+  it("nada faltando → lista vazia", () => {
+    expect(activationBlockers({ storefront: complete, agentWhatsapp: "5511999991234" })).toEqual([]);
+  });
+
+  it("AC1: CRECI vazio sozinho → só creci", () => {
+    expect(activationBlockers({ storefront: { ...complete, creci: "" }, agentWhatsapp: "5511999991234" })).toEqual(["creci"]);
+  });
+
+  it("AC2: razão social vazia sozinha → só razaoSocial", () => {
+    expect(activationBlockers({ storefront: { ...complete, legalName: null }, agentWhatsapp: "5511999991234" })).toEqual(["razaoSocial"]);
+  });
+
+  it("AC3: WhatsApp do agente vazio sozinho → só whatsappAgente", () => {
+    expect(activationBlockers({ storefront: complete, agentWhatsapp: null })).toEqual(["whatsappAgente"]);
+  });
+
+  it("AC4: as três faltando saem na ordem CRECI, razão social, WhatsApp do agente", () => {
+    expect(activationBlockers({ storefront: {}, agentWhatsapp: undefined })).toEqual([
+      "creci", "razaoSocial", "whatsappAgente",
+    ]);
+  });
+
+  it("AC4: duas faltando mantêm a ordem relativa", () => {
+    expect(activationBlockers({ storefront: { creci: "", legalName: "Ltda" }, agentWhatsapp: " " })).toEqual([
+      "creci", "whatsappAgente",
+    ]);
+    expect(activationBlockers({ storefront: { creci: "CRECI 1", legalName: "" }, agentWhatsapp: "" })).toEqual([
+      "razaoSocial", "whatsappAgente",
+    ]);
+  });
+
+  it("só espaços conta como vazio nos três campos", () => {
+    expect(
+      activationBlockers({ storefront: { creci: "   ", legalName: "	 " }, agentWhatsapp: "  " })
+    ).toEqual(["creci", "razaoSocial", "whatsappAgente"]);
+  });
+
+  it("todo bloqueio tem rótulo para a tela", () => {
+    for (const blocker of activationBlockers({ storefront: {}, agentWhatsapp: "" })) {
+      expect(ACTIVATION_BLOCKER_LABELS[blocker].length).toBeGreaterThan(0);
+    }
+    expect(Object.keys(ACTIVATION_BLOCKER_LABELS).sort()).toEqual(["creci", "razaoSocial", "whatsappAgente"]);
   });
 });
