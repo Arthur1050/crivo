@@ -50,6 +50,7 @@ import { getProperties } from "../data";
 import {
   createPropertyAction,
   deletePropertyAction,
+  setPropertyFeaturedAction,
   setPropertyPublishedAction,
   setPropertyStatusAction,
   updatePropertyAction,
@@ -658,5 +659,82 @@ describe("revalidação da vitrine nas 5 actions de imóvel (L16a T13 — VREV-0
       for (const result of results) expect(result.ok).toBe(false);
       expect(scheduled).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe("action de destaque (L16a T14 — VDEST-01, VREV-02)", () => {
+  const scheduled = vi.mocked(scheduleStorefrontRevalidation);
+
+  async function tenantWithProperty(name: string) {
+    const tenantId = await createTenant(name);
+    const capturerId = await createMember(tenantId, `Captador ${name}`);
+    sessionTenantId = tenantId;
+    const created = await createPropertyAction(baseInput(capturerId));
+    if (!created.ok) throw new Error("unreachable");
+    const [property] = await getProperties(tenantId);
+    scheduled.mockClear();
+    return { tenantId, propertyId: property.id };
+  }
+
+  it("gestor marca: o destaque é gravado e o aviso é agendado uma vez com o tenant do imóvel", async () => {
+    const { tenantId, propertyId } = await tenantWithProperty("T14 Marca");
+    sessionRoles = ["gestor"];
+    expect((await getProperties(tenantId))[0].featured).toBe(false);
+
+    expect(await setPropertyFeaturedAction({ propertyId, featured: true })).toEqual({ ok: true });
+
+    expect((await getProperties(tenantId))[0].featured).toBe(true);
+    expect(scheduled).toHaveBeenCalledTimes(1);
+    expect(scheduled).toHaveBeenCalledWith(tenantId);
+    expect(revalidatePath).toHaveBeenCalledWith("/imoveis");
+  });
+
+  it("gestor desmarca: o destaque volta a falso e o aviso é agendado", async () => {
+    const { tenantId, propertyId } = await tenantWithProperty("T14 Desmarca");
+    await setPropertyFeaturedAction({ propertyId, featured: true });
+    scheduled.mockClear();
+
+    expect(await setPropertyFeaturedAction({ propertyId, featured: false })).toEqual({ ok: true });
+
+    expect((await getProperties(tenantId))[0].featured).toBe(false);
+    expect(scheduled).toHaveBeenCalledTimes(1);
+    expect(scheduled).toHaveBeenCalledWith(tenantId);
+  });
+
+  it("AC3: corretor é recusado, nada é gravado e nada é agendado", async () => {
+    const { tenantId, propertyId } = await tenantWithProperty("T14 Corretor");
+    sessionRoles = ["corretor"];
+
+    const result = await setPropertyFeaturedAction({ propertyId, featured: true });
+
+    expect(result).toEqual({ ok: false, error: "Sem permissão para escrever imoveis." });
+    expect((await getProperties(tenantId))[0].featured).toBe(false);
+    expect(scheduled).not.toHaveBeenCalled();
+  });
+
+  it("AC4: id de imóvel de outra imobiliária é tratado como inexistente, fica intocado e nada é agendado", async () => {
+    const foreign = await tenantWithProperty("T14 Outra imobiliária");
+    const mine = await tenantWithProperty("T14 Minha imobiliária");
+    sessionTenantId = mine.tenantId;
+    scheduled.mockClear();
+
+    const result = await setPropertyFeaturedAction({ propertyId: foreign.propertyId, featured: true });
+
+    expect(result).toEqual({ ok: false, error: "Imóvel não encontrado." });
+    expect((await getProperties(foreign.tenantId))[0].featured).toBe(false);
+    expect(scheduled).not.toHaveBeenCalled();
+  });
+
+  it("valor de destaque que não é booleano é recusado, nada é gravado e nada é agendado", async () => {
+    const { tenantId, propertyId } = await tenantWithProperty("T14 Invalido");
+    const result = await setPropertyFeaturedAction({
+      propertyId,
+      // @ts-expect-error payload malformado, propositalmente.
+      featured: "sim",
+    });
+
+    expect(result.ok).toBe(false);
+    expect((await getProperties(tenantId))[0].featured).toBe(false);
+    expect(scheduled).not.toHaveBeenCalled();
   });
 });

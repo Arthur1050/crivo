@@ -8,6 +8,7 @@ import {
   createProperty,
   deleteProperty,
   isActiveMemberOf,
+  setPropertyFeatured,
   updateProperty,
   type Modality,
   type PropertyKind,
@@ -388,6 +389,39 @@ export async function setPropertyStatusAction(
   const updated = await updateProperty(tenantId, input.propertyId, {
     status: input.status,
   });
+
+  if (!updated) {
+    return { ok: false, error: NOT_FOUND_ERROR };
+  }
+
+  revalidatePath("/imoveis");
+  scheduleStorefrontRevalidation(tenantId);
+  return { ok: true };
+}
+
+export interface SetPropertyFeaturedInput {
+  propertyId: string;
+  featured: boolean;
+}
+
+/**
+ * Marca ou desmarca o imóvel como destaque da vitrine pública (lote-16a —
+ * VDEST-01). Exige `imoveis:escrever`; imóvel de outro tenant é tratado como
+ * inexistente (o tenant vem sempre do servidor). Sem teto de destaques. O aviso
+ * de revalidação só é agendado depois de gravar.
+ */
+export async function setPropertyFeaturedAction(
+  input: SetPropertyFeaturedInput
+): Promise<ActionResult> {
+  const denied = await denyIfForbidden("imoveis", "escrever");
+  if (denied) return denied;
+
+  if (typeof input.featured !== "boolean") {
+    return { ok: false, error: "Destaque deve ser verdadeiro ou falso." };
+  }
+
+  const tenantId = await getActiveTenantId();
+  const updated = await setPropertyFeatured(tenantId, input.propertyId, input.featured);
 
   if (!updated) {
     return { ok: false, error: NOT_FOUND_ERROR };

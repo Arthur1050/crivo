@@ -391,7 +391,7 @@ T10 → T21
 **Depends on**: T12
 **Reuses**: pontos de `revalidatePath` (`:164`, `:307`, `:328`, `:355`, `:386`)
 **Requirement**: VREV-02
-**Status**: Done
+**Status**: Done eff9dbf
 
 **Done when**:
 
@@ -412,6 +412,7 @@ T10 → T21
 **Depends on**: T13, T6
 **Reuses**: guarda de permissão das demais actions de imóvel
 **Requirement**: VDEST-01, VREV-02
+**Status**: Done
 
 **Done when**:
 
