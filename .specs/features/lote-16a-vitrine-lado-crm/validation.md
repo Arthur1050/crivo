@@ -278,3 +278,7 @@ Abreviações iguais às da seção "Verificação independente" (`V`, `P`, `D`,
 ### Confirmação final do `db:push:test` (HEAD `c63535c`, depois da reverificação)
 
 Duas execuções consecutivas de `npm run db:push:test`, ambas com exit 0, nos 5 alvos, com a conferência do estado final e o índice `document_categories_tenant_id_lower_name_idx` presente nos 5 ao fim.
+
+### Full de fechamento no HEAD final
+
+`npm test` rodado de novo em `bceff6d`, depois de todos os commits de código (o primeiro `3b620bc` mexeu em teste depois da primeira Full): 219 arquivos, 3681 testes (o +1 é o teste do M27), exit 0, sem timeout. Esta é a Full de fechamento; a primeira (em `606bd80`) fica superseded, como no precedente do L15.
