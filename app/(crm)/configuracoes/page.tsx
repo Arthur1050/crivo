@@ -12,12 +12,15 @@ import { FileTypeIcon } from "@/src/components/documents/file-type-icon";
 import { NavLink } from "@/src/components/shared/nav-link";
 import { BaselineForm } from "@/src/components/settings/baseline-form";
 import { SettingsForm } from "@/src/components/settings/settings-form";
+import { StorefrontForm } from "@/src/components/settings/storefront-form";
+import { can, type Role } from "@/src/lib/permissions";
 import {
   getDocumentCategories,
   getDocumentSample,
   getTenant,
   type Modality,
 } from "@/src/server/data";
+import { getStorefront } from "@/src/server/data/storefront";
 import {
   PermissionDeniedError,
   requirePermission,
@@ -57,18 +60,20 @@ export default async function ConfiguracoesPage() {
   // guarda recusa no servidor, registrando a negativa em log (AC6). O desfecho
   // é "recurso inexistente", mesmo tratamento de um recurso de outra
   // imobiliária (spec.md — Edge Cases), em vez de confirmar que a tela existe.
+  let roles: Role[];
   try {
-    await requirePermission("configuracoes", "ler");
+    ({ roles } = await requirePermission("configuracoes", "ler"));
   } catch (error) {
     if (error instanceof PermissionDeniedError) notFound();
     throw error;
   }
 
   const tenantId = await getActiveTenantId();
-  const [tenant, sample, categories] = await Promise.all([
+  const [tenant, sample, categories, storefront] = await Promise.all([
     getTenant(tenantId),
     getDocumentSample(tenantId),
     getDocumentCategories(tenantId),
+    getStorefront(tenantId),
   ]);
   const categoryById = new Map(
     categories.map((category) => [category.id, category])
@@ -93,6 +98,26 @@ export default async function ConfiguracoesPage() {
       </VStack>
 
       <SettingsForm tenant={tenant} />
+
+      <StorefrontForm
+        storefront={{
+          active: storefront.active,
+          layout: storefront.layout,
+          accentColor: storefront.accentColor,
+          font: storefront.font,
+          creci: storefront.creci,
+          legalName: storefront.legalName,
+          headline: storefront.headline,
+          about: storefront.about,
+          instagram: storefront.instagram,
+          phone: storefront.phone,
+          address: storefront.address,
+        }}
+        slug={tenant.slug}
+        agentWhatsapp={tenant.agentWhatsapp}
+        publicUrl={process.env.VITRINE_PUBLIC_URL || null}
+        canWrite={can(roles, "configuracoes", "escrever")}
+      />
 
       <BaselineForm tenant={tenant} />
 

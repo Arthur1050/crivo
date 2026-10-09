@@ -476,7 +476,7 @@ T10 → T21
 **Depends on**: T15
 **Reuses**: `src/components/settings/baseline-form.tsx`
 **Requirement**: VUI-01
-**Status**: Done
+**Status**: Done 1cb3b1b
 
 **Done when**:
 
@@ -497,6 +497,7 @@ T10 → T21
 **Depends on**: T17
 **Reuses**: carga de `getTenant` existente
 **Requirement**: VUI-01
+**Status**: Done
 
 **Done when**:
 

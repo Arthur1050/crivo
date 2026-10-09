@@ -8,6 +8,7 @@ import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
 import { Divider } from "@astryxdesign/core/Divider";
 import { FormLayout } from "@astryxdesign/core/FormLayout";
+import { Grid } from "@astryxdesign/core/Grid";
 import { Link } from "@astryxdesign/core/Link";
 import { SegmentedControl, SegmentedControlItem } from "@astryxdesign/core/SegmentedControl";
 import { Selector } from "@astryxdesign/core/Selector";
@@ -203,7 +204,7 @@ export function StorefrontForm({
             </SegmentedControl>
           </VStack>
 
-          <FormLayout direction="horizontal">
+          <Grid columns={{ minWidth: 240, max: 2 }} gap={4}>
             <TextInput
               label="Cor de destaque"
               description="Formato #rrggbb. Em branco usa a cor padrão."
@@ -219,6 +220,7 @@ export function StorefrontForm({
             />
             <Selector
               label="Fonte"
+              description="Usada em todo o catálogo."
               value={font}
               onChange={(value) => {
                 setFont(value as StorefrontFont);
@@ -228,13 +230,13 @@ export function StorefrontForm({
               isDisabled={!canWrite}
               status={statusOf("fonte")}
             />
-          </FormLayout>
+          </Grid>
         </FormLayout>
 
         <Divider />
 
         <FormLayout>
-          <FormLayout direction="horizontal">
+          <Grid columns={{ minWidth: 240, max: 2 }} gap={4}>
             <TextInput
               label="CRECI *"
               description="Obrigatório para publicar. Aparece no rodapé."
@@ -257,7 +259,7 @@ export function StorefrontForm({
               isDisabled={!canWrite}
               status={statusOf("razaoSocial")}
             />
-          </FormLayout>
+          </Grid>
 
           <TextInput
             label="Título"
@@ -284,7 +286,7 @@ export function StorefrontForm({
             status={statusOf("sobre")}
           />
 
-          <FormLayout direction="horizontal">
+          <Grid columns={{ minWidth: 240, max: 2 }} gap={4}>
             <TextInput
               label="Instagram"
               description="Sem o @."
@@ -309,7 +311,7 @@ export function StorefrontForm({
               isDisabled={!canWrite}
               status={statusOf("telefone")}
             />
-          </FormLayout>
+          </Grid>
 
           <TextInput
             label="Endereço"

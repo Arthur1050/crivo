@@ -58,6 +58,7 @@ interface FieldErrors {
   agentName?: string;
   modality?: string;
   agentVoiceTone?: string;
+  agentWhatsapp?: string;
   meetingDays?: string;
   businessHours?: string;
 }
@@ -182,6 +183,11 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
     });
 
     if (!result.ok) {
+      // Vitrine ativa: a action recusa apagar o WhatsApp do agente indicando o campo (VATIV-01 AC6).
+      if (result.field === "agentWhatsapp") {
+        setErrors({ agentWhatsapp: result.error });
+        return;
+      }
       const fieldError = mapActionError(result.error);
       if (fieldError) {
         setErrors(fieldError);
@@ -285,8 +291,16 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
             <TextInput
               label="Número WhatsApp do agente"
               value={agentWhatsapp}
-              onChange={setAgentWhatsapp}
+              onChange={(value) => {
+                setAgentWhatsapp(value);
+                setErrors((prev) => ({ ...prev, agentWhatsapp: undefined }));
+              }}
               hasClear
+              status={
+                errors.agentWhatsapp
+                  ? { type: "error", message: errors.agentWhatsapp }
+                  : undefined
+              }
             />
             <TextInput
               label="Website"
