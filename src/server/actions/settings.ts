@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { getActiveTenantId } from "../tenant";
 import { denyIfForbidden } from "./permission";
 import { updateTenantSettings, type Modality } from "../data";
+import { getStorefront } from "../data/storefront";
+import { scheduleStorefrontRevalidation } from "../storefront/schedule";
 import {
   validateAgentVoiceTone,
   validateBaselineCount,
@@ -13,7 +15,13 @@ import {
   validateName,
 } from "../validation";
 
-export type ActionResult = { ok: true } | { ok: false; error: string };
+export type ActionResult =
+  | { ok: true }
+  // `field` indica o campo recusado quando a recusa é de um campo só (lote-16a — VATIV-01 AC6).
+  | { ok: false; error: string; field?: "agentWhatsapp" };
+
+const STOREFRONT_WHATSAPP_ERROR =
+  "Desative a vitrine antes de remover o WhatsApp do agente.";
 
 export interface UpdateTenantSettingsInput {
   name: string;
@@ -117,6 +125,18 @@ export async function updateTenantSettingsAction(
   if (!attendanceCheck.ok) return attendanceCheck;
 
   const tenantId = await getActiveTenantId();
+
+  // VATIV-01 AC6: a view pública exige o WhatsApp do agente, então apagá-lo com a
+  // vitrine ativa tiraria a loja do ar sem aviso. Chave ausente = coluna
+  // intocada (não é apagar); vazio, só espaços ou nulo apagam. A recusa vem
+  // antes de qualquer escrita, então nenhuma parte das configurações é gravada.
+  if (input.agentWhatsapp !== undefined && (input.agentWhatsapp ?? "").trim() === "") {
+    const storefront = await getStorefront(tenantId);
+    if (storefront.active) {
+      return { ok: false, error: STOREFRONT_WHATSAPP_ERROR, field: "agentWhatsapp" };
+    }
+  }
+
   const updated = await updateTenantSettings(tenantId, {
     name: input.name.trim(),
     agentName: input.agentName.trim(),
@@ -142,5 +162,7 @@ export async function updateTenantSettingsAction(
   }
 
   revalidatePath("/configuracoes");
+  // VREV-02 AC9: nome, cidade e WhatsApp saem na vitrine; avisa depois de gravar.
+  scheduleStorefrontRevalidation(tenantId);
   return { ok: true };
 }

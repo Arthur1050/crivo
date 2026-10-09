@@ -99,6 +99,11 @@ vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
 }));
 
+// Lote-16a (VREV-02): salvar as configurações agenda o aviso da vitrine; aqui ele
+// é só um espião, para estes testes não dependerem do escopo de requisição do
+// `after()`. O comportamento está em `settings-storefront-actions.test.ts`.
+vi.mock("../storefront/schedule", () => ({ scheduleStorefrontRevalidation: vi.fn() }));
+
 vi.mock("workflow/api", () => ({
   start: vi.fn(async () => ({ runId: "workflow-action-test" })),
 }));
