@@ -455,7 +455,7 @@ T10 → T21
 **Depends on**: T12, T5
 **Reuses**: validação existente de configurações
 **Requirement**: VATIV-01, VREV-02
-**Status**: Done
+**Status**: Done 90132af
 
 **Done when**:
 
@@ -476,6 +476,7 @@ T10 → T21
 **Depends on**: T15
 **Reuses**: `src/components/settings/baseline-form.tsx`
 **Requirement**: VUI-01
+**Status**: Done
 
 **Done when**:
 
