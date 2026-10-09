@@ -304,7 +304,7 @@ T10 → T21
 **Depends on**: T7, T8
 **Reuses**: T7, T8
 **Requirement**: VBANCO-02
-**Status**: Done
+**Status**: Done f629ad0
 
 **Done when**:
 
@@ -326,6 +326,7 @@ T10 → T21
 **Depends on**: T9
 **Reuses**: laço de alvos existente
 **Requirement**: VBANCO-03
+**Status**: Done
 
 **Done when**:
 
