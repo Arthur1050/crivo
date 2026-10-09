@@ -111,7 +111,8 @@ export async function pushToTargets(
   return 0;
 }
 
-function realSteps(): PushSteps {
+/** Etapas reais; exportada para um teste provar a ligação de cada uma (L-026). */
+export function realSteps(): PushSteps {
   return {
     dropVitrine: dropVitrineSchema,
     restoreIndexes: restoreDrizzleBlindIndexes,

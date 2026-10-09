@@ -2,10 +2,10 @@ import "dotenv/config";
 import { sql } from "drizzle-orm";
 import { Client } from "pg";
 import { afterAll, describe, expect, it } from "vitest";
-import { applyVitrineSql, verifyVitrineState } from "../vitrine/apply";
+import { applyVitrineSql, dropVitrineSchema, verifyVitrineState } from "../vitrine/apply";
 import { db } from "../../src/db";
 import { currentTestDatabaseUrl } from "../../src/db/__tests__/vitrine-helpers";
-import { pushToTargets, restoreDrizzleBlindIndexes, type PushSteps } from "../test-db-push";
+import { pushToTargets, realSteps, restoreDrizzleBlindIndexes, type PushSteps } from "../test-db-push";
 
 const TARGETS = [
   "postgresql://owner:senha-da-base@host-base.example.test/neondb",
@@ -202,6 +202,14 @@ describe("índice que o drizzle-kit push derruba (restauração no db:push:test)
     });
     expect(await pushToTargets(TARGETS, steps, PASSWORD, capture().logger)).not.toBe(0);
     expect(calls).toEqual(["restore"]);
+  });
+
+  it("as etapas reais do db:push:test ligam cada função: derrubar, restaurar o índice, aplicar e conferir (L-026)", () => {
+    const steps = realSteps();
+    expect(steps.dropVitrine).toBe(dropVitrineSchema);
+    expect(steps.restoreIndexes).toBe(restoreDrizzleBlindIndexes);
+    expect(steps.applyVitrine).toBe(applyVitrineSql);
+    expect(steps.verify).toBe(verifyVitrineState);
   });
 
   it("recria o índice único por (tenant, lower(nome)) quando ele sumiu; reexecutar não falha", async () => {
