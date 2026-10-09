@@ -260,7 +260,7 @@ T10 → T21
 **Depends on**: T0
 **Reuses**: `resolveTestDatabaseUrl` (`src/db/test-connection.ts:22`)
 **Requirement**: VBANCO-02
-**Status**: Done
+**Status**: Done 7c64cca
 
 **Done when**:
 
@@ -281,6 +281,7 @@ T10 → T21
 **Depends on**: T1
 **Reuses**: design.md § Views
 **Requirement**: VBANCO-01
+**Status**: Done
 
 **Done when**:
 
