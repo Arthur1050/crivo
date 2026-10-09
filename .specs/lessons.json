@@ -4,7 +4,7 @@
   "window_days": 45,
   "quarantine_threshold": 2,
   "prune_requires_confirmation": true,
-  "next_id": 69,
+  "next_id": 72,
   "lessons": [
     {
       "id": "L-001",
@@ -1147,6 +1147,60 @@
       ],
       "created": "2026-10-08T21:06:05Z",
       "last_seen": "2026-10-08T21:06:05Z"
+    },
+    {
+      "id": "L-069",
+      "key": "surviving_mutant::etapa opcional injetada num executor de script precisa de teste que prove a ligacao na composicao real realsteps nao so a ordem no laco com simuladores",
+      "text": "Etapa opcional injetada num executor de script precisa de teste que prove a ligacao na composicao real (realSteps), nao so a ordem no laco com simuladores.",
+      "signal": "surviving_mutant",
+      "scope": "scripts",
+      "status": "candidate",
+      "features": [
+        "lote-16a-vitrine-lado-crm"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "M27 scripts/test-db-push.ts:117 (scripts)"
+      ],
+      "created": "2026-10-09T17:04:39Z",
+      "last_seen": "2026-10-09T17:04:39Z"
+    },
+    {
+      "id": "L-070",
+      "key": "gate_fail::o drizzle kit push derruba a cada execucao o indice unico de expressao lower name e aborta no create unique index seguinte com saida 0 depois de qualquer push recrie e confira esse indice senao a recusa de categoria duplicada some do banco e um teste da suite falha longe da causa",
+      "text": "O drizzle-kit push derruba a cada execucao o indice unico de expressao lower(name) e aborta no CREATE UNIQUE INDEX seguinte, com saida 0; depois de qualquer push recrie e confira esse indice, senao a recusa de categoria duplicada some do banco e um teste da suite falha longe da causa.",
+      "signal": "gate_fail",
+      "scope": "tooling,db",
+      "status": "candidate",
+      "features": [
+        "lote-16a-vitrine-lado-crm"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "scripts/test-db-push.ts:restoreDrizzleBlindIndexes (tooling,db)"
+      ],
+      "created": "2026-10-09T17:06:52Z",
+      "last_seen": "2026-10-09T17:06:52Z"
+    },
+    {
+      "id": "L-071",
+      "key": "gate_fail::o setter url password do whatwg url nao codifica o caractere monte a senha com encodeuricomponent e teste uma senha com caracteres especiais senao uma senha com vira url invalida so em producao",
+      "text": "O setter url.password do WHATWG URL nao codifica o caractere %: monte a senha com encodeURIComponent e teste uma senha com caracteres especiais, senao uma senha com % vira URL invalida so em producao.",
+      "signal": "gate_fail",
+      "scope": "scripts,testing",
+      "status": "candidate",
+      "features": [
+        "lote-16a-vitrine-lado-crm"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "src/db/test-connection.ts:resolveVitrineTestUrl (scripts,testing)"
+      ],
+      "created": "2026-10-09T17:06:52Z",
+      "last_seen": "2026-10-09T17:06:52Z"
     }
   ]
 }

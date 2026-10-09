@@ -560,7 +560,7 @@ T10 → T21
 **Depends on**: T10
 **Reuses**: design.md § Papel `crivo_vitrine`
 **Requirement**: VBANCO-03
-**Status**: Done
+**Status**: Done 606bd80
 
 **Done when**:
 
@@ -664,3 +664,8 @@ Execução estritamente sequencial, na ordem numérica.
 | VUI-01 | T17, T18 |
 | VUI-02 | T19 |
 | VSEED-01 | T20 |
+
+## Fix tasks fora do plano
+
+- **F1** `2e120e6`: o `drizzle-kit push` derruba o índice `document_categories_tenant_id_lower_name_idx` a cada execução; `db:push:test` passa a recriá-lo (achado na T16, causa na Full do L15).
+- **F2** `3b620bc`: lacuna M27 do Verifier; teste que prova a ligação das etapas reais do `db:push:test`.

@@ -390,6 +390,24 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: scripts/test-db-push.ts; validation.md § Full e auditoria pré-push (tooling,db)
 - last seen: 2026-10-08T21:06:05Z
 
+### L-069 - Etapa opcional injetada num executor de script precisa de teste que prove a ligacao na composicao real (realSteps), nao so a ordem no laco com simuladores.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `scripts` · harmful: 0
+- features: lote-16a-vitrine-lado-crm
+- evidence: M27 scripts/test-db-push.ts:117 (scripts)
+- last seen: 2026-10-09T17:04:39Z
+
+### L-070 - O drizzle-kit push derruba a cada execucao o indice unico de expressao lower(name) e aborta no CREATE UNIQUE INDEX seguinte, com saida 0; depois de qualquer push recrie e confira esse indice, senao a recusa de categoria duplicada some do banco e um teste da suite falha longe da causa.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `tooling,db` · harmful: 0
+- features: lote-16a-vitrine-lado-crm
+- evidence: scripts/test-db-push.ts:restoreDrizzleBlindIndexes (tooling,db)
+- last seen: 2026-10-09T17:06:52Z
+
+### L-071 - O setter url.password do WHATWG URL nao codifica o caractere %: monte a senha com encodeURIComponent e teste uma senha com caracteres especiais, senao uma senha com % vira URL invalida so em producao.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `scripts,testing` · harmful: 0
+- features: lote-16a-vitrine-lado-crm
+- evidence: src/db/test-connection.ts:resolveVitrineTestUrl (scripts,testing)
+- last seen: 2026-10-09T17:06:52Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
