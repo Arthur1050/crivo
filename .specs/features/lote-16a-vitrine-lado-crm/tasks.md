@@ -518,7 +518,7 @@ T10 → T21
 **Depends on**: T14
 **Reuses**: padrão de campos do próprio diálogo
 **Requirement**: VUI-02
-**Status**: Done
+**Status**: Done a149888
 
 **Done when**:
 
@@ -539,6 +539,7 @@ T10 → T21
 **Depends on**: T6
 **Reuses**: dados do seed do catálogo (L11)
 **Requirement**: VSEED-01
+**Status**: Done
 
 **Done when**:
 

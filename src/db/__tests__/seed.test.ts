@@ -14,6 +14,7 @@ import {
   serviceApiKeys,
   tenant_members,
   tenantApiKeys,
+  tenantStorefronts,
   tenants,
   users,
   accounts,
@@ -726,5 +727,82 @@ describe("db/seed", () => {
       expect(row.priceCents).toBe(original!.priceCents);
       expect(row.capturedByUserId).toBe(original!.capturedByUserId);
     }
+  });
+
+  describe("vitrine pública (L16a T20 — VSEED-01)", () => {
+    const FIRST_SEEDED_SLUG = "vale-uberaba";
+    const SECOND_SEEDED_SLUG = "triangulo";
+
+    async function storefrontsBySlug() {
+      const rows = await db
+        .select({ slug: tenants.slug, storefront: tenantStorefronts })
+        .from(tenantStorefronts)
+        .innerJoin(tenants, eq(tenants.id, tenantStorefronts.tenantId));
+      return new Map(rows.map((row) => [row.slug, row.storefront]));
+    }
+
+    it("AC1: a primeira imobiliária tem vitrine ativa e completa e a segunda, inativa; a terceira não tem linha", async () => {
+      const bySlug = await storefrontsBySlug();
+      expect([...bySlug.keys()].sort()).toEqual([SECOND_SEEDED_SLUG, FIRST_SEEDED_SLUG].sort());
+
+      const first = bySlug.get(FIRST_SEEDED_SLUG)!;
+      expect(first).toMatchObject({
+        active: true,
+        layout: "grade",
+        accentColor: "#0b6e4f",
+        font: "montserrat",
+        creci: "CRECI-MG 12345-J",
+        legalName: "Imobiliária Vale do Uberaba Ltda",
+        headline: "Casas e apartamentos em Uberaba",
+        instagram: "valeuberaba",
+        phone: "3433331000",
+        address: "Av. Leopoldino de Oliveira, 1000, Centro, Uberaba/MG",
+      });
+      expect(first.about).toBeTruthy();
+
+      const second = bySlug.get(SECOND_SEEDED_SLUG)!;
+      expect(second.active).toBe(false);
+      expect(second.creci).toBeNull();
+      expect(second.legalName).toBeNull();
+    });
+
+    it("AC1: a loja ativa aparece em vitrine.lojas e a inativa não", async () => {
+      const result = await db.execute(
+        sql`select slug from vitrine.lojas where slug in (${FIRST_SEEDED_SLUG}, ${SECOND_SEEDED_SLUG}, ${DEMO_SLUG})`
+      );
+      expect((result.rows as { slug: string }[]).map((row) => row.slug)).toEqual([FIRST_SEEDED_SLUG]);
+    });
+
+    it("AC2: a imobiliária ativa tem um destaque visível e um não visível; nenhuma outra tem destaque", async () => {
+      const rows = await db
+        .select({ slug: tenants.slug, reference: properties.reference, status: properties.status, published: properties.published, featured: properties.featured })
+        .from(properties)
+        .innerJoin(tenants, eq(tenants.id, properties.tenantId));
+
+      const featured = rows.filter((row) => row.featured);
+      expect(featured.every((row) => row.slug === FIRST_SEEDED_SLUG)).toBe(true);
+      const visible = featured.filter((row) => row.status === "disponivel" && row.published);
+      const notVisible = featured.filter((row) => !(row.status === "disponivel" && row.published));
+      expect(visible.map((row) => row.reference)).toEqual(["IM-0001"]);
+      expect(notVisible.map((row) => row.reference)).toEqual(["IM-0004"]);
+
+      const firstTenantRows = rows.filter((row) => row.slug === FIRST_SEEDED_SLUG);
+      expect(firstTenantRows).toHaveLength(4);
+      expect(firstTenantRows.filter((row) => !row.featured).map((row) => row.reference).sort()).toEqual(["IM-0002", "IM-0003"]);
+    });
+
+    it("AC3: rodar o seed de novo dá as mesmas linhas de tenant_storefronts e os mesmos destaques", async () => {
+      const snapshot = async () => ({
+        storefronts: (await db.select().from(tenantStorefronts)).sort((a, b) => a.tenantId.localeCompare(b.tenantId)),
+        featured: (await db.select({ id: properties.id }).from(properties).where(eq(properties.featured, true))).map((row) => row.id).sort(),
+      });
+      const before = await snapshot();
+      expect(before.storefronts).toHaveLength(2);
+      expect(before.featured).toHaveLength(2);
+
+      await runSeed();
+
+      expect(await snapshot()).toEqual(before);
+    });
   });
 });

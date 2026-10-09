@@ -14,6 +14,7 @@ import {
   serviceApiKeys,
   tenant_members,
   tenantApiKeys,
+  tenantStorefronts,
   tenants,
   users,
   whatsappChannels,
@@ -300,6 +301,47 @@ const SATURDAY_WINDOW = {
   workHoursStart: "09:00",
   workHoursEnd: "13:00",
 };
+
+// Vitrine pública (lote-16a — VSEED-01): a primeira imobiliária do seed nasce
+// com a vitrine ativa e completa, a segunda com a vitrine inativa e sem
+// CRECI, e a terceira sem linha (vitrine inativa com os valores padrão).
+// `updatedAt` é fixo para duas execuções darem as mesmas linhas.
+const STOREFRONT_SEED_UPDATED_AT = new Date("2026-10-09T12:00:00.000Z");
+const STOREFRONT_SEEDS: Record<string, Omit<typeof tenantStorefronts.$inferInsert, "tenantId">> = {
+  "vale-uberaba": {
+    active: true,
+    layout: "grade",
+    accentColor: "#0b6e4f",
+    font: "montserrat",
+    creci: "CRECI-MG 12345-J",
+    legalName: "Imobiliária Vale do Uberaba Ltda",
+    headline: "Casas e apartamentos em Uberaba",
+    about: "Atendimento próximo, com dados exatos de cada imóvel. Fale com a gente pelo WhatsApp.",
+    instagram: "valeuberaba",
+    phone: "3433331000",
+    address: "Av. Leopoldino de Oliveira, 1000, Centro, Uberaba/MG",
+    updatedAt: STOREFRONT_SEED_UPDATED_AT,
+  },
+  triangulo: {
+    active: false,
+    layout: "editorial",
+    accentColor: "#7a4b2a",
+    font: "lora",
+    creci: null,
+    legalName: null,
+    headline: null,
+    about: null,
+    instagram: null,
+    phone: null,
+    address: null,
+    updatedAt: STOREFRONT_SEED_UPDATED_AT,
+  },
+};
+
+// Destaques da imobiliária de vitrine ativa: um imóvel visível ao público
+// (disponível e publicado) e um que não é (vendido e não publicado), para a
+// vitrine e a tela de Imóveis exercitarem os dois casos (VSEED-01 AC2).
+const FEATURED_PROPERTY_KEYS = ["disponivel-publicado", "vendido"];
 
 const TENANT_DEFS: TenantDef[] = [
   {
@@ -746,6 +788,7 @@ export async function runSeed(): Promise<SeedResult> {
   const messageRows: (typeof messages.$inferInsert)[] = [];
   const apiKeyRows: (typeof tenantApiKeys.$inferInsert)[] = [];
   const propertyRows: (typeof properties.$inferInsert)[] = [];
+  const storefrontRows: (typeof tenantStorefronts.$inferInsert)[] = [];
   const seededApiKeys: SeededApiKey[] = [];
 
   // Chave de serviço do agente (lote-7 — SEC-01): gerada UMA vez, fora do
@@ -774,6 +817,9 @@ export async function runSeed(): Promise<SeedResult> {
       agentVoiceTone: tenantDef.agentVoiceTone,
       slug: tenantDef.slug,
     });
+
+    const storefrontSeed = STOREFRONT_SEEDS[tenantDef.key];
+    if (storefrontSeed) storefrontRows.push({ tenantId, ...storefrontSeed });
 
     // Chave de API do tenant (lote-5 — INT-01): gerada a cada execução do
     // seed (não determinística como `id()` acima — ver `generateApiKey`),
@@ -856,6 +902,8 @@ export async function runSeed(): Promise<SeedResult> {
         bedrooms: def.bedrooms,
         bathrooms: def.bathrooms,
         parkingSpots: def.parkingSpots,
+        featured:
+          storefrontSeed?.active === true && FEATURED_PROPERTY_KEYS.includes(def.key),
       });
     }
 
@@ -993,6 +1041,7 @@ export async function runSeed(): Promise<SeedResult> {
     // (lote-11 — restrict implícito, T3), mesma razão de `leads` acima: vem
     // ANTES de `tenant_members`/`tenants`/`users`.
     await tx.delete(properties);
+    await tx.delete(tenantStorefronts);
     await tx.delete(documentCategories);
     await tx.delete(tenantApiKeys);
     // service_api_keys não referencia tenants (sem FK — schema.ts), mas
@@ -1010,6 +1059,7 @@ export async function runSeed(): Promise<SeedResult> {
     // continuam fixtures de configuração, mas documentos exigem upload real
     // e não recebem mais linhas metadata-only no seed (lote-12).
     await tx.insert(tenants).values(tenantRows);
+    await tx.insert(tenantStorefronts).values(storefrontRows);
     await tx.insert(users).values(userRows);
     await tx.insert(tenant_members).values(memberRows);
     // `properties` referencia `tenants`/`users`, ambos já inseridos acima.
