@@ -11,7 +11,7 @@ Execute o lote 16b do Crivo com a skill `tlc-spec-driven` (ative pelo nome e sig
 
 ## O que já está aprovado (não pergunte de novo)
 
-Aprovados pelo usuário em 2026-10-09 (data da aprovação a confirmar na revisão):
+Aprovados pelo usuário em 2026-10-09, inclusive as assumptions marcadas `n` nas specs (aceitas ao iniciar o Execute):
 
 - `.specs/features/lote-16-vitrine-publica/context.md` e `design.md`
 - `.specs/features/lote-16b-vitrine-app/spec.md` e `tasks.md`

@@ -2,7 +2,7 @@
 
 **Specs**: `lote-16a-vitrine-lado-crm/spec.md`, `lote-16b-vitrine-app/spec.md`, `lote-16c-vitrine-ativacao/spec.md`
 **Context**: `lote-16-vitrine-publica/context.md`
-**Status**: Draft (aguarda aprovação do usuário)
+**Status**: Approved (usuário, 2026-10-09)
 **ADs**: conforma AD-002, AD-004, AD-007, AD-010, AD-014, AD-021, AD-028, AD-029, AD-033; **emenda AD-025** (AD-040, AD-042); cria AD-040 a AD-043.
 
 ---

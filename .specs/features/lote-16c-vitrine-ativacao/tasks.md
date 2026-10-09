@@ -10,7 +10,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 
 **Spec**: `.specs/features/lote-16c-vitrine-ativacao/spec.md`
 **Design**: `.specs/features/lote-16-vitrine-publica/design.md` (comum ao L16)
-**Status**: Draft (aguarda aprovação; começa só com L16a e L16b fechados com PASS)
+**Status**: Approved (usuário, 2026-10-09; começa só com L16a e L16b fechados com PASS)
 
 **Regras deste lote (auditoria do L14b § 7, item 7; AD-014, AD-040 a AD-043):**
 
