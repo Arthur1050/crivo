@@ -238,7 +238,7 @@ T10 → T21
 **Depends on**: T1
 **Reuses**: `updateProperty` e o filtro por tenant
 **Requirement**: VDEST-01
-**Status**: Done
+**Status**: Done 32dce79
 
 **Done when**:
 
@@ -260,6 +260,7 @@ T10 → T21
 **Depends on**: T0
 **Reuses**: `resolveTestDatabaseUrl` (`src/db/test-connection.ts:22`)
 **Requirement**: VBANCO-02
+**Status**: Done
 
 **Done when**:
 
