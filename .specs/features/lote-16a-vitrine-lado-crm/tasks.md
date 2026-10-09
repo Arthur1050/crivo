@@ -196,7 +196,7 @@ T10 → T21
 **Depends on**: T3
 **Reuses**: T3
 **Requirement**: VATIV-01
-**Status**: Done
+**Status**: Done c2c61a4
 
 **Done when**:
 
@@ -217,6 +217,7 @@ T10 → T21
 **Depends on**: T4
 **Reuses**: filtro por tenant ativo (AD-002)
 **Requirement**: VCFG-01, VCFG-02, VATIV-01
+**Status**: Done
 
 **Done when**:
 
