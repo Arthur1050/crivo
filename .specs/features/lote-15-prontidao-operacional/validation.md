@@ -500,3 +500,18 @@ evaluated: 3, sent: 0, skipped: null, sendFailed: false, failed: false
 
 Nenhum valor de variável, nome ou dado de tenant foi lido ou registrado. Com T14 e F2 fechadas, as
 ressalvas do veredito acima deixam de existir.
+
+## Publicação do fechamento (2026-10-09)
+
+**Autorização do usuário no chat:** "Autorizo", em resposta ao pedido de push com o HEAD `1f68824`.
+Antes do push: `origin/main` em `e2565ee`, 9 commits à frente e 0 atrás, trailers 0 no range e em
+`origin/main` inteiro; Full pós-F1 verde (207 arquivos, 3496 testes, exit 0).
+
+**Push:** `git push origin main`, `e2565ee..1f68824`. Único commit com código: `b913b8d` (F1, soma das
+recusas por `(code, rota)` no snapshot do alerta, mais os testes novos). Os demais só tocam `.specs`.
+
+**Deploy:** `dpl_WewnXXx41s9sV5BFdsT9bNXP3D9H`, `target: production`, commit `1f68824`, `READY`.
+Leituras depois do deploy: `GET /api/cron/expire-documents` sem secret devolve 401 e a home responde 307.
+
+**Rollback:** reimplantar o deployment anterior `dpl_HJ8PLH3yG4MDj4mjjGCV8VzypLC1` (`e2565ee`). Sem mudança
+de schema nem de variável neste push.
