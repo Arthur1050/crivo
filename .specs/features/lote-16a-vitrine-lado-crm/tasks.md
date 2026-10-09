@@ -539,7 +539,7 @@ T10 → T21
 **Depends on**: T6
 **Reuses**: dados do seed do catálogo (L11)
 **Requirement**: VSEED-01
-**Status**: Done
+**Status**: Done 44df7a8
 
 **Done when**:
 
@@ -560,6 +560,7 @@ T10 → T21
 **Depends on**: T10
 **Reuses**: design.md § Papel `crivo_vitrine`
 **Requirement**: VBANCO-03
+**Status**: Done
 
 **Done when**:
 
