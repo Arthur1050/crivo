@@ -412,7 +412,7 @@ T10 → T21
 **Depends on**: T13, T6
 **Reuses**: guarda de permissão das demais actions de imóvel
 **Requirement**: VDEST-01, VREV-02
-**Status**: Done
+**Status**: Done 2de80ca
 
 **Done when**:
 
@@ -434,6 +434,7 @@ T10 → T21
 **Depends on**: T12, T5
 **Reuses**: guarda de `src/server/actions/settings.ts`
 **Requirement**: VCFG-02, VATIV-01, VREV-02
+**Status**: Done
 
 **Done when**:
 
