@@ -235,3 +235,46 @@ Cópia de cada arquivo fora do repositório antes de cada mutação, uma mutaç�
 - **Capturas reais** (extensão do Chrome, `capturas/`): `t18-01` a `t18-08` (seção Vitrine vazia com 3 bloqueios em desktop e 375 px, recusa de cor, recusa de ativação por campo em desktop e 375 px, ativa com o link em desktop e 375 px, recusa de apagar o WhatsApp com a vitrine ativa) e `t19-01` a `t19-03` (diálogo com o destaque, lista com o marcador, lista do corretor sem controle). As de 375 px renderizam a página real num quadro de 375 px porque a janela da extensão não reduz o viewport. O modo somente leitura da seção (VUI-01 AC2) não tem captura: nenhum papel da matriz tem `configuracoes:ler` sem `escrever`.
 - **Achados fora da spec, resolvidos no lote**: o `drizzle-kit push` derruba o índice `document_categories_tenant_id_lower_name_idx` a cada execução (corrigido em `2e120e6`); o setter de `URL` não codifica `%` na senha (corrigido na T7); `FormLayout` horizontal estourava em 375 px (trocado por `Grid` na T18).
 - **Pendências para o L16c**: aplicar o SQL, o papel e a senha em produção (uma ação por task); medir a revalidação na Vercel (F15). Quirk do `drizzle-kit push` (saída 0 após erro em índice único existente) segue; o `db:push:test` o contorna, o push de produção não é feito por ele.
+
+## Reverificação do sensor (HEAD c63535c)
+
+**Veredito: PASS**
+
+- **Escopo**: sensor de discriminação refeito por um Verifier independente no HEAD final `c63535c` (depois do fix de M27 em `3b620bc`), cobrindo os 8 alvos obrigatórios, o M27 e 6 mutantes próprios. Nenhum código ou teste alterado; só esta seção foi acrescentada.
+- **Resultado**: **21/21 mortos, 0 sobrevivente**. Alvos obrigatórios (13 mutações, incluindo M27): todos mortos.
+- **Método**: cópia de cada arquivo no scratchpad (fora do repositório) antes da mutação, uma mutação por vez no arquivo real, só os testes que deveriam matá-la, restauração da cópia antes da próxima e `git diff --quiet -- <arquivo>` + comparação de `git status --porcelain`/`git diff --stat` com a linha de base após cada restauração. Um processo `npx vitest run` por vez (L-033), sempre no banco de teste base. Linha de base verde antes do sensor: `V`+`P`+`D` 54/54 (13+26+15); `PA`+`SA`+`L`+`R`+`PF`+`SS` 116/116.
+- **Mutações no SQL**: aplicadas no banco base pelo `beforeAll` de `V` (`V:77-80`); para M3 e M4 a ordem foi `V` (aplica o SQL mutado) → `P` → `D`. Depois de restaurar o arquivo, `V` rodou de novo para reaplicar o SQL correto e um script node temporário fora do repositório conferiu e desfez à mão `revoke select on public.properties from crivo_vitrine` e `alter role crivo_vitrine set default_transaction_read_only = on`.
+
+| # | Mutação | Arquivo | Teste que matou | Resultado |
+| --- | --- | --- | --- | --- |
+| R1a | `vitrine.imoveis` sem `and p.published` (alvo 1, mutante A) | `scripts/vitrine/vitrine.sql:106` | `V:153` (AC5, combinações de status × publicação); `V:272` (AC14 paridade) | ✅ morto |
+| R1b | `vitrine.imoveis` sem `p.status = 'disponivel'` (alvo 1, mutante B) | `scripts/vitrine/vitrine.sql:106` | `V:153`; `V:198` (loja só com vendidos); `V:217` (vendido sai da view); `V:272` | ✅ morto |
+| R2 | `vitrine.lojas` sem `nullif(trim(t.agent_whatsapp), '') is not null` (alvo 2) | `scripts/vitrine/vitrine.sql:80` | `V:113` (corte de loja AC4); `V:163` (imóveis de loja sem WhatsApp) | ✅ morto |
+| R3 | `grant select on public.properties to crivo_vitrine` acrescentado ao SQL (alvo 3) | `scripts/vitrine/vitrine.sql:130` | **`P`**: `P:99` (`SELECT em public.properties` → 42501), `P:166` (AC11 `role_table_grants` = 2 linhas), `P:176` (nada de `public` legível). **`D`**: `D:124` (`verifyVitrineState = []`), `D:128` e `D:151` (reaplicam o SQL mutado e esperam `[]`). `V` sozinho passa (13/13) | ✅ morto (por `P` e por `D`) |
+| R4 | `default_transaction_read_only = on` → `= off` (alvo 4) | `scripts/vitrine/vitrine.sql:126` | `P:133` (AC6, `rolconfig`); `D:124`, `D:128`, `D:140`, `D:151` (conferência do estado final) | ✅ morto |
+| R5a | `deletePropertyAction` sem `scheduleStorefrontRevalidation(tenantId)` (alvo 5) | `src/server/actions/properties.ts:338` | `PA:583` (AC8 `deletePropertyAction`) | ✅ morto |
+| R5b | `setPropertyFeaturedAction` sem `scheduleStorefrontRevalidation(tenantId)` (alvo 5) | `src/server/actions/properties.ts:431` | `PA:679` (gestor marca), `PA:692` (gestor desmarca) | ✅ morto |
+| R6a | agenda antes do `return statusCheck` na recusa por validação de `setPropertyStatusAction` (alvo 6) | `src/server/actions/properties.ts:386` | `PA:625` (AC10, status fora do enum) | ✅ morto |
+| R6b | agenda antes do `return` da recusa por permissão de `saveStorefrontAction` (alvo 6) | `src/server/actions/storefront.ts:48` | `SA:102` — `AssertionError` em `SA:111` (`scheduled not.toHaveBeenCalled()`) | ✅ morto |
+| R7 | `ACTIVATION_ORDER` = `["razaoSocial","creci","whatsappAgente"]` (alvo 7) | `src/lib/storefront.ts:193` | `L:205` (ordem CRECI → razão → WhatsApp), `L:220`; `SA:135` (três recusas na ordem) | ✅ morto |
+| R8a | log de não-2xx com `auth=${secret}` (alvo 8) | `src/server/storefront/revalidation.ts:78` | `R:153` (AC7, segredo nunca em log) | ✅ morto |
+| R8b | log do `catch` com `error.message` (a mensagem do erro traz o segredo) (alvo 8) | `src/server/storefront/revalidation.ts:87` | `R:153` | ✅ morto |
+| M27 | `realSteps()` sem `restoreIndexes: restoreDrizzleBlindIndexes,` | `scripts/test-db-push.ts:118` | `D:207` (etapas reais ligam cada função, L-026) | ✅ **morto** (sobrevivia antes de `3b620bc`) |
+| E1 | `setPropertyFeatured` sem filtro de tenant (`.where(eq(properties.id, propertyId))`) | `src/server/data/index.ts:913` | `PF:91` (AC4 outro tenant intocado); `PA:715` | ✅ morto |
+| E2 | limite do CRECI 40 → 41 | `src/lib/storefront.ts:64` | `L:90` (caso `creci`) | ✅ morto |
+| E3 | WhatsApp apagável com vitrine ativa (`if (false && storefront.active)`) | `src/server/actions/settings.ts:135` | `SS:92` (VATIV-01 AC6: string vazia, só espaços, nulo) | ✅ morto |
+| E4 | timeout 3000 → 30000 | `src/server/storefront/revalidation.ts:15` | `R:95` (timeout de 3 s), `R:114` (uma chamada no timeout), `R:153` — por estouro do `testTimeout` de 30 s (a promessa não resolve no tempo simulado) | ✅ morto |
+| E5 | timeout 3000 → 3001 (fronteira) | `src/server/storefront/revalidation.ts:15` | `R:95`, `R:153` (mesmo mecanismo: 3000 ms simulados não disparam o aborto) | ✅ morto |
+| E6 | `realSteps()` com `restoreIndexes: async () => {}` (função errada no lugar certo) | `scripts/test-db-push.ts:118` | `D:207` | ✅ morto |
+
+Abreviações iguais às da seção "Verificação independente" (`V`, `P`, `D`, `PA`, `SA`, `L`, `R`, `PF`, `SS`). Total: 21 mutações (R1a, R1b, R2, R3, R4, R5a, R5b, R6a, R6b, R7, R8a, R8b, M27 + E1–E6), 21 mortas.
+
+**Observação (não bloqueia)**: E4 e E5 morrem por estouro do `testTimeout` (30 s) e não por uma asserção sobre o desfecho, porque o teste avança exatamente 3000 ms simulados e espera a promessa. A discriminação existe (o teste falha), mas o diagnóstico de uma regressão real seria "Test timed out" em vez de uma mensagem sobre o timeout de 3 s.
+
+**Restauração da árvore**: após cada mutação o arquivo voltou idêntico ao HEAD (`git diff --quiet -- <arquivo>`), e no fim `git status --porcelain` e `git diff --stat` ficaram idênticos à linha de base registrada antes do sensor (os 4 arquivos preexistentes de fora do lote), acrescidos apenas deste `validation.md`.
+
+**Restauração do banco base**: depois de R3 e de R4, `V` reaplicou o SQL correto (13/13) e o script temporário confirmou/desfez o estado do papel. Estado final conferido: grants = `vitrine.imoveis:SELECT, vitrine.lojas:SELECT`; `rolconfig` = `default_transaction_read_only=on, statement_timeout=5s`. Rodada final no estado restaurado: `V` 13/13, `P` 26/26, `D` 15/15; `PA`+`SA`+`L`+`R`+`PF`+`SS` 116/116. `verifyVitrineState(base)` = `[]` (arquivo `.ts` temporário na raiz, executado com `npx tsx` e apagado em seguida).
+
+### Confirmação final do `db:push:test` (HEAD `c63535c`, depois da reverificação)
+
+Duas execuções consecutivas de `npm run db:push:test`, ambas com exit 0, nos 5 alvos, com a conferência do estado final e o índice `document_categories_tenant_id_lower_name_idx` presente nos 5 ao fim.
