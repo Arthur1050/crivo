@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getActiveTenantId } from "../tenant";
+import { scheduleStorefrontRevalidation } from "../storefront/schedule";
 import { denyIfForbidden } from "./permission";
 import {
   createProperty,
@@ -31,6 +32,11 @@ import {
 // sempre de `getActiveTenantId()` (nunca do `input`), a recusa de permissão
 // é a primeira coisa que roda em toda action, e cada escrita bem-sucedida
 // chama `revalidatePath("/imoveis")`.
+//
+// Lote-16a (VREV-02): cada escrita bem-sucedida também agenda o aviso de
+// revalidação da vitrine (`scheduleStorefrontRevalidation`), sempre com o tenant
+// ativo. Recusa por validação, permissão ou imóvel inexistente retorna antes e
+// não agenda nada; o agendamento nunca lança nem falha a ação.
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -162,6 +168,7 @@ export async function createPropertyAction(
   if (!result.ok) return result;
 
   revalidatePath("/imoveis");
+  scheduleStorefrontRevalidation(tenantId);
   return { ok: true };
 }
 
@@ -305,6 +312,7 @@ export async function updatePropertyAction(
   }
 
   revalidatePath("/imoveis");
+  scheduleStorefrontRevalidation(tenantId);
   return { ok: true };
 }
 
@@ -326,6 +334,7 @@ export async function deletePropertyAction(
   }
 
   revalidatePath("/imoveis");
+  scheduleStorefrontRevalidation(tenantId);
   return { ok: true };
 }
 
@@ -353,6 +362,7 @@ export async function setPropertyPublishedAction(
   }
 
   revalidatePath("/imoveis");
+  scheduleStorefrontRevalidation(tenantId);
   return { ok: true };
 }
 
@@ -384,5 +394,6 @@ export async function setPropertyStatusAction(
   }
 
   revalidatePath("/imoveis");
+  scheduleStorefrontRevalidation(tenantId);
   return { ok: true };
 }

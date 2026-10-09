@@ -370,7 +370,7 @@ T10 → T21
 **Depends on**: T11, T5
 **Reuses**: `getTenantSlug` (T5)
 **Requirement**: VREV-02
-**Status**: Done
+**Status**: Done 172a213
 
 **Done when**:
 
@@ -391,6 +391,7 @@ T10 → T21
 **Depends on**: T12
 **Reuses**: pontos de `revalidatePath` (`:164`, `:307`, `:328`, `:355`, `:386`)
 **Requirement**: VREV-02
+**Status**: Done
 
 **Done when**:
 

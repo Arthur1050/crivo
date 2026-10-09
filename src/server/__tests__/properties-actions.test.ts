@@ -40,7 +40,12 @@ vi.mock("../auth/session", async (importActual) => {
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
+// Lote-16a (VREV-02): o agendamento da revalidação da vitrine é substituído por um
+// espião; o que ele faz de verdade é provado em `storefront/__tests__/schedule.test.ts`.
+vi.mock("../storefront/schedule", () => ({ scheduleStorefrontRevalidation: vi.fn() }));
+
 import { revalidatePath } from "next/cache";
+import { scheduleStorefrontRevalidation } from "../storefront/schedule";
 import { getProperties } from "../data";
 import {
   createPropertyAction,
@@ -535,6 +540,123 @@ describe("server actions properties (T8)", () => {
 
       const [after] = await getProperties(tenantId);
       expect(after.status).toBe("disponivel");
+    });
+  });
+});
+
+describe("revalidação da vitrine nas 5 actions de imóvel (L16a T13 — VREV-02)", () => {
+  const scheduled = vi.mocked(scheduleStorefrontRevalidation);
+
+  /** Imobiliária com um imóvel já criado; o espião é zerado depois da preparação. */
+  async function tenantWithProperty(name: string) {
+    const tenantId = await createTenant(name);
+    const capturerId = await createMember(tenantId, `Captador ${name}`);
+    sessionTenantId = tenantId;
+    const created = await createPropertyAction(baseInput(capturerId));
+    if (!created.ok) throw new Error("unreachable");
+    const [property] = await getProperties(tenantId);
+    scheduled.mockClear();
+    return { tenantId, capturerId, propertyId: property.id };
+  }
+
+  describe("AC8: sucesso agenda uma vez, com o tenant do imóvel", () => {
+    it("createPropertyAction", async () => {
+      const tenantId = await createTenant("T13 Create");
+      const capturerId = await createMember(tenantId, "Captador T13 Create");
+      sessionTenantId = tenantId;
+      scheduled.mockClear();
+
+      expect(await createPropertyAction(baseInput(capturerId))).toEqual({ ok: true });
+
+      expect(scheduled).toHaveBeenCalledTimes(1);
+      expect(scheduled).toHaveBeenCalledWith(tenantId);
+    });
+
+    it("updatePropertyAction", async () => {
+      const { tenantId, propertyId } = await tenantWithProperty("T13 Update");
+      expect(await updatePropertyAction({ propertyId, areaSqm: 120 })).toEqual({ ok: true });
+      expect(scheduled).toHaveBeenCalledTimes(1);
+      expect(scheduled).toHaveBeenCalledWith(tenantId);
+    });
+
+    it("deletePropertyAction", async () => {
+      const { tenantId, propertyId } = await tenantWithProperty("T13 Delete");
+      expect(await deletePropertyAction({ propertyId })).toEqual({ ok: true });
+      expect(scheduled).toHaveBeenCalledTimes(1);
+      expect(scheduled).toHaveBeenCalledWith(tenantId);
+    });
+
+    it("setPropertyPublishedAction", async () => {
+      const { tenantId, propertyId } = await tenantWithProperty("T13 Publish");
+      expect(await setPropertyPublishedAction({ propertyId, published: true })).toEqual({ ok: true });
+      expect(scheduled).toHaveBeenCalledTimes(1);
+      expect(scheduled).toHaveBeenCalledWith(tenantId);
+    });
+
+    it("setPropertyStatusAction", async () => {
+      const { tenantId, propertyId } = await tenantWithProperty("T13 Status");
+      expect(await setPropertyStatusAction({ propertyId, status: "vendido" })).toEqual({ ok: true });
+      expect(scheduled).toHaveBeenCalledTimes(1);
+      expect(scheduled).toHaveBeenCalledWith(tenantId);
+    });
+  });
+
+  describe("AC10: recusa por validação não agenda", () => {
+    it("createPropertyAction com campo obrigatório vazio", async () => {
+      const tenantId = await createTenant("T13 Create Invalido");
+      const capturerId = await createMember(tenantId, "Captador T13 Create Invalido");
+      sessionTenantId = tenantId;
+      scheduled.mockClear();
+
+      const result = await createPropertyAction(baseInput(capturerId, { neighborhood: "   " }));
+
+      expect(result.ok).toBe(false);
+      expect(scheduled).not.toHaveBeenCalled();
+    });
+
+    it("updatePropertyAction com área inválida", async () => {
+      const { propertyId } = await tenantWithProperty("T13 Update Invalido");
+      const result = await updatePropertyAction({ propertyId, areaSqm: -5 });
+      expect(result.ok).toBe(false);
+      expect(scheduled).not.toHaveBeenCalled();
+    });
+
+    it("setPropertyStatusAction com status fora do enum", async () => {
+      const { propertyId } = await tenantWithProperty("T13 Status Invalido");
+      const result = await setPropertyStatusAction({
+        propertyId,
+        // @ts-expect-error valor fora do enum, propositalmente, para provar a recusa.
+        status: "alugado",
+      });
+      expect(result.ok).toBe(false);
+      expect(scheduled).not.toHaveBeenCalled();
+    });
+
+    it("imóvel inexistente em update, delete, publicação e status", async () => {
+      await tenantWithProperty("T13 Inexistente");
+      expect((await updatePropertyAction({ propertyId: NON_EXISTENT_ID, areaSqm: 120 })).ok).toBe(false);
+      expect((await deletePropertyAction({ propertyId: NON_EXISTENT_ID })).ok).toBe(false);
+      expect((await setPropertyPublishedAction({ propertyId: NON_EXISTENT_ID, published: true })).ok).toBe(false);
+      expect((await setPropertyStatusAction({ propertyId: NON_EXISTENT_ID, status: "vendido" })).ok).toBe(false);
+      expect(scheduled).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("AC10: recusa por permissão não agenda (sessão de corretor)", () => {
+    it("as 5 actions", async () => {
+      const { capturerId, propertyId } = await tenantWithProperty("T13 Permissao");
+      sessionRoles = ["corretor"];
+
+      const results = [
+        await createPropertyAction(baseInput(capturerId)),
+        await updatePropertyAction({ propertyId, areaSqm: 120 }),
+        await deletePropertyAction({ propertyId }),
+        await setPropertyPublishedAction({ propertyId, published: true }),
+        await setPropertyStatusAction({ propertyId, status: "vendido" }),
+      ];
+
+      for (const result of results) expect(result.ok).toBe(false);
+      expect(scheduled).not.toHaveBeenCalled();
     });
   });
 });
