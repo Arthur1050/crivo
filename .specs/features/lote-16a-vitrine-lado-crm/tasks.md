@@ -109,7 +109,7 @@ T10 → T21
 **Depends on**: None
 **Reuses**: design.md § Fatos operacionais
 **Requirement**: VBANCO-01, VBANCO-02, VBANCO-03
-**Status**: Done
+**Status**: Done 2c00ec2
 
 **Done when**:
 
@@ -132,6 +132,7 @@ T10 → T21
 **Depends on**: T0
 **Reuses**: check de `tenants` (`src/db/schema.ts:201`)
 **Requirement**: VCFG-01, VDEST-01
+**Status**: Done
 
 **Done when**:
 

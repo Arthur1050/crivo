@@ -57,6 +57,21 @@ export const propertyStatusEnum = pgEnum("property_status", [
   "vendido",
 ]);
 
+// Vitrine pública (lote-16a — VCFG-01). Listas fechadas: fonte livre exigiria
+// URL arbitrária na página pública (spec, Assumptions). O contrato espelhado
+// em `src/lib/storefront-contract.ts` falha se divergir destes valores.
+export const storefrontLayoutEnum = pgEnum("storefront_layout", [
+  "grade",
+  "editorial",
+]);
+
+export const storefrontFontEnum = pgEnum("storefront_font", [
+  "inter",
+  "montserrat",
+  "lora",
+  "playfair",
+]);
+
 export const motivationEnum = pgEnum("motivation", [
   "investidor",
   "morador",
@@ -1099,6 +1114,9 @@ export const properties = pgTable(
     modality: modalityEnum("modality").notNull(),
     status: propertyStatusEnum("status").notNull().default("disponivel"),
     published: boolean("published").notNull().default(false),
+    // Destaque da vitrine pública (lote-16a — VDEST-01). Sem teto por
+    // imobiliária; fica fora da rota de busca do contrato `/api/v1`.
+    featured: boolean("featured").notNull().default(false),
 
     street: text("street"), // só o CRM lê (BUSCA-03)
     number: text("number"), // só o CRM lê
@@ -1144,5 +1162,55 @@ export const properties = pgTable(
       table.published
     ),
     index("properties_captured_by_user_id_idx").on(table.capturedByUserId),
+  ]
+);
+
+// ---------------------------------------------------------------------------
+// Vitrine pública do catálogo (lote-16a — VCFG-01, AD-040).
+//
+// Tabela 1:1 com `tenants`: ausência de linha equivale a vitrine inativa com
+// os valores padrão (AD-004: imobiliárias existentes não precisam de migração).
+// A fronteira pública não é esta tabela, e sim as views do schema `vitrine`
+// (`scripts/vitrine/vitrine.sql`), que o papel `crivo_vitrine` lê.
+//
+// Os dois checks são do BANCO. O `drizzle-kit push` já saiu com 0 deixando
+// check sem aplicar (L-068): o SQL da vitrine os reaplica de forma idempotente
+// e o `db:push:test` confere o estado final.
+// ---------------------------------------------------------------------------
+export const tenantStorefronts = pgTable(
+  "tenant_storefronts",
+  {
+    tenantId: uuid("tenant_id")
+      .primaryKey()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    active: boolean("active").notNull().default(false),
+    layout: storefrontLayoutEnum("layout").notNull().default("grade"),
+    // "#rrggbb" em minúsculas; nulo = cor padrão da vitrine.
+    accentColor: text("accent_color"),
+    font: storefrontFontEnum("font").notNull().default("inter"),
+    creci: text("creci"),
+    legalName: text("legal_name"),
+    headline: text("headline"),
+    about: text("about"),
+    // Handle sem "@", [a-z0-9._]{1,30}; o link é montado pela vitrine.
+    instagram: text("instagram"),
+    // Só dígitos, de 10 a 13.
+    phone: text("phone"),
+    address: text("address"),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    check(
+      "tenant_storefronts_accent_color_check",
+      sql`${table.accentColor} is null or ${table.accentColor} ~ '^#[0-9a-f]{6}$'`
+    ),
+    // `nullif(trim(x), '') is not null` e não `trim(x) <> ''`: com CRECI nulo a
+    // comparação dá nulo e o check passaria (nulo satisfaz CHECK).
+    check(
+      "tenant_storefronts_active_requires_identity_check",
+      sql`not ${table.active} or (nullif(trim(${table.creci}), '') is not null and nullif(trim(${table.legalName}), '') is not null)`
+    ),
   ]
 );
