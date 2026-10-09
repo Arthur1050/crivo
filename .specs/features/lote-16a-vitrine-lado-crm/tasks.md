@@ -109,6 +109,7 @@ T10 → T21
 **Depends on**: None
 **Reuses**: design.md § Fatos operacionais
 **Requirement**: VBANCO-01, VBANCO-02, VBANCO-03
+**Status**: Done
 
 **Done when**:
 
