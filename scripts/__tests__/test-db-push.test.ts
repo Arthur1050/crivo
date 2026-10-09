@@ -1,10 +1,11 @@
 import "dotenv/config";
 import { sql } from "drizzle-orm";
+import { Client } from "pg";
 import { afterAll, describe, expect, it } from "vitest";
 import { applyVitrineSql, verifyVitrineState } from "../vitrine/apply";
 import { db } from "../../src/db";
 import { currentTestDatabaseUrl } from "../../src/db/__tests__/vitrine-helpers";
-import { pushToTargets, type PushSteps } from "../test-db-push";
+import { pushToTargets, restoreDrizzleBlindIndexes, type PushSteps } from "../test-db-push";
 
 const TARGETS = [
   "postgresql://owner:senha-da-base@host-base.example.test/neondb",
@@ -155,5 +156,66 @@ describe("L16a T10 — conferência do estado final contra o banco real (VBANCO-
       await applyVitrineSql(url);
     }
     expect(await verifyVitrineState(url)).toEqual([]);
+  });
+});
+
+describe("índice que o drizzle-kit push derruba (restauração no db:push:test)", () => {
+  const url = currentTestDatabaseUrl();
+  const INDEX = "document_categories_tenant_id_lower_name_idx";
+
+  // Cliente próprio: o `afterAll` do bloco anterior já encerrou o pool do `db`.
+  async function query<T>(text: string): Promise<T[]> {
+    const client = new Client({ connectionString: url });
+    await client.connect();
+    try {
+      return (await client.query(text)).rows as T[];
+    } finally {
+      await client.end();
+    }
+  }
+
+  async function indexExists() {
+    const rows = await query<{ n: number }>(
+      `select count(*)::int as n from pg_indexes where schemaname = 'public' and indexname = '${INDEX}'`
+    );
+    return rows[0].n === 1;
+  }
+
+  it("em cada alvo a restauração roda depois do push e antes de aplicar o SQL da vitrine", async () => {
+    const calls: string[] = [];
+    const { steps } = simulated({
+      dropVitrine: async () => { calls.push("drop"); },
+      push: async () => { calls.push("push"); return 0; },
+      restoreIndexes: async () => { calls.push("restore"); },
+      applyVitrine: async () => { calls.push("apply"); },
+      verify: async () => { calls.push("verify"); return []; },
+    });
+    expect(await pushToTargets(TARGETS.slice(0, 1), steps, PASSWORD, capture().logger)).toBe(0);
+    expect(calls).toEqual(["drop", "push", "restore", "apply", "verify"]);
+  });
+
+  it("falha ao restaurar para no alvo: não aplica o SQL e o código é ≠ 0", async () => {
+    const calls: string[] = [];
+    const { steps } = simulated({
+      restoreIndexes: async () => { calls.push("restore"); throw new Error("duplicado"); },
+      applyVitrine: async () => { calls.push("apply"); },
+    });
+    expect(await pushToTargets(TARGETS, steps, PASSWORD, capture().logger)).not.toBe(0);
+    expect(calls).toEqual(["restore"]);
+  });
+
+  it("recria o índice único por (tenant, lower(nome)) quando ele sumiu; reexecutar não falha", async () => {
+    await query(`drop index if exists "${INDEX}"`);
+    expect(await indexExists()).toBe(false);
+
+    await restoreDrizzleBlindIndexes(url);
+    await restoreDrizzleBlindIndexes(url);
+
+    expect(await indexExists()).toBe(true);
+    const [index] = await query<{ indexdef: string }>(
+      `select indexdef from pg_indexes where schemaname = 'public' and indexname = '${INDEX}'`
+    );
+    expect(index.indexdef).toContain("UNIQUE INDEX");
+    expect(index.indexdef).toContain("(tenant_id, lower(name))");
   });
 });

@@ -7,8 +7,8 @@
  * os workers defasados e a suíte paralela falha de um jeito que parece bug.
  * Este comando mantém todas alinhadas. Em cada alvo a ordem é: derrubar o
  * schema `vitrine` (alterar coluna usada por view faz o push falhar) -> push do
- * Drizzle -> aplicar o SQL da vitrine com a senha do papel -> conferir o estado
- * final. O push já saiu com 0 sem aplicar check (L-068), então só a conferência
+ * Drizzle -> restaurar o índice que o push derruba -> aplicar o SQL da vitrine
+ * com a senha do papel -> conferir o estado final. O push já saiu com 0 sem aplicar check (L-068), então só a conferência
  * decide que o alvo ficou pronto. Nenhuma connection string nem senha é
  * impressa — só o host de cada alvo.
  */
@@ -17,13 +17,40 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { resolveTestDatabaseUrl } from "../src/db/test-connection";
+import { Client } from "pg";
 import { applyVitrineSql, dropVitrineSchema, verifyVitrineState } from "./vitrine/apply";
 
-/** As quatro etapas de cada alvo; trocadas por simuladores nos testes. */
+/**
+ * Índices únicos que o `drizzle-kit push` derruba a cada execução e não
+ * recria: ele não reconhece o índice de expressão (`lower(name)`) como igual
+ * ao do schema, derruba-o e aborta no primeiro `CREATE UNIQUE INDEX` seguinte
+ * (o de `leads_tenant_id_id_idx`, que já existe), com saída 0. Sem este
+ * passo, a categoria de documento duplicada deixa de ser recusada pelo banco
+ * e a suíte falha. Idempotente.
+ */
+const DRIZZLE_BLIND_INDEXES = [
+  `create unique index if not exists "document_categories_tenant_id_lower_name_idx"
+   on "document_categories" using btree ("tenant_id", lower("name"))`,
+];
+
+/** Recria no banco de `url` os índices que o `drizzle-kit push` derrubou. */
+export async function restoreDrizzleBlindIndexes(url: string): Promise<void> {
+  const client = new Client({ connectionString: url });
+  await client.connect();
+  try {
+    for (const statement of DRIZZLE_BLIND_INDEXES) await client.query(statement);
+  } finally {
+    await client.end();
+  }
+}
+
+/** As etapas de cada alvo; trocadas por simuladores nos testes. */
 export interface PushSteps {
   dropVitrine: (url: string) => Promise<void>;
   /** Roda o `drizzle-kit push` e devolve o código de saída. */
   push: (url: string) => Promise<number | null> | number | null;
+  /** Recria os índices que o push derrubou; roda entre o push e o SQL da vitrine. */
+  restoreIndexes?: (url: string) => Promise<void>;
   applyVitrine: (url: string, options: { password: string }) => Promise<void>;
   /** Problemas do estado final; lista vazia = alvo pronto. */
   verify: (url: string) => Promise<string[]>;
@@ -65,6 +92,7 @@ export async function pushToTargets(
         logger.error(`Push falhou em ${label}; os demais alvos não foram tocados.`);
         return status ?? 1;
       }
+      await steps.restoreIndexes?.(url);
       await steps.applyVitrine(url, { password });
       const problems = await steps.verify(url);
       if (problems.length > 0) {
@@ -86,6 +114,7 @@ export async function pushToTargets(
 function realSteps(): PushSteps {
   return {
     dropVitrine: dropVitrineSchema,
+    restoreIndexes: restoreDrizzleBlindIndexes,
     push: (url) =>
       spawnSync("npx drizzle-kit push --config drizzle-test.config.ts", {
         stdio: "inherit",
