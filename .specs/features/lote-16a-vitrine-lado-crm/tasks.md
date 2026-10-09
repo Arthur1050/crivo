@@ -348,7 +348,7 @@ T10 → T21
 **Depends on**: T2
 **Reuses**: tipo do payload da T2; padrão do `CRIVO_OPERATOR_ALERT_EMAIL` vazio (`vitest.config.ts:41`)
 **Requirement**: VREV-01
-**Status**: Done
+**Status**: Done 9229ba4
 
 **Done when**:
 
@@ -370,6 +370,7 @@ T10 → T21
 **Depends on**: T11, T5
 **Reuses**: `getTenantSlug` (T5)
 **Requirement**: VREV-02
+**Status**: Done
 
 **Done when**:
 
