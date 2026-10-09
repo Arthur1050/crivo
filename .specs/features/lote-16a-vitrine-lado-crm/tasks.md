@@ -326,7 +326,7 @@ T10 → T21
 **Depends on**: T9
 **Reuses**: laço de alvos existente
 **Requirement**: VBANCO-03
-**Status**: Done
+**Status**: Done c4f71f5
 
 **Done when**:
 
@@ -348,6 +348,7 @@ T10 → T21
 **Depends on**: T2
 **Reuses**: tipo do payload da T2; padrão do `CRIVO_OPERATOR_ALERT_EMAIL` vazio (`vitest.config.ts:41`)
 **Requirement**: VREV-01
+**Status**: Done
 
 **Done when**:
 

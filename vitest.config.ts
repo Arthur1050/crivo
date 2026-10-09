@@ -39,6 +39,11 @@ export default defineConfig({
       // real, e o carregador de variáveis não sobrescreve uma já definida. Sem
       // isto, um teste da rota mandaria e-mail de verdade ao operador.
       CRIVO_OPERATOR_ALERT_EMAIL: "",
+      // Vazios de propósito (lote-16a — VREV-01 AC11): sem as duas, o cliente de
+      // revalidação não envia nada. Mesma razão do alerta acima: o ambiente
+      // local pode trazer a vitrine real e nenhum teste pode chamá-la.
+      VITRINE_PUBLIC_URL: "",
+      VITRINE_REVALIDATE_SECRET: "",
     },
     exclude: ["**/node_modules/**", "workflows/**"],
   },
