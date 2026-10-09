@@ -217,7 +217,7 @@ T10 → T21
 **Depends on**: T4
 **Reuses**: filtro por tenant ativo (AD-002)
 **Requirement**: VCFG-01, VCFG-02, VATIV-01
-**Status**: Done
+**Status**: Done 220bb2c
 
 **Done when**:
 
@@ -238,6 +238,7 @@ T10 → T21
 **Depends on**: T1
 **Reuses**: `updateProperty` e o filtro por tenant
 **Requirement**: VDEST-01
+**Status**: Done
 
 **Done when**:
 

@@ -895,6 +895,26 @@ export async function deleteProperty(
   return rows.length > 0;
 }
 
+/**
+ * Destaque da vitrine pública (lote-16a — VDEST-01). Escrita própria, fora de
+ * `UpdatePropertyPatch`: o destaque só interessa à vitrine e não faz parte da
+ * edição do imóvel nem do contrato `/api/v1`. Sem teto de destaques por
+ * imobiliária (AC5). Retorna `false` (no-op) quando nenhuma linha corresponde
+ * a `tenantId` + `propertyId` — imóvel de outro tenant é tratado como inexistente.
+ */
+export async function setPropertyFeatured(
+  tenantId: string,
+  propertyId: string,
+  featured: boolean
+): Promise<boolean> {
+  const rows = await db
+    .update(properties)
+    .set({ featured, updatedAt: sql`now()` })
+    .where(and(eq(properties.tenantId, tenantId), eq(properties.id, propertyId)))
+    .returning({ id: properties.id });
+  return rows.length > 0;
+}
+
 export interface DashboardRange {
   from: Date;
   to: Date;

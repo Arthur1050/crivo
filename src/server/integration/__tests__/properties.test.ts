@@ -321,6 +321,19 @@ describe("server/integration properties — searchVisibleProperties (T12)", () =
       }
     });
 
+    it("o DTO não tem campo de destaque, mesmo para imóvel em destaque (VDEST-01 AC6)", async () => {
+      const id = await insertProperty({ featured: true });
+      const [row] = await db.select().from(properties).where(eq(properties.id, id));
+      expect(row.featured).toBe(true);
+      const result = await searchVisibleProperties(tenantId, NO_FILTERS);
+      const item = result.imoveis.find((p) => p.referencia === row.reference);
+      expect(item).toBeDefined();
+      for (const found of result.imoveis) {
+        expect(found).not.toHaveProperty("featured");
+        expect(found).not.toHaveProperty("destaque");
+      }
+    });
+
     it("'preco' sai como string formatada em Real brasileiro, e nenhum bigint atravessa o DTO", async () => {
       const id = await insertProperty({ priceCents: 450_000_00n });
       const [row] = await db.select().from(properties).where(eq(properties.id, id));
