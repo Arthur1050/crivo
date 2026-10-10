@@ -483,6 +483,8 @@ T24 → T25
 
 ### T16: Layout da loja
 
+**Status**: concluída em 2026-10-10 (hash no `git log`; e2e 18 de 18; 4 mutantes do layout mortos; capturas `t16-01` a `t16-04`, largura de rolagem 375 em A e B; lint, typecheck e build da vitrine sem erro; `tsc` da raiz com os mesmos 50 erros).
+
 **What**: `app/c/[slug]/layout.tsx`: `<Suspense>`; slug inválido → `notFound()` sem consulta; loja ausente → `notFound()`; `TemaDaLoja` da loja (T10: `<Theme mode="light">` com o CSS do tema no HTML, AD-046); cabeçalho com logo, nome e botão de WhatsApp; rodapé legal (T15). O layout raiz (`app/layout.tsx`) ganha `data-theme="light"` no `<html>` e as variáveis das 4 fontes (`fontes.ts`). Antes: `npx astryx template centered-hero`.
 **Where**: `vitrine/app/c/[slug]/layout.tsx`
 **Depends on**: T15, T5, T10, T14

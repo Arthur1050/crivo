@@ -167,6 +167,149 @@ registrar("T14 a revalidação aceita sai no log com prefixo, slug e desfecho", 
   );
 });
 
+// ── T16: layout e tema da loja ─────────────────────────────────────────────
+
+/** `<style>` do HTML, na ordem do documento. */
+function blocosDeStyle(html: string): string[] {
+  return [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]);
+}
+
+/** Primeiro valor de uma propriedade CSS num bloco (`--color-accent: ...;`). */
+function valorDaPropriedade(css: string, propriedade: string): string | null {
+  const m = new RegExp(`${propriedade.replace(/[-]/g, "\\-")}\\s*:\\s*([^;]+);`).exec(css);
+  return m ? m[1].trim() : null;
+}
+
+/** Âncoras do HTML com href e texto interno (sem tags). */
+function ancoras(html: string): Array<{ href: string; texto: string }> {
+  return [...html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g)].flatMap((m) => {
+    const href = /\bhref="([^"]*)"/.exec(m[1])?.[1];
+    return href === undefined ? [] : [{ href, texto: m[2].replace(/<[^>]*>/g, "").trim() }];
+  });
+}
+
+/** Marca, nome e cor de nenhuma loja: o slug pedido pode aparecer (a URL é do visitante). */
+function semMarcaDeLoja(ctx: Contexto, texto: string): void {
+  for (const loja of Object.values(ctx.fixture.lojas)) {
+    assert.ok(!texto.includes(loja.nome), `cita a loja "${loja.nome}"`);
+    assert.ok(!texto.includes(loja.razaoSocial), `cita a razão social "${loja.razaoSocial}"`);
+    assert.ok(!texto.includes(loja.creci), `cita o CRECI "${loja.creci}"`);
+    if (loja.cor) assert.ok(!texto.toLowerCase().includes(loja.cor), `contém a cor ${loja.cor}`);
+  }
+}
+
+registrar("T16 loja inativa (C) e slug sem loja → não encontrado neutro, noindex, sem marca (status registrado)", async (ctx) => {
+  for (const slug of [ctx.fixture.lojas.c.slug, "vt-e2e-sem-loja"]) {
+    const r = await ctx.pedir(`/c/${slug}`);
+    // F8 (gate T0): a página sai em streaming, então a doc manda HTTP 200 com a UI de não encontrado.
+    assert.equal(r.status, 200, `/c/${slug}: status registrado (F8: 200 esperado pela doc)`);
+    assert.ok(r.texto.includes(TEXTO_NEUTRO), `/c/${slug}: falta a mensagem neutra`);
+    assert.match(r.texto, /<meta name="robots" content="noindex, nofollow"/, `/c/${slug}: sem noindex`);
+    semMarcaDeLoja(ctx, r.texto);
+    assert.ok(!r.texto.includes("astryx-theme"), `/c/${slug}: carrega o tema de uma loja`);
+  }
+});
+
+registrar("T16 lojas A, B e D: o HTML sem JS traz o bloco de tema da própria loja (VTEMA AC2, AC7)", async (ctx) => {
+  for (const loja of [ctx.fixture.lojas.a, ctx.fixture.lojas.b, ctx.fixture.lojas.d]) {
+    const r = await ctx.pedir(`/c/${loja.slug}`);
+    assert.equal(r.status, 200, loja.slug);
+    const escopo = `@scope ([data-astryx-theme="loja-${loja.slug}"])`;
+    const blocos = blocosDeStyle(r.texto).map((b) => b.trim());
+
+    const dosTokens = blocos.filter((b) => b.startsWith("@layer astryx-theme {"));
+    assert.equal(dosTokens.length, 1, `${loja.slug}: blocos @layer astryx-theme`);
+    assert.ok(dosTokens[0].includes(escopo), `${loja.slug}: falta ${escopo} no bloco do tema`);
+
+    const dosResets = blocos.filter((b) => b.startsWith("@layer reset {"));
+    assert.equal(dosResets.length, 1, `${loja.slug}: blocos @layer reset`);
+    assert.ok(dosResets[0].includes(escopo), `${loja.slug}: falta ${escopo} no bloco reset`);
+    assert.ok(dosResets[0].includes(":where(h1, h2, h3, h4, h5, h6)"), `${loja.slug}: falta o seletor de títulos`);
+
+    assert.match(
+      r.texto,
+      new RegExp(`<[a-z]+\\b[^>]*data-astryx-theme="loja-${loja.slug}"[^>]*>`),
+      `${loja.slug}: falta o wrapper do tema`
+    );
+  }
+});
+
+registrar("T16 o HTML de uma loja não carrega o tema de outra", async (ctx) => {
+  const { a, b, d } = ctx.fixture.lojas;
+  const paginaA = await ctx.pedir(`/c/${a.slug}`);
+  for (const outra of [b, d]) {
+    assert.ok(!paginaA.texto.includes(`loja-${outra.slug}`), `o HTML de ${a.slug} cita loja-${outra.slug}`);
+  }
+});
+
+registrar("T16 --color-accent de A, B e D é diferente entre si, sem comparar com hex literal (AD-046)", async (ctx) => {
+  const acentos: Record<string, string> = {};
+  for (const loja of [ctx.fixture.lojas.a, ctx.fixture.lojas.b, ctx.fixture.lojas.d]) {
+    const r = await ctx.pedir(`/c/${loja.slug}`);
+    const bloco = blocosDeStyle(r.texto).find((b) => b.trim().startsWith("@layer astryx-theme {"));
+    assert.ok(bloco, `${loja.slug}: sem bloco de tema`);
+    const acento = valorDaPropriedade(bloco, "--color-accent");
+    assert.ok(acento, `${loja.slug}: sem --color-accent no bloco do tema`);
+    acentos[loja.slug] = acento;
+  }
+  const { a, b, d } = ctx.fixture.lojas;
+  assert.notEqual(acentos[a.slug], acentos[b.slug], "accent de A = accent de B");
+  assert.notEqual(acentos[a.slug], acentos[d.slug], "accent de A = accent da loja sem cor (D)");
+  assert.notEqual(acentos[b.slug], acentos[d.slug], "accent de B = accent da loja sem cor (D)");
+});
+
+registrar("T16 --font-family-body e --font-family-heading seguem a fonte de cada loja (VTEMA AC3)", async (ctx) => {
+  const corpos: Record<string, string> = {};
+  for (const loja of [ctx.fixture.lojas.a, ctx.fixture.lojas.b, ctx.fixture.lojas.d]) {
+    const r = await ctx.pedir(`/c/${loja.slug}`);
+    const bloco = blocosDeStyle(r.texto).find((b) => b.trim().startsWith("@layer astryx-theme {")) ?? "";
+    const esperada = `var(--font-${loja.fonte})`;
+    assert.equal(valorDaPropriedade(bloco, "--font-family-body"), esperada, `${loja.slug}: corpo`);
+    assert.equal(valorDaPropriedade(bloco, "--font-family-heading"), esperada, `${loja.slug}: títulos`);
+    corpos[loja.slug] = esperada;
+  }
+  const { a, b } = ctx.fixture.lojas;
+  assert.notEqual(corpos[a.slug], corpos[b.slug], "A e B com a mesma fonte");
+});
+
+registrar("T16 rodapé com razão social, CRECI e aviso em A, B e D; contatos só quando a loja os tem (VLEGAL AC1–AC4)", async (ctx) => {
+  const { a, b, d } = ctx.fixture.lojas;
+  const aviso = "Preços e disponibilidade sujeitos a alteração sem aviso prévio.";
+  for (const loja of [a, b, d]) {
+    const r = await ctx.pedir(`/c/${loja.slug}`);
+    assert.ok(r.texto.includes(loja.razaoSocial), `${loja.slug}: razão social`);
+    assert.ok(r.texto.includes(loja.creci), `${loja.slug}: CRECI`);
+    assert.ok(r.texto.includes(aviso), `${loja.slug}: aviso`);
+  }
+
+  const paginaA = (await ctx.pedir(`/c/${a.slug}`)).texto;
+  const linksA = ancoras(paginaA).map((x) => x.href);
+  assert.ok(paginaA.includes(a.endereco ?? ""), "A: endereço");
+  assert.ok(linksA.includes(`https://instagram.com/${a.instagram}`), "A: link do Instagram");
+  assert.ok(linksA.includes(`tel:+55${a.telefone}`), "A: link do telefone com o prefixo 55");
+
+  const paginaB = (await ctx.pedir(`/c/${b.slug}`)).texto;
+  const linksB = ancoras(paginaB).map((x) => x.href);
+  assert.ok(!linksB.some((href) => href.includes("instagram.com")), "B (sem Instagram) mostra o link");
+  assert.ok(linksB.includes(`tel:+55${b.telefone}`), "B: telefone de 11 dígitos recebe 55");
+  assert.ok(!paginaB.includes("Rua Alfa"), "B mostra o endereço da A");
+});
+
+registrar("T16 o botão de WhatsApp do cabeçalho abre o wa.me com a mensagem de catálogo (VCAT AC12)", async (ctx) => {
+  for (const loja of [ctx.fixture.lojas.a, ctx.fixture.lojas.b, ctx.fixture.lojas.d]) {
+    const r = await ctx.pedir(`/c/${loja.slug}`);
+    const botao = ancoras(r.texto).find((x) => x.texto.includes("Falar no WhatsApp"));
+    assert.ok(botao, `${loja.slug}: sem botão "Falar no WhatsApp"`);
+    const url = new URL(botao.href);
+    assert.equal(url.origin + url.pathname, `https://wa.me/${loja.whatsappComPrefixo}`, loja.slug);
+    assert.equal(
+      url.searchParams.get("text"),
+      `Olá! Vi a vitrine da ${loja.nome} e gostaria de atendimento.`,
+      loja.slug
+    );
+  }
+});
+
 // ── Globais: olham tudo o que as asserções acima (e as das tasks seguintes) pediram ──
 
 registrarGlobal("Global: X-Robots-Tag \"noindex, nofollow\" em toda resposta (VSEO AC2)", (ctx) => {
