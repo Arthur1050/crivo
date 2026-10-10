@@ -259,6 +259,8 @@ T24 → T25
 
 ### T6: Dev da vitrine contra o banco de teste
 
+**Status**: concluída em 2026-10-10 (7 testes verdes, 3 mutantes mortos, execução real na porta 3100 com 404 em rota inexistente; build gate sem erro novo).
+
 **What**: `npm run vitrine:dev` na raiz: deriva a URL do papel para a branch `test`, gera segredo local e sobe `next dev -p 3100` em `vitrine/` sem imprimir credencial.
 **Where**: `scripts/vitrine-dev.ts`
 **Depends on**: T1
