@@ -147,6 +147,8 @@ T24 → T25
 
 ### T1: Projeto base da vitrine
 
+**Status**: concluída em 2026-10-10 (hash no `git log`; gate: 12 testes verdes, build da vitrine e da raiz sem erro novo).
+
 **What**: `vitrine/` com `package.json` (mesmas versões do CRM; scripts `dev`, `build`, `start`, `lint`, `typecheck`), `next.config.ts` (`cacheComponents: true`, `cacheLife.vitrine` = 60/60/300, cabeçalhos `X-Robots-Tag: noindex, nofollow` e `Referrer-Policy`, `turbopack.root` na pasta `vitrine/` conforme a F19), `tsconfig.json` (exclui `**/__tests__/**`: os testes da vitrine importam o `vitest` da raiz, que não é instalado no deploy; eles rodam no Vitest e não passam por `tsc`), lint, `app/layout.tsx` (CSS da Astryx, `lang="pt-BR"`, `robots` noindex) e `app/not-found.tsx` neutro; raiz exclui `vitrine/` do `tsconfig.json` e do lint, e o `.gitignore` da raiz ganha `/vitrine/node_modules` e `/vitrine/.next/`; `vitrine/package-lock.json` versionado.
 **Where**: `vitrine/next.config.ts`
 **Depends on**: T0

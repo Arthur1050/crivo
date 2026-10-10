@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Scaffolds da CLI da Astryx (git-ignored, nunca fazem parte do app).
     "scratch/**",
+    // Projeto próprio (AD-041): lint, tsconfig e dependências na pasta `vitrine/`.
+    "vitrine/**",
   ]),
 ]);
 

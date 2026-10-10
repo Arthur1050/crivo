@@ -53,3 +53,7 @@ next-env.d.ts
 
 # endpoints das branches do Neon por worker de teste (modelo: test-workers.example.json)
 test-workers.local.json
+
+# vitrine (AD-041): projeto próprio com dependências e build próprios
+/vitrine/node_modules
+/vitrine/.next/

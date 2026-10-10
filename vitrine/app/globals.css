@@ -1,0 +1,15 @@
+/*
+ * Ordem de cascata exigida pela ponte Tailwind da Astryx
+ * (node_modules/@astryxdesign/core/src/tailwind-theme.css § Usage). A ordem das
+ * camadas vale antes de qualquer `<style>` do tema da loja (AD-046): o tema
+ * escreve em `reset` e `astryx-theme`, e estas camadas já estão declaradas.
+ */
+@layer reset, theme, base, astryx-base, astryx-theme, components, utilities;
+
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+@import "@astryxdesign/core/reset.css";
+@import "@astryxdesign/core/astryx.css";
+@import "@astryxdesign/theme-neutral/theme.css";
+@import "@astryxdesign/core/tailwind-theme.css";
+@import "tailwindcss/utilities.css" layer(utilities);
