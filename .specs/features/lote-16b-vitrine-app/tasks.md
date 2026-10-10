@@ -417,6 +417,8 @@ T24 → T25
 
 ### T13: Fixture de sentinelas
 
+**Status**: concluída em 2026-10-10 (hash no `git log`; 4 testes verdes; lint da raiz 0 erros e `tsc` da raiz com os mesmos 50 erros de linha de base).
+
 **What**: `criarFixtureVitrine()`/`removerFixtureVitrine()` na branch `test`: lojas A e B ativas com cores, fontes e layouts diferentes, C inativa, D ativa sem cor, com a fonte padrão e sem imóvel visível (VTEMA AC2/AC7 e o estado vazio da T21); imóveis em todos os estados; captador, endereço e lead com textos sentinela únicos; um imóvel sem foto; um com `<script>` na descrição; 25 imóveis visíveis na loja A.
 **Where**: `scripts/vitrine-fixture.ts`
 **Depends on**: T0
