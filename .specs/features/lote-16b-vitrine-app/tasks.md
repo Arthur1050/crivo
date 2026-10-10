@@ -325,6 +325,8 @@ T24 → T25
 
 ### T9: Apresentação dos dados
 
+**Status**: concluída em 2026-10-10 (13 testes verdes (11 da vitrine + 2 de paridade com o enum do CRM); 5 mutantes mortos; build gate sem erro novo).
+
 **What**: Preço em reais sem centavos, rótulos de tipo e modalidade (`Record` tipado; `ambos` sem rótulo), texto alternativo das fotos, título e descrição de compartilhamento do catálogo e do item.
 **Where**: `vitrine/src/lib/apresentacao.ts`
 **Depends on**: T1
