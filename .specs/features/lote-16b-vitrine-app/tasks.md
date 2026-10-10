@@ -574,6 +574,8 @@ T24 → T25
 
 ### T20: Template editorial
 
+**Status**: concluída em 2026-10-10 (hash no `git log`; lint, typecheck e build da vitrine sem erro; mesmas props da T19; montado e provado na T21).
+
 **What**: Catálogo editorial: cabeçalho com a foto do primeiro destaque (omitida sem destaque), lista edge-to-edge de linhas, estado vazio, "Sobre". Antes: `npx astryx template side-gallery`.
 **Where**: `vitrine/src/templates/editorial/catalogo-editorial.tsx`
 **Depends on**: T19
