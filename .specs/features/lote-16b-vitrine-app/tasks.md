@@ -417,7 +417,7 @@ T24 → T25
 
 ### T13: Fixture de sentinelas
 
-**Status**: concluída em 2026-10-10 (hash no `git log`; 4 testes verdes; lint da raiz 0 erros e `tsc` da raiz com os mesmos 50 erros de linha de base).
+**Status**: concluída em 2026-10-10 (hash `23c747c`; 4 testes verdes; lint da raiz 0 erros e `tsc` da raiz com os mesmos 50 erros de linha de base).
 
 **What**: `criarFixtureVitrine()`/`removerFixtureVitrine()` na branch `test`: lojas A e B ativas com cores, fontes e layouts diferentes, C inativa, D ativa sem cor, com a fonte padrão e sem imóvel visível (VTEMA AC2/AC7 e o estado vazio da T21); imóveis em todos os estados; captador, endereço e lead com textos sentinela únicos; um imóvel sem foto; um com `<script>` na descrição; 25 imóveis visíveis na loja A.
 **Where**: `scripts/vitrine-fixture.ts`
@@ -439,7 +439,7 @@ T24 → T25
 
 ### T14: Harness HTTP da vitrine
 
-**Status**: concluída em 2026-10-10 (hash no `git log`; e2e 11 de 11 asserções verdes; falha proposital sai com código 1 e remove a fixture e o processo; lint e `tsc` da raiz sem erro novo).
+**Status**: concluída em 2026-10-10 (hash `eae2d41`; e2e 11 de 11 asserções verdes; falha proposital sai com código 1 e remove a fixture e o processo; lint e `tsc` da raiz sem erro novo).
 
 **What**: `npm run vitrine:e2e`: fixture → `next build` + `next start` da vitrine com o papel e segredo aleatório → asserções nomeadas → derruba o processo e limpa a fixture, mesmo em falha; stdout do servidor capturado para a varredura de sentinelas. Asserções iniciais: rota sem correspondência → 404 neutro (resposta sem streaming); slug inválido → página de não encontrado neutra; `X-Robots-Tag` em toda resposta; nenhum `Set-Cookie`; `POST /api/revalidar` 204/401/400/405 por HTTP.
 **Where**: `scripts/vitrine-e2e.ts`
@@ -461,7 +461,7 @@ T24 → T25
 
 ### T15: Rodapé legal
 
-**Status**: concluída em 2026-10-10 (hash no `git log`; lint, typecheck e build da vitrine sem erro; isolamento da raiz 12 testes verdes; o componente é montado e provado na T16).
+**Status**: concluída em 2026-10-10 (hash `4b61246`; lint, typecheck e build da vitrine sem erro; isolamento da raiz 12 testes verdes; o componente é montado e provado na T16).
 
 **What**: Componente com razão social, CRECI, aviso fixo e, quando houver, endereço, telefone, Instagram e WhatsApp.
 **Where**: `vitrine/src/rodape/rodape-legal.tsx`
@@ -483,7 +483,7 @@ T24 → T25
 
 ### T16: Layout da loja
 
-**Status**: concluída em 2026-10-10 (hash no `git log`; e2e 18 de 18; 4 mutantes do layout mortos; capturas `t16-01` a `t16-04`, largura de rolagem 375 em A e B; lint, typecheck e build da vitrine sem erro; `tsc` da raiz com os mesmos 50 erros).
+**Status**: concluída em 2026-10-10 (hash `dcd016c`; e2e 18 de 18; 4 mutantes do layout mortos; capturas `t16-01` a `t16-04`, largura de rolagem 375 em A e B; lint, typecheck e build da vitrine sem erro; `tsc` da raiz com os mesmos 50 erros).
 
 **What**: `app/c/[slug]/layout.tsx`: `<Suspense>`; slug inválido → `notFound()` sem consulta; loja ausente → `notFound()`; `TemaDaLoja` da loja (T10: `<Theme mode="light">` com o CSS do tema no HTML, AD-046); cabeçalho com logo, nome e botão de WhatsApp; rodapé legal (T15). O layout raiz (`app/layout.tsx`) ganha `data-theme="light"` no `<html>` e as variáveis das 4 fontes (`fontes.ts`). Antes: `npx astryx template centered-hero`.
 **Where**: `vitrine/app/c/[slug]/layout.tsx`
@@ -506,7 +506,7 @@ T24 → T25
 
 ### T17: Imóvel indisponível
 
-**Status**: concluída em 2026-10-10 (hash no `git log`; e2e 20 de 20; 2 mutantes mortos; capturas `t17-01` a `t17-03`; a mensagem é renderizada no servidor, não por `notFound()` em `<Suspense>`: ver `validation.md`; lint, typecheck e build da vitrine sem erro; `tsc` da raiz com os mesmos 50 erros).
+**Status**: concluída em 2026-10-10 (hash `b49a51e`; e2e 20 de 20; 2 mutantes mortos; capturas `t17-01` a `t17-03`; a mensagem é renderizada no servidor, não por `notFound()` em `<Suspense>`: ver `validation.md`; lint, typecheck e build da vitrine sem erro; `tsc` da raiz com os mesmos 50 erros).
 
 **What**: `app/c/[slug]/not-found.tsx` com "Este imóvel não está mais disponível.", link para o catálogo, dentro da marca da loja.
 **Where**: `vitrine/app/c/[slug]/not-found.tsx`
@@ -529,7 +529,7 @@ T24 → T25
 
 ### T18: Vitrine indisponível
 
-**Status**: concluída em 2026-10-10 (hash no `git log`; e2e 21 de 21; 2 mutantes mortos; 4 testes unitários novos do erro de leitura; capturas `t18-01` e `t18-02`; lint, typecheck e build da vitrine sem erro; `tsc` da raiz com os mesmos 50 erros).
+**Status**: concluída em 2026-10-10 (hash `49e311d`; e2e 21 de 21; 2 mutantes mortos; 4 testes unitários novos do erro de leitura; capturas `t18-01` e `t18-02`; lint, typecheck e build da vitrine sem erro; `tsc` da raiz com os mesmos 50 erros).
 
 **What**: `app/c/[slug]/error.tsx` com "Vitrine temporariamente indisponível." e log `[vitrine] erro` sem dado de linha.
 **Where**: `vitrine/app/c/[slug]/error.tsx`
@@ -552,7 +552,7 @@ T24 → T25
 
 ### T19: Template grade
 
-**Status**: concluída em 2026-10-10 (hash no `git log`; lint, typecheck e build da vitrine sem erro; 2 testes novos de `resumoDosAtributos`; o componente é montado e provado na T21).
+**Status**: concluída em 2026-10-10 (hash `11c1751`; lint, typecheck e build da vitrine sem erro; 2 testes novos de `resumoDosAtributos`; o componente é montado e provado na T21).
 
 **What**: Catálogo em grade: faixa "Destaques" (até 6, omitida sem destaque), grade de `ClickableCard` (3 colunas desktop, 1 no celular), estado vazio, "Sobre". Antes: `npx astryx template product-gallery`.
 **Where**: `vitrine/src/templates/grade/catalogo-grade.tsx`
@@ -574,7 +574,7 @@ T24 → T25
 
 ### T20: Template editorial
 
-**Status**: concluída em 2026-10-10 (hash no `git log`; lint, typecheck e build da vitrine sem erro; mesmas props da T19; montado e provado na T21).
+**Status**: concluída em 2026-10-10 (hash `3eaddf2`; lint, typecheck e build da vitrine sem erro; mesmas props da T19; montado e provado na T21).
 
 **What**: Catálogo editorial: cabeçalho com a foto do primeiro destaque (omitida sem destaque), lista edge-to-edge de linhas, estado vazio, "Sobre". Antes: `npx astryx template side-gallery`.
 **Where**: `vitrine/src/templates/editorial/catalogo-editorial.tsx`
@@ -596,7 +596,7 @@ T24 → T25
 
 ### T21: Página de catálogo
 
-**Status**: concluída em 2026-10-10 (hash no `git log`; e2e 32 de 32; mutantes mortos; capturas `t21-01` a `t21-08` com a largura de rolagem no `validation.md`; lint, typecheck e build da vitrine sem erro; lint da raiz 0 erros e `tsc` com os mesmos 50 erros). `og:image` do catálogo fica para a T24.
+**Status**: concluída em 2026-10-10 (hash `44521cf`; e2e 32 de 32; mutantes mortos; capturas `t21-01` a `t21-08` com a largura de rolagem no `validation.md`; lint, typecheck e build da vitrine sem erro; lint da raiz 0 erros e `tsc` com os mesmos 50 erros). `og:image` do catálogo fica para a T24.
 
 **What**: `app/c/[slug]/page.tsx`: lê `?pagina=` dentro de `<Suspense>`, escolhe o template pelo layout, pagina com `Pagination`, `generateMetadata` do catálogo.
 **Where**: `vitrine/app/c/[slug]/page.tsx`
