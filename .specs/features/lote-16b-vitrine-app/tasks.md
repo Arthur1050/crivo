@@ -192,6 +192,8 @@ T24 → T25
 
 ### T3: Views declaradas na vitrine
 
+**Status**: concluída em 2026-10-10 (3 testes verdes contra o banco, renomear coluna declarada quebra e foi desfeito; build gate sem erro novo).
+
 **What**: `pgSchema("vitrine")` e `pgView(...).existing()` de `lojas` e `imoveis`, com tipos derivados.
 **Where**: `vitrine/src/db/views.ts`
 **Depends on**: T2
