@@ -335,12 +335,13 @@ não vale (L-067 candidata).
 | F10 | `<Theme>` com tema `defineTheme` em runtime deixa o accent da loja no HTML do servidor | HTML de `next start` sem JS | L16b T0 | Parar; propor paleta pré-compilada ao usuário |
 | F11 | `next/font/google` com as 4 fontes da lista compõe com `typography` do tema | Build local + captura | L16b T0 | Fonte do sistema como fallback, decisão do usuário |
 | F12 | `opengraph-image` dinâmico com `next/og` funciona sob Cache Components | GET local devolvendo PNG | L16b T0 | OG estático por loja |
-| F13 | Testes em `vitrine/` rodam na suíte raiz com as dependências de `vitrine/node_modules` | `npx vitest run vitrine/...` | L16b T0 | Suíte própria da vitrine apontando para a branch `test` |
+| F13 | Testes em `vitrine/` rodam na suíte raiz com as dependências de `vitrine/node_modules`; e um teste da suíte raiz fora de `vitrine/` importa dela um módulo que cria o `db` com o `drizzle-orm` e o `pg` locais e lê como `crivo_vitrine` (AD-044) | `npx vitest run vitrine/...` e `npx vitest run src/...` | L16b T0 | Primeiro caminho: suíte própria da vitrine apontando para a branch `test`. Segundo caminho: parar e decidir com o usuário onde fica o teste das consultas |
 | F14 | Hobby aceita segundo projeto do mesmo repositório com Root Directory; limites de projetos, funções e logs | Doc da Vercel (`search_vercel_documentation`, leitura) | L16c T0 | Parar; decisão do usuário |
 | F15 | Na Vercel, `revalidateTag` invalida a página em todas as instâncias | Medição na prova real | L16c | Registrar frescor real (≤ 5 min) e decidir com o usuário |
 | F16 | `ignoreCommand` com `git diff HEAD^` funciona no clone da Vercel | Doc da Vercel | L16c T0 | Sem `ignoreCommand` (rebuild sempre) |
 | F17 | A prévia do WhatsApp mostra título e imagem com `noindex` | Link real compartilhado pelo usuário | L16c | Ajustar metadados |
 | F18 | O papel de produção não é membro de `neon_superuser` e só tem os 2 grants | Consulta de catálogo em produção, autorizada | L16c | Revogar e recriar por SQL |
+| F19 | Com `package-lock.json` na raiz do repositório e em `vitrine/`, `turbopack.root` fixado em `vitrine/` faz o build resolver só dentro da pasta | `next build` local do protótipo, com e sem a opção; doc `turbopack.md` § Root directory | L16b T0 | Sem `turbopack.root`; registrar a raiz inferida e o aviso do build |
 
 ---
 

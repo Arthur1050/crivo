@@ -74,7 +74,7 @@ tráfego anônimo nunca passe pelo CRM.
 1. The system SHALL ter a vitrine em `vitrine/`, com `package.json`, `next.config.ts`, `tsconfig.json` e lint próprios.
 2. The system SHALL habilitar `cacheComponents` no `next.config.ts` da vitrine.
 3. The system SHALL NOT ter `proxy.ts` nem `middleware.ts` na vitrine.
-4. The system SHALL NOT importar, em nenhum arquivo de `vitrine/`, caminho fora de `vitrine/`.
+4. The system SHALL NOT importar, em nenhum arquivo de `vitrine/`, caminho fora de `vitrine/` nem pacote que não esteja declarado no `package.json` da vitrine, com a única exceção do `vitest` nos arquivos de `__tests__/`.
 5. The system SHALL excluir `vitrine/` do `tsconfig.json` e do lint da raiz.
 6. The system SHALL conectar ao banco só por `VITRINE_DATABASE_URL`.
 7. The system SHALL espelhar em `vitrine/src/contrato.ts` o formato da tag, os layouts, as fontes, o payload da revalidação e as colunas das views.

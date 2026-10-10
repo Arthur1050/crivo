@@ -11,17 +11,18 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 **Spec**: `.specs/features/lote-16b-vitrine-app/spec.md`
 **Design**: `.specs/features/lote-16-vitrine-publica/design.md` (comum ao L16)
 **Context**: `.specs/features/lote-16-vitrine-publica/context.md`
-**Status**: Approved (usuário, 2026-10-09; começa só com o L16a fechado — fechado em 2026-10-09, Verifier PASS, arquivado)
+**Status**: Approved (usuário, 2026-10-09; revisado com o usuário em 2026-10-10, depois do L16a fechado com Verifier PASS e arquivado)
 
 **Regras deste lote (auditoria do L14b § 7; AD-010, AD-014, AD-025, AD-033, AD-040 a AD-043):**
 
-- Execução em linha, uma task por vez; só o Verifier final é sub-agente.
+- Execução em linha, uma task por vez; os únicos sub-agentes são os do fechamento: o Verifier e o agente de lições (AD-045).
 - `tasks.md` recebe só status e hash. Evidência no commit e no `validation.md`.
 - **Nenhuma ação em produção**: sem projeto na Vercel, sem variável remota, sem push. Isso é o L16c.
-- Nada em `vitrine/` importa de fora de `vitrine/`. Nada em `src/` importa de `vitrine/`, exceto os testes de paridade.
+- Nada em `vitrine/` importa de fora de `vitrine/`. Fora de `vitrine/`, só arquivos de teste da suíte raiz (`__tests__/`) importam de `vitrine/`: paridade, isolamento e o teste de banco das consultas (AD-044).
 - `AGENTS.md`: leia em `node_modules/next/dist/docs/` a página de cada API do Next antes de usá-la.
 - Astryx: `npx astryx build`, `npx astryx template` e `npx astryx component` antes de cada tela; sem `<div>` de layout, sem `style`, só tokens. Única exceção: `<img>` dentro de `AspectRatio` com utilitários Tailwind de token (a lib não tem primitivo de imagem).
 - Trabalho visual só com captura real pela extensão do Chrome (`npm run vitrine:dev`, porta 3100); sem captura, não altere UI.
+- Capturas de 375 px (usuário, 2026-10-10): a página real carregada num quadro de 375 px, como no L16a, porque a janela da extensão não reduz o viewport. Para VTEMA-02 AC9, a largura de rolagem do documento é medida dentro do quadro (≤ 375) e o número vai para o `validation.md`, por página.
 - `npm run vitrine:e2e` usa a branch `test`: não rode junto com testes pontuais (L-033).
 - Nenhum commit com `Co-Authored-By`, "Generated with" ou marca de atribuição (AD-014).
 
@@ -34,8 +35,8 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 | Code Layer | Required Test Type | Coverage Expectation | Location Pattern | Run Command |
 | --- | --- | --- | --- | --- |
 | Lib pura da vitrine (`vitrine/src/lib`, `vitrine/src/tema`, `vitrine/src/revalidacao.ts`) | unit | 1:1 com os ACs; todos os ramos; limites exatos (24/25, 10/11 dígitos) | `vitrine/src/**/__tests__/*.test.ts` | `npx vitest run vitrine/src/<arquivo>` |
-| Consultas (`vitrine/src/dados/consultas.ts`) | integration | Como `crivo_vitrine` na branch do worker; linha de outra loja na fixture (L-035); todos os estados de imóvel | `vitrine/src/dados/__tests__/*.test.ts` | `npx vitest run vitrine/src/dados/__tests__/<arquivo>` |
-| Camada de cache e rota (`vitrine/src/dados/cache.ts`, `vitrine/app/api/**`) | unit | `next/cache` simulado: perfil, tag, `revalidateTag` com `{ expire: 0 }`; todos os status da rota | `vitrine/**/__tests__/*.test.ts` | `npx vitest run <arquivo>` |
+| Consultas (`vitrine/src/dados/consultas.ts`) | integration | Como `crivo_vitrine` na branch do worker; fixture escrita como dono; linha de outra loja na fixture (L-035); todos os estados de imóvel | `src/db/__tests__/vitrine-consultas.test.ts` (suíte raiz, AD-044) | `npx vitest run src/db/__tests__/vitrine-consultas.test.ts` |
+| Conexão, camada de cache e rota (`vitrine/src/db/conexao.ts`, `vitrine/src/dados/cache.ts`, `vitrine/app/api/**`) | unit | Conexão sem a variável falha sem expor URL; `next/cache` simulado: perfil, tag, `revalidateTag` com `{ expire: 0 }`; todos os status da rota | `vitrine/**/__tests__/*.test.ts` | `npx vitest run <arquivo>` |
 | Paridade e isolamento (`src/**/__tests__/*paridade*`, `*isolamento*`) | unit / integration | Quebra quando um lado muda; colunas reais das views | `src/lib/__tests__`, `src/db/__tests__` | `npx vitest run <arquivo>` |
 | Rotas (`vitrine/app/**`) | e2e + captura real | Cada task de rota acrescenta as asserções dela ao harness: sucesso, vazio, não encontrado, erro; PII, isolamento, cache e revalidação por HTTP contra `next start` | `scripts/vitrine-e2e.ts` | `npm run vitrine:e2e` |
 | Componentes montados por rota (`vitrine/src/templates/**`, `vitrine/src/item/**`, `vitrine/src/rodape/**`) | none (build) | Provados pelo e2e da task de rota seguinte, que os monta | - | build gate |
@@ -76,6 +77,7 @@ T1 → T7
 T1 → T8
 T1 → T9
 T1 → T10
+T2 → T10
 T2 → T11 → T12
 ```
 
@@ -117,9 +119,9 @@ T24 → T25
 
 ## Task Breakdown
 
-### T0: Gate de viabilidade (F8–F13)
+### T0: Gate de viabilidade (F8–F13, F19)
 
-**What**: Comprovar F8–F13 do design com um protótipo descartável em `scratch/vitrine-prova/` (fora do git) lendo a branch `test` como `crivo_vitrine`; registrar resultado e fonte.
+**What**: Comprovar F8–F13 e F19 do design com um protótipo descartável em `scratch/vitrine-prova/` (fora do git) lendo a branch `test` como `crivo_vitrine`; registrar resultado e fonte.
 **Where**: `.specs/features/lote-16b-vitrine-app/validation.md`
 **Depends on**: None
 **Reuses**: design.md § Fatos operacionais; docs em `node_modules/next/dist/docs/`
@@ -128,8 +130,10 @@ T24 → T25
 **Done when**:
 
 - [ ] F8: status HTTP de `notFound()` dentro de `<Suspense>` registrado (a doc diz 200 em streaming); build com banco vazio, contagem de consultas antes e depois do segundo GET, GET depois de `revalidateTag(tag, { expire: 0 })` refletindo a mudança
-- [ ] F9: `<head>` com `og:title` para o UA do WhatsApp; F10: cor da loja no HTML sem JS; F11: as 4 fontes na build; F12: PNG do `opengraph-image`; F13: teste em `scratch/` resolvendo dependências locais pela suíte raiz
-- [ ] IF F8 ou F10 falhar THEN parar o lote e levar ao usuário a alternativa do design; demais falhas ajustam a task dona
+- [ ] F9: `<head>` com `og:title` para o UA do WhatsApp; F10: cor da loja no HTML sem JS; F11: as 4 fontes na build; F12: PNG do `opengraph-image`
+- [ ] F13, dois caminhos: (i) teste dentro do protótipo rodando na suíte raiz, com o `vitest` da raiz e as dependências locais do protótipo; (ii) teste da suíte raiz fora do protótipo importando dele um módulo que cria o `db` com o `drizzle-orm` e o `pg` locais e lê a branch `test` como `crivo_vitrine` (caminho do teste da T4, AD-044)
+- [ ] F19: raiz que o Next infere com `package-lock.json` na raiz do repositório e no protótipo, e o efeito de `turbopack.root` apontando para a pasta do protótipo (doc `turbopack.md` § Root directory); o resultado define a config da T1
+- [ ] IF F8 ou F10 falhar THEN parar o lote e levar ao usuário a alternativa do design; IF o caminho (ii) da F13 falhar THEN parar e levar ao usuário (reabre onde fica o teste da T4); demais falhas ajustam a task dona
 - [ ] Protótipo apagado depois do registro; nenhuma credencial registrada
 
 **Tests**: none
@@ -141,7 +145,7 @@ T24 → T25
 
 ### T1: Projeto base da vitrine
 
-**What**: `vitrine/` com `package.json` (mesmas versões do CRM; scripts `dev`, `build`, `start`, `lint`, `typecheck`), `next.config.ts` (`cacheComponents: true`, `cacheLife.vitrine` = 60/60/300, cabeçalhos `X-Robots-Tag: noindex, nofollow` e `Referrer-Policy`), `tsconfig.json`, lint, `app/layout.tsx` (CSS da Astryx, `lang="pt-BR"`, `robots` noindex) e `app/not-found.tsx` neutro; raiz exclui `vitrine/` do `tsconfig.json` e do lint.
+**What**: `vitrine/` com `package.json` (mesmas versões do CRM; scripts `dev`, `build`, `start`, `lint`, `typecheck`), `next.config.ts` (`cacheComponents: true`, `cacheLife.vitrine` = 60/60/300, cabeçalhos `X-Robots-Tag: noindex, nofollow` e `Referrer-Policy`, `turbopack.root` na pasta `vitrine/` conforme a F19), `tsconfig.json` (exclui `**/__tests__/**`: os testes da vitrine importam o `vitest` da raiz, que não é instalado no deploy; eles rodam no Vitest e não passam por `tsc`), lint, `app/layout.tsx` (CSS da Astryx, `lang="pt-BR"`, `robots` noindex) e `app/not-found.tsx` neutro; raiz exclui `vitrine/` do `tsconfig.json` e do lint, e o `.gitignore` da raiz ganha `/vitrine/node_modules` e `/vitrine/.next/`; `vitrine/package-lock.json` versionado.
 **Where**: `vitrine/next.config.ts`
 **Depends on**: T0
 **Reuses**: `next.config.ts`, `eslint.config.mjs` e `app/layout.tsx` da raiz como referência
@@ -149,7 +153,8 @@ T24 → T25
 
 **Done when**:
 
-- [ ] `src/lib/__tests__/vitrine-isolamento.test.ts`: nenhum `proxy.ts`/`middleware.ts` em `vitrine/` (AC3); nenhum import de `vitrine/` resolve para fora dela (AC4, varredura dos arquivos fora de `node_modules`); `tsconfig.json` e lint da raiz excluem `vitrine/` (AC5); `next.config.ts` da vitrine com `cacheComponents: true` e o perfil 60/60/300 (VCACHE-01 AC2)
+- [ ] `src/lib/__tests__/vitrine-isolamento.test.ts`: nenhum `proxy.ts`/`middleware.ts` em `vitrine/` (AC3); varredura dos imports de `vitrine/` fora de `node_modules` (AC4): import relativo nunca sai de `vitrine/`; import de pacote é módulo nativo do Node ou pacote declarado no `package.json` da vitrine; em arquivos de `__tests__/` só `vitest` é aceito a mais; o teste prova a regra com um caso de cada recusa; `vitrine/tsconfig.json` exclui `**/__tests__/**`; `tsconfig.json` e lint da raiz excluem `vitrine/` (AC5); `next.config.ts` da vitrine com `cacheComponents: true`, o perfil 60/60/300 (VCACHE-01 AC2) e `turbopack.root` na própria pasta (F19)
+- [ ] `git check-ignore` confirma `vitrine/node_modules` e `vitrine/.next`; depois do `npm install --prefix vitrine` e do build, `git status --short` não lista arquivo dessas duas pastas; `vitrine/package-lock.json` entra no commit
 - [ ] Build da vitrine e da raiz passam
 
 **Tests**: unit
@@ -199,37 +204,38 @@ T24 → T25
 
 ---
 
-### T4: Consultas da vitrine
+### T4: Consultas e conexão da vitrine
 
-**What**: `lojaPorSlug`, `imoveisDaLoja` (ordem destaque → `atualizado_em` desc → referência asc) e `imovelPorReferencia` (sem distinção de caixa), recebendo o `db`.
+**What**: `lojaPorSlug`, `imoveisDaLoja` (ordem destaque → `atualizado_em` desc → referência asc) e `imovelPorReferencia` (sem distinção de caixa), recebendo o `db`; e `vitrine/src/db/conexao.ts` com `criarDb(url)` (Pool `pg` com `max: 3` e Drizzle sobre as views, sem ler ambiente) e a conexão da app por `VITRINE_DATABASE_URL` (`server-only`, criada no primeiro uso).
 **Where**: `vitrine/src/dados/consultas.ts`
 **Depends on**: T3
-**Reuses**: T3
-**Requirement**: VSEG-01, VCAT-02, VITEM-01
+**Reuses**: T3; `resolveVitrineTestUrl` em `src/db/test-connection.ts`, `currentTestDatabaseUrl` em `src/db/__tests__/vitrine-helpers.ts` e o padrão de fixture `newTenant`/`addProperty` de `src/db/__tests__/vitrine-views.test.ts` (L16a)
+**Requirement**: VSEG-01, VCAT-02, VITEM-01, VPROJ-01
 
 **Done when**:
 
-- [ ] `vitrine/src/dados/__tests__/consultas.test.ts` conectando como `crivo_vitrine` (URL do papel: `resolveVitrineTestUrl` em `src/db/test-connection.ts` sobre `currentTestDatabaseUrl()`, L16a T7; como um teste dentro de `vitrine/` chega a ela sem importar de fora de `vitrine/` está pendente na revisão do planejamento), fixture com duas lojas ativas, uma inativa e imóveis em todos os estados: loja A nunca devolve linha da B (VSEG AC2, AC3); vendido, reservado e despublicado ausentes por lista e por referência direta (AC4); ordem com empate de `atualizado_em` decidido pela referência (VCAT AC2); `ap-0142` acha `AP-0142` (VITEM Edge Case); loja inativa → nulo
+- [ ] `src/db/__tests__/vitrine-consultas.test.ts` (suíte raiz, AD-044): fixture escrita como dono, com o `db` e o schema de `src/db`; leitura pelas consultas importadas de `vitrine/`, com o `db` de `criarDb(<URL do papel>)` conectado como `crivo_vitrine` (caminho (ii) da F13). Fixture com duas lojas ativas, uma inativa e imóveis em todos os estados: loja A nunca devolve linha da B (VSEG AC2, AC3); vendido, reservado e despublicado ausentes por lista e por referência direta (AC4); ordem com empate de `atualizado_em` decidido pela referência (VCAT AC2); `ap-0142` acha `AP-0142` (VITEM Edge Case); loja inativa → nulo
+- [ ] `vitrine/src/db/__tests__/conexao.test.ts`: sem `VITRINE_DATABASE_URL` a conexão da app falha com mensagem sem URL (VPROJ AC6)
 - [ ] Quick + Build passam
 
-**Tests**: integration
+**Tests**: integration + unit
 **Gate**: quick
 
-**Commit**: `feat(l16): consultas da vitrine`
+**Commit**: `feat(l16): consultas e conexão da vitrine`
 
 ---
 
-### T5: Camada de cache e conexão
+### T5: Camada de cache
 
-**What**: `vitrine/src/db/conexao.ts` (Pool `pg` com `VITRINE_DATABASE_URL`, `max: 3`, `server-only`) e `vitrine/src/dados/cache.ts` com `use cache`, `cacheLife("vitrine")` e `cacheTag(tag(slug))` sobre cada consulta.
+**What**: `vitrine/src/dados/cache.ts` com `use cache`, `cacheLife("vitrine")` e `cacheTag(tag(slug))` sobre cada consulta, usando a conexão da T4.
 **Where**: `vitrine/src/dados/cache.ts`
 **Depends on**: T4
-**Reuses**: doc `use-cache.md`, `cacheLife.md`, `cacheTag.md`
+**Reuses**: doc `use-cache.md`, `cacheLife.md`, `cacheTag.md`; conexão da T4
 **Requirement**: VCACHE-01
 
 **Done when**:
 
-- [ ] `vitrine/src/dados/__tests__/cache.test.ts` com `next/cache` simulado: cada função chama `cacheLife("vitrine")` e `cacheTag("tenant:<slug>:catalogo")` com o slug recebido (AC1); a conexão falha com mensagem sem URL quando a variável falta
+- [ ] `vitrine/src/dados/__tests__/cache.test.ts` com `next/cache` simulado: cada função chama `cacheLife("vitrine")` e `cacheTag("tenant:<slug>:catalogo")` com o slug recebido (AC1)
 - [ ] Quick + Build passam
 
 **Tests**: unit
@@ -321,15 +327,16 @@ T24 → T25
 
 ### T10: Tema da loja
 
-**What**: `temaDaLoja({ cor, fonte })` com `defineTheme` estendendo o tema neutro, e o mapa das 4 fontes de `next/font/google`.
+**What**: `temaDaLoja({ cor, familia })` com `defineTheme` estendendo o tema neutro, recebendo a família de fonte já resolvida; e `vitrine/src/tema/fontes.ts` com o mapa das 4 fontes de `next/font/google`. O mapa fica em módulo próprio porque `next/font/google` é vazio fora do compilador do Next (`index.js` de 0 bytes) e não pode ser importado por um teste.
 **Where**: `vitrine/src/tema/tema-da-loja.ts`
-**Depends on**: T1
-**Reuses**: `npx astryx docs theme` (§ defineTheme, extends)
+**Depends on**: T1, T2
+**Reuses**: `npx astryx docs theme` (§ defineTheme, extends); fontes do contrato (T2)
 **Requirement**: VTEMA-01
 
 **Done when**:
 
-- [ ] Testes com `resolveThemeTokens`: `--color-accent` do tema reflete a cor da loja; cor nula → cor padrão; cada uma das 4 fontes vai para `--font-family-body` e `--font-family-heading`
+- [ ] Testes com `resolveThemeTokens`: `--color-accent` do tema reflete a cor da loja; cor nula → cor padrão; a família recebida vai para `--font-family-body` e `--font-family-heading`; o teste não importa `fontes.ts`
+- [ ] `fontes.ts` tipado como `Record` das fontes do contrato (L-029): fonte nova ou renomeada quebra a compilação; provado pelo build (F11) e pelo e2e da T16
 - [ ] Quick + Build passam
 
 **Tests**: unit
@@ -384,7 +391,7 @@ T24 → T25
 **What**: `criarFixtureVitrine()`/`removerFixtureVitrine()` na branch `test`: lojas A e B ativas com cores, fontes e layouts diferentes, C inativa; imóveis em todos os estados; captador, endereço e lead com textos sentinela únicos; um imóvel sem foto; um com `<script>` na descrição; 25 imóveis visíveis na loja A.
 **Where**: `scripts/vitrine-fixture.ts`
 **Depends on**: T0
-**Reuses**: helpers de fixture dos testes do L11; tabela `tenant_storefronts` e `properties.featured` (L16a). O seed do L16a já deixa a 1ª imobiliária com vitrine ativa e destaques: a fixture usa tenants próprios e não altera essas linhas
+**Reuses**: padrão de fixture `newTenant`/`addProperty` de `src/db/__tests__/vitrine-views.test.ts` (L16a; não há módulo de fixture compartilhado); tabela `tenant_storefronts` e `properties.featured` (L16a). O seed do L16a já deixa a 1ª imobiliária com vitrine ativa e destaques: a fixture usa tenants próprios e não altera essas linhas
 **Requirement**: VSEG-01, VSEG-02
 
 **Done when**:
@@ -449,7 +456,7 @@ T24 → T25
 
 **Done when**:
 
-- [ ] E2E ganha: loja C e slug inexistente → página de não encontrado neutra, com `noindex`, sem nome de nenhuma loja (VCAT AC9, AC10); status registrado (200 esperado pela doc, F8); cor da loja A no HTML sem JS e diferente da B (VTEMA AC7); rodapé com razão social, CRECI e aviso (VLEGAL AC1); link `wa.me` do cabeçalho decodificado igual à mensagem de catálogo
+- [ ] E2E ganha: loja C e slug inexistente → página de não encontrado neutra, com `noindex`, sem nome de nenhuma loja (VCAT AC9, AC10); status registrado (200 esperado pela doc, F8); cor da loja A no HTML sem JS e diferente da B (VTEMA AC7); fonte da loja A aplicada na resposta do servidor e diferente da B (VTEMA AC3); rodapé com razão social, CRECI e aviso (VLEGAL AC1); link `wa.me` do cabeçalho decodificado igual à mensagem de catálogo
 - [ ] Captura real do cabeçalho e rodapé (`npm run vitrine:dev`), desktop e 375 px
 - [ ] E2E + Build passam
 
@@ -554,7 +561,7 @@ T24 → T25
 
 - [ ] E2E ganha: A com 24 itens na página 1 e 1 na página 2; `pagina=abc` → página 1; ordem destaque → recente → referência; nenhuma referência da B nas páginas da A; loja sem imóvel visível → estado vazio com 200; A em `grade` e B em `editorial` pelos marcadores de cada template; `og:*` do catálogo no `<head>` com UA do WhatsApp; nenhuma sentinela no HTML nem no stdout
 - [ ] E2E ganha o cache: mudar o preço de um imóvel da A no banco → página ainda antiga; POST com segredo → nova; página da B não reconsultada (contador de consultas da fixture); segredo errado → 401 e página continua antiga
-- [ ] Capturas reais em `.specs/features/lote-16b-vitrine-app/capturas/`: grade e editorial, desktop e 375 px, lojas A e B; catálogo vazio; sem rolagem horizontal em 375 px (VTEMA AC9)
+- [ ] Capturas reais em `.specs/features/lote-16b-vitrine-app/capturas/`: grade e editorial, desktop e 375 px, lojas A e B; catálogo vazio; sem rolagem horizontal em 375 px (VTEMA AC9), com a largura de rolagem medida dentro do quadro e registrada no `validation.md`
 - [ ] E2E + Build passam
 
 **Tests**: e2e
@@ -637,6 +644,7 @@ T24 → T25
 **Done when**:
 
 - [ ] Arquivos versionados no momento da captura (L-054), listados em `validation.md`
+- [ ] Largura de rolagem ≤ 375 medida no quadro e registrada para catálogo em grade, catálogo editorial, item, imóvel indisponível e catálogo vazio (VTEMA-02 AC9)
 
 **Tests**: none
 **Gate**: registro
@@ -676,6 +684,7 @@ Phase 2:  T1 → T7
           T1 → T8
           T1 → T9
           T1 → T10
+          T2 → T10
           T2 → T11 → T12
 Phase 3:  T13 → T14
 Phase 4:  T15 → T16 → T17
@@ -701,7 +710,8 @@ Execução estritamente sequencial, na ordem numérica.
 | T4 | T3 | T3 → T4 | ✅ |
 | T5 | T4 | T4 → T5 | ✅ |
 | T6 | T1 | T1 → T6 | ✅ |
-| T7–T10 | T1 | T1 → T7, T8, T9, T10 | ✅ |
+| T7–T9 | T1 | T1 → T7, T8, T9 | ✅ |
+| T10 | T1, T2 | T1 → T10, T2 → T10 | ✅ |
 | T11 | T2 | T2 → T11 | ✅ |
 | T12 | T11 | T11 → T12 | ✅ |
 | T13 | T0 | T0 → T13 | ✅ |
@@ -727,7 +737,7 @@ Execução estritamente sequencial, na ordem numérica.
 | T1 | Config do projeto + isolamento | unit | unit | ✅ |
 | T2 | Paridade | unit | unit | ✅ |
 | T3 | Paridade com o banco | integration | integration | ✅ |
-| T4 | Consultas | integration | integration | ✅ |
+| T4 | Consultas e conexão | integration + unit | integration + unit | ✅ |
 | T5 | Camada de cache | unit | unit | ✅ |
 | T6 | Script de dev | unit | unit | ✅ |
 | T7–T11 | Lib pura | unit | unit | ✅ |
@@ -743,14 +753,15 @@ Execução estritamente sequencial, na ordem numérica.
 | Task | Scope | Status |
 | --- | --- | --- |
 | T1 | Esqueleto do projeto (config, layout raiz, não encontrado neutro) + exclusões na raiz | ⚠️ coeso: nenhum arquivo dele builda sozinho |
-| T5 | Conexão + camada de cache | ⚠️ coeso: a conexão só é usada pela camada de cache |
+| T4 | Consultas + conexão | ⚠️ coeso: o teste das consultas precisa da fábrica de conexão da própria vitrine |
+| T10 | Tema + mapa de fontes | ⚠️ coeso: o mapa só alimenta o tema; são dois arquivos porque `next/font` não carrega no Vitest |
 | Demais | 1 arquivo | ✅ |
 
 ## Requirement Coverage
 
 | Requirement | Tasks |
 | --- | --- |
-| VPROJ-01 | T0, T1, T6, T26 |
+| VPROJ-01 | T0, T1, T4, T6, T26 |
 | VPROJ-02 | T2, T3 |
 | VCAT-01 | T8, T9, T16, T19, T20, T21 |
 | VCAT-02 | T4, T7, T21 |
