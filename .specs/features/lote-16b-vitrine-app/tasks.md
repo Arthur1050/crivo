@@ -214,6 +214,8 @@ T24 → T25
 
 ### T4: Consultas e conexão da vitrine
 
+**Status**: concluída em 2026-10-10 (11 testes verdes (8 no banco como crivo_vitrine, 3 de conexão); 5 mutantes mortos; build gate sem erro novo).
+
 **What**: `lojaPorSlug`, `imoveisDaLoja` (ordem destaque → `atualizado_em` desc → referência asc) e `imovelPorReferencia` (sem distinção de caixa), recebendo o `db`; e `vitrine/src/db/conexao.ts` com `criarDb(url)` (Pool `pg` com `max: 3` e Drizzle sobre as views, sem ler ambiente) e a conexão da app por `VITRINE_DATABASE_URL` (`server-only`, criada no primeiro uso).
 **Where**: `vitrine/src/dados/consultas.ts`
 **Depends on**: T3
