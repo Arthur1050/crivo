@@ -237,6 +237,8 @@ T24 → T25
 
 ### T5: Camada de cache
 
+**Status**: concluída em 2026-10-10 (7 testes verdes, 3 mutantes mortos (tag fixa, sem cacheLife, perfil errado); build gate sem erro novo).
+
 **What**: `vitrine/src/dados/cache.ts` com `use cache`, `cacheLife("vitrine")` e `cacheTag(tag(slug))` sobre cada consulta, usando a conexão da T4.
 **Where**: `vitrine/src/dados/cache.ts`
 **Depends on**: T4
