@@ -461,6 +461,8 @@ T24 → T25
 
 ### T15: Rodapé legal
 
+**Status**: concluída em 2026-10-10 (hash no `git log`; lint, typecheck e build da vitrine sem erro; isolamento da raiz 12 testes verdes; o componente é montado e provado na T16).
+
 **What**: Componente com razão social, CRECI, aviso fixo e, quando houver, endereço, telefone, Instagram e WhatsApp.
 **Where**: `vitrine/src/rodape/rodape-legal.tsx`
 **Depends on**: T8
