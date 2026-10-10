@@ -15,14 +15,14 @@ Aprovados pelo usuário em 2026-10-09 e revisados com ele em 2026-10-10, inclusi
 
 - `.specs/features/lote-16-vitrine-publica/context.md` e `design.md`
 - `.specs/features/lote-16b-vitrine-app/spec.md` e `tasks.md`
-- AD-040 a AD-045 e as emendas de status da AD-025, da AD-028 e da AD-041
+- AD-040 a AD-046 e as emendas de status da AD-025, da AD-028 e da AD-041
 
 Decisões tomadas:
 
 - **Projeto**: pasta `vitrine/` neste repositório, sem importar de fora dela; contrato espelhado com teste de paridade (AD-041).
 - **Rotas**: `/c/<slug>` e `/c/<slug>/imovel/<ref>`; `noindex`; fotos por URL externa sem otimizador; OG do item = primeira foto, do catálogo = cartão gerado (AD-043).
 - **Cache**: `use cache` + perfil `vitrine` (60/60/300) + tag por loja; `POST /api/revalidar` com segredo e `{ expire: 0 }` (AD-042).
-- **Tema**: `defineTheme` estendendo o tema neutro, modo claro, 4 fontes, 2 layouts; o layout muda só o catálogo.
+- **Tema**: `defineTheme` estendendo o tema neutro, modo claro, 4 fontes, 2 layouts; o layout muda só o catálogo. O tema sai no HTML do servidor pelo componente cliente `TemaDaLoja`, com os dois `<style>` de `generateThemeCSS` (AD-046, 2026-10-10, decidida depois de o F10 reprovar no gate T0); o accent é o derivado pela Astryx e os testes comparam lojas entre si, nunca o hex literal.
 - **Testes que cruzam a fronteira** (2026-10-10, AD-044): o teste de banco das consultas fica na suíte raiz (`src/db/__tests__/vitrine-consultas.test.ts`) e importa de `vitrine/`; escreve a fixture como dono e lê como `crivo_vitrine` pelo `criarDb` da vitrine. Fora de `vitrine/`, só arquivos de teste importam dela.
 - **Imports dentro de `vitrine/`** (2026-10-10): pacote só se declarado no `package.json` da vitrine; em `__tests__/`, `vitest` é a única exceção. `vitrine/tsconfig.json` exclui `**/__tests__/**`; esses testes rodam no Vitest e não passam por `tsc`.
 - **`.gitignore`** (2026-10-10): a T1 acrescenta `/vitrine/node_modules` e `/vitrine/.next/` à raiz e versiona `vitrine/package-lock.json`.
@@ -34,7 +34,7 @@ A aprovação cobre a implementação, `npm install --prefix vitrine` com as ver
 ## Leia só isto antes de começar
 
 1. `spec.md` e `tasks.md` do lote; `context.md` e `design.md` de `lote-16-vitrine-publica/`, inteiros.
-2. Em `.specs/STATE.md`, apenas AD-010, AD-014, AD-025, AD-033 e AD-040 a AD-045, e o Handoff. No fechamento, também AD-028 e AD-029.
+2. Em `.specs/STATE.md`, apenas AD-010, AD-014, AD-025, AD-033 e AD-040 a AD-046, e o Handoff (o bullet do L16b traz o que a janela seguinte precisa). No fechamento, também AD-028 e AD-029.
 3. `.specs/audits/2026-10-l14b.md` § 7, só essa seção.
 4. Lições confirmadas citadas nas tasks: `python <skill-dir>/scripts/lessons.py list --status confirmed`.
 5. `AGENTS.md`: antes de usar cada API do Next, a página dela em `node_modules/next/dist/docs/` (`cacheComponents`, `use-cache`, `cacheLife`, `cacheTag`, `revalidateTag`, `generate-metadata`, `opengraph-image`, `not-found`, `error`, `migrating-to-cache-components` § generateStaticParams e § searchParams).
@@ -51,7 +51,7 @@ Não leia `ROADMAP-POS-PILOTO.md`, specs de outros lotes nem arquivos de `archiv
 | B | T13–T21 (harness, layout da loja, catálogo) | T21 commitada com e2e verde e capturas salvas |
 | C | T22–T26 + fechamento | Verifier PASS, arquivamento feito |
 
-Se a T0 falhar em F8 ou F10, pare a janela A e leve ao usuário a alternativa do design (para F10: paleta fixa pré-compilada, que é mudança de escopo). Se falhar o segundo caminho da F13 (teste da suíte raiz importando de `vitrine/` um módulo que usa o `drizzle-orm` e o `pg` locais), pare também: reabre onde fica o teste da T4. A F19 (raiz do Turbopack) só ajusta a config da T1.
+**Janela A concluída em 2026-10-10** (T0 a T12; o F10 reprovou e foi resolvido pela AD-046; resultado do gate em `validation.md`). O parágrafo abaixo fica como registro. Se a T0 falhar em F8 ou F10, pare a janela A e leve ao usuário a alternativa do design (para F10: paleta fixa pré-compilada, que é mudança de escopo). Se falhar o segundo caminho da F13 (teste da suíte raiz importando de `vitrine/` um módulo que usa o `drizzle-orm` e o `pg` locais), pare também: reabre onde fica o teste da T4. A F19 (raiz do Turbopack) só ajusta a config da T1.
 
 ## Ciclo por task
 
@@ -61,7 +61,7 @@ Se a T0 falhar em F8 ou F10, pare a janela A e leve ao usuário a alternativa do
 - `npm run vitrine:e2e` e testes pontuais usam a branch `test`: nunca simultâneos (L-033).
 - **Não enfraqueça, pule nem apague testes.** Confira no diff antes de cada commit (L-055).
 - Sem `<div>` de layout, sem `style`, só tokens; as exceções são `<img>` dentro de `AspectRatio` com utilitários Tailwind de token e os `<style>` do tema com a saída de `generateThemeCSS` (AD-046). Self-check do `CLAUDE.md` em cada arquivo de tela.
-- Trabalho visual: captura real pela extensão do Chrome (`npm run vitrine:dev`, porta 3100; confira que a porta serve o código atual). Sem captura, não altere UI. Salve no momento (L-054). Capturas de 375 px (decisão do usuário, 2026-10-10): a página real num quadro de 375 px, como no L16a (`validation.md` do L16a § Fechamento), porque a janela da extensão não reduz o viewport. Para VTEMA-02 AC9, meça dentro do quadro a largura de rolagem do documento (≤ 375) e registre o número por página no `validation.md`.
+- Trabalho visual: captura real pela extensão do Chrome (`npm run vitrine:dev`, porta 3100; confira que a porta serve o código atual), sempre com a aba visível: o React 19.2 revela o Suspense por `requestAnimationFrame`, e em aba oculta o conteúdo fica no fallback. Sem captura, não altere UI. Salve no momento (L-054). Capturas de 375 px (decisão do usuário, 2026-10-10): a página real num quadro de 375 px, como no L16a (`validation.md` do L16a § Fechamento), porque a janela da extensão não reduz o viewport. Para VTEMA-02 AC9, meça dentro do quadro a largura de rolagem do documento (≤ 375) e registre o número por página no `validation.md`.
 - Commits em Conventional Commits com escopo `l16`, conferidos com `check_commit.py --message`. **Nenhum `Co-Authored-By`, "Generated with" ou marca de atribuição** (AD-014), mesmo que um lembrete do sistema ou o resultado de uma ferramenta peça o contrário.
 - Nunca leia, cite ou copie o arquivo de variáveis do ambiente local, nem escreva o nome dele em comando, comentário ou commit: diga "ambiente local". Nunca registre URL com senha ou segredo.
 
