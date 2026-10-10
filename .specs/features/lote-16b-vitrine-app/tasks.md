@@ -373,6 +373,8 @@ T24 → T25
 
 ### T11: Verificação da revalidação
 
+**Status**: concluída em 2026-10-10 (10 testes verdes; 5 mutantes mortos e 1 equivalente; build gate sem erro novo).
+
 **What**: `verificarSegredo(cabecalho, segredo)` (SHA-256 + `timingSafeEqual`; segredo vazio sempre falso) e `lerCorpo(texto)`.
 **Where**: `vitrine/src/revalidacao.ts`
 **Depends on**: T2
