@@ -20,7 +20,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 - **Nenhuma ação em produção**: sem projeto na Vercel, sem variável remota, sem push. Isso é o L16c.
 - Nada em `vitrine/` importa de fora de `vitrine/`. Fora de `vitrine/`, só arquivos de teste da suíte raiz (`__tests__/`) importam de `vitrine/`: paridade, isolamento e o teste de banco das consultas (AD-044).
 - `AGENTS.md`: leia em `node_modules/next/dist/docs/` a página de cada API do Next antes de usá-la.
-- Astryx: `npx astryx build`, `npx astryx template` e `npx astryx component` antes de cada tela; sem `<div>` de layout, sem `style`, só tokens. Única exceção: `<img>` dentro de `AspectRatio` com utilitários Tailwind de token (a lib não tem primitivo de imagem).
+- Astryx: `npx astryx build`, `npx astryx template` e `npx astryx component` antes de cada tela; sem `<div>` de layout, sem `style`, só tokens. Exceções: `<img>` dentro de `AspectRatio` com utilitários Tailwind de token (a lib não tem primitivo de imagem) e os `<style>` do tema com a saída de `generateThemeCSS` (AD-046).
 - Trabalho visual só com captura real pela extensão do Chrome (`npm run vitrine:dev`, porta 3100); sem captura, não altere UI.
 - Capturas de 375 px (usuário, 2026-10-10): a página real carregada num quadro de 375 px, como no L16a, porque a janela da extensão não reduz o viewport. Para VTEMA-02 AC9, a largura de rolagem do documento é medida dentro do quadro (≤ 375) e o número vai para o `validation.md`, por página.
 - `npm run vitrine:e2e` usa a branch `test`: não rode junto com testes pontuais (L-033).
@@ -121,7 +121,7 @@ T24 → T25
 
 ### T0: Gate de viabilidade (F8–F13, F19)
 
-**Status**: executada em 2026-10-10 (resultado em `validation.md`). **Gate reprovado em F10; lote parado, aguardando decisão do usuário.** F8, F9, F11 (build), F12, F13 (dois caminhos) e F19 passam. Hash: no commit que registra o gate.
+**Status**: concluída em 2026-10-10 (hash `ddbf72d`; resultado em `validation.md`). Gate: F8, F9, F11 (build), F12, F13 (dois caminhos) e F19 passam; **F10 reprovou** e foi resolvido pela AD-046 (opção b, decisão delegada pelo usuário a um agente Opus 5.5). Protótipo apagado.
 
 **What**: Comprovar F8–F13 e F19 do design com um protótipo descartável em `scratch/vitrine-prova/` (fora do git) lendo a branch `test` como `crivo_vitrine`; registrar resultado e fonte.
 **Where**: `.specs/features/lote-16b-vitrine-app/validation.md`
@@ -329,16 +329,19 @@ T24 → T25
 
 ### T10: Tema da loja
 
-**What**: `temaDaLoja({ cor, familia })` com `defineTheme` estendendo o tema neutro, recebendo a família de fonte já resolvida; e `vitrine/src/tema/fontes.ts` com o mapa das 4 fontes de `next/font/google`. O mapa fica em módulo próprio porque `next/font/google` é vazio fora do compilador do Next (`index.js` de 0 bytes) e não pode ser importado por um teste.
+**What**: `temaDaLoja({ slug, cor, fonte })` e `cssDoTema(tema)` em `vitrine/src/tema/tema-da-loja.ts` (puros, sem `next/font`): `defineTheme` estendendo o tema neutro, nome `loja-<slug>`, famílias por `tokens` (`--font-family-body` e `--font-family-heading` = `var(--font-<fonte>)`) e as duas camadas de CSS que a Astryx gera (`generateThemeCSS`; AD-046). `TemaDaLoja` (`'use client'`, porque `defineTheme` não roda em Server Component) em `vitrine/src/tema/tema-da-loja-provider.tsx`, que renderiza `<Theme mode="light">` com os dois `<style>`. E `vitrine/src/tema/fontes.ts` com as 4 fontes de `next/font/google` (`variable` = `--font-<id>`). O mapa fica em módulo próprio porque `next/font/google` é vazio fora do compilador do Next (`index.js` de 0 bytes) e não pode ser importado por um teste.
 **Where**: `vitrine/src/tema/tema-da-loja.ts`
 **Depends on**: T1, T2
-**Reuses**: `npx astryx docs theme` (§ defineTheme, extends); fontes do contrato (T2)
+**Reuses**: `npx astryx docs theme` (§ defineTheme, extends); fontes do contrato (T2); AD-046 e os achados do gate T0 em `validation.md`
 **Requirement**: VTEMA-01
 
 **Done when**:
 
-- [ ] Testes com `resolveThemeTokens`: `--color-accent` do tema reflete a cor da loja; cor nula → cor padrão; a família recebida vai para `--font-family-body` e `--font-family-heading`; o teste não importa `fontes.ts`
-- [ ] `fontes.ts` tipado como `Record` das fontes do contrato (L-029): fonte nova ou renomeada quebra a compilação; provado pelo build (F11) e pelo e2e da T16
+- [ ] Testes: `cssDoTema(...).tema` começa com `@layer astryx-theme {` e contém `@scope ([data-astryx-theme="loja-<slug>"])`; `.reset` começa com `@layer reset {` e contém `:where(h1, h2, h3, h4, h5, h6)`; o conteúdo interno é igual a `generateThemeCSS(tema).component` e `.prose`
+- [ ] `--color-accent` (via `resolveThemeTokens`): `#d4145a` ≠ `#12a150` ≠ cor nula; cor nula = cor padrão; cor fora do padrão (`#FFF`, `red`, `#d4145a;}</style>`) = cor nula, e a saída nunca contém `</style`; slug fora de `^[a-z0-9-]{1,63}$` lança; nenhuma asserção usa o hex derivado literal
+- [ ] `--font-family-body` e `--font-family-heading` = `var(--font-<fonte>)` para as 4 fontes do contrato; o teste não importa `fontes.ts`
+- [ ] Alarme de upgrade: o texto de `node_modules/@astryxdesign/core/dist/Theme/Theme.js` contém `@layer reset {` e `@layer astryx-theme {` na injeção
+- [ ] `fontes.ts` tipado como `Record` das fontes do contrato (L-029), com `variable` = `--font-<id>`: fonte nova ou renomeada quebra a compilação; provado pelo build (F11) e pelo e2e da T16
 - [ ] Quick + Build passam
 
 **Tests**: unit
@@ -390,7 +393,7 @@ T24 → T25
 
 ### T13: Fixture de sentinelas
 
-**What**: `criarFixtureVitrine()`/`removerFixtureVitrine()` na branch `test`: lojas A e B ativas com cores, fontes e layouts diferentes, C inativa; imóveis em todos os estados; captador, endereço e lead com textos sentinela únicos; um imóvel sem foto; um com `<script>` na descrição; 25 imóveis visíveis na loja A.
+**What**: `criarFixtureVitrine()`/`removerFixtureVitrine()` na branch `test`: lojas A e B ativas com cores, fontes e layouts diferentes, C inativa, D ativa sem cor, com a fonte padrão e sem imóvel visível (VTEMA AC2/AC7 e o estado vazio da T21); imóveis em todos os estados; captador, endereço e lead com textos sentinela únicos; um imóvel sem foto; um com `<script>` na descrição; 25 imóveis visíveis na loja A.
 **Where**: `scripts/vitrine-fixture.ts`
 **Depends on**: T0
 **Reuses**: padrão de fixture `newTenant`/`addProperty` de `src/db/__tests__/vitrine-views.test.ts` (L16a; não há módulo de fixture compartilhado); tabela `tenant_storefronts` e `properties.featured` (L16a). O seed do L16a já deixa a 1ª imobiliária com vitrine ativa e destaques: a fixture usa tenants próprios e não altera essas linhas
@@ -398,7 +401,7 @@ T24 → T25
 
 **Done when**:
 
-- [ ] `scripts/__tests__/vitrine-fixture.test.ts`: criar duas vezes não duplica; remover deixa zero linhas da fixture e não toca linha do seed
+- [ ] `scripts/__tests__/vitrine-fixture.test.ts`: criar duas vezes não duplica; remover deixa zero linhas das quatro lojas da fixture e não toca linha do seed
 - [ ] Quick + Build passam
 
 **Tests**: integration
@@ -450,7 +453,7 @@ T24 → T25
 
 ### T16: Layout da loja
 
-**What**: `app/c/[slug]/layout.tsx`: `<Suspense>`; slug inválido → `notFound()` sem consulta; loja ausente → `notFound()`; `<Theme mode="light">` da loja; cabeçalho com logo, nome e botão de WhatsApp; rodapé legal (T15). Antes: `npx astryx template centered-hero`.
+**What**: `app/c/[slug]/layout.tsx`: `<Suspense>`; slug inválido → `notFound()` sem consulta; loja ausente → `notFound()`; `TemaDaLoja` da loja (T10: `<Theme mode="light">` com o CSS do tema no HTML, AD-046); cabeçalho com logo, nome e botão de WhatsApp; rodapé legal (T15). O layout raiz (`app/layout.tsx`) ganha `data-theme="light"` no `<html>` e as variáveis das 4 fontes (`fontes.ts`). Antes: `npx astryx template centered-hero`.
 **Where**: `vitrine/app/c/[slug]/layout.tsx`
 **Depends on**: T15, T5, T10, T14
 **Reuses**: `centered-hero`
@@ -458,8 +461,8 @@ T24 → T25
 
 **Done when**:
 
-- [ ] E2E ganha: loja C e slug inexistente → página de não encontrado neutra, com `noindex`, sem nome de nenhuma loja (VCAT AC9, AC10); status registrado (200 esperado pela doc, F8); cor da loja A no HTML sem JS e diferente da B (VTEMA AC7); fonte da loja A aplicada na resposta do servidor e diferente da B (VTEMA AC3); rodapé com razão social, CRECI e aviso (VLEGAL AC1); link `wa.me` do cabeçalho decodificado igual à mensagem de catálogo
-- [ ] Captura real do cabeçalho e rodapé (`npm run vitrine:dev`), desktop e 375 px
+- [ ] E2E ganha: loja C e slug inexistente → página de não encontrado neutra, com `noindex`, sem nome de nenhuma loja (VCAT AC9, AC10); status registrado (200 esperado pela doc, F8); para A, B e D, no HTML sem JS: exatamente um bloco `@layer astryx-theme {` seguido de `@scope ([data-astryx-theme="loja-<slug>"])` e um `@layer reset {` com o mesmo escopo e `:where(h1, h2, h3, h4, h5, h6)`; o wrapper com `data-astryx-theme="loja-<slug>"`; o HTML de A não contém `loja-<slug de B>`; o `--color-accent` extraído do bloco de cada loja satisfaz acA ≠ acB, acA ≠ acD e acB ≠ acD, sem comparar com hex literal (VTEMA AC2, AC7); `--font-family-body` de A = `var(--font-<fonte de A>)`, de B = `var(--font-<fonte de B>)`, e diferentes (VTEMA AC3); rodapé com razão social, CRECI e aviso (VLEGAL AC1); link `wa.me` do cabeçalho decodificado igual à mensagem de catálogo
+- [ ] Captura real do cabeçalho e rodapé (`npm run vitrine:dev`), desktop e 375 px, com a aba visível (o React 19.2 revela o Suspense por `requestAnimationFrame`; em aba oculta o conteúdo fica no fallback)
 - [ ] E2E + Build passam
 
 **Tests**: e2e
@@ -561,9 +564,9 @@ T24 → T25
 
 **Done when**:
 
-- [ ] E2E ganha: A com 24 itens na página 1 e 1 na página 2; `pagina=abc` → página 1; ordem destaque → recente → referência; nenhuma referência da B nas páginas da A; loja sem imóvel visível → estado vazio com 200; A em `grade` e B em `editorial` pelos marcadores de cada template; `og:*` do catálogo no `<head>` com UA do WhatsApp; nenhuma sentinela no HTML nem no stdout
+- [ ] E2E ganha: A com 24 itens na página 1 e 1 na página 2; `pagina=abc` → página 1; ordem destaque → recente → referência; nenhuma referência da B nas páginas da A; loja D (sem imóvel visível) → estado vazio com 200; A em `grade` e B em `editorial` pelos marcadores de cada template; `og:*` do catálogo no `<head>` com UA do WhatsApp; o HTML do catálogo de A em grade traz o mesmo bloco de tema da T16 (o layout envolve a página); nenhuma sentinela no HTML nem no stdout
 - [ ] E2E ganha o cache: mudar o preço de um imóvel da A no banco → página ainda antiga; POST com segredo → nova; página da B não reconsultada (contador de consultas da fixture); segredo errado → 401 e página continua antiga
-- [ ] Capturas reais em `.specs/features/lote-16b-vitrine-app/capturas/`: grade e editorial, desktop e 375 px, lojas A e B; catálogo vazio; sem rolagem horizontal em 375 px (VTEMA AC9), com a largura de rolagem medida dentro do quadro e registrada no `validation.md`
+- [ ] Capturas reais em `.specs/features/lote-16b-vitrine-app/capturas/`: grade e editorial, desktop e 375 px, lojas A e B; catálogo vazio; todas com a aba visível; sem rolagem horizontal em 375 px (VTEMA AC9), com a largura de rolagem medida dentro do quadro e registrada no `validation.md`
 - [ ] E2E + Build passam
 
 **Tests**: e2e
@@ -616,7 +619,7 @@ T24 → T25
 
 ### T24: Imagem de compartilhamento da loja
 
-**What**: `app/c/[slug]/opengraph-image.tsx` com `ImageResponse` 1200×630: nome da loja sobre a cor da loja, sem recurso externo.
+**What**: `app/c/[slug]/opengraph-image.tsx` com `ImageResponse` 1200×630: nome da loja sobre a cor da loja (o hex literal da loja ou a cor padrão, não o accent derivado; AD-046), sem recurso externo.
 **Where**: `vitrine/app/c/[slug]/opengraph-image.tsx`
 **Depends on**: T5, T10, T14
 **Reuses**: doc de `opengraph-image` em `node_modules/next/dist/docs/`
@@ -645,7 +648,7 @@ T24 → T25
 
 **Done when**:
 
-- [ ] Arquivos versionados no momento da captura (L-054), listados em `validation.md`
+- [ ] Arquivos versionados no momento da captura (L-054), listados em `validation.md`; capturas com a aba visível; uma loja de cor sem croma, se a fixture tiver, registra a limitação do accent derivado (AD-046)
 - [ ] Largura de rolagem ≤ 375 medida no quadro e registrada para catálogo em grade, catálogo editorial, item, imóvel indisponível e catálogo vazio (VTEMA-02 AC9)
 
 **Tests**: none

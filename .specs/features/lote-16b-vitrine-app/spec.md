@@ -54,6 +54,7 @@ Este lote cria a vitrine: um projeto Next separado, somente leitura, que lê só
 | Loja inexistente ou inativa | Página de não encontrado neutra, sem marca | Não confirma a existência da imobiliária | n |
 | Perfil de cache | `vitrine`: stale 60 s, revalidate 60 s, expire 300 s | Pior caso de 5 min quando o aviso falha (AD-042) | y |
 | Cor padrão | Accent do tema neutro da Astryx | Loja sem cor escolhida | n |
+| Accent derivado | O `--color-accent` é o derivado pela Astryx (tom HCT 40); cores sem croma mudam de matiz (cinza → verde, preto → rosa) | Consequência de passar a cor como `color.accent` (AC1); limitação aceita (AD-046) | n |
 | Modalidade `ambos` no imóvel | Não exibida | Não descreve o imóvel | n |
 
 **Open questions:** none — todas resolvidas com o usuário ou registradas acima.
@@ -164,17 +165,17 @@ asserções passarem.
 **Acceptance Criteria**:
 
 1. The system SHALL envolver as páginas da loja num `<Theme mode="light">` gerado por `defineTheme` a partir do tema neutro, com a cor da loja como `color.accent`.
-2. WHERE a loja não tiver cor THEN o sistema SHALL usar a cor padrão da vitrine.
-3. The system SHALL aplicar a fonte da loja ao corpo e aos títulos, entre `inter`, `montserrat`, `lora` e `playfair`.
+2. WHERE a loja não tiver cor, ou a cor não casar com `^#[0-9a-f]{6}$`, THEN o sistema SHALL usar a cor padrão da vitrine.
+3. The system SHALL aplicar a fonte da loja ao corpo e aos títulos, entre `inter`, `montserrat`, `lora` e `playfair`, já no HTML da primeira resposta.
 4. WHERE o layout for `grade`, o catálogo SHALL mostrar cabeçalho, a faixa "Destaques" com até 6 destaques, a grade de cards, a paginação, "Sobre" e o rodapé.
 5. WHERE o layout for `editorial`, o catálogo SHALL mostrar o cabeçalho com a foto do primeiro destaque, a lista de linhas edge-to-edge, a paginação, "Sobre" e o rodapé.
 6. WHERE a loja não tiver nenhum destaque, o layout `grade` SHALL omitir a faixa "Destaques" e o layout `editorial` SHALL omitir a foto do cabeçalho.
-7. The system SHALL entregar a cor da loja no HTML da primeira resposta, sem depender de JavaScript.
-8. The system SHALL compor as páginas só com componentes e tokens da Astryx, com a única exceção do `<img>` dentro de `AspectRatio`, sem `style` inline.
+7. WHEN uma página de loja for pedida THEN o HTML da primeira resposta SHALL trazer, sem depender da hidratação, o CSS do tema da loja gerado pela Astryx (`generateThemeCSS`), escopado ao tema `loja-<slug>`, com o `--color-accent` derivado pela Astryx da cor da loja; o `--color-accent` de duas lojas com cores diferentes SHALL diferir entre si e do de uma loja sem cor.
+8. The system SHALL compor as páginas só com componentes e tokens da Astryx, sem atributo `style` e sem CSS escrito à mão, com duas exceções: o `<img>` dentro de `AspectRatio` e os `<style>` com a saída de `generateThemeCSS` nas camadas `reset` e `astryx-theme` (AD-046).
 9. The system SHALL ser utilizável em 375 px de largura, sem rolagem horizontal.
 
 **Independent Test**: capturas reais dos dois layouts, desktop e celular, com duas lojas de cores e
-fontes diferentes; HTML sem JS contém a cor.
+fontes diferentes; HTML sem JS com o CSS do tema de cada loja e accents distintos entre A, B e a loja sem cor.
 
 ---
 

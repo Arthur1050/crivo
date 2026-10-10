@@ -3,7 +3,7 @@
 **Specs**: `lote-16a-vitrine-lado-crm/spec.md`, `lote-16b-vitrine-app/spec.md`, `lote-16c-vitrine-ativacao/spec.md`
 **Context**: `lote-16-vitrine-publica/context.md`
 **Status**: Approved (usuário, 2026-10-09)
-**ADs**: conforma AD-002, AD-004, AD-007, AD-010, AD-014, AD-021, AD-028, AD-029, AD-033; **emenda AD-025** (AD-040, AD-042); cria AD-040 a AD-043.
+**ADs**: conforma AD-002, AD-004, AD-007, AD-010, AD-014, AD-021, AD-028, AD-029, AD-033; **emenda AD-025** (AD-040, AD-042); cria AD-040 a AD-043; **AD-046** emenda a AD-025 no mecanismo de entrega do tema (L16b, 2026-10-10).
 
 ---
 
@@ -62,7 +62,7 @@ graph TD
 | Padrão de mock de `next/cache` em testes de action | `src/server/__tests__/properties-actions.test.ts:41` | Mesmo padrão para `next/server` (`after`) |
 | Seed determinístico | `src/db/seed.ts` | Vitrine ativa para um tenant do seed, inativa para outro, destaques |
 | Templates Astryx | `npx astryx template product-gallery`, `centered-hero`, `side-gallery`, `product-detail` | Referência de composição dos dois layouts e da página de item |
-| `Theme`, `defineTheme`, `resolveThemeTokens` | `@astryxdesign/core/theme`, `@astryxdesign/theme-neutral` | Tema por loja derivado do neutro (`extends`) |
+| `Theme`, `defineTheme`, `generateThemeCSS`, `resolveThemeTokens` | `@astryxdesign/core/theme`, `@astryxdesign/theme-neutral` | Tema por loja derivado do neutro (`extends`); CSS do tema emitido no HTML do servidor (AD-046) |
 
 ### Integration Points
 
@@ -178,9 +178,8 @@ vitrine/
   quando o aviso falha: 5 min.
 - **Ordem do catálogo**: `destaque desc, atualizado_em desc, referencia asc`; 24 por página; página
   inválida → 1; acima da última → última.
-- **Tema**: `temaDaLoja({ cor, fonte })` → `defineTheme({ name, extends: neutralTheme, color: {
-  accent: cor ?? COR_PADRAO, neutralStyle: "neutral" }, typography: { body, heading } })`, com
-  `<Theme mode="light">`. Fontes da lista carregadas por `next/font/google`.
+- **Tema**: `temaDaLoja({ slug, cor, fonte })` (puro) → `defineTheme({ name: "loja-<slug>", extends: neutralTheme, color: { accent: corValida ?? COR_PADRAO, neutralStyle: "neutral" }, tokens: { "--font-family-body": "var(--font-<fonte>)", "--font-family-heading": "var(--font-<fonte>)" } })`;
+  `cssDoTema(tema)` devolve `{ reset: "@layer reset {…prose…}", tema: "@layer astryx-theme {…component…}" }` a partir de `generateThemeCSS`. O componente `TemaDaLoja` (`'use client'`: `defineTheme` não roda em Server Component) recebe `slug`, `cor` e `fonte` do layout (servidor) e renderiza `<Theme mode="light">` com os dois `<style>` antes dos filhos (AD-046). As 4 fontes de `next/font/google` expõem `--font-<id>` no `<html>` do layout raiz, com `data-theme="light"`. O runtime do `<Theme>` duplica o mesmo CSS no `<head>` depois da hidratação (aceito). Accent derivado pela Astryx (tom HCT 40); o cartão OG usa o hex literal.
 - **Imagens**: `<img loading="lazy" referrerPolicy="no-referrer">` dentro de `AspectRatio`, com
   utilitários Tailwind de token (`size-full object-cover`). Exceção sancionada: a Astryx não tem
   primitivo de imagem (`#2582`, comentado nos próprios templates).
@@ -304,7 +303,9 @@ grant select on vitrine.lojas, vitrine.imoveis to crivo_vitrine;
 | Duas definições de "visível ao público" (rota `/api/v1` e view) | `src/server/data/index.ts:703` | Divergência silenciosa entre agente e vitrine | Teste de paridade: o mesmo conjunto de fixtures produz o mesmo conjunto de referências nas duas |
 | Papel criado pelo console do Neon entra em `neon_superuser` | — (Neon) | Isolamento cai sem ninguém notar | Papel só por SQL; teste afirma que não é membro; L16c confere em produção |
 | `revalidateTag` local por instância em ambiente multi-instância | doc `how-revalidation-works.md` (§ multi-instance) | Vendido visível em outra instância | Perfil `vitrine` com `expire: 300`; L16c mede na Vercel e registra (F15) |
-| Tema runtime da Astryx injeta `<style>` por `useInsertionEffect` | `npx astryx docs theme` § Runtime vs Built | Cor da loja pode piscar ou faltar no HTML do servidor | F10 no gate do L16b; se falhar, parar e propor paleta fixa pré-compilada (mudança de escopo, decisão do usuário) |
+| Tema runtime da Astryx injeta `<style>` por `useInsertionEffect` | `npx astryx docs theme` § Runtime vs Built | Cor da loja pode piscar ou faltar no HTML do servidor | Reprovado no gate (F10); resolvido pela AD-046: CSS de `generateThemeCSS` emitido no servidor. Teste de alarme sobre `Theme.js` (T10) quebra em upgrade que mude camadas ou formato |
+| Accent derivado pela Astryx distorce cores sem croma ou claras | `expandColorScale.js:85,98` | Loja de marca cinza ou preta sai verde ou rosa | Aceito (AD-046); pré-visualização do accent efetivo no CRM fica como ideia adiada |
+| Suspense revelado por `requestAnimationFrame` (React 19.2) | runtime `$RC` | Aba oculta fica no fallback | Capturas com a aba visível; e2e por HTTP não é afetado |
 | `notFound()` em resposta com streaming sai com HTTP 200 + `noindex` | doc `loading.md:105-113` | Robôs veem "soft 404"; status 404 exigiria `proxy` com consulta ao banco | Aceito (assumption do L16b, a confirmar): a garantia é a UI de não encontrado, `noindex` e nenhum dado do imóvel; o e2e registra o status |
 | `generateStaticParams` não pode devolver `[]` com Cache Components | doc `migrating-to-cache-components.md` § generateStaticParams | Build quebra com banco vazio | Sem `generateStaticParams`; `params` lido dentro de `<Suspense>` (F8) |
 | Metadados em streaming podem não chegar ao robô do WhatsApp | doc `generate-metadata.md:1230` (HTML-limited bots) | Prévia sem título/imagem | F9 no gate do L16b (user-agent do WhatsApp) e F17 no L16c |
@@ -332,8 +333,8 @@ não vale (L-067 candidata).
 | F7 | `after()` funciona em Server Action no Next 16.2.11 | `node_modules/next/dist/docs/01-app/03-api-reference/04-functions/after.md` (linha 8: "Server Functions") | L16a T0 | Chamar sem `after`, com timeout curto |
 | F8 | Com `cacheComponents`, rota `[slug]` sem `generateStaticParams` e `params` em `<Suspense>`: build passa com banco vazio; segundo GET não consulta o banco; `revalidateTag(tag, { expire: 0 })` faz o GET seguinte refletir a mudança | `next build` + `next start` locais com contador de consultas | L16b T0 | Parar e reportar; nenhuma tela antes |
 | F9 | Metadados OG chegam no `<head>` para o user-agent do WhatsApp | `curl` local com UA do WhatsApp | L16b T0 | Configurar `htmlLimitedBots` e repetir |
-| F10 | `<Theme>` com tema `defineTheme` em runtime deixa o accent da loja no HTML do servidor | HTML de `next start` sem JS | L16b T0 | Parar; propor paleta pré-compilada ao usuário |
-| F11 | `next/font/google` com as 4 fontes da lista compõe com `typography` do tema | Build local + captura | L16b T0 | Fonte do sistema como fallback, decisão do usuário |
+| F10 | `<Theme>` com tema `defineTheme` em runtime deixa o accent da loja no HTML do servidor | HTML de `next start` sem JS | L16b T0 | Reprovado no runtime puro (T0 do L16b, 2026-10-10); resolvido pela AD-046, medido no protótipo |
+| F11 | `next/font/google` com as 4 fontes da lista compõe com o tema (por `tokens`, não por `typography.body.family`; achado do T0) | Build local + captura | L16b T0 | Fonte do sistema como fallback, decisão do usuário |
 | F12 | `opengraph-image` dinâmico com `next/og` funciona sob Cache Components | GET local devolvendo PNG | L16b T0 | OG estático por loja |
 | F13 | Testes em `vitrine/` rodam na suíte raiz com as dependências de `vitrine/node_modules`; e um teste da suíte raiz fora de `vitrine/` importa dela um módulo que cria o `db` com o `drizzle-orm` e o `pg` locais e lê como `crivo_vitrine` (AD-044) | `npx vitest run vitrine/...` e `npx vitest run src/...` | L16b T0 | Primeiro caminho: suíte própria da vitrine apontando para a branch `test`. Segundo caminho: parar e decidir com o usuário onde fica o teste das consultas |
 | F14 | Hobby aceita segundo projeto do mesmo repositório com Root Directory; limites de projetos, funções e logs | Doc da Vercel (`search_vercel_documentation`, leitura) | L16c T0 | Parar; decisão do usuário |
