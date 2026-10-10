@@ -16,7 +16,8 @@
     "smoke:reset": "tsx src/db/smoke-reset.ts",
     "alert:send-test": "tsx --conditions=react-server scripts/send-test-integration-alert.ts",
     "test": "node scripts/test-suite.mjs",
-    "vitrine:dev": "tsx scripts/vitrine-dev.ts"
+    "vitrine:dev": "tsx scripts/vitrine-dev.ts",
+    "vitrine:e2e": "tsx scripts/vitrine-e2e.ts"
   },
   "dependencies": {
     "@astryxdesign/core": "^0.2.0",

@@ -439,6 +439,8 @@ T24 → T25
 
 ### T14: Harness HTTP da vitrine
 
+**Status**: concluída em 2026-10-10 (hash no `git log`; e2e 11 de 11 asserções verdes; falha proposital sai com código 1 e remove a fixture e o processo; lint e `tsc` da raiz sem erro novo).
+
 **What**: `npm run vitrine:e2e`: fixture → `next build` + `next start` da vitrine com o papel e segredo aleatório → asserções nomeadas → derruba o processo e limpa a fixture, mesmo em falha; stdout do servidor capturado para a varredura de sentinelas. Asserções iniciais: rota sem correspondência → 404 neutro (resposta sem streaming); slug inválido → página de não encontrado neutra; `X-Robots-Tag` em toda resposta; nenhum `Set-Cookie`; `POST /api/revalidar` 204/401/400/405 por HTTP.
 **Where**: `scripts/vitrine-e2e.ts`
 **Depends on**: T13, T12
