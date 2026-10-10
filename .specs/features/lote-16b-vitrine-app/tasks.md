@@ -281,6 +281,8 @@ T24 → T25
 
 ### T7: Paginação e validação de rota
 
+**Status**: concluída em 2026-10-10 (12 testes verdes; 4 mutantes mortos e 1 equivalente; build gate sem erro novo).
+
 **What**: `paginar(itens, pagina)` (24 por página; inválida → 1; acima da última → última), `slugValido`, `referenciaParaUrl` e `referenciaDaUrl`.
 **Where**: `vitrine/src/lib/catalogo.ts`
 **Depends on**: T1
