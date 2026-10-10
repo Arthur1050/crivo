@@ -11,7 +11,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 **Spec**: `.specs/features/lote-16b-vitrine-app/spec.md`
 **Design**: `.specs/features/lote-16-vitrine-publica/design.md` (comum ao L16)
 **Context**: `.specs/features/lote-16-vitrine-publica/context.md`
-**Status**: Approved (usuário, 2026-10-09; começa só com o L16a fechado)
+**Status**: Approved (usuário, 2026-10-09; começa só com o L16a fechado — fechado em 2026-10-09, Verifier PASS, arquivado)
 
 **Regras deste lote (auditoria do L14b § 7; AD-010, AD-014, AD-025, AD-033, AD-040 a AD-043):**
 
@@ -47,7 +47,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 | Gate Level | When to Use | Command |
 | --- | --- | --- |
 | Quick | Task com testes unit/integration | `npx vitest run <arquivos da task>` |
-| Build | Toda task que toca `vitrine/` | `npm --prefix vitrine run lint` + `npm --prefix vitrine run typecheck` + `npm --prefix vitrine run build`; e `npm run lint` + `npx tsc --noEmit -p .` na raiz sem erro novo |
+| Build | Toda task que toca `vitrine/` | `npm --prefix vitrine run lint` + `npm --prefix vitrine run typecheck` + `npm --prefix vitrine run build`; e `npm run lint` + `npx tsc --noEmit -p .` na raiz sem erro novo (linha de base do L16a: 50 erros preexistentes em arquivos de teste; reconferir na T0) |
 | E2E | Tasks de rota (T14 em diante) e fechamento | `npm run vitrine:e2e` |
 | Full | Fechamento do lote | `npm test` + `npm run vitrine:e2e` (nunca simultâneos) |
 | Registro | Gate, capturas e docs | Resultado em `validation.md`, commitado |
@@ -164,7 +164,7 @@ T24 → T25
 **What**: `vitrine/src/contrato.ts` (tag, layouts, fontes, payload, colunas) e o teste de paridade com `src/lib/storefront-contract.ts`.
 **Where**: `vitrine/src/contrato.ts`
 **Depends on**: T1
-**Reuses**: `src/lib/storefront-contract.ts` (L16a T2)
+**Reuses**: `src/lib/storefront-contract.ts` (L16a T2: `STOREFRONT_LAYOUTS`, `STOREFRONT_FONTS`, `storefrontCacheTag`, `RevalidationRequest`, `STOREFRONT_VIEW_COLUMNS`)
 **Requirement**: VPROJ-02
 
 **Done when**:
@@ -184,7 +184,7 @@ T24 → T25
 **What**: `pgSchema("vitrine")` e `pgView(...).existing()` de `lojas` e `imoveis`, com tipos derivados.
 **Where**: `vitrine/src/db/views.ts`
 **Depends on**: T2
-**Reuses**: colunas do contrato (T2)
+**Reuses**: colunas do contrato (T2); `currentTestDatabaseUrl` em `src/db/__tests__/vitrine-helpers.ts` (L16a). O lado CRM já confere `STOREFRONT_VIEW_COLUMNS` contra as views reais em `src/db/__tests__/vitrine-views.test.ts` (L16a)
 **Requirement**: VPROJ-02, VSEG-01
 
 **Done when**:
@@ -209,7 +209,7 @@ T24 → T25
 
 **Done when**:
 
-- [ ] `vitrine/src/dados/__tests__/consultas.test.ts` conectando como `crivo_vitrine` (URL da L16a T7), fixture com duas lojas ativas, uma inativa e imóveis em todos os estados: loja A nunca devolve linha da B (VSEG AC2, AC3); vendido, reservado e despublicado ausentes por lista e por referência direta (AC4); ordem com empate de `atualizado_em` decidido pela referência (VCAT AC2); `ap-0142` acha `AP-0142` (VITEM Edge Case); loja inativa → nulo
+- [ ] `vitrine/src/dados/__tests__/consultas.test.ts` conectando como `crivo_vitrine` (URL do papel: `resolveVitrineTestUrl` em `src/db/test-connection.ts` sobre `currentTestDatabaseUrl()`, L16a T7; como um teste dentro de `vitrine/` chega a ela sem importar de fora de `vitrine/` está pendente na revisão do planejamento), fixture com duas lojas ativas, uma inativa e imóveis em todos os estados: loja A nunca devolve linha da B (VSEG AC2, AC3); vendido, reservado e despublicado ausentes por lista e por referência direta (AC4); ordem com empate de `atualizado_em` decidido pela referência (VCAT AC2); `ap-0142` acha `AP-0142` (VITEM Edge Case); loja inativa → nulo
 - [ ] Quick + Build passam
 
 **Tests**: integration
@@ -244,7 +244,7 @@ T24 → T25
 **What**: `npm run vitrine:dev` na raiz: deriva a URL do papel para a branch `test`, gera segredo local e sobe `next dev -p 3100` em `vitrine/` sem imprimir credencial.
 **Where**: `scripts/vitrine-dev.ts`
 **Depends on**: T1
-**Reuses**: `resolveVitrineTestUrl` (L16a T7)
+**Reuses**: `resolveVitrineTestUrl` e `VITRINE_ROLE` em `src/db/test-connection.ts` (L16a T7; já codifica a senha, L-071); senha em `VITRINE_TEST_DB_PASSWORD` do ambiente local
 **Requirement**: VPROJ-01
 
 **Done when**:
@@ -384,7 +384,7 @@ T24 → T25
 **What**: `criarFixtureVitrine()`/`removerFixtureVitrine()` na branch `test`: lojas A e B ativas com cores, fontes e layouts diferentes, C inativa; imóveis em todos os estados; captador, endereço e lead com textos sentinela únicos; um imóvel sem foto; um com `<script>` na descrição; 25 imóveis visíveis na loja A.
 **Where**: `scripts/vitrine-fixture.ts`
 **Depends on**: T0
-**Reuses**: helpers de fixture dos testes do L11
+**Reuses**: helpers de fixture dos testes do L11; tabela `tenant_storefronts` e `properties.featured` (L16a). O seed do L16a já deixa a 1ª imobiliária com vitrine ativa e destaques: a fixture usa tenants próprios e não altera essas linhas
 **Requirement**: VSEG-01, VSEG-02
 
 **Done when**:
@@ -650,7 +650,7 @@ T24 → T25
 **What**: Como rodar (`vitrine:dev`, `vitrine:e2e`), variáveis (nomes, nunca valores), regra de não importar de fora, deploy como segundo projeto (L16c), ADs 040–043.
 **Where**: `vitrine/README.md`
 **Depends on**: T25
-**Reuses**: `scripts/vitrine/README.md` (L16a)
+**Reuses**: `scripts/vitrine/README.md` (L16a T21)
 **Requirement**: VPROJ-01
 
 **Done when**:

@@ -2,7 +2,7 @@
 
 **Context**: `.specs/features/lote-16-vitrine-publica/context.md`
 **Design**: `.specs/features/lote-16-vitrine-publica/design.md`
-**Depende de**: L16a fechado (tabela, views, papel e aviso de revalidação)
+**Depende de**: L16a fechado (tabela, views, papel e aviso de revalidação) — fechado em 2026-10-09 com Verifier PASS; papel, views e colunas existem só nos bancos de teste
 
 ## Problem Statement
 

@@ -302,6 +302,15 @@ usuário em 2026-10-07: dos oito itens originais, três saíram do lote (1, 3, 7
 **Posição**: deliberadamente a última preocupação deste roadmap (usuário, 2026-09-05), apesar de ter
 sinal de cliente real. Tudo que vem antes serve o piloto que já existe; a vitrine amplia superfície.
 
+> **Status (2026-10-10)**: planejado em 2026-10-09 e dividido em três lotes (`features/lote-16-vitrine-publica/`
+> com `context.md` e `design.md` comuns). **L16a (lado CRM) executado** em 2026-10-09, Verifier PASS,
+> só nos bancos de teste (`features/lote-16a-vitrine-lado-crm/`, linha no `features/INDEX.md`).
+> **L16b** (projeto `vitrine/`) e **L16c** (ativação em produção) seguem futuros. O isolamento descrito
+> abaixo foi refinado pela AD-040 (o papel lê só duas views do schema `vitrine`, não a tabela de imóveis
+> e colunas de `tenants`) e o frescor pela AD-042 (perfil `vitrine` 60/60/300 s em vez de
+> `cacheLife('minutes')`); a pasta `vitrine/` neste repositório é a AD-041 e o contrato público a AD-043.
+> O texto abaixo é o registro da decisão de 2026-09-05.
+
 **Arquitetura decidida (2026-09-05): projeto separado, leitura pura, usuário de banco SELECT-only.**
 Ver AD-025 em `STATE.md`.
 

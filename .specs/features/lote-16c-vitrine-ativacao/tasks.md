@@ -348,7 +348,7 @@ T13 → T14
 
 ### T14: Roadmap e índice
 
-**What**: L16 executado no `ROADMAP-POS-PILOTO.md`; linhas de L16a, L16b e L16c em `features/INDEX.md`.
+**What**: L16 executado no `ROADMAP-POS-PILOTO.md`; linhas de L16a, L16b e L16c em `features/INDEX.md` (a do L16a já existe desde o fechamento dele, 2026-10-09: acrescentar o que a ativação mudou nela e as linhas de L16b e L16c).
 **Where**: `.specs/features/INDEX.md`
 **Depends on**: T13
 **Reuses**: formato das linhas existentes

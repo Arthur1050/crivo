@@ -282,3 +282,9 @@ Duas execuções consecutivas de `npm run db:push:test`, ambas com exit 0, nos 5
 ### Full de fechamento no HEAD final
 
 `npm test` rodado de novo em `bceff6d`, depois de todos os commits de código (o primeiro `3b620bc` mexeu em teste depois da primeira Full): 219 arquivos, 3681 testes (o +1 é o teste do M27), exit 0, sem timeout. Esta é a Full de fechamento; a primeira (em `606bd80`) fica superseded, como no precedente do L15.
+
+## Decisão das lições e conferência de encerramento (2026-10-10)
+
+- **Lições (AD-028)**, por delegação do usuário a um agente Opus 5.5 (commit `aa5c808`): **L-069 descartada** (duplica a L-026; a candidata da lacuna M27 citada na "Verificação independente" não existe mais no store), **L-070 e L-071 promovidas** a `confirmed`, sem inflar `recurrence`. Achado do mesmo agente: o `drizzle-kit push` de produção também derruba `document_categories_tenant_id_lower_name_idx`; o L16c precisa recriá-lo e conferi-lo (nota em `scripts/vitrine/README.md` § Produção e no Handoff do `STATE.md`).
+- **Observação 5 do Verifier resolvida**: a linha de status da T21 no `tasks.md` arquivado traz o hash `606bd80`.
+- **Conferência de encerramento**: os 22 hashes de T0–T21 e os das fix tasks F1 `2e120e6` e F2 `3b620bc` existem em `git log`; nenhum commit de `803ef9c..HEAD` traz `Co-Authored-By` ou "Generated with"; `validate_state.py` (L16a), `validate_spec.py` (L16a, L16b, L16c) e `validate_tasks.py` (L16a arquivado, L16b, L16c) com 0 erros.
