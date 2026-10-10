@@ -4,6 +4,7 @@ import {
   metadadosDoCatalogo,
   metadadosDoItem,
   rotuloDaModalidade,
+  resumoDosAtributos,
   rotuloDoTipo,
   textoAlternativoDaFoto,
   TIPOS_DE_IMOVEL,
@@ -101,3 +102,21 @@ describe("L16b T9 — metadados de compartilhamento (VOG AC2, AC3)", () => {
     });
   });
 });
+
+describe("L16b T19 — atributos do card (VCAT AC6)", () => {
+  it("quartos, banheiros, vagas e área, separados por ponto médio", () => {
+    expect(resumoDosAtributos({ quartos: 3, banheiros: 2, vagas: 2, areaM2: 120 })).toBe(
+      "3 quartos · 2 banheiros · 2 vagas · 120 m²"
+    );
+  });
+
+  it("singular só para 1; zero fica no plural", () => {
+    expect(resumoDosAtributos({ quartos: 1, banheiros: 1, vagas: 1, areaM2: 38 })).toBe(
+      "1 quarto · 1 banheiro · 1 vaga · 38 m²"
+    );
+    expect(resumoDosAtributos({ quartos: 0, banheiros: 0, vagas: 0, areaM2: 0 })).toBe(
+      "0 quartos · 0 banheiros · 0 vagas · 0 m²"
+    );
+  });
+});
+

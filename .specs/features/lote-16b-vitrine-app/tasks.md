@@ -552,6 +552,8 @@ T24 → T25
 
 ### T19: Template grade
 
+**Status**: concluída em 2026-10-10 (hash no `git log`; lint, typecheck e build da vitrine sem erro; 2 testes novos de `resumoDosAtributos`; o componente é montado e provado na T21).
+
 **What**: Catálogo em grade: faixa "Destaques" (até 6, omitida sem destaque), grade de `ClickableCard` (3 colunas desktop, 1 no celular), estado vazio, "Sobre". Antes: `npx astryx template product-gallery`.
 **Where**: `vitrine/src/templates/grade/catalogo-grade.tsx`
 **Depends on**: T9, T16

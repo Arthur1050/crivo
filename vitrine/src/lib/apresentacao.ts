@@ -97,3 +97,20 @@ export function metadadosDoItem(
     descricao: `${imovel.quartos} quartos · ${imovel.areaM2} m² · ${formatarPreco(imovel.precoCentavos)}`,
   };
 }
+
+/**
+ * Atributos do card do catálogo (VCAT AC6): "3 quartos · 2 banheiros · 1 vaga ·
+ * 120 m²". Singular só para 1; zero fica no plural ("0 vagas"), como se fala.
+ */
+export function resumoDosAtributos(
+  imovel: Pick<Imovel, "quartos" | "banheiros" | "vagas" | "areaM2">
+): string {
+  const contar = (n: number, singular: string, plural: string) => `${n} ${n === 1 ? singular : plural}`;
+  return [
+    contar(imovel.quartos, "quarto", "quartos"),
+    contar(imovel.banheiros, "banheiro", "banheiros"),
+    contar(imovel.vagas, "vaga", "vagas"),
+    `${imovel.areaM2} m²`,
+  ].join(" · ");
+}
+
