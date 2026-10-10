@@ -395,6 +395,8 @@ T24 → T25
 
 ### T12: Rota de revalidação
 
+**Status**: concluída em 2026-10-10 (9 testes verdes; 7 mutantes verificados e mortos; build gate sem erro novo, rota ƒ /api/revalidar no build).
+
 **What**: `POST /api/revalidar` → 204 com `revalidateTag(tag, { expire: 0 })`; 401, 400, 405; log `[vitrine]` com slug e desfecho.
 **Where**: `vitrine/app/api/revalidar/route.ts`
 **Depends on**: T11
