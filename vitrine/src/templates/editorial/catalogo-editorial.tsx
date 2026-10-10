@@ -1,7 +1,7 @@
 import { Grid } from "@astryxdesign/core/Grid";
 import { Link } from "@astryxdesign/core/Link";
 import { List, ListItem } from "@astryxdesign/core/List";
-import { VStack } from "@astryxdesign/core/Stack";
+import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { Heading, Text } from "@astryxdesign/core/Text";
 import { Token } from "@astryxdesign/core/Token";
 import type { Imovel } from "../../db/views";
@@ -30,7 +30,10 @@ function LinhaDoImovel({ slug, imovel }: { slug: string; imovel: Imovel }) {
       }
       description={
         <VStack gap={0.5}>
-          <Text weight="bold">{formatarPreco(imovel.precoCentavos)}</Text>
+          <HStack gap={2} vAlign="center" wrap="wrap">
+            <Text weight="bold">{formatarPreco(imovel.precoCentavos)}</Text>
+            {imovel.destaque ? <Token label="Destaque" size="sm" /> : null}
+          </HStack>
           <Text type="supporting">
             {[modalidade, imovel.referencia.toUpperCase(), `${imovel.bairro}, ${imovel.cidade}`]
               .filter(Boolean)
@@ -39,7 +42,6 @@ function LinhaDoImovel({ slug, imovel }: { slug: string; imovel: Imovel }) {
           <Text type="supporting">{resumoDosAtributos(imovel)}</Text>
         </VStack>
       }
-      endContent={imovel.destaque ? <Token label="Destaque" size="sm" /> : undefined}
     />
   );
 }

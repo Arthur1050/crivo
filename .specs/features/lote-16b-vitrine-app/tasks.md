@@ -596,6 +596,8 @@ T24 → T25
 
 ### T21: Página de catálogo
 
+**Status**: concluída em 2026-10-10 (hash no `git log`; e2e 32 de 32; mutantes mortos; capturas `t21-01` a `t21-08` com a largura de rolagem no `validation.md`; lint, typecheck e build da vitrine sem erro; lint da raiz 0 erros e `tsc` com os mesmos 50 erros). `og:image` do catálogo fica para a T24.
+
 **What**: `app/c/[slug]/page.tsx`: lê `?pagina=` dentro de `<Suspense>`, escolhe o template pelo layout, pagina com `Pagination`, `generateMetadata` do catálogo.
 **Where**: `vitrine/app/c/[slug]/page.tsx`
 **Depends on**: T20, T7

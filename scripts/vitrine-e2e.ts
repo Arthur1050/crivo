@@ -20,8 +20,11 @@ import assert from "node:assert/strict";
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import path from "node:path";
+import { and, eq } from "drizzle-orm";
+import { properties } from "../src/db/schema";
 import {
   abrirBancoDeTeste,
+  type BancoDoDono,
   criarFixtureVitrine,
   removerFixtureVitrine,
   type FixtureVitrine,
@@ -44,6 +47,8 @@ export interface Contexto {
   base: string;
   segredo: string;
   fixture: FixtureVitrine;
+  /** Banco de TESTE como dono: para mudar dados no meio da prova (cache, revalidação). */
+  db: BancoDoDono;
   /** Faz a requisição e registra a resposta para as asserções globais. */
   pedir(
     caminho: string,
@@ -400,6 +405,246 @@ registrar("T18 banco inalcançável → a mensagem sai no HTML, sem host, senha,
   }
 });
 
+// ── T21: página de catálogo ────────────────────────────────────────────────
+
+const UA_WHATSAPP = "WhatsApp/2.23.20.0 A";
+
+/** Referências dos imóveis nos links `/c/<slug>/imovel/<ref>`, na ordem do documento, sem repetir. */
+function referenciasNosLinks(html: string, slug: string): string[] {
+  const prefixo = `/c/${slug}/imovel/`;
+  const vistas: string[] = [];
+  for (const { href } of ancoras(html)) {
+    if (!href.startsWith(prefixo)) continue;
+    const ref = href.slice(prefixo.length);
+    if (!vistas.includes(ref)) vistas.push(ref);
+  }
+  return vistas;
+}
+
+/** Trecho do HTML entre dois marcadores de texto (o início de `de` até o início de `ate`). */
+function trecho(html: string, de: string, ate?: string): string {
+  const inicio = html.indexOf(de);
+  if (inicio < 0) return "";
+  const fim = ate ? html.indexOf(ate, inicio + de.length) : -1;
+  return fim < 0 ? html.slice(inicio) : html.slice(inicio, fim);
+}
+
+/** Ordem do catálogo pela spec (VCAT AC2): destaque, mais recente, referência. */
+function ordemDoCatalogo(imoveis: ReadonlyArray<{ referencia: string; destaque: boolean; atualizadoEm: Date; visivel: boolean }>) {
+  return imoveis
+    .filter((imovel) => imovel.visivel)
+    .sort(
+      (x, y) =>
+        Number(y.destaque) - Number(x.destaque) ||
+        y.atualizadoEm.getTime() - x.atualizadoEm.getTime() ||
+        x.referencia.localeCompare(y.referencia)
+    )
+    .map((imovel) => imovel.referencia.toLowerCase());
+}
+
+/** Valor de `content` da meta `og:*`/`twitter:*` no `<head>`; `null` se não houver. */
+function metaDoHead(html: string, nome: string): string | null {
+  const fimDoHead = html.indexOf("</head>");
+  const head = fimDoHead < 0 ? "" : html.slice(0, fimDoHead);
+  for (const meta of head.split("<meta ").slice(1)) {
+    const tag = meta.slice(0, meta.indexOf(">"));
+    const chave = /(?:property|name)="([^"]*)"/.exec(tag)?.[1];
+    if (chave === nome) return /content="([^"]*)"/.exec(tag)?.[1] ?? null;
+  }
+  return null;
+}
+
+registrar("T21 A: 24 imóveis na página 1 e 1 na página 2, na ordem destaque → recente → referência (VCAT AC2, AC3)", async (ctx) => {
+  const { a } = ctx.fixture.lojas;
+  const esperada = ordemDoCatalogo(a.imoveis);
+  assert.equal(esperada.length, 25);
+
+  const p1 = htmlVisivel((await ctx.pedir(`/c/${a.slug}`)).texto);
+  const grade1 = referenciasNosLinks(trecho(p1, ">Imóveis disponíveis<"), a.slug);
+  assert.deepEqual(grade1, esperada.slice(0, 24), "página 1: ordem e conteúdo da grade");
+  const faixa = referenciasNosLinks(trecho(p1, ">Destaques<", ">Imóveis disponíveis<"), a.slug);
+  assert.deepEqual(faixa, esperada.slice(0, 3), "faixa Destaques: os 3 destaques, na mesma ordem");
+
+  const p2 = htmlVisivel((await ctx.pedir(`/c/${a.slug}?pagina=2`)).texto);
+  assert.deepEqual(referenciasNosLinks(p2, a.slug), esperada.slice(24), "página 2: só o 25º");
+  assert.ok(!p2.includes(">Destaques<"), "a faixa Destaques aparece fora da página 1");
+});
+
+registrar("T21 ?pagina= inválida → página 1; acima da última → última (VCAT AC4, AC5)", async (ctx) => {
+  const { a } = ctx.fixture.lojas;
+  const esperada = ordemDoCatalogo(a.imoveis);
+  for (const pagina of ["abc", "0", "-1", "1.5", ""]) {
+    const html = htmlVisivel((await ctx.pedir(`/c/${a.slug}?pagina=${encodeURIComponent(pagina)}`)).texto);
+    const grade = referenciasNosLinks(trecho(html, ">Imóveis disponíveis<"), a.slug);
+    assert.deepEqual(grade, esperada.slice(0, 24), `pagina=${JSON.stringify(pagina)}`);
+  }
+  const ultima = htmlVisivel((await ctx.pedir(`/c/${a.slug}?pagina=99`)).texto);
+  assert.deepEqual(referenciasNosLinks(ultima, a.slug), esperada.slice(24), "pagina=99");
+});
+
+registrar("T21 imóvel vendido, reservado e despublicado não aparece em nenhuma página da A (VSEG AC4)", async (ctx) => {
+  const { a } = ctx.fixture.lojas;
+  const ocultos = a.imoveis.filter((imovel) => !imovel.visivel).map((imovel) => imovel.referencia.toLowerCase());
+  assert.equal(ocultos.length, 3);
+  for (const caminho of [`/c/${a.slug}`, `/c/${a.slug}?pagina=2`]) {
+    const html = htmlVisivel((await ctx.pedir(caminho)).texto).toLowerCase();
+    for (const ref of ocultos) assert.ok(!html.includes(ref), `${caminho}: lista ${ref}`);
+    for (const imovel of a.imoveis.filter((x) => !x.visivel)) {
+      assert.ok(!html.includes(`r$ ${imovel.precoReais.toLocaleString("pt-BR")}`), `${caminho}: mostra o preço de ${imovel.referencia}`);
+    }
+  }
+});
+
+registrar("T21 nenhuma página da A traz imóvel, bairro, preço ou foto da B, e vice-versa (VSEG AC3)", async (ctx) => {
+  const { a, b } = ctx.fixture.lojas;
+  const paginasDaA = ["", "?pagina=2"].map((q) => `/c/${a.slug}${q}`);
+  const exclusivosDaB = ["Bairro Beta Exclusivo", "BETA-EXCLUSIVO", "fotos.vitrine-e2e.test/b/"];
+  for (const imovel of b.imoveis) exclusivosDaB.push(`R$ ${imovel.precoReais.toLocaleString("pt-BR")}`);
+  for (const caminho of paginasDaA) {
+    const html = (await ctx.pedir(caminho)).texto;
+    for (const marca of exclusivosDaB) assert.ok(!html.includes(marca), `${caminho} contém "${marca}" da B`);
+  }
+
+  const paginaB = (await ctx.pedir(`/c/${b.slug}`)).texto;
+  for (const marca of ["Bairro Alfa", "fotos.vitrine-e2e.test/a/", "R$ 160.000", "R$ 400.000"]) {
+    assert.ok(!paginaB.includes(marca), `a página da B contém "${marca}" da A`);
+  }
+
+  // A referência AP-0001 existe nas duas lojas: cada uma mostra o preço da própria.
+  const paginaA2 = htmlVisivel((await ctx.pedir(`/c/${a.slug}?pagina=2`)).texto);
+  assert.ok(paginaA2.includes("R$ 160.000"), "A: preço de AP-0001 da A");
+  assert.ok(htmlVisivel(paginaB).includes("R$ 987.000"), "B: preço de AP-0001 da B");
+});
+
+registrar("T21 A sai em grade e B em editorial, cada uma pelos marcadores do próprio template (VTEMA AC4, AC5)", async (ctx) => {
+  const { a, b } = ctx.fixture.lojas;
+  const htmlA = htmlVisivel((await ctx.pedir(`/c/${a.slug}`)).texto);
+  const htmlB = htmlVisivel((await ctx.pedir(`/c/${b.slug}`)).texto);
+
+  assert.ok(htmlA.includes("astryx-clickable-card"), "A (grade): sem cards");
+  assert.ok(!htmlA.includes("astryx-list-item"), "A (grade): tem linhas de lista");
+  assert.ok(htmlB.includes("astryx-list-item"), "B (editorial): sem linhas de lista");
+  assert.ok(!htmlB.includes("astryx-clickable-card"), "B (editorial): tem cards");
+
+  // Cabeçalho do editorial: a foto do primeiro destaque (AP-0003) aparece no cabeçalho e na linha.
+  const primeiroDestaque = ordemDoCatalogo(b.imoveis)[0];
+  const foto = `https://fotos.vitrine-e2e.test/b/${primeiroDestaque}-1.jpg`;
+  assert.equal(htmlB.split(foto).length - 1, 2, "B: foto do destaque no cabeçalho e na linha");
+  assert.equal(htmlB.split("Destaque").length - 1 >= 1, true, "B: marcador Destaque na linha");
+
+  // Cada loja mantém o tema do layout em volta do catálogo (VTEMA AC7).
+  for (const loja of [a, b]) {
+    const bruto = (await ctx.pedir(`/c/${loja.slug}`)).texto;
+    const blocos = blocosDeStyle(bruto).map((x) => x.trim()).filter((x) => x.startsWith("@layer astryx-theme {"));
+    assert.equal(blocos.length, 1, `${loja.slug}: blocos de tema no catálogo`);
+    assert.ok(blocos[0].includes(`@scope ([data-astryx-theme="loja-${loja.slug}"])`), `${loja.slug}: escopo`);
+  }
+});
+
+registrar("T21 cards e linhas trazem foto com lazy, no-referrer e alt; imóvel sem foto mantém a moldura (VITEM AC6, AC8)", async (ctx) => {
+  const { a } = ctx.fixture.lojas;
+  const html = htmlVisivel((await ctx.pedir(`/c/${a.slug}`)).texto);
+  const tag = html.split("<img ").map((t) => t.slice(0, t.indexOf(">"))).find((t) => t.includes("/a/ap-0025-1.jpg"));
+  assert.ok(tag, "foto de AP-0025 não encontrada");
+  assert.match(tag, /loading="lazy"/);
+  assert.match(tag, /referrerPolicy="no-referrer"/i);
+  assert.match(tag, /alt="Apartamento em Bairro Alfa 25, foto 1 de 2"/);
+  const semFoto = a.imoveis.filter((imovel) => imovel.visivel && imovel.fotos === null).length;
+  assert.equal(html.split("Sem foto").length - 1, semFoto, "espaço reservado do imóvel sem foto");
+});
+
+registrar("T21 catálogo sem imóvel visível (D) → estado vazio com WhatsApp e HTTP 200 (VCAT AC7)", async (ctx) => {
+  const d = ctx.fixture.lojas.d;
+  const r = await ctx.pedir(`/c/${d.slug}`);
+  const html = htmlVisivel(r.texto);
+  assert.equal(r.status, 200);
+  assert.ok(html.includes("Nenhum imóvel disponível no momento."), "falta a mensagem de catálogo vazio");
+  assert.ok(!html.includes("astryx-clickable-card") && !html.includes("astryx-list-item"), "mostra imóvel");
+  // A descrição nos metadados ("Imóveis disponíveis em <cidade>/<uf>") não conta: só o título da seção.
+  assert.ok(!html.includes(">Imóveis disponíveis<"), "mostra a seção de imóveis");
+  const botoes = ancoras(html).filter((x) => x.texto.includes("Falar no WhatsApp"));
+  assert.equal(botoes.length, 2, "botões de WhatsApp: cabeçalho e estado vazio");
+  for (const botao of botoes) {
+    const url = new URL(botao.href);
+    assert.equal(url.origin + url.pathname, `https://wa.me/${d.whatsappComPrefixo}`);
+    assert.equal(url.searchParams.get("text"), `Olá! Vi a vitrine da ${d.nome} e gostaria de atendimento.`);
+  }
+});
+
+registrar("T21 paginação em português, só quando há mais de uma página (VCAT AC3, Edge Case de 24/25)", async (ctx) => {
+  const { a, b } = ctx.fixture.lojas;
+  const paginaA = htmlVisivel((await ctx.pedir(`/c/${a.slug}`)).texto);
+  assert.ok(paginaA.includes('aria-label="Paginação"'), "A: sem a navegação em português");
+  assert.ok(paginaA.includes('aria-label="Ir para a próxima página"'), "A: botão de próxima página");
+  assert.ok(!paginaA.includes("Go to") && !paginaA.includes('aria-label="Pagination"'), "A: texto em inglês da lib");
+
+  const paginaB = htmlVisivel((await ctx.pedir(`/c/${b.slug}`)).texto);
+  assert.ok(!paginaB.includes("astryx-pagination"), "B (4 imóveis) mostra paginação");
+});
+
+registrar("T21 og:* do catálogo no <head> para o user-agent do WhatsApp (VOG AC1, AC2, AC6)", async (ctx) => {
+  const { a, b } = ctx.fixture.lojas;
+  const cabecalhos = { "user-agent": UA_WHATSAPP };
+
+  const ra = await ctx.pedir(`/c/${a.slug}`, { cabecalhos });
+  assert.equal(metaDoHead(ra.texto, "og:title"), `${a.nome} — imóveis`);
+  assert.equal(metaDoHead(ra.texto, "og:description"), a.titulo, "descrição = título institucional");
+  assert.equal(metaDoHead(ra.texto, "og:url"), `${ctx.base}/c/${a.slug}`, "URL absoluta a partir de VITRINE_PUBLIC_URL");
+  assert.equal(metaDoHead(ra.texto, "twitter:card"), "summary_large_image");
+  assert.equal(metaDoHead(ra.texto, "twitter:title"), `${a.nome} — imóveis`);
+  assert.ok(ra.texto.includes(`<title>${a.nome} — imóveis</title>`), "<title>");
+
+  const rb = await ctx.pedir(`/c/${b.slug}`, { cabecalhos });
+  assert.equal(metaDoHead(rb.texto, "og:title"), `${b.nome} — imóveis`);
+  assert.equal(metaDoHead(rb.texto, "og:description"), "Imóveis disponíveis em Uberlândia/MG", "sem título institucional");
+});
+
+registrar("T21 cache: a mudança no banco só aparece depois do aviso certo; a loja B segue do cache (VCACHE AC8, AC9)", async (ctx) => {
+  const { a, b } = ctx.fixture.lojas;
+  const avisar = (slug: string, segredo: string) =>
+    ctx.pedir("/api/revalidar", {
+      metodo: "POST",
+      cabecalhos: { authorization: `Bearer ${segredo}` },
+      corpo: JSON.stringify({ slug }),
+    });
+  const preco = (html: string, valor: string) => htmlVisivel(html).includes(valor);
+
+  // Estado de partida: as duas lojas recém-lidas do banco.
+  assert.equal((await avisar(a.slug, ctx.segredo)).status, 204);
+  assert.equal((await avisar(b.slug, ctx.segredo)).status, 204);
+  assert.ok(preco((await ctx.pedir(`/c/${a.slug}`)).texto, "R$ 400.000"), "A: preço de partida de AP-0025");
+  assert.ok(preco((await ctx.pedir(`/c/${b.slug}`)).texto, "R$ 530.000"), "B: preço de partida de CA-0004");
+
+  // O banco muda nas duas lojas, sem aviso.
+  await ctx.db
+    .update(properties)
+    .set({ priceCents: 777_000n * 100n })
+    .where(and(eq(properties.tenantId, a.id), eq(properties.reference, "AP-0025")));
+  await ctx.db
+    .update(properties)
+    .set({ priceCents: 888_000n * 100n })
+    .where(and(eq(properties.tenantId, b.id), eq(properties.reference, "CA-0004")));
+
+  const antigaA = (await ctx.pedir(`/c/${a.slug}`)).texto;
+  assert.ok(preco(antigaA, "R$ 400.000") && !preco(antigaA, "R$ 777.000"), "A sem aviso: tem de seguir do cache");
+
+  // Segredo errado: 401 e a página continua a antiga.
+  assert.equal((await avisar(a.slug, "segredo-errado")).status, 401);
+  const aindaAntiga = (await ctx.pedir(`/c/${a.slug}`)).texto;
+  assert.ok(preco(aindaAntiga, "R$ 400.000") && !preco(aindaAntiga, "R$ 777.000"), "A com segredo errado");
+
+  // Aviso certo para A: A reflete o banco; B, que não foi avisada, segue do cache.
+  assert.equal((await avisar(a.slug, ctx.segredo)).status, 204);
+  const novaA = (await ctx.pedir(`/c/${a.slug}`)).texto;
+  assert.ok(preco(novaA, "R$ 777.000") && !preco(novaA, "R$ 400.000"), "A depois do aviso: tem de refletir o banco");
+  const paginaB = (await ctx.pedir(`/c/${b.slug}`)).texto;
+  assert.ok(preco(paginaB, "R$ 530.000") && !preco(paginaB, "R$ 888.000"), "B não foi avisada: tem de seguir do cache");
+
+  // O aviso da B, por fim, a atualiza.
+  assert.equal((await avisar(b.slug, ctx.segredo)).status, 204);
+  assert.ok(preco((await ctx.pedir(`/c/${b.slug}`)).texto, "R$ 888.000"), "B depois do próprio aviso");
+});
+
 // ── Globais: olham tudo o que as asserções acima (e as das tasks seguintes) pediram ──
 
 registrarGlobal("Global: X-Robots-Tag \"noindex, nofollow\" em toda resposta (VSEO AC2)", (ctx) => {
@@ -423,6 +668,14 @@ registrarGlobal("Global: nenhuma sentinela de PII ou de imóvel oculto no HTML n
       assert.ok(!r.texto.includes(sentinela), `sentinela "${sentinela}" em ${r.metodo} ${r.caminho}`);
     }
   }
+});
+
+registrarGlobal("Global: o servidor principal não registrou nenhum erro de render nem de leitura", (ctx) => {
+  const erros = ctx
+    .saidaDoServidor()
+    .split("\n")
+    .filter((linha) => linha.includes("⨯") || linha.includes("[vitrine] erro"));
+  assert.deepEqual(erros, [], "o log do servidor tem erro");
 });
 
 registrarGlobal("Global: o segredo da revalidação não aparece no log nem em resposta (VCACHE AC10)", (ctx) => {
@@ -570,6 +823,7 @@ export async function main(): Promise<number> {
       base,
       segredo,
       fixture,
+      db,
       saidaDoServidor: () => saida,
       respostas: () => registro,
       async iniciarInstancia(porta, sobrescritas) {
