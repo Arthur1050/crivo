@@ -303,6 +303,8 @@ T24 → T25
 
 ### T8: Links de contato
 
+**Status**: concluída em 2026-10-10 (9 testes verdes; 5 mutantes mortos; build gate sem erro novo).
+
 **What**: `linkWhatsapp(numero, mensagem)`, `mensagemItem(ref, loja)`, `mensagemCatalogo(loja)`, `linkTelefone`, `linkInstagram`.
 **Where**: `vitrine/src/lib/contato.ts`
 **Depends on**: T1
