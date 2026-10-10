@@ -2,6 +2,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { tagDaLoja } from "../contrato";
 import { dbDaApp } from "../db/conexao";
 import { imoveisDaLoja, imovelPorReferencia, lojaPorSlug } from "./consultas";
+import { lerDoBanco } from "./erro-de-leitura";
 
 /**
  * Única camada que importa `next/cache` (AD-042). Toda leitura de uma loja
@@ -10,25 +11,33 @@ import { imoveisDaLoja, imovelPorReferencia, lojaPorSlug } from "./consultas";
  * referência são argumentos, então fazem parte da chave do cache e cada loja
  * tem entradas próprias. `cacheLife` e `cacheTag` ficam dentro de cada função,
  * como a doc do Next pede.
+ *
+ * A consulta passa por `lerDoBanco`: falha do banco sai como `ErroDeLeitura`,
+ * sem o SQL nem o host, porque o Next imprime o erro das funções com `use cache`.
+ * A conexão da app é obtida fora dele: a mensagem de variável ausente não cita
+ * valor.
  */
 
 export async function lojaCacheada(slug: string) {
   "use cache";
   cacheLife("vitrine");
   cacheTag(tagDaLoja(slug));
-  return lojaPorSlug(dbDaApp(), slug);
+  const db = dbDaApp();
+  return lerDoBanco(() => lojaPorSlug(db, slug));
 }
 
 export async function imoveisCacheados(slug: string) {
   "use cache";
   cacheLife("vitrine");
   cacheTag(tagDaLoja(slug));
-  return imoveisDaLoja(dbDaApp(), slug);
+  const db = dbDaApp();
+  return lerDoBanco(() => imoveisDaLoja(db, slug));
 }
 
 export async function imovelCacheado(slug: string, referencia: string) {
   "use cache";
   cacheLife("vitrine");
   cacheTag(tagDaLoja(slug));
-  return imovelPorReferencia(dbDaApp(), slug, referencia);
+  const db = dbDaApp();
+  return lerDoBanco(() => imovelPorReferencia(db, slug, referencia));
 }

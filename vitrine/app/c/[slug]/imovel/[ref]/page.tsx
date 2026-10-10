@@ -1,4 +1,6 @@
+import { unstable_rethrow } from "next/navigation";
 import { Suspense } from "react";
+import { registrarErro, VitrineIndisponivel } from "../../../../../src/loja/indisponivel";
 import { ImovelIndisponivel } from "../../../../../src/loja/nao-encontrado";
 import { imovelCacheado } from "../../../../../src/dados/cache";
 import { referenciaDaUrl, slugValido } from "../../../../../src/lib/catalogo";
@@ -31,7 +33,14 @@ async function ImovelDaLoja({ params }: Props) {
   if (!slugValido(slug)) return null;
   const referencia = referenciaDaUrl(ref);
   if (!referencia) return <ImovelIndisponivel slug={slug} />;
-  const imovel = await imovelCacheado(slug, referencia);
+  let imovel: Awaited<ReturnType<typeof imovelCacheado>>;
+  try {
+    imovel = await imovelCacheado(slug, referencia);
+  } catch (erro) {
+    unstable_rethrow(erro);
+    registrarErro("imovel", erro);
+    return <VitrineIndisponivel />;
+  }
   if (!imovel) return <ImovelIndisponivel slug={slug} />;
   return null;
 }

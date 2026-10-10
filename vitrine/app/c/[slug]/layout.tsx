@@ -5,10 +5,12 @@ import { Layout, LayoutContent, LayoutHeader } from "@astryxdesign/core/Layout";
 import { Link } from "@astryxdesign/core/Link";
 import { Spinner } from "@astryxdesign/core/Spinner";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
+import { unstable_rethrow } from "next/navigation";
 import { Suspense } from "react";
 import { lojaCacheada } from "../../../src/dados/cache";
 import { linkWhatsapp, mensagemCatalogo } from "../../../src/lib/contato";
 import { slugValido } from "../../../src/lib/catalogo";
+import { registrarErro, VitrineIndisponivel } from "../../../src/loja/indisponivel";
 import { NaoEncontradoNeutro } from "../../../src/loja/nao-encontrado";
 import { RodapeLegal } from "../../../src/rodape/rodape-legal";
 import { TemaDaLoja } from "../../../src/tema/tema-da-loja-provider";
@@ -50,7 +52,16 @@ async function LojaComTema({ children, params }: Props) {
   // dentro de `<Suspense>`, o erro faz o servidor entregar o limite para render
   // no cliente e o HTML sem JS sai sem a página (só o fallback de carregamento).
   if (!slugValido(slug)) return <NaoEncontradoNeutro />;
-  const loja = await lojaCacheada(slug);
+  let loja: Awaited<ReturnType<typeof lojaCacheada>>;
+  try {
+    loja = await lojaCacheada(slug);
+  } catch (erro) {
+    // Banco indisponível: a mensagem sai no HTML, sem host, SQL nem pilha
+    // (VSEG-02). Os erros internos do Next (`notFound`, bailout) seguem adiante.
+    unstable_rethrow(erro);
+    registrarErro("loja", erro);
+    return <VitrineIndisponivel paginaInteira />;
+  }
   if (!loja) return <NaoEncontradoNeutro />;
 
   const whatsapp = linkWhatsapp(loja.whatsapp, mensagemCatalogo(loja.nome));

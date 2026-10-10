@@ -47,8 +47,23 @@ export interface Contexto {
   /** Faz a requisição e registra a resposta para as asserções globais. */
   pedir(
     caminho: string,
-    opcoes?: { metodo?: string; cabecalhos?: Record<string, string>; corpo?: string; binario?: boolean }
+    opcoes?: {
+      metodo?: string;
+      cabecalhos?: Record<string, string>;
+      corpo?: string;
+      binario?: boolean;
+      /** Outra instância (ver `iniciarInstancia`); sem isto, a instância principal. */
+      base?: string;
+    }
   ): Promise<RespostaRegistrada>;
+  /**
+   * Sobe outra instância da vitrine já construída, na `porta`, com variáveis de
+   * ambiente trocadas. É encerrada por `parar()` ou, no mais tardar, no fim da execução.
+   */
+  iniciarInstancia(
+    porta: number,
+    sobrescritas: Record<string, string>
+  ): Promise<{ base: string; saida: () => string; parar: () => void }>;
   /** O que o servidor imprimiu até agora (stdout e stderr). */
   saidaDoServidor(): string;
   /** Todas as respostas já registradas. */
@@ -352,6 +367,39 @@ registrar("T17 referência que não existe na loja A → não encontrado com a m
   }
 });
 
+// ── T18: vitrine indisponível ──────────────────────────────────────────────
+
+registrar("T18 banco inalcançável → a mensagem sai no HTML, sem host, senha, SQL nem pilha (VSEG-02)", async (ctx) => {
+  const host = "banco-inalcancavel.invalid";
+  const senha = "senha-de-teste-inalcancavel";
+  const outra = await ctx.iniciarInstancia(PORTA_E2E + 1, {
+    VITRINE_DATABASE_URL: `postgresql://crivo_vitrine:${senha}@${host}:5432/neondb`,
+  });
+  try {
+    const loja = ctx.fixture.lojas.a.slug;
+    for (const caminho of [`/c/${loja}`, `/c/${loja}/imovel/ap-0001`]) {
+      const r = await ctx.pedir(caminho, { base: outra.base });
+      const visivel = htmlVisivel(r.texto);
+      assert.equal(r.status, 200, `${caminho}: status (streaming → 200 pela doc)`);
+      assert.ok(visivel.includes("Vitrine temporariamente indisponível."), `${caminho}: falta a mensagem no HTML visível`);
+      assert.ok(!r.texto.includes("<!--$!-->"), `${caminho}: o limite caiu para render no cliente`);
+      assert.match(r.texto, /<meta name="robots" content="noindex/, `${caminho}: sem noindex`);
+      for (const proibido of [host, senha, "ENOTFOUND", "getaddrinfo", "node_modules", "vitrine\".\"lojas", "select \""]) {
+        assert.ok(!r.texto.includes(proibido), `${caminho}: o HTML contém "${proibido}"`);
+      }
+      assert.ok(!/\n\s+at\s/.test(r.texto), `${caminho}: o HTML contém pilha de chamadas`);
+      semMarcaDeLoja(ctx, visivel);
+    }
+    const log = outra.saida();
+    assert.match(log, /\[vitrine\] erro \(loja\): /, "o log não registrou a falha com o prefixo");
+    for (const proibido of [host, senha, "vitrine\".\"lojas", "select \""]) {
+      assert.ok(!log.includes(proibido), `o log contém "${proibido}"`);
+    }
+  } finally {
+    outra.parar();
+  }
+});
+
 // ── Globais: olham tudo o que as asserções acima (e as das tasks seguintes) pediram ──
 
 registrarGlobal("Global: X-Robots-Tag \"noindex, nofollow\" em toda resposta (VSEO AC2)", (ctx) => {
@@ -496,6 +544,7 @@ export async function main(): Promise<number> {
 
   const { db, encerrar } = abrirBancoDeTeste();
   let servidor: ChildProcess | null = null;
+  const instanciasExtras: ChildProcess[] = [];
   let saida = "";
   let falhou = false;
 
@@ -523,8 +572,22 @@ export async function main(): Promise<number> {
       fixture,
       saidaDoServidor: () => saida,
       respostas: () => registro,
+      async iniciarInstancia(porta, sobrescritas) {
+        let saidaExtra = "";
+        const processo = spawn(process.execPath, [BIN_DO_NEXT, "start", "-p", String(porta)], {
+          cwd: PASTA_DA_VITRINE,
+          env: { ...ambienteDoNext, ...sobrescritas } as NodeJS.ProcessEnv,
+          stdio: ["ignore", "pipe", "pipe"],
+        });
+        instanciasExtras.push(processo);
+        processo.stdout?.on("data", (parte) => (saidaExtra += String(parte)));
+        processo.stderr?.on("data", (parte) => (saidaExtra += String(parte)));
+        const baseExtra = `http://localhost:${porta}`;
+        await esperarServidor(baseExtra, processo);
+        return { base: baseExtra, saida: () => saidaExtra, parar: () => encerrarProcesso(processo) };
+      },
       async pedir(caminho, opcoes = {}) {
-        const resposta = await fetch(`${base}${caminho}`, {
+        const resposta = await fetch(`${opcoes.base ?? base}${caminho}`, {
           method: opcoes.metodo ?? "GET",
           headers: opcoes.cabecalhos,
           body: opcoes.corpo,
@@ -557,6 +620,7 @@ export async function main(): Promise<number> {
     falhou = true;
   } finally {
     encerrarProcesso(servidor);
+    for (const extra of instanciasExtras) encerrarProcesso(extra);
     try {
       await removerFixtureVitrine(db);
     } catch (e) {

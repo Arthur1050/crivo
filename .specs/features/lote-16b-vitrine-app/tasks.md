@@ -529,6 +529,8 @@ T24 → T25
 
 ### T18: Vitrine indisponível
 
+**Status**: concluída em 2026-10-10 (hash no `git log`; e2e 21 de 21; 2 mutantes mortos; 4 testes unitários novos do erro de leitura; capturas `t18-01` e `t18-02`; lint, typecheck e build da vitrine sem erro; `tsc` da raiz com os mesmos 50 erros).
+
 **What**: `app/c/[slug]/error.tsx` com "Vitrine temporariamente indisponível." e log `[vitrine] erro` sem dado de linha.
 **Where**: `vitrine/app/c/[slug]/error.tsx`
 **Depends on**: T16
