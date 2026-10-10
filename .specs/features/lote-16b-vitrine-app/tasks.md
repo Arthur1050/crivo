@@ -170,6 +170,8 @@ T24 → T25
 
 ### T2: Contrato da vitrine e paridade
 
+**Status**: concluída em 2026-10-10 (paridade 5 testes verdes, mutação de coluna só na vitrine quebra e foi desfeita; build gate sem erro novo).
+
 **What**: `vitrine/src/contrato.ts` (tag, layouts, fontes, payload, colunas) e o teste de paridade com `src/lib/storefront-contract.ts`.
 **Where**: `vitrine/src/contrato.ts`
 **Depends on**: T1
