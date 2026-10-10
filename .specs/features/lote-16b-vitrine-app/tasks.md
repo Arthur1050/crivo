@@ -121,6 +121,8 @@ T24 → T25
 
 ### T0: Gate de viabilidade (F8–F13, F19)
 
+**Status**: executada em 2026-10-10 (resultado em `validation.md`). **Gate reprovado em F10; lote parado, aguardando decisão do usuário.** F8, F9, F11 (build), F12, F13 (dois caminhos) e F19 passam. Hash: no commit que registra o gate.
+
 **What**: Comprovar F8–F13 e F19 do design com um protótipo descartável em `scratch/vitrine-prova/` (fora do git) lendo a branch `test` como `crivo_vitrine`; registrar resultado e fonte.
 **Where**: `.specs/features/lote-16b-vitrine-app/validation.md`
 **Depends on**: None
