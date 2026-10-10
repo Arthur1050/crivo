@@ -5,11 +5,11 @@ import { Layout, LayoutContent, LayoutHeader } from "@astryxdesign/core/Layout";
 import { Link } from "@astryxdesign/core/Link";
 import { Spinner } from "@astryxdesign/core/Spinner";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
-import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { lojaCacheada } from "../../../src/dados/cache";
 import { linkWhatsapp, mensagemCatalogo } from "../../../src/lib/contato";
 import { slugValido } from "../../../src/lib/catalogo";
+import { NaoEncontradoNeutro } from "../../../src/loja/nao-encontrado";
 import { RodapeLegal } from "../../../src/rodape/rodape-legal";
 import { TemaDaLoja } from "../../../src/tema/tema-da-loja-provider";
 
@@ -27,7 +27,8 @@ interface Props {
  * isso a resposta sai em streaming e o "não encontrado" de loja sai com HTTP 200
  * e `noindex` (assumption da spec, F8; doc `loading.md`). Slug fora do formato
  * não consulta o banco; slug sem loja visível (inexistente, inativa, sem
- * CRECI/WhatsApp) cai na página neutra de `app/not-found.tsx`, sem marca.
+ * CRECI/WhatsApp) mostra a página neutra, sem marca, com o mesmo texto de
+ * `app/not-found.tsx`.
  */
 export default function LojaLayout({ children, params }: Props) {
   return (
@@ -45,9 +46,12 @@ export default function LojaLayout({ children, params }: Props) {
 
 async function LojaComTema({ children, params }: Props) {
   const { slug } = await params;
-  if (!slugValido(slug)) notFound();
+  // A página neutra é renderizada aqui, não lançada com `notFound()`: lançado
+  // dentro de `<Suspense>`, o erro faz o servidor entregar o limite para render
+  // no cliente e o HTML sem JS sai sem a página (só o fallback de carregamento).
+  if (!slugValido(slug)) return <NaoEncontradoNeutro />;
   const loja = await lojaCacheada(slug);
-  if (!loja) notFound();
+  if (!loja) return <NaoEncontradoNeutro />;
 
   const whatsapp = linkWhatsapp(loja.whatsapp, mensagemCatalogo(loja.nome));
 

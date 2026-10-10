@@ -310,6 +310,48 @@ registrar("T16 o botão de WhatsApp do cabeçalho abre o wa.me com a mensagem de
   }
 });
 
+// ── T17: imóvel indisponível ───────────────────────────────────────────────
+
+/**
+ * HTML sem `<script>`: o payload RSC repete o texto das páginas, então um
+ * `includes` no corpo inteiro passaria mesmo com a UI só montada no cliente.
+ */
+function htmlVisivel(html: string): string {
+  return html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, "");
+}
+
+registrar("T17 páginas neutras (loja inativa, sem loja, slug inválido) estão no HTML sem JS, sem render no cliente", async (ctx) => {
+  for (const slug of [ctx.fixture.lojas.c.slug, "vt-e2e-sem-loja", "Slug_Invalido"]) {
+    const r = await ctx.pedir(`/c/${slug}`);
+    const visivel = htmlVisivel(r.texto);
+    assert.ok(visivel.includes(TEXTO_NEUTRO), `/c/${slug}: a mensagem neutra não está no HTML visível`);
+    assert.ok(!r.texto.includes("<!--$!-->"), `/c/${slug}: o limite caiu para render no cliente`);
+    semMarcaDeLoja(ctx, visivel);
+  }
+});
+
+registrar("T17 referência que não existe na loja A → não encontrado com a marca da A, o link do catálogo e noindex (VITEM AC5)", async (ctx) => {
+  const { a, b } = ctx.fixture.lojas;
+  for (const ref of ["ap-9999", "REF_INVALIDA$"]) {
+    const r = await ctx.pedir(`/c/${a.slug}/imovel/${encodeURIComponent(ref)}`);
+    const visivel = htmlVisivel(r.texto);
+    assert.equal(r.status, 200, `${ref}: status registrado (F8: 200 pela doc)`);
+    assert.ok(visivel.includes("Este imóvel não está mais disponível."), `${ref}: falta a mensagem no HTML visível`);
+    assert.ok(!r.texto.includes("<!--$!-->"), `${ref}: o limite caiu para render no cliente`);
+    const voltar = ancoras(visivel).find((x) => x.texto.includes("Ver todos os imóveis"));
+    assert.equal(
+      voltar?.href,
+      `/c/${a.slug}`,
+      `${ref}: link do catálogo (âncoras: ${JSON.stringify(ancoras(visivel))})`
+    );
+    assert.ok(visivel.includes(a.creci), `${ref}: CRECI da loja A`);
+    assert.ok(visivel.includes(a.razaoSocial), `${ref}: razão social da loja A`);
+    assert.match(r.texto, /<meta name="robots" content="noindex/, `${ref}: sem noindex`);
+    assert.match(visivel, new RegExp(`data-astryx-theme="loja-${a.slug}"`), `${ref}: sem a marca da loja A`);
+    assert.ok(!visivel.includes(b.nome), `${ref}: cita a loja B`);
+  }
+});
+
 // ── Globais: olham tudo o que as asserções acima (e as das tasks seguintes) pediram ──
 
 registrarGlobal("Global: X-Robots-Tag \"noindex, nofollow\" em toda resposta (VSEO AC2)", (ctx) => {

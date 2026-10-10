@@ -506,6 +506,8 @@ T24 → T25
 
 ### T17: Imóvel indisponível
 
+**Status**: concluída em 2026-10-10 (hash no `git log`; e2e 20 de 20; 2 mutantes mortos; capturas `t17-01` a `t17-03`; a mensagem é renderizada no servidor, não por `notFound()` em `<Suspense>`: ver `validation.md`; lint, typecheck e build da vitrine sem erro; `tsc` da raiz com os mesmos 50 erros).
+
 **What**: `app/c/[slug]/not-found.tsx` com "Este imóvel não está mais disponível.", link para o catálogo, dentro da marca da loja.
 **Where**: `vitrine/app/c/[slug]/not-found.tsx`
 **Depends on**: T16
