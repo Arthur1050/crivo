@@ -57,3 +57,5 @@ O `drop schema ... cascade` remove as views e os grants do schema. Se `drop role
 ## Produção
 
 Nada deste diretório roda em produção sem uma ação explícita e autorizada (lote 16c, uma ação por task). Em produção valem a mesma ordem, o mesmo papel só por SQL e a conferência do estado final antes de qualquer variável ser definida na Vercel.
+
+**Atenção ao índice de categoria.** O `drizzle-kit push` derruba `document_categories_tenant_id_lower_name_idx` e não o recria. Só o `db:push:test` o restaura. Em qualquer push de produção, recrie o índice (`create unique index if not exists "document_categories_tenant_id_lower_name_idx" on "document_categories" using btree ("tenant_id", lower("name"))`) e confira que ele existe antes de seguir; o L16c precisa de uma task para isso.

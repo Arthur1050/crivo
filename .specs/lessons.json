@@ -1149,37 +1149,20 @@
       "last_seen": "2026-10-08T21:06:05Z"
     },
     {
-      "id": "L-069",
-      "key": "surviving_mutant::etapa opcional injetada num executor de script precisa de teste que prove a ligacao na composicao real realsteps nao so a ordem no laco com simuladores",
-      "text": "Etapa opcional injetada num executor de script precisa de teste que prove a ligacao na composicao real (realSteps), nao so a ordem no laco com simuladores.",
-      "signal": "surviving_mutant",
-      "scope": "scripts",
-      "status": "candidate",
-      "features": [
-        "lote-16a-vitrine-lado-crm"
-      ],
-      "recurrence": 1,
-      "harmful": 0,
-      "evidence": [
-        "M27 scripts/test-db-push.ts:117 (scripts)"
-      ],
-      "created": "2026-10-09T17:04:39Z",
-      "last_seen": "2026-10-09T17:04:39Z"
-    },
-    {
       "id": "L-070",
       "key": "gate_fail::o drizzle kit push derruba a cada execucao o indice unico de expressao lower name e aborta no create unique index seguinte com saida 0 depois de qualquer push recrie e confira esse indice senao a recusa de categoria duplicada some do banco e um teste da suite falha longe da causa",
       "text": "O drizzle-kit push derruba a cada execucao o indice unico de expressao lower(name) e aborta no CREATE UNIQUE INDEX seguinte, com saida 0; depois de qualquer push recrie e confira esse indice, senao a recusa de categoria duplicada some do banco e um teste da suite falha longe da causa.",
       "signal": "gate_fail",
       "scope": "tooling,db",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-16a-vitrine-lado-crm"
       ],
       "recurrence": 1,
       "harmful": 0,
       "evidence": [
-        "scripts/test-db-push.ts:restoreDrizzleBlindIndexes (tooling,db)"
+        "scripts/test-db-push.ts:restoreDrizzleBlindIndexes (tooling,db)",
+        "STATE.md Handoff L15 Observações: índice document_categories_tenant_id_lower_name_idx sumiu dos 5 bancos de teste e derrubou 3 testes na 1ª Full; causa estabelecida no L16a, fix 2e120e6 (tooling,db)"
       ],
       "created": "2026-10-09T17:06:52Z",
       "last_seen": "2026-10-09T17:06:52Z"
@@ -1190,14 +1173,15 @@
       "text": "O setter url.password do WHATWG URL nao codifica o caractere %: monte a senha com encodeURIComponent e teste uma senha com caracteres especiais, senao uma senha com % vira URL invalida so em producao.",
       "signal": "gate_fail",
       "scope": "scripts,testing",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-16a-vitrine-lado-crm"
       ],
       "recurrence": 1,
       "harmful": 0,
       "evidence": [
-        "src/db/test-connection.ts:resolveVitrineTestUrl (scripts,testing)"
+        "src/db/test-connection.ts:resolveVitrineTestUrl (scripts,testing)",
+        "T7 7c64cca; src/db/__tests__/test-connection.test.ts:56 senha com % @ : / ? # (scripts,testing)"
       ],
       "created": "2026-10-09T17:06:52Z",
       "last_seen": "2026-10-09T17:06:52Z"
