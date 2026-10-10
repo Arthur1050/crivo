@@ -347,6 +347,8 @@ T24 → T25
 
 ### T10: Tema da loja
 
+**Status**: concluída em 2026-10-10 (13 testes verdes; 6 mutantes verificados e mortos; build gate sem erro novo; AD-046).
+
 **What**: `temaDaLoja({ slug, cor, fonte })` e `cssDoTema(tema)` em `vitrine/src/tema/tema-da-loja.ts` (puros, sem `next/font`): `defineTheme` estendendo o tema neutro, nome `loja-<slug>`, famílias por `tokens` (`--font-family-body` e `--font-family-heading` = `var(--font-<fonte>)`) e as duas camadas de CSS que a Astryx gera (`generateThemeCSS`; AD-046). `TemaDaLoja` (`'use client'`, porque `defineTheme` não roda em Server Component) em `vitrine/src/tema/tema-da-loja-provider.tsx`, que renderiza `<Theme mode="light">` com os dois `<style>`. E `vitrine/src/tema/fontes.ts` com as 4 fontes de `next/font/google` (`variable` = `--font-<id>`). O mapa fica em módulo próprio porque `next/font/google` é vazio fora do compilador do Next (`index.js` de 0 bytes) e não pode ser importado por um teste.
 **Where**: `vitrine/src/tema/tema-da-loja.ts`
 **Depends on**: T1, T2
