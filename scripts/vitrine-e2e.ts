@@ -1302,6 +1302,89 @@ registrar("V12 a fonte da loja chega ao HTML: o <html> traz a classe de cada fon
   }
 });
 
+// ── Fechamento do lote, rodada 3 do Verifier: editorial paginado, UF, tipo e meta robots ──
+
+registrar("V13 editorial com mais de 24 imóveis: paginação em português, 24 linhas na página 1 e 1 na 2 (VTEMA AC5)", async (ctx) => {
+  const { a } = ctx.fixture.lojas;
+  const definir = (layout: "grade" | "editorial") =>
+    ctx.db.update(tenantStorefronts).set({ layout }).where(eq(tenantStorefronts.tenantId, a.id));
+  try {
+    await definir("editorial");
+    await avisarVitrine(ctx, a.slug);
+    const esperada = ordemDoCatalogo(a.imoveis);
+    assert.equal(esperada.length, 25);
+    const p1 = textoLimpo((await ctx.pedir(`/c/${a.slug}`)).texto);
+    assert.ok(p1.includes("astryx-list-item") && !p1.includes("astryx-clickable-card"), "A não saiu em editorial");
+    assert.ok(p1.includes('aria-label="Paginação"'), "editorial sem a navegação de páginas");
+    assert.ok(p1.includes('aria-label="Ir para a próxima página"'), "editorial sem o botão de próxima página");
+    assert.deepEqual(referenciasNosLinks(trecho(p1, ">Imóveis disponíveis<"), a.slug), esperada.slice(0, 24), "página 1");
+    for (const caminho of [`/c/${a.slug}?pagina=2`, `/c/${a.slug}?pagina=99`]) {
+      const p2 = textoLimpo((await ctx.pedir(caminho)).texto);
+      assert.deepEqual(referenciasNosLinks(trecho(p2, ">Imóveis disponíveis<"), a.slug), esperada.slice(24), caminho);
+      assert.ok(p2.includes('aria-label="Paginação"'), `${caminho}: sem paginação`);
+    }
+  } finally {
+    await definir(a.layout);
+    await avisarVitrine(ctx, a.slug);
+  }
+});
+
+registrar("V14 meta robots exata (noindex, nofollow) no catálogo, no imóvel, no indisponível e na página neutra (VSEO AC1)", async (ctx) => {
+  const { a, b, d } = ctx.fixture.lojas;
+  const caminhos = [
+    `/c/${a.slug}`,
+    `/c/${a.slug}?pagina=2`,
+    `/c/${b.slug}`,
+    `/c/${d.slug}`,
+    `/c/${a.slug}/imovel/ap-0001`,
+    `/c/${a.slug}/imovel/ap-0005`,
+    `/c/${a.slug}/imovel/ap-9999`,
+    `/c/${ctx.fixture.lojas.c.slug}`,
+    "/c/Slug_Invalido",
+  ];
+  for (const caminho of caminhos) {
+    const r = await ctx.pedir(caminho);
+    assert.ok(
+      r.texto.includes('<meta name="robots" content="noindex, nofollow"'),
+      `${caminho}: meta robots diferente de "noindex, nofollow"`
+    );
+    assert.equal(r.texto.split('<meta name="robots"').length - 1, 1, `${caminho}: mais de uma meta robots`);
+  }
+});
+
+registrar("V15 a UF do imóvel vem do imóvel: mudar a UF no banco muda a página depois do aviso (VITEM AC1)", async (ctx) => {
+  const { a } = ctx.fixture.lojas;
+  const onde = and(eq(properties.tenantId, a.id), eq(properties.reference, "AP-0001"));
+  const [antes] = await ctx.db.select({ state: properties.state, updatedAt: properties.updatedAt }).from(properties).where(onde);
+  assert.equal(antes.state, "MG");
+  try {
+    await ctx.db.update(properties).set({ state: "SP" }).where(onde);
+    await avisarVitrine(ctx, a.slug);
+    const html = textoLimpo((await ctx.pedir(`/c/${a.slug}/imovel/ap-0001`)).texto);
+    assert.ok(html.includes(">Uberaba/SP<"), "a UF do imóvel não aparece");
+    assert.ok(!html.includes(">Uberaba/MG<"), "a UF antiga continua na página");
+  } finally {
+    await ctx.db.update(properties).set({ state: antes.state, updatedAt: antes.updatedAt }).where(onde);
+    await avisarVitrine(ctx, a.slug);
+  }
+});
+
+registrar("V16 o tipo do imóvel aparece no texto visível de cada card (grade) e de cada linha (editorial) (VCAT AC6)", async (ctx) => {
+  const { a, b } = ctx.fixture.lojas;
+  const rotulo = (tipo: string) => (tipo === "apartamento" ? "Apartamento" : "Casa");
+  const naPagina1 = ordemDoCatalogo(a.imoveis).slice(0, 24);
+  const htmlA = textoLimpo((await ctx.pedir(`/c/${a.slug}`)).texto);
+  for (const imovel of a.imoveis.filter((x) => x.visivel && naPagina1.includes(x.referencia.toLowerCase()))) {
+    const linha = `>${rotulo(imovel.tipo)} · Usado · ${imovel.referencia}<`;
+    assert.ok(htmlA.includes(linha), `A ${imovel.referencia}: falta ${linha}`);
+  }
+  const htmlB = textoLimpo((await ctx.pedir(`/c/${b.slug}`)).texto);
+  for (const imovel of b.imoveis.filter((x) => x.visivel)) {
+    const titulo = `${rotulo(imovel.tipo)} em ${imovel.bairro}`;
+    assert.ok(htmlB.includes(`>${titulo}<`), `B ${imovel.referencia}: falta o título "${titulo}"`);
+  }
+});
+
 // ── Globais: olham tudo o que as asserções acima (e as das tasks seguintes) pediram ──
 
 registrarGlobal("Global: X-Robots-Tag \"noindex, nofollow\" em toda resposta (VSEO AC2)", (ctx) => {

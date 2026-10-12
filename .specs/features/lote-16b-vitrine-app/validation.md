@@ -472,3 +472,166 @@ A reverificação por um agente novo (sem contexto anterior) reprovou o HEAD `b2
 | VTEMA AC3, fonte no HTML | e2e V12: o `<html>` declara a classe `__variable` das 4 fontes e as folhas de estilo da página definem `--font-<fonte>` |
 
 Sensor da correção (cópia dos arquivos, restaurados): `robots.ts` com `Disallow` (V9 e estático), segunda rota com POST (estático), `style` cru num título (estático), `mode="dark"` (V11 e estático) e o `<html>` sem a classe das fontes (V12) morrem. Com os cinco aplicados: 5 de 10 testes estáticos reprovam e 3 das 59 asserções do e2e reprovam. Sem mutante: 10 de 10 e 59 de 59.
+
+## Validation — Terceira verificação independente (HEAD 06a9175)
+
+**Result**: FAIL
+
+Verifier novo, sem contexto das rodadas anteriores: avaliação formada a partir da spec, do código e da execução dos testes; só depois comparada com as duas verificações acima. Regra evidence-or-zero: cada item precisa de um teste cujo valor asserido seja o da spec (ou captura, onde só o olho prova).
+
+- **Intervalo**: `git log --oneline ddbf72d^..06a9175` (38 commits; `677f29e`, renomeação de marca, ignorado). Código: `vitrine/`, `scripts/vitrine-*.ts`, `scripts/__tests__/vitrine-*`, `src/lib/storefront-contract.ts`, `src/db/__tests__/vitrine-*`, `src/lib/__tests__/vitrine-*` e `storefront-*`.
+- **Execução no HEAD limpo**: `npm run vitrine:e2e` → 59 de 59; `npx vitest run vitrine src/lib/__tests__/vitrine-isolamento.test.ts src/lib/__tests__/vitrine-superficie.test.ts src/lib/__tests__/storefront-contract-parity.test.ts src/lib/__tests__/vitrine-tipos-paridade.test.ts src/db/__tests__/vitrine-consultas.test.ts src/db/__tests__/vitrine-views-paridade.test.ts src/db/__tests__/vitrine-privilegios.test.ts src/db/__tests__/vitrine-views.test.ts scripts/__tests__/vitrine-dev.test.ts scripts/__tests__/vitrine-fixture.test.ts` → 22 arquivos, 186 de 186.
+- "e2e:N" = `scripts/vitrine-e2e.ts:N`. Os testes da vitrine estão em `vitrine/**/__tests__/`; os da raiz em `src/**/__tests__/`.
+
+### Cobertura por requisito e AC
+
+| Req. | AC | Teste (valor asserido) | Código | Veredito |
+| --- | --- | --- | --- | --- |
+| VPROJ-01 | AC1 | `vitrine-isolamento.test.ts:164-171` (4 arquivos e scripts) | `vitrine/package.json`, `next.config.ts`, `tsconfig.json`, `eslint.config.mjs` | OK |
+| VPROJ-01 | AC2 | `vitrine-isolamento.test.ts:173-176` | `vitrine/next.config.ts:6` | OK |
+| VPROJ-01 | AC3 | `vitrine-isolamento.test.ts:182-187` (estático) | — | OK |
+| VPROJ-01 | AC4 | `vitrine-isolamento.test.ts:189-199`, regra provada em `:90-153` | todo `vitrine/` | OK |
+| VPROJ-01 | AC5 | `vitrine-isolamento.test.ts:209-225` (tsc e ESLint da raiz) | `tsconfig.json`/`eslint.config` da raiz | OK |
+| VPROJ-01 | AC6 | `vitrine/src/db/__tests__/conexao.test.ts:9-35` (lê `VITRINE_DATABASE_URL`) | `vitrine/src/db/conexao.ts:25-33` | **Parcial**: nada prova o "só" (mutante X14 com `DATABASE_URL` antes sobrevive) |
+| VPROJ-02 | AC7 | `storefront-contract-parity.test.ts:23-51` | `vitrine/src/contrato.ts:11-64` | OK |
+| VPROJ-02 | AC8 | `storefront-contract-parity.test.ts:23-51`; `vitrine-views-paridade.test.ts:37-47` (contra `information_schema`) | `vitrine/src/db/views.ts:17-58` | OK |
+| VCAT-01 | AC1 | e2e:234-237 (200 em A, B, D); e2e:1045-1057 (nome, título, sobre); e2e:458-472 (imóveis da loja) | `app/c/[slug]/page.tsx:66-101`, `templates/comum/secoes.tsx:36-60` | OK |
+| VCAT-02 | AC2 | e2e:458-467 (destaques mais antigos e empate 19/20 na fixture); `vitrine-consultas.test.ts:152-165` | `vitrine/src/dados/consultas.ts:19-25` | OK |
+| VCAT-02 | AC3 | e2e:458-471; `vitrine/src/lib/__tests__/catalogo.test.ts:13-25` | `vitrine/src/lib/catalogo.ts:7`, `:22-36` | OK |
+| VCAT-02 | AC4 | e2e:474-481; `catalogo.test.ts:27-31` | `catalogo.ts:25-28` | OK |
+| VCAT-02 | AC5 | e2e:482-483; `catalogo.test.ts:33-44` | `catalogo.ts:27` | OK |
+| VCAT-01 | AC6 | e2e:1028-1043 (bairro, cidade, quartos, banheiros, vagas, área), e2e:545-555 (foto principal), e2e:616/:516 (preço no card), e2e:465 (link do item) | `templates/grade/catalogo-grade.tsx:12-41`, `templates/editorial/catalogo-editorial.tsx:18-47` | **Parcial**: o tipo do card em grade só é visto pelo `alt` e pelo rótulo acessível (mutante X1 tira o tipo do texto do card e sobrevive) |
+| VCAT-01 | AC7 | e2e:557-573 (mensagem, 2 botões `wa.me` com a mensagem de catálogo, 200) | `templates/comum/secoes.tsx:13-33` | OK |
+| VCAT-03 | AC8 | e2e:1218-1233 (banco inalcançável, slug inválido → neutra sem erro de leitura); `catalogo.test.ts:51-67` | `app/c/[slug]/layout.tsx:54`, `catalogo.ts:39-43` | OK |
+| VCAT-03 | AC9 | e2e:222-232, e2e:344-352 (C e slug sem loja: sem nome, razão, CRECI, cor nem tema) | `layout.tsx:65`, `src/loja/nao-encontrado.tsx:9-19` | OK |
+| VCAT-03 | AC10 | e2e:125, :133, :228, :370 (`noindex`); e2e:720-741 e Global e2e:1320 (sem dado de imóvel) | `app/layout.tsx:21` | OK |
+| VCAT-01 | AC11 | `vitrine/src/lib/__tests__/apresentacao.test.ts:14-28` (`R$ 520.000`); e2e:678 | `vitrine/src/lib/apresentacao.ts:10-13` | OK |
+| VCAT-01 | AC12 | e2e:319-332 (A 11 dígitos, B 13, D 10) | `layout.tsx:67`, `:90-98` | OK |
+| VITEM-01 | AC1 | e2e:667-688 e e2e:690-701 (cada atributo do próprio campo) | `src/item/pagina-item.tsx:56-127` | **Parcial**: a UF asserida (`Uberaba/MG`) coincide com uma constante; toda a fixture visível é `MG` (mutante X3 com `MG` fixo sobrevive) |
+| VITEM-01 | AC2 | e2e:703-718 (`AP-0001` e `ap-0001`, `og:url` e links em minúsculas); `catalogo.test.ts:70-87` | `catalogo.ts:46-67` | OK |
+| VITEM-02 | AC3 | e2e:810-829 (decodificado igual ao texto da spec); `contato.test.ts:36-41` | `src/lib/contato.ts:16-25`, `pagina-item.tsx:61` | OK |
+| VITEM-02 | AC4 | e2e:820 (A 11 dígitos → `55`, B 13 sem prefixo), e2e:325 (D 10 dígitos); `contato.test.ts:16-24` (10/11 com, 12/13 sem) | `contato.ts:10-13` | OK |
+| VITEM-02 | AC5 | e2e:354-374 (marca da A, CRECI, razão, link `/c/<slug>`, `noindex`); e2e:720-741 | `src/loja/nao-encontrado.tsx:26-35`, `imovel/[ref]/page.tsx:83`, `:95` | OK |
+| VITEM-01 | AC6 | e2e:802-808 ("Sem foto", sem `<img>`); e2e:554 no card; ícone e proporção: captura `t23-03`, `t23-05` | `templates/comum/foto-do-imovel.tsx:19-38`, `espaco-sem-foto.tsx:25-34` | OK (proporção e ícone por captura) |
+| VITEM-01 | AC7 | e2e:776-787; estático `vitrine-superficie.test.ts:92-97` (sem `dangerouslySetInnerHTML`) | `pagina-item.tsx:18-30` | OK |
+| VITEM-01 | AC8 | e2e:789-800 (item, 2 fotos); e2e:545-552 (card) | `item/galeria-do-imovel.tsx:45`, `foto-do-imovel.tsx:27-32` | OK |
+| VSEG-01 | AC1 | `vitrine-privilegios.test.ts:166` (só 2 grants, SELECT nas 2 views) e `:176`; `vitrine-consultas.test.ts:107-111` (`current_user` = `krivo_vitrine`) | `vitrine/src/db/views.ts` | OK |
+| VSEG-01 | AC2 | `vitrine-consultas.test.ts:114-133`; e2e:754-774 | `consultas.ts:23`, `:38` | OK |
+| VSEG-01 | AC3 | e2e:499-518, e2e:754-774; `vitrine-consultas.test.ts:114-133` | idem | OK |
+| VSEG-01 | AC4 | e2e:486-497, e2e:720-741, Global e2e:1320; `vitrine-consultas.test.ts:135-148` | view (L16a) | OK |
+| VSEG-02 | AC5 | Global e2e:1320-1328 (sentinelas de captador, logradouro, número, complemento e lead no HTML, nos metadados e no log); a imagem OG só recebe nome, cor, cidade e UF (`opengraph-image.tsx:39-63`), e as views não têm coluna de PII (`vitrine-views.test.ts:101`) | — | OK |
+| VSEG-02 | AC6 | `vitrine-superficie.test.ts:57-74`; e2e:1247-1259 | `app/api/revalidar/route.ts:19-49` | OK |
+| VSEG-02 | AC7 | Global e2e:1314-1318; `route.test.ts:110-118` | — | OK |
+| VSEG-01 | AC8 | `vitrine-consultas.test.ts:107-148` (como `krivo_vitrine`, com linhas de outra loja e ocultas) | — | OK |
+| VTEMA-01 | AC1 | e2e:1261-1275 (`data-theme="light"`); `vitrine-superficie.test.ts:134-138`; `tema-da-loja.test.ts:16-26` (sem cor = accent do neutro; cores diferentes = accents diferentes) | `src/tema/tema-da-loja.ts:30-46`, `tema-da-loja-provider.tsx:31` | OK |
+| VTEMA-01 | AC2 | `tema-da-loja.test.ts:33-41`; `cor.test.ts:9-14`; e2e:266-280 (D sem cor) | `tema/cor.ts:8-20` | OK |
+| VTEMA-01 | AC3 | e2e:282-294, e2e:1277-1303; `tema-da-loja.test.ts:58-71` | `tema-da-loja.ts:36-44`, `tema/fontes.ts`, `app/layout.tsx:29` | OK |
+| VTEMA-02 | AC4 | e2e:458-471 (faixa e grade), e2e:1069-1123 (6 de 8 destaques), e2e:575-584 (paginação), e2e:1045-1057 (Sobre), e2e:296-317 (rodapé) | `catalogo-grade.tsx:49-82`, `page.tsx:87-98` | OK |
+| VTEMA-02 | AC5 | e2e:520-534 (foto do 1º destaque no cabeçalho, linhas `astryx-list-item`), e2e:1045-1057 (Sobre), rodapé e2e:296 | `catalogo-editorial.tsx:56-90` | **Parcial**: a paginação do editorial não tem nenhuma prova (B tem 4 imóveis; nenhuma asserção nem captura do editorial com mais de 24); mutante X2 tira `{paginacao}` do editorial e sobrevive |
+| VTEMA-02 | AC6 | e2e:1103-1133 | `catalogo-grade.tsx:54`, `catalogo-editorial.tsx:63` | OK |
+| VTEMA-01 | AC7 | e2e:234-280; `tema-da-loja.test.ts:75-102` | `tema-da-loja.ts:60-66`, `tema-da-loja-provider.tsx:24-37` | OK |
+| VTEMA-02 | AC8 | `vitrine-superficie.test.ts:78-109` (estático) | `vitrine/app`, `vitrine/src` | OK |
+| VTEMA-02 | AC9 | capturas `t25-02/04/06/08..14`, `t23-04..06`, `t21-06..08` (conferi `t25-02`, `t25-06`); tabela de larguras da T25 neste arquivo | — | OK (captura) |
+| VLEGAL-01 | AC1 | e2e:296-304 (catálogo A, B, D), e2e:1059-1067 (item e imóvel indisponível), e2e:368-369 | `src/rodape/rodape-legal.tsx:24-59` | OK |
+| VLEGAL-01 | AC2 | e2e:306-316 (A com endereço, telefone e Instagram; B sem Instagram) | `rodape-legal.tsx:35-55` | OK |
+| VLEGAL-01 | AC3 | e2e:309; `contato.test.ts:66-71` | `contato.ts:39-42` | OK |
+| VLEGAL-01 | AC4 | e2e:310, :315 (10 e 11 dígitos); `contato.test.ts:58-64` | `contato.ts:33-36` | OK |
+| VOG-01 | AC1 | e2e:586-601 (catálogo), e2e:831-842 (item), e2e:888-903 (`og:image` absoluto em A, B, D e no item sem foto) | `page.tsx:26-44`, `imovel/[ref]/page.tsx:24-59`, `app/layout.tsx:8-19` | OK para catálogo e item (ver observação 1 sobre a página de imóvel indisponível) |
+| VOG-01 | AC2 | e2e:591-600; `apresentacao.test.ts:69-87` | `apresentacao.ts:81-89` | OK |
+| VOG-01 | AC3 | e2e:835-836; `apresentacao.test.ts:89-103` | `apresentacao.ts:92-99` | OK |
+| VOG-01 | AC4 | e2e:837, :840 (1ª foto); e2e:900-902 (sem foto → cartão da loja) | `imovel/[ref]/page.tsx:32-35` | OK |
+| VOG-01 | AC5 | e2e:905-924 (PNG 1200×630, pixel = hex da loja), e2e:1198-1216 (nome muda o PNG), e2e:939-996 (sem saída de rede) | `opengraph-image.tsx:25-68` | OK |
+| VOG-01 | AC6 | e2e:586-601, e2e:831-842 (UA do WhatsApp, `metaDoHead` corta em `</head>`) | — | OK |
+| VCACHE-01 | AC1 | `vitrine/src/dados/__tests__/cache.test.ts:52-61` | `src/dados/cache.ts:21-43` | OK |
+| VCACHE-01 | AC2 | `vitrine-isolamento.test.ts:173-176` | `next.config.ts:7-10` | OK |
+| VCACHE-02 | AC3 | `route.test.ts:39-50`; e2e:138-146 | `route.ts:36-38` | OK |
+| VCACHE-02 | AC4 | `route.test.ts:52-70`; e2e:148-161, e2e:633-635 | `route.ts:21-28`, `revalidacao.ts:24-25` | OK |
+| VCACHE-02 | AC5 | `route.test.ts:72-78`; `revalidacao.test.ts:61-87`; e2e:163-170 | `revalidacao.ts:36-50` | OK |
+| VCACHE-02 | AC6 | `route.test.ts:80-87`; e2e:172-182 | `route.ts:42-49` | OK |
+| VCACHE-02 | AC7 | `vitrine/src/__tests__/revalidacao.test.ts:47-53` (espião de `timingSafeEqual`, buffers de 32 bytes) | `revalidacao.ts:20-29` | **Parcial**: o espião só é conferido no caminho do segredo certo; um retorno antecipado com `!==` antes do `timingSafeEqual` (mutante X4b) passa em toda a suíte |
+| VCACHE-01 | AC8 | e2e:603-647 | `cache.ts`, `route.ts:36` | OK |
+| VCACHE-01 | AC9 | e2e:629-635 (sem aviso segue do cache); teto de 300 s pela configuração (`vitrine-isolamento.test.ts:175`) | — | OK |
+| VCACHE-02 | AC10 | `route.test.ts:89-108`; e2e:184-189; Global e2e:1338-1343 | `route.ts:26`, `:32`, `:37` | OK |
+| VSEO-01 | AC1 | e2e:125, :133, :228 (`noindex, nofollow` completo nas neutras); e2e:370, :392, :685, :739 (só o prefixo `noindex` no item, indisponível e erro) | `app/layout.tsx:21` | **Parcial**: nenhuma asserção da meta no catálogo de uma loja (A, B, D), e nas páginas de item só o prefixo; mutante X5 (`robots: { index: false, follow: true }` no `generateMetadata` do catálogo) sobrevive |
+| VSEO-01 | AC2 | Global e2e:1307-1312; e2e:1243 | `next.config.ts:20` | OK |
+| VSEO-01 | AC3 | `vitrine-superficie.test.ts:113-130`; e2e:1237-1245 | — | OK |
+
+| Edge Case | Teste | Veredito |
+| --- | --- | --- |
+| 24 imóveis → uma página, sem paginação | e2e:1142-1168 (V5); `catalogo.test.ts:13-19` | OK |
+| 25 imóveis → página 2 com 1 | e2e:469-470; `catalogo.test.ts:21-25` | OK |
+| Foto quebrada mantém proporção e `alt` | captura `t21-01-grade-loja-a-desktop-foto-quebrada` (conferida) | OK (captura) |
+| `<script>` na descrição | e2e:776-787 | OK |
+| `ap-0142` casa com `AP-0142` | e2e:703-714; `vitrine-consultas.test.ts:168-176` | OK |
+| Banco indisponível | e2e:378-407 (T18); `erro-de-leitura.test.ts:17-32` | OK |
+| Loja desativada + aviso → neutra | e2e:1170-1196 (V6) | OK |
+
+**Contagem** (75 itens: 68 ACs e 7 Edge Cases): com prova 69 (dos quais 3 por captura: VTEMA AC9, foto quebrada e a proporção/ícone de VITEM AC6); **parcial 6** (VTEMA AC5, VCACHE AC7, VSEO AC1, VITEM AC1, VCAT AC6, VPROJ AC6); sem nenhuma prova 0. Em VTEMA AC5, o elemento "paginação" do editorial tem prova zero.
+
+### Sensor de discriminação
+
+Método: cópia do arquivo em `scratchpad/verifier3/`, mutação no arquivo real, teste-alvo, restauração imediata e `git status --short` vazio antes do próximo; um processo de teste por vez; nenhum teste editado. M3: a forma sem o 2º argumento não compila no Next 16.2; usado o perfil `"max"`, que compila (`tsc --noEmit` da vitrine com saída 0). Mutantes que só podem morrer no e2e e não interagem (páginas e asserções disjuntas) foram agrupados numa execução e atribuídos pelo nome da asserção que reprovou.
+
+| # | Arquivo | Mutação | Teste que matou | Desfecho |
+| --- | --- | --- | --- | --- |
+| M1 | `vitrine/src/dados/consultas.ts:23` | `imoveisDaLoja` sem o filtro de slug | `vitrine-consultas.test.ts:122-123` (e mais 4 do arquivo) | morto |
+| M2 | `vitrine/src/dados/cache.ts:24,32,40` | `cacheTag("tenant:catalogo")` fixo | `cache.test.ts:57` (as 3 funções) | morto |
+| M3 | `vitrine/app/api/revalidar/route.ts:36` | `{ expire: 0 }` → `"max"` | `route.test.ts:43` | morto |
+| M4 | `vitrine/src/revalidacao.ts:28` | `partes[1].trim() === segredo` no lugar de `timingSafeEqual` | `revalidacao.test.ts:49` | morto |
+| M5 | `vitrine/src/lib/contato.ts:12` | prefixo `55` também com 12 dígitos | `contato.test.ts:22`, `:59` | morto |
+| M6 | `vitrine/src/lib/catalogo.ts:27` | sem `Math.min(pedida, totalPaginas)` | `catalogo.test.ts:35`, `:43`, `:47` | morto |
+| M7a | `vitrine/next.config.ts:20` | sem o cabeçalho `X-Robots-Tag` | e2e:1310 (Global) e e2e:1243 (V9) — 57 de 59 | morto |
+| M7b | `vitrine/app/layout.tsx:21` | sem `robots` no metadado do layout raiz | e2e:125, :133, :228, :370, :392, :685, :739 — 52 de 59 | morto |
+| M8 | `vitrine/src/item/pagina-item.tsx:122` | descrição num `<p dangerouslySetInnerHTML>` com `<br/>` | e2e:780 (T23 `<script>`) — 58 de 59; estático `vitrine-superficie.test.ts:95` | morto |
+| X1 | `templates/grade/catalogo-grade.tsx:28` | card sem o tipo no texto (fica no `alt` e no rótulo) | nenhum (e2e 59 de 59, lote com X2, X3, X5) | **SOBREVIVEU** |
+| X2 | `templates/editorial/catalogo-editorial.tsx:81` | editorial sem `{paginacao}` | nenhum (e2e 59 de 59) | **SOBREVIVEU** |
+| X3 | `src/item/pagina-item.tsx:89` | UF do imóvel trocada por `MG` fixo | nenhum (e2e 59 de 59) | **SOBREVIVEU** |
+| X4b | `src/revalidacao.ts:28` | `if (partes[1].trim() !== segredo) return false;` antes do `timingSafeEqual` | nenhum (`revalidacao.test.ts` e `route.test.ts` 19 de 19) | **SOBREVIVEU** |
+| X5 | `app/c/[slug]/page.tsx:36` | `robots: { index: false, follow: true }` no catálogo | nenhum (e2e 59 de 59) | **SOBREVIVEU** |
+| X6 | `app/c/[slug]/imovel/[ref]/page.tsx:40` | `openGraph` sem `title` | — | equivalente (o Next herda o `title` da página em `og:title`; saída igual), fora do placar |
+| X6b | idem | `og:title` do item = a descrição | e2e:835 — 58 de 59 | morto |
+| X7 | `src/lib/contato.ts:24` | referência da mensagem do WhatsApp sem maiúsculas | `contato.test.ts:38`, `:52` | morto |
+| X8 | `src/lib/contato.ts:40` | Instagram sem tirar o `@` | `contato.test.ts:68` | morto |
+| X9 | `src/lib/contato.ts:34` | `tel:` sem o `55` | `contato.test.ts:59` | morto |
+| X10 | `src/dados/consultas.ts:24` | ordem sem o destaque primeiro | `vitrine-consultas.test.ts:164` | morto |
+| X11 | `src/dados/consultas.ts:38` | `imovelPorReferencia` sem o filtro de slug | `vitrine-consultas.test.ts:131` | morto |
+| X12 | `templates/comum/foto-do-imovel.tsx:31` | sem `referrerPolicy` | e2e:551 — lote 55 de 59 | morto |
+| X13 | `templates/comum/secoes.tsx:21` | estado vazio sem o botão de WhatsApp | e2e:567 — lote 55 de 59 | morto |
+| X15 | `src/rodape/rodape-legal.tsx:56` | rodapé sem o aviso legal | e2e:303 e e2e:1064 — lote 55 de 59 | morto |
+| X14 | `src/db/conexao.ts:27` | `DATABASE_URL \|\| VITRINE_DATABASE_URL` | nenhum (`conexao.test.ts`, isolamento e superfície 25 de 25; no e2e o filho não recebe as variáveis do CRM) | **SOBREVIVEU** |
+
+**Placar**: 24 mutantes não equivalentes, **18 mortos, 6 sobreviventes**. Os 8 alvos obrigatórios (9 mutantes, M7 em dois) morrem. Os 6 sobreviventes confirmam as 6 provas parciais da contagem. Corte por status (vendido, reservado, despublicado): não há mutante dentro de `vitrine/` (o corte é da view do L16a, que o papel só lê); provas em `vitrine-consultas.test.ts:135-148`, `vitrine-views.test.ts:153` e e2e:720-741.
+
+### Lacunas (ranqueadas)
+
+Todas são de prova: o código do HEAD cumpre cada item por inspeção. Nenhuma pede mudança de produto, só testes (exceto a observação 1, que pede decisão).
+
+1. **VTEMA AC5, paginação do layout editorial sem prova** (P1): a fixture só põe o editorial na B, com 4 imóveis; nenhuma asserção nem captura mostra a paginação do editorial. Fechar no e2e trocando o layout da A para `editorial` (com restauração e aviso, como a V4) e conferindo `aria-label="Paginação"` na página 1 e o 25º imóvel em `?pagina=2`. Mutante X2 sobrevive.
+2. **VCACHE AC7, tempo constante só no caminho de sucesso** (P1, segurança): `revalidacao.test.ts:47-53` chama `verificarSegredo` só com o segredo certo. Fechar conferindo o espião também com segredo errado do mesmo tamanho e de outro tamanho (uma chamada de `timingSafeEqual`, buffers de 32 bytes, em cada caso). Mutante X4b sobrevive.
+3. **VSEO AC1, meta `robots` não asserida no catálogo** (P2): as asserções cobrem as páginas neutras, o item, o indisponível e o erro (estas só pelo prefixo `noindex`), nunca `/c/<slug>` de uma loja visível. Fechar com `<meta name="robots" content="noindex, nofollow">` completo em A, B, D e no item. Mutante X5 sobrevive.
+4. **VITEM AC1, UF sem discriminação**: toda a fixture visível é `MG`, então `MG` fixo passa. Fechar com um imóvel visível de UF diferente da loja (ex.: um imóvel da A em `SP`) e asserção do texto `<cidade>/<UF>`. Mutante X3 sobrevive.
+5. **VCAT AC6, tipo do card em grade só pelo `alt`/rótulo acessível**: fechar com asserção do texto visível do card (`Apartamento · Usado · AP-0025`). Mutante X1 sobrevive. (Apontado como menor pela verificação anterior, sem mutante.)
+6. **VPROJ AC6, o "só" de `VITRINE_DATABASE_URL`**: fechar com teste de `conexao.ts` com `DATABASE_URL` definida e `VITRINE_DATABASE_URL` vazia (tem de falhar) ou estático (nenhuma outra variável de banco lida em `vitrine/`). Mutante X14 sobrevive.
+
+Observação 1 (decisão, não prova): VOG AC1 pede `og:title`, `og:description`, `og:url` e `twitter:card` "em toda página de loja", e VLEGAL AC1 trata o imóvel indisponível como página de loja. Hoje essa página só herda `og:image` do segmento, e o e2e:738 afirma a ausência de `og:title`. Usar os metadados do catálogo da loja ali não vazaria dado do imóvel; ou registrar na spec que a página de imóvel indisponível fica fora de VOG AC1.
+
+Comparação com as verificações anteriores (feita depois da avaliação acima): as 5 lacunas da segunda verificação estão fechadas pela F2 e reconfirmadas aqui (estático e e2e V9–V12 verdes; os mutantes M7a/M8 também morrem pelos testes novos). Os itens 1 a 4 e 6 acima são novos; o item 5 já constava como menor.
+
+### Rodada de correção 3 (F3) — lacunas da terceira verificação
+
+O HEAD `06a9175` foi reprovado por um terceiro agente novo, de novo por prova parcial e não por produto: 6 ACs com mutante sobrevivente (VTEMA AC5, VCACHE AC7, VSEO AC1, VITEM AC1, VCAT AC6, VPROJ AC6). Nenhum código de `vitrine/` mudou na F3.
+
+| Lacuna | Prova nova |
+| --- | --- |
+| VTEMA AC5, paginação do editorial | e2e V13: A trocada para `editorial` no banco (25 imóveis): linhas e navegação em português, 24 na página 1, 1 na 2 e na `?pagina=99`; layout restaurado |
+| VCACHE AC7, comparação em tempo constante sempre | `vitrine/src/__tests__/revalidacao.test.ts`: `timingSafeEqual` é chamado uma vez também com segredo errado, de outro tamanho ou de 500 caracteres |
+| VSEO AC1, meta `robots` | e2e V14: exatamente uma `<meta name="robots" content="noindex, nofollow">` no catálogo (A, página 2, B, D), no imóvel, no sem foto, no indisponível, na loja inativa e no slug inválido |
+| VITEM AC1, UF do imóvel | e2e V15: a UF de `AP-0001` vira `SP` no banco, avisa, a página mostra `Uberaba/SP` e não `Uberaba/MG`; restaura |
+| VCAT AC6, tipo no card | e2e V16: a linha `Tipo · Usado · REF` de cada card de A e o título `Tipo em bairro` de cada linha de B |
+| VPROJ AC6, só `VITRINE_DATABASE_URL` | `vitrine/src/db/__tests__/conexao.test.ts`: com a variável do CRM definida e a da vitrine vazia, a conexão da app falha; `vitrine-superficie.test.ts`: nenhum arquivo da vitrine lê outra variável de conexão |
+
+Sensor da correção (cópia dos arquivos, restaurados): editorial sem paginação (V13), meta `noindex, follow` no imóvel (V14), UF fixa em `MG` (V15), card sem o tipo (V16), recusa por comparação direta antes do `timingSafeEqual` (teste de revalidação) e leitura da variável do CRM (teste de conexão e teste estático) morrem. Com os mutantes: 3 de 26 testes unitários e estáticos e 4 de 63 asserções do e2e reprovam. Sem mutante: 26 de 26 e 63 de 63.
+
+### Ponto que depende de decisão do usuário (não resolvido)
+
+A terceira verificação apontou que a página de imóvel indisponível (VITEM AC5) não traz `og:title`, `og:description`, `og:url` nem `twitter:card`, e o e2e T23 exige essa ausência de propósito (nenhum dado do imóvel pode vazar). A VOG AC1 diz "em toda página de loja", e a VLEGAL AC1 trata essa página como página de loja. As duas saídas mudam algo que não é só prova: (a) emitir ali os metadados do catálogo da loja (código novo e a asserção de ausência da T23 muda); ou (b) registrar na spec que a página de imóvel indisponível fica fora da VOG AC1 (emenda de AC). Nenhuma foi aplicada: é decisão do usuário. Depois dela, a verificação final precisa rodar de novo no HEAD resultante.

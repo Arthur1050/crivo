@@ -86,3 +86,19 @@ describe("L16b T11 — lerCorpo (VCACHE-02 AC5)", () => {
     }
   });
 });
+
+describe("L16b fechamento — a comparação roda sempre (VCACHE-02 AC7)", () => {
+  beforeEach(() => {
+    espiao.timingSafeEqual.mockClear();
+  });
+
+  it("chama timingSafeEqual também com segredo errado, de outro tamanho ou muito longo", () => {
+    const mesmoTamanho = SEGREDO.slice(0, -1) + (SEGREDO.endsWith("9") ? "8" : "9");
+    const tentativas = [mesmoTamanho, `${SEGREDO}x`, SEGREDO.slice(0, 5), "x".repeat(500), "curto"];
+    for (const tentativa of tentativas) {
+      espiao.timingSafeEqual.mockClear();
+      expect(verificarSegredo(`Bearer ${tentativa}`, SEGREDO)).toBe(false);
+      expect(espiao.timingSafeEqual, `Bearer ${tentativa.slice(0, 8)}…`).toHaveBeenCalledTimes(1);
+    }
+  });
+});

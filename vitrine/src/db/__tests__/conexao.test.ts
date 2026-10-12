@@ -44,3 +44,18 @@ describe("L16b T4 — conexão da vitrine (VPROJ-01 AC6)", () => {
     await db.$client.end();
   });
 });
+
+describe("L16b fechamento — a conexão da app lê só VITRINE_DATABASE_URL (VPROJ-01 AC6)", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+
+  it("com DATABASE_URL definida e VITRINE_DATABASE_URL vazia a conexão da app continua falhando", async () => {
+    vi.stubEnv("DATABASE_URL", "postgres://dono:senha@host.invalido:5432/banco");
+    vi.stubEnv("VITRINE_DATABASE_URL", "");
+    vi.resetModules();
+    const { dbDaApp } = await import("../conexao");
+    expect(() => dbDaApp()).toThrow(/VITRINE_DATABASE_URL/);
+  });
+});

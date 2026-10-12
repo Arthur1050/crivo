@@ -53,6 +53,17 @@ const CARTAO_DE_COMPARTILHAMENTO = "app/c/[slug]/opengraph-image.tsx";
 /** Os dois `<style>` com a saída de `generateThemeCSS` (AD-046). */
 const PROVEDOR_DO_TEMA = "src/tema/tema-da-loja-provider.tsx";
 
+describe("VPROJ AC6: o banco só entra por VITRINE_DATABASE_URL", () => {
+  it("nenhum arquivo da vitrine lê a DATABASE_URL do CRM nem outra variável de conexão", () => {
+    const padrao = /process\.env\.([A-Z0-9_]*(?:DATABASE|POSTGRES|PG)[A-Z0-9_]*)/g;
+    const leituras = codigoDaVitrine.flatMap(({ arquivo, codigo }) =>
+      [...codigo.matchAll(padrao)].map((m) => `${arquivo}: ${m[1]}`)
+    );
+    expect(leituras.length).toBeGreaterThan(0);
+    expect(leituras.filter((leitura) => !leitura.endsWith(": VITRINE_DATABASE_URL"))).toEqual([]);
+  });
+});
+
 describe("VSEG AC6: só POST /api/revalidar aceita escrita", () => {
   it("há um único arquivo de rota na vitrine: app/api/revalidar/route.ts", () => {
     const rotas = listar(path.join(VITRINE, "app"), (nome) => /^route\.(ts|tsx|js|jsx)$/.test(nome)).map(relativo);
