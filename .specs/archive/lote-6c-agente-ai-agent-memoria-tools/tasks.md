@@ -420,7 +420,7 @@ T12 → T13 → T14 → T15 → T16 → T17
 
 **Fonte de verdade do shape de saída do `memoryManager` LOAD**: `get_node_types` não expõe o shape de saída deste nó. Confirmado por execução MCP real (scratch workflow `1RCAODv8A769gs47`, arquivado): `{ messages: [...], messagesCount: N }` com `groupMessages:true`/`simplifyOutput:true` — `messagesCount` é o campo usado pelo IF de "memória vazia".
 
-**`principal.ts` não publicado/atualizado na instância**: por instrução do escopo deste batch, T9/T10/T11 só validam via `validate_workflow` (código puro, não exige a instância) — a publicação real de `principal.ts` fica para o T12 (Batch 3), que já vai incluir o nó AI Agent do T11 também. Evita reconciliar o workflow `crivo-agente-principal` **ativo** em produção com um estado parcial (sem o agente ainda).
+**`principal.ts` não publicado/atualizado na instância**: por instrução do escopo deste batch, T9/T10/T11 só validam via `validate_workflow` (código puro, não exige a instância) — a publicação real de `principal.ts` fica para o T12 (Batch 3), que já vai incluir o nó AI Agent do T11 também. Evita reconciliar o workflow `krivo-agente-principal` **ativo** em produção com um estado parcial (sem o agente ainda).
 
 **Commit**: `feat(agente): adiciona memoria persistente com purga e semeadura`
 
@@ -485,7 +485,7 @@ T12 → T13 → T14 → T15 → T16 → T17
 - [x] `n8n/generated/` regenerado e byte-idêntico ao export da instância para os 3
 - [x] Uma execução com fixture percorre o caminho feliz até `responder_lead`
 - [x] Uma execução com fixture prova a recusa de abertura proibida sem envio ao lead
-- [x] `errorWorkflow` (`crivo-agente-erros`) segue linkado nos 3
+- [x] `errorWorkflow` (`krivo-agente-erros`) segue linkado nos 3
 - [x] Gate check passes: `npx vitest run && npm run lint && npm run build`
 - [x] Test count: ~692 tests pass (no silent deletions) — real: 691 (sem mudança, task de publicação)
 
@@ -493,7 +493,7 @@ T12 → T13 → T14 → T15 → T16 → T17
 
 **Achado real e correção (bloqueante, fora do Done-when original mas necessário para satisfazê-lo)**: `responder_lead`/`agendar_reuniao` (`@n8n/n8n-nodes-langchain.toolWorkflow`, T11) tinham `workflowInputs` sem a propriedade `schema` — sem ela, o resourceMapper não mapeia NENHUM campo (nem os estáticos via `expr()`, nem o dinâmico via `fromAi()`); confirmado por 8 execuções reais (`Execute Workflow Trigger` recebendo todos os campos `null`, envio ao WhatsApp falhando com corpo vazio). Corrigido em `n8n/workflows/principal.ts` (schema adicionado aos 2 nós), regenerado, republicado. Achado relacionado: nenhum dos 2 sub-workflows tinha `errorWorkflow` linkado (só `principal`/`scheduler` tinham, de lotes anteriores) — corrigido via `setWorkflowSettings`. Detalhes completos em `n8n/README.md` §11.
 
-**Evidência real de execução**: recusa de abertura proibida — execução `450` de `crivo-tool-responder-lead` (`{accepted:false, reason:"abertura-proibida"}`, sem alcançar o nó de envio). Caminho feliz — execução `462` de `crivo-agente-principal` (AI Agent chama `registrar_qualificacao` com correção de enum inválido em tempo real, depois `responder_lead`) → execução `463` de `crivo-tool-responder-lead` (`status:"success"`, `{ok:true}`, mensagem real enviada e registrada no CRM). Reconciliação `generated/`: 52 nós / 61 conexões do publicado comparados campo a campo contra um workflow-escrutínio compilado do `n8n/generated/principal.ts` corrigido via `create_workflow_from_code` — 0 divergências fora dos 24 nós do entorno (intocados por design, diffs só cosméticos).
+**Evidência real de execução**: recusa de abertura proibida — execução `450` de `krivo-tool-responder-lead` (`{accepted:false, reason:"abertura-proibida"}`, sem alcançar o nó de envio). Caminho feliz — execução `462` de `krivo-agente-principal` (AI Agent chama `registrar_qualificacao` com correção de enum inválido em tempo real, depois `responder_lead`) → execução `463` de `krivo-tool-responder-lead` (`status:"success"`, `{ok:true}`, mensagem real enviada e registrada no CRM). Reconciliação `generated/`: 52 nós / 61 conexões do publicado comparados campo a campo contra um workflow-escrutínio compilado do `n8n/generated/principal.ts` corrigido via `create_workflow_from_code` — 0 divergências fora dos 24 nós do entorno (intocados por design, diffs só cosméticos).
 
 **Tests**: none
 **Gate**: build

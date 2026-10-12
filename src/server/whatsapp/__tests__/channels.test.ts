@@ -68,7 +68,7 @@ describe("T7 — canal servidor e Analytics independentes (USO-01 AC8; L14B-01 A
   it("tenant vem da autenticação existente; outro tenant não é revelado nem associado", async () => {
     const own = await channel();
     const foreign = await channel({ tenantId: tenantB });
-    const auth = await authenticate(new Request("http://local/api/v1/statuses", { headers: { Authorization: `Bearer ${key}`, "X-Crivo-Tenant": `fixture-${tenantB}` } }));
+    const auth = await authenticate(new Request("http://local/api/v1/statuses", { headers: { Authorization: `Bearer ${key}`, "X-Krivo-Tenant": `fixture-${tenantB}` } }));
     expect(auth).toEqual(ctxA);
     if (auth instanceof Response) throw new Error("Fixture não autenticada");
     expect(await resolveChannel(auth, { phoneNumberId: foreign.phoneNumberId })).toEqual({ ok: false, reason: "unknown-channel" });

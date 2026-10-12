@@ -1,6 +1,6 @@
 # Prompt de Execução — Lote 11: Catálogo de imóveis
 
-> Cole o bloco abaixo numa nova janela do Claude Code aberta na raiz do projeto (`crivo/`).
+> Cole o bloco abaixo numa nova janela do Claude Code aberta na raiz do projeto (`krivo/`).
 >
 > **Antes de colar, confira na janela nova:**
 > - **Extensão Claude in Chrome** disponível — a T20 exige captura real de tela de duas visões da tela nova (`/imoveis` como gestor e como corretor). O painel Browser embutido **não serve**: ele não captura quando não está visível.
@@ -111,5 +111,5 @@ pode ser removido, pulado ou enfraquecido; a contagem sobe monotonicamente task 
 - `validate_state.py lote-11-catalogo-de-imoveis` com exit 0, rodado por você.
 - Lições distiladas dos fracassos fundamentados via `lessons.py`. Um PASS limpo não registra nada.
 - **Revisão de lições (AD-028, obrigatória, é a T29)**: rodar `lessons.py list --status all`, ler as candidatas destiladas neste lote e **me apresentar** quais merecem promoção a `confirmed`, com o critério. A promoção é minha decisão — **nunca automática e nunca do sub-agente**. E nenhuma lição é apagada sem confirmação: se `lessons.py list` emitir NOTA de vencimento, isso é gatilho de revisão, não de exclusão; `prune --confirm` só depois que eu confirmar.
-- `STATE.md § Handoff` reescrito para o lote-11, **preservando as pendências herdadas ainda não resolvidas** (remarcação de reunião impossível, `agentVoiceTone` × `voice.mjs`, registro de qualificação incompleto, paridade cosmética do `crivo-tool-agendar-reuniao`, as duas linhas inertes em `conversa_estado`, L4 Fix 1/2, L5 Fix 1, `RESEND_FROM`, baselines fictícios).
+- `STATE.md § Handoff` reescrito para o lote-11, **preservando as pendências herdadas ainda não resolvidas** (remarcação de reunião impossível, `agentVoiceTone` × `voice.mjs`, registro de qualificação incompleto, paridade cosmética do `krivo-tool-agendar-reuniao`, as duas linhas inertes em `conversa_estado`, L4 Fix 1/2, L5 Fix 1, `RESEND_FROM`, baselines fictícios).
 - `INDEX.md` com a linha do lote-11 e `ROADMAP-POS-PILOTO.md` marcando o L11 como executado, registrando o que sobrou para o L12 (conteúdo de documento, storage de binário, preview) e para o L16 (vitrine).

@@ -14,7 +14,7 @@ import { type Tenant } from "./data";
  *
  * A lista de candidatos mudou de significado no lote-8 (AD-021, que emenda a
  * AD-007): antes eram TODOS os tenants do banco e o identificador vinha do
- * cookie `crivo_tenant`; agora são apenas os tenants VINCULADOS ao usuário
+ * cookie `krivo_tenant`; agora são apenas os tenants VINCULADOS ao usuário
  * autenticado, e o identificador é o `activeOrganizationId` da sessão. A regra
  * de desempate é a mesma, e é literalmente a AC4 de TENANT-01: identificador
  * fora da lista é ignorado em vez de honrado.
@@ -55,7 +55,7 @@ export async function getLinkedTenants(userId: string): Promise<Tenant[]> {
  *
  * A assinatura é a mesma de antes do lote-8 para não obrigar as cinco páginas
  * e as três server actions a mudarem nesta task (isso é a T18) — mas a FONTE
- * mudou: era o cookie `crivo_tenant`, agora é o `activeOrganizationId` da
+ * mudou: era o cookie `krivo_tenant`, agora é o `activeOrganizationId` da
  * sessão, já validado contra os vínculos reais do usuário pela guarda
  * (AD-021, que emenda a AD-007). Sem sessão válida, `verifySession()`
  * redireciona antes de chegar aqui.
@@ -72,7 +72,7 @@ export async function getActiveTenantId(): Promise<string> {
  * autenticado: sem essa checagem, o seletor voltaria a ser campo livre e a
  * exposição que o login fecha na porta entraria pela janela. A gravação em si
  * é do plugin (`setActiveOrganization`), que escreve `activeOrganizationId` na
- * sessão — o cookie `crivo_tenant` deixou de existir como fonte de verdade.
+ * sessão — o cookie `krivo_tenant` deixou de existir como fonte de verdade.
  */
 export async function setActiveTenant(tenantId: string): Promise<void> {
   "use server";

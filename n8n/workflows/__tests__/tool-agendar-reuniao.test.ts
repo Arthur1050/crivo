@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import agendarReuniao from "../tool-agendar-reuniao";
 
 /**
- * Topologia do sub-workflow `crivo-tool-agendar-reuniao` (lote-8 T29 —
+ * Topologia do sub-workflow `krivo-tool-agendar-reuniao` (lote-8 T29 —
  * ATRIB-02). A ordem dos efeitos colaterais é a regra que esta task inverte,
  * e ordem não é expressável nas funções puras de `n8n/src/agendamento.mjs`:
  * é uma propriedade do grafo. Estes testes leem o grafo que o SDK emite (o

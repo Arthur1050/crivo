@@ -5,7 +5,7 @@ import { Pool } from "pg";
 /**
  * Cria o acesso de leitura da vitrine para a URL recebida. Não lê o ambiente:
  * quem chama decide qual URL usar (a app usa `dbDaApp`; o teste de banco da
- * suíte raiz usa a URL do papel `crivo_vitrine` da branch do worker, AD-044).
+ * suíte raiz usa a URL do papel `krivo_vitrine` da branch do worker, AD-044).
  * `max: 3` porque cada instância serverless abre o próprio pool e o Neon limita
  * as conexões do plano (AD-042).
  */

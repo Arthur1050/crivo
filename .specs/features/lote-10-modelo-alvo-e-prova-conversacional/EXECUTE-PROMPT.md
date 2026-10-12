@@ -1,6 +1,6 @@
 # Prompt de Execução — Lote 10: Modelo alvo e prova conversacional
 
-> Cole o bloco abaixo numa nova janela do Claude Code aberta na raiz do projeto (`crivo/`).
+> Cole o bloco abaixo numa nova janela do Claude Code aberta na raiz do projeto (`krivo/`).
 > **Antes de colar, confira na janela nova**:
 > - **MCP do n8n É OBRIGATÓRIO** neste lote — publicação de workflow, execução da bateria e leitura de execuções passam todos por ele. Sem MCP do n8n, o lote não sai da Fase 1.
 > - **Extensão Claude in Chrome disponível** — a Fase 5 exige captura real de tela do CRM em três cenários. O painel Browser embutido **não serve** (não captura quando não está visível).
@@ -55,7 +55,7 @@ teste. Se algum sobreviver, a suíte de T3 é decorativa e vira fix task.
 
 ## ⚠️ Condições de PARADA — respeite-as literalmente
 
-**1. Divergência entre publicado e `n8n/generated/` na T2.** Se o `crivo-agente-principal` publicado
+**1. Divergência entre publicado e `n8n/generated/` na T2.** Se o `krivo-agente-principal` publicado
 não bater com `n8n/generated/principal.ts`, **PARE e me chame** antes de publicar qualquer coisa.
 Publicar por cima apagaria silenciosamente uma alteração feita na UI que ninguém registrou — foi
 exatamente o modo de falha que o lote-8 T30 encontrou com o modelo. Registre a divergência (T2 já
@@ -130,7 +130,7 @@ removido, pulado ou enfraquecido. A T3 só sobe o piso; nenhuma task o abaixa.
 
 6. **Estado do repositório**: working tree limpa. O único untracked no início são os artefatos de
    planejamento deste lote, se eu ainda não os tiver commitado. Nenhum dos ruídos antigos
-   (`public/crivo_*.png`, `skills-lock.json`) existe mais — os dois foram versionados.
+   (`public/krivo_*.png`, `skills-lock.json`) existe mais — os dois foram versionados.
 
 ## Fatos já confirmados no planejamento — não os reconfirme do zero
 

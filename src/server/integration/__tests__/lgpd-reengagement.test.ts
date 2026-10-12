@@ -73,7 +73,7 @@ describe("T29 — opt-out da integração invalida ponte no mesmo commit", () =>
     expect(node).toBeDefined();
     expect(node!.parameters.method).toBe("POST");
     expect(node!.parameters.url).toContain("/leads/{{ $('Code: gate').first().json.id }}/opt-out");
-    expect(node!.parameters.headerParameters.parameters).toEqual([{ name: "X-Crivo-Tenant", value: "={{ $('Code: gate').first().json.tenantSlug }}" }]);
+    expect(node!.parameters.headerParameters.parameters).toEqual([{ name: "X-Krivo-Tenant", value: "={{ $('Code: gate').first().json.tenantSlug }}" }]);
     const row = await fixture();
     expect(await optOutLead(tenantId, row.lead.id, { now: () => now })).toEqual({ optedOutAt: now });
     expect(await episode(row)).toMatchObject({ state: "cancelled", dispatchAuthorizedAt: null, claimToken: null, bridgeInvalidatedAt: now });

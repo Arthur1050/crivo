@@ -23,7 +23,7 @@ describe("server/data reads — lote 3 (ordenação e conversation summaries)", 
   let fixtureLeadBId: string;
 
   beforeAll(async () => {
-    // lote-7 — REAL-01: só `crivo-demo` recebe lead/conversa/mensagem
+    // lote-7 — REAL-01: só `krivo-demo` recebe lead/conversa/mensagem
     // fictícios no seed a partir daqui; os pilotos nascem com 0 de cada.
     // Tenant A precisa de leads/conversas/mensagens reais para os testes de
     // ordenação abaixo, então é resolvido pelo slug em vez de "os dois
@@ -33,9 +33,9 @@ describe("server/data reads — lote 3 (ordenação e conversation summaries)", 
     // conversa — inserida como fixture mínima abaixo (limpa no afterAll).
     const allTenants = await getTenants();
     expect(allTenants.length).toBeGreaterThanOrEqual(2);
-    const demo = allTenants.find((t) => t.slug === "crivo-demo");
+    const demo = allTenants.find((t) => t.slug === "krivo-demo");
     const other = allTenants.find((t) => t.id !== demo?.id);
-    expect(demo, "tenant Crivo Demo deveria existir (seed lote-7)").toBeDefined();
+    expect(demo, "tenant Krivo Demo deveria existir (seed lote-7)").toBeDefined();
     expect(other).toBeDefined();
     tenantAId = demo!.id;
     tenantBId = other!.id;

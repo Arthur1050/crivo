@@ -4,13 +4,13 @@ Executado em 2026-10-07 com autorização explícita do usuário no chat (public
 
 | Item | Valor |
 | --- | --- |
-| Workflow | `0B1nqjODu7xuYYKF` (crivo-agente-principal) |
+| Workflow | `0B1nqjODu7xuYYKF` (krivo-agente-principal) |
 | Versão anterior (rollback) | `e3e25681-8cd1-4ea3-bc38-33d373cf6b80`, salva em `rollback-e3e25681.json` |
 | Versão publicada | `ddb63ae8-f02f-4e6a-a1b6-3cb05d4b229b` |
 | `versionId` = `activeVersionId` (L-032) | sim, lido depois da publicação |
 | Nós | 65 (eram 73); um único `lmChatOpenAi` (`OpenAI Chat Model`), nenhum `textClassifier` |
 | Fonte | branch `hotfix/opt-out-so-sair`, commit `fea3306`, sobre `0688deb`; branch enviado ao origin |
-| `crivo-medicao-opt-out` (`n5iAMCl5nSM6jA6U`) | arquivado |
+| `krivo-medicao-opt-out` (`n5iAMCl5nSM6jA6U`) | arquivado |
 
 ## Como foi aplicado
 

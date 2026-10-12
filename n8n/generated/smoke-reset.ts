@@ -1,5 +1,5 @@
 /**
- * crivo-smoke-reset — limpeza dos alvos do n8n entre cenários da prova
+ * krivo-smoke-reset — limpeza dos alvos do n8n entre cenários da prova
  * conversacional (`n8n/smoke/roteiro.md` §9, alvos 1 e 2).
  *
  * O checklist de limpeza da AD-027 tem três alvos em dois sistemas. Este
@@ -113,6 +113,6 @@ const deleteConversaEstadoRow = node({
   output: [{ id: 1 }],
 });
 
-export default workflow("crivo-smoke-reset", "crivo-smoke-reset")
+export default workflow("krivo-smoke-reset", "krivo-smoke-reset")
   .add(manualTrigger)
   .to(purgeMemory.to(deleteConversaEstadoRow));

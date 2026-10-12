@@ -1,6 +1,6 @@
 # Prompt de Execução — Lote 6c: AI Agent, memória persistente e tools determinísticas
 
-> Cole o bloco abaixo numa nova janela do Claude Code aberta na raiz do projeto (`crivo/`).
+> Cole o bloco abaixo numa nova janela do Claude Code aberta na raiz do projeto (`krivo/`).
 > **Antes de colar, confira na janela nova**: MCP do **n8n** conectado (a instância está no ar e T5–T12/T16 dependem dela). **Claude in Chrome não é necessário** — este lote não toca nenhuma tela.
 > **Antes de começar, tenha em mãos**: os dados de conexão do **Postgres da própria instância n8n** (host local, banco, usuário, senha) — é onde a memória vai morar. HUMAN GATE do T5.
 

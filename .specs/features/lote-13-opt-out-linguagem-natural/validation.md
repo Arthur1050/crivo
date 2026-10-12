@@ -109,7 +109,7 @@ Worktree descartável em `scratchpad/wt` (`git worktree add … HEAD`), junction
 | T12d–T12e | ✅ | Trava determinística. Medição APROVADA na execução 2688 (v4, `classifierHash` `1547f0ae…`) |
 | T13 | ✅ | Agora com Status, Evidence e os 4 checkboxes marcados (`tasks.md:500-525`). O commit `cdef838` e o teste `principal-classificador.test.ts:209` existem |
 | T14–T17 | ✅ | — |
-| T18 | ⏸️ Pendente de execução humana (D8) | `search_executions` do `crivo-agente-principal` (`0B1nqjODu7xuYYKF`) desde 2026-09-29T23:52Z devolve **0 execuções**. O workflow foi atualizado pela última vez às 23:58:06Z, dentro da janela da T16, sem mudança depois disso |
+| T18 | ⏸️ Pendente de execução humana (D8) | `search_executions` do `krivo-agente-principal` (`0B1nqjODu7xuYYKF`) desde 2026-09-29T23:52Z devolve **0 execuções**. O workflow foi atualizado pela última vez às 23:58:06Z, dentro da janela da T16, sem mudança depois disso |
 | T19 | ✅ | Ciclo de correção 1. Conferido abaixo |
 
 A duplicação do `tasks.md` (T1–T12e em dobro) sumiu: o arquivo tem 815 linhas e um único `#### T1:`.

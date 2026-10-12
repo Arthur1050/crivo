@@ -105,7 +105,7 @@ describe("runIntegrationAlert — transição e e-mail (ALERTA-01, ALERTA-02)", 
     const emails = mentioning(tenant);
     expect(emails).toHaveLength(1);
     expect(emails[0].to).toBe(OPERATOR);
-    expect(emails[0].subject).toMatch(/^\[crivo\] Integração com problema em \d+ imobiliária\(s\)$/);
+    expect(emails[0].subject).toMatch(/^\[krivo\] Integração com problema em \d+ imobiliária\(s\)$/);
     expect(emails[0].text).toContain(tenant.name);
     expect(first.sent).toBeGreaterThanOrEqual(1);
     const afterFirst = await stateOf(tenant.id);

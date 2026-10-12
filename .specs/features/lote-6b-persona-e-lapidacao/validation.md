@@ -135,7 +135,7 @@ Executado em worktree temporário isolado (`git worktree add <scratch> HEAD`), n
 **Sensor depth**: lightweight (3 mutações, proporcional ao default — este lote não é P0/pagamento/auth)
 **Result**: 3/3 killed — PASS ✅
 
-**Isolamento confirmado**: `git status --porcelain` da árvore real idêntico antes e depois do sensor (só os 4 arquivos untracked pré-existentes do início da sessão: `public/crivo_white_symbol*.png`, `skills-lock.json` — nenhum relacionado a este lote). Worktree removido com `git worktree remove --force`; `git worktree list` confirma só o worktree principal restante.
+**Isolamento confirmado**: `git status --porcelain` da árvore real idêntico antes e depois do sensor (só os 4 arquivos untracked pré-existentes do início da sessão: `public/krivo_white_symbol*.png`, `skills-lock.json` — nenhum relacionado a este lote). Worktree removido com `git worktree remove --force`; `git worktree list` confirma só o worktree principal restante.
 
 ---
 

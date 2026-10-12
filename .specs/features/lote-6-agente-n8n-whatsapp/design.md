@@ -16,9 +16,9 @@ graph TD
         WA[WhatsApp Cloud API<br/>número de teste]
     end
     subgraph n8n
-        WF1[crivo-agente-principal<br/>WhatsApp Trigger]
-        WF2[crivo-agente-scheduler<br/>Schedule Trigger 15min]
-        WF4[crivo-agente-erros<br/>Error Trigger]
+        WF1[krivo-agente-principal<br/>WhatsApp Trigger]
+        WF2[krivo-agente-scheduler<br/>Schedule Trigger 15min]
+        WF4[krivo-agente-erros<br/>Error Trigger]
         DT1[(Data Table<br/>tenant_config)]
         DT2[(Data Table<br/>conversa_estado)]
         DT3[(Data Table<br/>agenda_envios)]
@@ -86,7 +86,7 @@ Schedule Trigger a cada 15 min (cadência configurável) roda três varreduras e
 | Parsers puros do contrato | `src/server/integration/parsers.ts` | Padrão para validação de `meetingDays`/horas no CONF-05 |
 | `updateTenantSettings` + action + form | `src/server/data/index.ts`, `settings-form.tsx` | Estender com os 3 campos novos (padrão SPG-1: chave ausente não toca) |
 | Teste `SwaggerParser.validate()` | teste existente do openapi | Cobre o novo path `/settings` automaticamente |
-| Padrão Error Trigger → e-mail | workflow `tosta.log — Workflow de erro` (instância n8n) | Mesmo desenho para `crivo-agente-erros` (credencial Gmail existente) |
+| Padrão Error Trigger → e-mail | workflow `tosta.log — Workflow de erro` (instância n8n) | Mesmo desenho para `krivo-agente-erros` (credencial Gmail existente) |
 | Guia de integração | `docs/integration/guia-integracao.md` | Fonte da semântica de idempotência/409/opt-out que a camada de decisão implementa |
 
 ### Integration Points
@@ -123,7 +123,7 @@ Schedule Trigger a cada 15 min (cadência configurável) roda três varreduras e
 - **Location**: `n8n/workflows/*.ts` (código SDK n8n com marcadores `__INLINE(<arquivo>)__` para os Code nodes) + `n8n/generated/*.ts` (código final com as funções inlined — o que vai à instância) + `scripts/n8n-inline.mjs` (gera `generated/` a partir de `workflows/` + `src/`).
 - **Interfaces**: `node scripts/n8n-inline.mjs` (determinístico; rodar duas vezes = mesmo output); publicação na instância via MCP n8n (`create_workflow_from_code`/`update_workflow`) usando o conteúdo de `generated/`.
 - **Dependencies**: MCP n8n na sessão de Execute; SDK reference (`get_sdk_reference`) obrigatória antes de escrever os `.ts`.
-- **Workflows**: `crivo-agente-principal`, `crivo-agente-scheduler`, `crivo-agente-erros` (Error Trigger → Gmail, workflow de erro dos dois primeiros).
+- **Workflows**: `krivo-agente-principal`, `krivo-agente-scheduler`, `krivo-agente-erros` (Error Trigger → Gmail, workflow de erro dos dois primeiros).
 
 ### 3. Data Tables (n8n)
 
@@ -240,11 +240,11 @@ interface SettingsResponse {
 | ------- | -------- | ------ | ---------- |
 | **R1**: API keys de tenant em Data Table do n8n (texto claro) | `tenant_config` | Vazamento de chave se instância comprometida | Aceito para piloto (2 consumidores, chaves revogáveis via `revoked_at` — guia §1); antes de números reais: migrar para credenciais HTTP Header Auth por tenant ou secrets do n8n. Registrado como follow-up |
 | **R2**: Token de acesso Meta do usuário pode ser o temporário (23h) do painel | credencial WhatsApp no n8n | Envio para de funcionar em <1 dia | Execute usa **token permanente de System User** (Meta Business Settings); passo documentado no runbook de setup |
-| **R3**: Quota de execuções do n8n Cloud com scheduler de 15 min (~2.9k exec/mês só dele) | `crivo-agente-scheduler` | Estouro de plano | Um único workflow scheduler para as 3 varreduras; cadência é 1 parâmetro; verificar plano na Execute e ajustar (30 min ainda satisfaz "≈1h antes") |
+| **R3**: Quota de execuções do n8n Cloud com scheduler de 15 min (~2.9k exec/mês só dele) | `krivo-agente-scheduler` | Estouro de plano | Um único workflow scheduler para as 3 varreduras; cadência é 1 parâmetro; verificar plano na Execute e ajustar (30 min ainda satisfaz "≈1h antes") |
 | **R4**: Gemini pode devolver JSON malformado/campos inventados | rota conversa | Dado alucinado no CRM | `validateLlmOutput` com whitelist de enums do contrato + retry + fallback de esclarecimento; teste discriminante com fixture de saída inválida |
 | **R5**: `tsc --noEmit` já falha no repo (BigInt em `format.test.ts:17`, pendência herdada) | `src/lib/__tests__/format.test.ts:17` | Ruído ao adicionar código TS novo | Fora do gate (build/lint/vitest); não piorar: código novo do lote não usa literais BigInt; pendência segue aberta |
 | **R6**: Testes de integração existentes mutam o snapshot do seed (higiene herdada) | `mutations.test.ts` etc. | Smoke exige `npm run db:seed` antes | Mesmo procedimento já documentado no STATE; smoke do lote roda seed antes — **e coordena rotação de chave** (seed do banco de produção regenera a API key que a `tenant_config` usa; runbook cobre a ordem) |
-| **R7**: Webhook único por app Meta — o WhatsApp Trigger assume a assinatura do app | app Meta | Outro consumidor do mesmo app quebraria | Aceito: o app Meta é dedicado ao Crivo |
+| **R7**: Webhook único por app Meta — o WhatsApp Trigger assume a assinatura do app | app Meta | Outro consumidor do mesmo app quebraria | Aceito: o app Meta é dedicado ao Krivo |
 
 ---
 

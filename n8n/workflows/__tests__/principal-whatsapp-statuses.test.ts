@@ -49,7 +49,7 @@ describe("T49 — status separado do pipeline conversacional", () => {
     const prepared = run(PREPARE, tenant, { [ROUTE]: routed }); expect(prepared).toEqual({ json: { tenantSlug: "fixture", batch: dto } });
     expect(expression(node(POST).parameters.jsonBody, prepared.json)).toEqual(dto);
     const headers = node(POST).parameters.headerParameters as { parameters: { name: string; value: string }[] };
-    expect(headers.parameters.map((header) => [header.name, expression(header.value, prepared.json)])).toEqual([["X-Crivo-Tenant", "fixture"]]);
+    expect(headers.parameters.map((header) => [header.name, expression(header.value, prepared.json)])).toEqual([["X-Krivo-Tenant", "fixture"]]);
   });
   it.each([{ ...tenant, phoneNumberId: "n2" }, { ...tenant, tenantSlug: "" }, { error: "private" }])("vínculo errado/lookup falhou não produz POST %#", (input) => {
     expect(run(PREPARE, input, { [ROUTE]: routed })).toBeNull();

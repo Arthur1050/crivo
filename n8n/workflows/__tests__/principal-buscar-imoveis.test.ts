@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import principal from "../principal";
 
 /**
- * Tool `buscar_imoveis` no `crivo-agente-principal` (lote-11 — T22, BUSCA-04).
+ * Tool `buscar_imoveis` no `krivo-agente-principal` (lote-11 — T22, BUSCA-04).
  *
  * Cobre estrutura: nome, tipo/versão do nó, origem de CADA parâmetro (um
  * `$fromAI` por critério, nunca um blob único — AC4), o tenant vindo de
@@ -76,9 +76,9 @@ describe("buscar_imoveis — origem de cada parâmetro de critério (BUSCA-04 AC
 });
 
 describe("buscar_imoveis — tenant nunca vem do modelo (BUSCA-04 AC2/AC3)", () => {
-  it("o header X-Crivo-Tenant vem de expressão do fluxo (Code: gate), não de $fromAI", () => {
+  it("o header X-Krivo-Tenant vem de expressão do fluxo (Code: gate), não de $fromAI", () => {
     const headers = node().parameters.headerParameters as { parameters: { name: string; value: string }[] };
-    const tenantHeader = headers.parameters.find((p) => p.name === "X-Crivo-Tenant");
+    const tenantHeader = headers.parameters.find((p) => p.name === "X-Krivo-Tenant");
 
     expect(tenantHeader?.value).toBe("={{ $('Code: gate').first().json.tenantSlug }}");
     expect(tenantHeader?.value).not.toContain("$fromAI");

@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Crivo — CRM do agente SDR",
+  title: "Krivo — CRM do agente SDR",
   description:
     "Pipeline, conversas e desempenho do agente SDR que qualifica leads imobiliários via WhatsApp.",
 };

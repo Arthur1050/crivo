@@ -29,7 +29,7 @@ Fluxo de qualificação conversacional construído no **n8n** (instância do usu
 
 ### 3. API do CRM consumida em produção (Vercel)
 
-- Projeto `crivo` na Vercel, produção READY no commit do lote-5. URL base: `https://crivo-arthur1050s-projects.vercel.app`.
+- Projeto `krivo` na Vercel, produção READY no commit do lote-5. URL base: `https://crivo-arthur1050s-projects.vercel.app`.
 - **Ajuste aplicado nesta sessão (autorizado pelo usuário)**: Vercel Authentication estava em `all_except_custom_domains` e bloquearia n8n + webhook; alterada para **Only Preview Deployments** via conector. Verificado: `GET /api/v1/context` sem chave responde `401 application/problem+json` (`nao-autenticado`) — API pública e falando o contrato.
 - Pré-requisitos que o Execute ainda valida: `DATABASE_URL` (Neon) e `CRON_SECRET` no projeto Vercel; banco de produção seedado; **API keys usadas pelo n8n = as impressas pelo seed DESSE banco** (seed rotaciona chaves — guia de integração §1).
 

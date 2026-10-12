@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Crivo — Contrato de Integração CRM ↔ Agente
+  title: Krivo — Contrato de Integração CRM ↔ Agente
   version: "1.0.0"
   description: >-
     Contrato REST que o fluxo do agente (n8n + WhatsApp, Fase 8) usa para
@@ -45,7 +45,7 @@ paths:
         escreveu (lote-14): grava quando o valor muda e nunca é apagado por
         uma entrega que não o envia.
       parameters:
-        - $ref: "#/components/parameters/XCrivoTenant"
+        - $ref: "#/components/parameters/XKrivoTenant"
       requestBody:
         required: true
         content:
@@ -86,7 +86,7 @@ paths:
         tenant ou inexistente responde `404`.
       parameters:
         - $ref: "#/components/parameters/LeadId"
-        - $ref: "#/components/parameters/XCrivoTenant"
+        - $ref: "#/components/parameters/XKrivoTenant"
       responses:
         "200":
           description: Lead do tenant da chave.
@@ -118,7 +118,7 @@ paths:
         `assignedBroker` (lote-8).
       parameters:
         - $ref: "#/components/parameters/LeadId"
-        - $ref: "#/components/parameters/XCrivoTenant"
+        - $ref: "#/components/parameters/XKrivoTenant"
       requestBody:
         required: true
         content:
@@ -182,16 +182,16 @@ paths:
             Quantidade máxima de mensagens mais recentes a devolver. Fora da
             faixa 1–100 (incluindo valores não numéricos) responde `400`
             `payload-invalido`.
-        - $ref: "#/components/parameters/XCrivoTenant"
+        - $ref: "#/components/parameters/XKrivoTenant"
       responses:
         "200":
           description: Mensagens do lead em ordem cronológica crescente.
           headers:
-            X-Crivo-Anchor-Message-Id:
+            X-Krivo-Anchor-Message-Id:
               description: ID do inbound cronologicamente corrente (sentAt/id), independente do limit; string null sem inbound.
               schema:
                 type: string
-            X-Crivo-Agent-State-Revision:
+            X-Krivo-Agent-State-Revision:
               description: Revisão corrente da projeção do agente; string null sem projeção. Mesmo snapshot do histórico, inclusive array vazio.
               schema:
                 type: string
@@ -229,7 +229,7 @@ paths:
         todos os fatos originais, inclusive canal, e retorna metadata atual.
       parameters:
         - $ref: "#/components/parameters/LeadId"
-        - $ref: "#/components/parameters/XCrivoTenant"
+        - $ref: "#/components/parameters/XKrivoTenant"
       requestBody:
         required: true
         content:
@@ -277,7 +277,7 @@ paths:
         do consumidor (agente) — veja "Opt-out" no guia de integração.
       parameters:
         - $ref: "#/components/parameters/LeadId"
-        - $ref: "#/components/parameters/XCrivoTenant"
+        - $ref: "#/components/parameters/XKrivoTenant"
       responses:
         "200":
           description: Opt-out registrado (ou já existente).
@@ -313,7 +313,7 @@ paths:
           description: >-
             Instante inicial, ISO-8601 com fuso. Ausente, vazio ou inválido
             responde `400` `payload-invalido`.
-        - $ref: "#/components/parameters/XCrivoTenant"
+        - $ref: "#/components/parameters/XKrivoTenant"
       responses:
         "200":
           description: Pedidos do tenant a partir de `since`, em ordem crescente.
@@ -351,7 +351,7 @@ paths:
         O tenant vem exclusivamente da credencial de serviço; nenhum campo do
         corpo o influencia. A resposta declara `Cache-Control: no-store`.
       parameters:
-        - $ref: "#/components/parameters/XCrivoTenant"
+        - $ref: "#/components/parameters/XKrivoTenant"
       requestBody:
         required: true
         content:
@@ -401,7 +401,7 @@ paths:
         tenant não configurou — veja `guia-integracao.md` para o fallback
         seg-sex 9h-18h que o consumidor aplica nesse caso.
       parameters:
-        - $ref: "#/components/parameters/XCrivoTenant"
+        - $ref: "#/components/parameters/XKrivoTenant"
       responses:
         "200":
           description: Settings do tenant da chave.
@@ -471,7 +471,7 @@ paths:
           schema:
             type: integer
             minimum: 1
-        - $ref: "#/components/parameters/XCrivoTenant"
+        - $ref: "#/components/parameters/XKrivoTenant"
       responses:
         "200":
           description: Imóveis visíveis do tenant que casam com o filtro.
@@ -498,7 +498,7 @@ paths:
         e não autoriza publicar saída calculada em âncora anterior.
       parameters:
         - $ref: "#/components/parameters/LeadId"
-        - $ref: "#/components/parameters/XCrivoTenant"
+        - $ref: "#/components/parameters/XKrivoTenant"
       requestBody:
         required: true
         content:
@@ -562,7 +562,7 @@ paths:
         Página de candidatos examinados no corte estável do servidor. Cursor opaco vinculado ao tenant/corte;
         pode haver página vazia com nextCursor. Não é snapshot MVCC. Consulta não reivindica nem autoriza envio.
       parameters:
-        - $ref: "#/components/parameters/XCrivoTenant"
+        - $ref: "#/components/parameters/XKrivoTenant"
         - name: limit
           in: query
           schema:
@@ -622,7 +622,7 @@ paths:
         só o claim novo e nunca desfaz dispatch autorizado.
       parameters:
         - $ref: "#/components/parameters/LeadId"
-        - $ref: "#/components/parameters/XCrivoTenant"
+        - $ref: "#/components/parameters/XKrivoTenant"
       requestBody:
         required: true
         content:
@@ -707,7 +707,7 @@ paths:
           schema:
             type: string
             format: uuid
-        - $ref: "#/components/parameters/XCrivoTenant"
+        - $ref: "#/components/parameters/XKrivoTenant"
       requestBody:
         required: true
         content:
@@ -782,7 +782,7 @@ paths:
           schema:
             type: string
             format: uuid
-        - $ref: "#/components/parameters/XCrivoTenant"
+        - $ref: "#/components/parameters/XKrivoTenant"
       requestBody:
         required: true
         content:
@@ -864,7 +864,7 @@ paths:
           schema:
             type: string
             format: uuid
-        - $ref: "#/components/parameters/XCrivoTenant"
+        - $ref: "#/components/parameters/XKrivoTenant"
       requestBody:
         required: true
         content:
@@ -932,7 +932,7 @@ paths:
         marcador consumido e guardas de humano/opt-out/reset/âncora.
       parameters:
         - $ref: "#/components/parameters/LeadId"
-        - $ref: "#/components/parameters/XCrivoTenant"
+        - $ref: "#/components/parameters/XKrivoTenant"
       requestBody:
         required: true
         content:
@@ -999,7 +999,7 @@ paths:
         Revisão do frame é da ponte, independente de agentStateRevision.
       parameters:
         - $ref: "#/components/parameters/LeadId"
-        - $ref: "#/components/parameters/XCrivoTenant"
+        - $ref: "#/components/parameters/XKrivoTenant"
       requestBody:
         required: true
         content:
@@ -1068,7 +1068,7 @@ paths:
         pendente. Replay não cria mensagem/inbound nem ativa agente; órfão dura 30 dias. Pricing desconhecido
         fica indisponível, sem gratuidade presumida.
       parameters:
-        - $ref: "#/components/parameters/XCrivoTenant"
+        - $ref: "#/components/parameters/XKrivoTenant"
       requestBody:
         required: true
         content:
@@ -1135,7 +1135,7 @@ paths:
         limitado, nunca zero. Adapter produtivo ausente e usageEnabled false para conta de teste; Consumo
         indisponível sem saldo presumido.
       parameters:
-        - $ref: "#/components/parameters/XCrivoTenant"
+        - $ref: "#/components/parameters/XKrivoTenant"
       requestBody:
         required: true
         content:
@@ -1201,7 +1201,7 @@ components:
       description: >-
         Credencial de serviço única e cross-tenant (`Authorization: Bearer
         <chave>`), usada pelo fluxo do agente (lote-7 — SEC-01). Exige o
-        header adicional `X-Crivo-Tenant` com o slug do tenant — ausente ou
+        header adicional `X-Krivo-Tenant` com o slug do tenant — ausente ou
         desconhecido responde `401 tenant-nao-identificado`, nunca cai em
         nenhum tenant default. Verificado ANTES de `bearerAuth`: quando o
         hash da chave corresponde a uma chave de serviço ativa, este modo é
@@ -1216,8 +1216,8 @@ components:
         type: string
         format: uuid
       description: Id do lead no CRM (não o `externalId` do mundo do agente).
-    XCrivoTenant:
-      name: X-Crivo-Tenant
+    XKrivoTenant:
+      name: X-Krivo-Tenant
       in: header
       required: false
       schema:
@@ -1231,7 +1231,7 @@ components:
     NaoAutenticado:
       description: >-
         Sem header de autenticação, chave inválida ou revogada
-        (`code: nao-autenticado`); ou, no modo de serviço, `X-Crivo-Tenant`
+        (`code: nao-autenticado`); ou, no modo de serviço, `X-Krivo-Tenant`
         ausente ou com slug desconhecido (`code: tenant-nao-identificado`,
         lote-7 — SEC-01). O `code` no corpo distingue as duas causas.
       content:
@@ -2224,7 +2224,7 @@ components:
         type:
           type: string
           format: uri
-          description: "URN determinístico por código: `urn:crivo:problem:<code>`."
+          description: "URN determinístico por código: `urn:krivo:problem:<code>`."
         title:
           type: string
         status:

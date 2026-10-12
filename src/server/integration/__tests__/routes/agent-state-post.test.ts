@@ -27,7 +27,7 @@ function post(row: Fixture, body = payload(row), options: { raw?: string; auth?:
 async function state(row: Fixture) { return db.select().from(leadAgentState).where(eq(leadAgentState.leadId, row.lead.id)); }
 async function problem(response: Response, status: number, code: string) {
   expect(response.status).toBe(status); expect(response.headers.get("Content-Type")).toContain("application/problem+json");
-  expect(await response.json()).toMatchObject({ status, code, type: `urn:crivo:problem:${code}` });
+  expect(await response.json()).toMatchObject({ status, code, type: `urn:krivo:problem:${code}` });
 }
 beforeAll(async () => {
   await db.insert(tenants).values([tenantId, foreignTenant].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T35", agentName: "Agente", supportedModality: "ambos" as const })));

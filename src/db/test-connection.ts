@@ -47,10 +47,10 @@ export function parseWorkerEndpoints(value: string | undefined): string[] {
 }
 
 /** Papel de banco da vitrine pública (AD-040); o mesmo nome em todos os alvos. */
-export const VITRINE_ROLE = "crivo_vitrine";
+export const VITRINE_ROLE = "krivo_vitrine";
 
 /**
- * URL com que o papel `crivo_vitrine` conecta no alvo de `baseUrl` (a URL do
+ * URL com que o papel `krivo_vitrine` conecta no alvo de `baseUrl` (a URL do
  * worker, já resolvida por `resolveTestDatabaseUrl`): troca só usuário e senha
  * e preserva host, banco e parâmetros. A senha vem da variável do ambiente
  * local `VITRINE_TEST_DB_PASSWORD` e nunca aparece em mensagem de erro.

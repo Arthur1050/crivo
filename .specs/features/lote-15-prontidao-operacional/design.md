@@ -26,7 +26,7 @@ graph TD
     ROUTE --> LOG[console.info com os campos do alerta]
 ```
 
-Complementa, sem substituir, o `crivo-agente-erros` do n8n (falha de execução → Gmail): o alerta
+Complementa, sem substituir, o `krivo-agente-erros` do n8n (falha de execução → Gmail): o alerta
 cobre silêncio e recusas do contrato, que não geram execução com erro.
 
 ---
@@ -49,7 +49,7 @@ cobre silêncio e recusas do contrato, que não geram execução com erro.
 | System | Integration Method |
 | --- | --- |
 | Neon | 2 colunas novas e nullable em `tenants`; `npm run db:push:test` no teste; `drizzle-kit push` em produção só na task autorizada |
-| Vercel | Cron existente sem mudança de agenda; variável nova `CRIVO_OPERATOR_ALERT_EMAIL` criada pelo usuário; deploy pelo push do `main` |
+| Vercel | Cron existente sem mudança de agenda; variável nova `KRIVO_OPERATOR_ALERT_EMAIL` criada pelo usuário; deploy pelo push do `main` |
 | Resend | Mesmo adaptador e remetente dos convites |
 
 ---
@@ -85,12 +85,12 @@ cobre silêncio e recusas do contrato, que não geram execução com erro.
 ### Ligação na manutenção e na rota
 
 - `runDailyMaintenance(now, { storage, integrationAlert? })`: com `integrationAlert` presente roda o grupo; ausente, reporta `integrationAlertSkipped: "sem-dependencia"` e não toca o banco. Os testes existentes não passam a dependência e ficam como estão.
-- `createExpireDocumentsHandler` monta a dependência real (`process.env.CRIVO_OPERATOR_ALERT_EMAIL`, `sendIntegrationAlertEmail`), aceita override por `deps`, e escreve `console.info("[manutencao] alerta", {evaluated, sent, skipped, sendFailed, failed})` — sem nome de tenant, para o log de produção provar a execução (ALERTA-04 AC5).
+- `createExpireDocumentsHandler` monta a dependência real (`process.env.KRIVO_OPERATOR_ALERT_EMAIL`, `sendIntegrationAlertEmail`), aceita override por `deps`, e escreve `console.info("[manutencao] alerta", {evaluated, sent, skipped, sendFailed, failed})` — sem nome de tenant, para o log de produção provar a execução (ALERTA-04 AC5).
 
 ### CLIs
 
 - `src/db/revoke-service-key.ts` + `npm run db:revoke-service-key`: `revokeServiceKeysByLabel(label, executor = db)` numa transação: conta ativas totais e ativas com o rótulo, recusa os casos da REVOGA-01, senão `UPDATE ... SET revoked_at = now() WHERE label = $1 AND revoked_at IS NULL`. O executor injetável permite o teste rodar dentro de transação revertida.
-- `scripts/send-test-integration-alert.ts` + `npm run alert:send-test`: monta um alerta de exemplo com tenant fictício via `formatIntegrationAlertEmail(..., { test: true })` e envia a `CRIVO_OPERATOR_ALERT_EMAIL`; sem destinatário, sai com 1.
+- `scripts/send-test-integration-alert.ts` + `npm run alert:send-test`: monta um alerta de exemplo com tenant fictício via `formatIntegrationAlertEmail(..., { test: true })` e envia a `KRIVO_OPERATOR_ALERT_EMAIL`; sem destinatário, sai com 1.
 
 ---
 
@@ -142,7 +142,7 @@ interface IntegrationAlertResult {
 
 | Concern | Location (file:line) | Impact | Mitigation |
 | --- | --- | --- | --- |
-| Testes carregam `.env` (`import "dotenv/config"`); com `CRIVO_OPERATOR_ALERT_EMAIL` e `RESEND_API_KEY` locais, um teste da rota mandaria e-mail real | `vitest.config.ts` (bloco `test.env`) | E-mail real a cada suíte | `test.env` define `CRIVO_OPERATOR_ALERT_EMAIL: ""` (dotenv não sobrescreve variável já definida); teste afirma o valor efetivo (L-037) |
+| Testes carregam `.env` (`import "dotenv/config"`); com `KRIVO_OPERATOR_ALERT_EMAIL` e `RESEND_API_KEY` locais, um teste da rota mandaria e-mail real | `vitest.config.ts` (bloco `test.env`) | E-mail real a cada suíte | `test.env` define `KRIVO_OPERATOR_ALERT_EMAIL: ""` (dotenv não sobrescreve variável já definida); teste afirma o valor efetivo (L-037) |
 | Banco de teste por worker acumula centenas de tenants de fixture | `src/server/integration/lgpd.ts:227` | Uma consulta por tenant a us-east-1 deixaria a manutenção lenta, o mesmo custo de suíte apontado na auditoria do L14b | Snapshot em 3 consultas agrupadas; testes afirmam só sobre os próprios tenants |
 | A manutenção roda em todos os tenants, inclusive os de outros arquivos de teste | `maintenance.integration.test.ts` | Asserção sobre o e-mail inteiro ficaria instável | Testes filtram o e-mail e o resultado pelos tenants da fixture |
 | Hobby: cron diário com precisão de ±59 min; o cron só roda em deploy de produção | `vercel.json` | Detecção no pior caso em ~48h; sem execução, nunca alerta | Fora de escopo mudar; T0 confirma nos logs que o cron roda em produção |
@@ -177,7 +177,7 @@ sucesso continua sem registro.
 
 ## Ordem de implantação
 
-`drizzle-kit push` em produção (T12) → `CRIVO_OPERATOR_ALERT_EMAIL` no Production pelo usuário (T13) →
+`drizzle-kit push` em produção (T12) → `KRIVO_OPERATOR_ALERT_EMAIL` no Production pelo usuário (T13) →
 push do `main` = deploy (T14) → primeira manutenção registrada (T15). Colunas antes do código porque o
 código as lê; a variável antes do deploy para a primeira queda não ficar presa. Rollback do schema:
 `ALTER TABLE tenants DROP COLUMN integration_health_state, DROP COLUMN integration_health_changed_at`

@@ -20,7 +20,7 @@ import {
 
 // `getActiveTenantId()` (chamada internamente por toda action) resolve a
 // imobiliária ativa pela GUARDA DE SESSÃO desde o lote-8 (AD-021) — antes era
-// o cookie `crivo_tenant`. Nenhuma das duas é utilizável fora de um request
+// o cookie `krivo_tenant`. Nenhuma das duas é utilizável fora de um request
 // scope real do Next.js: `cookies()`/`headers()` lançam "called outside a
 // request scope", e `verifySession()` redirecionaria.
 //
@@ -621,7 +621,7 @@ describe("server actions", () => {
     let fixtureLeadId: string;
 
     beforeAll(async () => {
-      // lote-7 — REAL-01: só `crivo-demo` recebe lead fictício no seed a
+      // lote-7 — REAL-01: só `krivo-demo` recebe lead fictício no seed a
       // partir daqui; `activeTenantId` (tenants[0], resolvido pelo fallback
       // real de `getActiveTenantId()` sem cookie) pode ser um tenant-piloto
       // sem nenhum lead. Este describe insere sua própria fixture mínima no

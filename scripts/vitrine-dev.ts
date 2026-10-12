@@ -1,6 +1,6 @@
 /**
  * `npm run vitrine:dev` — sobe a vitrine (`vitrine/`, porta 3100) contra o banco
- * de TESTE, lendo como o papel `crivo_vitrine`, o mesmo que a vitrine usa em
+ * de TESTE, lendo como o papel `krivo_vitrine`, o mesmo que a vitrine usa em
  * produção (lote-16b — VPROJ-01).
  *
  * O que ele faz: deriva a URL do papel a partir da `TEST_DATABASE_URL` (troca só

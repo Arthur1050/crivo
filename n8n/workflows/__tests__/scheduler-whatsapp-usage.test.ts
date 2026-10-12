@@ -39,7 +39,7 @@ describe("T56 — tick CRM de consumo e reconciliação", () => {
     const channel = { ...tenant, phoneNumberId: "430000000000001", enabled: true };
     for (const [name, checkpoint, value] of [["HTTP: sincronizar consumo E", "Code: canal E", channel], ["HTTP: reconciliar E sem transporte", "Code: tenant E", tenant]] as const) {
       const headers = node(name).parameters.headerParameters as { parameters: { name: string; value: unknown }[] };
-      expect(headers.parameters[0].name).toBe("X-Crivo-Tenant"); expect(expression(headers.parameters[0].value, { tenantSlug: "foreign" }, { [checkpoint]: value })).toBe("fixture-a");
+      expect(headers.parameters[0].name).toBe("X-Krivo-Tenant"); expect(expression(headers.parameters[0].value, { tenantSlug: "foreign" }, { [checkpoint]: value })).toBe("fixture-a");
       expect(node(name).parameters.authentication).toBe("genericCredentialType"); expect(node(name).parameters.genericAuthType).toBe("httpHeaderAuth");
     }
   });

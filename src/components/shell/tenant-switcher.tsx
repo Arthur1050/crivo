@@ -38,7 +38,7 @@ interface TenantSwitcherMenuProps {
  * componentes. O que mudou é de onde vem a lista e o que a troca grava — as
  * imobiliárias são exclusivamente os VÍNCULOS do usuário autenticado, e a
  * troca grava o `activeOrganizationId` da sessão em vez do cookie
- * `crivo_tenant`, que deixou de ser fonte de verdade.
+ * `krivo_tenant`, que deixou de ser fonte de verdade.
  *
  * Quem tem um vínculo só não vê seletor nenhum (AC2): o componente pai não
  * monta este menu, então não há popover a abrir.

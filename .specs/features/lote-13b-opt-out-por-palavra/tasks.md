@@ -238,7 +238,7 @@ T7 → T8 → T9
 **Depends on**: None (fases 1 e 2 concluídas: paridade de T1 e mudança de T2/T3 no main)
 **Reuses**: mudanças de T2/T3; `scripts/n8n-inline.mjs`
 **Requirement**: SAIR-05
-**Status**: ✅ Done — fea3306 (branch `hotfix/opt-out-so-sair`, worktree `../crivo-hotfix-l13b`; nada publicado nem enviado)
+**Status**: ✅ Done — fea3306 (branch `hotfix/opt-out-so-sair`, worktree `../krivo-hotfix-l13b`; nada publicado nem enviado)
 
 **Tools**:
 
@@ -260,7 +260,7 @@ T7 → T8 → T9
 
 ### T8: Publicar o hotfix e arquivar a medição
 
-**What**: Com autorização do usuário: `update_workflow` + `publish_workflow` do principal com o gerado de T7; arquivar `crivo-medicao-opt-out`; push do branch de hotfix.
+**What**: Com autorização do usuário: `update_workflow` + `publish_workflow` do principal com o gerado de T7; arquivar `krivo-medicao-opt-out`; push do branch de hotfix.
 **Where**: `.specs/features/lote-13b-opt-out-por-palavra/evidence/publicacao.md`
 **Depends on**: T7
 **Reuses**: L-032, L-051
@@ -276,7 +276,7 @@ T7 → T8 → T9
 
 - [ ] JSON da versão `e3e25681` salvo antes da publicação (rollback)
 - [ ] `versionId` = `activeVersionId` do principal e publicado == gerado de T7
-- [ ] `crivo-medicao-opt-out` arquivado
+- [ ] `krivo-medicao-opt-out` arquivado
 - [ ] Evidência registrada com IDs de versão
 
 **Tests**: none

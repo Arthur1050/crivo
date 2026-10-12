@@ -2,7 +2,7 @@
 
 ## Registro do gate de viabilidade (T0, 2026-10-09)
 
-Executado na branch `test` do Neon (banco de teste, AD-033), como `neondb_owner` (sem superusuário). Papel de prova `crivo_vitrine_gate`, criado e removido na mesma execução; schema `vitrine` de prova criado e removido. Nenhuma URL, senha ou chave foi impressa ou registrada: a senha do papel de prova era aleatória, só existiu em memória e em arquivo temporário apagado.
+Executado na branch `test` do Neon (banco de teste, AD-033), como `neondb_owner` (sem superusuário). Papel de prova `krivo_vitrine_gate`, criado e removido na mesma execução; schema `vitrine` de prova criado e removido. Nenhuma URL, senha ou chave foi impressa ou registrada: a senha do papel de prova era aleatória, só existiu em memória e em arquivo temporário apagado.
 
 | ID | Fato | Fonte e comando (sem credencial) | Resultado |
 | --- | --- | --- | --- |
@@ -27,7 +27,7 @@ O `drizzle-kit push` na branch `test` termina com `error: relation "leads_tenant
 
 ### Estado após o gate
 
-Papel `crivo_vitrine_gate` removido (`pg_roles` = 0) e schema `vitrine` inexistente na base de teste. Workers não foram tocados. Nada fora dos bancos de teste.
+Papel `krivo_vitrine_gate` removido (`pg_roles` = 0) e schema `vitrine` inexistente na base de teste. Workers não foram tocados. Nada fora dos bancos de teste.
 
 ---
 
@@ -88,7 +88,7 @@ Abreviações: `SV` = `src/db/__tests__/schema-vitrine.test.ts`; `V` = `src/db/_
 | AC4 | só loja ativa, com CRECI, razão e WhatsApp | `V:121` — só `complete.slug` entre completa, sem WhatsApp (nulo e espaços), inativa e sem linha; `V:130-148` valor de cada coluna | ✅ |
 | AC5 | só `disponivel` E publicado, de loja visível | `V:160` (6 combinações → só 1); `V:168` (loja inativa/sem WhatsApp → `[]`); `V:176-193` valores | ✅ |
 | AC6 | papel com login, read-only, 5s, USAGE, SELECT só nas views | `P:137-139` (`rolcanlogin`, `rolconfig` contém `default_transaction_read_only=on` e `statement_timeout=5s`); `P:152` USAGE; `P:170` grants | ✅ |
-| AC7 | papel lê as duas views | `P:89`, `P:94` — conectado como `crivo_vitrine`, `rows toEqual([{slug}])` / `[{referencia:"PRV-1"}]` | ✅ |
+| AC7 | papel lê as duas views | `P:89`, `P:94` — conectado como `krivo_vitrine`, `rows toEqual([{slug}])` / `[{referencia:"PRV-1"}]` | ✅ |
 | AC8 | `SELECT` nas 10 tabelas → `42501` | `P:100` — `it.each(TABLES_DENIED)`, `codeOf(...) toBe("42501")`, uma por tabela (lista em `P:16-19` = as 10 da spec) | ✅ |
 | AC9 | `INSERT/UPDATE/DELETE` nas views recusados | `P:119` — código ∈ {`25006`,`42501`,`55000`} p/ 3 verbos × 2 views; `P:127-128` nada escrito. A spec diz só "recusar" (sem código), então a asserção por conjunto está no nível da spec | ✅ |
 | AC10 | não é membro de papel algum | `P:157` (`neon_superuser` = false), `P:160` (`pg_auth_members` = 0), `P:163` atributos elevados falsos | ✅ |
@@ -176,7 +176,7 @@ Cópia de cada arquivo fora do repositório antes de cada mutação, uma mutaç�
 | M1a | `vitrine.imoveis` sem `and p.published` (alvo 1) | `scripts/vitrine/vitrine.sql:106` | `V` (AC5 combinações; AC14 paridade) | ✅ morto |
 | M1b | `vitrine.imoveis` sem `p.status = 'disponivel'` (alvo 1) | `scripts/vitrine/vitrine.sql:106` | `V` (AC5; vendidos; vendido some; AC14) | ✅ morto |
 | M2 | `vitrine.lojas` sem a condição de WhatsApp (alvo 2) | `scripts/vitrine/vitrine.sql:80` | `V` (corte de loja AC4; imóveis de loja sem WhatsApp) | ✅ morto |
-| M3 | `grant select on public.properties to crivo_vitrine` (alvo 3) | `scripts/vitrine/vitrine.sql:130` | `P` (`public.properties` → 42501; AC11 grants; privilégio de coluna) **e** `D` (`verifyVitrineState = []`); `V` sozinho passa | ✅ morto |
+| M3 | `grant select on public.properties to krivo_vitrine` (alvo 3) | `scripts/vitrine/vitrine.sql:130` | `P` (`public.properties` → 42501; AC11 grants; privilégio de coluna) **e** `D` (`verifyVitrineState = []`); `V` sozinho passa | ✅ morto |
 | M4 | `default_transaction_read_only = off` (alvo 4) | `scripts/vitrine/vitrine.sql:126` | `P:137-139` (`rolconfig`) e `D` (conferência do estado) | ✅ morto |
 | M5 | `deletePropertyAction` sem agendar (alvo 5) | `src/server/actions/properties.ts:338` | `PA:583` | ✅ morto |
 | M6a | agenda na recusa por validação de `setPropertyStatusAction` (alvo 6) | `src/server/actions/properties.ts:386` | `PA:625` | ✅ morto |
@@ -207,7 +207,7 @@ Cópia de cada arquivo fora do repositório antes de cada mutação, uma mutaç�
 
 **Profundidade**: expandida (P0: fronteira de segurança). **Resultado**: 28/29 mortos; os 8 alvos obrigatórios (M1a, M1b, M2, M3, M4, M5, M6a, M6b, M7, M8) todos mortos. Alvo 3 morto por `P` e por `D`.
 
-**Restauração do banco base**: após M3/M4/M10/M28, `V` rodou com o SQL correto (13/13), o script temporário fez `revoke select on public.properties from crivo_vitrine` e `alter role crivo_vitrine set default_transaction_read_only = on`, e conferiu: grants = `vitrine.imoveis:SELECT, vitrine.lojas:SELECT`; `rolconfig` = `default_transaction_read_only=on, statement_timeout=5s`; checks com a definição `NULLIF(TRIM(...))` original. Após M25, `SEED` rodou de novo com o seed correto (35/35). Por fim `P` 26/26, `D` 14/14, `SV` 10/10 e `verifyVitrineState(base)` = `[]` (arquivo temporário na raiz, apagado em seguida).
+**Restauração do banco base**: após M3/M4/M10/M28, `V` rodou com o SQL correto (13/13), o script temporário fez `revoke select on public.properties from krivo_vitrine` e `alter role krivo_vitrine set default_transaction_read_only = on`, e conferiu: grants = `vitrine.imoveis:SELECT, vitrine.lojas:SELECT`; `rolconfig` = `default_transaction_read_only=on, statement_timeout=5s`; checks com a definição `NULLIF(TRIM(...))` original. Após M25, `SEED` rodou de novo com o seed correto (35/35). Por fim `P` 26/26, `D` 14/14, `SV` 10/10 e `verifyVitrineState(base)` = `[]` (arquivo temporário na raiz, apagado em seguida).
 
 ### Gates
 
@@ -243,14 +243,14 @@ Cópia de cada arquivo fora do repositório antes de cada mutação, uma mutaç�
 - **Escopo**: sensor de discriminação refeito por um Verifier independente no HEAD final `c63535c` (depois do fix de M27 em `3b620bc`), cobrindo os 8 alvos obrigatórios, o M27 e 6 mutantes próprios. Nenhum código ou teste alterado; só esta seção foi acrescentada.
 - **Resultado**: **21/21 mortos, 0 sobrevivente**. Alvos obrigatórios (13 mutações, incluindo M27): todos mortos.
 - **Método**: cópia de cada arquivo no scratchpad (fora do repositório) antes da mutação, uma mutação por vez no arquivo real, só os testes que deveriam matá-la, restauração da cópia antes da próxima e `git diff --quiet -- <arquivo>` + comparação de `git status --porcelain`/`git diff --stat` com a linha de base após cada restauração. Um processo `npx vitest run` por vez (L-033), sempre no banco de teste base. Linha de base verde antes do sensor: `V`+`P`+`D` 54/54 (13+26+15); `PA`+`SA`+`L`+`R`+`PF`+`SS` 116/116.
-- **Mutações no SQL**: aplicadas no banco base pelo `beforeAll` de `V` (`V:77-80`); para M3 e M4 a ordem foi `V` (aplica o SQL mutado) → `P` → `D`. Depois de restaurar o arquivo, `V` rodou de novo para reaplicar o SQL correto e um script node temporário fora do repositório conferiu e desfez à mão `revoke select on public.properties from crivo_vitrine` e `alter role crivo_vitrine set default_transaction_read_only = on`.
+- **Mutações no SQL**: aplicadas no banco base pelo `beforeAll` de `V` (`V:77-80`); para M3 e M4 a ordem foi `V` (aplica o SQL mutado) → `P` → `D`. Depois de restaurar o arquivo, `V` rodou de novo para reaplicar o SQL correto e um script node temporário fora do repositório conferiu e desfez à mão `revoke select on public.properties from krivo_vitrine` e `alter role krivo_vitrine set default_transaction_read_only = on`.
 
 | # | Mutação | Arquivo | Teste que matou | Resultado |
 | --- | --- | --- | --- | --- |
 | R1a | `vitrine.imoveis` sem `and p.published` (alvo 1, mutante A) | `scripts/vitrine/vitrine.sql:106` | `V:153` (AC5, combinações de status × publicação); `V:272` (AC14 paridade) | ✅ morto |
 | R1b | `vitrine.imoveis` sem `p.status = 'disponivel'` (alvo 1, mutante B) | `scripts/vitrine/vitrine.sql:106` | `V:153`; `V:198` (loja só com vendidos); `V:217` (vendido sai da view); `V:272` | ✅ morto |
 | R2 | `vitrine.lojas` sem `nullif(trim(t.agent_whatsapp), '') is not null` (alvo 2) | `scripts/vitrine/vitrine.sql:80` | `V:113` (corte de loja AC4); `V:163` (imóveis de loja sem WhatsApp) | ✅ morto |
-| R3 | `grant select on public.properties to crivo_vitrine` acrescentado ao SQL (alvo 3) | `scripts/vitrine/vitrine.sql:130` | **`P`**: `P:99` (`SELECT em public.properties` → 42501), `P:166` (AC11 `role_table_grants` = 2 linhas), `P:176` (nada de `public` legível). **`D`**: `D:124` (`verifyVitrineState = []`), `D:128` e `D:151` (reaplicam o SQL mutado e esperam `[]`). `V` sozinho passa (13/13) | ✅ morto (por `P` e por `D`) |
+| R3 | `grant select on public.properties to krivo_vitrine` acrescentado ao SQL (alvo 3) | `scripts/vitrine/vitrine.sql:130` | **`P`**: `P:99` (`SELECT em public.properties` → 42501), `P:166` (AC11 `role_table_grants` = 2 linhas), `P:176` (nada de `public` legível). **`D`**: `D:124` (`verifyVitrineState = []`), `D:128` e `D:151` (reaplicam o SQL mutado e esperam `[]`). `V` sozinho passa (13/13) | ✅ morto (por `P` e por `D`) |
 | R4 | `default_transaction_read_only = on` → `= off` (alvo 4) | `scripts/vitrine/vitrine.sql:126` | `P:133` (AC6, `rolconfig`); `D:124`, `D:128`, `D:140`, `D:151` (conferência do estado final) | ✅ morto |
 | R5a | `deletePropertyAction` sem `scheduleStorefrontRevalidation(tenantId)` (alvo 5) | `src/server/actions/properties.ts:338` | `PA:583` (AC8 `deletePropertyAction`) | ✅ morto |
 | R5b | `setPropertyFeaturedAction` sem `scheduleStorefrontRevalidation(tenantId)` (alvo 5) | `src/server/actions/properties.ts:431` | `PA:679` (gestor marca), `PA:692` (gestor desmarca) | ✅ morto |

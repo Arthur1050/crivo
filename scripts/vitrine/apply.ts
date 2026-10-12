@@ -39,7 +39,7 @@ export async function applyVitrineSql(
     await client.query(sql);
     if (options.password) {
       // `ALTER ROLE ... PASSWORD` não aceita parâmetro; o literal é escapado pelo driver.
-      await client.query(`alter role crivo_vitrine password ${client.escapeLiteral(options.password)}`);
+      await client.query(`alter role krivo_vitrine password ${client.escapeLiteral(options.password)}`);
     }
   });
 }
@@ -90,28 +90,28 @@ export async function verifyVitrineState(url: string): Promise<string[]> {
     }
 
     const role = await client.query<{ rolcanlogin: boolean; rolconfig: string[] | null }>(
-      "select rolcanlogin, rolconfig from pg_roles where rolname = 'crivo_vitrine'"
+      "select rolcanlogin, rolconfig from pg_roles where rolname = 'krivo_vitrine'"
     );
     if (role.rows.length === 0) {
-      problems.push("papel crivo_vitrine ausente");
+      problems.push("papel krivo_vitrine ausente");
     } else {
       const { rolcanlogin, rolconfig } = role.rows[0];
-      if (!rolcanlogin) problems.push("papel crivo_vitrine sem login");
+      if (!rolcanlogin) problems.push("papel krivo_vitrine sem login");
       for (const setting of ["default_transaction_read_only=on", "statement_timeout=5s"]) {
-        if (!(rolconfig ?? []).includes(setting)) problems.push(`papel crivo_vitrine sem ${setting}`);
+        if (!(rolconfig ?? []).includes(setting)) problems.push(`papel krivo_vitrine sem ${setting}`);
       }
     }
 
     const grants = await client.query<{ table_schema: string; table_name: string; privilege_type: string }>(
       `select table_schema, table_name, privilege_type from information_schema.role_table_grants
-       where grantee = 'crivo_vitrine'`
+       where grantee = 'krivo_vitrine'`
     );
     const presentGrants = new Set(grants.rows.map((row) => `${row.table_schema}.${row.table_name}:${row.privilege_type}`));
     for (const grant of EXPECTED_GRANTS) {
-      if (!presentGrants.has(grant)) problems.push(`grant ${grant} ausente para crivo_vitrine`);
+      if (!presentGrants.has(grant)) problems.push(`grant ${grant} ausente para krivo_vitrine`);
     }
     for (const grant of presentGrants) {
-      if (!EXPECTED_GRANTS.includes(grant)) problems.push(`grant inesperado ${grant} para crivo_vitrine`);
+      if (!EXPECTED_GRANTS.includes(grant)) problems.push(`grant inesperado ${grant} para krivo_vitrine`);
     }
 
     return problems;

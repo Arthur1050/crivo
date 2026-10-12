@@ -7,14 +7,14 @@
 
 ## Architecture Overview
 
-RSC-first (confirmado com o usuário): Server Components consultam a camada de acesso a dados diretamente no servidor via Drizzle; o tenant ativo vive num **cookie** (`crivo_tenant`) legível pelos Server Components; Zustand espelha o tenant no client apenas para UI (nome exibido, seletor). Troca de tenant = server action que grava o cookie + `router.refresh()`.
+RSC-first (confirmado com o usuário): Server Components consultam a camada de acesso a dados diretamente no servidor via Drizzle; o tenant ativo vive num **cookie** (`krivo_tenant`) legível pelos Server Components; Zustand espelha o tenant no client apenas para UI (nome exibido, seletor). Troca de tenant = server action que grava o cookie + `router.refresh()`.
 
 **Modelo de renderização**: Next 16.2.11 **sem** `cacheComponents` (config padrão) — rotas dinâmicas por request, sem exigência de `<Suspense>` em torno de `cookies()`. `fetch`/queries não são cacheados por padrão no Next 16, o que é o comportamento desejado (dado sempre fresco do banco).
 
 ```mermaid
 graph TD
     U[Usuário] -->|clica| TS[TenantSwitcher - client]
-    TS -->|server action setTenant| CK[Cookie crivo_tenant]
+    TS -->|server action setTenant| CK[Cookie krivo_tenant]
     TS -->|espelha| ZS[Zustand tenantStore]
     CK -->|cookies read| RSC[Server Components - páginas]
     RSC -->|"tenant_id explícito"| DAL[Camada de acesso src/server/data]
@@ -85,7 +85,7 @@ graph TD
 - **Purpose**: Fonte de verdade do tenant ativo, legível no servidor e persistente entre reloads.
 - **Location**: `src/server/tenant.ts`
 - **Interfaces**:
-  - `getActiveTenantId(): Promise<string>` — lê cookie `crivo_tenant`; default: primeiro tenant do seed
+  - `getActiveTenantId(): Promise<string>` — lê cookie `krivo_tenant`; default: primeiro tenant do seed
   - `setActiveTenant(tenantId)` — server action: valida tenant existente, grava cookie
 - **Dependencies**: `next/headers` (`cookies()` — assíncrono no Next 16), DAL.
 
@@ -176,7 +176,7 @@ interface Document     { id: uuid; tenantId; name; modality: modality; mimeType;
 | -------- | ------ | --------- |
 | Driver Postgres | `pg` (node-postgres) | Único driver que funciona idêntico em Neon (TCP+SSL) e Postgres local — troca de banco = troca de URL |
 | Cache Components | NÃO habilitar na Fase 1 | Config padrão do Next 16 já rende tudo dinâmico por request — correto para CRM com dado fresco; habilitar traria exigências de Suspense sem benefício no mock |
-| Fonte de verdade do tenant | Cookie `crivo_tenant` (não localStorage) | RSC precisa ler o tenant no servidor; localStorage é invisível ao servidor. Zustand espelha para UI. Satisfaz o AC de persistência da spec |
+| Fonte de verdade do tenant | Cookie `krivo_tenant` (não localStorage) | RSC precisa ler o tenant no servidor; localStorage é invisível ao servidor. Zustand espelha para UI. Satisfaz o AC de persistência da spec |
 | Idempotência do seed | Delete-and-insert com UUIDs determinísticos | Estado canônico garantido, sem lógica de upsert complexa; IDs estáveis ajudam testes |
 | Test runner | Vitest | Padrão de facto para Next+TS; necessário para o teste de isolamento (FUND-06) e para o gate da skill |
 | Migrations | `drizzle-kit push` na Fase 1 (sem arquivos de migration) | Fase de fundação com schema volátil; migrations versionadas passam a valer quando houver dado real (Fase 7/9) |

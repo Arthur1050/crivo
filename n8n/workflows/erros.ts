@@ -1,12 +1,12 @@
 /**
- * crivo-agente-erros — Error Trigger -> Gmail (design.md — Error Handling
+ * krivo-agente-erros — Error Trigger -> Gmail (design.md — Error Handling
  * Strategy; padrão espelhado do workflow existente na instância
  * "tosta.log — Workflow de erro", confirmado via MCP
  * `search_workflows`/`get_workflow_details` no T9: Error Trigger -> ação de
  * recuperação especifica do outro produto -> Gmail send). Não depende de
  * `n8n/src/` (nenhum marcador `__INLINE(...)__` — é só orquestração de
  * nós nativos), então já nasce completo aqui; T11 só publica via MCP e liga
- * `crivo-agente-principal`/`crivo-agente-scheduler` a ele
+ * `krivo-agente-principal`/`krivo-agente-scheduler` a ele
  * (`settings.errorWorkflow`).
  */
 import { workflow, trigger, node, newCredential } from "@n8n/workflow-sdk";
@@ -15,7 +15,7 @@ const pipelineFailed = trigger({
   type: "n8n-nodes-base.errorTrigger",
   version: 1,
   config: {
-    name: "Falha em crivo-agente-*",
+    name: "Falha em krivo-agente-*",
     position: [0, 0],
   },
   output: [
@@ -26,7 +26,7 @@ const pipelineFailed = trigger({
         lastNodeExecuted: "HTTP Request",
         url: "https://n8n.example.com/workflow/abc/executions/12345",
       },
-      workflow: { id: "abc", name: "crivo-agente-principal" },
+      workflow: { id: "abc", name: "krivo-agente-principal" },
     },
   ],
 });
@@ -41,10 +41,10 @@ const notifyByEmail = node({
       resource: "message",
       operation: "send",
       sendTo: "tostamatias@gmail.com",
-      subject: "={{ '[crivo] Falha em ' + (($json.workflow && $json.workflow.name) || 'workflow do agente') }}",
+      subject: "={{ '[krivo] Falha em ' + (($json.workflow && $json.workflow.name) || 'workflow do agente') }}",
       emailType: "text",
       message:
-        "={{ [ 'Uma execução do agente crivo falhou.', '', 'Workflow: ' + (($json.workflow && $json.workflow.name) || '-'), 'Execução: ' + (($json.execution && $json.execution.id) || '-'), 'Último nó executado: ' + (($json.execution && $json.execution.lastNodeExecuted) || '-'), '', 'Mensagem:', (($json.execution && $json.execution.error && $json.execution.error.message) || 'sem mensagem'), '', 'Abrir execução:', (($json.execution && $json.execution.url) || '-') ].join('\\n') }}",
+        "={{ [ 'Uma execução do agente krivo falhou.', '', 'Workflow: ' + (($json.workflow && $json.workflow.name) || '-'), 'Execução: ' + (($json.execution && $json.execution.id) || '-'), 'Último nó executado: ' + (($json.execution && $json.execution.lastNodeExecuted) || '-'), '', 'Mensagem:', (($json.execution && $json.execution.error && $json.execution.error.message) || 'sem mensagem'), '', 'Abrir execução:', (($json.execution && $json.execution.url) || '-') ].join('\\n') }}",
       options: {},
     },
     credentials: {
@@ -56,6 +56,6 @@ const notifyByEmail = node({
   output: [{ id: "18abc", threadId: "18abc" }],
 });
 
-export default workflow("crivo-agente-erros", "crivo-agente-erros")
+export default workflow("krivo-agente-erros", "krivo-agente-erros")
   .add(pipelineFailed)
   .to(notifyByEmail);

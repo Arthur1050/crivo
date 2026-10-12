@@ -20,11 +20,11 @@ type PropertyInsert = typeof properties.$inferInsert;
 const AGORA = new Date("2026-10-01T12:00:00.000Z");
 const ha = (dias: number) => new Date(AGORA.getTime() - dias * 24 * 60 * 60 * 1000);
 
-describe("L16b T4 — consultas da vitrine como crivo_vitrine (VSEG-01, VCAT-02, VITEM-01)", () => {
+describe("L16b T4 — consultas da vitrine como krivo_vitrine (VSEG-01, VCAT-02, VITEM-01)", () => {
   const tenantIds: string[] = [];
   let userId: string;
   let sequence = 0;
-  // Leitura pelo papel `crivo_vitrine` da branch do worker, com o `db` da própria vitrine.
+  // Leitura pelo papel `krivo_vitrine` da branch do worker, com o `db` da própria vitrine.
   const leitura = criarDb(
     resolveVitrineTestUrl({
       baseUrl: currentTestDatabaseUrl(),
@@ -104,10 +104,10 @@ describe("L16b T4 — consultas da vitrine como crivo_vitrine (VSEG-01, VCAT-02,
     await db.$client.end();
   });
 
-  it("lê como o papel crivo_vitrine, não como o dono (VSEG AC8)", async () => {
+  it("lê como o papel krivo_vitrine, não como o dono (VSEG AC8)", async () => {
     // String, não `sql`: o `sql` da raiz e o `db` da vitrine vêm de cópias distintas do drizzle (AD-044).
     const resultado = await leitura.execute("select current_user as usuario");
-    expect((resultado.rows[0] as { usuario: string }).usuario).toBe("crivo_vitrine");
+    expect((resultado.rows[0] as { usuario: string }).usuario).toBe("krivo_vitrine");
   });
 
   describe("isolamento por slug e corte de visibilidade (VSEG AC2, AC3, AC4)", () => {

@@ -70,15 +70,15 @@ existe para o corretor.
 
 ---
 
-## §24 — Publicação de `crivo-agente-principal` com `buscar_imoveis` (T24)
+## §24 — Publicação de `krivo-agente-principal` com `buscar_imoveis` (T24)
 
-Workflow `crivo-agente-principal` (`0B1nqjODu7xuYYKF`), via MCP `update_workflow` + `publish_workflow`
+Workflow `krivo-agente-principal` (`0B1nqjODu7xuYYKF`), via MCP `update_workflow` + `publish_workflow`
 — nenhuma edição pela UI (AD-014).
 
 **Operações aplicadas** (tradução mecânica do que `n8n/generated/principal.ts` já declarava):
 
 1. `addNode` `buscar_imoveis` (`httpRequestTool` v4.5, `GET /api/v1/properties`, 7 critérios via
-   `$fromAI`, `X-Crivo-Tenant` por expressão do fluxo, `neverError`)
+   `$fromAI`, `X-Krivo-Tenant` por expressão do fluxo, `neverError`)
 2. `setNodeSettings` em `buscar_imoveis`: `retryOnFail: true`, `maxTries: 2`
 3. `addConnection` `buscar_imoveis` → `AI Agent` em `ai_tool`
 4. `setNodeSettings` em `consultar_documentos`: `retryOnFail: true`, `maxTries: 2` — a fonte já tinha
@@ -89,7 +89,7 @@ Workflow `crivo-agente-principal` (`0B1nqjODu7xuYYKF`), via MCP `update_workflow
    `buscar_imoveis` ao catálogo)
 
 Um segundo `update_workflow` foi necessário: a primeira chamada passou a credencial de
-`buscar_imoveis` só por nome (`{httpHeaderAuth: {name: "Crivo - chave de servico"}}`) e o MCP devolveu
+`buscar_imoveis` só por nome (`{httpHeaderAuth: {name: "Krivo - chave de servico"}}`) e o MCP devolveu
 `"note": "HTTP Request nodes (buscar_imoveis) were skipped during credential auto-assignment"` — a
 credencial não foi atribuída. Corrigido com `setNodeCredential` explícito (`credentialId`
 `YhGcdfGtdEBBU9YP`, resolvido via `list_credentials`).
@@ -124,7 +124,7 @@ Confirmado por `get_workflow_details` pós-publicação: `active: true`, `isArch
 sobre os nós `Chat Memory Manager: *` já registrados no lote-10 (`n8n/smoke/evidencia.md` §5.4) —
 pré-existentes, não relacionados a esta publicação.
 
-**Nenhum outro workflow tocado** — a dívida cosmética do `crivo-tool-agendar-reuniao` (paridade
+**Nenhum outro workflow tocado** — a dívida cosmética do `krivo-tool-agendar-reuniao` (paridade
 fonte × instância, lote-10 `evidencia.md`/`§14.7`) fica como está, fora do escopo deste lote.
 
 ---
@@ -358,7 +358,7 @@ atualizar/publicar somente o principal. Fonte local já verificada: commit `2268
 1.304 testes em 91 arquivos, lint e build passaram (§31). Não houve mudança de
 código ou novo teste nesta task; o gate completo não foi repetido.
 
-**Alvo**: `crivo-agente-principal`, id `0B1nqjODu7xuYYKF`.
+**Alvo**: `krivo-agente-principal`, id `0B1nqjODu7xuYYKF`.
 Versão anterior reconsultada antes da alteração:
 `e0a4f1b7-bee3-4a7d-bf50-0e01c2b6a07f`, draft e ativo coincidentes.
 Artefato `n8n/generated/principal.ts` importado pelo SDK e novamente validado pelo
@@ -410,7 +410,7 @@ Usuário informou acreditar ter resolvido a credencial e autorizou executar o re
 para iniciar nova sessão. Alvo fixo do roteiro: tenant `triangulo`, waId `553499532444`.
 Executada a ordem n8n → CRM, sem alterar workflow ou enviar mensagem no WhatsApp.
 
-- `crivo-smoke-reset` (`rgf3t1cVsd2q0X0f`) executado em modo manual;
+- `krivo-smoke-reset` (`rgf3t1cVsd2q0X0f`) executado em modo manual;
   execução **2320**, conferida individualmente por `get_execution`, status **success**,
   de `2026-09-14T17:04:33.626Z` a `17:04:33.719Z`.
 - Memory Manager retornou `success=true` para sessão `triangulo:553499532444`.
@@ -749,7 +749,7 @@ Scheduler reconsulta/cria lead pelo waId (scheduler.ts:172/192/203): deixar essa
 após apagar o CRM permitiria recriar a sessão e enviar link do teste anterior.
 Foi removido somente esse resíduo associado, como parte do reset autorizado.
 
-**n8n, rotina existente**: execute_workflow manual no crivo-smoke-reset
+**n8n, rotina existente**: execute_workflow manual no krivo-smoke-reset
 rgf3t1cVsd2q0X0f, execução **2370**, confirmada por get_execution, success,
 2026-09-14T17:52:03.181Z–17:52:03.255Z. Memory Manager success=true para
 triangulo:553499532444. deleteRows removeu conversa_estado id 33, filtrado por

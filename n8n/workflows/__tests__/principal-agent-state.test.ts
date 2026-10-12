@@ -19,7 +19,7 @@ function captured() { return run(CAPTURE, posted, captureContexts)[0].json; }
 const desired = { phase: "qualificando", perguntadosJson: '["modality"]', systemMessage: "texto", userMessage: "Oi" };
 const payload = { anchorMessageId: anchor, resetObservedAt: null, expectedRevision: 4, phase: "qualificando", askedFields: ["modality"], openingHistory: ["Olá"] };
 function prepared() { return run(PREP, desired, { [CAPTURE]: captured(), "Code: contexto do lead": ctx }).json; }
-function metadata(id = anchor, revision: number | null = 5) { return { body: [], headers: { "x-crivo-anchor-message-id": id, "x-crivo-agent-state-revision": revision === null ? "null" : String(revision) } }; }
+function metadata(id = anchor, revision: number | null = 5) { return { body: [], headers: { "x-krivo-anchor-message-id": id, "x-krivo-agent-state-revision": revision === null ? "null" : String(revision) } }; }
 function confirmation(p = payload) { return { replay: false, state: { ...p, revision: p.expectedRevision + 1, updatedAt: "2026-10-02T12:00:00Z" } }; }
 
 describe("T50 — publicação CRM de todos escritores de fase antes do cache", () => {

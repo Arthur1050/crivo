@@ -60,7 +60,7 @@ export interface UpdateTenantSettingsInput {
 /**
  * Atualiza as configurações do tenant ATIVO (lote-2 — CONF-01/02). O tenant
  * nunca vem de `input` — é sempre resolvido no servidor via
- * `getActiveTenantId()` (cookie `crivo_tenant`), para que nenhum chamador
+ * `getActiveTenantId()` (cookie `krivo_tenant`), para que nenhum chamador
  * possa gravar em outro tenant informando um id no payload.
  *
  * Só `name`, `agentName` e `supportedModality` são validados: os campos de

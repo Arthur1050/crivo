@@ -149,7 +149,7 @@ vendido e ver a página de não encontrado com a marca da loja.
 5. The system SHALL NOT incluir no HTML, nos metadados, na imagem OG nem no log do servidor: logradouro, número, complemento, nome, e-mail ou telefone do captador, nem nome ou telefone de lead.
 6. The system SHALL NOT ter rota que aceite escrita além de `POST /api/revalidar`.
 7. The system SHALL NOT definir cookie em nenhuma resposta.
-8. WHEN as consultas da vitrine rodarem como `crivo_vitrine` contra o banco de teste THEN o isolamento por slug e o corte de visibilidade SHALL valer com linhas de outra loja na fixture.
+8. WHEN as consultas da vitrine rodarem como `krivo_vitrine` contra o banco de teste THEN o isolamento por slug e o corte de visibilidade SHALL valer com linhas de outra loja na fixture.
 
 **Independent Test**: rodar `npm run vitrine:e2e` com a fixture de sentinelas e ver todas as
 asserções passarem.

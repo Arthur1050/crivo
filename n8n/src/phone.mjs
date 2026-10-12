@@ -1,7 +1,7 @@
 /**
  * Normalização do destinatário de envio no WhatsApp (nono dígito brasileiro).
  *
- * PROBLEMA REAL (execução 354 de `crivo-agente-principal`, confirmado contra
+ * PROBLEMA REAL (execução 354 de `krivo-agente-principal`, confirmado contra
  * duas fontes): o webhook da Meta entrega o contato em `wa_id` no formato
  * LEGADO, sem o nono dígito — `553499532444` (12 dígitos) — enquanto a Cloud
  * API só aceita como destinatário o número atual, com o 9 — `5534999532444`

@@ -100,7 +100,7 @@ describe("L16a T10 — db:push:test com o SQL da vitrine (VBANCO-03)", () => {
   });
 
   it("nenhum log traz a senha do papel, a senha da base ou a URL: só o host", async () => {
-    const failing = simulated({ verify: async () => ["papel crivo_vitrine ausente"] });
+    const failing = simulated({ verify: async () => ["papel krivo_vitrine ausente"] });
     const { lines, logger } = capture();
     await pushToTargets(TARGETS, simulated().steps, PASSWORD, logger);
     await pushToTargets(TARGETS, failing.steps, PASSWORD, logger);
@@ -138,20 +138,20 @@ describe("L16a T10 — conferência do estado final contra o banco real (VBANCO-
   });
 
   it("um GRANT a mais em public.properties para o papel é apontado como inesperado", async () => {
-    await db.execute(sql`grant select on public.properties to crivo_vitrine`);
+    await db.execute(sql`grant select on public.properties to krivo_vitrine`);
     try {
       const problems = await verifyVitrineState(url);
-      expect(problems).toEqual(["grant inesperado public.properties:SELECT para crivo_vitrine"]);
+      expect(problems).toEqual(["grant inesperado public.properties:SELECT para krivo_vitrine"]);
     } finally {
-      await db.execute(sql`revoke select on public.properties from crivo_vitrine`);
+      await db.execute(sql`revoke select on public.properties from krivo_vitrine`);
     }
     expect(await verifyVitrineState(url)).toEqual([]);
   });
 
   it("um grant que falta nas views é apontado como ausente", async () => {
-    await db.execute(sql`revoke select on vitrine.lojas from crivo_vitrine`);
+    await db.execute(sql`revoke select on vitrine.lojas from krivo_vitrine`);
     try {
-      expect(await verifyVitrineState(url)).toEqual(["grant vitrine.lojas:SELECT ausente para crivo_vitrine"]);
+      expect(await verifyVitrineState(url)).toEqual(["grant vitrine.lojas:SELECT ausente para krivo_vitrine"]);
     } finally {
       await applyVitrineSql(url);
     }

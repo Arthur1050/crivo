@@ -64,7 +64,7 @@ export function LoginForm() {
         <Card padding={8}>
           <VStack gap={6}>
             <VStack gap={1}>
-              <Heading level={1}>Entrar no Crivo</Heading>
+              <Heading level={1}>Entrar no Krivo</Heading>
               <Text type="supporting" color="secondary">
                 Use o e-mail e a senha da sua imobiliária.
               </Text>

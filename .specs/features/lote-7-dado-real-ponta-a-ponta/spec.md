@@ -35,8 +35,8 @@ Toda ambiguidade está resolvida ou registrada aqui — nada fica silenciosament
 | Assumption / decision | Chosen default | Rationale | Confirmed? |
 | --------------------- | -------------- | --------- | ---------- |
 | O que exatamente é "o mock" que a Fase 9 substitui | Só dado de **lead** (leads, conversas, mensagens). Configuração do tenant — corretores, categorias, documentos, horário comercial, tom de voz — permanece semeada nos tenants-piloto | Documento e horário comercial são contexto que o agente consome via `GET /api/v1/context` e `/settings`; esvaziá-los deixaria o agente sem contexto justo no smoke. O que polui Kanban/Dashboard/Chats é lead fictício, não configuração | y |
-| Destino dos 50 leads de seed já existentes nos 2 tenants-piloto | Apagados pelo reseed; o dataset rico renasce no tenant `Crivo Demo` | Seed determinístico e reprodutível (`id(...)` derivado de chave estável); migrar linhas sem valor custaria um script one-shot | n |
-| Visibilidade do tenant `Crivo Demo` no seletor de tenants | Visível para todos, sem flag | Não existe autenticação (AD-001) — não há a quem esconder; o nome já denuncia que é demonstração | n |
+| Destino dos 50 leads de seed já existentes nos 2 tenants-piloto | Apagados pelo reseed; o dataset rico renasce no tenant `Krivo Demo` | Seed determinístico e reprodutível (`id(...)` derivado de chave estável); migrar linhas sem valor custaria um script one-shot | n |
+| Visibilidade do tenant `Krivo Demo` no seletor de tenants | Visível para todos, sem flag | Não existe autenticação (AD-001) — não há a quem esconder; o nome já denuncia que é demonstração | n |
 | Definição de `first_response_at` | Instante (`sent_at`) da **primeira** mensagem com `sender = "agente"` daquele lead, gravado uma única vez e nunca sobrescrito | É a definição que o dashboard já assume ao calcular `firstResponseAt - firstContactAt`; gravar uma vez torna a operação idempotente sob reentrega de mensagem | n |
 | Desempate da regra "menor carga ativa" | `created_at` do corretor, ascendente; persistindo empate, `id` ascendente | Precisa ser determinístico para o teste conseguir asseverar um resultado exato | n |
 | Corretor escolhido sob criação concorrente de dois leads | A contagem de carga é lida no momento da criação; dois leads simultâneos podem cair no mesmo corretor | Carga é uma aproximação, não uma cota; serializar a criação de lead por causa disso custaria mais do que resolve | n |
@@ -63,14 +63,14 @@ Toda ambiguidade está resolvida ou registrada aqui — nada fica silenciosament
 
 **Acceptance Criteria**:
 
-1. WHEN o seed é executado THEN o sistema SHALL criar três tenants: `Crivo Demo` com o dataset completo de demonstração, e os dois tenants-piloto sem nenhum lead, conversa ou mensagem.
+1. WHEN o seed é executado THEN o sistema SHALL criar três tenants: `Krivo Demo` com o dataset completo de demonstração, e os dois tenants-piloto sem nenhum lead, conversa ou mensagem.
 2. The system SHALL semear nos tenants-piloto a configuração completa do tenant — corretores, categorias de documento, documentos, horário comercial, tom de voz e chave de API — exatamente como antes.
-3. WHEN o seed é executado THEN o sistema SHALL deixar `baseline_leads_per_month`, `baseline_first_response_minutes` e `baseline_lead_to_meeting_pct` nulos nos dois tenants-piloto, mantendo-os preenchidos no tenant `Crivo Demo`.
+3. WHEN o seed é executado THEN o sistema SHALL deixar `baseline_leads_per_month`, `baseline_first_response_minutes` e `baseline_lead_to_meeting_pct` nulos nos dois tenants-piloto, mantendo-os preenchidos no tenant `Krivo Demo`.
 4. WHILE um tenant não tem nenhum lead, o Dashboard SHALL exibir os KPIs sem valor numérico inventado (zero ou traço, nunca `NaN`) e cada gráfico e a tabela de leads recentes SHALL exibir seu estado vazio.
 5. WHILE um tenant não tem nenhum lead, o Pipeline SHALL exibir as três colunas com estado vazio e a tela de Chats SHALL exibir o estado vazio da lista de conversas.
-6. WHEN o seletor de tenants é aberto THEN o sistema SHALL listar os três tenants, com `Crivo Demo` entre eles.
+6. WHEN o seletor de tenants é aberto THEN o sistema SHALL listar os três tenants, com `Krivo Demo` entre eles.
 
-**Independent Test**: rodar `npm run db:seed`, abrir Dashboard, Pipeline e Chats no tenant Triângulo Imóveis (tudo vazio, sem erro) e no tenant `Crivo Demo` (dataset completo).
+**Independent Test**: rodar `npm run db:seed`, abrir Dashboard, Pipeline e Chats no tenant Triângulo Imóveis (tudo vazio, sem erro) e no tenant `Krivo Demo` (dataset completo).
 
 ---
 
@@ -208,7 +208,7 @@ Toda ambiguidade está resolvida ou registrada aqui — nada fica silenciosament
 2. WHILE não existe nenhuma mensagem do agente no tenant ativo, a sidebar SHALL exibir um subtítulo de estado ocioso, sem inventar atividade.
 3. The system SHALL derivar esse estado exclusivamente de dado do próprio CRM, sem nenhuma chamada à instância n8n.
 
-**Independent Test**: abrir o CRM no tenant `Crivo Demo` (mensagens recentes → instante relativo) e num tenant-piloto recém-semeado (sem mensagem → estado ocioso).
+**Independent Test**: abrir o CRM no tenant `Krivo Demo` (mensagens recentes → instante relativo) e num tenant-piloto recém-semeado (sem mensagem → estado ocioso).
 
 ---
 
@@ -219,7 +219,7 @@ Toda ambiguidade está resolvida ou registrada aqui — nada fica silenciosament
 - IF o seletor de corretor recebe um id inexistente THEN o sistema SHALL recusar a alteração sem lançar erro não tratado na tela.
 - WHEN a reunião de um lead é reagendada para o futuro depois do comparecimento já marcado THEN o sistema SHALL preservar o valor de `meeting_attended` já registrado.
 - IF a instância n8n está fora do ar durante o smoke THEN o autor SHALL registrar o desfecho como não provado, nunca inferir sucesso a partir do estado do CRM.
-- WHEN o tenant `Crivo Demo` está ativo THEN o sistema SHALL tratá-lo como qualquer outro tenant, sem caminho especial de código.
+- WHEN o tenant `Krivo Demo` está ativo THEN o sistema SHALL tratá-lo como qualquer outro tenant, sem caminho especial de código.
 
 ---
 
@@ -241,7 +241,7 @@ Toda ambiguidade está resolvida ou registrada aqui — nada fica silenciosament
 
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified
 
-**Coverage:** 9 total, 9 mapeadas a tasks, 0 sem mapeamento, 9 verificadas. Todas com evidência real registrada em `tasks.md` (Phases 1–4) e nas notas de T17/T19/T20/T21/T22. O Verifier (author ≠ verifier) rodou em 2 rounds: round 1 achou SEC-01 AC2 com gap real (`crivo-agente-scheduler` sem migrar do T17, 401 confirmado em produção via execução 897); Fix 1 (commit `76e2d6d`) migrou o workflow e foi reverificado de forma independente no round 2 — PASS, `validation.md` (`.specs/features/lote-7-dado-real-ponta-a-ponta/validation.md`), `validate_state.py` exit 0.
+**Coverage:** 9 total, 9 mapeadas a tasks, 0 sem mapeamento, 9 verificadas. Todas com evidência real registrada em `tasks.md` (Phases 1–4) e nas notas de T17/T19/T20/T21/T22. O Verifier (author ≠ verifier) rodou em 2 rounds: round 1 achou SEC-01 AC2 com gap real (`krivo-agente-scheduler` sem migrar do T17, 401 confirmado em produção via execução 897); Fix 1 (commit `76e2d6d`) migrou o workflow e foi reverificado de forma independente no round 2 — PASS, `validation.md` (`.specs/features/lote-7-dado-real-ponta-a-ponta/validation.md`), `validate_state.py` exit 0.
 
 ---
 

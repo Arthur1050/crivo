@@ -14,7 +14,7 @@
 Coluna escura fixa (~240–260px), três regiões verticais:
 
 1. **Header de marca**: NavIcon quadrado-arredondado com fundo accent (ícone de prédio) + nome do tenant em bold + subtítulo secundário "{city}, {state}". É também o gatilho do seletor de tenant (NavHeadingMenu).
-2. **Corpo scrollável**: seção com heading uppercase pequeno "MENU" contendo os itens Pipeline, Dashboard, Documentos, Configurações (no Crivo: os 5 atuais — Dashboard, Pipeline, Chats, Documentos, Configurações); item ativo com fundo suave + chevron à direita. Abaixo, seção "AGENTE IA" com um card sutil (variante muted): dot verde + "{agentName} — Online" em linha 1, "Qualificando leads via WhatsApp" em texto secundário na linha 2.
+2. **Corpo scrollável**: seção com heading uppercase pequeno "MENU" contendo os itens Pipeline, Dashboard, Documentos, Configurações (no Krivo: os 5 atuais — Dashboard, Pipeline, Chats, Documentos, Configurações); item ativo com fundo suave + chevron à direita. Abaixo, seção "AGENTE IA" com um card sutil (variante muted): dot verde + "{agentName} — Online" em linha 1, "Qualificando leads via WhatsApp" em texto secundário na linha 2.
 3. **Footer fixo**: avatar circular accent + nome do usuário ("Gestor Demo") + email em texto secundário.
 
 Sem TopNav em nenhuma página — a identidade mora toda na sidebar.
@@ -27,32 +27,32 @@ Sem TopNav em nenhuma página — a identidade mora toda na sidebar.
   - Linha 1: nome em bold à esquerda + badge de modalidade à direita (Novo = azul, Usado = laranja/amarelo, Ambos = roxo).
   - Linha 2: ícone de telefone + número.
   - Linha 3: ícone de pin + bairro/região.
-  - Linha 4: preço em bold à esquerda ("R$ 420.000") + tipo de imóvel em texto secundário à direita ("Apartamento 3 quartos" — no Crivo: `propertyType`).
+  - Linha 4: preço em bold à esquerda ("R$ 420.000") + tipo de imóvel em texto secundário à direita ("Apartamento 3 quartos" — no Krivo: `propertyType`).
   - Divider sutil.
   - Rodapé: ícone de calendário + data à esquerda; avatar circular pequeno com iniciais do corretor à direita.
 
 ### R2 — Dashboard
 
-- Header: h1 "Dashboard" + subtítulo "Visão geral do desempenho do agente SDR e do pipeline de leads". (No Crivo, o filtro de período atual permanece nesta região.)
-- Linha de 4 KPI cards: cada um com label pequeno no topo-esquerda, chip de ícone colorido (NavIcon) no topo-direita, valor grande (colorido semanticamente quando é taxa: verde positivo, vermelho alerta), sublabel em texto secundário ("4 leads", "últimos 7 dias"). (No Crivo são 5 KPIs — manter os 5 em Grid.)
+- Header: h1 "Dashboard" + subtítulo "Visão geral do desempenho do agente SDR e do pipeline de leads". (No Krivo, o filtro de período atual permanece nesta região.)
+- Linha de 4 KPI cards: cada um com label pequeno no topo-esquerda, chip de ícone colorido (NavIcon) no topo-direita, valor grande (colorido semanticamente quando é taxa: verde positivo, vermelho alerta), sublabel em texto secundário ("4 leads", "últimos 7 dias"). (No Krivo são 5 KPIs — manter os 5 em Grid.)
 - Linha assimétrica: card ~2/3 com heading "Leads por Status — Últimos 7 Dias" + descrição + gráfico de barras agrupadas com legenda embaixo; card ~1/3 com heading "Distribuição por Modalidade" + descrição + donut com legenda vertical ao lado (label, valor, %).
 - Card full-width "Leads Recentes" + descrição "Últimos 5 leads gerados pelo agente": Table com colunas Lead (bold), Orçamento, Modalidade (badge), Status (badge colorido), Corretor (avatar iniciais + nome), Data.
 
 ### R3 — Documentos
 
-- Header: h1 "Documentos de Contexto" + subtítulo "Arquivos usados pelo agente {agentName} para responder com precisão nas conversas". Botão primário "+ Novo documento" à direita. (No Crivo, "Gerenciar categorias" permanece ao lado.)
-- Card único com tabela densa edge-to-edge: colunas Nome (ícone de arquivo + nome), Modalidade (badge outline colorido: Novos = azul, Usados = laranja, Ambas = roxo), Enviado em, Validade (data ou "Sem validade" em texto atenuado), Tamanho, Ação (ícone de lixeira). (No Crivo: manter coluna Categoria com badge colorido atual e o menu de ações atual em vez de só lixeira; busca e filtros atuais acima da tabela.)
+- Header: h1 "Documentos de Contexto" + subtítulo "Arquivos usados pelo agente {agentName} para responder com precisão nas conversas". Botão primário "+ Novo documento" à direita. (No Krivo, "Gerenciar categorias" permanece ao lado.)
+- Card único com tabela densa edge-to-edge: colunas Nome (ícone de arquivo + nome), Modalidade (badge outline colorido: Novos = azul, Usados = laranja, Ambas = roxo), Enviado em, Validade (data ou "Sem validade" em texto atenuado), Tamanho, Ação (ícone de lixeira). (No Krivo: manter coluna Categoria com badge colorido atual e o menu de ações atual em vez de só lixeira; busca e filtros atuais acima da tabela.)
 
 ### R4 — Configurações
 
 - Header: h1 "Configurações" + subtítulo "Gerencie os dados da imobiliária e do agente SDR".
 - Card seccionado "Dados da Imobiliária": header do card com ícone + título + descrição "Informações institucionais usadas pelo agente e exibidas no painel", divider, corpo com formulário em 2 colunas: Nome da Imobiliária / Modalidade Suportada; Cidade / Estado (UF); Número WhatsApp do Agente / Website. Labels com ícone pequeno onde couber.
 - Card seccionado "Persona do Agente SDR": header com ícone + título + descrição "Define como o agente se apresenta e se comporta nas conversas do WhatsApp", divider, corpo: Nome do Agente (input + helper "Este nome aparece nas saudações e nas mensagens do agente.") e Mensagem de Apresentação (TextArea multi-linha).
-- (No Crivo: card "Documentos" resumido atual permanece, recomposto com List/Item.)
+- (No Krivo: card "Documentos" resumido atual permanece, recomposto com List/Item.)
 
 ### R5 — Chats (referência de anatomia de conversa)
 
-Conversa escura estilo agente IA: divisor de data centralizado ("Today"); mensagem do usuário em bubble filled alinhada à direita com timestamp abaixo; resposta do agente em variante ghost (sem bubble) com avatar + conteúdo rico; grupos de mensagens consecutivas visualmente conectados. **Adaptação Crivo**: a thread é lead↔agente de WhatsApp — usar ChatMessageList + ChatMessageBubble (lead = filled, agente = ghost com avatar/nome) + ChatMessageMetadata (timestamps) + ChatSystemMessage divider para datas. NÃO inventar tool calls/markdown que não existem nos dados. Lista de conversas à esquerda no padrão "List — Message List" da Astryx: Avatar de iniciais, nome, preview, timestamp relativo, item selecionado destacado.
+Conversa escura estilo agente IA: divisor de data centralizado ("Today"); mensagem do usuário em bubble filled alinhada à direita com timestamp abaixo; resposta do agente em variante ghost (sem bubble) com avatar + conteúdo rico; grupos de mensagens consecutivas visualmente conectados. **Adaptação Krivo**: a thread é lead↔agente de WhatsApp — usar ChatMessageList + ChatMessageBubble (lead = filled, agente = ghost com avatar/nome) + ChatMessageMetadata (timestamps) + ChatSystemMessage divider para datas. NÃO inventar tool calls/markdown que não existem nos dados. Lista de conversas à esquerda no padrão "List — Message List" da Astryx: Avatar de iniciais, nome, preview, timestamp relativo, item selecionado destacado.
 
 ---
 
@@ -106,7 +106,7 @@ O fluxo de dados não muda: RSC-first (AD-007), tenant do cookie, componentes cl
 | --- | --- |
 | Postgres (Neon) | Migração aditiva via `drizzle-kit push` (padrão real dos lotes 3–4; sem pasta de migrations) |
 | Seed | `src/db/seed.ts` (ou equivalente atual) ganha os campos novos com invariantes testadas |
-| Cookie `crivo_tenant` | Inalterado (AD-007); switcher só muda de lugar |
+| Cookie `krivo_tenant` | Inalterado (AD-007); switcher só muda de lugar |
 
 ---
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import principal from "../principal";
 
 /**
- * Nó de modelo do `crivo-agente-principal` (lote-10 T3 — MOD-01).
+ * Nó de modelo do `krivo-agente-principal` (lote-10 T3 — MOD-01).
  *
  * A troca de família de modelo (Gemini -> OpenAI) é uma mudança de UM nó, e a
  * promessa do requisito tem duas metades: o nó novo está certo (a), e **nada

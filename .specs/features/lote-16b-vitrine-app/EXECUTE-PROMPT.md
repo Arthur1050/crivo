@@ -1,6 +1,6 @@
 # EXECUTE-PROMPT — Lote 16b, vitrine pública (projeto `vitrine/`)
 
-Execute o lote 16b do Crivo com a skill `tlc-spec-driven` (ative pelo nome e siga o Execute e as Critical Rules). Responda sempre em português. **Só comece com o L16a fechado (Verifier PASS e arquivado).** O L16a fechou em 2026-10-09 com PASS e está arquivado; as lições dele foram decididas em 2026-10-10. O planejamento deste lote foi revisado com o usuário em 2026-10-10, depois do L16a (decisões abaixo).
+Execute o lote 16b do Krivo com a skill `tlc-spec-driven` (ative pelo nome e siga o Execute e as Critical Rules). Responda sempre em português. **Só comece com o L16a fechado (Verifier PASS e arquivado).** O L16a fechou em 2026-10-09 com PASS e está arquivado; as lições dele foram decididas em 2026-10-10. O planejamento deste lote foi revisado com o usuário em 2026-10-10, depois do L16a (decisões abaixo).
 
 ## Modelo
 
@@ -23,7 +23,7 @@ Decisões tomadas:
 - **Rotas**: `/c/<slug>` e `/c/<slug>/imovel/<ref>`; `noindex`; fotos por URL externa sem otimizador; OG do item = primeira foto, do catálogo = cartão gerado (AD-043).
 - **Cache**: `use cache` + perfil `vitrine` (60/60/300) + tag por loja; `POST /api/revalidar` com segredo e `{ expire: 0 }` (AD-042).
 - **Tema**: `defineTheme` estendendo o tema neutro, modo claro, 4 fontes, 2 layouts; o layout muda só o catálogo. O tema sai no HTML do servidor pelo componente cliente `TemaDaLoja`, com os dois `<style>` de `generateThemeCSS` (AD-046, 2026-10-10, decidida depois de o F10 reprovar no gate T0); o accent é o derivado pela Astryx e os testes comparam lojas entre si, nunca o hex literal.
-- **Testes que cruzam a fronteira** (2026-10-10, AD-044): o teste de banco das consultas fica na suíte raiz (`src/db/__tests__/vitrine-consultas.test.ts`) e importa de `vitrine/`; escreve a fixture como dono e lê como `crivo_vitrine` pelo `criarDb` da vitrine. Fora de `vitrine/`, só arquivos de teste importam dela.
+- **Testes que cruzam a fronteira** (2026-10-10, AD-044): o teste de banco das consultas fica na suíte raiz (`src/db/__tests__/vitrine-consultas.test.ts`) e importa de `vitrine/`; escreve a fixture como dono e lê como `krivo_vitrine` pelo `criarDb` da vitrine. Fora de `vitrine/`, só arquivos de teste importam dela.
 - **Imports dentro de `vitrine/`** (2026-10-10): pacote só se declarado no `package.json` da vitrine; em `__tests__/`, `vitest` é a única exceção. `vitrine/tsconfig.json` exclui `**/__tests__/**`; esses testes rodam no Vitest e não passam por `tsc`.
 - **`.gitignore`** (2026-10-10): a T1 acrescenta `/vitrine/node_modules` e `/vitrine/.next/` à raiz e versiona `vitrine/package-lock.json`.
 - **Fontes** (2026-10-10): `next/font/google` não carrega fora do compilador do Next; o mapa das fontes fica em `vitrine/src/tema/fontes.ts` e o teste do tema não o importa.

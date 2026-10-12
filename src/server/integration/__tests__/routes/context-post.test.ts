@@ -26,7 +26,7 @@ describe("routes: POST /api/v1/context", () => {
   function makeRequest(body: unknown, key?: string, slug?: string): Request {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (key !== undefined) headers.Authorization = `Bearer ${key}`;
-    if (slug !== undefined) headers["X-Crivo-Tenant"] = slug;
+    if (slug !== undefined) headers["X-Krivo-Tenant"] = slug;
     return new Request(`https://local${ROUTE}`, {
       method: "POST",
       headers,

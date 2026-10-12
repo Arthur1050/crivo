@@ -1,6 +1,6 @@
 # T9 — Prova real dos três casos
 
-Executada em 2026-10-07 com autorização do usuário no chat. Mensagens digitadas no WhatsApp Web da conta do número de teste (conta confirmada pelo usuário), conversa "Test Number (Crivo)", tenant `triangulo`. Principal publicado: versão `ddb63ae8`. Reset duplo (n8n `crivo-smoke-reset`, depois `npm run smoke:reset`) antes de cada caso e ao final; n8n: execuções 3473, 3484, 3497, 3511.
+Executada em 2026-10-07 com autorização do usuário no chat. Mensagens digitadas no WhatsApp Web da conta do número de teste (conta confirmada pelo usuário), conversa "Test Number (Krivo)", tenant `triangulo`. Principal publicado: versão `ddb63ae8`. Reset duplo (n8n `krivo-smoke-reset`, depois `npm run smoke:reset`) antes de cada caso e ao final; n8n: execuções 3473, 3484, 3497, 3511.
 
 | Caso | Mensagem do lead | Execução | Rota do gate | `optedOutAt` | Resposta | Veredito |
 | --- | --- | --- | --- | --- | --- | --- |

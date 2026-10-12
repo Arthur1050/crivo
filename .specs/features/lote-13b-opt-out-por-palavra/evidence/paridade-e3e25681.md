@@ -4,7 +4,7 @@
 
 | Item | Valor |
 | --- | --- |
-| Workflow | `0B1nqjODu7xuYYKF` (crivo-agente-principal), ativo, não arquivado |
+| Workflow | `0B1nqjODu7xuYYKF` (krivo-agente-principal), ativo, não arquivado |
 | `versionId` = `activeVersionId` | `e3e25681-8cd1-4ea3-bc38-33d373cf6b80` |
 | Nós | 73 publicados, 73 no gerado de `0688deb`; nenhum nó só de um lado |
 | sha256 de `n8n/generated/principal.ts` @0688deb (CRLF→LF) | `05d41b5b659c46edfe2e3c6a10f699b100224e9e1471a0c686d91211d8a5b9df` |

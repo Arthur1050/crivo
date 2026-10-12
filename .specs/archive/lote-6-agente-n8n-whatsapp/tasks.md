@@ -275,7 +275,7 @@ Empacotamento sugerido (~7/batch, phases inteiras): **Batch 1 = P1+P2 (T1–T8) 
 
 ---
 
-### T10: Workflow `crivo-agente-principal`
+### T10: Workflow `krivo-agente-principal`
 
 **What**: Workflow completo em código SDK (`n8n/workflows/principal.ts` → generated → publicado via MCP): WhatsApp Trigger → filtro → normalize (inline) → lookup `tenant_config` → debounce (Data Table + Wait 10s) → sync CRM → gate (inline) → rotas (opt-out/registro/mídia/conversa) → settings+context → Gemini (JSON) → validate (inline) → efeitos (PATCH/Calendar availability+create com Meet/escalar; 409 tolerado) → send → registro da resposta. Data Tables `tenant_config`/`conversa_estado`/`agenda_envios` criadas via MCP. **Obrigatório antes de codar**: `get_sdk_reference` + `get_node_types` de todos os nós.
 **Where**: `n8n/workflows/principal.ts`, `n8n/generated/principal.ts`, instância n8n
@@ -294,11 +294,11 @@ Empacotamento sugerido (~7/batch, phases inteiras): **Batch 1 = P1+P2 (T1–T8) 
 
 **Tests**: execução via MCP · **Gate**: quick + evidência de execução
 **Commit**: `feat(n8n): workflow principal de qualificação publicado como código`
-**Status**: ✅ Done — `43e58ac` (workflow `crivo-agente-principal` id `h1Rny5ajKuFy9cUT`, 53 nós). Bug real encontrado e corrigido à parte em `30d2542` (credenciais WhatsApp/Calendar não resolviam nos nós publicados — nomes de `newCredential()` não batiam com as credenciais reais criadas no HUMAN GATE).
+**Status**: ✅ Done — `43e58ac` (workflow `krivo-agente-principal` id `h1Rny5ajKuFy9cUT`, 53 nós). Bug real encontrado e corrigido à parte em `30d2542` (credenciais WhatsApp/Calendar não resolviam nos nós publicados — nomes de `newCredential()` não batiam com as credenciais reais criadas no HUMAN GATE).
 
 ---
 
-### T11: Workflows `crivo-agente-scheduler` + `crivo-agente-erros`
+### T11: Workflows `krivo-agente-scheduler` + `krivo-agente-erros`
 
 **What**: Scheduler único (15 min, cadência parametrizada) com as 3 varreduras (lembrete 1h antes com re-checagem de `optedOutAt` e template fora da janela 24h; reengajamento 24h; escalonamento 48h) + workflow de erro (Error Trigger → Gmail) ligado aos dois workflows.
 **Where**: `n8n/workflows/scheduler.ts`, `n8n/workflows/erros.ts`, generated, instância
@@ -312,18 +312,18 @@ Empacotamento sugerido (~7/batch, phases inteiras): **Batch 1 = P1+P2 (T1–T8) 
 
 - [x] Execução de teste via MCP: linha em `agenda_envios` dentro da janela → envio marcado; lead com opt-out → NENHUM envio (teste discriminante) — exec 61, confirmado no nível de nó (filtro `exclui encerradas` excluiu estruturalmente os leads opt-out/encerrados)
 - [x] Reengajamento marca `reengaged`; 48h → PATCH escalado com motivo "ausência de resposta" — exec 61 (⚠️ relato não cita o valor exato do `escalationReason` gravado; Verifier deve conferir a string exata "ausência de resposta", não só que o PATCH ocorreu)
-- [x] Error Trigger dispara e-mail em falha forçada — **fechado com evidência orgânica real**: após a ativação (T12 prep), o scheduler encontrou 3 linhas de teste reais em `agenda_envios` com `phoneNumberId` fictício e tentou enviar de verdade — a Graph API da Meta rejeitou (400, número inexistente), o que disparou `crivo-agente-erros` **duas vezes** em produção (exec 71 e 73, `mode:"error"`), ambas confirmadas enviando o e-mail via Gmail (ids `19fd58d9f10cee38`, `19fd5902d6ef7897`). Teste adicional forçado (exec 72) também confirmou. As 3 linhas de teste foram marcadas `sentAt` para não gerar mais e-mails de ruído.
+- [x] Error Trigger dispara e-mail em falha forçada — **fechado com evidência orgânica real**: após a ativação (T12 prep), o scheduler encontrou 3 linhas de teste reais em `agenda_envios` com `phoneNumberId` fictício e tentou enviar de verdade — a Graph API da Meta rejeitou (400, número inexistente), o que disparou `krivo-agente-erros` **duas vezes** em produção (exec 71 e 73, `mode:"error"`), ambas confirmadas enviando o e-mail via Gmail (ids `19fd58d9f10cee38`, `19fd5902d6ef7897`). Teste adicional forçado (exec 72) também confirmou. As 3 linhas de teste foram marcadas `sentAt` para não gerar mais e-mails de ruído.
 - [x] Gate: `npx vitest run` verde — confirmado independentemente, 527/527
 
 **Tests**: execução via MCP · **Gate**: quick + evidência de execução
 **Commit**: `feat(n8n): scheduler de lembretes/reengajamento e workflow de erro`
-**Status**: ✅ Done — `2f428c5` (`crivo-agente-scheduler` id `me4bH12A5IrFp5oB` 26 nós; `crivo-agente-erros` id `mS4QE9953alk7Guu` 2 nós). Mesmo bug de credencial do T10 também corrigido aqui em `30d2542`. Ambos workflows agora `active:true`.
+**Status**: ✅ Done — `2f428c5` (`krivo-agente-scheduler` id `me4bH12A5IrFp5oB` 26 nós; `krivo-agente-erros` id `mS4QE9953alk7Guu` 2 nós). Mesmo bug de credencial do T10 também corrigido aqui em `30d2542`. Ambos workflows agora `active:true`.
 
 ---
 
 ### T12: Conectividade Meta real (webhook + envio)
 
-**What**: Com as credenciais criadas pelo usuário (runbook T9): ativar `crivo-agente-principal` (o trigger registra/verifica o webhook na Meta sozinho), validar ida-e-volta real no número de teste (mensagem → resposta do agente), submeter/verificar as 2 templates. Capturar 1 payload real da Meta e reconciliar com as fixtures do T5 (divergência → ajustar fixture + SPEC_DEVIATION documentado).
+**What**: Com as credenciais criadas pelo usuário (runbook T9): ativar `krivo-agente-principal` (o trigger registra/verifica o webhook na Meta sozinho), validar ida-e-volta real no número de teste (mensagem → resposta do agente), submeter/verificar as 2 templates. Capturar 1 payload real da Meta e reconciliar com as fixtures do T5 (divergência → ajustar fixture + SPEC_DEVIATION documentado).
 **Where**: instância n8n + painel Meta; `n8n/fixtures/` (reconciliação)
 **Depends on**: T10, T11 · **Bloqueios humanos**: credenciais Meta/Google criadas na instância pelo usuário; templates dependem de aprovação Meta
 **Reuses**: runbook T9

@@ -163,7 +163,7 @@ T14 → T16
 **Done when**:
 
 - [ ] `src/lib/__tests__/integration-alert.test.ts` cobre: gravado nulo → `initialize` com o estado avaliado e fora de `alert` (AC3); `saudavel` + avaliado `problema` → `alert` (AC2); `problema` + avaliado `saudavel` → `recover` sem `alert` (AC4); estado igual → nenhuma lista (AC5); recusa com mensagem recente → `problema`; última mensagem exatamente a 24h → `saudavel` e a 24h + 1 ms → `problema` (L-023)
-- [ ] Formato: assunto `[crivo] Integração com problema em N imobiliária(s)` com N exato para 1 e 3 tenants; corpo com nome, slug, contagem por `(code, rota)`, ISO 8601 UTC ou `nunca` (ALERTA-02 AC2/AC3); `{ test: true }` prefixa `[teste] `
+- [ ] Formato: assunto `[krivo] Integração com problema em N imobiliária(s)` com N exato para 1 e 3 tenants; corpo com nome, slug, contagem por `(code, rota)`, ISO 8601 UTC ou `nunca` (ALERTA-02 AC2/AC3); `{ test: true }` prefixa `[teste] `
 - [ ] Teste afirma que o corpo não contém nenhum campo além dos do snapshot (ALERTA-02 AC4)
 - [ ] Módulo sem import de I/O (mesma regra de pureza de `pilot-metrics.ts`); quick gate verde
 
@@ -265,7 +265,7 @@ T14 → T16
 
 ### T6: Alerta na manutenção diária e na rota do cron
 
-**What**: Grupo `integrationAlert` em `runDailyMaintenance`, dependência real montada na rota, `console.info` do resumo e `CRIVO_OPERATOR_ALERT_EMAIL: ""` no `test.env` do Vitest.
+**What**: Grupo `integrationAlert` em `runDailyMaintenance`, dependência real montada na rota, `console.info` do resumo e `KRIVO_OPERATOR_ALERT_EMAIL: ""` no `test.env` do Vitest.
 **Where**: `src/server/integration/lgpd.ts`
 **Depends on**: T5
 **Reuses**: `runGroup`, `createExpireDocumentsHandler`
@@ -281,7 +281,7 @@ T14 → T16
 
 - [ ] Teste novo `src/server/integration/__tests__/maintenance-alert.integration.test.ts`: com o alerta lançando (injeção, L-002) → `integrationAlertFailed: true` e os demais campos iguais aos de uma execução com o alerta ok sobre os mesmos dados (AC3); sem a dependência → `integrationAlertSkipped: "sem-dependencia"` e nenhuma escrita em `tenants`
 - [ ] Teste da rota: `createExpireDocumentsHandler` sem override monta a dependência com o destinatário do ambiente e a resposta traz os cinco campos `integrationAlert*` (L-026); o `console.info` recebe os campos sem nome de tenant
-- [ ] Teste afirma `process.env.CRIVO_OPERATOR_ALERT_EMAIL === ""` sob Vitest mesmo com `dotenv/config` (L-037)
+- [ ] Teste afirma `process.env.KRIVO_OPERATOR_ALERT_EMAIL === ""` sob Vitest mesmo com `dotenv/config` (L-037)
 - [ ] `maintenance.integration.test.ts` verde sem alteração de asserção; quick gate verde; build gate sem erro novo
 
 **Tests**: integration
@@ -293,7 +293,7 @@ T14 → T16
 
 ### T7: Comando de envio de teste
 
-**What**: `npm run alert:send-test` (`tsx --conditions=react-server`) envia um alerta de exemplo `[teste]` a `CRIVO_OPERATOR_ALERT_EMAIL`.
+**What**: `npm run alert:send-test` (`tsx --conditions=react-server`) envia um alerta de exemplo `[teste]` a `KRIVO_OPERATOR_ALERT_EMAIL`.
 **Where**: `scripts/send-test-integration-alert.ts`
 **Depends on**: T2, T4
 **Reuses**: `formatIntegrationAlertEmail`, `sendIntegrationAlertEmail`
@@ -307,7 +307,7 @@ T14 → T16
 
 **Done when**:
 
-- [ ] `scripts/__tests__/send-test-integration-alert.test.ts` (envio falso): assunto começa com `[teste] [crivo]`; destinatário é o do ambiente; sem destinatário sai com 1 sem enviar; `ok: false` sai com 1 e imprime o erro do adaptador
+- [ ] `scripts/__tests__/send-test-integration-alert.test.ts` (envio falso): assunto começa com `[teste] [krivo]`; destinatário é o do ambiente; sem destinatário sai com 1 sem enviar; `ok: false` sai com 1 e imprime o erro do adaptador
 - [ ] Nenhum dado real de tenant no exemplo; quick gate verde
 
 **Tests**: unit
@@ -371,7 +371,7 @@ T14 → T16
 
 ### T10: Envio de teste ao operador (ação externa)
 
-**What**: Com autorização, o usuário põe `CRIVO_OPERATOR_ALERT_EMAIL` no `.env` local e o executor roda `npm run alert:send-test`; o usuário confirma recebimento e o domínio do remetente.
+**What**: Com autorização, o usuário põe `KRIVO_OPERATOR_ALERT_EMAIL` no `.env` local e o executor roda `npm run alert:send-test`; o usuário confirma recebimento e o domínio do remetente.
 **Where**: `.specs/features/lote-15-prontidao-operacional/validation.md`
 **Depends on**: T7
 **Reuses**: T7
@@ -424,7 +424,7 @@ T14 → T16
 
 ### T12: Variável do operador no Production (ação do usuário)
 
-**What**: O usuário cria `CRIVO_OPERATOR_ALERT_EMAIL` no ambiente Production da Vercel e confirma.
+**What**: O usuário cria `KRIVO_OPERATOR_ALERT_EMAIL` no ambiente Production da Vercel e confirma.
 **Where**: `.specs/features/lote-15-prontidao-operacional/validation.md`
 **Depends on**: T0
 **Reuses**: —

@@ -1,6 +1,6 @@
 # Prompt de Execução — Lote 8: Usuários, papéis e atribuição por agenda
 
-> Cole o bloco abaixo numa nova janela do Claude Code aberta na raiz do projeto (`crivo/`).
+> Cole o bloco abaixo numa nova janela do Claude Code aberta na raiz do projeto (`krivo/`).
 > **Antes de colar, confira na janela nova**: MCP do **n8n** conectado (Phase 7 depende da instância no ar) e a extensão **Claude in Chrome** disponível (há tela nova em T6, T10, T22, T23 e T32 — o painel Browser embutido **não serve**, ele não captura quando não está visível).
 > **Antes de começar, tenha em mãos**: uma conta no **Resend** com chave de API (dependência externa nova, exigida a partir de T19) e acesso à instância n8n (T30 publica; T31 purga a memória de teste).
 
@@ -79,5 +79,5 @@ Testes derivados da spec (nunca da implementação); gate verde antes de done (c
 - Não implementar atendimento humano pelo Chats, página de Agenda, vínculo de conta Google ou login com Google — todos explicitamente fora de escopo, no lote do pacote Google.
 - Não escrever script de migração de dado. Não há dado real; o reseed determinístico é o caminho de convergência, e código de migração aqui seria resíduo permanente.
 - Não escrever `middleware.ts`. O convention do Next 16 é `proxy.ts`.
-- Não tocar na autenticação do contrato de integração (`/api/v1/**`): segue na credencial de serviço com `X-Crivo-Tenant` (SEC-01 do lote-7), caminho independente do login de usuário.
+- Não tocar na autenticação do contrato de integração (`/api/v1/**`): segue na credencial de serviço com `X-Krivo-Tenant` (SEC-01 do lote-7), caminho independente do login de usuário.
 - Não fazer `git push` sem me pedir na hora. O projeto é git-linked na Vercel — push dispara deploy. Aprovação de spec/tasks autoriza commit local, nunca push.

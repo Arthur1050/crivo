@@ -1,8 +1,8 @@
 /**
- * crivo-tool-responder-lead — sub-workflow tool `responder_lead` (T7).
+ * krivo-tool-responder-lead — sub-workflow tool `responder_lead` (T7).
  *
  * Única porta de saída de mensagem do agente para o lead (design.md —
- * Components: "Sub-workflow crivo-tool-responder-lead"). O nó AI Agent do
+ * Components: "Sub-workflow krivo-tool-responder-lead"). O nó AI Agent do
  * fluxo principal (T11) chama este sub-workflow uma vez por mensagem que
  * decide enviar (até 3 vezes por turno) via `toolWorkflow`. Requisitos:
  * AGN-03, AGN-04, VOZ-01, VOZ-02, VOZ-03.
@@ -202,10 +202,10 @@ const getLeadBeforeSend = node({
       genericAuthType: "httpHeaderAuth",
       sendHeaders: true,
       headerParameters: {
-        parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Execute Workflow Trigger').first().json.tenantSlug }}") }],
+        parameters: [{ name: "X-Krivo-Tenant", value: expr("{{ $('Execute Workflow Trigger').first().json.tenantSlug }}") }],
       },
     },
-    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
+    credentials: { httpHeaderAuth: newCredential("Krivo - chave de servico") },
   },
   output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", status: "em_qualificacao", optedOutAt: null, humanTakeoverAt: null, memoryResetRequestedAt: null }],
 });
@@ -318,7 +318,7 @@ const registerAgentMessage = node({
       genericAuthType: "httpHeaderAuth",
       sendHeaders: true,
       headerParameters: {
-        parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: normalizar destinatario do envio').first().json.tenantSlug }}") }],
+        parameters: [{ name: "X-Krivo-Tenant", value: expr("{{ $('Code: normalizar destinatario do envio').first().json.tenantSlug }}") }],
       },
       sendBody: true,
       contentType: "json",
@@ -327,7 +327,7 @@ const registerAgentMessage = node({
         "{{ { externalId: $json.messages[0].id, sender: 'agente', content: $('Code: normalizar destinatario do envio').first().json.mensagem, sentAt: $now.toISO(), whatsappPhoneNumberId: $('Code: normalizar destinatario do envio').first().json.phoneNumberId } }}"
       ),
     },
-    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
+    credentials: { httpHeaderAuth: newCredential("Krivo - chave de servico") },
   },
   output: [{ id: "6fa85f64-5717-4562-b3fc-2c963f66afa9", sender: "agente" }],
 });
@@ -386,7 +386,7 @@ const acceptedBranch = normalizeRecipientCode.to(
   sendWhatsAppMessage.to(registerAgentMessage.to(persistAbertura.to(acceptResponse)))
 );
 
-export default workflow("crivo-tool-responder-lead", "crivo-tool-responder-lead")
+export default workflow("krivo-tool-responder-lead", "krivo-tool-responder-lead")
   .add(respondTrigger)
   .to(
     conversaEstadoLookup.to(

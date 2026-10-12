@@ -315,7 +315,7 @@ describe("T68 — prova integrada por resultado, fixtures PG reais", () => {
 
   it("captura e artefato conferidos antecedem limpeza; falha conserva fixture e não vira prova externa", async () => {
     const row = await fixture(), result = await runFixtureEpisode(options(row)); if (!result.executed || !result.sent.messageId) throw new Error("fixture-output-missing");
-    const directory = mkdtempSync(join(tmpdir(), "crivo-t68-")), image = join(directory, "fixture.capture"), artifactPath = join(directory, "fixture.json");
+    const directory = mkdtempSync(join(tmpdir(), "krivo-t68-")), image = join(directory, "fixture.capture"), artifactPath = join(directory, "fixture.json");
     const order: string[] = [], fresh = gates(true); fresh.publication = { ...fresh.publication, queues: [] };
     writeFileSync(image, "synthetic fixture capture; no browser or external execution");
     const delivery = { transportCalls: 1, episodeId: result.episodeId, wamid: row.wamid, messageId: result.sent.messageId, acceptedAt: now.toISOString() };
@@ -336,7 +336,7 @@ describe("T68 — prova integrada por resultado, fixtures PG reais", () => {
       expect(executor.cleanup).not.toHaveBeenCalled(); expect(await outputs(row)).toHaveLength(1); expect(await episode(result.episodeId)).toMatchObject({ state: "accepted" });
     } finally {
       const absoluteDirectory = resolve(directory);
-      if (dirname(absoluteDirectory) === resolve(tmpdir()) && basename(absoluteDirectory).startsWith("crivo-t68-")) rmSync(absoluteDirectory, { recursive: true, force: true });
+      if (dirname(absoluteDirectory) === resolve(tmpdir()) && basename(absoluteDirectory).startsWith("krivo-t68-")) rmSync(absoluteDirectory, { recursive: true, force: true });
     }
   });
 });

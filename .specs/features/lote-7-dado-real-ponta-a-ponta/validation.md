@@ -7,7 +7,7 @@
 
 ## Validation: lote-7-dado-real-ponta-a-ponta - PASS
 
-**Veredicto: ✅ PASS** — 40 de 40 ACs provadas, sensor 5/5, gate verde. O único bloqueador da rodada 1 (**SEC-01 AC2** — `crivo-agente-scheduler` sem autenticação no CRM) foi corrigido em `76e2d6d` e re-verificado de forma independente na rodada 2: fonte, arquivo gerado e workflow publicado na instância, os três sem nenhum vestígio de `apiKey`/`Authorization`, com os 5 call sites no mesmo padrão de credencial de serviço já provado em produção por `principal.ts`.
+**Veredicto: ✅ PASS** — 40 de 40 ACs provadas, sensor 5/5, gate verde. O único bloqueador da rodada 1 (**SEC-01 AC2** — `krivo-agente-scheduler` sem autenticação no CRM) foi corrigido em `76e2d6d` e re-verificado de forma independente na rodada 2: fonte, arquivo gerado e workflow publicado na instância, os três sem nenhum vestígio de `apiKey`/`Authorization`, com os 5 call sites no mesmo padrão de credencial de serviço já provado em produção por `principal.ts`.
 
 **Rodada 2 — o que foi re-derivado do zero** (nada herdado do relato do orquestrador): o range de commits e o `--stat`; a leitura integral do diff de `n8n/workflows/scheduler.ts`; a comparação linha a linha com o padrão de `principal.ts`; o workflow ao vivo `gmIWxiRrHGIdtPub` por `get_workflow_details` **e** por `get_workflow_version` da versão publicada; o histórico de versões; a execução **897** com dados de nó; a existência da credencial `YhGcdfGtdEBBU9YP`; o arquivamento do workflow scratch; o gate completo; e a integridade de `.specs/STATE.md` e `spec.md`. Uma limitação de evidência ficou registrada — ver **Fix 1 (resolvido)** e a Lacuna 6.
 
@@ -35,14 +35,14 @@
 
 | Criterion | Spec-defined outcome | `file:line` + assertion | Result |
 | --------- | -------------------- | ----------------------- | ------ |
-| AC1 seed cria 3 tenants, pilotos sem lead | exatamente 3 tenants; piloto com 0 lead/conversa/mensagem | `src/db/__tests__/seed.test.ts:85` `expect(allTenants).toHaveLength(3)`; `:88` `expect(slugs).toEqual(["crivo-demo","triangulo","vale-uberaba"])`; `:118` `expect(pilotLeads).toHaveLength(0)` | ✅ PASS |
+| AC1 seed cria 3 tenants, pilotos sem lead | exatamente 3 tenants; piloto com 0 lead/conversa/mensagem | `src/db/__tests__/seed.test.ts:85` `expect(allTenants).toHaveLength(3)`; `:88` `expect(slugs).toEqual(["krivo-demo","triangulo","vale-uberaba"])`; `:118` `expect(pilotLeads).toHaveLength(0)` | ✅ PASS |
 | AC2 config completa nos pilotos | corretores/categorias/documentos/chave > 0 | `src/db/__tests__/seed.test.ts:145-147` `expect(pilotBrokers.length).toBeGreaterThan(0)` etc.; `:191` `expect(rows[0].keyHash).toBe(expectedHash)` | ✅ PASS |
 | AC3 baselines nulos nos pilotos | os 3 campos `null` no piloto, não-nulos no Demo | `src/db/__tests__/seed.test.ts:155-157` `expect(pilot.baselineLeadsPerMonth).toBeNull()`; `:161-163` `.not.toBeNull()` | ✅ PASS |
 | AC4 KPIs sem `NaN` em tenant vazio | zero ou traço, nunca `NaN` | captura real T6 (5 tiles em `—`/`0`) | ⚠️ Manual — atestado |
 | AC5 Pipeline/Chats estado vazio | 3 colunas + lista vazias | captura real T6 | ⚠️ Manual — atestado |
-| AC6 seletor lista os 3 tenants | `Crivo Demo` entre eles | `seed.test.ts:88`; confirmado por mim em produção: 3 tenants com slug | ✅ PASS |
+| AC6 seletor lista os 3 tenants | `Krivo Demo` entre eles | `seed.test.ts:88`; confirmado por mim em produção: 3 tenants com slug | ✅ PASS |
 
-**Re-verificação independente**: consulta direta ao Postgres de produção devolveu exatamente 3 tenants — `vale-uberaba`, `crivo-demo`, `triangulo`.
+**Re-verificação independente**: consulta direta ao Postgres de produção devolveu exatamente 3 tenants — `vale-uberaba`, `krivo-demo`, `triangulo`.
 
 ### KPI-01 — Primeira resposta do agente marca o relógio
 
@@ -92,10 +92,10 @@
 | Criterion | Spec-defined outcome | `file:line` + assertion | Result |
 | --------- | -------------------- | ----------------------- | ------ |
 | AC1 nenhuma chave em coluna de Data Table | coluna ausente | **Re-verificado por mim via MCP**: `tenant_config` (`xRHckWWd6fxGeNta`) tem só `phoneNumberId`, `tenantSlug`, `calendarId` | ✅ PASS |
-| AC2 fluxo do agente continua autenticando e resolvendo o tenant certo, sem alteração observável | toda chamada `/api/v1/*` do agente segue autenticada | `principal.ts` + 2 tools: ✅ (execuções 1020/1072/1627/1631, rodada 1). `scheduler.ts`: **corrigido em `76e2d6d`** e re-verificado na rodada 2 — `n8n/workflows/scheduler.ts:156-157` (`authentication: "genericCredentialType"` / `genericAuthType: "httpHeaderAuth"`), `:160` (header `X-Crivo-Tenant` ← `tenantSlug`), `:175` (`credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") }`); idem `:303-304/:306/:314`, `:440-441/:443/:445`, `:494-495/:497/:505`, `:635-636/:638/:646`. `grep -ci "apikey"` e `grep -ci "authorization"` = **0** em `n8n/workflows/scheduler.ts` **e** em `n8n/generated/scheduler.ts`; 5 `httpRequest` / 5 `genericCredentialType` / 5 `X-Crivo-Tenant` / 5 `newCredential("Crivo - chave de servico")` nos dois arquivos. Padrão idêntico ao de `n8n/workflows/principal.ts:1107-1121` (tool `escalar_para_humano`), que a rodada 1 já provou em produção pela execução **1072**. Ao vivo: `get_workflow_version(gmIWxiRrHGIdtPub, 06add4c3-…)` devolve os 5 nós com exatamente essa forma, `active: true`, `versionId == activeVersionId` | ✅ PASS |
+| AC2 fluxo do agente continua autenticando e resolvendo o tenant certo, sem alteração observável | toda chamada `/api/v1/*` do agente segue autenticada | `principal.ts` + 2 tools: ✅ (execuções 1020/1072/1627/1631, rodada 1). `scheduler.ts`: **corrigido em `76e2d6d`** e re-verificado na rodada 2 — `n8n/workflows/scheduler.ts:156-157` (`authentication: "genericCredentialType"` / `genericAuthType: "httpHeaderAuth"`), `:160` (header `X-Krivo-Tenant` ← `tenantSlug`), `:175` (`credentials: { httpHeaderAuth: newCredential("Krivo - chave de servico") }`); idem `:303-304/:306/:314`, `:440-441/:443/:445`, `:494-495/:497/:505`, `:635-636/:638/:646`. `grep -ci "apikey"` e `grep -ci "authorization"` = **0** em `n8n/workflows/scheduler.ts` **e** em `n8n/generated/scheduler.ts`; 5 `httpRequest` / 5 `genericCredentialType` / 5 `X-Krivo-Tenant` / 5 `newCredential("Krivo - chave de servico")` nos dois arquivos. Padrão idêntico ao de `n8n/workflows/principal.ts:1107-1121` (tool `escalar_para_humano`), que a rodada 1 já provou em produção pela execução **1072**. Ao vivo: `get_workflow_version(gmIWxiRrHGIdtPub, 06add4c3-…)` devolve os 5 nós com exatamente essa forma, `active: true`, `versionId == activeVersionId` | ✅ PASS |
 | AC3 falha de auth responde `401` problem+json com `code` | `tenant-nao-identificado` | `src/server/integration/__tests__/auth.test.ts:184` `expect(body.code).toBe("tenant-nao-identificado")`; `:204` (slug desconhecido, nunca cai em default); `routes/leads-post.test.ts:265` | ✅ PASS |
 | AC4 rotação documentada no `n8n/README.md` | procedimento humano | `n8n/README.md` §12 (ordem que evita apagão); R1 §3 resolvido | ✅ PASS |
-| Precedência: chave de tenant ignora `X-Crivo-Tenant` | chave de A + header de B resolve A | `auth.test.ts:225-227` `expect(result.tenantId).toBe(tenantA.id)` e `.not.toBe(tenantB.id)` | ✅ PASS |
+| Precedência: chave de tenant ignora `X-Krivo-Tenant` | chave de A + header de B resolve A | `auth.test.ts:225-227` `expect(result.tenantId).toBe(tenantA.id)` e `.not.toBe(tenantB.id)` | ✅ PASS |
 | Chave revogada não resolve | `null` | `src/server/data/__tests__/service-auth.test.ts:48` | ✅ PASS |
 | Chave em claro nunca persistida | só hash sha256 | `src/db/__tests__/seed.test.ts:471` | ✅ PASS |
 
@@ -141,7 +141,7 @@ Tier **P0/critical-path** (auth, integridade de dado). Scratch por cópia de arq
 | 1 | `src/lib/broker-assignment.ts:46` | Desempate `createdAt` invertido: `aTime < bTime` → `aTime > bTime` | `src/lib/__tests__/broker-assignment.test.ts:18` | ✅ Killed |
 | 2 | `src/server/data/index.ts:793` | Guarda de tenant removida em `updateLeadBroker`: `and(eq(brokers.id,…), eq(brokers.tenantId,…))` → `eq(brokers.id,…)` | `lead-controls.test.ts:119` ("corretor de outro tenant") | ✅ Killed |
 | 3 | `src/server/data/index.ts:1081` | Guarda de escrita única removida: `sender === "agente" && firstResponseAt === null` → `sender === "agente"` | `first-response.test.ts:80` ("segunda mensagem preserva") | ✅ Killed |
-| 4 | `src/server/integration/auth.ts:76` | Caminho por chave de tenant passa a obedecer `X-Crivo-Tenant` | `auth.test.ts:209` (teste discriminante de precedência) | ✅ Killed |
+| 4 | `src/server/integration/auth.ts:76` | Caminho por chave de tenant passa a obedecer `X-Krivo-Tenant` | `auth.test.ts:209` (teste discriminante de precedência) | ✅ Killed |
 | 5 | `src/server/data/index.ts:97` | `resolveServiceApiKeyHash` aceita chave revogada: `isNull(revokedAt)` removido | `service-auth.test.ts:48` ("chave revogada devolve null") | ✅ Killed |
 
 **Sensor depth**: P0-full (5 mutações, mínimo exigido).
@@ -177,7 +177,7 @@ Tier **P0/critical-path** (auth, integridade de dado). Scratch por cópia de arq
 - [x] Reunião reagendada para o futuro depois do comparecimento marcado → `setMeetingAttendance` só escreve `meetingAttended`; `canEditMeetingAttendance` decide edição, nunca apaga valor.
 - [x] Limite exato `meetingAt === now` → não editável (`meeting-attendance.test.ts:21`).
 - [x] Instância n8n fora do ar durante o smoke → registrar como não provado. Honrado: a rodada 1 do opt-out (execução **1118**, `status: error`) foi registrada como falha, não maquiada.
-- [x] `Crivo Demo` tratado como qualquer tenant → nenhum caminho especial no código.
+- [x] `Krivo Demo` tratado como qualquer tenant → nenhum caminho especial no código.
 
 ---
 
@@ -223,16 +223,16 @@ Material obrigatório: é o argumento empírico de por que o smoke roteirizado (
 
 ## Fix Plans
 
-### Fix 1 — ✅ **RESOLVIDO na rodada 2** (`76e2d6d`) — `crivo-agente-scheduler` perdeu a autenticação no CRM (SEC-01 AC2)
+### Fix 1 — ✅ **RESOLVIDO na rodada 2** (`76e2d6d`) — `krivo-agente-scheduler` perdeu a autenticação no CRM (SEC-01 AC2)
 
 > **Status: resolvido.** Commit `fix(agente): migra scheduler para credencial de servico` (`76e2d6d`), único commit acima de `7680752`. Re-verificação independente da rodada 2 abaixo, no bloco **Verificação do fix**. O diagnóstico original fica registrado como está, porque é o argumento de por que a correção era necessária.
 
 - **Severidade**: **Blocker** para o piloto. Major para o produto.
-- **Root cause**: o T17 migrou `principal.ts` e os 2 sub-workflows para a credencial de serviço + `X-Crivo-Tenant` e **removeu a coluna `apiKey` da Data Table `tenant_config`**. O workflow `crivo-agente-scheduler` (`gmIWxiRrHGIdtPub`, **ativo**, Schedule Trigger a cada 15min) nunca foi migrado: ele ainda lê `tenant.apiKey` daquela Data Table e monta `Authorization: Bearer {{ …apiKey }}` por expressão. Com a coluna removida, o valor é `undefined` e o header sai vazio.
+- **Root cause**: o T17 migrou `principal.ts` e os 2 sub-workflows para a credencial de serviço + `X-Krivo-Tenant` e **removeu a coluna `apiKey` da Data Table `tenant_config`**. O workflow `krivo-agente-scheduler` (`gmIWxiRrHGIdtPub`, **ativo**, Schedule Trigger a cada 15min) nunca foi migrado: ele ainda lê `tenant.apiKey` daquela Data Table e monta `Authorization: Bearer {{ …apiKey }}` por expressão. Com a coluna removida, o valor é `undefined` e o header sai vazio.
 - **Evidência dura (produção)**: execução **897** (2026-08-16T16:45Z, `status: error`):
   - `Data Table: tenant do lembrete` devolveu a linha `triangulo` **sem campo `apiKey`**;
   - `Code: combinar lembrete e tenant` propagou o objeto **sem `apiKey`**;
-  - `HTTP: POST /leads (reconsulta lembrete)` recebeu **`401`** `{"type":"urn:crivo:problem:nao-autenticado","code":"nao-autenticado","detail":"Formato do header Authorization inválido. Use 'Bearer <chave>'."}`.
+  - `HTTP: POST /leads (reconsulta lembrete)` recebeu **`401`** `{"type":"urn:krivo:problem:nao-autenticado","code":"nao-autenticado","detail":"Formato do header Authorization inválido. Use 'Bearer <chave>'."}`.
   - **Não é falha pré-existente**: nas execuções de 2026-08-14 (antes do T17) o nó `HTTP: GET /settings (reengajamento)` respondeu com dados reais. Os erros daquela data têm outra causa (template `reengajamento` sem `template.language.code` — Meta 400), fora do escopo deste lote.
 - **Call sites afetados** (`n8n/workflows/scheduler.ts`, idem `n8n/generated/scheduler.ts`):
   - `:155` `POST /leads` (reconsulta do lembrete) — header em `:158`
@@ -243,7 +243,7 @@ Material obrigatório: é o argumento empírico de por que o smoke roteirizado (
 - **Impacto funcional**: lembrete de reunião, reengajamento de 24h e encerramento de conversa de 48h param de escrever no CRM. Num piloto cujo KPI de vitrine é taxa de comparecimento, o lembrete de reunião morrer em silêncio é material.
 - **Por que está latente agora**: as únicas linhas devidas em `agenda_envios` são as 2 linhas inertes de `test-tenant-lote6c`, cujo `tenantSlug` não existe em `tenant_config` — o lookup devolve vazio e a cadeia morre **antes** do nó HTTP. Por isso as execuções recentes aparecem como `success` em ~200ms. Na primeira reunião real de `triangulo` que vencer, volta a dar 401.
 - **Fix task**:
-  - **What**: migrar os 5 call sites de `scheduler.ts` para `authentication: "genericCredentialType"` + `genericAuthType: "httpHeaderAuth"` com a credencial `Crivo - chave de servico` (`YhGcdfGtdEBBU9YP`), acrescentando `X-Crivo-Tenant` com o `tenantSlug` — exatamente o padrão já aplicado em `principal.ts:1105-1121`. Remover `apiKey` dos 3 Code nodes que o propagam (`:114`, `:416`, `:603`) e das saídas de exemplo (`:97`, `:117`, `:203`, `:399`, `:419`, `:588`, `:606`).
+  - **What**: migrar os 5 call sites de `scheduler.ts` para `authentication: "genericCredentialType"` + `genericAuthType: "httpHeaderAuth"` com a credencial `Krivo - chave de servico` (`YhGcdfGtdEBBU9YP`), acrescentando `X-Krivo-Tenant` com o `tenantSlug` — exatamente o padrão já aplicado em `principal.ts:1105-1121`. Remover `apiKey` dos 3 Code nodes que o propagam (`:114`, `:416`, `:603`) e das saídas de exemplo (`:97`, `:117`, `:203`, `:399`, `:419`, `:588`, `:606`).
   - **Where**: `n8n/workflows/scheduler.ts`; regenerar `n8n/generated/scheduler.ts` por `node scripts/n8n-inline.mjs`; publicar por MCP.
   - **Verify**: disparar o scheduler com uma linha de `agenda_envios` real de `triangulo` vencida e confirmar por `get_execution` que o nó HTTP responde 2xx; conferir por `get_workflow_details` que nenhum `headerParameters` com `Authorization` sobrou.
   - **Done when**: `grep -rn "Authorization" n8n/workflows/` não devolve nenhum `headerParameters`; nenhuma referência a `apiKey` em `n8n/workflows/scheduler.ts`; execução real confirmada; `n8n/generated/` byte-idêntico ao publicado.
@@ -257,15 +257,15 @@ Cada item abaixo foi re-derivado da fonte primária; nenhum aceito por relato.
 | ------------------ | ----------------------------- | --------- |
 | Nenhum `Authorization` em `headerParameters` sob `n8n/workflows/` | `grep -rn "Authorization" n8n/workflows/` | Único hit é um **comentário** em `principal.ts:1094`; nenhum `headerParameters`. ✅ |
 | Nenhuma referência a `apiKey` em `n8n/workflows/scheduler.ts` | `grep -ci "apikey"` (case-insensitive) | **0** — e **0** também em `n8n/generated/scheduler.ts`. ✅ |
-| 5 call sites migrados | leitura do arquivo + contagem | 5 nós `n8n-nodes-base.httpRequest`, 5 `genericCredentialType`, 5 `genericAuthType: "httpHeaderAuth"`, 5 `X-Crivo-Tenant`, 5 `credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") }`. ✅ |
+| 5 call sites migrados | leitura do arquivo + contagem | 5 nós `n8n-nodes-base.httpRequest`, 5 `genericCredentialType`, 5 `genericAuthType: "httpHeaderAuth"`, 5 `X-Krivo-Tenant`, 5 `credentials: { httpHeaderAuth: newCredential("Krivo - chave de servico") }`. ✅ |
 | `n8n/generated/` coerente com a fonte | mesmas contagens no arquivo gerado (5/5/5) e `--stat` mostrando os dois arquivos no mesmo commit | ✅ |
 | Header do tenant vem do `tenantSlug` já existente em cada nó | leitura de cada expressão | `$('Code: combinar lembrete e tenant').item.json.tenantSlug`, `$('Code: canal do lembrete').first().json.tenantSlug` (o `...ctx` do Code node propaga `tenantSlug`), `$json.tenantSlug` (reengajamento), `$('Code: combinar reengajamento e tenant').first().json.tenantSlug`, `$json.tenantSlug` (escalonamento). Todas resolvem contra um objeto que comprovadamente carrega `tenantSlug`. ✅ |
 | `apiKey` removido dos 3 Code nodes que o propagavam | leitura do `jsCode` de `Code: combinar lembrete e tenant`, `Code: combinar reengajamento e tenant`, `Code: combinar escalonamento e tenant`, na fonte **e** na versão publicada | Nenhum dos três monta `apiKey`; `Code: combinar escalonamento e tenant` deixou de ler `$json` do tenant por completo. Varredura de todos os Code nodes do workflow publicado: **0** com `apiKey`. ✅ |
 | Publicado e ativo na instância | `get_workflow_details(gmIWxiRrHGIdtPub)` | `active: true`, `isArchived: false`, `versionId = 06add4c3-4e73-4a93-939b-dc976374b208` **igual** a `activeVersionId`, `updatedAt: 2026-08-23T02:30:12.678Z`. Varredura do JSON inteiro: **0** ocorrências de `apiKey`, **0** de `Authorization`. ✅ |
 | Versão publicada não é autosave do editor | `get_workflow_history(gmIWxiRrHGIdtPub)` | Versão mais recente `06add4c3-…`, `autosaved: false`, autoria "Arthur Tosta (via MCP)". A armadilha conhecida (autosave do editor sobrescrevendo publicação por MCP) **não ocorreu**. ✅ |
-| Conteúdo da versão publicada == fonte | `get_workflow_version(gmIWxiRrHGIdtPub, 06add4c3-…)` | Os 5 nós HTTP publicados trazem `authentication: "genericCredentialType"`, `genericAuthType: "httpHeaderAuth"` e um único header `X-Crivo-Tenant`, com as mesmas expressões da fonte. ✅ |
+| Conteúdo da versão publicada == fonte | `get_workflow_version(gmIWxiRrHGIdtPub, 06add4c3-…)` | Os 5 nós HTTP publicados trazem `authentication: "genericCredentialType"`, `genericAuthType: "httpHeaderAuth"` e um único header `X-Krivo-Tenant`, com as mesmas expressões da fonte. ✅ |
 | Execução **897** realmente mostra o 401 do esquema antigo | `get_execution(gmIWxiRrHGIdtPub, 897, includeData: true)`, chamada por mim | `status: error`. `Data Table: tenant do lembrete` devolveu a linha real de `triangulo` (`phoneNumberId: 1321478747709350`, `calendarId`) **sem campo `apiKey`**; `Code: combinar lembrete e tenant` propagou o contexto do lead `9ed1e79b-…` **sem `apiKey`**; o nó HTTP tinha `authentication: "none"` + `Authorization: =Bearer {{ ….apiKey }}` e recebeu **`401`** com `code: "nao-autenticado"` do deploy de produção. A citação da rodada 1 confere byte a byte. ✅ |
-| Credencial de serviço existe e é do tipo certo | `list_credentials(query: "Crivo")` | `YhGcdfGtdEBBU9YP` · `Crivo - chave de servico` · tipo `httpHeaderAuth`. ✅ |
+| Credencial de serviço existe e é do tipo certo | `list_credentials(query: "Krivo")` | `YhGcdfGtdEBBU9YP` · `Krivo - chave de servico` · tipo `httpHeaderAuth`. ✅ |
 | Workflow scratch não ficou vivo | `get_workflow_details(MuJojnEv7X0emzPT)` | A API recusa: *"Workflow 'MuJojnEv7X0emzPT' is archived and cannot be accessed"* — arquivamento confirmado pelo próprio comportamento da instância, mais forte que ler uma flag. ✅ |
 
 **Limitação de evidência declarada (não é lacuna de correção, é lacuna de observabilidade)** — dois pontos que **não** consegui re-derivar, e que registro em vez de esconder:
@@ -321,7 +321,7 @@ Cada item abaixo foi re-derivado da fonte primária; nenhum aceito por relato.
 
 **O que funciona**: a Fase 9 entrega o que prometeu no núcleo. Os tenants-piloto operam só com dado real; todo lead do contrato nasce com corretor (provado em produção em 2 leads distintos); `first_response_at` é gravado uma única vez e o KPI-carro-chefe do PRD tem valor real pela primeira vez (~18s num lead real); comparecimento ganhou caminho de escrita com três estados e limite correto; a chave de tenant saiu do texto claro e o `authenticate()` de dois modos tem precedência provada por teste discriminante; e os três desfechos da conversa estão provados por execução real, com todos os ids e o evento do Calendar reconferidos por mim na instância. O smoke da Phase 4 se pagou: achou 6 defeitos reais que nenhum teste automatizado alcançaria, incluindo uma violação de LGPD (confirmação de opt-out nunca entregue) que agora está corrigida e verificada por `wamid` real.
 
-**Issues found**: nenhum em aberto. O único achado do lote — **SEC-01 AC2**, `crivo-agente-scheduler` sem autenticação no CRM depois que o T17 removeu `tenant_config.apiKey` e migrou só os 3 workflows que revisou — foi corrigido em `76e2d6d` e re-verificado por um segundo verificador independente: os 5 call sites migraram para a credencial de serviço + `X-Crivo-Tenant`, `apiKey`/`Authorization` sumiram da fonte, do arquivo gerado e do workflow publicado, e a versão ativa na instância (`06add4c3-…`, `autosaved: false`) é a nova. A execução **897** foi reconsultada e confirma o 401 original nos próprios dados de nó. Fica registrada uma limitação de evidência, não um defeito: a execução ao vivo que o orquestrador usou para provar o fix (**1649**) deixou de ser consultável quando o workflow scratch foi arquivado, e o vínculo de credencial não é legível para nenhum nó nesta instância — a rodada 2 provou a configuração publicada, não uma execução pós-fix. Ver *Verificação do fix* e a Lacuna 5.
+**Issues found**: nenhum em aberto. O único achado do lote — **SEC-01 AC2**, `krivo-agente-scheduler` sem autenticação no CRM depois que o T17 removeu `tenant_config.apiKey` e migrou só os 3 workflows que revisou — foi corrigido em `76e2d6d` e re-verificado por um segundo verificador independente: os 5 call sites migraram para a credencial de serviço + `X-Krivo-Tenant`, `apiKey`/`Authorization` sumiram da fonte, do arquivo gerado e do workflow publicado, e a versão ativa na instância (`06add4c3-…`, `autosaved: false`) é a nova. A execução **897** foi reconsultada e confirma o 401 original nos próprios dados de nó. Fica registrada uma limitação de evidência, não um defeito: a execução ao vivo que o orquestrador usou para provar o fix (**1649**) deixou de ser consultável quando o workflow scratch foi arquivado, e o vínculo de credencial não é legível para nenhum nó nesta instância — a rodada 2 provou a configuração publicada, não uma execução pós-fix. Ver *Verificação do fix* e a Lacuna 5.
 
 **Recomendação de fechamento**: subir os 9 requirements de `Implementing` para `Verified` no `spec.md`, atualizar a seção `## Handoff` do `.specs/STATE.md` (segue descrevendo "T22 Pending, Verifier NÃO rodou") e, na primeira reunião real de `triangulo` que vencer, conferir a execução do scheduler correspondente para ter também a prova de execução do Fix 1.
 

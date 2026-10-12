@@ -1,6 +1,6 @@
 # EXECUTE-PROMPT — Lote 13b, opt-out só pela palavra "sair"
 
-Execute o lote 13b do Crivo com a skill `tlc-spec-driven` (ative pelo nome e siga o Execute e as Critical Rules). Responda sempre em português.
+Execute o lote 13b do Krivo com a skill `tlc-spec-driven` (ative pelo nome e siga o Execute e as Critical Rules). Responda sempre em português.
 
 ## Modelo
 
@@ -16,7 +16,7 @@ Spec e tasks aprovadas pelo usuário em 2026-10-07:
 - `.specs/features/lote-13b-opt-out-por-palavra/spec.md`
 - `.specs/features/lote-13b-opt-out-por-palavra/tasks.md`
 
-Decisões: remover o classificador LLM de opt-out; opt-out só pela mensagem exata "sair" (sem "parar"), com a confirmação fixa atual; texto do system message intacto; testes do classificador e da medição removidos junto com o código; hotfix sobre o principal do L14 publicado (`e3e25681`, fonte `0688deb`) sem ativar o L14b; arquivar `crivo-medicao-opt-out`.
+Decisões: remover o classificador LLM de opt-out; opt-out só pela mensagem exata "sair" (sem "parar"), com a confirmação fixa atual; texto do system message intacto; testes do classificador e da medição removidos junto com o código; hotfix sobre o principal do L14 publicado (`e3e25681`, fonte `0688deb`) sem ativar o L14b; arquivar `krivo-medicao-opt-out`.
 
 Aprovação cobre implementação e commits locais. **Cada ação externa exige autorização explícita do usuário no momento**, task a task: publicar/arquivar no n8n (T8), push do branch de hotfix e do main, envio de WhatsApp na prova (T9). Leitura pelo MCP do n8n é livre (T1, T9).
 
@@ -40,7 +40,7 @@ Não leia `ROADMAP`, specs de outros lotes nem arquivos de `archive/`.
 
 ## Hotfix (T7–T8)
 
-- Worktree: `git worktree add ../crivo-hotfix-l13b -b hotfix/opt-out-so-sair 0688deb`. Aplique ali só o equivalente de T2 e T3. Rode os testes de grafo do principal e do gate nesse worktree.
+- Worktree: `git worktree add ../krivo-hotfix-l13b -b hotfix/opt-out-so-sair 0688deb`. Aplique ali só o equivalente de T2 e T3. Rode os testes de grafo do principal e do gate nesse worktree.
 - Antes de publicar: salve o JSON da versão `e3e25681` (rollback) e confirme com o usuário. Depois: `publish_workflow` e confira `versionId` = `activeVersionId` (L-032).
 - O main não recebe merge do branch de hotfix; ele já tem a mesma mudança pelas T2–T4.
 

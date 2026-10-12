@@ -18,11 +18,11 @@ Trocar o dado mockado do CRM pelo dado real entregue pelo agente (Fase 9 do road
 
 ### Separação entre dado de demonstração e dado real
 
-- O seed passa a criar **três** tenants. O dataset rico (leads, conversas, mensagens, baselines) vai inteiro para um novo tenant **`Crivo Demo`**; Triângulo Imóveis e Vale do Uberaba nascem sem nenhum lead.
+- O seed passa a criar **três** tenants. O dataset rico (leads, conversas, mensagens, baselines) vai inteiro para um novo tenant **`Krivo Demo`**; Triângulo Imóveis e Vale do Uberaba nascem sem nenhum lead.
 - A **configuração** dos tenants-piloto continua semeada: corretores, categorias, documentos, horário comercial, tom de voz e chave de API. O que a Fase 9 substitui é dado de lead, não configuração — e o agente precisa dos documentos e do horário comercial para funcionar no smoke.
-- Baselines (`baseline_*`) ficam **nulos** nos tenants-piloto e preenchidos no `Crivo Demo`. Baseline real é Fase 10; comparar dado real contra baseline inventado produziria um número falso justo na fase de provar valor.
+- Baselines (`baseline_*`) ficam **nulos** nos tenants-piloto e preenchidos no `Krivo Demo`. Baseline real é Fase 10; comparar dado real contra baseline inventado produziria um número falso justo na fase de provar valor.
 - Os 50 leads de seed já existentes nos dois tenants são **apagados pelo reseed**, não migrados. Nenhum script de migração one-shot.
-- `Crivo Demo` aparece normalmente no seletor de tenants, sem flag e sem caminho especial de código.
+- `Krivo Demo` aparece normalmente no seletor de tenants, sem flag e sem caminho especial de código.
 
 ### Atribuição de corretor
 

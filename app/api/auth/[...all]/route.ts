@@ -9,6 +9,6 @@ import { auth } from "@/src/server/auth/config";
  * Fica fora do `proxy.ts` de propósito (o matcher exclui `api` inteiro): este
  * handler não pode exigir a sessão que ele mesmo emite. É também um caminho
  * independente do contrato de integração `/api/v1/**`, que segue na credencial
- * de serviço com `X-Crivo-Tenant` (SEC-01 do lote-7; AD-021).
+ * de serviço com `X-Krivo-Tenant` (SEC-01 do lote-7; AD-021).
  */
 export const { GET, POST } = toNextJsHandler(auth);

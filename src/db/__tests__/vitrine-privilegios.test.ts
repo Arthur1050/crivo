@@ -8,11 +8,11 @@ import { properties, tenants, tenantStorefronts, users } from "../schema";
 import { resolveVitrineTestUrl } from "../test-connection";
 import { currentTestDatabaseUrl } from "./vitrine-helpers";
 
-// Este teste CONECTA como `crivo_vitrine`, com a senha de VITRINE_TEST_DB_PASSWORD
+// Este teste CONECTA como `krivo_vitrine`, com a senha de VITRINE_TEST_DB_PASSWORD
 // (ambiente local). Ele afirma o estado que `npm run db:push:test` deixou no
 // alvo (papel, views, grants); não reaplica o SQL por conta própria.
 
-const ROLE = "crivo_vitrine";
+const ROLE = "krivo_vitrine";
 const TABLES_DENIED = [
   "leads", "messages", "conversations", "users", "sessions", "accounts",
   "tenants", "tenant_storefronts", "properties", "tenant_api_keys",
@@ -34,7 +34,7 @@ async function codeOf(attempt: Promise<unknown>): Promise<string | undefined> {
   return undefined;
 }
 
-describe("L16a T9 — papel crivo_vitrine e grants (VBANCO-02)", () => {
+describe("L16a T9 — papel krivo_vitrine e grants (VBANCO-02)", () => {
   let vitrine: Client;
   let tenantId: string;
   let slug: string;
@@ -43,7 +43,7 @@ describe("L16a T9 — papel crivo_vitrine e grants (VBANCO-02)", () => {
   it("a senha de teste do papel está no ambiente local (sem ela este teste falha, não pula)", () => {
     expect(
       process.env.VITRINE_TEST_DB_PASSWORD,
-      "VITRINE_TEST_DB_PASSWORD não está definida no ambiente local: sem ela não há login como crivo_vitrine."
+      "VITRINE_TEST_DB_PASSWORD não está definida no ambiente local: sem ela não há login como krivo_vitrine."
     ).toBeTruthy();
   });
 

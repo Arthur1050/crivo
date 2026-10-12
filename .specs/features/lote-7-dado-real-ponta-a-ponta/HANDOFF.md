@@ -1,6 +1,6 @@
 # Handoff — Lote 7 (Fase 9): o que falta é T22 + Verifier
 
-> Cole este arquivo (ou aponte para ele) numa janela nova do Claude Code aberta na raiz do projeto (`crivo/`).
+> Cole este arquivo (ou aponte para ele) numa janela nova do Claude Code aberta na raiz do projeto (`krivo/`).
 > **Confira antes de começar**: MCP do **n8n** conectado e extensão **Claude in Chrome** disponível (o T22 tem checagem em produção; o Verifier pode querer captura real).
 > Ative a skill `tlc-spec-driven` e rode **apenas o que falta do Execute**: **T22** e, na sequência, o **Verifier**. Não refaça Specify/Design/Tasks e não repita T1–T21.
 
@@ -12,16 +12,16 @@
 
 Toda a evidência real de cada task está registrada em `tasks.md`, na nota logo abaixo do `**Status**: Done` de cada uma — inclusive ids de execução do n8n **já confirmados por consulta** (nunca citados de memória). O Verifier deve reconferir por conta própria em vez de confiar nessas notas, mas elas dizem onde olhar.
 
-- **Phase 1 (T1–T6)** — commits `292d83f..5f9513f`. Schema `slug`, seed de 3 tenants (`Crivo Demo` + 2 pilotos vazios), `assignBroker` puro, `first_response_at`, estados vazios confirmados por captura real.
+- **Phase 1 (T1–T6)** — commits `292d83f..5f9513f`. Schema `slug`, seed de 3 tenants (`Krivo Demo` + 2 pilotos vazios), `assignBroker` puro, `first_response_at`, estados vazios confirmados por captura real.
 - **Phase 2 (T7–T11)** — commits `8df07a8..42c809d`. DAL de escrita, server actions, `LeadControls`, painel (sobre o redesign que o usuário fez em paralelo), sidebar com atividade real.
 - **Phase 3 (T12–T18)** — commits `6e20bba..c1c6c55`. `service_api_keys`, DAL, seed emitindo a chave, `authenticate()` de modo duplo, docs do contrato, e a troca do fluxo n8n para credencial de serviço (HUMAN GATE cumprido; coluna `apiKey` removida da Data Table).
 - **Phase 4 (T19–T21)** — as três conversas reais estão **provadas**, cada uma com screenshot + id de execução confirmado + artefato/estado verificado em produção. Detalhe completo nas notas do `tasks.md`.
 
 **Contagem de testes: piso real do lote 622 → 693 agora.** Nenhum teste removido, pulado ou enfraquecido em nenhum momento.
 
-**Git**: branch `main`, HEAD `36c9a8a`, **7 commits locais ainda não enviados** (`1e01d9e..36c9a8a` — todas as correções achadas na Phase 4). Working tree limpa fora de untracked pré-existentes (`public/crivo_*.png`, `skills-lock.json`).
+**Git**: branch `main`, HEAD `36c9a8a`, **7 commits locais ainda não enviados** (`1e01d9e..36c9a8a` — todas as correções achadas na Phase 4). Working tree limpa fora de untracked pré-existentes (`public/krivo_*.png`, `skills-lock.json`).
 
-**n8n**: `crivo-agente-principal` (`0B1nqjODu7xuYYKF`) publicado na versão **`d3105bb3-8522-449c-aa7c-0569d6a2a547`**, **61 nós**, ativo. `n8n/generated/principal.ts` está byte-idêntico ao publicado (conferido a cada publicação).
+**n8n**: `krivo-agente-principal` (`0B1nqjODu7xuYYKF`) publicado na versão **`d3105bb3-8522-449c-aa7c-0569d6a2a547`**, **61 nós**, ativo. `n8n/generated/principal.ts` está byte-idêntico ao publicado (conferido a cada publicação).
 
 ---
 
@@ -51,7 +51,7 @@ Sub-agente **fresco** (author ≠ verifier), que re-deriva a cobertura do zero a
 - o desempate de `assignBroker` — trocar a ordem do desempate tem que matar teste;
 - a guarda de tenant em `updateLeadBroker` — aceitar corretor de outro tenant tem que matar teste;
 - a condição de escrita única de `first_response_at` — sobrescrever tem que matar teste;
-- a precedência dos dois modos em `authenticate()` — chave de tenant obedecendo o header `X-Crivo-Tenant` tem que matar teste.
+- a precedência dos dois modos em `authenticate()` — chave de tenant obedecendo o header `X-Krivo-Tenant` tem que matar teste.
 
 Mutações rodam em scratch isolado (worktree temporário ou cópia de arquivos — **nunca `git stash`**), descartado depois, com `git status --porcelain` da árvore real conferido contra o baseline pré-sensor.
 
@@ -103,8 +103,8 @@ Publicar workflow na instância n8n **está autorizado** (é o objeto do lote e 
 
 ## 6. Estado de produção agora
 
-- **Vercel**: projeto `crivo` (`prj_O9vEsQZlWqMRRkaIn7llpoHh8dNx`, team `team_OhaWvx8glCwkSeNa2sSJqQIq`), produção em `crivo-plum.vercel.app`, servindo o commit `c1c6c55`. **Os 7 commits de correção da Phase 4 ainda não estão no ar** — mas são todos de `n8n/`, que não afeta o app Next.js; o fluxo n8n já está publicado com essas correções direto na instância.
-- **Banco de produção**: 3 tenants (`Crivo Demo` com dataset rico, `triangulo` e `vale-uberaba` sem lead de seed), tabela `service_api_keys` aplicada, coluna `tenants.slug` aplicada.
+- **Vercel**: projeto `krivo` (`prj_O9vEsQZlWqMRRkaIn7llpoHh8dNx`, team `team_OhaWvx8glCwkSeNa2sSJqQIq`), produção em `crivo-plum.vercel.app`, servindo o commit `c1c6c55`. **Os 7 commits de correção da Phase 4 ainda não estão no ar** — mas são todos de `n8n/`, que não afeta o app Next.js; o fluxo n8n já está publicado com essas correções direto na instância.
+- **Banco de produção**: 3 tenants (`Krivo Demo` com dataset rico, `triangulo` e `vale-uberaba` sem lead de seed), tabela `service_api_keys` aplicada, coluna `tenants.slug` aplicada.
 - **n8n**: 61 nós, ativo, credencial de serviço `YhGcdfGtdEBBU9YP` em uso; `tenant_config` sem coluna `apiKey`; 1 linha (`triangulo`).
 - **Modelo do agente**: `gemini-3.5-flash-lite`, **trocado à mão pelo usuário na UI**. `n8n/workflows/principal.ts` ainda declara `models/gemini-3.5-flash` na fonte — **divergência conhecida entre fonte e instância**, que o próximo `n8n-inline` + publish reverteria sem querer. O usuário decidiu migrar para **`gpt-5-nano`** num lote futuro; até lá, alinhar fonte e instância é uma pendência a resolver conscientemente (ver seção 7).
 

@@ -38,8 +38,8 @@ export const GET = withIntegrationRoute<MessagesRouteContext>(
     }
 
     return Response.json(result.messages.map(serializeMessage), { headers: {
-      "X-Crivo-Anchor-Message-Id": result.anchorMessageId ?? "null",
-      "X-Crivo-Agent-State-Revision": result.agentStateRevision === null ? "null" : String(result.agentStateRevision),
+      "X-Krivo-Anchor-Message-Id": result.anchorMessageId ?? "null",
+      "X-Krivo-Agent-State-Revision": result.agentStateRevision === null ? "null" : String(result.agentStateRevision),
     } });
   }
 );

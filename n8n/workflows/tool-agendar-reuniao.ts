@@ -1,9 +1,9 @@
 /**
- * crivo-tool-agendar-reuniao — sub-workflow tool `agendar_reuniao` (T8).
+ * krivo-tool-agendar-reuniao — sub-workflow tool `agendar_reuniao` (T8).
  *
  * Compõe disponibilidade + criação do evento no Google Calendar + `PATCH`
  * do CRM + fila de lembrete numa unidade só (design.md — Components:
- * "Sub-workflow crivo-tool-agendar-reuniao"; "Por que 3 tools nativas e 2
+ * "Sub-workflow krivo-tool-agendar-reuniao"; "Por que 3 tools nativas e 2
  * sub-workflows"). Chamado pelo nó AI Agent (T11) via `toolWorkflow`.
  * Requisito: AGN-03.
  *
@@ -218,7 +218,7 @@ const patchLeadScheduled = node({
       genericAuthType: "httpHeaderAuth",
       sendHeaders: true,
       headerParameters: {
-        parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: checar horario comercial').first().json.tenantSlug }}") }],
+        parameters: [{ name: "X-Krivo-Tenant", value: expr("{{ $('Code: checar horario comercial').first().json.tenantSlug }}") }],
       },
       sendBody: true,
       contentType: "json",
@@ -228,7 +228,7 @@ const patchLeadScheduled = node({
       ),
       options: { response: { response: { fullResponse: true, neverError: true } } },
     },
-    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
+    credentials: { httpHeaderAuth: newCredential("Krivo - chave de servico") },
   },
   output: [
     {
@@ -414,7 +414,7 @@ const scheduledBranch = patchLeadScheduled.to(
   )
 );
 
-export default workflow("crivo-tool-agendar-reuniao", "crivo-tool-agendar-reuniao")
+export default workflow("krivo-tool-agendar-reuniao", "krivo-tool-agendar-reuniao")
   .add(scheduleTrigger)
   .to(
     checkBusinessHours.to(

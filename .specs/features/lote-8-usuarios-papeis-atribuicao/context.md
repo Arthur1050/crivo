@@ -20,7 +20,7 @@ Fica fora: atendimento humano pelo Chats, página de Agenda, vínculo de conta G
 
 - Login completo com **better-auth**: e-mail + senha, sessão, `proxy.ts` protegendo o CRM inteiro (Next 16 deprecou `middleware.ts`), e **convite por e-mail** para o administrador criar gestor e corretor.
 - A imobiliária ativa passa a vir do vínculo do usuário autenticado; o cookie continua existindo como mecanismo, mas é validado contra os vínculos reais e ignorado quando aponta para fora deles.
-- O contrato de integração (`/api/v1/**`) fica **inalterado**: segue na credencial de serviço com `X-Crivo-Tenant` (SEC-01 do lote-7). Login de usuário e credencial de serviço são caminhos independentes.
+- O contrato de integração (`/api/v1/**`) fica **inalterado**: segue na credencial de serviço com `X-Krivo-Tenant` (SEC-01 do lote-7). Login de usuário e credencial de serviço são caminhos independentes.
 
 ### Modelo de usuário e imobiliária
 
@@ -71,7 +71,7 @@ Papéis acumuláveis, com **união de permissões** (o mais permissivo vence).
 
 ### Declined / Undiscussed Gray Areas → Assumptions
 
-Nenhuma área cinzenta foi recusada. Tudo o que não foi decidido em conversa está registrado na tabela **Assumptions & Open Questions** da spec com default escolhido e justificativa — em especial: provedor de e-mail, bootstrap do primeiro administrador, semântica de papéis acumuláveis, destino dos corretores já cadastrados, nome da coluna de responsável em `leads`, estado do ambiente de teste após o reseed, granularidade do slot, fuso horário, local do evento no Calendar, regra de atribuição no escalonamento, duração de sessão e senha, validade do convite, efeito da desativação sobre a conta, quem edita a janela de trabalho de terceiros, e visibilidade do tenant `Crivo Demo`.
+Nenhuma área cinzenta foi recusada. Tudo o que não foi decidido em conversa está registrado na tabela **Assumptions & Open Questions** da spec com default escolhido e justificativa — em especial: provedor de e-mail, bootstrap do primeiro administrador, semântica de papéis acumuláveis, destino dos corretores já cadastrados, nome da coluna de responsável em `leads`, estado do ambiente de teste após o reseed, granularidade do slot, fuso horário, local do evento no Calendar, regra de atribuição no escalonamento, duração de sessão e senha, validade do convite, efeito da desativação sobre a conta, quem edita a janela de trabalho de terceiros, e visibilidade do tenant `Krivo Demo`.
 
 ---
 

@@ -43,7 +43,7 @@ export function createExpireDocumentsHandler(
     // O destinatário é lido a cada chamada, como o secret: ausente, o alerta
     // não envia e reporta `destinatario-ausente` (lote-15 — ALERTA-03).
     const integrationAlert = deps.integrationAlert ?? {
-      operatorEmail: process.env.CRIVO_OPERATOR_ALERT_EMAIL,
+      operatorEmail: process.env.KRIVO_OPERATOR_ALERT_EMAIL,
       send: sendIntegrationAlertEmail,
     };
     const result = await runDailyMaintenance(now(), { storage, integrationAlert });

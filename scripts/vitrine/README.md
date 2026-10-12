@@ -1,10 +1,10 @@
 # SQL da vitrine pública
 
-Fronteira de banco da vitrine (AD-040): o papel `crivo_vitrine` lê só duas views do schema `vitrine`, e o CRM avisa a vitrine quando o catálogo muda (AD-042). Este diretório guarda o SQL e o executor.
+Fronteira de banco da vitrine (AD-040): o papel `krivo_vitrine` lê só duas views do schema `vitrine`, e o CRM avisa a vitrine quando o catálogo muda (AD-042). Este diretório guarda o SQL e o executor.
 
 | Arquivo | O que faz |
 | --- | --- |
-| `vitrine.sql` | Idempotente. Reaplica os dois checks de `tenant_storefronts`, cria o schema `vitrine`, as views `vitrine.lojas` e `vitrine.imoveis` (`security_barrier`), o papel `crivo_vitrine` e os dois grants. Não define senha. |
+| `vitrine.sql` | Idempotente. Reaplica os dois checks de `tenant_storefronts`, cria o schema `vitrine`, as views `vitrine.lojas` e `vitrine.imoveis` (`security_barrier`), o papel `krivo_vitrine` e os dois grants. Não define senha. |
 | `apply.ts` | `applyVitrineSql(url, { password? })`, `dropVitrineSchema(url)` e `verifyVitrineState(url)`. |
 
 ## Ordem obrigatória, em qualquer banco
@@ -20,7 +20,7 @@ Nos bancos de teste, `npm run db:push:test` faz os quatro passos em cada alvo (b
 
 ## O papel nasce só por SQL
 
-**Nunca crie `crivo_vitrine` pelo console do Neon.** O console coloca o papel em `neon_superuser`, o que anula o isolamento sem ninguém notar. Por SQL, o papel não é membro de papel algum e não tem privilégio nenhum em `public`; o `vitrine.sql` cria o papel só se ele não existir.
+**Nunca crie `krivo_vitrine` pelo console do Neon.** O console coloca o papel em `neon_superuser`, o que anula o isolamento sem ninguém notar. Por SQL, o papel não é membro de papel algum e não tem privilégio nenhum em `public`; o `vitrine.sql` cria o papel só se ele não existir.
 
 Papéis são por branch do Neon: o papel criado numa branch não existe nas branches filhas já criadas. Aplique o SQL em cada alvo.
 
@@ -29,7 +29,7 @@ Papéis são por branch do Neon: o papel criado numa branch não existe nas bran
 O `vitrine.sql` não contém senha.
 
 - **Bancos de teste**: `npm run db:push:test` aplica a senha a partir de `VITRINE_TEST_DB_PASSWORD`, uma variável do ambiente local. Sem ela o comando falha antes de tocar qualquer alvo.
-- **Produção**: quem define a senha é o usuário, no editor SQL do Neon, com `alter role crivo_vitrine password '<senha definida pelo usuário>'`. A senha vai direto para a variável do projeto da vitrine na Vercel e nunca para o repositório, para um commit ou para o chat.
+- **Produção**: quem define a senha é o usuário, no editor SQL do Neon, com `alter role krivo_vitrine password '<senha definida pelo usuário>'`. A senha vai direto para a variável do projeto da vitrine na Vercel e nunca para o repositório, para um commit ou para o chat.
 
 ## Variáveis dos dois projetos
 
@@ -38,7 +38,7 @@ O `vitrine.sql` não contém senha.
 | CRM (raiz) | `VITRINE_PUBLIC_URL` | Endereço público da vitrine. O CRM envia `POST <VITRINE_PUBLIC_URL>/api/revalidar` e monta o link "Abrir vitrine". Vazia ou ausente: nada é enviado e o CRM registra um `info`. |
 | CRM (raiz) | `VITRINE_REVALIDATE_SECRET` | Segredo compartilhado, enviado como `Authorization: Bearer`. Vazio ou ausente: nada é enviado. |
 | Vitrine (`vitrine/`) | `VITRINE_REVALIDATE_SECRET` | O mesmo segredo; a rota `/api/revalidar` o compara em tempo constante. |
-| Vitrine (`vitrine/`) | `VITRINE_DATABASE_URL` | Conexão do papel `crivo_vitrine` (usuário e senha dele, nunca o dono). |
+| Vitrine (`vitrine/`) | `VITRINE_DATABASE_URL` | Conexão do papel `krivo_vitrine` (usuário e senha dele, nunca o dono). |
 | Testes | `VITRINE_TEST_DB_PASSWORD` | Senha do papel nos bancos de teste, só no ambiente local. |
 
 No bloco de ambiente da configuração do Vitest, `VITRINE_PUBLIC_URL` e `VITRINE_REVALIDATE_SECRET` ficam vazias de propósito: nenhum teste do CRM chama a vitrine real.
@@ -49,10 +49,10 @@ O aviso é melhor-esforço (AD-042): timeout de 3 s, sem repetição, e nunca fa
 
 ```sql
 drop schema vitrine cascade;
-drop role crivo_vitrine;
+drop role krivo_vitrine;
 ```
 
-O `drop schema ... cascade` remove as views e os grants do schema. Se `drop role` reclamar de dependências, derrube antes o que ainda pertence ao papel (`drop owned by crivo_vitrine`). A tabela `tenant_storefronts` e a coluna `properties.featured` ficam: são dado do CRM e não afetam nada sem as views.
+O `drop schema ... cascade` remove as views e os grants do schema. Se `drop role` reclamar de dependências, derrube antes o que ainda pertence ao papel (`drop owned by krivo_vitrine`). A tabela `tenant_storefronts` e a coluna `properties.featured` ficam: são dado do CRM e não afetam nada sem as views.
 
 ## Produção
 

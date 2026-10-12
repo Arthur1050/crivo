@@ -2,7 +2,7 @@
  * `npm run alert:send-test` — envia ao operador um alerta de exemplo `[teste]`
  * (lote-15, ALERTA-04 AC3), no mesmo formato do alerta real e com um tenant
  * fictício, para provar que o Resend entrega no endereço de
- * `CRIVO_OPERATOR_ALERT_EMAIL` antes do deploy. Não lê banco nem tenant real.
+ * `KRIVO_OPERATOR_ALERT_EMAIL` antes do deploy. Não lê banco nem tenant real.
  * Uso: `npm run alert:send-test`
  */
 import "dotenv/config";
@@ -28,7 +28,7 @@ export async function sendTestIntegrationAlert(deps: {
 }): Promise<number> {
   const to = deps.operatorEmail?.trim();
   if (!to) {
-    deps.error("CRIVO_OPERATOR_ALERT_EMAIL ausente: defina o destinatário no ambiente local e rode de novo.");
+    deps.error("KRIVO_OPERATOR_ALERT_EMAIL ausente: defina o destinatário no ambiente local e rode de novo.");
     return 1;
   }
   const { subject, text } = formatIntegrationAlertEmail([EXAMPLE], { test: true });
@@ -47,7 +47,7 @@ const isMain =
 
 if (isMain) {
   sendTestIntegrationAlert({
-    operatorEmail: process.env.CRIVO_OPERATOR_ALERT_EMAIL,
+    operatorEmail: process.env.KRIVO_OPERATOR_ALERT_EMAIL,
     send: sendIntegrationAlertEmail,
     log: (line) => console.log(line),
     error: (line) => console.error(line),

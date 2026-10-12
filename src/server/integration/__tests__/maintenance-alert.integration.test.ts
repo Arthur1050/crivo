@@ -177,7 +177,7 @@ describe("rota /api/cron/expire-documents — ligação do alerta (L-026)", () =
   });
 
   it("sob o Vitest o destinatário do ambiente é vazio, mesmo com o carregador de variáveis ativo (L-037)", () => {
-    expect(process.env.CRIVO_OPERATOR_ALERT_EMAIL).toBe("");
+    expect(process.env.KRIVO_OPERATOR_ALERT_EMAIL).toBe("");
   });
 
   it("sem destinatário no ambiente a resposta traz os cinco campos e destinatario-ausente, sem enviar", async () => {
@@ -193,7 +193,7 @@ describe("rota /api/cron/expire-documents — ligação do alerta (L-026)", () =
 
   it("com destinatário no ambiente o handler monta a dependência real: envia ao destinatário e loga só contagens", async () => {
     const tenant = await newFallingTenant();
-    vi.stubEnv("CRIVO_OPERATOR_ALERT_EMAIL", "operador@fixture.test");
+    vi.stubEnv("KRIVO_OPERATOR_ALERT_EMAIL", "operador@fixture.test");
     const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
 
     let response: Response;

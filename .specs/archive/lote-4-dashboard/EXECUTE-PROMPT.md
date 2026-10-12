@@ -1,6 +1,6 @@
 # Prompt de Execução — Lote 4 / Fase 5 (Dashboard)
 
-> Cole o bloco abaixo numa nova janela do Claude Code aberta na raiz do projeto (`crivo/`).
+> Cole o bloco abaixo numa nova janela do Claude Code aberta na raiz do projeto (`krivo/`).
 
 ---
 

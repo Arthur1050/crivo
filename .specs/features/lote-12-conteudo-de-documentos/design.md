@@ -175,7 +175,7 @@ Contrato novo:
 POST /api/v1/context
 Content-Type: application/json
 Authorization: Bearer <service-key>
-X-Crivo-Tenant: <tenant-slug>
+X-Krivo-Tenant: <tenant-slug>
 ```
 
 ```json

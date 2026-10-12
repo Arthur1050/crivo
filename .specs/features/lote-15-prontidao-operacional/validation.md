@@ -23,14 +23,14 @@ READY), rollback candidate.
 ## Envio de teste ao operador (T10, 2026-10-07)
 
 Autorização: o usuário pediu a execução de `npm run alert:send-test` em 2026-10-07, com
-`CRIVO_OPERATOR_ALERT_EMAIL` e `RESEND_FROM` no ambiente local. O endereço completo do operador não
+`KRIVO_OPERATOR_ALERT_EMAIL` e `RESEND_FROM` no ambiente local. O endereço completo do operador não
 é registrado aqui.
 
 | Tentativa | Resultado |
 | --- | --- |
 | 1 | Resend recusou com 422: destinatário era um endereço de domínio de exemplo (valor de placeholder no ambiente local). Nada enviado. Corrigido pelo usuário. |
 | 2 | Aceito e `delivered`, mas com remetente padrão `onboarding@resend.dev` (sem `RESEND_FROM` local), que só entrega ao dono da conta e não prova o domínio verificado. O comando saiu com 127 por um assert do libuv no Windows (`process.exit` com socket fechando); corrigido em `310445b` (`process.exitCode`). |
-| 3 | Aceito, id do provedor `01a117b7-1556-77b9-b145-ae2467acb68c`, status `delivered` (MCP Resend `get-email`, leitura). Remetente `Crivo <support@usekrivo.online>`, domínio verificado na F3. Assunto `[teste] [crivo] Integração com problema em 1 imobiliária(s)`. Comando saiu com código 0. |
+| 3 | Aceito, id do provedor `01a117b7-1556-77b9-b145-ae2467acb68c`, status `delivered` (MCP Resend `get-email`, leitura). Remetente `Krivo <support@usekrivo.online>`, domínio verificado na F3. Assunto `[teste] [krivo] Integração com problema em 1 imobiliária(s)`. Comando saiu com código 0. |
 
 Confirmação do usuário (2026-10-07): o e-mail chegou na caixa de entrada, com remetente no domínio
 `usekrivo.online`. T10 concluída. O gate F2 segue parcial: a leitura dos logs do cron está agendada
@@ -71,7 +71,7 @@ ALTER TABLE tenants DROP COLUMN integration_health_state, DROP COLUMN integratio
 
 ## Variável do operador em produção (T12, 2026-10-07)
 
-Ação do usuário. O usuário confirmou no chat (2026-10-07) que criou `CRIVO_OPERATOR_ALERT_EMAIL` no
+Ação do usuário. O usuário confirmou no chat (2026-10-07) que criou `KRIVO_OPERATOR_ALERT_EMAIL` no
 ambiente Production da Vercel. O valor não foi lido, colado nem registrado; o executor não consultou
 o painel. Confirmação satisfaz ALERTA-04 AC5 antes do push.
 
@@ -177,8 +177,8 @@ diff só amplia o import (`src/server/auth/__tests__/email.test.ts:28-32`) e acr
 | ALERTA-01 AC5 | Igual → estado e instante intactos, sem alerta | `integration-alert.test.ts:60` plano vazio; `integration-alert.integration.test.ts:171-174` `changedAt` preservado partindo de valor distinto (L-053) | ✅ |
 | ALERTA-01 AC6 | No máximo 1 e-mail por queda | `integration-alert.integration.test.ts:115` `expect(mentioning(tenant)).toHaveLength(0)` na 2ª execução, `:117-118` estado e instante inalterados | ✅ |
 | ALERTA-01 AC7 | Execuções simultâneas → no máximo 1 e-mail | `integration-health.test.ts:231` `expect(waiting).toBeGreaterThanOrEqual(2)` (disputa real, L-052) e `:235` `expect(a.length + b.length).toBe(1)`; `integration-alert.integration.test.ts:187-188` 0 e-mails, `sent` 0. A reivindicação **parcial** (outra execução leva só parte dos tenants) não é testada: mutantes x1 e x2 | ⚠️ |
-| ALERTA-02 AC1 | Exatamente 1 e-mail ao `CRIVO_OPERATOR_ALERT_EMAIL`, remetente `RESEND_FROM` ou o padrão | `integration-alert.integration.test.ts:127` `expect(sendOk).toHaveBeenCalledTimes(1)`, `:105` `expect(emails[0].to).toBe(OPERATOR)`; `src/server/auth/__tests__/email.test.ts:176` `expect(payload.from).toBe("Crivo <alertas@fixture.test>")`, `:185` padrão `"Crivo <onboarding@resend.dev>"` | ✅ |
-| ALERTA-02 AC2 | Assunto `[crivo] Integração com problema em N imobiliária(s)` com N exato | `integration-alert.test.ts:94-99` `toBe(...1...)` e `toBe(...3...)`; `integration-alert.integration.test.ts:203` `expect(result.sent).toBe(listed)` | ✅ |
+| ALERTA-02 AC1 | Exatamente 1 e-mail ao `KRIVO_OPERATOR_ALERT_EMAIL`, remetente `RESEND_FROM` ou o padrão | `integration-alert.integration.test.ts:127` `expect(sendOk).toHaveBeenCalledTimes(1)`, `:105` `expect(emails[0].to).toBe(OPERATOR)`; `src/server/auth/__tests__/email.test.ts:176` `expect(payload.from).toBe("Krivo <alertas@fixture.test>")`, `:185` padrão `"Krivo <onboarding@resend.dev>"` | ✅ |
+| ALERTA-02 AC2 | Assunto `[krivo] Integração com problema em N imobiliária(s)` com N exato | `integration-alert.test.ts:94-99` `toBe(...1...)` e `toBe(...3...)`; `integration-alert.integration.test.ts:203` `expect(result.sent).toBe(listed)` | ✅ |
 | ALERTA-02 AC3 | Nome, slug, contagem por `(code, rota)`, ISO UTC ou `nunca` | `integration-alert.test.ts:104-108` `toContain("invalid_token /api/v1/leads: 3")`, `"2026-10-05T14:30:00.000Z"`; `:114` `toContain("nunca")`. Ver achado D1: a mesma `(code, rota)` pode sair em duas linhas | ⚠️ precisão |
 | ALERTA-02 AC4 | Sem conteúdo, telefone, nome de lead, chave | `integration-alert.test.ts:133-137` `not.toContain` para nome de lead, telefone, conteúdo, chave e `tenantId` | ✅ |
 | ALERTA-03 AC1 | Destinatário ausente ou vazio → sem envio, `saudavel` mantido, `skipped: "destinatario-ausente"` | `integration-alert.integration.test.ts:217-227` (`undefined`, `""`, `"   "`): `not.toHaveBeenCalled()`, `skipped` `"destinatario-ausente"`, estado `"saudavel"` e instante original | ✅ |
@@ -208,7 +208,7 @@ diff só amplia o import (`src/server/auth/__tests__/email.test.ts:28-32`) e acr
 | --- | --- | --- |
 | ALERTA-04 AC1 | § Gate deste arquivo: F1, F3 e F4 confirmados; F2 **parcial** | ⚠️ |
 | ALERTA-04 AC2 | F2 não confirmado, mas a Phase 3 seguiu por decisão registrada do usuário (§ Push e deploy). Desvio da letra do AC, aceito pelo usuário | ⚠️ desvio aceito |
-| ALERTA-04 AC3 | § Envio de teste: tentativa 3 `delivered`, confirmação do usuário; `scripts/__tests__/send-test-integration-alert.test.ts:24` assunto começa com `[teste] [crivo]` | ✅ |
+| ALERTA-04 AC3 | § Envio de teste: tentativa 3 `delivered`, confirmação do usuário; `scripts/__tests__/send-test-integration-alert.test.ts:24` assunto começa com `[teste] [krivo]` | ✅ |
 | ALERTA-04 AC4 | § Schema (T11) registrado antes de § Push e deploy (T13), cada um com autorização | ✅ |
 | ALERTA-04 AC5 | § Variável (T12) antes do push | ✅ |
 | ALERTA-04 AC6 | T14 pendente (leitura dos logs agendada) | ❌ pendente |
@@ -261,7 +261,7 @@ conferindo o SHA-256. Profundidade: P0 expandida (39 mutantes).
 | 11c | `revoke-service-key.ts:68` | só o update sem `isNull` | SOBREVIVEU, **equivalente**: os ids vêm da seleção de ativas travada `FOR UPDATE` na mesma transação |
 | 11d | `revoke-service-key.ts:48` | rótulo sem distinguir caixa | MORTO: `:117` |
 | 12a | `app/api/cron/expire-documents/route.ts:49` | rota não passa `integrationAlert` | MORTO: `maintenance-alert.integration.test.ts:188`, `:210` |
-| 12b | `vitest.config.ts:41` | sem `CRIVO_OPERATOR_ALERT_EMAIL: ""` | MORTO: `maintenance-alert.integration.test.ts:180` (rodado só com `-t L-037`, sem envio possível) |
+| 12b | `vitest.config.ts:41` | sem `KRIVO_OPERATOR_ALERT_EMAIL: ""` | MORTO: `maintenance-alert.integration.test.ts:180` (rodado só com `-t L-037`, sem envio possível) |
 | 12c | `route.ts:46` | destinatário fixo `undefined` | MORTO: `:210` |
 | 13a | `src/lib/integration-alert.ts:70` | N fixo em 1 | MORTO: `integration-alert.test.ts:97` |
 | 13b | `src/lib/integration-alert.ts:51` | corpo despeja o snapshot inteiro (`JSON.stringify`) | MORTO: `:134` |

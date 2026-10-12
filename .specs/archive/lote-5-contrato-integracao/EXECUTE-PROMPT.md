@@ -1,6 +1,6 @@
 # Prompt de Execução — Lote 5: Contrato de Integração CRM ↔ Agente
 
-> Cole o bloco abaixo numa nova janela do Claude Code aberta na raiz do projeto (`crivo/`).
+> Cole o bloco abaixo numa nova janela do Claude Code aberta na raiz do projeto (`krivo/`).
 
 ---
 

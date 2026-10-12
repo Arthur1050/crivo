@@ -419,7 +419,7 @@ não são afetados. A lição L-015 manda conferir com `grep` todos os workflows
 
 ## Confirmações da T1 (2026-10-01)
 
-Rascunho `crivo-rascunho-l14-memoria` (`5f6NETNOgpkXEjgq`, projeto pessoal), execução manual `2802`,
+Rascunho `krivo-rascunho-l14-memoria` (`5f6NETNOgpkXEjgq`, projeto pessoal), execução manual `2802`,
 `success`, conferida por `get_execution`. Sessão sintética `rascunho-l14:1790853712528`, sem dado real.
 
 - `get_node_types`: `memoryManager` v1.1 em `insert` aceita `type: 'ai' | 'system' | 'user'`;

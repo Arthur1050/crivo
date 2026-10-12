@@ -39,7 +39,7 @@ describe("interpretarPatchAgendamento (ATRIB-02 AC4/AC5/AC7)", () => {
   it("`sem-corretor-disponivel` não confirma: nenhum evento é criado (AC5)", () => {
     const resultado = interpretarPatchAgendamento(
       envelope(409, {
-        type: "urn:crivo:problem:sem-corretor-disponivel",
+        type: "urn:krivo:problem:sem-corretor-disponivel",
         status: 409,
         code: "sem-corretor-disponivel",
       })

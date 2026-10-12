@@ -3,7 +3,7 @@ import { parseWorkerEndpoints, resolveTestDatabaseUrl } from "../test-connection
 /**
  * URL do banco de teste do worker atual (a mesma que `src/db/index.ts` usa).
  * Os testes da vitrine precisam dela para falar com o SQL e com o papel
- * `crivo_vitrine` no mesmo alvo em que o `db` do teste escreve.
+ * `krivo_vitrine` no mesmo alvo em que o `db` do teste escreve.
  */
 export function currentTestDatabaseUrl(): string {
   const baseUrl = process.env.TEST_DATABASE_URL;

@@ -1,6 +1,6 @@
 # Prompt de Execução — Lote 7: Dado real ponta a ponta (Fase 9)
 
-> Cole o bloco abaixo numa nova janela do Claude Code aberta na raiz do projeto (`crivo/`).
+> Cole o bloco abaixo numa nova janela do Claude Code aberta na raiz do projeto (`krivo/`).
 > **Antes de colar, confira na janela nova**: MCP do **n8n** conectado (a instância precisa estar no ar — Phases 3 e 4 dependem dela) **e** a extensão **Claude in Chrome** disponível (há captura real obrigatória em T6, T10, T11 e nas três provas da Phase 4). O painel Browser embutido **não serve** — ele não captura quando não está visível.
 > **Antes de começar, tenha em mãos**: acesso à instância n8n para criar uma credencial (HUMAN GATE do T17) e o celular com o número de teste do WhatsApp já homologado (Phase 4 — você é quem manda as mensagens).
 
@@ -93,7 +93,7 @@ Aprovar este plano autoriza implementação e commits **locais**. Exigem meu OK 
 ## Ao final
 
 1. Verifier PASS + `validation.md` escrito, com as três provas da Phase 4 (screenshot + id de execução confirmado + artefato externo) ou, honestamente, o registro do que **não** foi provado. Desfecho não observado é gap declarado, nunca inferido a partir do estado do CRM.
-2. O sensor de mutação deve cobrir, no mínimo: o desempate de `assignBroker` (trocar a ordem do desempate tem que matar teste), a guarda de tenant em `updateLeadBroker` (aceitar corretor de outro tenant tem que matar teste), a condição de escrita única de `first_response_at` (sobrescrever tem que matar teste) e a precedência dos dois modos em `authenticate()` (chave de tenant obedecendo o header `X-Crivo-Tenant` tem que matar teste).
+2. O sensor de mutação deve cobrir, no mínimo: o desempate de `assignBroker` (trocar a ordem do desempate tem que matar teste), a guarda de tenant em `updateLeadBroker` (aceitar corretor de outro tenant tem que matar teste), a condição de escrita única de `first_response_at` (sobrescrever tem que matar teste) e a precedência dos dois modos em `authenticate()` (chave de tenant obedecendo o header `X-Krivo-Tenant` tem que matar teste).
 3. Atualizar `tasks.md` (Status: Done) e a rastreabilidade do `spec.md` (os 9 requirement IDs → status real), honestamente.
 4. Atualizar `## Handoff` do `.specs/STATE.md` **e** gravar **AD-020** em `## Decisions` (T22) — exceção autorizada para tocar `## Decisions`: o roadmap ganha o lote de usuários/perfis/papéis + atribuição por agenda entre a Fase 9 e a Fase 10 (L7 = Fase 9, L8 = usuários/papéis, L9 = Fase 10), e AD-006 fica `amended by AD-020`.
 5. Reportar: resumo por batch (commits + contagem de testes conferida por você, não pelo relato do worker), veredito do Verifier, e o que ficou como gap conhecido para o L8.

@@ -1,7 +1,7 @@
 /**
  * Decisão determinística do agendamento (lote-8 — ATRIB-02, tasks.md T29).
  * Funções puras, sem I/O, sem dependências — rodam dentro de um Code node do
- * `crivo-tool-agendar-reuniao`.
+ * `krivo-tool-agendar-reuniao`.
  *
  * A ordem do sub-workflow foi invertida nesta task: o `PATCH /leads/{id}` do
  * CRM acontece ANTES da criação do evento no Google Calendar. Quem escolhe o

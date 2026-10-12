@@ -450,7 +450,7 @@ a repetição da T26 depois do reset continua pendente antes de seguir para T27.
 **Done when**:
 - [x] Happy path com filtros combinados e sem filtro nenhum
 - [x] Filtro inválido → `400` `application/problem+json` com `code` `payload-invalido`
-- [x] Chave de serviço ausente/inválida e `X-Crivo-Tenant` desconhecido recusados (SEC-01), sem cair em tenant default
+- [x] Chave de serviço ausente/inválida e `X-Krivo-Tenant` desconhecido recusados (SEC-01), sem cair em tenant default
 - [x] Tenant A e tenant B com a mesma chave devolvem conjuntos disjuntos
 - [x] Os 4 verbos não suportados devolvem `405` em `problem+json`
 - [x] `route-instrumentation.test.ts` (varredura existente) passa sem alteração — o export está marcado `INSTRUMENTED`
@@ -676,7 +676,7 @@ a repetição da T26 depois do reset continua pendente antes de seguir para T27.
 
 ### T22: Nó `buscar_imoveis` no workflow
 
-**What**: `httpRequestTool` v4.5 com `X-Crivo-Tenant` por expressão do fluxo, um `$fromAI` por filtro, `neverError`, e `retryOnFail`/`maxTries` em `config`.
+**What**: `httpRequestTool` v4.5 com `X-Krivo-Tenant` por expressão do fluxo, um `$fromAI` por filtro, `neverError`, e `retryOnFail`/`maxTries` em `config`.
 **Where**: `n8n/workflows/principal.ts`
 **Depends on**: T21
 **Reuses**: `consultarDocumentosTool` (linha 1153) como molde
@@ -688,7 +688,7 @@ a repetição da T26 depois do reset continua pendente antes de seguir para T27.
 
 **Done when**:
 - [x] `retryOnFail` e `maxTries` estão em `config`, **não** dentro de `parameters` — o erro que o commit `a80760c` corrigiu em `consultar_documentos`
-- [x] `X-Crivo-Tenant` vem de `$('Code: gate')`, nunca de `$fromAI` (BUSCA-04 AC3)
+- [x] `X-Krivo-Tenant` vem de `$('Code: gate')`, nunca de `$fromAI` (BUSCA-04 AC3)
 - [x] A tool entra em `subnodes.tools` do `AI Agent`; as 5 existentes permanecem
 - [x] Teste estrutural: nome da tool, origem de cada parâmetro, e as contagens de nós e conexões batendo com a adição de exatamente uma tool
 - [x] `agentModel` com zero linhas tocadas (AD-026)
@@ -734,7 +734,7 @@ a repetição da T26 depois do reset continua pendente antes de seguir para T27.
 
 ### T24: Publicar e conferir hash
 
-**What**: Publicar `crivo-agente-principal` na instância a partir de `n8n/generated/principal.ts` e conferir SHA-256 do publicado antes de ativar.
+**What**: Publicar `krivo-agente-principal` na instância a partir de `n8n/generated/principal.ts` e conferir SHA-256 do publicado antes de ativar.
 **Where**: `.specs/archive/lote-11-catalogo-de-imoveis/evidencia.md`
 **Depends on**: T23
 **Reuses**: Procedimento do lote-10 (conferência de SHA antes de ativar)
@@ -747,7 +747,7 @@ a repetição da T26 depois do reset continua pendente antes de seguir para T27.
 **Done when**:
 - [x] SHA-256 do publicado confere com o gerado **antes** de ativar (BUSCA-04 AC12) — comparação estrutural completa node a node (62/62 nós, 76/76 conexões, `jsCode` idêntico byte a byte, `buscar_imoveis`/`consultar_documentos`/`OpenAI Chat Model` idênticos)
 - [x] `evidencia.md` registra o id da versão publicada (`ccc29639-6a1c-4a92-b98a-df55146eee87`), como o Handoff do lote-10 faz
-- [x] Nenhum outro workflow tocado — a dívida cosmética do `crivo-tool-agendar-reuniao` fica como está
+- [x] Nenhum outro workflow tocado — a dívida cosmética do `krivo-tool-agendar-reuniao` fica como está
 - [x] Gate build passa
 
 **Tests**: none

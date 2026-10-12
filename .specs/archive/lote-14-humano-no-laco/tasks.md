@@ -138,7 +138,7 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 **Done when:**
 
 - [x] `get_node_types` confirma os tipos aceitos por `memoryManager` em `insert` e o `tableName` padrão do `memoryPostgresChat`; o resultado está na Evidence.
-- [x] Rascunho `crivo-rascunho-l14-memoria` executado numa sessão sintética (`rascunho-l14:<timestamp>`): insere `user` ("quantas vagas tem?"), `system` ("Mensagem enviada ao lead por Ana, da equipe da imobiliária: o apartamento tem 3 vagas") e roda o AI Agent (`gpt-5.4-nano-2026-03-17`, mesma memória) com a pergunta do lead; a execução termina `success` e a resposta cita 3 vagas.
+- [x] Rascunho `krivo-rascunho-l14-memoria` executado numa sessão sintética (`rascunho-l14:<timestamp>`): insere `user` ("quantas vagas tem?"), `system` ("Mensagem enviada ao lead por Ana, da equipe da imobiliária: o apartamento tem 3 vagas") e roda o AI Agent (`gpt-5.4-nano-2026-03-17`, mesma memória) com a pergunta do lead; a execução termina `success` e a resposta cita 3 vagas.
 - [x] Um nó Postgres lê `information_schema.columns` de `n8n_chat_histories` e confirma a coluna `session_id`; outro executa o `DELETE` parametrizado; um `load` seguinte devolve `messagesCount: 0`.
 - [x] Ids das execuções conferidos por `get_execution` e registrados **antes** de arquivar o rascunho (L-011, L-016); nenhum dado real.
 - [x] `design.md` (Tech Decisions e Risks & Concerns) registra a confirmação ou a troca: se `system` falhar, a semeadura usa `ai` com o mesmo texto de atribuição, e a T22 segue essa escolha; se a coluna for outra, C10 é corrigido. Qualquer desvio que mude o comportamento prometido por um AC para o lote e vai ao usuário antes da T2.
@@ -147,7 +147,7 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 **Evidence** (registrada antes de arquivar o rascunho, L-016):
 
 - `get_node_types`: `memoryManager` v1.1 `insert` aceita `ai | system | user`; `memoryPostgresChat` v1.4 tem `tableName` padrão `n8n_chat_histories`.
-- Rascunho `crivo-rascunho-l14-memoria`, id `5f6NETNOgpkXEjgq`, projeto pessoal, criado por `create_workflow_from_code` com autorização do usuário. Execução manual `2802`, `success`, conferida por `get_execution` (L-011). Sessão sintética `rascunho-l14:1790853712528`.
+- Rascunho `krivo-rascunho-l14-memoria`, id `5f6NETNOgpkXEjgq`, projeto pessoal, criado por `create_workflow_from_code` com autorização do usuário. Execução manual `2802`, `success`, conferida por `get_execution` (L-011). Sessão sintética `rascunho-l14:1790853712528`.
 - Memória carregada pelo agente: `HumanMessage` "quantas vagas tem?" seguida de `SystemMessage` com a nota da Ana. O modelo recebeu a nota como `System:` no meio do histórico e respondeu "São 3 vagas no apartamento." à pergunta "quantas vagas tem mesmo?".
 - `information_schema.columns`: `id` integer, `session_id` character varying, `message` jsonb. Contagem antes da purga 4; `DELETE ... WHERE session_id = $1` com `queryReplacement`; `load` seguinte `messagesCount: 0`; contagem depois 0.
 - Resultado: `system` confirmado para a T22 e `session_id` confirmado para a T27. `design.md` § Confirmações da T1, Tech Decisions e Risks & Concerns atualizados. Nenhum desvio de AC.
@@ -615,7 +615,7 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 - [x] Arquivo de teste novo `n8n/workflows/__tests__/principal-conducao-humana.test.ts`: o `jsonBody` do POST contém `whatsappPhoneNumberId` vindo de `Code: combinar evento e tenant`; o código do gate passa `humanTakeoverAt`. _Evidência: 19 testes no arquivo novo; o gate executado com a marca devolve `somente-registrar`._
 - [x] O envio de contingência só é alcançável pela saída verdadeira do novo IF; a saída falsa e a saída de erro do HTTP (índice real no `toJSON()`, L-044) chegam ao fechamento sem envio; testes que falham se qualquer aresta sumir (SILENCIO-01 AC4, AC5; L-026). _Evidência: `toJSON()` — GET saída 0 → Code, saída 1 → `Code: preparar clear de buffer (turno do agente)`; IF 0 → `Code: preparar envio de contingência` (único predecessor), IF 1 → fechamento; o fechamento não alcança nenhum nó `whatsApp`._
-- [x] O `Code: pode enviar no turno?` inlina `conduction.mjs`; `leadId`/`tenantSlug` vêm de expressão do fluxo, nunca de `$fromAI`. _Evidência: URL e `X-Crivo-Tenant` de `$('Code: gate')`; marca/opt-out → `podeEnviar: false`, `escalado_humano` sem marca → `true`._
+- [x] O `Code: pode enviar no turno?` inlina `conduction.mjs`; `leadId`/`tenantSlug` vêm de expressão do fluxo, nunca de `$fromAI`. _Evidência: URL e `X-Krivo-Tenant` de `$('Code: gate')`; marca/opt-out → `podeEnviar: false`, `escalado_humano` sem marca → `true`._
 - [x] `node scripts/n8n-inline.mjs` roda; `validate_workflow` do gerado sem erro; gerado no mesmo commit. _Evidência: só `n8n/generated/principal.ts` mudou de conteúdo (70/90 → 73/95); `parseWorkflowCodeToBuilder` + `validateWorkflow` do SDK local sobre o gerado completo: válido, 0 erros, 0 warnings. `validate_workflow` do MCP sobre o estado final do principal registrado na T24._
 - [x] Gate Full passa; contagem registrada. _Evidência: `npm test` 142 arquivos / 2.320 testes (base 140/2.287); falhas: as 2 conhecidas de DOCLIM-01 AC8 e o pin de `principal-modelo.test.ts` (70/90), atualizado para a contagem exata nova 73/95 (mesma prática do lote-13 `3a15671`) e reverificado (`n8n/workflows/__tests__` 183/183)._
 
@@ -651,14 +651,14 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 **What:** Entre `Aceito pelas barreiras de persona?` e `Code: normalizar destinatario do envio`, inserir `HTTP: GET /leads/{id} (antes do envio)` (`onError: continueErrorOutput`) → `Code: pode enviar no turno?` → IF; o falso vai à recusa com `reason: "conversa-com-humano"` e o erro com `reason: "conducao-indisponivel"`.
 **Where:** `n8n/workflows/tool-responder-lead.ts`
 **Depends on:** T24
-**Reuses:** `tool-responder-lead.ts:183-280`, credencial "Crivo - chave de servico"
+**Reuses:** `tool-responder-lead.ts:183-280`, credencial "Krivo - chave de servico"
 **Requirement:** SILENCIO-01
 **Tools:** n8n leitura
 
 **Done when:**
 
 - [x] Arquivo de teste novo `n8n/workflows/__tests__/tool-responder-lead.test.ts`: `WhatsApp: enviar resposta do agente` só é alcançável pela saída verdadeira do IF novo; saída falsa e erro do HTTP chegam à recusa sem envio e sem `persistAbertura` (AC4, AC5; L-026, L-044). _Evidência: 18 testes (16 falham sem a implementação). `toJSON()`: barreiras 0 → GET; GET 0 → `Code: pode enviar no turno?`, GET 1 → `Code: condução indisponível` → recusa; IF 0 → `Code: normalizar destinatario do envio` (único predecessor), IF 1 → recusa; a recusa não alcança `WhatsApp: enviar resposta do agente` nem `Data Table: gravar abertura`. Motivos executados: `conversa-com-humano` e `conducao-indisponivel`._
-- [x] O `leadId` e o `tenantSlug` do GET vêm do `Execute Workflow Trigger`, nunca do modelo. _Evidência: URL e `X-Crivo-Tenant` de `$('Execute Workflow Trigger')`, sem `$fromAI`._
+- [x] O `leadId` e o `tenantSlug` do GET vêm do `Execute Workflow Trigger`, nunca do modelo. _Evidência: URL e `X-Krivo-Tenant` de `$('Execute Workflow Trigger')`, sem `$fromAI`._
 - [x] `node scripts/n8n-inline.mjs` roda; `validate_workflow` sem erro; gerado no mesmo commit. _Evidência: só `n8n/generated/tool-responder-lead.ts` mudou (10/9 → 14/15); SDK local: válido, 0 warnings; `validate_workflow` do MCP: `valid: true`, 14 nós, sem warnings._
 - [x] Gate Full passa; contagem registrada. _Evidência: `npm test` 144 arquivos / 2.354 testes; só as 2 falhas conhecidas de DOCLIM-01 AC8._
 
@@ -745,7 +745,7 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 - [x] Self-check da Astryx: nenhum `<div>`, `style={{}}` ou valor arbitrário.
 - [x] Gate Build passa; contagem registrada. *(Suíte: 145 arquivos / 2.391 testes, só as 2 falhas conhecidas de `DOCLIM-01 AC8`; lint 0 erros; build ok.)*
 
-**Evidence:** captura pela extensão Claude in Chrome em `http://localhost:3000/chats?conversa=e4965984-…` (`npm run dev:test`, banco descartável conferido no log; porta 3000 conferida por `netstat` + `curl`), logado como o administrador de teste "Ana Teste" de `crivo-demo`. Thread sintética do lead "Nathan Ferreira" com lead, agente e dois humanos: as bolhas de "Ana Teste" e "Bruno Lima" ficam à direita, filled, com avatar de iniciais (AT, BL) e o nome na primeira bolha de cada grupo; duas mensagens seguidas da Ana formam um grupo, e a do Bruno abre outro; as bolhas do agente ficam à direita sem avatar nem nome; as do lead, à esquerda com avatar e nome. O overlay do Next acusou um erro de hidratação no divisor de data (`<Timestamp format="date_weekday">`, `message-thread.tsx:62`), código anterior ao lote, registrado em Deferred Ideas.
+**Evidence:** captura pela extensão Claude in Chrome em `http://localhost:3000/chats?conversa=e4965984-…` (`npm run dev:test`, banco descartável conferido no log; porta 3000 conferida por `netstat` + `curl`), logado como o administrador de teste "Ana Teste" de `krivo-demo`. Thread sintética do lead "Nathan Ferreira" com lead, agente e dois humanos: as bolhas de "Ana Teste" e "Bruno Lima" ficam à direita, filled, com avatar de iniciais (AT, BL) e o nome na primeira bolha de cada grupo; duas mensagens seguidas da Ana formam um grupo, e a do Bruno abre outro; as bolhas do agente ficam à direita sem avatar nem nome; as do lead, à esquerda com avatar e nome. O overlay do Next acusou um erro de hidratação no divisor de data (`<Timestamp format="date_weekday">`, `message-thread.tsx:62`), código anterior ao lote, registrado em Deferred Ideas.
 
 **Tests:** none
 **Gate:** Build
@@ -765,7 +765,7 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 - [x] Captura real da lista com uma conversa do agente, uma com marca e uma em `escalado_humano` (AC5).
 - [x] Self-check da Astryx; gate Build passa; contagem registrada. *(Suíte: 145 arquivos / 2.391 testes, só as 2 falhas conhecidas de `DOCLIM-01 AC8`; lint 0 erros; build ok.)*
 
-**Evidence:** captura pela extensão Claude in Chrome (`dev:test`, administrador de teste de `crivo-demo`). Topo da lista: "Nathan Ferreira" (marca de condução humana) com o `Token` "Humano" abaixo do horário; "Simone Dias" e as demais conversas do agente sem o token. Fim da lista: as sete conversas em `escalado_humano` sem marca (Otávio Ramos, Gabriela Carvalho, Diego Oliveira, Sabrina Ibrahim, Leonardo Oliveira, Uendel Ramos, Karina Lopes) com o token. Sem `<div>`, `<span>` nem `style`.
+**Evidence:** captura pela extensão Claude in Chrome (`dev:test`, administrador de teste de `krivo-demo`). Topo da lista: "Nathan Ferreira" (marca de condução humana) com o `Token` "Humano" abaixo do horário; "Simone Dias" e as demais conversas do agente sem o token. Fim da lista: as sete conversas em `escalado_humano` sem marca (Otávio Ramos, Gabriela Carvalho, Diego Oliveira, Sabrina Ibrahim, Leonardo Oliveira, Uendel Ramos, Karina Lopes) com o token. Sem `<div>`, `<span>` nem `style`.
 
 **Tests:** none
 **Gate:** Build
@@ -925,7 +925,7 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 #### T37: Escrever os cenários da prova no roteiro
 
-**What:** `n8n/smoke/roteiro.md` ganha os cenários (a) assumir, responder e receber sem recarregar; (b) devolver e o agente usar um fato que só o corretor disse; (c) opt-out pelo CRM; (d) `sair` durante a condução humana — no formato da AD-027, com a limpeza entre cenários (`smoke:reset` agora inclui as reservas; `crivo-smoke-reset` no n8n).
+**What:** `n8n/smoke/roteiro.md` ganha os cenários (a) assumir, responder e receber sem recarregar; (b) devolver e o agente usar um fato que só o corretor disse; (c) opt-out pelo CRM; (d) `sair` durante a condução humana — no formato da AD-027, com a limpeza entre cenários (`smoke:reset` agora inclui as reservas; `krivo-smoke-reset` no n8n).
 **Where:** `n8n/smoke/roteiro.md`
 **Depends on:** T36
 **Reuses:** formato dos cenários do lote-10 e do lote-13
@@ -974,7 +974,7 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 #### T39: Publicar o n8n
 
-**What:** Com autorização específica: `add_data_table_column` `memoryResetAt` em `conversa_estado`; `update_workflow` + `publish_workflow` de `crivo-tool-responder-lead`, `crivo-agente-scheduler` e `crivo-agente-principal`, nessa ordem.
+**What:** Com autorização específica: `add_data_table_column` `memoryResetAt` em `conversa_estado`; `update_workflow` + `publish_workflow` de `krivo-tool-responder-lead`, `krivo-agente-scheduler` e `krivo-agente-principal`, nessa ordem.
 **Where:** `.specs/archive/lote-14-humano-no-laco/tasks.md`
 **Depends on:** T38
 **Reuses:** pipeline de publicação do `n8n/README.md`
@@ -992,10 +992,10 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 
 - Coluna `memoryResetAt` (string, id `fnsV2nDPvWGtT9Dx`) criada em `conversa_estado` (`ZsplBxJjXv3kwKZ8`) por `add_data_table_column`; `search_data_tables` mostra 11 colunas com ela no índice 10.
 - Publicação por `update_workflow` com a diferença exata entre o gerado anterior ao lote (`git show 6135baf:n8n/generated/*.ts`, `toJSON()`) e o gerado atual, calculada por script; depois `publish_workflow`:
-  - `crivo-tool-responder-lead` (`Li2hgCX943zKmDXf`): 4 nós novos e 7 arestas; `versionId == activeVersionId == d8e9931e-aced-4233-a019-f25b353ee614`, 14 nós. Os nós `Code: aplicar barreiras de persona` e `Code: normalizar destinatario do envio` já estavam publicados sem os comentários de documentação desde 2026-08-16 (lógica idêntica); não foram tocados.
-  - `crivo-agente-scheduler` (`gmIWxiRrHGIdtPub`): 15 nós novos e 19 arestas; `versionId == activeVersionId == e8b97f8b-9890-4191-a8d2-b42aa3c8ebb8`; comparação por script do `get_workflow_details` com o gerado: 41 nós e 41 arestas, **sem diferença**. **Achado**: o scheduler estava **inativo** desde 2026-08-23 (`activeVersionId: null`, nenhuma execução registrada). A publicação o reativou.
-  - `crivo-agente-principal` (`0B1nqjODu7xuYYKF`): 3 nós novos, 5 alterados e 6 arestas; `versionId == activeVersionId == d8a323e6-8ac4-4e51-ba61-84932d1dd355`, 73 nós e 95 arestas. Comparação por script: os 8 nós do lote idênticos ao gerado; diferenças restantes só as conhecidas (escape do regex nos 4 nós de opt-out, D6 do lote-13; quebra de linha final em 2 nós, anterior ao lote) e parâmetros com valor padrão omitidos pelo n8n.
-  - Credenciais dos nós novos (`Crivo - chave de servico` `YhGcdfGtdEBBU9YP`, `Postgres n8n local` `yyiKyt0KY8Q7TwND`) reafirmadas por `setNodeCredential`; a execução 2829 da tool prova o GET autenticado.
+  - `krivo-tool-responder-lead` (`Li2hgCX943zKmDXf`): 4 nós novos e 7 arestas; `versionId == activeVersionId == d8e9931e-aced-4233-a019-f25b353ee614`, 14 nós. Os nós `Code: aplicar barreiras de persona` e `Code: normalizar destinatario do envio` já estavam publicados sem os comentários de documentação desde 2026-08-16 (lógica idêntica); não foram tocados.
+  - `krivo-agente-scheduler` (`gmIWxiRrHGIdtPub`): 15 nós novos e 19 arestas; `versionId == activeVersionId == e8b97f8b-9890-4191-a8d2-b42aa3c8ebb8`; comparação por script do `get_workflow_details` com o gerado: 41 nós e 41 arestas, **sem diferença**. **Achado**: o scheduler estava **inativo** desde 2026-08-23 (`activeVersionId: null`, nenhuma execução registrada). A publicação o reativou.
+  - `krivo-agente-principal` (`0B1nqjODu7xuYYKF`): 3 nós novos, 5 alterados e 6 arestas; `versionId == activeVersionId == d8a323e6-8ac4-4e51-ba61-84932d1dd355`, 73 nós e 95 arestas. Comparação por script: os 8 nós do lote idênticos ao gerado; diferenças restantes só as conhecidas (escape do regex nos 4 nós de opt-out, D6 do lote-13; quebra de linha final em 2 nós, anterior ao lote) e parâmetros com valor padrão omitidos pelo n8n.
+  - Credenciais dos nós novos (`Krivo - chave de servico` `YhGcdfGtdEBBU9YP`, `Postgres n8n local` `yyiKyt0KY8Q7TwND`) reafirmadas por `setNodeCredential`; a execução 2829 da tool prova o GET autenticado.
 - Execuções reais depois da publicação, conferidas por `get_execution`: scheduler **2803** (23:00 UTC, `success`; varredura D com `resets: []`) e **2838** (purga do 6c); tool **2829** (`HTTP: GET /leads/{id} (antes do envio)` 200 → `podeEnviar: true` → envio); principal **2805**, **2814**, **2819** etc. (T40).
 - `document-context-benchmark.ts check --workflow-version d8a323e6-…`: 9 tetos conferidos, 9 marcados `stale`. A identidade só mudou no `workflowVersion` (modelo, system message, tools e janela de memória iguais); um teto `stale` continua limitando com o valor antigo. Remedição pendente (ver Handoff).
 - **Lembretes antigos**: a Data Table `agenda_envios` tem lembretes de reuniões de setembro com `sentAt` vazio (linhas 17 e 18 do número de teste e duas de teste do lote-6c). A varredura A os reenviaria a um lead do número de teste com `conversa_estado` existente; durante a prova o scheduler ficou despublicado nos casos 6a/6b/6d e republicado no 6c (lead com opt-out → rota `skip`, execução 2838). Limpeza dessas linhas fica para o usuário decidir.
@@ -1010,7 +1010,7 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 **What:** Rodar os cenários (a)–(d) do roteiro com o usuário enviando pelo WhatsApp, com capturas do CRM pela extensão do Chrome, ids conferidos e limpeza entre cenários; registrar a captura da janela fechada.
 **Where:** `n8n/smoke/evidencia.md`
 **Depends on:** T39
-**Reuses:** protocolo da AD-027, `smoke:reset`, `crivo-smoke-reset`
+**Reuses:** protocolo da AD-027, `smoke:reset`, `krivo-smoke-reset`
 **Requirement:** HUMPROVA-01, ASSUMIR-01, SILENCIO-01, ENVIO-01, THREAD-01, DEVOLVER-01, OPTHUM-01
 **Tools:** Conectado — **autorização específica**
 
@@ -1023,7 +1023,7 @@ T35 -> T36 -> T37 -> T38 -> T39 -> T40
 - [x] Captura do campo bloqueado para um lead com a última mensagem há 24 h ou mais (AC4).
 - [x] Evidência em `n8n/smoke/evidencia.md` § Lote 14 com ids conferidos por `get_execution` (L-011), sem PII; estado de teste limpo no fim; gate Build passa.
 
-**Evidence** (2026-10-01): `n8n/smoke/evidencia.md` § "Lote 14 — T40". 6a aprovado (2805; `somente-registrar` em 2814 e 2815, zero mensagem do agente depois da marca). 6b reprovado na primeira rodada (2819, 2828: o agente leu a nota do corretor, mas recusou repetir dado de imóvel fora de `buscar_imoveis`) e aprovado depois da emenda D12 do system message, aprovada pelo usuário (`0688deb`, principal `e3e25681`): 2875 com `resetDue = true` e resposta "3 vagas", 2881 com `resetDue = false`; atualização da thread em 5,9 s sem recarregar. 6c aprovado (opt-out pelo CRM às 23:11:02Z, uma confirmação; varredura D 2838 apagou 14 linhas da sessão; 2837 em silêncio). 6d aprovado (2859: `sair` com a marca roteou `opt-out`, confirmação única). Captura da janela fechada num lead do seed demonstrativo ("A janela fechou em 05/07/2026 às 20:08."). Limpezas `crivo-smoke-reset` 2804, 2839, 2863 e 2890, cada uma com `smoke:reset`. Gate Build: nenhuma mudança de código nesta task.
+**Evidence** (2026-10-01): `n8n/smoke/evidencia.md` § "Lote 14 — T40". 6a aprovado (2805; `somente-registrar` em 2814 e 2815, zero mensagem do agente depois da marca). 6b reprovado na primeira rodada (2819, 2828: o agente leu a nota do corretor, mas recusou repetir dado de imóvel fora de `buscar_imoveis`) e aprovado depois da emenda D12 do system message, aprovada pelo usuário (`0688deb`, principal `e3e25681`): 2875 com `resetDue = true` e resposta "3 vagas", 2881 com `resetDue = false`; atualização da thread em 5,9 s sem recarregar. 6c aprovado (opt-out pelo CRM às 23:11:02Z, uma confirmação; varredura D 2838 apagou 14 linhas da sessão; 2837 em silêncio). 6d aprovado (2859: `sair` com a marca roteou `opt-out`, confirmação única). Captura da janela fechada num lead do seed demonstrativo ("A janela fechou em 05/07/2026 às 20:08."). Limpezas `krivo-smoke-reset` 2804, 2839, 2863 e 2890, cada uma com `smoke:reset`. Gate Build: nenhuma mudança de código nesta task.
 
 **Tests:** none
 **Gate:** Build

@@ -24,7 +24,7 @@ async function fixture(patch: Partial<typeof reengagementEpisodes.$inferInsert> 
 }
 const tick = (pageSize = 100) => reconcileAutomationTick({ tenantId }, { now: () => now, pageSize });
 async function current(id: string) { return (await db.select().from(reengagementEpisodes).where(eq(reengagementEpisodes.id, id)))[0]; }
-function request(path: string, body?: unknown, authenticated = true) { return new Request("http://local/api/v1/whatsapp/automation/" + path, { method: body === undefined ? "GET" : "POST", headers: { ...(authenticated ? { Authorization: `Bearer ${key}` } : {}), "X-Crivo-Tenant": `fixture-${foreignTenant}`, "Content-Type": "application/json" }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) }); }
+function request(path: string, body?: unknown, authenticated = true) { return new Request("http://local/api/v1/whatsapp/automation/" + path, { method: body === undefined ? "GET" : "POST", headers: { ...(authenticated ? { Authorization: `Bearer ${key}` } : {}), "X-Krivo-Tenant": `fixture-${foreignTenant}`, "Content-Type": "application/json" }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) }); }
 beforeAll(async () => {
   await db.insert(tenants).values([tenantId, foreignTenant].map(id => ({ id, slug: `fixture-${id}`, name: "Fixture T56", agentName: "Agente", supportedModality: "ambos" as const })));
   await db.insert(tenantApiKeys).values({ tenantId, label: "fixtureT56", keyHash: createHash("sha256").update(key).digest("hex") });

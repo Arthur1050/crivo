@@ -151,7 +151,7 @@ describe("sendResetPasswordEmail", () => {
 describe("sendIntegrationAlertEmail (L15 — ALERTA-02 AC1)", () => {
   const ALERT = {
     to: "operador@fixture.test",
-    subject: "[crivo] Integração com problema em 1 imobiliária(s)",
+    subject: "[krivo] Integração com problema em 1 imobiliária(s)",
     text: "corpo do alerta",
   };
   const originalFrom = process.env.RESEND_FROM;
@@ -162,7 +162,7 @@ describe("sendIntegrationAlertEmail (L15 — ALERTA-02 AC1)", () => {
   });
 
   it("envia ao destinatário recebido, com assunto e corpo, e remetente de RESEND_FROM", async () => {
-    process.env.RESEND_FROM = "Crivo <alertas@fixture.test>";
+    process.env.RESEND_FROM = "Krivo <alertas@fixture.test>";
     mocks.send.mockResolvedValue({ data: { id: "email_alert" }, error: null });
 
     const result = await sendIntegrationAlertEmail(ALERT);
@@ -173,7 +173,7 @@ describe("sendIntegrationAlertEmail (L15 — ALERTA-02 AC1)", () => {
     expect(payload.to).toBe(ALERT.to);
     expect(payload.subject).toBe(ALERT.subject);
     expect(payload.text).toBe(ALERT.text);
-    expect(payload.from).toBe("Crivo <alertas@fixture.test>");
+    expect(payload.from).toBe("Krivo <alertas@fixture.test>");
   });
 
   it("sem RESEND_FROM usa o remetente padrão do adaptador", async () => {
@@ -182,7 +182,7 @@ describe("sendIntegrationAlertEmail (L15 — ALERTA-02 AC1)", () => {
 
     await sendIntegrationAlertEmail(ALERT);
 
-    expect(mocks.send.mock.calls[0][0].from).toBe("Crivo <onboarding@resend.dev>");
+    expect(mocks.send.mock.calls[0][0].from).toBe("Krivo <onboarding@resend.dev>");
   });
 
   it("erro do provedor vira ok: false sem lançar", async () => {

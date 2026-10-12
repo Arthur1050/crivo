@@ -148,7 +148,7 @@ describe("server/integration auth", () => {
   });
 
   describe("modo de serviço (lote-7 — SEC-01)", () => {
-    it("chave de serviço + X-Crivo-Tenant válido resolve o tenant correto", async () => {
+    it("chave de serviço + X-Krivo-Tenant válido resolve o tenant correto", async () => {
       const { key, id: serviceKeyId } = await createTestServiceKey();
       const slug = `tenant-auth-${randomUUID()}`;
       const tenantId = await createTestTenantWithSlug(slug);
@@ -156,7 +156,7 @@ describe("server/integration auth", () => {
       const request = new Request("http://local/api/v1/leads", {
         headers: {
           Authorization: `Bearer ${key}`,
-          "X-Crivo-Tenant": slug,
+          "X-Krivo-Tenant": slug,
         },
       });
       const result = await authenticate(request);
@@ -169,7 +169,7 @@ describe("server/integration auth", () => {
       await deleteTestTenant(tenantId);
     });
 
-    it("chave de serviço sem X-Crivo-Tenant retorna 401 tenant-nao-identificado", async () => {
+    it("chave de serviço sem X-Krivo-Tenant retorna 401 tenant-nao-identificado", async () => {
       const { key, id: serviceKeyId } = await createTestServiceKey();
 
       const request = new Request("http://local/api/v1/leads", {
@@ -192,7 +192,7 @@ describe("server/integration auth", () => {
       const request = new Request("http://local/api/v1/leads", {
         headers: {
           Authorization: `Bearer ${key}`,
-          "X-Crivo-Tenant": `slug-desconhecido-${randomUUID()}`,
+          "X-Krivo-Tenant": `slug-desconhecido-${randomUUID()}`,
         },
       });
       const result = await authenticate(request);
@@ -206,7 +206,7 @@ describe("server/integration auth", () => {
       await deleteTestServiceKey(serviceKeyId);
     });
 
-    it("chave do tenant A + header X-Crivo-Tenant do tenant B resolve A — chave de tenant ignora o header (teste discriminante)", async () => {
+    it("chave do tenant A + header X-Krivo-Tenant do tenant B resolve A — chave de tenant ignora o header (teste discriminante)", async () => {
       const [tenantA, tenantB] = await getTenants();
       const { key, id: apiKeyId } = await createTestApiKey(tenantA.id);
       const slugB = `tenant-b-auth-${randomUUID()}`;
@@ -215,7 +215,7 @@ describe("server/integration auth", () => {
       const request = new Request("http://local/api/v1/leads", {
         headers: {
           Authorization: `Bearer ${key}`,
-          "X-Crivo-Tenant": slugB,
+          "X-Krivo-Tenant": slugB,
         },
       });
       const result = await authenticate(request);

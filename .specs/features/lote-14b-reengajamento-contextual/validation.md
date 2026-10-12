@@ -25,12 +25,12 @@ Logs em `C:/Users/user/AppData/Local/Temp/`, lidos sem repetir Full/lint/build. 
 
 | Execução | Evidência | Outcome |
 | --- | --- | --- |
-| Full inicial, `npm test` | `crivo-l14b-close-test.log`, início 10:31:34, 1133,62s | exit 1; 202/204 arquivos passaram, 2 falharam; 3582 casos: 3548 passaram/4 falharam/30 não executados pelo hook |
-| Lint global único | `crivo-l14b-close-lint.log` | exit 0, zero erros/9 avisos; ocorreu antes dos reparos locais |
-| Build global único | `crivo-l14b-close-build.log` | exit 0, 29 páginas; ocorreu antes dos reparos locais; mensagens Better Auth de configuração de build não concedem autenticação operacional |
-| Seed diagnóstico pré-correção | `crivo-l14b-close-seed-diagnostic.log`, 46,53s | exit 0, 30/30 na base; não reproduzia os filhos restritivos herdados do worker |
-| Recheck 1 | `crivo-l14b-close-repair1.log`, início 10:52:53, 126,30s | exit 0, seed 30 + retention 10, 40/40 em 2 arquivos, zero falhas/skips |
-| Recheck 2, último autorizado | `crivo-l14b-close-repair2.log`, início 10:56:56, 262,23s | exit 0, 96/96 em 5 arquivos: seed 31, retention 10, isolation/first-response/maintenance; zero falhas/skips |
+| Full inicial, `npm test` | `krivo-l14b-close-test.log`, início 10:31:34, 1133,62s | exit 1; 202/204 arquivos passaram, 2 falharam; 3582 casos: 3548 passaram/4 falharam/30 não executados pelo hook |
+| Lint global único | `krivo-l14b-close-lint.log` | exit 0, zero erros/9 avisos; ocorreu antes dos reparos locais |
+| Build global único | `krivo-l14b-close-build.log` | exit 0, 29 páginas; ocorreu antes dos reparos locais; mensagens Better Auth de configuração de build não concedem autenticação operacional |
+| Seed diagnóstico pré-correção | `krivo-l14b-close-seed-diagnostic.log`, 46,53s | exit 0, 30/30 na base; não reproduzia os filhos restritivos herdados do worker |
+| Recheck 1 | `krivo-l14b-close-repair1.log`, início 10:52:53, 126,30s | exit 0, seed 30 + retention 10, 40/40 em 2 arquivos, zero falhas/skips |
+| Recheck 2, último autorizado | `krivo-l14b-close-repair2.log`, início 10:56:56, 262,23s | exit 0, 96/96 em 5 arquivos: seed 31, retention 10, isolation/first-response/maintenance; zero falhas/skips |
 | Quick G2 independente | Vitest direto: prompt, contextual, inliner, scheduler-reengagement, publication-check; início 10:56:42, 3,08s | exit 0, 57/57 em 5 arquivos; nenhum DB/API externa |
 | ESLint pontual pós-reparos / diff-check | três arquivos alterados, executado pelo root | exit 0 / exit 0; não equivale a repetir lint/build globais |
 
@@ -51,7 +51,7 @@ Logs em `C:/Users/user/AppData/Local/Temp/`, lidos sem repetir Full/lint/build. 
 
 Full inicial + rechecks cobrem arquivos que falharam e regressões diretamente afetadas, incluindo a FK concreta. Satisfazem o fechamento **local** no pedido de Full/lint/build uma vez e até dois rechecks corretivos. Não se soma testes repetidos para apresentar uma suíte integral verde. Não houve nova execução nas branches de workers; desempenho da varredura paralela no volume histórico segue limite da evidência, não causa demonstrada nem prova de produção.
 
-**Integridade:** baseline 2402, fase 9 histórica 3580/3580, fase 10 +2 = 3582; reseed +1 dá total coletável esperado 3583, sem Full desse total. Nenhum teste/assertion/timeout/skip foi removido/enfraquecido. Tsc final readonly do root: exit 2, 50 diagnósticos no log `C:/Users/user/AppData/Local/Temp/crivo-l14b-close-types.log`; nenhum nos três arquivos alterados. A contagem coincide com o baseline histórico de 50, sem comparação semântica ampla nem declaração de gate verde.
+**Integridade:** baseline 2402, fase 9 histórica 3580/3580, fase 10 +2 = 3582; reseed +1 dá total coletável esperado 3583, sem Full desse total. Nenhum teste/assertion/timeout/skip foi removido/enfraquecido. Tsc final readonly do root: exit 2, 50 diagnósticos no log `C:/Users/user/AppData/Local/Temp/krivo-l14b-close-types.log`; nenhum nos três arquivos alterados. A contagem coincide com o baseline histórico de 50, sem comparação semântica ampla nem declaração de gate verde.
 
 ### Mapa dos 95 ACs
 
@@ -163,7 +163,7 @@ Um output por cenário comprova o roteiro observado, não comportamento universa
 
 ### Sensor discriminante local
 
-Scratch preexistente `C:/Users/user/AppData/Local/Temp/crivo-l14b-resume-sensor-e92035c/sensor.mts`, inspecionado integralmente. Lê jsCode gerado e cria somente baseline.js/mutant.js no mesmo Temp, removendo apenas o guard de identidade da cópia. Input: tool proibida `responder_lead` com envelope íntegro `{imoveis:[],total:0}`. Sem DB/modelo/API/segredo, mutation real, stash ou mutante ao vivo.
+Scratch preexistente `C:/Users/user/AppData/Local/Temp/krivo-l14b-resume-sensor-e92035c/sensor.mts`, inspecionado integralmente. Lê jsCode gerado e cria somente baseline.js/mutant.js no mesmo Temp, removendo apenas o guard de identidade da cópia. Input: tool proibida `responder_lead` com envelope íntegro `{imoveis:[],total:0}`. Sem DB/modelo/API/segredo, mutation real, stash ou mutante ao vivo.
 
 | Mutação | Fonte/assertion | Observação independente | Desfecho |
 | --- | --- | --- | --- |
@@ -203,7 +203,7 @@ Limites explícitos: Full inicial reprovada com recuperação local, sem nova Fu
 
 ### Histórico, autoria e fechamento
 
-Relatório anterior `/root/verifier_resume_phase10`: FAIL, 73 PASS/6 GAP/15 Deferred/1 condicional; Full anterior 3552 PASS/30 pending e provas externas em conta de teste. É execução distinta da Full deste fechamento (3548 PASS/4 falhas/30 não executados). Cópia preservada pelo root em `C:/Users/user/AppData/Local/Temp/crivo-l14b-validation-phase10-before-close.md`. Seis gaps externos passaram a Deferred por decisão atual; transporte de teste antigo não concede canal/Analytics de produção.
+Relatório anterior `/root/verifier_resume_phase10`: FAIL, 73 PASS/6 GAP/15 Deferred/1 condicional; Full anterior 3552 PASS/30 pending e provas externas em conta de teste. É execução distinta da Full deste fechamento (3548 PASS/4 falhas/30 não executados). Cópia preservada pelo root em `C:/Users/user/AppData/Local/Temp/krivo-l14b-validation-phase10-before-close.md`. Seis gaps externos passaram a Deferred por decisão atual; transporte de teste antigo não concede canal/Analytics de produção.
 
 L-056/L-057/L-058 e candidatas L-059/L-060 foram registradas/modificadas pelo Verifier anterior. Nenhuma lição adicionada/promovida/removida/sobrescrita por este Verifier; não atribuí alterações herdadas à sessão. Sinais grounded G0/M1 permanecem aqui; instrução explícita impede modificar lições/criar tasks/evidências. LESSONS.md/lessons.json e untracked permanecem locais.
 

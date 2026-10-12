@@ -1,6 +1,6 @@
 # Prompt de Execução — Lote 9: Instrumentação de métricas do piloto
 
-> Cole o bloco abaixo numa nova janela do Claude Code aberta na raiz do projeto (`crivo/`).
+> Cole o bloco abaixo numa nova janela do Claude Code aberta na raiz do projeto (`krivo/`).
 > **Antes de colar, confira na janela nova**: extensão **Claude in Chrome** disponível — há quatro superfícies novas de UI (T20/T21 reuniões a confirmar, T25/T26 formulário de baseline, T29/T30 saúde da integração, T33 relatório) e o painel Browser embutido **não serve**, ele não captura quando não está visível.
 > **MCP do n8n NÃO é necessário neste lote**: nenhum workflow muda, nenhum contrato de request/response muda, nenhum código de erro novo é criado.
 > **Nenhuma variável de ambiente nova** é introduzida — nada a acrescentar na Vercel desta vez.
@@ -65,7 +65,7 @@ Testes derivados da spec (nunca da implementação); gate verde antes de done (c
 
 5. **Git**: `origin/main` está sincronizado com `main` no início deste lote (HEAD `9039776`). **Push, deploy e qualquer operação remota exigem autorização explícita minha** — commits locais estão autorizados pela aprovação das tasks, o resto não.
 
-6. **Untracked pré-existentes** que NÃO são deste lote e não devem ser commitados: `public/crivo_*.png`, `skills-lock.json`, e o ruído recorrente de fim de linha em `n8n/src/phase.mjs` (o `git diff` dele é vazio).
+6. **Untracked pré-existentes** que NÃO são deste lote e não devem ser commitados: `public/krivo_*.png`, `skills-lock.json`, e o ruído recorrente de fim de linha em `n8n/src/phase.mjs` (o `git diff` dele é vazio).
 
 ## Ao final do lote
 

@@ -185,7 +185,7 @@ describe("docs/integration/openapi.yaml — SwaggerParser.validate()", () => {
       const { post } = await contextPath();
       expect(Object.keys(post.responses)).toEqual(expect.arrayContaining(["200", "400", "401", "413"]));
       expect(post.security).toEqual([{ bearerAuth: [] }, { serviceAuth: [] }]);
-      expect(JSON.stringify(post.parameters)).toContain("X-Crivo-Tenant");
+      expect(JSON.stringify(post.parameters)).toContain("X-Krivo-Tenant");
     });
 
     it("a resposta anuncia Cache-Control no-store, como o handler devolve", async () => {
@@ -314,8 +314,8 @@ describe("docs/integration/openapi.yaml — paridade e presença (lote-14 — CO
   it("T30 GET preserva array e documenta headers para metadata inclusive resposta vazia", async () => {
     const api = await load(), response = api.paths["/leads/{id}/messages"].get.responses["200"];
     expect(response.content?.["application/json"]?.schema?.type).toBe("array");
-    expect(Object.keys(response.headers ?? {})).toEqual(["X-Crivo-Anchor-Message-Id", "X-Crivo-Agent-State-Revision"]);
-    expect(response.headers?.["X-Crivo-Agent-State-Revision"].schema?.pattern).toBe("^(null|[0-9]+)$");
+    expect(Object.keys(response.headers ?? {})).toEqual(["X-Krivo-Anchor-Message-Id", "X-Krivo-Agent-State-Revision"]);
+    expect(response.headers?.["X-Krivo-Agent-State-Revision"].schema?.pattern).toBe("^(null|[0-9]+)$");
   });
 
   it("documenta GET /leads/{id}, GET /memory-resets e whatsappPhoneNumberId opcional em POST /leads (AC7)", async () => {

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import smokeReset from "../smoke-reset";
 
 /**
- * `crivo-smoke-reset` — limpeza dos alvos 1 e 2 do checklist da AD-027
+ * `krivo-smoke-reset` — limpeza dos alvos 1 e 2 do checklist da AD-027
  * (`n8n/smoke/roteiro.md` §9).
  *
  * O que estes testes fixam é o que torna a rotina segura: ela apaga
@@ -33,7 +33,7 @@ function nodeByName(name: string) {
   return found;
 }
 
-describe("crivo-smoke-reset — purga da sessão de memória (alvo 1)", () => {
+describe("krivo-smoke-reset — purga da sessão de memória (alvo 1)", () => {
   const memoryManager = () =>
     nodeByName("Chat Memory Manager: purgar sessão do smoke");
 
@@ -52,7 +52,7 @@ describe("crivo-smoke-reset — purga da sessão de memória (alvo 1)", () => {
   });
 });
 
-describe("crivo-smoke-reset — remoção da linha de conversa_estado (alvo 2)", () => {
+describe("krivo-smoke-reset — remoção da linha de conversa_estado (alvo 2)", () => {
   const dataTable = () => nodeByName("Data Table: apagar linha de conversa_estado");
 
   it("apaga linha na Data Table certa, pela operação deleteRows", () => {
@@ -77,7 +77,7 @@ describe("crivo-smoke-reset — remoção da linha de conversa_estado (alvo 2)",
   });
 });
 
-describe("crivo-smoke-reset — alvo fixo e escopo mínimo", () => {
+describe("krivo-smoke-reset — alvo fixo e escopo mínimo", () => {
   it("não expõe nenhum parâmetro vindo do modelo ou do chamador ($fromAI ausente em todo o grafo)", () => {
     expect(JSON.stringify(workflow)).not.toContain("$fromAI");
   });

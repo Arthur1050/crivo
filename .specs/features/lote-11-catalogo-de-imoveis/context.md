@@ -121,7 +121,7 @@ escolhido e a razão — e são confirmadas pela aprovação da spec.
 - `src/lib/permissions.ts` — matriz de permissões e a diferença escopo × ação.
 - `app/api/v1/context/route.ts` — o padrão de rota fina sob `withIntegrationRoute`.
 - `n8n/workflows/principal.ts:1149-1180` — o padrão de tool `httpRequestTool` com
-  `X-Crivo-Tenant` por expressão do fluxo e `neverError`.
+  `X-Krivo-Tenant` por expressão do fluxo e `neverError`.
 
 ---
 

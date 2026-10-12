@@ -64,7 +64,7 @@ O seed não cria senha para ninguém, de propósito. A conta com que você vai e
 npm run db:create-admin -- <slug-da-imobiliaria> <email> <senha> ["Nome"]
 ```
 
-Slugs do seed: `crivo-demo`, `triangulo`, `vale-uberaba`.
+Slugs do seed: `krivo-demo`, `triangulo`, `vale-uberaba`.
 
 Rodar sobre um e-mail que já existe **promove** em vez de duplicar, e papéis acumulam (`corretor,administrador`) — um corretor promovido não perde a carteira. O comando é idempotente: repetir sobre quem já é administrador não altera nada.
 
@@ -74,11 +74,11 @@ Escolha a senha você mesmo, num gerenciador de senhas. Ela vai para o históric
 
 Único trabalho manual permitido na instância (AD-014: a UI do n8n nunca é editada à mão, **exceto credenciais**).
 
-1. Abrir a credencial `httpHeaderAuth` **"Crivo - chave de servico"** na UI do n8n.
+1. Abrir a credencial `httpHeaderAuth` **"Krivo - chave de servico"** na UI do n8n.
 2. Trocar o valor do header `Authorization` para `Bearer <chave de serviço nova>` (a do stdout do passo 3.1).
-3. Confirmar antes de seguir: o procedimento de conferência está em `n8n/README.md` §12.2 (workflow-escrutínio temporário, `X-Crivo-Tenant: triangulo`, espera `status: "success"`).
+3. Confirmar antes de seguir: o procedimento de conferência está em `n8n/README.md` §12.2 (workflow-escrutínio temporário, `X-Krivo-Tenant: triangulo`, espera `status: "success"`).
 
-Sem este passo, toda chamada do agente ao CRM responde `401 nao-autenticado` e o agente para de funcionar em silêncio — a falha só aparece quando `crivo-agente-erros` dispara o e-mail.
+Sem este passo, toda chamada do agente ao CRM responde `401 nao-autenticado` e o agente para de funcionar em silêncio — a falha só aparece quando `krivo-agente-erros` dispara o e-mail.
 
 > `tenant_config` **não guarda mais nenhuma chave** desde o lote-7 (T17). Não há nada a re-sincronizar nessa Data Table depois do seed — só a credencial acima.
 

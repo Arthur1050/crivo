@@ -162,14 +162,14 @@ O ponto decisivo de `responder_lead`: validar depois do envio não serve para na
 - **Dependencies**: `phase.mjs`
 - **Reuses**: `AI_TRANSPARENCY_INSTRUCTION` e o bloco de tom do tenant de `prompt.mjs`, literalmente
 
-### Sub-workflow `crivo-tool-responder-lead`
+### Sub-workflow `krivo-tool-responder-lead`
 
 - **Purpose**: única porta de saída de mensagem do agente para o lead.
 - **Location**: `n8n/workflows/tool-responder-lead.ts`
 - **Fluxo**: `executeWorkflowTrigger` → Code (carrega `conversa_estado`, aplica `checkOpening` + `checkCapabilityPromise` + contador) → IF rejeitado → devolve erro nomeado ao agente | aceito → normaliza telefone → WhatsApp send → `POST /leads/{id}/messages` → grava contador e abertura em `conversa_estado`
 - **Reuses**: `voice.mjs`, `phone.mjs`
 
-### Sub-workflow `crivo-tool-agendar-reuniao`
+### Sub-workflow `krivo-tool-agendar-reuniao`
 
 - **Purpose**: transação de agendamento entre Calendar e CRM.
 - **Location**: `n8n/workflows/tool-agendar-reuniao.ts`

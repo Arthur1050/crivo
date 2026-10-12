@@ -150,7 +150,7 @@ Evidence-or-zero: every row below cites `file:line` + the actual assertion. Wher
 
 ## Discrimination Sensor
 
-Sensor ran in an isolated `git worktree` (`git worktree add ../crivo-verify-scratch HEAD`), never `git stash`. Because `.env` files are blocked from being read or referenced by this agent (project policy), the scratch worktree could not carry its own database credentials; DB-backed test files were instead invoked via `npx vitest run --root <scratch-worktree-path> <test-file>` with the shell's working directory kept at the real repo root, so `dotenv/config` resolved `.env` there exactly as it does for a normal `npm test` run, while all mutated source under test was loaded from the scratch worktree's own files via relative imports. `node_modules` in the scratch worktree was a directory junction to the real repo's `node_modules` (no packages installed, no `.env` copied or read). This means DB access came from the same connection the orchestrator's own gate-check run already used — no secret was read, copied, or displayed by this Verifier at any point.
+Sensor ran in an isolated `git worktree` (`git worktree add ../krivo-verify-scratch HEAD`), never `git stash`. Because `.env` files are blocked from being read or referenced by this agent (project policy), the scratch worktree could not carry its own database credentials; DB-backed test files were instead invoked via `npx vitest run --root <scratch-worktree-path> <test-file>` with the shell's working directory kept at the real repo root, so `dotenv/config` resolved `.env` there exactly as it does for a normal `npm test` run, while all mutated source under test was loaded from the scratch worktree's own files via relative imports. `node_modules` in the scratch worktree was a directory junction to the real repo's `node_modules` (no packages installed, no `.env` copied or read). This means DB access came from the same connection the orchestrator's own gate-check run already used — no secret was read, copied, or displayed by this Verifier at any point.
 
 | # | File:line (scratch) | Mutation | Test run | Result |
 | - | -------------------- | -------- | -------- | ------ |
@@ -163,7 +163,7 @@ Sensor ran in an isolated `git worktree` (`git worktree add ../crivo-verify-scra
 
 **Sensor outcome**: 3/4 killed, 1 survived (mutation 4) — routed to the ranked gap list below as a fix task, not silently accepted. Does not change the overall verdict (see Summary): the survived mutation is a narrow test-discrimination gap on a boundary the source code itself gets right (confirmed by direct inspection and by the opposite-direction mutation being caught).
 
-**Isolation verified**: scratch worktree removed (`git worktree remove --force ../crivo-verify-scratch`) after the node_modules junction was deleted; `git worktree list` shows only the real tree; `git status --porcelain` and `git rev-parse HEAD` after cleanup are byte-identical to the pre-sensor baseline (both captured before and after — see Gate Check section).
+**Isolation verified**: scratch worktree removed (`git worktree remove --force ../krivo-verify-scratch`) after the node_modules junction was deleted; `git worktree list` shows only the real tree; `git status --porcelain` and `git rev-parse HEAD` after cleanup are byte-identical to the pre-sensor baseline (both captured before and after — see Gate Check section).
 
 ---
 
@@ -205,7 +205,7 @@ Sensor ran in an isolated `git worktree` (`git worktree add ../crivo-verify-scra
 - **Skipped tests**: none
 - **Failures**: none
 - **`package.json`/`package-lock.json` diff** (REL-01 AC5): `git diff 9039776..HEAD -- package.json package-lock.json` — empty, confirming no new dependency
-- **Pre-sensor porcelain baseline**: ` M n8n/src/phase.mjs` (pre-existing, untouched) + 4 pre-existing untracked files (`public/crivo_*.png` ×3, `skills-lock.json`)
+- **Pre-sensor porcelain baseline**: ` M n8n/src/phase.mjs` (pre-existing, untouched) + 4 pre-existing untracked files (`public/krivo_*.png` ×3, `skills-lock.json`)
 - **Post-sensor porcelain**: identical — confirmed byte-for-byte match after scratch worktree removal
 - **HEAD before/after sensor**: `c7264d22d38e42ebf51688161bdb6be83611896c` (unchanged)
 

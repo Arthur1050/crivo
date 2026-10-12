@@ -26,7 +26,7 @@ type PropertyInsert = typeof properties.$inferInsert;
  * direto de `context-get.test.ts`/`leads-post.test.ts` (modo de serviço):
  * tenants, captador e chave de serviço próprios deste arquivo, no modo de
  * autenticação que a tool `buscar_imoveis` de fato usa (chave de serviço
- * cross-tenant + `X-Crivo-Tenant`, SEC-01).
+ * cross-tenant + `X-Krivo-Tenant`, SEC-01).
  */
 describe("routes: GET /api/v1/properties", () => {
   let tenantAId: string;
@@ -145,7 +145,7 @@ describe("routes: GET /api/v1/properties", () => {
     return new Request(`http://local/api/v1/properties${query}`, {
       headers: {
         ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
-        ...(tenantSlug !== null ? { "X-Crivo-Tenant": tenantSlug } : {}),
+        ...(tenantSlug !== null ? { "X-Krivo-Tenant": tenantSlug } : {}),
       },
     });
   }
@@ -207,14 +207,14 @@ describe("routes: GET /api/v1/properties", () => {
     expect(response.status).toBe(401);
   });
 
-  it("chave de serviço sem X-Crivo-Tenant responde 401 tenant-nao-identificado (SEC-01)", async () => {
+  it("chave de serviço sem X-Krivo-Tenant responde 401 tenant-nao-identificado (SEC-01)", async () => {
     const response = await GET(makeRequest("", { tenantSlug: null }));
     expect(response.status).toBe(401);
     const body = await response.json();
     expect(body.code).toBe("tenant-nao-identificado");
   });
 
-  it("X-Crivo-Tenant com slug desconhecido responde 401 tenant-nao-identificado, sem cair em tenant default (SEC-01)", async () => {
+  it("X-Krivo-Tenant com slug desconhecido responde 401 tenant-nao-identificado, sem cair em tenant default (SEC-01)", async () => {
     const response = await GET(makeRequest("", { tenantSlug: `slug-desconhecido-${randomUUID()}` }));
     expect(response.status).toBe(401);
     const body = await response.json();

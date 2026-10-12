@@ -29,7 +29,7 @@ Três frentes independentes que só se encontram na prova final:
 ```mermaid
 graph TD
     subgraph F1["Fonte de dado"]
-      SEED[seed.ts: 3 tenants] --> DEMO[Crivo Demo: dataset rico]
+      SEED[seed.ts: 3 tenants] --> DEMO[Krivo Demo: dataset rico]
       SEED --> PILOT[Piloto: so configuracao]
     end
 
@@ -44,7 +44,7 @@ graph TD
 
     subgraph F3["Guarda da chave"]
       N8N["n8n: credencial httpHeaderAuth unica"] --> AUTH[auth.ts]
-      N8N -->|"X-Crivo-Tenant: slug"| AUTH
+      N8N -->|"X-Krivo-Tenant: slug"| AUTH
       AUTH --> SVC[(service_api_keys)]
       AUTH --> TEN[("tenants.slug")]
     end
@@ -87,7 +87,7 @@ graph TD
 | System | Integration Method |
 | ------ | ------------------ |
 | Contrato `/api/v1/*` | Mudança **aditiva** em `authenticate()`: o modo por chave de tenant continua funcionando; o modo de serviço é um segundo caminho. Nenhuma rota muda de assinatura. |
-| Fluxo n8n | 8 pontos onde o header `Authorization` é montado por expressão passam a usar a credencial `httpHeaderAuth` do nó + header `X-Crivo-Tenant`. A coluna `apiKey` some da Data Table `tenant_config`. |
+| Fluxo n8n | 8 pontos onde o header `Authorization` é montado por expressão passam a usar a credencial `httpHeaderAuth` do nó + header `X-Krivo-Tenant`. A coluna `apiKey` some da Data Table `tenant_config`. |
 | Google Calendar | Só leitura de evidência no smoke; nenhuma mudança de fluxo. |
 
 ---
@@ -143,7 +143,7 @@ graph TD
 - **Purpose**: permitir que o agente autentique com uma credencial única e nomeie o tenant por header, sem quebrar o modo por chave de tenant.
 - **Algoritmo**:
   1. Extrai o bearer (código atual, inalterado).
-  2. Hash sha256 → procura em `service_api_keys` (não revogada). **Achou** ⇒ modo de serviço: exige `X-Crivo-Tenant`; resolve `tenants.slug` → `tenantId`; ausente ou desconhecido ⇒ `401 tenant-nao-identificado`.
+  2. Hash sha256 → procura em `service_api_keys` (não revogada). **Achou** ⇒ modo de serviço: exige `X-Krivo-Tenant`; resolve `tenants.slug` → `tenantId`; ausente ou desconhecido ⇒ `401 tenant-nao-identificado`.
   3. **Não achou** ⇒ caminho atual (`resolveTenantIdByApiKeyHash`), inalterado.
   4. Nenhum dos dois ⇒ `401 nao-autenticado`, como hoje.
 - **Invariante preservado**: `authenticate()` continua **nunca** lendo o corpo da requisição. O tenant vem de header ou de chave — jamais de payload.
@@ -151,7 +151,7 @@ graph TD
 ### Fluxo n8n
 
 - **Purpose**: parar de transportar a chave como parâmetro.
-- **Mudanças**: nos 8 pontos com `headerParameters` de `Authorization`, remover o parâmetro e ligar a credencial `httpHeaderAuth` do nó (`Authorization: Bearer <chave de serviço>`, valor no cofre); adicionar `X-Crivo-Tenant` com o `tenantSlug` que o gate já carrega. Remover `apiKey` do `tenant_config` e de todo o encadeamento de contexto (`Code: combinar evento e tenant`, `Code: gate`, checkpoints).
+- **Mudanças**: nos 8 pontos com `headerParameters` de `Authorization`, remover o parâmetro e ligar a credencial `httpHeaderAuth` do nó (`Authorization: Bearer <chave de serviço>`, valor no cofre); adicionar `X-Krivo-Tenant` com o `tenantSlug` que o gate já carrega. Remover `apiKey` do `tenant_config` e de todo o encadeamento de contexto (`Code: combinar evento e tenant`, `Code: gate`, checkpoints).
 - **Publicação**: `n8n/workflows/*.ts` → `node scripts/n8n-inline.mjs` → `update_workflow`/`publish_workflow` via MCP → `get_workflow_details` para conferir publicado == `generated/` (AD-014).
 
 ---
@@ -166,7 +166,7 @@ slug: text("slug"),  // nullable + uniqueIndex parcial (WHERE NOT NULL)
 
 **Por que nullable**: `drizzle-kit push` de coluna `NOT NULL` sem default numa tabela com linhas falha. Nullable + índice único parcial é o padrão já usado no projeto (`leads.external_id`, `messages.external_id`). O seed preenche os três; a auth só resolve match não-nulo.
 
-**Valores**: `triangulo`, `vale-uberaba`, `crivo-demo` — os mesmos `key` de `TENANT_DEFS`, que é também o que a Data Table `tenant_config` já guarda em `tenantSlug`. **Risco de divergência: conferir os valores reais na instância antes de trocar o header** (ver Risks).
+**Valores**: `triangulo`, `vale-uberaba`, `krivo-demo` — os mesmos `key` de `TENANT_DEFS`, que é também o que a Data Table `tenant_config` já guarda em `tenantSlug`. **Risco de divergência: conferir os valores reais na instância antes de trocar o header** (ver Risks).
 
 ### `service_api_keys` (tabela nova)
 
@@ -188,7 +188,7 @@ slug: text("slug"),  // nullable + uniqueIndex parcial (WHERE NOT NULL)
 interface TenantDef {
   // ... campos atuais
   slug: string;          // = key, agora persistido
-  seedLeadData: boolean; // true so no Crivo Demo
+  seedLeadData: boolean; // true so no Krivo Demo
 }
 ```
 
@@ -198,8 +198,8 @@ interface TenantDef {
 
 | Error Scenario | Handling | User Impact |
 | -------------- | -------- | ----------- |
-| Chave de serviço válida sem `X-Crivo-Tenant` | `401` problem+json, `code: tenant-nao-identificado` | O fluxo n8n falha alto e `crivo-agente-erros` dispara e-mail; nenhuma escrita silenciosa no tenant errado. |
-| `X-Crivo-Tenant` com slug desconhecido | Mesmo `401 tenant-nao-identificado` | Idem. Nunca cai num tenant default. |
+| Chave de serviço válida sem `X-Krivo-Tenant` | `401` problem+json, `code: tenant-nao-identificado` | O fluxo n8n falha alto e `krivo-agente-erros` dispara e-mail; nenhuma escrita silenciosa no tenant errado. |
+| `X-Krivo-Tenant` com slug desconhecido | Mesmo `401 tenant-nao-identificado` | Idem. Nunca cai num tenant default. |
 | Tenant sem corretor no momento da criação do lead | `assignBroker` devolve `null`; lead criado com `broker_id` nulo | Card do Kanban degrada sem linha de corretor (comportamento já existente). |
 | Corretor de outro tenant enviado à action | DAL devolve `null`; action devolve falha explícita | Seletor volta ao valor anterior; nenhuma escrita. |
 | Reentrega de mensagem já ingerida | `created === false` ⇒ `first_response_at` não é tocado | Nenhum. KPI estável sob reentrega. |
@@ -213,7 +213,7 @@ interface TenantDef {
 | Concern | Location | Impact | Mitigation |
 | ------- | -------- | ------ | ---------- |
 | **A suíte reseeda o banco** — `seed.test.ts` chama `runSeed()` no `beforeAll` | `src/db/__tests__/seed.test.ts` | Com dado real no piloto, um reseed acidental destrói lead real | O guard de `TEST_DATABASE_URL` (`src/db/index.ts:10-21`) já isola isso. **Pré-requisito do Execute: confirmar que `npx vitest run` roda verde contra o banco de teste antes da primeira task** — o `STATE.md` registra que `drizzle-kit push` nunca rodou com sucesso contra um banco de teste realmente vazio. |
-| **Slug do CRM ≠ `tenantSlug` da Data Table** | `tenant_config` na instância vs `TENANT_DEFS` | Header `X-Crivo-Tenant` com valor que a auth não resolve ⇒ 401 em toda chamada do agente | Task de SEC-01 **lê os valores reais da Data Table via MCP** antes de trocar o header, e reconcilia; nunca assume. |
+| **Slug do CRM ≠ `tenantSlug` da Data Table** | `tenant_config` na instância vs `TENANT_DEFS` | Header `X-Krivo-Tenant` com valor que a auth não resolve ⇒ 401 em toda chamada do agente | Task de SEC-01 **lê os valores reais da Data Table via MCP** antes de trocar o header, e reconcilia; nunca assume. |
 | **Chave de serviço tem blast radius maior** | `service_api_keys` | Vazamento alcança todos os tenants | Aceito conscientemente: hoje todas as chaves já estão expostas juntas em texto claro na mesma Data Table, e ainda vazam no log de execução. A chave de serviço vive no cofre criptografado e é mascarada. Procedimento de rotação documentado no `n8n/README.md` (SEC-01 AC4). |
 | **`lead-detail-panel.tsx` é puramente apresentacional hoje** | `src/components/pipeline/lead-detail-panel.tsx` | Adicionar interatividade pode transformar o painel inteiro em client component e arrastar a árvore | Extrair só os dois controles para um client component filho; o painel segue servidor. |
 | **`getDashboardKpis` carrega todos os leads do período em memória** | `src/server/data/index.ts:409-418` (`select()` sem projeção) | Com volume real cresce linearmente; hoje inofensivo (dezenas de linhas) | Fora do escopo deste lote. Registrado como dívida para a Fase 10, que é quem instrumenta métricas. |
@@ -227,7 +227,7 @@ interface TenantDef {
 
 | Decision | Choice | Rationale |
 | -------- | ------ | --------- |
-| Separação demo × real | Terceiro tenant `Crivo Demo` | Zero mudança de schema, zero filtro novo em toda query da DAL, e preserva a demo comercial. Uma flag `is_demo` contaminaria cada query e adicionaria estado de UI a testar em cinco telas. |
+| Separação demo × real | Terceiro tenant `Krivo Demo` | Zero mudança de schema, zero filtro novo em toda query da DAL, e preserva a demo comercial. Uma flag `is_demo` contaminaria cada query e adicionaria estado de UI a testar em cinco telas. |
 | Identificador do tenant no header | `tenants.slug` (texto legível), não UUID nem `phone_number_id` | O n8n já carrega `tenantSlug` em todo o encadeamento; o UUID não existe do lado do n8n e o `phone_number_id` faria o header mentir sobre o que carrega. |
 | Modo de serviço aditivo, não substitutivo | `authenticate()` tenta serviço, depois tenant | Não quebra o contrato provado pelo Verifier do lote-5 nem invalida as chaves por tenant já emitidas. |
 | Política de atribuição isolada em função pura | `src/lib/broker-assignment.ts` | É a costura explícita para o lote de usuários/papéis trocar a política sem tocar os chamadores. |

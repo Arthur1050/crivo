@@ -18,16 +18,16 @@ const BEARER_PATTERN = /^Bearer\s+(.+)$/i;
  * (design.md — `src/server/integration/auth.ts`, INT-01/SEC-01). Nunca lê o
  * corpo da requisição — `tenant_id` em qualquer payload é estruturalmente
  * inalcançável a partir daqui, por construção (a única fonte de tenant é a
- * chave ou o header `X-Crivo-Tenant`, nunca o payload). Retorna a `Response`
+ * chave ou o header `X-Krivo-Tenant`, nunca o payload). Retorna a `Response`
  * 401 já pronta em qualquer falha, para o handler apenas repassar
  * (`if (auth instanceof Response) return auth;`).
  *
  * Dois modos, nesta ordem (lote-7 — SEC-01, design.md — Auth de serviço):
  * 1. **Chave de serviço** (`service_api_keys`, cross-tenant): exige o header
- *    `X-Crivo-Tenant` com um slug conhecido; ausente ou desconhecido nunca
+ *    `X-Krivo-Tenant` com um slug conhecido; ausente ou desconhecido nunca
  *    cai em nenhum tenant default — sempre `401 tenant-nao-identificado`.
  * 2. **Chave de tenant** (`tenant_api_keys`, caminho original do lote-5):
- *    inalterado — o tenant vem só da chave, `X-Crivo-Tenant` é ignorado
+ *    inalterado — o tenant vem só da chave, `X-Krivo-Tenant` é ignorado
  *    mesmo se presente e divergente.
  */
 export async function authenticate(
@@ -52,12 +52,12 @@ export async function authenticate(
 
   const serviceKeyId = await resolveServiceApiKeyHash(keyHash);
   if (serviceKeyId) {
-    const slug = request.headers.get("x-crivo-tenant")?.trim();
+    const slug = request.headers.get("x-krivo-tenant")?.trim();
     if (!slug) {
       return problem(
         401,
         "tenant-nao-identificado",
-        "Chave de serviço exige o header X-Crivo-Tenant."
+        "Chave de serviço exige o header X-Krivo-Tenant."
       );
     }
 
@@ -66,7 +66,7 @@ export async function authenticate(
       return problem(
         401,
         "tenant-nao-identificado",
-        "X-Crivo-Tenant não corresponde a nenhum tenant conhecido."
+        "X-Krivo-Tenant não corresponde a nenhum tenant conhecido."
       );
     }
 

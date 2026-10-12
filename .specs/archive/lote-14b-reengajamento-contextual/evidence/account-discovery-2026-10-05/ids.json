@@ -10,8 +10,8 @@
   "tenants": [
     {
       "id": "a0744420-585f-4c83-a096-2c348cb57511",
-      "name": "Crivo Demo",
-      "slug": "crivo-demo"
+      "name": "Krivo Demo",
+      "slug": "krivo-demo"
     },
     {
       "id": "7c6882c6-18da-4ce9-8724-c2236a15fe08",

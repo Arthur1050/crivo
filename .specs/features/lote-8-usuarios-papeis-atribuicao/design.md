@@ -31,13 +31,13 @@ graph TD
     ACT --> DAL
     DAL --> DB[(Postgres)]
 
-    AG[Agente n8n] -->|X-Crivo-Tenant + chave de serviço| API["/api/v1/**<br/>caminho independente"]
+    AG[Agente n8n] -->|X-Krivo-Tenant + chave de serviço| API["/api/v1/**<br/>caminho independente"]
     API --> ASSIGN[atribuição server-side<br/>agendamento / escalonamento]
     ASSIGN --> WW["work-window.mjs + broker-assignment<br/>funções puras"]
     ASSIGN --> DB
 ```
 
-O contrato de integração (`/api/v1/**`) **não passa pelo proxy nem pela sessão** — segue na credencial de serviço com `X-Crivo-Tenant` (SEC-01 do lote-7). Os dois caminhos de autenticação permanecem independentes por desenho.
+O contrato de integração (`/api/v1/**`) **não passa pelo proxy nem pela sessão** — segue na credencial de serviço com `X-Krivo-Tenant` (SEC-01 do lote-7). Os dois caminhos de autenticação permanecem independentes por desenho.
 
 ---
 

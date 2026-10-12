@@ -28,7 +28,7 @@ describe("T47 — grafo real e Code nodes de geração somente leitura", () => {
     expect(JSON.stringify(graph.connections)).toContain("ai_tool");
     for (const forbidden of ["memoryPostgresChat", "memoryManager", "whatsApp", "postgres", "toolWorkflow"]) expect(graph.nodes.some((entry) => entry.type.includes(forbidden))).toBe(false);
     for (const name of ["responder_lead", "registrar_qualificacao", "agendar_reuniao", "escalar_para_humano"]) expect(graph.nodes.map((entry) => entry.name)).not.toContain(name);
-    for (const tool of tools) { expect(tool.parameters.url).toMatch(/^https:\/\/crivo-arthur1050s-projects\.vercel\.app\/api\/v1\/(context|properties)$/); expect(tool.parameters.options).toMatchObject({ response: { response: { neverError: false } } }); }
+    for (const tool of tools) { expect(["https://crivo-arthur1050s-projects.vercel.app/api/v1/context", "https://crivo-arthur1050s-projects.vercel.app/api/v1/properties"]).toContain(tool.parameters.url); expect(tool.parameters.options).toMatchObject({ response: { response: { neverError: false } } }); }
   });
   it("modelo datado é o mesmo do principal e timeout total120 inclui leituras/chamadas repetidas", () => {
     const normal = principal.toJSON() as unknown as Graph; expect(node("OpenAI Chat Model").parameters.model).toEqual(node("OpenAI Chat Model", normal).parameters.model); expect(graph.settings.executionTimeout).toBe(120);

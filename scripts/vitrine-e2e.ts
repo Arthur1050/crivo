@@ -3,7 +3,7 @@
  * (lote-16b — T14; VSEG-02, VCACHE-02, VSEO-01, VCAT-03).
  *
  * Sequência: fixture de sentinelas na branch de TESTE -> `next build` e
- * `next start` da vitrine com o papel `crivo_vitrine` e um segredo aleatório ->
+ * `next start` da vitrine com o papel `krivo_vitrine` e um segredo aleatório ->
  * asserções nomeadas por `fetch` (sem JS) -> derruba o processo e remove a
  * fixture, mesmo com falha. O stdout do servidor é capturado para a varredura
  * de sentinelas e de segredo.
@@ -378,7 +378,7 @@ registrar("T18 banco inalcançável → a mensagem sai no HTML, sem host, senha,
   const host = "banco-inalcancavel.invalid";
   const senha = "senha-de-teste-inalcancavel";
   const outra = await ctx.iniciarInstancia(PORTA_E2E + 1, {
-    VITRINE_DATABASE_URL: `postgresql://crivo_vitrine:${senha}@${host}:5432/neondb`,
+    VITRINE_DATABASE_URL: `postgresql://krivo_vitrine:${senha}@${host}:5432/neondb`,
   });
   try {
     const loja = ctx.fixture.lojas.a.slug;

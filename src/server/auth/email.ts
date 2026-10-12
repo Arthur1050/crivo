@@ -25,7 +25,7 @@ export type EmailResult =
   | { ok: false; error: string };
 
 /** Remetente. Sobrescrevível por ambiente porque depende do domínio verificado. */
-const DEFAULT_FROM = "Crivo <onboarding@resend.dev>";
+const DEFAULT_FROM = "Krivo <onboarding@resend.dev>";
 
 export interface InvitationEmail {
   to: string;
@@ -42,11 +42,11 @@ export async function sendInvitationEmail(
 ): Promise<EmailResult> {
   return send({
     to: invitation.to,
-    subject: `Convite para o Crivo — ${invitation.tenantName}`,
+    subject: `Convite para o Krivo — ${invitation.tenantName}`,
     text: [
       `Olá, ${invitation.name}.`,
       "",
-      `Você foi convidado para acessar o Crivo da imobiliária ${invitation.tenantName}.`,
+      `Você foi convidado para acessar o Krivo da imobiliária ${invitation.tenantName}.`,
       "Defina a sua senha e ative a conta por este link:",
       invitation.url,
       "",
@@ -67,11 +67,11 @@ export async function sendResetPasswordEmail(
 ): Promise<EmailResult> {
   return send({
     to: reset.to,
-    subject: "Redefinição de senha do Crivo",
+    subject: "Redefinição de senha do Krivo",
     text: [
       `Olá, ${reset.name}.`,
       "",
-      "Recebemos um pedido para redefinir a sua senha do Crivo.",
+      "Recebemos um pedido para redefinir a sua senha do Krivo.",
       "Se foi você, defina uma senha nova por este link:",
       reset.url,
       "",
@@ -81,7 +81,7 @@ export async function sendResetPasswordEmail(
 }
 
 export interface IntegrationAlertEmail {
-  /** Endereço do operador (`CRIVO_OPERATOR_ALERT_EMAIL`), lido por quem chama. */
+  /** Endereço do operador (`KRIVO_OPERATOR_ALERT_EMAIL`), lido por quem chama. */
   to: string;
   subject: string;
   text: string;

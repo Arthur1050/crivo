@@ -13,7 +13,7 @@
 | ---- | ------ | ----- |
 | T1–T4 | ✅ Done | `phase.mjs`, `voice.mjs`, `session.mjs`, `system-message.mjs` — all present, tested, inlined verbatim into the live `principal` workflow (byte-for-byte match confirmed via `get_workflow_details`) |
 | T5–T6 | ✅ Done | Postgres credential (`yyiKyt0KY8Q7TwND`, `db:"n8n"`) confirmed live; `conversa_estado` has `perguntadosJson`/`aberturasJson` (confirmed via live node schemas in T7/T10 output) |
-| T7–T8 | ✅ Done | `crivo-tool-responder-lead` (`Li2hgCX943zKmDXf`) and `crivo-tool-agendar-reuniao` (`2qCs6rPzmeOqan65`) published, active, `errorWorkflow` linked to `73Yx70RMJrpLiYQn` |
+| T7–T8 | ✅ Done | `krivo-tool-responder-lead` (`Li2hgCX943zKmDXf`) and `krivo-tool-agendar-reuniao` (`2qCs6rPzmeOqan65`) published, active, `errorWorkflow` linked to `73Yx70RMJrpLiYQn` |
 | T9–T11 | ✅ Done | Old miolo fully removed (no LLM Chain node anywhere in the 52-node `principal` workflow); memory block + AI Agent with 5 tools live and wired |
 | T12 | ✅ Done | `workflowInputs.schema` fix confirmed present on both `toolWorkflow` nodes in the **live** workflow; `n8n/generated/` regenerates byte-identical to disk |
 | T13–T15 | ✅ Done | `validate-llm.mjs`(+39 tests)/`prompt.mjs`(+20)/`history.mjs`(+10) removed — exact match confirmed by counting `it(` in each file at the pre-removal commit |
@@ -30,7 +30,7 @@ Evidence-or-zero. Pure-JS layer cites `file:line`; workflow layer cites the **li
 
 | Criterion | Spec-defined outcome | Evidence | Result |
 | --------- | --------------------- | -------- | ------ |
-| AGN-01 (P1.1): turno roda em `agent`, sem LLM Chain | Nenhum nó Basic LLM Chain no caminho | Live `crivo-agente-principal` (`0B1nqjODu7xuYYKF`, 52 nodes): node `AI Agent` type `@n8n/n8n-nodes-langchain.agent`, `hasOutputParser:false`. Grep of the full node type list found zero `lmChatOpenAi`/`chainLlm`/`chainRetrievalQa` nodes. Executions `462`/`496` cited in tasks.md T12/T16 | ✅ PASS |
+| AGN-01 (P1.1): turno roda em `agent`, sem LLM Chain | Nenhum nó Basic LLM Chain no caminho | Live `krivo-agente-principal` (`0B1nqjODu7xuYYKF`, 52 nodes): node `AI Agent` type `@n8n/n8n-nodes-langchain.agent`, `hasOutputParser:false`. Grep of the full node type list found zero `lmChatOpenAi`/`chainLlm`/`chainRetrievalQa` nodes. Executions `462`/`496` cited in tasks.md T12/T16 | ✅ PASS |
 | AGN-02 (P1.2): exatamente 5 tools | `registrar_qualificacao`, `agendar_reuniao`, `escalar_para_humano`, `consultar_documentos`, `responder_lead` — nenhuma outra | Live `connections` block: exactly 5 `ai_tool` edges into `AI Agent`, matching those 5 names, no 6th. Also `n8n/src/__tests__/system-message.test.ts:144-156` asserts all 5 tool names appear in the catalog instruction | ✅ PASS |
 | AGN-03 (P1.3): tool recusa sem efeito, devolve motivo nomeado | Recusa nomeada, sem side-effect | Live: `registrar_qualificacao`/`escalar_para_humano` have `options.response.response.neverError:true` (so CRM's `problem+json` `code` reaches the agent verbatim instead of a generic n8n error — confirmed by the author's live test in T11, corpo `{"region":"Uberaba"}`). `tool-responder-lead`'s `Code: aplicar barreiras de persona` (live, byte-identical to `voice.mjs`) returns `{accepted:false, reason:...}` **before** the WhatsApp send node — confirmed via the live connections graph (`Aceito pelas barreiras de persona?` gates the send branch) | ✅ PASS |
 | AGN-04 (P1.4): 4ª chamada de `responder_lead` recusada | Recusa sem enviar | Live `tool-responder-lead` code: `turnCount = aberturas.filter(sentAt > lastInboundAt).length; if (turnCount >= 3) rejection = 'limite-mensagens-turno'` — 3 accepted (0,1,2) then the 4th call (turnCount=3) is rejected. Execution `407` (Batch 2, tasks.md T7) | ✅ PASS |
@@ -104,7 +104,7 @@ Already self-disclosed by the author in T11's notes and consistent with the desi
 
 ## Discrimination Sensor
 
-**Isolation**: temporary `git worktree` at a scratchpad path (never `git stash`), `node_modules` attached via a Windows junction (removed before `git worktree remove --force`). Baseline `git status --porcelain` on the real tree recorded before any sensor work and re-confirmed identical after teardown (only the 4 pre-existing untracked files from before this session — `public/crivo_white_symbol*.png`, `skills-lock.json` — nothing from sensor activity).
+**Isolation**: temporary `git worktree` at a scratchpad path (never `git stash`), `node_modules` attached via a Windows junction (removed before `git worktree remove --force`). Baseline `git status --porcelain` on the real tree recorded before any sensor work and re-confirmed identical after teardown (only the 4 pre-existing untracked files from before this session — `public/krivo_white_symbol*.png`, `skills-lock.json` — nothing from sensor activity).
 
 ### Track A — pure JS (`n8n/src/*.mjs`)
 
@@ -120,7 +120,7 @@ Already self-disclosed by the author in T11's notes and consistent with the desi
 
 ### Track B — workflow layer's named mandatory risk (`leadId` never from `$fromAI`)
 
-Design.md's Risks & Concerns table names this explicitly: *"A URL da tool é montada por expressão do fluxo, nunca por `$fromAI`. Só o corpo aceita campos do modelo. Vira teste de discriminação obrigatório no Verifier."* Inspected via `get_workflow_details` on the **currently published** `crivo-agente-principal` (`0B1nqjODu7xuYYKF`, `active:true`, `updatedAt:"2026-08-15T02:51:35.339Z"`) this session — not read from repo source.
+Design.md's Risks & Concerns table names this explicitly: *"A URL da tool é montada por expressão do fluxo, nunca por `$fromAI`. Só o corpo aceita campos do modelo. Vira teste de discriminação obrigatório no Verifier."* Inspected via `get_workflow_details` on the **currently published** `krivo-agente-principal` (`0B1nqjODu7xuYYKF`, `active:true`, `updatedAt:"2026-08-15T02:51:35.339Z"`) this session — not read from repo source.
 
 - **`registrar_qualificacao`** (`httpRequestTool`, id `c4733b73-...`): `"url": "=https://.../api/v1/leads/{{ $('Code: gate').first().json.id }}"`. Body: `$fromAI('campo', ...)` / `$fromAI('valor', ...)` — model controls field name/value, never the URL/leadId.
 - **`escalar_para_humano`** (`httpRequestTool`, id `604eca0b-...`): identical pattern — `url` bound to `{{ $('Code: gate').first().json.id }}`; body's `escalationReason` is the only `$fromAI` field.
@@ -136,7 +136,7 @@ Design.md's Risks & Concerns table names this explicitly: *"A URL da tool é mon
 
 `node scripts/n8n-inline.mjs` re-run against the committed `n8n/workflows/*.ts` on the real tree: **zero diff** against `n8n/generated/*.ts` on disk (`git status --porcelain n8n/generated/` empty after regeneration). The `a640caf` `export const` fix is present (`EXPORT_DECLARATION_PATTERN` matches `function|const|let|class`) and confirmed effective — no stray `export const`/`export function` tokens remain in any generated Code-node payload.
 
-Live-instance spot check: the `Code: sessão expirada?` and `Code: montar system message e marcar campo perguntado` node bodies on the **published** `crivo-agente-principal` were extracted via `get_workflow_details` and are byte-for-byte identical (including comments/JSDoc) to `n8n/src/session.mjs`, `n8n/src/phase.mjs`, and `n8n/src/system-message.mjs` on disk. Node count on the live workflow: 52 — matches T12's reconciliation claim exactly.
+Live-instance spot check: the `Code: sessão expirada?` and `Code: montar system message e marcar campo perguntado` node bodies on the **published** `krivo-agente-principal` were extracted via `get_workflow_details` and are byte-for-byte identical (including comments/JSDoc) to `n8n/src/session.mjs`, `n8n/src/phase.mjs`, and `n8n/src/system-message.mjs` on disk. Node count on the live workflow: 52 — matches T12's reconciliation claim exactly.
 
 ---
 
@@ -167,7 +167,7 @@ Each of T13/T14/T15 touches exactly 2 files (module + its test), confirmed via `
 
 1. **AGN-05, MEM-02/03/04, VOZ-02/03, CTX-03 — unit-tested/`validate_workflow`-only, not exercised via a live end-to-end conversational turn this batch.** Confirmed accurate. `spec.md`'s own "Evidência real por camada" section correctly differentiates AGN-01/02/03/04/QLF-*/VOZ-01/MEM-01/OBS-01 (live-execution-proven) from AGN-05/MEM-02-04/VOZ-02-03/CTX-03 (unit-test-or-static-only) — no blanket "Verified" overclaim found anywhere in the traceability table.
 2. **T16 SPEC_DEVIATION (`gemini-3.1-flash` → `gemini-3.5-flash`).** Documented in `tasks.md` T16 with reasoning (live `ListModels` call, same release window, non-lite, pinned version not the floating alias). Judged **justified**: this is a narrow technical substitution (the literal target didn't exist) within the same model family/generation the spec's own Assumptions table already treats as discretionary ("Modelo | Gemini, o mesmo já em uso | ... | n (discretion)"), isolated to one commit, revertible, and measured with a direct A/B comparison against the same fixture. It does not cross into the kind of model-swap decision the Assumptions table explicitly deferred as a confounding variable — the family stayed Gemini flash, non-lite, same window.
-3. **T12's two production bugs (`workflowInputs.schema` missing; `errorWorkflow` unlinked on sub-workflows).** Both confirmed **fixed on the currently published instance** via live `get_workflow_details` on `responder_lead`/`agendar_reuniao` (`schema` present, all fields mapped) and on `crivo-tool-responder-lead`/`crivo-tool-agendar-reuniao` (`settings.errorWorkflow:"73Yx70RMJrpLiYQn"`) — not just claimed in the repo/README.
+3. **T12's two production bugs (`workflowInputs.schema` missing; `errorWorkflow` unlinked on sub-workflows).** Both confirmed **fixed on the currently published instance** via live `get_workflow_details` on `responder_lead`/`agendar_reuniao` (`schema` present, all fields mapped) and on `krivo-tool-responder-lead`/`krivo-tool-agendar-reuniao` (`settings.errorWorkflow:"73Yx70RMJrpLiYQn"`) — not just claimed in the repo/README.
 4. **2 inert test rows in `conversa_estado` (`test-tenant-lote6c*`).** Accepted as accurately described non-blocking cleanup debt: `conversa_estado` is only ever reached via a `tenantSlug` resolved from a `tenant_config` lookup keyed on a real `phoneNumberId`; a stray row keyed by a literal test-tenant slug that has no corresponding `tenant_config` entry is unreachable by real production traffic. Not independently queried row-by-row (no MCP data-table-row-browse tool available in this session; same limitation the author reported), but the reachability argument is structurally sound from the live workflow's lookup chain.
 
 ---

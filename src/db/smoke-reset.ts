@@ -19,7 +19,7 @@ import {
  * A limpeza entre cenários da prova conversacional (AD-027) tem três alvos em
  * dois sistemas. Este comando cobre o único que mora no CRM; os outros dois
  * (sessão em `n8n_chat_histories` e linha de `conversa_estado`) são do n8n e
- * saem pelo workflow `crivo-smoke-reset` (`n8n/workflows/smoke-reset.ts`).
+ * saem pelo workflow `krivo-smoke-reset` (`n8n/workflows/smoke-reset.ts`).
  *
  * Os dois lados ficam separados de propósito: para este script alcançar a
  * memória do n8n ele precisaria de credencial do Postgres da instância, e o
@@ -147,7 +147,7 @@ if (isMain) {
         );
       }
       console.log(
-        "Falta o lado do n8n (memória + conversa_estado): rode o workflow `crivo-smoke-reset`."
+        "Falta o lado do n8n (memória + conversa_estado): rode o workflow `krivo-smoke-reset`."
       );
       process.exit(0);
     })

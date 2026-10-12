@@ -1,5 +1,5 @@
 /**
- * crivo-smoke-memoria — confere, sem ler conteúdo, se a memória persistente do
+ * krivo-smoke-memoria — confere, sem ler conteúdo, se a memória persistente do
  * agente guardou a observação integral de `consultar_documentos` (lote-12 —
  * T35, DOCPROVA-01: "Memória persistente não contém observação integral da
  * tool").
@@ -51,6 +51,6 @@ const inspectMemory = node({
   output: [{ mensagens: 0, maior_mensagem_chars: 0, com_envelope_da_tool: 0, mensagens_do_tipo_tool: 0 }],
 });
 
-export default workflow("crivo-smoke-memoria", "crivo-smoke-memoria")
+export default workflow("krivo-smoke-memoria", "krivo-smoke-memoria")
   .add(manualTrigger)
   .to(inspectMemory);

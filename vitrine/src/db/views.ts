@@ -3,7 +3,7 @@ import type { Fonte, Layout } from "../contrato";
 
 /**
  * As duas views públicas do schema `vitrine` (AD-040), declaradas como
- * existentes: a vitrine nunca cria nem altera nada, e o papel `crivo_vitrine`
+ * existentes: a vitrine nunca cria nem altera nada, e o papel `krivo_vitrine`
  * só tem `SELECT` nelas. Nome e ordem das colunas são os de
  * `COLUNAS_DAS_VIEWS` (contrato.ts); `vitrine-views-paridade.test.ts` os confere
  * contra o banco.

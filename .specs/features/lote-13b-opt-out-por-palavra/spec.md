@@ -38,7 +38,7 @@ existir só pela mensagem exata "sair", e o agente orienta o lead a enviá-la.
 | Texto do system message | Byte a byte igual ao publicado | Decisão do usuário (2026-10-07) | Sim |
 | Testes, corpus e medição do classificador | Removidos junto com o código; testes da palavra-chave mantidos e ampliados | Decisão do usuário (2026-10-07); o comportamento medido deixa de existir | Sim |
 | Caminho até produção | Hotfix: principal gerado da fonte do L14 publicado (`0688deb`) com só esta mudança; o main recebe a mesma mudança | Decisão do usuário (2026-10-07); a economia começa sem ativar o L14b | Sim |
-| Workflow `crivo-medicao-opt-out` em produção | Arquivado | Webhook ativo que chama o modelo se acionado; rodou uma vez (execução 2688) | Sim, usuário em 2026-10-07 |
+| Workflow `krivo-medicao-opt-out` em produção | Arquivado | Webhook ativo que chama o modelo se acionado; rodou uma vez (execução 2688) | Sim, usuário em 2026-10-07 |
 | Constantes `OPT_OUT_CONFIRMATION` e `OPT_OUT_REGISTRATION_FAILED` | Mantidas onde ainda forem usadas (o CRM importa a confirmação); o resto do módulo do classificador sai | O opt-out pela tela usa a mesma confirmação (AD-034) | Sim, usuário em 2026-10-07 |
 
 **Open questions:** none — todas resolvidas ou registradas acima.
@@ -49,7 +49,7 @@ existir só pela mensagem exata "sair", e o agente orienta o lead a enviá-la.
 
 ### P1: Turno de conversa sem classificador — SAIR-01 ⭐ MVP
 
-**User Story**: Como operador do Crivo, quero que cada turno chame só o modelo do agente, para não gastar tokens nem latência num classificador.
+**User Story**: Como operador do Krivo, quero que cada turno chame só o modelo do agente, para não gastar tokens nem latência num classificador.
 
 **Acceptance Criteria**:
 
@@ -97,7 +97,7 @@ existir só pela mensagem exata "sair", e o agente orienta o lead a enviá-la.
 **Acceptance Criteria**:
 
 1. The system SHALL não conter no repositório o workflow, o script, o corpus, o placar e os testes da medição de opt-out, nem a exigência de medição aprovada para publicar o principal.
-2. WHEN o hotfix é publicado THEN the system SHALL ter o workflow `crivo-medicao-opt-out` arquivado na instância n8n.
+2. WHEN o hotfix é publicado THEN the system SHALL ter o workflow `krivo-medicao-opt-out` arquivado na instância n8n.
 3. The system SHALL registrar no `STATE.md` uma AD que supersede a AD-032 e restaura a exclusividade do gate da AD-018 e o escopo de modelo único da AD-026.
 
 **Independent Test**: busca no repositório sem referências ativas; `search_workflows` mostra a medição arquivada; STATE validado.

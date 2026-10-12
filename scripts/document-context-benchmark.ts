@@ -1,7 +1,7 @@
 /**
  * Benchmark do teto de contexto documental (lote-12 — T34, DOCLIM-01).
  *
- * As medições saem do workflow `crivo-benchmark-contexto` no n8n
+ * As medições saem do workflow `krivo-benchmark-contexto` no n8n
  * (`n8n/workflows/benchmark-contexto.ts`), uma execução por faixa, e são
  * registradas num arquivo de resultados versionado — só métricas, nunca o
  * corpus. Este script faz o resto:
@@ -44,7 +44,7 @@ const MODALITIES = ["novo", "usado", "ambos"] as const;
 export interface BenchmarkResultsFile {
   benchmarkedAt: string;
   benchmarkWorkflowId: string;
-  /** `activeVersionId` do `crivo-agente-principal` no momento da medição. */
+  /** `activeVersionId` do `krivo-agente-principal` no momento da medição. */
   agentWorkflowVersion: string;
   tokenSource: string;
   runs: Array<BenchmarkRun & { executionId: string }>;

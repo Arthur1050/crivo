@@ -292,7 +292,7 @@ usuário em 2026-10-07: dos oito itens originais, três saíram do lote (1, 3, 7
 | 8 | L4 Fix 2 | **Aceito sem artefato**: produzir a evidência exigiria uma camada de teste de UI que o projeto não tem |
 
 **Em produção:** colunas `integration_health_state` e `integration_health_changed_at` em `tenants`,
-`CRIVO_OPERATOR_ALERT_EMAIL` no Production e deploy `e2565ee`. A primeira manutenção com o alerta rodou em 2026-10-08 03:01 UTC (`evaluated: 3`, `failed: false`) e comprovou que o cron executa em produção.
+`KRIVO_OPERATOR_ALERT_EMAIL` no Production e deploy `e2565ee`. A primeira manutenção com o alerta rodou em 2026-10-08 03:01 UTC (`evaluated: 3`, `failed: false`) e comprovou que o cron executa em produção.
 
 ---
 
@@ -345,7 +345,7 @@ o Postgres recusa, independente do bug ou de quem escreveu.
 sem conflito, então a personalização por tenant funciona em runtime sem sair da lib.
 `defineTheme` recebe `color.accent` (hex) + `neutralStyle` e **gera a paleta inteira** com contraste
 resolvido; `typography.body/heading` recebem `family`/`url`; `extends` deriva o tema do tenant de um
-tema-base Crivo. A tabela de SSR da doc diz que **tokens são SSR-safe** sob injeção em runtime — só
+tema-base Krivo. A tabela de SSR da doc diz que **tokens são SSR-safe** sob injeção em runtime — só
 *component overrides* piscam na hidratação, e componentes estão fora de escopo por decisão do
 usuário. **A AD-010 não precisa de emenda**: o `CLAUDE.md` já nomeia `astryx theme` como o caminho
 sancionado para brand/accent.

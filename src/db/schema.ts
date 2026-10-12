@@ -181,7 +181,7 @@ export const tenants = pgTable(
     // instrução de processo.
     agentVoiceTone: text("agent_voice_tone"),
     // Identificador legível único do tenant (lote-7 — SEC-01), usado pelo
-    // header `X-Crivo-Tenant` do modo de autenticação de serviço do agente
+    // header `X-Krivo-Tenant` do modo de autenticação de serviço do agente
     // e já espelhado no n8n como `tenantSlug` na Data Table `tenant_config`.
     //
     // NOT NULL com índice único TOTAL a partir do lote-8 (T3): o plugin
@@ -794,7 +794,7 @@ export const tenantApiKeys = pgTable("tenant_api_keys", {
 // tenant embutida em texto claro numa Data Table. Mesmo formato de
 // `tenant_api_keys` (hash sha256 persistido, valor em claro só existe uma
 // vez no output do seed). Deliberadamente SEM `tenantId`/FK: o tenant da
-// chamada vem do header `X-Crivo-Tenant`, nunca da chave — a chave só prova
+// chamada vem do header `X-Krivo-Tenant`, nunca da chave — a chave só prova
 // que quem chama é o agente, não qual tenant ele está atendendo
 // (design.md — Auth de serviço).
 export const serviceApiKeys = pgTable("service_api_keys", {
@@ -861,7 +861,7 @@ export const sessions = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     // Imobiliária ativa da sessão (AD-021, que emenda a AD-007): substitui o
-    // cookie `crivo_tenant` como fonte de verdade. `text` e sem FK porque é
+    // cookie `krivo_tenant` como fonte de verdade. `text` e sem FK porque é
     // assim que o plugin declara o campo (`type: "string"`) e é o que o CLI
     // emite — o valor é sempre um `tenants.id`, e a validação contra os
     // vínculos reais do usuário mora na guarda (`verifySession`, T7), não
@@ -1171,7 +1171,7 @@ export const properties = pgTable(
 // Tabela 1:1 com `tenants`: ausência de linha equivale a vitrine inativa com
 // os valores padrão (AD-004: imobiliárias existentes não precisam de migração).
 // A fronteira pública não é esta tabela, e sim as views do schema `vitrine`
-// (`scripts/vitrine/vitrine.sql`), que o papel `crivo_vitrine` lê.
+// (`scripts/vitrine/vitrine.sql`), que o papel `krivo_vitrine` lê.
 //
 // Os dois checks são do BANCO. O `drizzle-kit push` já saiu com 0 deixando
 // check sem aplicar (L-068): o SQL da vitrine os reaplica de forma idempotente

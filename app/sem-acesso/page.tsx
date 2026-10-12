@@ -11,7 +11,7 @@ import { resolveAuthContext } from "@/src/server/auth/session";
 import { SignOutButton } from "@/src/components/auth/sign-out-button";
 
 export const metadata: Metadata = {
-  title: "Sem acesso — Crivo",
+  title: "Sem acesso — Krivo",
 };
 
 /**

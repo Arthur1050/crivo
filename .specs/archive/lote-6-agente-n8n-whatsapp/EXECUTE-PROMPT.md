@@ -1,6 +1,6 @@
 # Prompt de Execução — Lote 6: Agente n8n + WhatsApp
 
-> Cole o bloco abaixo numa nova janela do Claude Code aberta na raiz do projeto (`crivo/`).
+> Cole o bloco abaixo numa nova janela do Claude Code aberta na raiz do projeto (`krivo/`).
 > **Antes de colar, confira na janela nova**: MCP do **n8n** conectado (obrigatório no Batch 2) e extensão **Claude in Chrome** ativa (screenshots do T2/T13).
 
 ---

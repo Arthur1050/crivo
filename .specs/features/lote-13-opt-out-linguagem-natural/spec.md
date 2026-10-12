@@ -78,7 +78,7 @@ Every ambiguity is resolved or recorded here; nothing remains silently unclear.
 4. WHEN a medição roda THEN the system SHALL executar somente o classificador, com o mesmo snapshot de modelo da AD-026 e as mesmas categorias, descrições, prompt e formato de entrada que serão publicados, sem chamar o CRM.
 5. WHEN a medição roda THEN the system SHALL executar cada frase 3 vezes, com a última mensagem do agente definida no item do corpus (a mesma abertura fixa quando o item não define outra), e reportar por frase e por faixa quantas execuções foram classificadas como explícita, ambígua e fora.
 6. The measurement SHALL aprovar somente se zero execuções de frases ambíguas ou fora forem classificadas como explícita E pelo menos 90% das execuções de frases explícitas forem classificadas como explícita.
-7. IF a medição reprova THEN the system SHALL manter o classificador fora do `crivo-agente-principal` publicado e manter a orientação "responda `sair`" em vigor.
+7. IF a medição reprova THEN the system SHALL manter o classificador fora do `krivo-agente-principal` publicado e manter a orientação "responda `sair`" em vigor.
 8. IF a configuração do classificador em `principal.ts` (modelo, categorias, descrições, prompt ou formato de entrada) difere da usada na última medição aprovada THEN the system SHALL falhar a suíte de testes até uma nova medição aprovada ser registrada.
 
 **Independent Test**: Rodar a medição sobre o corpus e obter um relatório versionado com contagens por frase e por faixa, veredito APROVADO/REPROVADO calculado pela barra do AC6 e a identidade (hash) da configuração do classificador medida.

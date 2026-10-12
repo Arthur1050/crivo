@@ -15,7 +15,7 @@ aqui, local e testado, antes de existir a vitrine.
 
 - [ ] Um gestor configura e ativa a vitrine da imobiliária em Configurações, e o CRM recusa ativar
       sem CRECI, razão social e WhatsApp do agente.
-- [ ] O papel `crivo_vitrine` lê as duas views e é **recusado pelo Postgres** em qualquer tabela de
+- [ ] O papel `krivo_vitrine` lê as duas views e é **recusado pelo Postgres** em qualquer tabela de
       `public`, provado por teste contra o banco real.
 - [ ] Toda mudança de imóvel ou da vitrine dispara o aviso de revalidação com o slug certo, sem
       nunca falhar a ação do gestor.
@@ -124,17 +124,17 @@ vendido.
 3. The system SHALL expor em `vitrine.imoveis` exatamente as colunas `loja_slug, referencia, tipo, modalidade, bairro, cidade, uf, preco_centavos, area_m2, quartos, banheiros, vagas, descricao, fotos, destaque, atualizado_em`, nessa ordem.
 4. The system SHALL incluir em `vitrine.lojas` só imobiliárias com vitrine ativa, CRECI e razão social não vazios e WhatsApp do agente não vazio.
 5. The system SHALL incluir em `vitrine.imoveis` só imóveis com `status = disponivel` E publicados, de imobiliárias presentes em `vitrine.lojas`.
-6. The system SHALL criar o papel `crivo_vitrine` com login, `default_transaction_read_only = on`, `statement_timeout = 5s`, `USAGE` no schema `vitrine` e `SELECT` só nas duas views.
-7. WHEN o papel `crivo_vitrine` consultar as duas views THEN o Postgres SHALL devolver as linhas.
-8. IF o papel `crivo_vitrine` tentar `SELECT` em `leads`, `messages`, `conversations`, `users`, `sessions`, `accounts`, `tenants`, `tenant_storefronts`, `properties` ou `tenant_api_keys` THEN o Postgres SHALL recusar com o código `42501`.
-9. IF o papel `crivo_vitrine` tentar `INSERT`, `UPDATE` ou `DELETE` em qualquer view THEN o Postgres SHALL recusar.
-10. The system SHALL NOT tornar `crivo_vitrine` membro de `neon_superuser` nem de nenhum outro papel.
-11. The system SHALL registrar em `information_schema.role_table_grants` exatamente duas linhas para `crivo_vitrine`: `SELECT` em `vitrine.lojas` e em `vitrine.imoveis`.
+6. The system SHALL criar o papel `krivo_vitrine` com login, `default_transaction_read_only = on`, `statement_timeout = 5s`, `USAGE` no schema `vitrine` e `SELECT` só nas duas views.
+7. WHEN o papel `krivo_vitrine` consultar as duas views THEN o Postgres SHALL devolver as linhas.
+8. IF o papel `krivo_vitrine` tentar `SELECT` em `leads`, `messages`, `conversations`, `users`, `sessions`, `accounts`, `tenants`, `tenant_storefronts`, `properties` ou `tenant_api_keys` THEN o Postgres SHALL recusar com o código `42501`.
+9. IF o papel `krivo_vitrine` tentar `INSERT`, `UPDATE` ou `DELETE` em qualquer view THEN o Postgres SHALL recusar.
+10. The system SHALL NOT tornar `krivo_vitrine` membro de `neon_superuser` nem de nenhum outro papel.
+11. The system SHALL registrar em `information_schema.role_table_grants` exatamente duas linhas para `krivo_vitrine`: `SELECT` em `vitrine.lojas` e em `vitrine.imoveis`.
 12. WHEN `npm run db:push:test` rodar THEN o sistema SHALL derrubar o schema `vitrine`, aplicar o schema Drizzle e recriar views, papel e grants em cada alvo de teste, nessa ordem.
 13. WHEN `npm run db:push:test` rodar duas vezes seguidas THEN a segunda execução SHALL terminar com o mesmo estado de views, papel e grants, sem erro.
 14. WHEN uma imobiliária ativa tiver até 3 imóveis visíveis THEN a busca do contrato sem filtros e `vitrine.imoveis` SHALL devolver o mesmo conjunto de referências, e o total da busca SHALL ser igual ao número de linhas da view para essa imobiliária.
 
-**Independent Test**: conectar como `crivo_vitrine` na branch do worker, ler as views, tentar ler
+**Independent Test**: conectar como `krivo_vitrine` na branch do worker, ler as views, tentar ler
 `leads` e receber `42501`; listar os grants e ver só dois.
 
 ---
@@ -258,7 +258,7 @@ Configurações).
 
 ## Success Criteria
 
-- [ ] O teste de privilégio passa contra o banco real: `crivo_vitrine` lê as views e recebe `42501`
+- [ ] O teste de privilégio passa contra o banco real: `krivo_vitrine` lê as views e recebe `42501`
       em `leads`.
 - [ ] Um gestor ativa a vitrine pelo CRM e a loja aparece em `vitrine.lojas`; um imóvel marcado como
       vendido some de `vitrine.imoveis` no mesmo instante.

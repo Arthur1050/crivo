@@ -26,7 +26,7 @@ import { serviceApiKeys } from "./schema";
  * emitir outra.
  *
  * Depois de rodar, o passo humano continua sendo o do README §12.3: editar a
- * credencial `httpHeaderAuth` "Crivo - chave de servico" (`YhGcdfGtdEBBU9YP`)
+ * credencial `httpHeaderAuth` "Krivo - chave de servico" (`YhGcdfGtdEBBU9YP`)
  * na UI do n8n, trocando o header `Authorization` para `Bearer <chave nova>` —
  * a exceção de sempre ao workflow-as-code (credencial é gate humano).
  *
@@ -67,7 +67,7 @@ if (isMain) {
       console.log(`Chave de serviço emitida com o rótulo '${minted.label}'.`);
       console.log("");
       console.log("Cole este valor no header Authorization da credencial");
-      console.log("'Crivo - chave de servico' (YhGcdfGtdEBBU9YP) na UI do n8n:");
+      console.log("'Krivo - chave de servico' (YhGcdfGtdEBBU9YP) na UI do n8n:");
       console.log("");
       console.log(`  Bearer ${minted.key}`);
       console.log("");

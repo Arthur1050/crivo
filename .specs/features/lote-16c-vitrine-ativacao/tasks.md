@@ -146,7 +146,7 @@ T13 → T14
 
 **Done when**:
 
-- [ ] Saída sem erro; rollback `REVOKE ALL ON SCHEMA vitrine FROM crivo_vitrine; DROP OWNED BY crivo_vitrine; DROP ROLE crivo_vitrine;` registrado
+- [ ] Saída sem erro; rollback `REVOKE ALL ON SCHEMA vitrine FROM krivo_vitrine; DROP OWNED BY krivo_vitrine; DROP ROLE krivo_vitrine;` registrado
 
 **Tests**: none
 **Gate**: registro
@@ -157,7 +157,7 @@ T13 → T14
 
 ### T4: Senha do papel (usuário)
 
-**What**: O usuário roda `ALTER ROLE crivo_vitrine PASSWORD '<senha>'` no editor SQL do Neon de produção e monta, para si, a URL pooler com esse usuário. O executor só entrega o comando sem a senha.
+**What**: O usuário roda `ALTER ROLE krivo_vitrine PASSWORD '<senha>'` no editor SQL do Neon de produção e monta, para si, a URL pooler com esse usuário. O executor só entrega o comando sem a senha.
 **Where**: `.specs/features/lote-16c-vitrine-ativacao/validation.md`
 **Depends on**: T3
 **Reuses**: —
@@ -165,7 +165,7 @@ T13 → T14
 
 **Done when**:
 
-- [ ] Usuário confirma; nenhum valor registrado; rollback `ALTER ROLE crivo_vitrine PASSWORD NULL;`
+- [ ] Usuário confirma; nenhum valor registrado; rollback `ALTER ROLE krivo_vitrine PASSWORD NULL;`
 
 **Tests**: none
 **Gate**: registro
@@ -176,7 +176,7 @@ T13 → T14
 
 ### T5: Conferência do papel em produção (executor, leitura)
 
-**What**: Com autorização, consultas de catálogo: grants de `crivo_vitrine` (exatamente 2), `pg_has_role` em `neon_superuser` (falso), `rolconfig` com `default_transaction_read_only=on` e `statement_timeout=5s` (F18).
+**What**: Com autorização, consultas de catálogo: grants de `krivo_vitrine` (exatamente 2), `pg_has_role` em `neon_superuser` (falso), `rolconfig` com `default_transaction_read_only=on` e `statement_timeout=5s` (F18).
 **Where**: `.specs/features/lote-16c-vitrine-ativacao/validation.md`
 **Depends on**: T4
 **Reuses**: consultas do teste `vitrine-privilegios.test.ts` (L16a T9)

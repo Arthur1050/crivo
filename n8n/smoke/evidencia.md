@@ -58,14 +58,14 @@ o mesmo modelo é o objeto do T2.
 
 ### 2.1 Alvo e método
 
-Workflow publicado `crivo-agente-principal`, id **`0B1nqjODu7xuYYKF`** (obtido via `search_workflows`),
+Workflow publicado `krivo-agente-principal`, id **`0B1nqjODu7xuYYKF`** (obtido via `search_workflows`),
 lido com `get_workflow_details`. Estado da instância no momento da leitura:
 
 - `active: true`, `isArchived: false`
 - `versionId` = `activeVersionId` = **`d3105bb3-8522-449c-aa7c-0569d6a2a547`** (o que está publicado é
   o que está ativo — não há draft pendente divergindo da versão ativa)
 - `settings`: `{"executionOrder":"v1","availableInMCP":true,"binaryMode":"separate","errorWorkflow":"73Yx70RMJrpLiYQn"}`
-  — `errorWorkflow` aponta para `crivo-agente-erros` (id `73Yx70RMJrpLiYQn`), como esperado
+  — `errorWorkflow` aponta para `krivo-agente-erros` (id `73Yx70RMJrpLiYQn`), como esperado
 
 O lado versionado foi obtido compilando `n8n/generated/principal.ts` com `toJSON()` (o mesmo grafo que
 o inliner produz e que uma publicação levaria para a instância), e comparado **nó a nó e conexão a
@@ -212,7 +212,7 @@ portanto que publicar restaura em vez de apagar.
 
 ### 5.1 O que foi publicado, e como
 
-Workflow `crivo-agente-principal` (`0B1nqjODu7xuYYKF`), via MCP `update_workflow` + `publish_workflow`
+Workflow `krivo-agente-principal` (`0B1nqjODu7xuYYKF`), via MCP `update_workflow` + `publish_workflow`
 — **nenhuma edição pela UI** (AD-014). As operações foram a tradução mecânica do que
 `n8n/generated/principal.ts` declara para os nós afetados:
 
@@ -238,7 +238,7 @@ draft pendente.
 | Nós Gemini remanescentes | **nenhum** (busca por tipo e por nome: 0) |
 | Contagens | **61 nós / 75 conexões** — idênticas à §2.2, a troca não mexeu em mais nada |
 | `active` | `true` (`isArchived: false`) |
-| `settings.errorWorkflow` | `73Yx70RMJrpLiYQn` = `crivo-agente-erros`, inalterado |
+| `settings.errorWorkflow` | `73Yx70RMJrpLiYQn` = `krivo-agente-erros`, inalterado |
 
 **Credenciais continuam não observáveis por esta via**: `get_workflow_details` e
 `get_workflow_version` devolvem credencial vazia para **0 de 61** nós — inclusive para nós que
@@ -736,13 +736,13 @@ O `neverError: true` das 3 tools nativas funcionou como projetado: o corpo `prob
 
 | # | Execução | Chamada recusada | `observation` (literal) |
 | --- | --- | --- | --- |
-| 1 | **`1900`** (turno 1) | `registrar_qualificacao {campo: "propertyType", valor: "apartamento usado"}` | `{"type":"urn:crivo:problem:payload-invalido","title":"Payload inválido","status":400,"detail":"Campo 'propertyType' inválido. Valores aceitos: casa, apartamento.","code":"payload-invalido"}` |
+| 1 | **`1900`** (turno 1) | `registrar_qualificacao {campo: "propertyType", valor: "apartamento usado"}` | `{"type":"urn:krivo:problem:payload-invalido","title":"Payload inválido","status":400,"detail":"Campo 'propertyType' inválido. Valores aceitos: casa, apartamento.","code":"payload-invalido"}` |
 | 2 | **`1934`** (turno 4) | `registrar_qualificacao {campo: "motivation", valor: "morar sozinho"}` | `…"detail":"Campo 'motivation' inválido. Valores aceitos: investidor, morador.","code":"payload-invalido"` |
 | 3 | **`1934`** (turno 4) | `registrar_qualificacao {campo: "creditStatus", valor: "recurso próprio junto com FGTS"}` | `…"detail":"Campo 'creditStatus' inválido. Valores aceitos: pre_aprovado, recurso_proprio, fgts.","code":"payload-invalido"` |
 | 4 | **`1942`** (turno 5) | `registrar_qualificacao {campo: "motivation", valor: "morar sozinho"}` | idem #2 |
 | 5 | **`1942`** (turno 5) | `registrar_qualificacao {campo: "creditStatus", valor: "recurso próprio junto com FGTS para fechar"}` | idem #3 |
 
-**`code` registrado: `payload-invalido`** (`type: urn:crivo:problem:payload-invalido`, `status: 400`)
+**`code` registrado: `payload-invalido`** (`type: urn:krivo:problem:payload-invalido`, `status: 400`)
 nas cinco.
 
 A recusa #1 é espontânea — não foi provocada pelo roteiro. O modelo tentou gravar o texto cru do lead
@@ -1082,7 +1082,7 @@ repetição independente (também produziu uma recusa `payload-invalido`).
 
 | # | Execução | Chamada recusada | `observation` |
 | --- | --- | --- | --- |
-| 1 | **`1960`** (turno 3) | `registrar_qualificacao {campo:"propertyType", valor:"apartamento de 2 quartos"}` | `{"type":"urn:crivo:problem:payload-invalido","title":"Payload inválido","status":400,"detail":"Campo 'propertyType' inválido. Valores aceitos: casa, apartamento.","code":"payload-invalido"}` |
+| 1 | **`1960`** (turno 3) | `registrar_qualificacao {campo:"propertyType", valor:"apartamento de 2 quartos"}` | `{"type":"urn:krivo:problem:payload-invalido","title":"Payload inválido","status":400,"detail":"Campo 'propertyType' inválido. Valores aceitos: casa, apartamento.","code":"payload-invalido"}` |
 | 2 | **`1960`** (turno 3) | `registrar_qualificacao {campo:"motivation", valor:"comprar pra morar sozinho"}` | `…"detail":"Campo 'motivation' inválido. Valores aceitos: investidor, morador.","code":"payload-invalido"` |
 | 3 | **`1966`** (turno 4) | `registrar_qualificacao {campo:"motivation", valor:"comprar para morar sozinho"}` | idem #2 |
 
@@ -1222,8 +1222,8 @@ Nenhuma linha desta seção entra em R1 ou R2. São sinais para a prova conversa
 ### 13.1 Chave de serviço — confirmada por execução real contra `/api/v1`
 
 Workflow-escrutínio temporário (`Manual Trigger` → `HTTP: GET /settings`, mesma configuração do nó
-publicado: credencial `httpHeaderAuth` "Crivo - chave de servico" `YhGcdfGtdEBBU9YP`, header
-`X-Crivo-Tenant: triangulo`), criado via `create_workflow_from_code` (`ZlyEJOIWY0gs5bSY`), seguindo o
+publicado: credencial `httpHeaderAuth` "Krivo - chave de servico" `YhGcdfGtdEBBU9YP`, header
+`X-Krivo-Tenant: triangulo`), criado via `create_workflow_from_code` (`ZlyEJOIWY0gs5bSY`), seguindo o
 padrão do `n8n/README.md` §12.2.
 
 - **Achado de instrumento, não do produto**: `create_workflow_from_code` não anexou a credencial
@@ -1244,19 +1244,19 @@ padrão do `n8n/README.md` §12.2.
 - Workflow-escrutínio arquivado (`archive_workflow`) logo após a execução — nada ficou pendurado na
   instância.
 
-### 13.2 `crivo-agente-principal` — ativo, com o modelo do veredito de T9
+### 13.2 `krivo-agente-principal` — ativo, com o modelo do veredito de T9
 
 `get_workflow_details` (id `0B1nqjODu7xuYYKF`): `active: true`, `versionId == activeVersionId ==
 "8f9f8418-35b0-4d63-b8a0-e522f6f4e679"` — a mesma versão publicada em T5, inalterada desde então.
 Nó de modelo: `lmChatOpenAi`, `value` e `cachedResultName` `"gpt-5.4-nano-2026-03-17"`.
-`settings.errorWorkflow = "73Yx70RMJrpLiYQn"` (`crivo-agente-erros`), como antes.
+`settings.errorWorkflow = "73Yx70RMJrpLiYQn"` (`krivo-agente-erros`), como antes.
 
 ### 13.3 `tenant_config` — linha do `triangulo` presente, `calendarId` já exercitado
 
 A tabela (`xRHckWWd6fxGeNta`) tem 3 colunas (`phoneNumberId`, `tenantSlug`, `calendarId`) e nenhuma
 tool MCP lê uma linha específica por id — o mesmo limite já registrado em §8.3/§9.1. Em vez de repetir
 a armadilha do metadado de tabela, esta pré-condição já tem prova mais forte que uma leitura: as duas
-rodadas da bateria (T7/T9) **usaram** essa linha de verdade em toda chamada HTTP (`X-Crivo-Tenant:
+rodadas da bateria (T7/T9) **usaram** essa linha de verdade em toda chamada HTTP (`X-Krivo-Tenant:
 triangulo` resolvendo, `agendar_reuniao` criando eventos reais em `tostamatias@gmail.com` — execuções
 `1923` e a rodada final de T9). O `calendarId` certo não é uma leitura pendente; já foi exercitado
 duas vezes com sucesso.
@@ -1370,7 +1370,7 @@ em conversa real, com teste e publicação conferida por hash antes de ativar.
 
 ### 14.7 Achado de paridade, não corrigido de propósito
 
-O nó `Code: checar horario comercial` do `crivo-tool-agendar-reuniao` publicado é uma cópia
+O nó `Code: checar horario comercial` do `krivo-tool-agendar-reuniao` publicado é uma cópia
 **minificada** do módulo (1.867 chars contra 5.704 em `n8n/generated/`): mesma lógica, mesmos
 identificadores, mesmo harness final, sem comentários e sem formatação. Divergência cosmética
 anterior a este lote, encontrada ao publicar a correção do `meetLink`. Não foi tocada — está fora do
@@ -1701,13 +1701,13 @@ numa rodada de Specify futura — não é reescrita aqui, e a AD-001 não é eme
 
 ## Lote 13 — T18: opt-out por linguagem natural — APROVADO (2026-09-30)
 
-Prova conduzida pelo usuário no WhatsApp do número de teste, com o `crivo-agente-principal`
+Prova conduzida pelo usuário no WhatsApp do número de teste, com o `krivo-agente-principal`
 (`0B1nqjODu7xuYYKF`). Todo id abaixo foi conferido por `get_execution`. As frases citadas são as do
 roteiro; as demais mensagens do lead não são reproduzidas.
 
 ### Caso 5a — explícito: **APROVADO** (agente `3e20756c`)
 
-Limpeza antes: `crivo-smoke-reset` execução 2704 (memória e `conversa_estado` apagadas) e
+Limpeza antes: `krivo-smoke-reset` execução 2704 (memória e `conversa_estado` apagadas) e
 `npm run smoke:reset` (lead de teste apagado).
 
 | Turno | Execução | Resultado |
@@ -1721,7 +1721,7 @@ turno 1 e a confirmação. Nenhuma mensagem depois da confirmação.
 
 ### Caso 5b original — ambíguo + "sim": comportamento **aprovado e depois removido** (D11)
 
-Limpeza antes: `crivo-smoke-reset` 2717 e `smoke:reset`. Execuções 2718, 2724 e 2732 (conversa
+Limpeza antes: `krivo-smoke-reset` 2717 e `smoke:reset`. Execuções 2718, 2724 e 2732 (conversa
 normal, classificador `fora`/`other`); 2738 — "não tenho interesse, obrigado" → classificador saída 1
 (`ambigua`), o agente perguntou "Você quer parar de receber mensagens por este número, pra encerrar
 de vez?", `optedOutAt` nulo; 2744 — "Sim" → classificador `explicita` (a última fala era a
@@ -1734,7 +1734,7 @@ agora prova o comportamento novo e precisa ser refeito, junto com o 5c e a regre
 
 ### Caso 5b novo — desinteresse sem pedido explícito: **APROVADO** (agente `3be9cfed`)
 
-Limpeza antes: `crivo-smoke-reset` 2764 e `smoke:reset`. Mensagens enviadas pelo WhatsApp Web do
+Limpeza antes: `krivo-smoke-reset` 2764 e `smoke:reset`. Mensagens enviadas pelo WhatsApp Web do
 usuário, a pedido dele, via extensão do Chrome.
 
 | Turno | Execução | Resultado |
@@ -1744,7 +1744,7 @@ usuário, a pedido dele, via extensão do Chrome.
 
 ### Caso 5c — fora de escopo: **APROVADO** (agente `3be9cfed`)
 
-Limpeza antes: `crivo-smoke-reset` 2776 e `smoke:reset` (4 mensagens apagadas do 5b: 2 do lead e 2
+Limpeza antes: `krivo-smoke-reset` 2776 e `smoke:reset` (4 mensagens apagadas do 5b: 2 do lead e 2
 do agente). Mensagens enviadas pelo WhatsApp Web do usuário, a pedido dele.
 
 | Turno | Execução | Resultado |
@@ -1754,7 +1754,7 @@ do agente). Mensagens enviadas pelo WhatsApp Web do usuário, a pedido dele.
 
 ### Regressão do cenário 3 — palavra exata: **APROVADO** (agente `3be9cfed`)
 
-Limpeza antes: `crivo-smoke-reset` 2789 e `smoke:reset` (4 mensagens apagadas do 5c).
+Limpeza antes: `krivo-smoke-reset` 2789 e `smoke:reset` (4 mensagens apagadas do 5c).
 
 | Turno | Execução | Resultado |
 | --- | --- | --- |
@@ -1762,7 +1762,7 @@ Limpeza antes: `crivo-smoke-reset` 2789 e `smoke:reset` (4 mensagens apagadas do
 | 2 — `sair` | 2796 | Gate `opt-out` (antes de qualquer modelo; o classificador não rodou); `POST /leads/{id}/opt-out` gravou `optedOutAt` 15:56:37Z; `Chat Memory Manager: purgar memória (opt-out)` `success: true`; **uma** mensagem enviada, com o texto exato de OPTMSG-01 |
 | 3 — mensagem qualquer | 2800 | Gate `somente-registrar`; nada enviado |
 
-Limpeza final: `crivo-smoke-reset` 2801 e `smoke:reset`, que apagou exatamente 5 mensagens: 3 do lead,
+Limpeza final: `krivo-smoke-reset` 2801 e `smoke:reset`, que apagou exatamente 5 mensagens: 3 do lead,
 a resposta do turno 1 e a confirmação.
 
 ### Veredito da T18: **APROVADO**
@@ -1785,8 +1785,8 @@ memória nos casos que registram está provada pelo nó do próprio fluxo (`succ
 
 Prova conduzida pelo usuário no WhatsApp do número de teste, com o corretor agindo no **Chats do CRM
 de produção** e capturas de tela pela extensão do Chrome. Workflows publicados na T39:
-`crivo-agente-principal` (`0B1nqjODu7xuYYKF`), `crivo-tool-responder-lead` (`Li2hgCX943zKmDXf`,
-`d8e9931e`) e `crivo-agente-scheduler` (`gmIWxiRrHGIdtPub`, `e8b97f8b`). Todo id abaixo foi conferido
+`krivo-agente-principal` (`0B1nqjODu7xuYYKF`), `krivo-tool-responder-lead` (`Li2hgCX943zKmDXf`,
+`d8e9931e`) e `krivo-agente-scheduler` (`gmIWxiRrHGIdtPub`, `e8b97f8b`). Todo id abaixo foi conferido
 por `get_execution`. As mensagens do lead não são reproduzidas; o único texto literal é o fato do
 corretor do caso 6b, literal por contrato do roteiro.
 
@@ -1801,7 +1801,7 @@ o 6c e no fim da prova. Esses lembretes continuam pendentes de limpeza (ver Hand
 
 ### Caso 6a — assumir, responder pelo CRM e receber sem recarregar: **APROVADO**
 
-Limpeza antes: `crivo-smoke-reset` 2804 e `npm run smoke:reset`.
+Limpeza antes: `krivo-smoke-reset` 2804 e `npm run smoke:reset`.
 
 | Turno | Execução | Resultado |
 | --- | --- | --- |
@@ -1848,13 +1848,13 @@ o aviso "Opt-out em 01/10/2026".
 | Lead escreve depois do opt-out | 2837 | Gate `somente-registrar` por `optedOutAt`; gravada, sem resposta |
 | Varredura D do scheduler | 2838 (23:15:00Z) | `GET /memory-resets` trouxe o lead; reset devido; `Postgres: apagar sessão` removeu 14 linhas de `n8n_chat_histories`; `conversa_estado` purgada — 4 min depois do opt-out (limite: 20 min) |
 
-Limpeza depois: `crivo-smoke-reset` 2839 e `smoke:reset`.
+Limpeza depois: `krivo-smoke-reset` 2839 e `smoke:reset`.
 
 ### Caso 6d — `sair` durante a condução humana: **APROVADO**
 
 Lead novo, corretor assumiu a conversa. Execução 2859: com a marca gravada, a palavra exata `sair`
 fez o gate rotear `opt-out`; `POST /leads/{id}/opt-out` gravou `optedOutAt`, a memória foi purgada e
-a confirmação do lote-13 saiu **uma** vez. Limpeza depois: `crivo-smoke-reset` 2863 e `smoke:reset`.
+a confirmação do lote-13 saiu **uma** vez. Limpeza depois: `krivo-smoke-reset` 2863 e `smoke:reset`.
 
 ### Captura da janela fechada (JANELA-01 AC4): **APROVADO**
 
@@ -1863,7 +1863,7 @@ de envio bloqueado com o aviso "A janela fechou em 05/07/2026 às 20:08."
 
 ### Estado final
 
-`crivo-smoke-reset` 2890 e `npm run smoke:reset` depois da segunda rodada do 6b; scheduler
+`krivo-smoke-reset` 2890 e `npm run smoke:reset` depois da segunda rodada do 6b; scheduler
 republicado e ativo (`e8b97f8b`).
 
 ### Observações de qualidade (AD-027, não reprovam)

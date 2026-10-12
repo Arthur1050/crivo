@@ -165,7 +165,7 @@ T6 → T7 → T8
 
 ### T5: Contexto de tenant no servidor (cookie + server action)
 
-**What**: Criar `src/server/tenant.ts`: pure function `resolveActiveTenant(cookieValue, tenants)` (retorna tenant do cookie se válido, senão o primeiro), `getActiveTenantId()` (lê cookie `crivo_tenant` via `cookies()` — assíncrono no Next 16), `setActiveTenant(tenantId)` (server action: valida contra `getTenants`, grava cookie); testes unit da pure function.
+**What**: Criar `src/server/tenant.ts`: pure function `resolveActiveTenant(cookieValue, tenants)` (retorna tenant do cookie se válido, senão o primeiro), `getActiveTenantId()` (lê cookie `krivo_tenant` via `cookies()` — assíncrono no Next 16), `setActiveTenant(tenantId)` (server action: valida contra `getTenants`, grava cookie); testes unit da pure function.
 **Where**: `src/server/tenant.ts`, `src/server/__tests__/tenant.test.ts`
 **Depends on**: T4
 **Reuses**: DAL (`getTenants`)

@@ -144,7 +144,7 @@ export async function inviteUserAction(
   const sent = await sendInvitationEmail({
     to: email,
     name: existing?.name ?? name,
-    tenantName: tenant?.name ?? "Crivo",
+    tenantName: tenant?.name ?? "Krivo",
     url: invitationUrl(invitation.id),
   });
 
@@ -197,7 +197,7 @@ export async function resendInviteAction(
   const sent = await sendInvitationEmail({
     to: member.email,
     name: member.name,
-    tenantName: tenant?.name ?? "Crivo",
+    tenantName: tenant?.name ?? "Krivo",
     url: invitationUrl(invitation.id),
   });
 

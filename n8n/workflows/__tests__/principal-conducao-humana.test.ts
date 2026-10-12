@@ -195,7 +195,7 @@ describe("Code: pode enviar no turno? (canAgentSendInTurn inline)", () => {
 });
 
 describe("ids da leitura vêm do fluxo, nunca do modelo", () => {
-  it("URL e X-Crivo-Tenant do GET vêm de Code: gate, sem $fromAI", () => {
+  it("URL e X-Krivo-Tenant do GET vêm de Code: gate, sem $fromAI", () => {
     const params = nodeByName(GET_LEAD).parameters;
     expect(String(params.url)).toContain("/leads/{{ $('Code: gate').first().json.id }}");
     expect(JSON.stringify(params.headerParameters)).toContain("$('Code: gate').first().json.tenantSlug");

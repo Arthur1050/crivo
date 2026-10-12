@@ -93,7 +93,7 @@ T19 → T20 → T21 → T22
 
 ### T1: Adicionar `slug` ao tenant
 
-**What**: Coluna `slug` em `tenants`, nullable com índice único parcial, aplicada por `drizzle-kit push`. É o identificador que o header `X-Crivo-Tenant` vai carregar e que o n8n já guarda como `tenantSlug`.
+**What**: Coluna `slug` em `tenants`, nullable com índice único parcial, aplicada por `drizzle-kit push`. É o identificador que o header `X-Krivo-Tenant` vai carregar e que o n8n já guarda como `tenantSlug`.
 **Where**: `src/db/schema.ts`
 **Depends on**: None
 **Reuses**: padrão de coluna aditiva nullable + `uniqueIndex(...).where(sql\`... is not null\`)` de `leads.external_id`
@@ -123,7 +123,7 @@ T19 → T20 → T21 → T22
 
 ### T2: Seed com três tenants — demonstração separada da operação
 
-**What**: `TENANT_DEFS` ganha `slug` e `seedLeadData`; nasce o def `Crivo Demo` levando o dataset rico (leads, conversas, mensagens, baselines); Triângulo e Vale do Uberaba mantêm **toda** a configuração (corretores, categorias, documentos, horário comercial, tom de voz, chave de API) e ficam sem nenhum lead, com baselines nulos.
+**What**: `TENANT_DEFS` ganha `slug` e `seedLeadData`; nasce o def `Krivo Demo` levando o dataset rico (leads, conversas, mensagens, baselines); Triângulo e Vale do Uberaba mantêm **toda** a configuração (corretores, categorias, documentos, horário comercial, tom de voz, chave de API) e ficam sem nenhum lead, com baselines nulos.
 **Where**: `src/db/seed.ts`
 **Depends on**: T1
 **Reuses**: `id()` determinístico, o loop por `TENANT_DEFS`, `generateApiKey()`
@@ -137,9 +137,9 @@ T19 → T20 → T21 → T22
 **Done when**:
 
 - [x] `runSeed()` cria exatamente 3 tenants, com `slug` preenchido nos três
-- [x] Teste assevera por contagem: `Crivo Demo` tem leads > 0, conversas > 0 e mensagens > 0; cada tenant-piloto tem **exatamente 0** de cada um dos três
+- [x] Teste assevera por contagem: `Krivo Demo` tem leads > 0, conversas > 0 e mensagens > 0; cada tenant-piloto tem **exatamente 0** de cada um dos três
 - [x] Teste assevera que cada tenant-piloto mantém corretores > 0, categorias > 0, documentos > 0 e uma chave de API
-- [x] Teste assevera `baselineLeadsPerMonth`, `baselineFirstResponseMinutes` e `baselineLeadToMeetingPct` nulos nos dois pilotos e não-nulos no `Crivo Demo`
+- [x] Teste assevera `baselineLeadsPerMonth`, `baselineFirstResponseMinutes` e `baselineLeadToMeetingPct` nulos nos dois pilotos e não-nulos no `Krivo Demo`
 - [x] `runSeed()` continua imprimindo as chaves em claro uma única vez, agora para os 3 tenants
 - [x] Gate check passes: `npx vitest run`
 - [x] Test count: piso real + ~6 (real: 622→624 líquido em `seed.test.ts`; 4 arquivos de teste pré-existentes ajustados como consequência direta — `mutations.test.ts`, `isolation.test.ts`, `reads.test.ts`, `actions.test.ts` — pois assumiam posicionalmente que os 2 primeiros tenants tinham lead, o que deixou de valer com REAL-01)
@@ -266,7 +266,7 @@ T19 → T20 → T21 → T22
 - [x] `next start` numa porta dedicada (build de produção, nunca `next dev`) e captura real das 3 telas no tenant Triângulo Imóveis vazio — feito na porta 3105, após o orquestrador aplicar `drizzle-kit push` + reseed contra produção
 - [x] Nenhum KPI exibe `NaN`, `undefined` ou número inventado — confirmado na captura real do Dashboard: os 5 tiles mostram `—`/`0` (Tempo médio 1ª resposta, Taxa de qualificação, Taxa de escalonamento, Taxa de comparecimento em `—`; Volume de leads em `0`)
 - [x] As 3 colunas do Kanban exibem estado vazio; a lista de conversas exibe estado vazio; os 2 gráficos e a tabela de leads recentes exibem estado vazio — confirmado na captura real: Pipeline (3 colunas "Nenhum lead", badges "0"), Chats ("Nenhuma conversa ainda"), Dashboard (Volume/Distribuição por modalidade/Distribuição por motivação com "Sem leads no período", Leads Recentes com "Nenhum lead ainda")
-- [x] Captura do tenant `Crivo Demo` no mesmo passe, provando que o dataset rico continua renderizando — confirmado na captura real: Chats "25 conversas conduzidas pelo agente Sofia", Pipeline "25 leads ativos" distribuídos 10/8/7 nas 3 colunas com cards completos (corretor, orçamento, modalidade), Dashboard com KPIs reais (Volume 8, Tempo médio 1ª resposta 15min, gráficos e tabela de leads recentes preenchidos)
+- [x] Captura do tenant `Krivo Demo` no mesmo passe, provando que o dataset rico continua renderizando — confirmado na captura real: Chats "25 conversas conduzidas pelo agente Sofia", Pipeline "25 leads ativos" distribuídos 10/8/7 nas 3 colunas com cards completos (corretor, orçamento, modalidade), Dashboard com KPIs reais (Volume 8, Tempo médio 1ª resposta 15min, gráficos e tabela de leads recentes preenchidos)
 - [x] Servidor parado e porta confirmada livre ao final — `Stop-Process` no PID da porta 3105, `Get-NetTCPConnection -LocalPort 3105` confirmou `PORT FREE`
 - [x] Qualquer correção necessária usa componente/prop da Astryx verificado por `npx astryx component <Nome>` — não aplicável: nenhuma correção de código foi necessária (revisão de código e captura real não acharam nenhum buraco; `pipeline-board.tsx` não mudou)
 - [x] Gate check passes: `npx vitest run && npm run lint && npm run build` — 640 testes, 0 falhas, 51 arquivos; lint 0 erros (2 warnings pré-existentes em `n8n/`); build de produção verde
@@ -392,7 +392,7 @@ T19 → T20 → T21 → T22
 
 **Done when**:
 
-- [x] Captura real (build de produção) do painel no tenant `Crivo Demo`: seletor de corretor visível e preenchido — confirmado na captura real (porta 3107): lead Ricardo Almeida com "Corretor: Beatriz Moraes Correia" selecionado no `Selector`
+- [x] Captura real (build de produção) do painel no tenant `Krivo Demo`: seletor de corretor visível e preenchido — confirmado na captura real (porta 3107): lead Ricardo Almeida com "Corretor: Beatriz Moraes Correia" selecionado no `Selector`
 - [x] Captura real do controle de comparecimento num lead com reunião passada, e da ausência dele num lead com reunião futura — confirmado: Ricardo Almeida (reunião 8/jul/2026, no passado em relação a hoje 15/ago/2026) mostra `SegmentedControl` editável (Pendente/Compareceu/Não compareceu); Nathan Ferreira (sem reunião, `meetingAt` nulo) mostra "Compareceu à reunião: Pendente" como texto somente leitura
 - [x] Trocar o corretor pela tela atualiza o nome no card do Kanban sem recarregar a página — confirmado na captura depois da ação: card de Nathan Ferreira passou a exibir o avatar "BC" (Beatriz Correia) imediatamente após fechar o painel, sem nenhuma navegação entre a troca e a captura
 - [x] Marcar comparecimento e conferir na captura do Dashboard que a taxa deixou de estar vazia — confirmado: tile "Taxa de comparecimento" foi de "— · de 0 reuniões confirmadas" para "100% · de 1 reunião confirmada" após marcar "Compareceu" em Ricardo Almeida
@@ -428,7 +428,7 @@ T19 → T20 → T21 → T22
 - [x] A constante `AGENT_SUBTITLE` (`sidebar.tsx:47`) não existe mais
 - [x] A escolha do texto (relativo × ocioso) é função pura em `src/lib/agent-activity.ts` (`formatAgentActivitySubtitle`) com teste cobrindo os dois ramos e o valor nulo
 - [x] Nenhum import nem chamada à instância n8n em todo o caminho — conferido por leitura (INT-08): `sidebar.tsx`, `app/(crm)/layout.tsx` e `src/lib/agent-activity.ts` só importam `getLastAgentMessageAt` (DAL própria do CRM) e `formatRelativeTimePtBR`
-- [x] Captura real (build de produção, porta 3106) da sidebar no `Crivo Demo` ("Sofia — Online / Ativo pela última vez há 3 horas") e no tenant-piloto `Triângulo Imóveis`, recém-semeado sem lead/mensagem ("Lucas — Online / Nenhuma mensagem enviada ainda") — servidor parado e porta 3106 confirmada livre ao final
+- [x] Captura real (build de produção, porta 3106) da sidebar no `Krivo Demo` ("Sofia — Online / Ativo pela última vez há 3 horas") e no tenant-piloto `Triângulo Imóveis`, recém-semeado sem lead/mensagem ("Lucas — Online / Nenhuma mensagem enviada ainda") — servidor parado e porta 3106 confirmada livre ao final
 - [x] Gate check passes: `npx vitest run && npm run lint && npm run build` — 663 testes, 0 falhas, 54 arquivos; lint 0 erros (2 warnings pré-existentes em `n8n/`); build de produção verde
 - [x] Test count: piso real + ~4 (real: +3, `src/lib/__tests__/agent-activity.test.ts`; 660→663)
 
@@ -532,7 +532,7 @@ T19 → T20 → T21 → T22
 
 ### T15: Modo de autenticação de serviço no contrato
 
-**What**: `authenticate()` tenta primeiro a chave de serviço; achando, exige `X-Crivo-Tenant` e resolve o tenant pelo slug. Não achando, cai no caminho por chave de tenant, **inalterado**.
+**What**: `authenticate()` tenta primeiro a chave de serviço; achando, exige `X-Krivo-Tenant` e resolve o tenant pelo slug. Não achando, cai no caminho por chave de tenant, **inalterado**.
 **Where**: `src/server/integration/auth.ts`
 **Depends on**: T14
 **Reuses**: `problem()` (AD-013), extração de bearer já existente
@@ -545,10 +545,10 @@ T19 → T20 → T21 → T22
 
 **Done when**:
 
-- [x] Chave de serviço + `X-Crivo-Tenant` válido resolve o tenant correto
+- [x] Chave de serviço + `X-Krivo-Tenant` válido resolve o tenant correto
 - [x] Chave de serviço **sem** o header: `401` com `code: tenant-nao-identificado`
 - [x] Chave de serviço com slug desconhecido: `401` com `code: tenant-nao-identificado` — teste assevera que **não** cai em nenhum tenant default
-- [x] Chave por tenant continua funcionando exatamente como antes, **inclusive ignorando** um `X-Crivo-Tenant` presente e divergente — teste discriminante: chave do tenant A + header do tenant B resolve A
+- [x] Chave por tenant continua funcionando exatamente como antes, **inclusive ignorando** um `X-Krivo-Tenant` presente e divergente — teste discriminante: chave do tenant A + header do tenant B resolve A
 - [x] `authenticate()` continua sem ler o corpo da requisição — conferido por leitura (`src/server/integration/auth.ts` só lê `request.headers`, nunca `request.json()`/`.body`)
 - [x] Ao menos uma rota real (`POST /api/v1/leads`) testada nos dois modos ponta a ponta — modo por chave de tenant já coberto pelo describe existente; modo de serviço coberto pelo novo describe em `leads-post.test.ts`
 - [x] Gate check passes: `npx vitest run` — 678 testes, 0 falhas, 55 arquivos
@@ -565,7 +565,7 @@ T19 → T20 → T21 → T22
 
 ### T16: Documentar o modo de serviço no contrato
 
-**What**: `openapi.yaml` ganha o esquema de segurança novo, o header `X-Crivo-Tenant` e o `code` de erro `tenant-nao-identificado`; o guia de integração ganha a seção correspondente.
+**What**: `openapi.yaml` ganha o esquema de segurança novo, o header `X-Krivo-Tenant` e o `code` de erro `tenant-nao-identificado`; o guia de integração ganha a seção correspondente.
 **Where**: `docs/integration/openapi.yaml`
 **Depends on**: T15
 **Reuses**: teste existente que valida o arquivo por `SwaggerParser.validate()`
@@ -579,7 +579,7 @@ T19 → T20 → T21 → T22
 **Done when**:
 
 - [x] `openapi.yaml` continua passando `SwaggerParser.validate()` (teste já existente, verde)
-- [x] Os dois modos de auth documentados, com a regra de precedência explícita (securitySchemes `bearerAuth`/`serviceAuth`, parâmetro `X-Crivo-Tenant`, `code: tenant-nao-identificado` no enum e na resposta `NaoAutenticado`)
+- [x] Os dois modos de auth documentados, com a regra de precedência explícita (securitySchemes `bearerAuth`/`serviceAuth`, parâmetro `X-Krivo-Tenant`, `code: tenant-nao-identificado` no enum e na resposta `NaoAutenticado`)
 - [x] `docs/integration/guia-integracao.md` atualizado na mesma passada (seção 1 reescrita com os dois modos e a regra de precedência)
 - [x] Gate check passes: `npx vitest run && npm run lint && npm run build` — 678 testes, 0 falhas, 55 arquivos (sem variação — task reusa o teste já existente); lint 0 erros (2 warnings pré-existentes em `n8n/`); build de produção verde
 
@@ -594,7 +594,7 @@ T19 → T20 → T21 → T22
 
 ### T17: Fluxo n8n usa a credencial de serviço · HUMAN GATE
 
-**What**: Os 8 pontos que hoje montam `Authorization` por expressão (`n8n/workflows/principal.ts:418,474,547,638,799,999,1040,1074`) passam a usar a credencial `httpHeaderAuth` do nó + header `X-Crivo-Tenant` com o `tenantSlug`. A coluna `apiKey` sai da Data Table `tenant_config` e de todo o encadeamento de contexto. Mesma troca nos 2 sub-workflows.
+**What**: Os 8 pontos que hoje montam `Authorization` por expressão (`n8n/workflows/principal.ts:418,474,547,638,799,999,1040,1074`) passam a usar a credencial `httpHeaderAuth` do nó + header `X-Krivo-Tenant` com o `tenantSlug`. A coluna `apiKey` sai da Data Table `tenant_config` e de todo o encadeamento de contexto. Mesma troca nos 2 sub-workflows.
 **Where**: `n8n/workflows/principal.ts`
 **Depends on**: T16
 **Reuses**: pipeline de publicação do `n8n/README.md` §1 (`scripts/n8n-inline.mjs` → MCP)
@@ -620,7 +620,7 @@ T19 → T20 → T21 → T22
 
 **Status**: Done
 
-**Nota (Phase 4, 2026-08-16)**: HUMAN GATE cumprido — usuário criou a credencial `httpHeaderAuth` "Crivo - chave de servico" (`YhGcdfGtdEBBU9YP`). Slugs reconciliados antes da troca: `tenant_config` tinha 1 linha, `tenantSlug: "triangulo"`, batendo com `src/db/seed.ts` — sem divergência. Coluna `apiKey` removida via `delete_data_table_column` e ausência reconfirmada por `search_data_tables` (restam `phoneNumberId`, `tenantSlug`, `calendarId`). Execução real **664** (confirmada por consulta): `X-Crivo-Tenant: triangulo` → lead `1ed76ddb-5b89-43fc-a30e-d1e216cd4a67` criado em produção (corroborado independentemente pelo orquestrador via query direta no banco). Teste negativo, execução **665**: slug inexistente → `{"type":"urn:crivo:problem:tenant-nao-identificado","status":401}` — nunca cai em tenant default. Commit `8c8c009`. **Ressalva honesta**: o round-trip completo pelo `whatsAppTrigger` não é acionável por MCP (só Schedule/Webhook/Form/Chat/Manual) — foi provado por workflow scratch com a config publicada idêntica, e o round-trip real ficou coberto pela Phase 4. As 2 linhas inertes de `conversa_estado` **permanecem**: não existe tool de delete de linha na superfície MCP de Data Table (só coluna/tabela).
+**Nota (Phase 4, 2026-08-16)**: HUMAN GATE cumprido — usuário criou a credencial `httpHeaderAuth` "Krivo - chave de servico" (`YhGcdfGtdEBBU9YP`). Slugs reconciliados antes da troca: `tenant_config` tinha 1 linha, `tenantSlug: "triangulo"`, batendo com `src/db/seed.ts` — sem divergência. Coluna `apiKey` removida via `delete_data_table_column` e ausência reconfirmada por `search_data_tables` (restam `phoneNumberId`, `tenantSlug`, `calendarId`). Execução real **664** (confirmada por consulta): `X-Krivo-Tenant: triangulo` → lead `1ed76ddb-5b89-43fc-a30e-d1e216cd4a67` criado em produção (corroborado independentemente pelo orquestrador via query direta no banco). Teste negativo, execução **665**: slug inexistente → `{"type":"urn:krivo:problem:tenant-nao-identificado","status":401}` — nunca cai em tenant default. Commit `8c8c009`. **Ressalva honesta**: o round-trip completo pelo `whatsAppTrigger` não é acionável por MCP (só Schedule/Webhook/Form/Chat/Manual) — foi provado por workflow scratch com a config publicada idêntica, e o round-trip real ficou coberto pela Phase 4. As 2 linhas inertes de `conversa_estado` **permanecem**: não existe tool de delete de linha na superfície MCP de Data Table (só coluna/tabela).
 
 **Tests**: none
 **Gate**: build
@@ -779,7 +779,7 @@ T19 → T20 → T21 → T22
 
 **Status**: Done
 
-**Nota (2026-08-22)**: rota de expiração disparada em produção pela primeira vez desde que existe (lote-5): `POST https://crivo-plum.vercel.app/api/cron/expire-documents` com `Authorization: Bearer $CRON_SECRET` (secret fornecido pelo usuário, nunca impresso em log/output) → `200 {"deletedByTenant":{},"total":0}`. Contagem 0 é o resultado honesto e esperado: consulta direta ao banco de produção (script descartável em `scratch/`, removido depois, nunca commitado) confirmou que só existem **3 documentos com `expiresAt` preenchido em toda a produção** — um por tenant (`vale-uberaba`, `triangulo`, `crivo-demo`), todos "Modelo de Contrato Padrão.docx", todos com prazo `2027-01-01T00:00:00Z` — nenhum ainda vencido. Não há, hoje, nenhum documento expirado para a rota deletar nem para `GET /api/v1/context` excluir. **Item 2 do Done-when** ficou provado por leitura de código + consulta ao banco, não por chamada HTTP autenticada ao vivo: `src/server/integration/context.ts:53` já filtra `expiresAt IS NULL OR expiresAt > now()` na própria query de leitura, independente do cron já ter rodado (comentário no próprio arquivo cita LGPD-02 AC2); com `EXPIRED_NOW_COUNT: 0` confirmado no banco, a exclusão é vacuamente satisfeita hoje e coberta por `context.test.ts`/`context-get.test.ts`/`cron-expire-documents.test.ts`. Não foi feita uma chamada HTTP real a `GET /api/v1/context` porque nenhuma chave de API (tenant ou serviço) em texto claro está disponível para o agente nesta sessão — por desenho deliberado do SEC-01/T14, o valor só é impresso uma vez no seed e nunca persistido; gerar uma chave nova via reseed para essa checagem rotacionaria credenciais reais de produção, ação fora do escopo autorizado desta task. Registrado como limitação honesta, não como lacuna de cobertura: o dia em que o primeiro documento realmente expirar (2027-01-01, salvo mudança de seed) é a primeira oportunidade real de observar a exclusão via API ao vivo. AD-020 registrada em `.specs/STATE.md` (`## Decisions`, após AD-019) com o roadmap emendado exatamente como especificado; AD-006 marcada `amended by AD-020`. Rastreabilidade de `spec.md` atualizada no mesmo commit: os 9 requirement IDs saem de `Pending` para `Implementing` (referenciando as tasks que os provam), com o Coverage explicando que o salto para `Verified` fica reservado ao Verifier. Gate final: `npx vitest run && npm run lint && npm run build` — **693 testes passando, 55 arquivos, 0 falhas** (piso real 622 → 693, +71 líquidos, batendo exatamente com a soma dos deltas reais registrados task a task); lint 0 erros, 2 warnings pré-existentes em `n8n/` (`scheduler.ts`/`generated/scheduler.ts`, `ifElse` não usado — mesmos warnings já presentes desde antes deste lote); build de produção verde, as 14 rotas do app compiladas sem erro. Nenhum teste removido ou enfraquecido em nenhuma task do lote.
+**Nota (2026-08-22)**: rota de expiração disparada em produção pela primeira vez desde que existe (lote-5): `POST https://crivo-plum.vercel.app/api/cron/expire-documents` com `Authorization: Bearer $CRON_SECRET` (secret fornecido pelo usuário, nunca impresso em log/output) → `200 {"deletedByTenant":{},"total":0}`. Contagem 0 é o resultado honesto e esperado: consulta direta ao banco de produção (script descartável em `scratch/`, removido depois, nunca commitado) confirmou que só existem **3 documentos com `expiresAt` preenchido em toda a produção** — um por tenant (`vale-uberaba`, `triangulo`, `krivo-demo`), todos "Modelo de Contrato Padrão.docx", todos com prazo `2027-01-01T00:00:00Z` — nenhum ainda vencido. Não há, hoje, nenhum documento expirado para a rota deletar nem para `GET /api/v1/context` excluir. **Item 2 do Done-when** ficou provado por leitura de código + consulta ao banco, não por chamada HTTP autenticada ao vivo: `src/server/integration/context.ts:53` já filtra `expiresAt IS NULL OR expiresAt > now()` na própria query de leitura, independente do cron já ter rodado (comentário no próprio arquivo cita LGPD-02 AC2); com `EXPIRED_NOW_COUNT: 0` confirmado no banco, a exclusão é vacuamente satisfeita hoje e coberta por `context.test.ts`/`context-get.test.ts`/`cron-expire-documents.test.ts`. Não foi feita uma chamada HTTP real a `GET /api/v1/context` porque nenhuma chave de API (tenant ou serviço) em texto claro está disponível para o agente nesta sessão — por desenho deliberado do SEC-01/T14, o valor só é impresso uma vez no seed e nunca persistido; gerar uma chave nova via reseed para essa checagem rotacionaria credenciais reais de produção, ação fora do escopo autorizado desta task. Registrado como limitação honesta, não como lacuna de cobertura: o dia em que o primeiro documento realmente expirar (2027-01-01, salvo mudança de seed) é a primeira oportunidade real de observar a exclusão via API ao vivo. AD-020 registrada em `.specs/STATE.md` (`## Decisions`, após AD-019) com o roadmap emendado exatamente como especificado; AD-006 marcada `amended by AD-020`. Rastreabilidade de `spec.md` atualizada no mesmo commit: os 9 requirement IDs saem de `Pending` para `Implementing` (referenciando as tasks que os provam), com o Coverage explicando que o salto para `Verified` fica reservado ao Verifier. Gate final: `npx vitest run && npm run lint && npm run build` — **693 testes passando, 55 arquivos, 0 falhas** (piso real 622 → 693, +71 líquidos, batendo exatamente com a soma dos deltas reais registrados task a task); lint 0 erros, 2 warnings pré-existentes em `n8n/` (`scheduler.ts`/`generated/scheduler.ts`, `ifElse` não usado — mesmos warnings já presentes desde antes deste lote); build de produção verde, as 14 rotas do app compiladas sem erro. Nenhum teste removido ou enfraquecido em nenhuma task do lote.
 
 **Tests**: none
 **Gate**: build

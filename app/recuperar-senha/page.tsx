@@ -5,7 +5,7 @@ import { RequestPasswordResetForm } from "@/src/components/auth/request-password
 import { ResetPasswordForm } from "@/src/components/auth/reset-password-form";
 
 export const metadata: Metadata = {
-  title: "Recuperar senha — Crivo",
+  title: "Recuperar senha — Krivo",
 };
 
 /**

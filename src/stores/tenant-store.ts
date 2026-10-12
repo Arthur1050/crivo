@@ -5,7 +5,7 @@ import { create } from "zustand";
  * header, item selecionado no seletor).
  *
  * A fonte de verdade é o `activeOrganizationId` da SESSÃO autenticada
- * (AD-021, que emenda a AD-007) — não mais o cookie `crivo_tenant`, que deixou
+ * (AD-021, que emenda a AD-007) — não mais o cookie `krivo_tenant`, que deixou
  * de existir como mecanismo. Esta store continua sendo só espelho: não usa
  * `zustand/persist` / localStorage, e é inicializada e atualizada
  * exclusivamente a partir do que o servidor já resolveu e validou contra os

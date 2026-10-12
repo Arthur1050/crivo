@@ -77,7 +77,7 @@ export async function pushToTargets(
 ): Promise<number> {
   if (!password) {
     logger.error(
-      "VITRINE_TEST_DB_PASSWORD não definida no ambiente local: sem ela o papel crivo_vitrine ficaria sem senha. Nenhum alvo foi tocado."
+      "VITRINE_TEST_DB_PASSWORD não definida no ambiente local: sem ela o papel krivo_vitrine ficaria sem senha. Nenhum alvo foi tocado."
     );
     return 1;
   }

@@ -36,7 +36,7 @@ conta contra o modelo** — o que a bateria julga é a chamada de tool, não a e
 
 ## 2. Mecanismo de disparo
 
-`crivo-agente-principal` (`0B1nqjODu7xuYYKF`) dispara por `whatsAppTrigger`. `execute_workflow` do
+`krivo-agente-principal` (`0B1nqjODu7xuYYKF`) dispara por `whatsAppTrigger`. `execute_workflow` do
 MCP **não** aceita esse tipo de trigger (só Schedule/Webhook/Form/Chat/Manual — registrado em
 `n8n/README.md` §12.2). O disparo da bateria é portanto:
 

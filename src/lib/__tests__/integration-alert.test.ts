@@ -92,10 +92,10 @@ describe("formatIntegrationAlertEmail — ALERTA-02", () => {
 
   it("assunto traz N exato para 1 e para 3 tenants (AC2)", () => {
     expect(formatIntegrationAlertEmail([refused]).subject).toBe(
-      "[crivo] Integração com problema em 1 imobiliária(s)"
+      "[krivo] Integração com problema em 1 imobiliária(s)"
     );
     expect(formatIntegrationAlertEmail([refused, silent, third]).subject).toBe(
-      "[crivo] Integração com problema em 3 imobiliária(s)"
+      "[krivo] Integração com problema em 3 imobiliária(s)"
     );
   });
 
@@ -116,7 +116,7 @@ describe("formatIntegrationAlertEmail — ALERTA-02", () => {
 
   it("test: true prefixa o assunto com [teste] (T2 Done when)", () => {
     expect(formatIntegrationAlertEmail([refused], { test: true }).subject).toBe(
-      "[teste] [crivo] Integração com problema em 1 imobiliária(s)"
+      "[teste] [krivo] Integração com problema em 1 imobiliária(s)"
     );
     expect(formatIntegrationAlertEmail([refused]).subject.startsWith("[teste]")).toBe(false);
   });

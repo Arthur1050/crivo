@@ -35,8 +35,8 @@ export default async function ConvitePage({
               <Heading level={1}>Ativar sua conta</Heading>
               <Text type="body" color="secondary">
                 {tenant
-                  ? `Você foi convidado para o Crivo da ${tenant.name}. Defina uma senha para entrar.`
-                  : "Defina uma senha para entrar no Crivo."}
+                  ? `Você foi convidado para o Krivo da ${tenant.name}. Defina uma senha para entrar.`
+                  : "Defina uma senha para entrar no Krivo."}
               </Text>
             </VStack>
             <AcceptInvitationForm token={token} email={usable.email} />

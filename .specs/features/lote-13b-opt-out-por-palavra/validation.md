@@ -56,7 +56,7 @@
 | Criterion | Spec-defined outcome | `file:line` + asserção | Result |
 | --- | --- | --- | --- |
 | AC1 sem workflow/script/corpus/placar/testes/lock | arquivos ausentes, sem referência ativa | Os 9 arquivos de `tasks.md:196` não existem (`test -e`); `git grep` de `medicao-opt-out|opt-out-score|opt-out-corpus|opt-out-measurement|buildClassifierInput|refineOptOutCategory|assertApprovedIdentity|classifierIdentity` em `n8n/ scripts/ src/ package.json` só acha a lista de nomes removidos em `principal-sem-classificador.test.ts:68-77` | ✅ PASS (resíduos só em comentários, ver gaps 4-5) |
-| AC2 `crivo-medicao-opt-out` arquivado | arquivado | MCP `get_workflow_details n5iAMCl5nSM6jA6U` → "is archived and cannot be accessed"; `search_workflows "medicao"` → 0 | ✅ PASS (produção) |
+| AC2 `krivo-medicao-opt-out` arquivado | arquivado | MCP `get_workflow_details n5iAMCl5nSM6jA6U` → "is archived and cannot be accessed"; `search_workflows "medicao"` → 0 | ✅ PASS (produção) |
 | AC3 AD que supersede AD-032 e restaura AD-018/AD-026 | AD registrada e status emendados | `.specs/STATE.md:340` (AD-038 Decision: "Supersede a AD-032, restaura a exclusividade do gate da AD-018 e o escopo de modelo único da AD-026"); `.specs/STATE.md:296` AD-032 `superseded by AD-038`; `:182` AD-018 `amended by AD-038`; `:246` AD-026 `amended by AD-038` | ✅ PASS · ⚠️ ver gap 6 (D11) |
 
 ### SAIR-05 — Hotfix em produção com prova real

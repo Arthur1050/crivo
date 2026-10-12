@@ -11,7 +11,7 @@ function harness(send: (message: { to: string; subject: string; text: string }) 
 }
 
 describe("L15 T7 — comando de envio de teste do alerta (ALERTA-04 AC3)", () => {
-  it("envia ao destinatário do ambiente com o assunto [teste] [crivo] e sai com 0", async () => {
+  it("envia ao destinatário do ambiente com o assunto [teste] [krivo] e sai com 0", async () => {
     const send = vi.fn(async (): Promise<EmailResult> => ({ ok: true, id: "email_1" }));
     const { deps, out } = harness(send);
 
@@ -21,7 +21,7 @@ describe("L15 T7 — comando de envio de teste do alerta (ALERTA-04 AC3)", () =>
     expect(send).toHaveBeenCalledTimes(1);
     const message = send.mock.calls[0] as unknown as [{ to: string; subject: string; text: string }];
     expect(message[0].to).toBe(OPERATOR);
-    expect(message[0].subject.startsWith("[teste] [crivo] Integração com problema em ")).toBe(true);
+    expect(message[0].subject.startsWith("[teste] [krivo] Integração com problema em ")).toBe(true);
     expect(out.join("\n")).not.toContain(OPERATOR);
   });
 
@@ -46,7 +46,7 @@ describe("L15 T7 — comando de envio de teste do alerta (ALERTA-04 AC3)", () =>
 
     expect(code).toBe(1);
     expect(send).not.toHaveBeenCalled();
-    expect(err.join("\n")).toContain("CRIVO_OPERATOR_ALERT_EMAIL");
+    expect(err.join("\n")).toContain("KRIVO_OPERATOR_ALERT_EMAIL");
   });
 
   it("ok: false sai com 1 e imprime o erro do adaptador", async () => {

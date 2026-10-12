@@ -109,7 +109,7 @@ graph TD
         SEARCH["integration/properties.ts<br/>searchVisibleProperties + DTO"]
     end
 
-    subgraph N8N["n8n — crivo-agente-principal"]
+    subgraph N8N["n8n — krivo-agente-principal"]
         TOOL["buscar_imoveis<br/>httpRequestTool"]
         SYS["system-message.mjs<br/>fronteira + catálogo de tools"]
         AGENT["AI Agent (6 tools)"]
@@ -159,7 +159,7 @@ de prompt não vence.
 | `formatCurrencyBRL` | `src/lib/format.ts:12` | Formata centavos em "R$ 450.000,00" — tanto na tabela do CRM quanto no DTO da rota. |
 | Página de Documentos | `app/(crm)/documentos/page.tsx` | Molde do RSC: lê `searchParams`, consulta duas vezes (tudo × filtrado) para distinguir os dois vazios. |
 | `DocumentsTable` / `DocumentsToolbar` | `src/components/documents/` | Molde de `Table` + `pixel`/`proportional`, `DropdownMenu` de linha, `AlertDialog` de exclusão, e filtro escrito na URL com debounce de 300 ms. |
-| `consultarDocumentosTool` | `n8n/workflows/principal.ts:1153` | Molde do nó: `X-Crivo-Tenant` por expressão, `httpHeaderAuth`, `neverError`, `retryOnFail`. |
+| `consultarDocumentosTool` | `n8n/workflows/principal.ts:1153` | Molde do nó: `X-Krivo-Tenant` por expressão, `httpHeaderAuth`, `neverError`, `retryOnFail`. |
 | `modalityEnum` | `src/db/schema.ts:22` | Reusado como está para a modalidade do imóvel. |
 | Índice único parcial de `leads` | `src/db/schema.ts` (`leads_assigned_user_id_meeting_at_idx`) | Molde da disciplina "a trava é do banco, não da aplicação". |
 
@@ -167,8 +167,8 @@ de prompt não vence.
 
 | Sistema | Método de integração |
 | --- | --- |
-| Contrato `/api/v1` | Rota nova sob o mesmo wrapper, mesma credencial de serviço, mesmo `X-Crivo-Tenant`. Nenhuma mudança nas 7 rotas existentes. |
-| `crivo-agente-principal` | Uma tool a mais no array `subnodes.tools` do nó `AI Agent` (`principal.ts:1333`). Nenhum outro nó muda. |
+| Contrato `/api/v1` | Rota nova sob o mesmo wrapper, mesma credencial de serviço, mesmo `X-Krivo-Tenant`. Nenhuma mudança nas 7 rotas existentes. |
+| `krivo-agente-principal` | Uma tool a mais no array `subnodes.tools` do nó `AI Agent` (`principal.ts:1333`). Nenhum outro nó muda. |
 | `n8n/src/system-message.mjs` | Duas edições cirúrgicas: a fronteira de capacidade e o catálogo de tools. |
 | Schema | Tabela nova + 2 enums novas. Nenhuma tabela existente alterada. |
 | Seed | Bloco novo ao final, depois de tenants e usuários existirem. |
@@ -376,7 +376,7 @@ tira do modelo a tarefa de formatar moeda, que é onde ele erra ordem de grandez
 
 ### Fluxo n8n
 
-- **`n8n/workflows/principal.ts`**: `buscarImoveisTool` (`n8n-nodes-base.httpRequestTool` v4.5), `retryOnFail: true`, `maxTries: 2`, `neverError`, `X-Crivo-Tenant` por expressão de `Code: gate`, credencial `Crivo - chave de servico`, e um `$fromAI` por filtro. Entra no array `subnodes.tools` do `AI Agent`.
+- **`n8n/workflows/principal.ts`**: `buscarImoveisTool` (`n8n-nodes-base.httpRequestTool` v4.5), `retryOnFail: true`, `maxTries: 2`, `neverError`, `X-Krivo-Tenant` por expressão de `Code: gate`, credencial `Krivo - chave de servico`, e um `$fromAI` por filtro. Entra no array `subnodes.tools` do `AI Agent`.
 - **`retryOnFail`/`maxTries` vão em `config`, não em `parameters`** — o commit `a80760c` corrigiu exatamente esse erro em `consultar_documentos`: aninhados dentro de `parameters`, o schema do nó não os aplica e o retry nunca é configurado.
 - **`n8n/src/system-message.mjs`**: `CAPABILITY_BOUNDARY_INSTRUCTION` perde "NÃO busca imóveis" e "NÃO informa preços" e mantém a proibição de foto/arquivo; `TOOLS_CATALOG_INSTRUCTION` ganha a linha de `buscar_imoveis`, incluindo a regra de resultado vazio (declarar a ausência, nunca inventar).
 - **`n8n/generated/principal.ts`**: regenerado. A publicação confere SHA-256 antes de ativar (AD-027 / disciplina do lote-10).
@@ -415,7 +415,7 @@ tira do modelo a tarefa de formatar moeda, que é onde ele erra ordem de grandez
 | **`bigint` não é JSON-safe** | `src/server/integration/leads.ts:73` mostra o precedente | `JSON.stringify` estoura com `priceCents` cru, e o erro aparece só na rota, não no teste de DAL | O DTO nunca carrega `bigint`: `preco` sai formatado por `formatCurrencyBRL`. Teste de rota assertando o tipo do campo |
 | **`unaccent` não está disponível sem `CREATE EXTENSION`** | Postgres do Neon | O Edge Case de acento no filtro falharia silenciosamente, devolvendo lista vazia em vez de erro | Colunas `*Normalized` preenchidas na escrita + `normalizeForSearch` puro dos dois lados. Zero dependência de extensão |
 | **Duas suítes concorrentes se corrompem** | `STATE.md § Handoff` (achado da T16 do lote-10) | Falha falsa convincente (`23503`, contagem de tenants divergente) interpretada como regressão do lote | Cada task roda o gate isolado, confirmando que nenhum outro processo `node` está vivo antes de aceitar uma falha como real |
-| **Paridade fonte × instância já tem dívida** | `evidencia.md` §14.7 do lote-10 (`crivo-tool-agendar-reuniao` publicado é cópia minificada) | Publicar o principal sem conferir hash repetiria o problema no workflow que este lote toca | Conferência de SHA-256 antes de ativar, já exigida por `BUSCA-04` (Tool AC12). A dívida do `agendar_reuniao` **não** é tocada por este lote |
+| **Paridade fonte × instância já tem dívida** | `evidencia.md` §14.7 do lote-10 (`krivo-tool-agendar-reuniao` publicado é cópia minificada) | Publicar o principal sem conferir hash repetiria o problema no workflow que este lote toca | Conferência de SHA-256 antes de ativar, já exigida por `BUSCA-04` (Tool AC12). A dívida do `agendar_reuniao` **não** é tocada por este lote |
 | **`openapi.yaml` já está desatualizado** | dívida herdada do lote-8, listada em `STATE.md § Handoff` | A rota nova aumentaria a divergência | Documentar a rota nova no `openapi.yaml` **é** task deste lote. O restante da dívida (`assignedBroker`, os 2 códigos do lote-8) continua no L14, não é adotado aqui |
 | **Excluir usuário passa a poder falhar** | `src/server/actions/users.ts` / `deactivate.ts` | A FK `captured_by_user_id` rejeita a exclusão de quem ainda capta — comportamento novo numa tela que este lote não é dono | Task dedicada: traduzir a violação de FK numa mensagem de recusa legível na tela de Usuários, com teste. Desativação (que não apaga a linha, USER-02) continua funcionando |
 

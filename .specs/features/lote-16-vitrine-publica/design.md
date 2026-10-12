@@ -19,7 +19,7 @@ graph TD
     V -->|revalidateTag tenant:slug:catalogo, expire 0| C[(Cache use cache)]
     VIS[Visitante / WhatsApp] -->|GET /c/slug| V
     V -->|cache miss| C
-    C -->|crivo_vitrine: SELECT só nas views| VW[schema vitrine: lojas, imoveis]
+    C -->|krivo_vitrine: SELECT só nas views| VW[schema vitrine: lojas, imoveis]
     VW --> PG
     V -->|wa.me link| WA[WhatsApp do agente]
 ```
@@ -27,7 +27,7 @@ graph TD
 - **O CRM continua como está** (AD-007: RSC-first, `cacheComponents` desligado). Ganha uma tabela,
   uma coluna, uma seção em Configurações, um toggle em Imóveis e um cliente HTTP de revalidação.
 - **A vitrine** (`vitrine/`) é um Next 16.2.11 com `cacheComponents: true`, sem `proxy.ts`, sem
-  autenticação, sem escrita. Lê só pelo papel `crivo_vitrine`, que só enxerga duas views.
+  autenticação, sem escrita. Lê só pelo papel `krivo_vitrine`, que só enxerga duas views.
 - **A fronteira de segurança é o banco**: o papel não tem privilégio em nenhuma tabela de `public`;
   as views já aplicam o corte de visibilidade (loja ativa com CRECI, imóvel `disponivel` e publicado)
   e expõem só colunas públicas. Um bug na vitrine não consegue ler `leads`, endereço do imóvel,
@@ -57,7 +57,7 @@ graph TD
 | Matriz de permissões | `src/lib/permissions.ts` | `configuracoes:escrever` (Vitrine) e `imoveis:escrever` (destaque); nada novo na matriz |
 | Configurações e `SettingsForm` | `app/(crm)/configuracoes/page.tsx`, `src/components/settings/settings-form.tsx` | Nova seção em Card de settings, mesmo padrão de `BaselineForm` |
 | Ação de configurações do tenant | `src/server/actions/settings.ts` | Passa a agendar revalidação e a recusar apagar o WhatsApp com vitrine ativa |
-| Conexão por worker | `src/db/test-connection.ts:22` | Mesma derivação de URL para o papel `crivo_vitrine` (troca usuário/senha) |
+| Conexão por worker | `src/db/test-connection.ts:22` | Mesma derivação de URL para o papel `krivo_vitrine` (troca usuário/senha) |
 | `db:push:test` | `scripts/test-db-push.ts` | Passa a fazer: derrubar schema `vitrine` → `drizzle-kit push` → aplicar SQL da vitrine, em cada alvo |
 | Padrão de mock de `next/cache` em testes de action | `src/server/__tests__/properties-actions.test.ts:41` | Mesmo padrão para `next/server` (`after`) |
 | Seed determinístico | `src/db/seed.ts` | Vitrine ativa para um tenant do seed, inativa para outro, destaques |
@@ -69,7 +69,7 @@ graph TD
 | System | Integration Method |
 | --- | --- |
 | Postgres (CRM) | Drizzle, papel dono, schema `public` (inalterado) |
-| Postgres (vitrine) | `pg` + Drizzle com `pgView(...).existing()` no schema `vitrine`, papel `crivo_vitrine` |
+| Postgres (vitrine) | `pg` + Drizzle com `pgView(...).existing()` no schema `vitrine`, papel `krivo_vitrine` |
 | CRM → vitrine | `POST {VITRINE_PUBLIC_URL}/api/revalidar`, `Authorization: Bearer {VITRINE_REVALIDATE_SECRET}`, corpo `{"slug": "..."}` |
 | Vitrine → WhatsApp | Link `https://wa.me/<dígitos>?text=<mensagem codificada>` |
 | Vitrine → robôs de prévia | `generateMetadata` (OG/Twitter) + `opengraph-image` gerado com `next/og` |
@@ -90,7 +90,7 @@ graph TD
 #### SQL da vitrine (`scripts/vitrine/vitrine.sql` + `scripts/vitrine/apply.ts`)
 
 - **Purpose**: garantir os checks de `tenant_storefronts` (o `drizzle-kit push` não aplica check,
-  Handoff do L15), criar/atualizar schema `vitrine`, as duas views, o papel `crivo_vitrine` e os
+  Handoff do L15), criar/atualizar schema `vitrine`, as duas views, o papel `krivo_vitrine` e os
   grants. Idempotente.
 - **Interfaces**: `applyVitrineSql(url, { password? })`; `dropVitrineSchema(url)`.
 - **Dependencies**: `pg`. A senha do papel vem de variável do ambiente local nos alvos de teste e
@@ -198,7 +198,7 @@ vitrine/
   inativo, imóveis em todas as combinações de status e publicação, e **sentinelas** de PII (nome e
   e-mail do captador, logradouro, número, complemento, um lead com nome e telefone).
 - `scripts/vitrine-e2e.ts` (`npm run vitrine:e2e`): aplica a fixture, roda `next build` e
-  `next start` da vitrine com o papel `crivo_vitrine` e segredo aleatório, faz as asserções por HTTP,
+  `next start` da vitrine com o papel `krivo_vitrine` e segredo aleatório, faz as asserções por HTTP,
   captura o stdout do servidor, derruba o processo e limpa a fixture. Não roda junto com testes
   pontuais na branch `test` (L-033).
 
@@ -262,14 +262,14 @@ Fora das views, de propósito: `id`s, `tenant_id`, `street`, `number`, `compleme
 `captured_by_user_id`, `status`, `published`, `sequence`, colunas normalizadas e tudo de `tenants`
 que não é identidade pública.
 
-### Papel `crivo_vitrine`
+### Papel `krivo_vitrine`
 
 ```sql
-create role crivo_vitrine login;                       -- senha definida à parte
-alter role crivo_vitrine set default_transaction_read_only = on;
-alter role crivo_vitrine set statement_timeout = '5s';
-grant usage on schema vitrine to crivo_vitrine;
-grant select on vitrine.lojas, vitrine.imoveis to crivo_vitrine;
+create role krivo_vitrine login;                       -- senha definida à parte
+alter role krivo_vitrine set default_transaction_read_only = on;
+alter role krivo_vitrine set statement_timeout = '5s';
+grant usage on schema vitrine to krivo_vitrine;
+grant select on vitrine.lojas, vitrine.imoveis to krivo_vitrine;
 -- nenhum grant em public; nenhuma associação a neon_superuser
 ```
 
@@ -312,7 +312,7 @@ grant select on vitrine.lojas, vitrine.imoveis to crivo_vitrine;
 | URLs de foto arbitrárias cadastradas pelo gestor | `src/db/schema.ts:1119` | Hotlink bloqueado, imagem quebrada | Aceito; `alt` e proporção fixa; upload para Blob adiado |
 | `.claude` fora do git: patch de lições local | AD-028 | — | Sem impacto no L16 |
 | Suíte raiz passa a coletar testes de `vitrine/` | `vitest.config.ts:43` | Duas cópias de `next`/`drizzle-orm` resolvidas | Consultas da vitrine sem import de `next`; F13 no gate; `tsconfig` e lint da raiz excluem `vitrine/` |
-| Testes do CRM chamando a vitrine real | `vitest.config.ts:41` | Requisição externa durante a suíte | `VITRINE_PUBLIC_URL` e `VITRINE_REVALIDATE_SECRET` vazios no bloco env do Vitest (mesmo padrão do `CRIVO_OPERATOR_ALERT_EMAIL`) |
+| Testes do CRM chamando a vitrine real | `vitest.config.ts:41` | Requisição externa durante a suíte | `VITRINE_PUBLIC_URL` e `VITRINE_REVALIDATE_SECRET` vazios no bloco env do Vitest (mesmo padrão do `KRIVO_OPERATOR_ALERT_EMAIL`) |
 | Vercel Hobby: logs de 1 h | AD-039 | Falha de revalidação some do log rápido | Aceito; pior caso limitado a 5 min pelo cache |
 
 ---
@@ -336,7 +336,7 @@ não vale (L-067 candidata).
 | F10 | `<Theme>` com tema `defineTheme` em runtime deixa o accent da loja no HTML do servidor | HTML de `next start` sem JS | L16b T0 | Reprovado no runtime puro (T0 do L16b, 2026-10-10); resolvido pela AD-046, medido no protótipo |
 | F11 | `next/font/google` com as 4 fontes da lista compõe com o tema (por `tokens`, não por `typography.body.family`; achado do T0) | Build local + captura | L16b T0 | Fonte do sistema como fallback, decisão do usuário |
 | F12 | `opengraph-image` dinâmico com `next/og` funciona sob Cache Components | GET local devolvendo PNG | L16b T0 | OG estático por loja |
-| F13 | Testes em `vitrine/` rodam na suíte raiz com as dependências de `vitrine/node_modules`; e um teste da suíte raiz fora de `vitrine/` importa dela um módulo que cria o `db` com o `drizzle-orm` e o `pg` locais e lê como `crivo_vitrine` (AD-044) | `npx vitest run vitrine/...` e `npx vitest run src/...` | L16b T0 | Primeiro caminho: suíte própria da vitrine apontando para a branch `test`. Segundo caminho: parar e decidir com o usuário onde fica o teste das consultas |
+| F13 | Testes em `vitrine/` rodam na suíte raiz com as dependências de `vitrine/node_modules`; e um teste da suíte raiz fora de `vitrine/` importa dela um módulo que cria o `db` com o `drizzle-orm` e o `pg` locais e lê como `krivo_vitrine` (AD-044) | `npx vitest run vitrine/...` e `npx vitest run src/...` | L16b T0 | Primeiro caminho: suíte própria da vitrine apontando para a branch `test`. Segundo caminho: parar e decidir com o usuário onde fica o teste das consultas |
 | F14 | Hobby aceita segundo projeto do mesmo repositório com Root Directory; limites de projetos, funções e logs | Doc da Vercel (`search_vercel_documentation`, leitura) | L16c T0 | Parar; decisão do usuário |
 | F15 | Na Vercel, `revalidateTag` invalida a página em todas as instâncias | Medição na prova real | L16c | Registrar frescor real (≤ 5 min) e decidir com o usuário |
 | F16 | `ignoreCommand` com `git diff HEAD^` funciona no clone da Vercel | Doc da Vercel | L16c T0 | Sem `ignoreCommand` (rebuild sempre) |

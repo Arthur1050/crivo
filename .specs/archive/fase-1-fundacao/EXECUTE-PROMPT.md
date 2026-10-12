@@ -1,6 +1,6 @@
 # Prompt de Execução — Lote 1 / Fase 1 (fundação técnica)
 
-> Cole o bloco abaixo numa nova janela do Claude Code aberta na raiz do projeto (`crivo/`).
+> Cole o bloco abaixo numa nova janela do Claude Code aberta na raiz do projeto (`krivo/`).
 
 ---
 

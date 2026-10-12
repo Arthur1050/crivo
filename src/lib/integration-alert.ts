@@ -67,7 +67,7 @@ export function formatIntegrationAlertEmail(
   alerts: TenantHealthSnapshot[],
   options: { test?: boolean } = {}
 ): { subject: string; text: string } {
-  const subject = `${options.test ? "[teste] " : ""}[crivo] Integração com problema em ${alerts.length} imobiliária(s)`;
+  const subject = `${options.test ? "[teste] " : ""}[krivo] Integração com problema em ${alerts.length} imobiliária(s)`;
   const text = [
     "A integração do agente com o CRM passou a ter problema nas imobiliárias abaixo.",
     "",

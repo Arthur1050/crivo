@@ -47,12 +47,12 @@ export const config = {
   //
   // `api` sai inteiro, e é isso que mantém os dois caminhos de autenticação
   // independentes por desenho (AD-021): `/api/v1/**` e `/api/cron/**` seguem
-  // na credencial de serviço com `X-Crivo-Tenant` (SEC-01 do lote-7), e
+  // na credencial de serviço com `X-Krivo-Tenant` (SEC-01 do lote-7), e
   // `/api/auth/**` é o próprio handler do better-auth, que não pode exigir a
   // sessão que ele mesmo emite.
   //
   // `.*\..*` cobre tudo que tem extensão — `favicon.ico` e todo arquivo de
-  // `public/`, que é servido a partir da raiz (`/crivo_white_symbol.png`) e
+  // `public/`, que é servido a partir da raiz (`/krivo_white_symbol.png`) e
   // seria redirecionado para o login sem essa negativa.
   matcher: ["/((?!api|_next/static|_next/image|.*\\..*).*)"],
 };

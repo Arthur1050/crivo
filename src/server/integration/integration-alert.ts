@@ -11,7 +11,7 @@ import {
 const HEALTH_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 export interface IntegrationAlertDependencies {
-  /** `CRIVO_OPERATOR_ALERT_EMAIL`; ausente ou vazio impede o envio, nunca o libera. */
+  /** `KRIVO_OPERATOR_ALERT_EMAIL`; ausente ou vazio impede o envio, nunca o libera. */
   operatorEmail: string | undefined;
   send: (message: { to: string; subject: string; text: string }) => Promise<EmailResult>;
 }

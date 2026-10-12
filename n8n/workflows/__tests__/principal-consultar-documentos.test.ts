@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import principal from "../principal";
 
 /**
- * Tool `consultar_documentos` no `crivo-agente-principal` (lote-12 — T28,
+ * Tool `consultar_documentos` no `krivo-agente-principal` (lote-12 — T28,
  * DOCCTX-01/DOCPROVA-01).
  *
  * A tool migrou de `GET ?modality=` para `POST {modality, question}`. Os
@@ -86,7 +86,7 @@ describe("tool consultar_documentos — POST com pergunta (lote-12 T28)", () => 
       const headers = node().parameters.headerParameters as {
         parameters: { name: string; value: string }[];
       };
-      const tenant = headers.parameters.find((p) => p.name === "X-Crivo-Tenant");
+      const tenant = headers.parameters.find((p) => p.name === "X-Krivo-Tenant");
       expect(tenant?.value).toContain("$('Code: gate')");
       expect(tenant?.value).toContain("tenantSlug");
     });

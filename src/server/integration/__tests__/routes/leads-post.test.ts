@@ -376,7 +376,7 @@ describe("routes: POST /api/v1/leads", () => {
 });
 
 // lote-7 — SEC-01: POST /api/v1/leads testada ponta a ponta no modo de
-// serviço (chave cross-tenant + X-Crivo-Tenant), além do modo por chave de
+// serviço (chave cross-tenant + X-Krivo-Tenant), além do modo por chave de
 // tenant já coberto acima — os dois modos precisam produzir o mesmo
 // resultado observável do contrato (design.md — "sem alteração no
 // comportamento observável").
@@ -421,7 +421,7 @@ describe("routes: POST /api/v1/leads — modo de autenticação de serviço (lot
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${serviceKey}`,
-        ...(withTenantHeader ? { "X-Crivo-Tenant": tenantSlug } : {}),
+        ...(withTenantHeader ? { "X-Krivo-Tenant": tenantSlug } : {}),
       },
       body: JSON.stringify(body),
     });
@@ -436,7 +436,7 @@ describe("routes: POST /api/v1/leads — modo de autenticação de serviço (lot
     };
   }
 
-  it("cria o lead no tenant correto via chave de serviço + X-Crivo-Tenant (SEC-01 AC2)", async () => {
+  it("cria o lead no tenant correto via chave de serviço + X-Krivo-Tenant (SEC-01 AC2)", async () => {
     const externalId = randomUUID();
     const response = await POST(makeServiceRequest(validPayload(externalId)), undefined);
 
@@ -449,7 +449,7 @@ describe("routes: POST /api/v1/leads — modo de autenticação de serviço (lot
     expect(persisted!.externalId).toBe(externalId);
   });
 
-  it("chave de serviço sem X-Crivo-Tenant responde 401 tenant-nao-identificado, sem gravar nada", async () => {
+  it("chave de serviço sem X-Krivo-Tenant responde 401 tenant-nao-identificado, sem gravar nada", async () => {
     const externalId = randomUUID();
     const response = await POST(
       makeServiceRequest(validPayload(externalId), { withTenantHeader: false }),

@@ -75,7 +75,7 @@ O entorno permanece intocado: WhatsApp Trigger, normalização de evento, lookup
 
 ### RabbitMQ — validado e descartado
 
-Motivos reais pelos quais fluxos profissionais usam broker, checados um a um contra o que já existe aqui: ACK rápido do webhook já resolvido (o Trigger responde em `onReceived`); serialização por conversa parcialmente coberta por debounce + `checkStillLatest`; retry/DLQ já existe via `errorWorkflow` (`crivo-agente-erros`); escala horizontal no n8n se resolve com **queue mode/Redis**, não RabbitMQ. Com 2 tenants-piloto, adicionar um broker externo para operar é custo sem contrapartida. **Gatilho para revisitar:** FIFO estrito por lead com múltiplos workers, ou migração do agente para o microserviço INT-08.
+Motivos reais pelos quais fluxos profissionais usam broker, checados um a um contra o que já existe aqui: ACK rápido do webhook já resolvido (o Trigger responde em `onReceived`); serialização por conversa parcialmente coberta por debounce + `checkStillLatest`; retry/DLQ já existe via `errorWorkflow` (`krivo-agente-erros`); escala horizontal no n8n se resolve com **queue mode/Redis**, não RabbitMQ. Com 2 tenants-piloto, adicionar um broker externo para operar é custo sem contrapartida. **Gatilho para revisitar:** FIFO estrito por lead com múltiplos workers, ou migração do agente para o microserviço INT-08.
 
 ### Agent's Discretion
 

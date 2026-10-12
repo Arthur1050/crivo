@@ -60,7 +60,7 @@ export type { LeadScope };
  * (`/api/v1/**`) e para asserções de teste sobre estado persistido.
  *
  * O agente não é um usuário e não tem papel (SEC-01, AD-021): ele autentica
- * pela credencial de serviço e o tenant vem do header `X-Crivo-Tenant`. Existe
+ * pela credencial de serviço e o tenant vem do header `X-Krivo-Tenant`. Existe
  * como função nomeada, e não como objeto literal solto, para que todo ponto
  * que lê lead sem filtro de responsável diga em voz alta por quê.
  */
@@ -156,7 +156,7 @@ export async function resolveTenantIdByApiKeyHash(
  * `resolveTenantIdByApiKeyHash` acima: chaves com `revokedAt` preenchido
  * são ignoradas. Deliberadamente NÃO devolve tenant nenhum — a chave de
  * serviço é cross-tenant por construção (schema.ts); quem chama resolve o
- * tenant à parte, pelo header `X-Crivo-Tenant` (`resolveTenantIdBySlug`
+ * tenant à parte, pelo header `X-Krivo-Tenant` (`resolveTenantIdBySlug`
  * abaixo), nunca pela chave.
  */
 export async function resolveServiceApiKeyHash(
@@ -174,7 +174,7 @@ export async function resolveServiceApiKeyHash(
 
 /**
  * Resolve o `tenantId` a partir do `slug` legível (lote-7 — SEC-01), usado
- * pelo modo de autenticação de serviço (header `X-Crivo-Tenant`). `null`
+ * pelo modo de autenticação de serviço (header `X-Krivo-Tenant`). `null`
  * para slug desconhecido ou string vazia — nunca cai em nenhum tenant
  * default (design.md — Error Handling Strategy: `401 tenant-nao-identificado`
  * é responsabilidade de quem chama, não desta função).

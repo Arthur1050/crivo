@@ -1,6 +1,6 @@
 # Prompt de Execução — Lote 6b: Persona conversacional + lapidação de UI
 
-> Cole o bloco abaixo numa nova janela do Claude Code aberta na raiz do projeto (`crivo/`).
+> Cole o bloco abaixo numa nova janela do Claude Code aberta na raiz do projeto (`krivo/`).
 > **Antes de colar, confira na janela nova**: extensão **Claude in Chrome** ativa (screenshots obrigatórios em T4, T11, T12, T13). MCP do n8n **não é necessário** — a instância está fora do ar e nenhuma task depende dela.
 
 ---

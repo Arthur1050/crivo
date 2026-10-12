@@ -146,7 +146,7 @@ fonte dos workflows está sincronizada com `n8n/generated/`.
 
 ### T2: Confirmar paridade entre o workflow publicado e `n8n/generated/`
 
-**What**: Comparar, nó a nó, o `crivo-agente-principal` publicado na instância contra
+**What**: Comparar, nó a nó, o `krivo-agente-principal` publicado na instância contra
 `n8n/generated/principal.ts`, e registrar o resultado (paridade ou divergência) antes de qualquer
 publicação nova.
 **Where**: `n8n/smoke/evidencia.md`
@@ -159,7 +159,7 @@ publicação nova.
 - Skill: NONE
 
 **Done when**:
-- [x] `get_workflow_details` do `crivo-agente-principal` obtido e comparado com `n8n/generated/principal.ts`
+- [x] `get_workflow_details` do `krivo-agente-principal` obtido e comparado com `n8n/generated/principal.ts`
 - [x] Contagem de nós e conexões registrada dos dois lados (61 nós / 75 conexões dos dois lados)
 - [x] O nó de modelo publicado é confirmado como `lmChatGoogleGemini` / `models/gemini-3.5-flash-lite` — o ponto de partida da troca
 - [x] Divergências (se houver) listadas nominalmente, separando cosmético de lógico — **divergência lógica encontrada** (configurações de execução ausentes em 3 nós, §2.5 da evidência): batch parado, T3-T5 não executados
@@ -226,7 +226,7 @@ fixa o que mudou e o que não pode ter mudado.
 
 **What**: Publicar `n8n/generated/principal.ts` na instância via MCP e confirmar que o nó de modelo
 publicado é o OpenAI, com o workflow ainda ativo.
-**Where**: instância n8n — workflow `crivo-agente-principal`
+**Where**: instância n8n — workflow `krivo-agente-principal`
 **Depends on**: T4
 **Reuses**: procedimento de publicação de `n8n/README.md` §1
 **Requirement**: MOD-01
@@ -238,7 +238,7 @@ publicado é o OpenAI, com o workflow ainda ativo.
 **Done when**:
 - [x] Workflow publicado a partir de `n8n/generated/principal.ts` (nunca editado pela UI — AD-014)
 - [x] `get_workflow_details` confirma `lmChatOpenAi` com `gpt-5.4-nano-2026-03-17` e nenhum nó Gemini
-- [x] Workflow continua `active: true` e com `settings.errorWorkflow` apontando para `crivo-agente-erros`
+- [x] Workflow continua `active: true` e com `settings.errorWorkflow` apontando para `krivo-agente-erros`
 - [x] Id da versão publicada registrado em `n8n/smoke/evidencia.md`
 
 **Tests**: none
@@ -419,7 +419,7 @@ ao modelo está em ordem — e declarar o congelamento de `vitest`.
 
 **Done when**:
 - [x] Chave de serviço confirmada funcionando contra `/api/v1` (uma chamada real, com o resultado registrado) — execução `1974`, workflow-escrutínio `ZlyEJOIWY0gs5bSY` (arquivado depois)
-- [x] `crivo-agente-principal` ativo, com o modelo do veredito de T9 — `gpt-5.4-nano-2026-03-17`, versão `8f9f8418-…`
+- [x] `krivo-agente-principal` ativo, com o modelo do veredito de T9 — `gpt-5.4-nano-2026-03-17`, versão `8f9f8418-…`
 - [x] `tenant_config` com a linha do `triangulo` presente e apontando para o `calendarId` certo — exercitado de verdade em T7/T9 (eventos reais criados em `tostamatias@gmail.com`), não só lido
 - [x] Número de teste e destinatário confirmados na lista permitida da Meta — `553499532444`, já usado com sucesso na rodada final de T9
 - [x] **Congelamento declarado**: nenhum `npx vitest run` até T16 terminar, com o motivo escrito — §13.5

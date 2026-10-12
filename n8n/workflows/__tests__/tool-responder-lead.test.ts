@@ -188,7 +188,7 @@ describe("motivos devolvidos ao agente", () => {
 });
 
 describe("ids da leitura vêm do Execute Workflow Trigger, nunca do modelo", () => {
-  it("URL e X-Crivo-Tenant do GET vêm do trigger, sem $fromAI", () => {
+  it("URL e X-Krivo-Tenant do GET vêm do trigger, sem $fromAI", () => {
     const params = nodeByName(GET_LEAD).parameters;
     expect(String(params.url)).toContain("/leads/{{ $('Execute Workflow Trigger').first().json.leadId }}");
     expect(JSON.stringify(params.headerParameters)).toContain("$('Execute Workflow Trigger').first().json.tenantSlug");

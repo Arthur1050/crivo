@@ -113,7 +113,7 @@ T10 → T21
 
 **Done when**:
 
-- [ ] F1–F5 e F7 registrados com fonte, comando (sem credencial) e resultado; papel de prova criado com nome `crivo_vitrine_gate` e removido no fim
+- [ ] F1–F5 e F7 registrados com fonte, comando (sem credencial) e resultado; papel de prova criado com nome `krivo_vitrine_gate` e removido no fim
 - [ ] IF F1 falhar THEN parar o lote e avisar o usuário; F2–F5 ajustam as tasks T8–T10 conforme o design
 - [ ] Linha de base de `npx tsc --noEmit -p .` registrada (contagem de erros)
 - [ ] Nenhuma ação fora dos bancos de teste; nenhum valor de URL, senha ou chave registrado
@@ -264,7 +264,7 @@ T10 → T21
 
 **Done when**:
 
-- [ ] `src/db/__tests__/test-connection.test.ts` ganha casos: usuário vira `crivo_vitrine`, senha codificada, host e banco preservados; senha ausente → erro com mensagem sem a URL
+- [ ] `src/db/__tests__/test-connection.test.ts` ganha casos: usuário vira `krivo_vitrine`, senha codificada, host e banco preservados; senha ausente → erro com mensagem sem a URL
 - [ ] Quick + Build passam
 
 **Tests**: unit
@@ -308,7 +308,7 @@ T10 → T21
 
 **Done when**:
 
-- [ ] `src/db/__tests__/vitrine-privilegios.test.ts`, **conectando como `crivo_vitrine`**: lê as duas views (AC7); `SELECT` em cada uma das 10 tabelas de AC8 recusado com `42501`, uma asserção por tabela (L-012); `INSERT`, `UPDATE` e `DELETE` numa view recusados (AC9); como dono: `role_table_grants` com exatamente as 2 linhas (AC11), sem associação a papel nenhum (AC10), configurações do papel presentes (AC6)
+- [ ] `src/db/__tests__/vitrine-privilegios.test.ts`, **conectando como `krivo_vitrine`**: lê as duas views (AC7); `SELECT` em cada uma das 10 tabelas de AC8 recusado com `42501`, uma asserção por tabela (L-012); `INSERT`, `UPDATE` e `DELETE` numa view recusados (AC9); como dono: `role_table_grants` com exatamente as 2 linhas (AC11), sem associação a papel nenhum (AC10), configurações do papel presentes (AC6)
 - [ ] Sem `VITRINE_TEST_DB_PASSWORD` o teste falha com mensagem clara (não pula em silêncio)
 - [ ] Quick + Build passam
 
@@ -346,7 +346,7 @@ T10 → T21
 **What**: `requestStorefrontRevalidation(slug, deps?)` com os 3 desfechos, timeout de 3 s e logs `[vitrine]`; `VITRINE_PUBLIC_URL` e `VITRINE_REVALIDATE_SECRET` vazios no bloco env da config do Vitest.
 **Where**: `src/server/storefront/revalidation.ts`
 **Depends on**: T2
-**Reuses**: tipo do payload da T2; padrão do `CRIVO_OPERATOR_ALERT_EMAIL` vazio (`vitest.config.ts:41`)
+**Reuses**: tipo do payload da T2; padrão do `KRIVO_OPERATOR_ALERT_EMAIL` vazio (`vitest.config.ts:41`)
 **Requirement**: VREV-01
 **Status**: Done 9229ba4
 
@@ -555,10 +555,10 @@ T10 → T21
 
 ### T21: Procedimento do SQL da vitrine
 
-**What**: README com a ordem obrigatória em qualquer banco (derrubar views → push → aplicar SQL), a regra de criar o papel só por SQL (nunca pelo console), a senha definida à parte, as variáveis dos dois projetos e o rollback (`DROP SCHEMA vitrine CASCADE; DROP ROLE crivo_vitrine;`).
+**What**: README com a ordem obrigatória em qualquer banco (derrubar views → push → aplicar SQL), a regra de criar o papel só por SQL (nunca pelo console), a senha definida à parte, as variáveis dos dois projetos e o rollback (`DROP SCHEMA vitrine CASCADE; DROP ROLE krivo_vitrine;`).
 **Where**: `scripts/vitrine/README.md`
 **Depends on**: T10
-**Reuses**: design.md § Papel `crivo_vitrine`
+**Reuses**: design.md § Papel `krivo_vitrine`
 **Requirement**: VBANCO-03
 **Status**: Done 606bd80
 

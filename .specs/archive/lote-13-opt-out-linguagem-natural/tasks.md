@@ -19,7 +19,7 @@ Implemente estas tarefas com a skill `tlc-spec-driven`: **ative-a pelo nome e si
 - Confirmar `git status`, branch e baseline de testes antes da T1; preservar mudanças alheias.
 - `npm test` roda a suíte completa em paralelo nas branches de worker do Neon (AD-033); nunca duas suítes completas ao mesmo tempo (L-033). Testes pontuais de uma tarefa (`npx vitest run <arquivo>`) usam a branch base e podem rodar enquanto a suíte roda. Depois de qualquer mudança de schema, `npm run db:push:test`. Confirmar que `TEST_DATABASE_URL` é descartável.
 - Toda alteração em `n8n/workflows/*.ts` termina com `node scripts/n8n-inline.mjs` e com o `n8n/generated/` correspondente no mesmo commit.
-- **Efeitos externos exigem autorização específica do usuário imediatamente antes**: T2 (workflow de rascunho no n8n), T12 (publicar e executar `crivo-medicao-opt-out`), T16 (publicar `crivo-agente-principal`), T17 (benchmark conectado e `persist`) e T18 (conversa real no WhatsApp). Aprovar este `tasks.md` não autoriza nenhuma delas. T1 e as leituras de T12 são somente leitura.
+- **Efeitos externos exigem autorização específica do usuário imediatamente antes**: T2 (workflow de rascunho no n8n), T12 (publicar e executar `krivo-medicao-opt-out`), T16 (publicar `krivo-agente-principal`), T17 (benchmark conectado e `persist`) e T18 (conversa real no WhatsApp). Aprovar este `tasks.md` não autoriza nenhuma delas. T1 e as leituras de T12 são somente leitura.
 - Evidência nunca contém texto de mensagem de lead real, telefone completo, token ou chave. Ids de execução só entram depois de conferidos por `get_execution` (L-011).
 - Toda publicação no n8n confere `versionId == activeVersionId` depois do `publish_workflow` (L-032).
 - **Parada obrigatória**: se a medição da T12 sair `REPROVADO`, o lote para. Nada da Phase 5 roda, e o usuário decide o próximo passo (AD-032).
@@ -106,7 +106,7 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 #### T1: Registrar o formato real da sessão carregada pela memória
 
-**What:** Ler uma execução real recente do `crivo-agente-principal` com sessão não vazia e registrar o formato dos elementos de `messages` que `Chat Memory Manager: carregar sessão` devolve com `groupMessages: true`, gerando uma fixture sanitizada com esse formato.
+**What:** Ler uma execução real recente do `krivo-agente-principal` com sessão não vazia e registrar o formato dos elementos de `messages` que `Chat Memory Manager: carregar sessão` devolve com `groupMessages: true`, gerando uma fixture sanitizada com esse formato.
 **Where:** `n8n/fixtures/memory-load-sample.json`
 **Depends on:** None
 **Reuses:** `principal.ts:771-784` (comentário do shape conhecido), MCP `search_executions`/`get_execution`
@@ -129,7 +129,7 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 **Evidence:**
 
-- Execução **2598** do `crivo-agente-principal` (`0B1nqjODu7xuYYKF`), `status: success`, modo `webhook`, 2026-09-25T22:27:28Z, conferida por `get_execution` com `includeData` restrito a `Chat Memory Manager: carregar sessão`. Saída: `{ messages: [...8 elementos], messagesCount: 8 }`.
+- Execução **2598** do `krivo-agente-principal` (`0B1nqjODu7xuYYKF`), `status: success`, modo `webhook`, 2026-09-25T22:27:28Z, conferida por `get_execution` com `includeData` restrito a `Chat Memory Manager: carregar sessão`. Saída: `{ messages: [...8 elementos], messagesCount: 8 }`.
 - Formato observado: cada elemento de `messages` agrupa mensagens consecutivas **por autoria**, com as chaves na ordem de inserção. `human` (string) é o lead; `ai` string é a fala do agente; `ai: []` é a mensagem do agente que só chamou tool (sem texto); `tool` é o resultado da tool serializado como string. Exemplos reais de chaves: `{human, ai: [], tool}`, `{ai: "<texto>", human}`, `{ai: [], tool}`, `{ai: "<texto>"}` (último elemento, agente por último).
 - **Autoria distinguível**: sim. Não contradiz o `design.md`. `lastAgentMessage` deve percorrer os elementos do fim para o começo e devolver o primeiro `ai` que seja string não vazia, ignorando `ai: []`.
 - `messagesCount` conta elementos agrupados, não mensagens individuais.
@@ -162,7 +162,7 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 **Evidence** (registrada antes de arquivar o rascunho, L-016):
 
-- Rascunho `crivo-rascunho-t2-classificador`, id `hsYF9VXAbGKLCkIc`, projeto pessoal, criado por `create_workflow_from_code` com autorização do usuário. Webhook → Switch por `body.caso` → três `textClassifier` v1.1 (categorias `fora`, `ambigua`, `explicita`; `multiClass: false`; `fallback: other`; `enableAutoFixing: true`; `onError: continueErrorOutput`) com `lmChatOpenAi` v1.3 `gpt-5.4-nano-2026-03-17`, `reasoningEffort: low`, `timeout: 20000`. Entrada sintética: `Última mensagem enviada ao lead: <abertura fixa>\nMensagem do lead: não me mande mais mensagens`. Executado em modo `manual`, sem CRM, WhatsApp ou memória.
+- Rascunho `krivo-rascunho-t2-classificador`, id `hsYF9VXAbGKLCkIc`, projeto pessoal, criado por `create_workflow_from_code` com autorização do usuário. Webhook → Switch por `body.caso` → três `textClassifier` v1.1 (categorias `fora`, `ambigua`, `explicita`; `multiClass: false`; `fallback: other`; `enableAutoFixing: true`; `onError: continueErrorOutput`) com `lmChatOpenAi` v1.3 `gpt-5.4-nano-2026-03-17`, `reasoningEffort: low`, `timeout: 20000`. Entrada sintética: `Última mensagem enviada ao lead: <abertura fixa>\nMensagem do lead: não me mande mais mensagens`. Executado em modo `manual`, sem CRM, WhatsApp ou memória.
 - **(a) template customizado** — execução **2634**, conferida por `get_execution`. O classificador devolveu `main: [[],[],[item],[],[]]`: **5 saídas**, item na saída **2 (`explicita`)**. O prompt enviado ao modelo é o template customizado com `{categories}` substituído por `fora, ambigua, explicita`, **seguido das instruções de formato que o nó anexa sozinho** (JSON Schema com uma propriedade booleana por categoria mais `fallback`, e as linhas "Categories are mutually exclusive" / "If no categories apply, select the fallback option"). Resposta do modelo: `{"fora":false,"ambigua":false,"explicita":true,"fallback":false}` em bloco de código. **Uma única chamada ao modelo** (`Modelo a` runIndex 0 apenas): **sem auto-fix**. 739 tokens de entrada estimados, 24 de saída.
 - **(b) template padrão** — execução **2635**, conferida por `get_execution`. Mesmo resultado: `main: [[],[],[item],[],[]]`, saída 2, uma chamada, **sem auto-fix**. 667 tokens de entrada, 24 de saída.
 - **(c) falha forçada** (modelo `gpt-modelo-inexistente-lote13`) — execução **2636**, conferida por `get_execution`. O modelo falhou com `NodeApiError` ("The model ... does not exist"); o classificador terminou `success` com `main: [[],[],[],[],[item]]`: o item saiu pela **saída 4, a saída de erro própria**, com o JSON de entrada preservado e um campo `error`. Nenhum item saiu por uma categoria. Não é o desvio de parada do `EXECUTE-PROMPT.md`.
@@ -318,7 +318,7 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 #### T9: Criar o workflow de medição
 
-**What:** Criar `n8n/workflows/medicao-opt-out.ts` (`crivo-medicao-opt-out`): webhook → expandir corpus × 3 com `buildClassifierInput` → classificador + modelo com os parâmetros finais da T2 → marcar categoria por saída (incluindo `other` e erro) → Merge → `scoreMeasurement` → resposta; gerar `n8n/generated/medicao-opt-out.ts`.
+**What:** Criar `n8n/workflows/medicao-opt-out.ts` (`krivo-medicao-opt-out`): webhook → expandir corpus × 3 com `buildClassifierInput` → classificador + modelo com os parâmetros finais da T2 → marcar categoria por saída (incluindo `other` e erro) → Merge → `scoreMeasurement` → resposta; gerar `n8n/generated/medicao-opt-out.ts`.
 **Where:** `n8n/workflows/medicao-opt-out.ts`
 **Depends on:** T8
 **Reuses:** `n8n/workflows/benchmark-contexto.ts` (webhook, estrutura, cabeçalho de propósito), inliner
@@ -377,7 +377,7 @@ T14 -> T15 -> T16 -> T17 -> T18
 **Done when:**
 
 - [x] Testes de aresta, um por aresta (L-026): `explicita` → HTTP natural; sucesso do HTTP natural → `Code: finalizar opt-out`; erro → `Code: orientar sair` → `Code: destinatário do envio fixo`.
-- [x] Teste: a URL e o `X-Crivo-Tenant` do HTTP natural vêm de `$('Code: gate')`, iguais aos do nó da palavra-chave (OPTREG-01 AC1, AC2).
+- [x] Teste: a URL e o `X-Krivo-Tenant` do HTTP natural vêm de `$('Code: gate')`, iguais aos do nó da palavra-chave (OPTREG-01 AC1, AC2).
 - [x] Teste: `Code: finalizar opt-out` tem exatamente dois predecessores (os dois HTTP de opt-out) e só ele produz a confirmação; o texto antigo não aparece em nenhum nó (OPTMSG-01 AC1).
 - [x] Teste: as arestas do caminho da palavra-chave (`Switch: rota (gate)` saída 0 → HTTP da palavra-chave → finalizar → purgas → envio fixo) continuam idênticas, e o nó HTTP da palavra-chave não ganhou `onError` (OPTKEY-01 AC1, AC4).
 - [x] `git diff` não toca `n8n/src/gate.mjs` nem `n8n/src/__tests__/gate.test.ts` (OPTKEY-01 AC2).
@@ -394,7 +394,7 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 #### T12: Publicar e rodar a medição de falso positivo
 
-**What:** Publicar `crivo-medicao-opt-out` a partir de `n8n/generated/medicao-opt-out.ts`, executá-lo com o corpus da T8, gravar o relatório com `scripts/opt-out-measurement.ts stamp` e decidir pela barra.
+**What:** Publicar `krivo-medicao-opt-out` a partir de `n8n/generated/medicao-opt-out.ts`, executá-lo com o corpus da T8, gravar o relatório com `scripts/opt-out-measurement.ts stamp` e decidir pela barra.
 **Where:** `.specs/features/lote-13-opt-out-linguagem-natural/medicao-opt-out-<AAAA-MM-DD>.json`
 **Depends on:** T11
 **Reuses:** fluxo de publicação do `n8n/README.md`; T4, T7, T9
@@ -417,7 +417,7 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 **Evidence:**
 
-- Workflow `crivo-medicao-opt-out`, id **`yTgE1WKY8BPOCuDl`** (projeto pessoal), criado por `create_workflow_from_code` a partir de `n8n/generated/medicao-opt-out.ts` e publicado com autorização do usuário. `get_workflow_details`: `versionId == activeVersionId == 3630cd81-921b-4ba9-abb4-912f1c5bed3e` (L-032); 11 nós; conexões iguais às do gerado (5 saídas do classificador → 5 marcadores → Merge entradas 0–4 → `Code: pontuar`). Paridade conferida por hash: `classifierIdentity` sobre os nós publicados do classificador e do modelo = `07f33701ce001b073d584bdf636f910be91fc3e8119dda324542d3e2c2be5953`, igual ao `identity` do `principal.ts`.
+- Workflow `krivo-medicao-opt-out`, id **`yTgE1WKY8BPOCuDl`** (projeto pessoal), criado por `create_workflow_from_code` a partir de `n8n/generated/medicao-opt-out.ts` e publicado com autorização do usuário. `get_workflow_details`: `versionId == activeVersionId == 3630cd81-921b-4ba9-abb4-912f1c5bed3e` (L-032); 11 nós; conexões iguais às do gerado (5 saídas do classificador → 5 marcadores → Merge entradas 0–4 → `Code: pontuar`). Paridade conferida por hash: `classifierIdentity` sobre os nós publicados do classificador e do modelo = `07f33701ce001b073d584bdf636f910be91fc3e8119dda324542d3e2c2be5953`, igual ao `identity` do `principal.ts`.
 - Execução **2685** (modo webhook, produção), conferida por `get_execution`: `status: success`, 2026-09-29T05:11:31Z → 05:12:31Z (60 s). Entrada: `n8n/fixtures/opt-out-corpus.json` (62 frases) com `repeticoes: 3` → **186 classificações**. O modelo do classificador rodou **186 vezes** (subRuns 0–185): **nenhum auto-fix**. Categorias brutas: `explicita` 79, `ambigua` 58, `fora` 48, `other` 1, `erro` 0. O Merge de 5 entradas disparou mesmo com a saída de erro vazia.
 - Relatório: `.specs/features/lote-13-opt-out-linguagem-natural/medicao-opt-out-2026-09-29.json`, carimbado por `scripts/opt-out-measurement.ts stamp` (`classifierHash` acima, `modelId` `gpt-5.4-nano-2026-03-17`), com `workflowVersion`, `execucaoN8n` e `execucoesComAutoFix: 0`.
 - **Resultado pela barra (OPTMED-01 AC6)**: `taxaExplicita` = 72/72 = **1,0** (passa); `falsosPositivos` = **7** (reprova). Os 7 vêm de três near-misses de "parar de mandar <coisa>", todos da faixa `fora`:
@@ -450,7 +450,7 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 #### T12b: Nova medição da versão 2
 
-**What:** Atualizar e publicar `crivo-medicao-opt-out` com o gerado da v2, rodar o corpus de 72 frases × 3 e aplicar a barra.
+**What:** Atualizar e publicar `krivo-medicao-opt-out` com o gerado da v2, rodar o corpus de 72 frases × 3 e aplicar a barra.
 **Depends on:** T12a
 **Requirement:** OPTMED-01
 **Commit:** `test(n8n): record opt-out classifier measurement v2`
@@ -489,7 +489,7 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 **Commit:** `feat(n8n): downgrade content-only stop requests before opt-out registration`
 
-**Status:** ✅ Concluída (2026-09-29). Pendente fora deste worker: republicar `crivo-medicao-opt-out` e medir (a trava muda o hash).
+**Status:** ✅ Concluída (2026-09-29). Pendente fora deste worker: republicar `krivo-medicao-opt-out` e medir (a trava muda o hash).
 
 **Evidence:** `npx vitest run n8n/workflows/__tests__ n8n/src/__tests__ scripts/__tests__`: 24 arquivos / 626 testes, 0 falhas (576 → 626). Por arquivo: `opt-out-intent.test.ts` 57, `principal-opt-out-natural.test.ts` 28, `medicao-opt-out.test.ts` 40, `principal-classificador.test.ts` 23, `principal-modelo.test.ts` 12. Contagens do agente 69/88 → 71/91; medição 11/14 → 13/17 nós/conexões. `validate_workflow` do MCP: medição válida, 13 nós. O principal gerado (190 KB, ~70 mil tokens) não foi enviado ao MCP: o arquivo inteiro não cabe num único argumento de chamada deste worker. No lugar, o mesmo parser e validador do SDK (`parseWorkflowCodeToBuilder` + `validateWorkflow` de `@n8n/workflow-sdk`) rodou localmente sobre os dois gerados: principal válido, 71 nós, 0 erros, 0 avisos; medição válida, 13 nós (mesmo resultado do MCP). Novo hash (`identity`): `1547f0ae6ee31640db62b432a36e1e5d6c77fd92467a18f9f42034ba088f6b29`. Desvio da regra literal: "mensagem de voz" (`fora-27`) é removida antes de procurar menção ao contato, senão `mensag` manteria a frase `explicita`. `npm run lint` sem erro. `gate.mjs` e `gate.test.ts` sem diff.
 
@@ -500,7 +500,7 @@ T14 -> T15 -> T16 -> T17 -> T18
 **Status:** ✅ Concluída (2026-09-29) — veredito **APROVADO**.
 **Commit:** `test(n8n): record approved opt-out classifier measurement`
 
-**Evidence:** o workflow de medição anterior (`yTgE1WKY8BPOCuDl`) foi arquivado depois de os relatórios v1–v3 estarem gravados (L-016); o novo `crivo-medicao-opt-out` (`n5iAMCl5nSM6jA6U`) foi criado de `n8n/generated/medicao-opt-out.ts` e publicado; `versionId == activeVersionId == 2b494521-0815-44b7-bd77-5d4e19da667c`, 14 nós, conexões com a trava (saída 2 → `Code: conferir pedido explícito` → IF → marcar explicita / marcar ambigua (trava) → Merge 6 entradas). Diferenças conhecidas em relação ao gerado: o `Code: pontuar` publicado não tem o bloco de comentário do módulo inlinado (a lógica é a mesma; a pontuação fica fora do hash). Execução **2688** (conferida por `get_execution`, `success`, 102 s): 77 × 3 = 231 classificações, `execucoes` 231 (Merge disparou uma vez), 231 chamadas ao modelo (sem auto-fix), `erro` 0, `other` 1. **Explícitas 84/84 (1,0); falsos positivos 0** (ambíguas 0/51, fora 0/96). A trava não precisou atuar nesta rodada (o marcador da trava não executou); a cobertura dela sobre o corpus vem de `opt-out-intent.test.ts`. Relatório: `medicao-opt-out-2026-09-29-v4.json`, `classifierHash` `1547f0ae…` igual ao `identity` do `principal.ts`.
+**Evidence:** o workflow de medição anterior (`yTgE1WKY8BPOCuDl`) foi arquivado depois de os relatórios v1–v3 estarem gravados (L-016); o novo `krivo-medicao-opt-out` (`n5iAMCl5nSM6jA6U`) foi criado de `n8n/generated/medicao-opt-out.ts` e publicado; `versionId == activeVersionId == 2b494521-0815-44b7-bd77-5d4e19da667c`, 14 nós, conexões com a trava (saída 2 → `Code: conferir pedido explícito` → IF → marcar explicita / marcar ambigua (trava) → Merge 6 entradas). Diferenças conhecidas em relação ao gerado: o `Code: pontuar` publicado não tem o bloco de comentário do módulo inlinado (a lógica é a mesma; a pontuação fica fora do hash). Execução **2688** (conferida por `get_execution`, `success`, 102 s): 77 × 3 = 231 classificações, `execucoes` 231 (Merge disparou uma vez), 231 chamadas ao modelo (sem auto-fix), `erro` 0, `other` 1. **Explícitas 84/84 (1,0); falsos positivos 0** (ambíguas 0/51, fora 0/96). A trava não precisou atuar nesta rodada (o marcador da trava não executou); a cobertura dela sobre o corpus vem de `opt-out-intent.test.ts`. Relatório: `medicao-opt-out-2026-09-29-v4.json`, `classifierHash` `1547f0ae…` igual ao `identity` do `principal.ts`.
 
 
 #### T13: Travar a publicação na medição aprovada
@@ -525,7 +525,7 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 **Status:** ✅ Concluída (2026-09-29)
 
-**Evidence:** `assertApprovedIdentity` e `latestApprovedMeasurement` em `scripts/opt-out-measurement.ts` procuram `medicao-opt-out-*.json` com `APROVADO` em `.specs/features/` **e** `.specs/archive/lote-13…` (decisão D4), para a trava sobreviver à higiene documental da AD-029. Testes: `scripts/__tests__/opt-out-measurement.test.ts` (sem relatório → erro "rode o crivo-medicao-opt-out"; só REPROVADO → mesmo erro; APROVADO com o mesmo hash → passa; hash diferente → "rode a medição de novo"; vale o APROVADO mais recente entre diretórios; diretório inexistente e arquivo estranho ignorados) e `n8n/workflows/__tests__/principal-classificador.test.ts` (a identidade do `principal.ts` é o `classifierHash` do relatório aprovado v4, `1547f0ae…`). Prova de discriminação num JSON em memória, descartado depois: trocar "imóvel específico" por "imóvel qualquer" na descrição de `fora` faz `assertApprovedIdentity` lançar "O classificador mudou desde a medição aprovada"; o original passa com `APROVADO`. Gate Full: `node scripts/n8n-inline.mjs`; `npm test` 125 arquivos / 2.111 testes, só as 2 falhas preexistentes aceitas (`DOCLIM-01 AC8`); lint 0 erros. Commit `cdef838` (o mesmo commit deixou por engano o `tasks.md` com um trecho duplicado e sem esta evidência, corrigido no ciclo de correção do Verifier).
+**Evidence:** `assertApprovedIdentity` e `latestApprovedMeasurement` em `scripts/opt-out-measurement.ts` procuram `medicao-opt-out-*.json` com `APROVADO` em `.specs/features/` **e** `.specs/archive/lote-13…` (decisão D4), para a trava sobreviver à higiene documental da AD-029. Testes: `scripts/__tests__/opt-out-measurement.test.ts` (sem relatório → erro "rode o krivo-medicao-opt-out"; só REPROVADO → mesmo erro; APROVADO com o mesmo hash → passa; hash diferente → "rode a medição de novo"; vale o APROVADO mais recente entre diretórios; diretório inexistente e arquivo estranho ignorados) e `n8n/workflows/__tests__/principal-classificador.test.ts` (a identidade do `principal.ts` é o `classifierHash` do relatório aprovado v4, `1547f0ae…`). Prova de discriminação num JSON em memória, descartado depois: trocar "imóvel específico" por "imóvel qualquer" na descrição de `fora` faz `assertApprovedIdentity` lançar "O classificador mudou desde a medição aprovada"; o original passa com `APROVADO`. Gate Full: `node scripts/n8n-inline.mjs`; `npm test` 125 arquivos / 2.111 testes, só as 2 falhas preexistentes aceitas (`DOCLIM-01 AC8`); lint 0 erros. Commit `cdef838` (o mesmo commit deixou por engano o `tasks.md` com um trecho duplicado e sem esta evidência, corrigido no ciclo de correção do Verifier).
 
 ### Phase 5: Documentação, publicação e prova
 
@@ -534,7 +534,7 @@ T14 -> T15 -> T16 -> T17 -> T18
 **What:** Acrescentar ao `n8n/smoke/roteiro.md` o cenário de opt-out em linguagem natural (três casos em sequência, com reset entre eles), atualizar o cenário 3 com o texto novo da confirmação e remover a nota "Opt-out por linguagem natural é L13, fora deste lote".
 **Where:** `n8n/smoke/roteiro.md`
 **Depends on:** T13
-**Reuses:** estrutura dos cenários existentes (AD-027), checklist de limpeza, `npm run smoke:reset` + `crivo-smoke-reset`
+**Reuses:** estrutura dos cenários existentes (AD-027), checklist de limpeza, `npm run smoke:reset` + `krivo-smoke-reset`
 **Requirement:** OPTPROVA-01, OPTDOC-01
 **Tools:** Local Core
 
@@ -580,7 +580,7 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 #### T16: Publicar o agente com o classificador
 
-**What:** Rodar `document-context-benchmark.ts check`, publicar `n8n/generated/principal.ts` no `crivo-agente-principal`, conferir paridade e ativação, e registrar a versão.
+**What:** Rodar `document-context-benchmark.ts check`, publicar `n8n/generated/principal.ts` no `krivo-agente-principal`, conferir paridade e ativação, e registrar a versão.
 **Where:** `.specs/features/lote-13-opt-out-linguagem-natural/tasks.md`
 **Depends on:** T15
 **Reuses:** pipeline de publicação do `n8n/README.md`; `get_workflow_details`
@@ -603,18 +603,18 @@ T14 -> T15 -> T16 -> T17 -> T18
 **Evidence:**
 - `principal-classificador.test.ts` verde imediatamente antes (gate da T13, trava de identidade `1547f0ae…` = medição aprovada v4).
 - `check` antes da publicação (versão ativa anterior `73788130-1789-46a8-8a41-61c33860224c`): "9 teto(s) conferido(s); 9 marcado(s) como desatualizado(s)" — o system message local mudou (instrução ambígua), então os tetos ficaram `stale` e seguem limitando com o valor antigo (AD-031).
-- Publicação por `update_workflow` em lotes (decisão D5): 9 nós novos (`Code: entrada do classificador`, `Classificador: opt-out`, `OpenAI Chat Model (classificador)` com a credencial `OpenAI account` `bGnmNn5iFH4sBCoo`, `Code: rota fora`, `Code: rota ambígua`, `Code: conferir pedido explícito`, `Pedido explícito confirmado?`, `HTTP: POST /leads/{id}/opt-out (linguagem natural)` com `Crivo - chave de servico` `YhGcdfGtdEBBU9YP`, retry 3×, `continueErrorOutput`, e `Code: orientar sair (falha do registro)`), `jsCode` novo em `Code: finalizar opt-out` e `Code: montar system message e marcar campo perguntado`, 1 conexão removida e 16 adicionadas; depois `publish_workflow`.
-- `get_workflow_details` (saída salva em arquivo e comparada por script com `principal.toJSON()`): **`versionId == activeVersionId == 3e20756c-45d2-430d-8106-e4204abf6045`**, ativo; 71 nós; **91 conexões, 0 diferença**; 19 nós de código com `jsCode` idêntico byte a byte (inclusive o `montar system message`, 46 KB); parâmetros do classificador, do modelo, do HTTP natural (URL, autenticação, `X-Crivo-Tenant`, retry, `onError`) e do IF idênticos; o HTTP da palavra-chave segue sem `onError` e com a mesma URL.
+- Publicação por `update_workflow` em lotes (decisão D5): 9 nós novos (`Code: entrada do classificador`, `Classificador: opt-out`, `OpenAI Chat Model (classificador)` com a credencial `OpenAI account` `bGnmNn5iFH4sBCoo`, `Code: rota fora`, `Code: rota ambígua`, `Code: conferir pedido explícito`, `Pedido explícito confirmado?`, `HTTP: POST /leads/{id}/opt-out (linguagem natural)` com `Krivo - chave de servico` `YhGcdfGtdEBBU9YP`, retry 3×, `continueErrorOutput`, e `Code: orientar sair (falha do registro)`), `jsCode` novo em `Code: finalizar opt-out` e `Code: montar system message e marcar campo perguntado`, 1 conexão removida e 16 adicionadas; depois `publish_workflow`.
+- `get_workflow_details` (saída salva em arquivo e comparada por script com `principal.toJSON()`): **`versionId == activeVersionId == 3e20756c-45d2-430d-8106-e4204abf6045`**, ativo; 71 nós; **91 conexões, 0 diferença**; 19 nós de código com `jsCode` idêntico byte a byte (inclusive o `montar system message`, 46 KB); parâmetros do classificador, do modelo, do HTTP natural (URL, autenticação, `X-Krivo-Tenant`, retry, `onError`) e do IF idênticos; o HTTP da palavra-chave segue sem `onError` e com a mesma URL.
 - **Diferença conhecida (decisão D6)**: nos 4 nós que inlinam `opt-out-intent.mjs`, o regex de `normalizeUserMessage` ficou publicado com os caracteres literais U+0300 a U+036F em vez do escape de seis caracteres do fonte — o transporte do MCP converte qualquer sequência de escape unicode em caractere, com qualquer número de barras (testado três vezes em `Code: rota fora`, restaurado depois). O texto antes e depois do regex é idêntico ao gerado, e a classe de caracteres é a mesma (conferido em Node: mesma saída para texto acentuado). Dois nós que o lote não tocou (`Code: preparar clear de buffer (turno do agente)`, `Code: preparar turno para memória`) já estavam publicados sem a quebra de linha final antes deste lote.
 - Avisos do `update_workflow` que restaram são os já conhecidos: `SUBNODE_NOT_CONNECTED` dos `memoryManager` (falso positivo do lote-6c) e `builtInTools` do `OpenAI Chat Model` do agente, preexistente.
 - Gate Build: sem mudança de código nesta tarefa; os gates da T13 (2.111 testes) e da T15 (build ok) valem para o estado publicado.
 
 #### T17: Rerodar o benchmark de teto depois da publicação
 
-**What:** Rodar `check` contra a nova versão, rerodar as faixas necessárias do `crivo-benchmark-contexto` e gravar com `persist`, conforme o `n8n/README.md` §13.
+**What:** Rodar `check` contra a nova versão, rerodar as faixas necessárias do `krivo-benchmark-contexto` e gravar com `persist`, conforme o `n8n/README.md` §13.
 **Where:** `.specs/features/lote-13-opt-out-linguagem-natural/benchmark-contexto-<AAAA-MM-DD>.json`
 **Depends on:** T16
-**Reuses:** `scripts/document-context-benchmark.ts`, `crivo-benchmark-contexto`
+**Reuses:** `scripts/document-context-benchmark.ts`, `krivo-benchmark-contexto`
 **Requirement:** OPTDOC-01
 **Tools:** Conectado — **autorização específica antes de executar e antes do `persist`**
 
@@ -633,7 +633,7 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 **Evidence:**
 - Motivo do `stale`: o `check` da T16 (antes da publicação) marcou os 9 tetos por mudança do system message (`system-message.mjs` com a instrução ambígua); depois da publicação a versão do workflow também mudou (`73788130` → `3e20756c`). O script só imprime contagens; o motivo gravado em cada linha é `mudou: <componentes>`.
-- Decisão D7: 15 faixas repetidas no `crivo-benchmark-contexto` (`xpsD2PZQ1KoE2sA5`, versão publicada `09934c27`), execuções **2689 a 2703**, todas `success` (conferidas por `search_executions`/`get_execution`): 0 B, 64 KB ×1/×2 e 128 KB ×1/×2 para `ambos`, `novo` e `usado`. Todas as faixas com corpus aprovaram (3/3 fatos, `consultar_documentos` chamada); faixas 0 B sem fatos, como esperado. Latência de 4,0 s a 10,4 s. O workflow de benchmark não foi republicado: ele inlina o `system-message.mjs` anterior, e com `optOutAmbiguo` ausente o texto é byte a byte o mesmo (teste da T5).
+- Decisão D7: 15 faixas repetidas no `krivo-benchmark-contexto` (`xpsD2PZQ1KoE2sA5`, versão publicada `09934c27`), execuções **2689 a 2703**, todas `success` (conferidas por `search_executions`/`get_execution`): 0 B, 64 KB ×1/×2 e 128 KB ×1/×2 para `ambos`, `novo` e `usado`. Todas as faixas com corpus aprovaram (3/3 fatos, `consultar_documentos` chamada); faixas 0 B sem fatos, como esperado. Latência de 4,0 s a 10,4 s. O workflow de benchmark não foi republicado: ele inlina o `system-message.mjs` anterior, e com `optOutAmbiguo` ausente o texto é byte a byte o mesmo (teste da T5).
 - Métricas: `benchmark-contexto-2026-09-30.json` (sem corpus). Tetos calculados antes do `persist` (simulação) e depois gravados:
 
   | Modalidade | Anterior (2026-09-25) | Novo (2026-09-30) | Variação |
@@ -651,7 +651,7 @@ T14 -> T15 -> T16 -> T17 -> T18
 **What:** Executar o cenário novo do roteiro (três casos) e a regressão do cenário 3 no número de teste, e registrar a evidência em `n8n/smoke/evidencia.md`.
 **Where:** `n8n/smoke/evidencia.md`
 **Depends on:** T17
-**Reuses:** `roteiro.md` (T14), checklist de limpeza, `npm run smoke:reset`, `crivo-smoke-reset`
+**Reuses:** `roteiro.md` (T14), checklist de limpeza, `npm run smoke:reset`, `krivo-smoke-reset`
 **Requirement:** OPTPROVA-01, OPTREG-01, OPTAMB-01, OPTSEG-01, OPTKEY-01, OPTMSG-01
 **Tools:** Conectado — **autorização específica; as mensagens são enviadas pelo usuário no WhatsApp**
 
@@ -669,7 +669,7 @@ T14 -> T15 -> T16 -> T17 -> T18
 **Gate:** Build
 **Commit:** `docs(n8n): record natural language opt-out smoke evidence`
 
-**Status:** ✅ Concluída (2026-09-30): 5a, 5b novo, 5c e cenário 3 aprovados (o 5b original foi aprovado e depois removido pela D11). O 5a e o 5b original rodaram com o usuário digitando; o 5b novo, o 5c e o cenário 3 foram enviados pelo WhatsApp Web do usuário via extensão do Chrome, a pedido dele. Evidência em `n8n/smoke/evidencia.md` § Lote 13 — T18. Antes: ⏸️ Pendente de execução humana (decisão D8, 2026-09-29). A prova exige que uma pessoa mande mensagens reais no WhatsApp para o número de teste; nenhuma ferramenta desta execução consegue fazer isso sem enviar mensagens em nome do usuário, e o `crivo-agente-principal` só dispara pelo `whatsAppTrigger` (o `execute_workflow` não aceita esse gatilho e o webhook da Meta exige a assinatura do app). Tudo o que a prova depende já está publicado: agente `3e20756c-45d2-430d-8106-e4204abf6045` com classificador, trava e confirmação nova (T16), tetos de contexto atualizados (T17) e roteiro §6.1 + regressão do cenário 3 (T14). Para fechar: rodar os casos 5a, 5b e 5c e o cenário 3 conforme `n8n/smoke/roteiro.md`, registrar em `n8n/smoke/evidencia.md` com ids conferidos por `get_execution` e commitar com a mensagem desta tarefa.
+**Status:** ✅ Concluída (2026-09-30): 5a, 5b novo, 5c e cenário 3 aprovados (o 5b original foi aprovado e depois removido pela D11). O 5a e o 5b original rodaram com o usuário digitando; o 5b novo, o 5c e o cenário 3 foram enviados pelo WhatsApp Web do usuário via extensão do Chrome, a pedido dele. Evidência em `n8n/smoke/evidencia.md` § Lote 13 — T18. Antes: ⏸️ Pendente de execução humana (decisão D8, 2026-09-29). A prova exige que uma pessoa mande mensagens reais no WhatsApp para o número de teste; nenhuma ferramenta desta execução consegue fazer isso sem enviar mensagens em nome do usuário, e o `krivo-agente-principal` só dispara pelo `whatsAppTrigger` (o `execute_workflow` não aceita esse gatilho e o webhook da Meta exige a assinatura do app). Tudo o que a prova depende já está publicado: agente `3e20756c-45d2-430d-8106-e4204abf6045` com classificador, trava e confirmação nova (T16), tetos de contexto atualizados (T17) e roteiro §6.1 + regressão do cenário 3 (T14). Para fechar: rodar os casos 5a, 5b e 5c e o cenário 3 conforme `n8n/smoke/roteiro.md`, registrar em `n8n/smoke/evidencia.md` com ids conferidos por `get_execution` e commitar com a mensagem desta tarefa.
 
 ---
 
@@ -720,8 +720,8 @@ T14 -> T15 -> T16 -> T17 -> T18
 
 **Evidence:**
 - `npx vitest run n8n/ scripts/__tests__/opt-out-measurement.test.ts src/server/documents/__tests__/benchmark-identity.test.ts`: 25 arquivos / 629 testes, 0 falhas; `opt-out-measurement.ts identity` = `1547f0ae6ee31640…`.
-- `crivo-agente-principal`: 4 operações (jsCode de `Code: rota fora`, remoção de `Code: rota ambígua`, saída 1 do classificador e falso do IF → rota fora) e o jsCode de `Code: montar system message e marcar campo perguntado`. Rascunho comparado por script com `principal.toJSON()`: 70 nós, 90 conexões, 0 diferença de aresta; os dois nós alterados idênticos byte a byte; nos 4 nós que inlinam `opt-out-intent.mjs` a única diferença é a regex da D6. `versionId` conferido `3be9cfed-e56e-45d6-93a4-74a7910969ef`, publicado com `activeVersionId` igual.
-- `crivo-benchmark-contexto`: `Code: gerar faixa` atualizado, 14 nós com parâmetros idênticos ao gerado, publicado em `b228c3de-5059-4c03-ad62-4b94a2d0e73d`.
+- `krivo-agente-principal`: 4 operações (jsCode de `Code: rota fora`, remoção de `Code: rota ambígua`, saída 1 do classificador e falso do IF → rota fora) e o jsCode de `Code: montar system message e marcar campo perguntado`. Rascunho comparado por script com `principal.toJSON()`: 70 nós, 90 conexões, 0 diferença de aresta; os dois nós alterados idênticos byte a byte; nos 4 nós que inlinam `opt-out-intent.mjs` a única diferença é a regex da D6. `versionId` conferido `3be9cfed-e56e-45d6-93a4-74a7910969ef`, publicado com `activeVersionId` igual.
+- `krivo-benchmark-contexto`: `Code: gerar faixa` atualizado, 14 nós com parâmetros idênticos ao gerado, publicado em `b228c3de-5059-4c03-ad62-4b94a2d0e73d`.
 - `check` antes: 9 tetos `stale`. 15 faixas nas execuções 2749–2763, todas `success`; as 10 com corpus aprovaram (3/3 fatos). Tetos iguais aos anteriores (novo 106.898, usado 119.714, ambos 106.720 B; variação 0%). `persist` com `systemMessageHash` `b71ea963…`; `check` seguinte: "9 teto(s) conferido(s); 0 marcado(s) como desatualizado(s)". Métricas em `benchmark-contexto-2026-09-30-d11.json` (neste diretório de arquivo).
 
 ## Phase Execution Map

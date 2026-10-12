@@ -18,7 +18,7 @@ function route(overrides: Partial<Parameters<typeof createDocumentPreviewGetHand
 }
 
 function request() {
-  return new Request("https://crivo.test/api/documents/document-1/preview");
+  return new Request("https://krivo.test/api/documents/document-1/preview");
 }
 
 function params(id = "document-1") {

@@ -245,7 +245,7 @@ exata `sair` descadastra: `parar` e o pedido em linguagem natural são respondid
 registro, e o agente orienta responder `sair`.
 
 **Estado inicial exigido**: os três alvos do checklist (§9) limpos. Os três casos usam o mesmo
-número de teste, **em sequência, com `npm run smoke:reset` + `crivo-smoke-reset` e a confirmação do
+número de teste, **em sequência, com `npm run smoke:reset` + `krivo-smoke-reset` e a confirmação do
 checklist entre um caso e outro** — cada reset apaga o lead, e o caso seguinte nasce com um lead novo.
 
 ### Caso 5a — `parar` (não registra)
@@ -297,7 +297,7 @@ no **Chats do CRM de produção**, com capturas de tela pela extensão do Chrome
 escreve em nome do lead.
 
 **Estado inicial exigido**: os três alvos do checklist (§9) limpos antes de cada caso. Os quatro casos
-usam o mesmo número de teste, em sequência, com `crivo-smoke-reset` + `npm run smoke:reset` e a
+usam o mesmo número de teste, em sequência, com `krivo-smoke-reset` + `npm run smoke:reset` e a
 confirmação do checklist entre um caso e outro (o `smoke:reset` também apaga as reservas de envio
 humano, `human_message_sends`, do lead).
 
@@ -331,7 +331,7 @@ fala humana. As falas do lead continuam sendo intenção.
 | --- | --- | --- | --- |
 | 1 | Lead | Interesse inicial qualquer | Lead criado; agente responde; memória com conteúdo |
 | 2 | Corretor | Clica em "Registrar opt-out" e confirma na caixa | `optedOutAt` gravado; **uma** confirmação com o texto de OPTMSG-01 entregue no WhatsApp e gravada como `humano`; conversa vira somente leitura com a data do opt-out |
-| — | Scheduler | Próximo tick da varredura D (até 20 min) | Execução do `crivo-agente-scheduler` com o pedido do lead devido; sessão `"triangulo:553499532444"` em `n8n_chat_histories` **vazia**; `memoryResetAt` gravado em `conversa_estado` |
+| — | Scheduler | Próximo tick da varredura D (até 20 min) | Execução do `krivo-agente-scheduler` com o pedido do lead devido; sessão `"triangulo:553499532444"` em `n8n_chat_histories` **vazia**; `memoryResetAt` gravado em `conversa_estado` |
 | 3 | Lead | Qualquer mensagem depois | `gate` roteia `somente-registrar` por `optedOutAt`: gravada, **sem resposta** |
 
 ### Caso 6d — `sair` durante a condução humana
@@ -419,7 +419,7 @@ apagado — o próximo cenário nasceria com metade do estado velho e metade do 
 **Os três alvos têm rotina — a limpeza manual descrita na tabela abaixo é a referência do que cada
 uma faz, não o procedimento a seguir à mão.** Na mesma ordem obrigatória:
 
-1. **n8n (alvos 1 e 2)** — executar o workflow `crivo-smoke-reset` (`rgf3t1cVsd2q0X0f`; fonte em
+1. **n8n (alvos 1 e 2)** — executar o workflow `krivo-smoke-reset` (`rgf3t1cVsd2q0X0f`; fonte em
    `n8n/workflows/smoke-reset.ts`), trigger manual, sem parâmetro: purga a sessão de memória e apaga
    a linha de `conversa_estado` do alvo.
 2. **CRM (alvo 3)** — `npm run smoke:reset` (`src/db/smoke-reset.ts`): apaga `messages` →
@@ -437,7 +437,7 @@ continua sendo o turno 1 do cenário seguinte.
 | # | Alvo | Onde | Chave / identificação | Se esquecido |
 | --- | --- | --- | --- | --- |
 | 1 | Sessão de memória | `n8n_chat_histories` (Postgres da instância n8n) | `"triangulo:553499532444"` (padrão geral: `"<tenantSlug>:<waId>"`, `principal.ts:679`) | O agente do cenário seguinte "lembra" de uma conversa que, para o CRM, nunca aconteceu — mistura contexto de dois desfechos diferentes na mesma resposta |
-| 2 | Linha de `conversa_estado` | Data Table `ZsplBxJjXv3kwKZ8` | Casada por `tenantSlug = triangulo` + `waId = 553499532444`, com `allConditions` (a ferramenta MCP não apaga linha de Data Table; o **nó** `dataTable` v1.1 apaga, em `operation: deleteRows` — é o que o `crivo-smoke-reset` usa, e é por isso que a remoção deixou de ser trabalho de UI) | `perguntadosJson` chega cheio; a fase pode virar `agendando` no 1º turno, pulando a qualificação que o cenário exige (mesma falha observada em `evidencia.md` §8) |
+| 2 | Linha de `conversa_estado` | Data Table `ZsplBxJjXv3kwKZ8` | Casada por `tenantSlug = triangulo` + `waId = 553499532444`, com `allConditions` (a ferramenta MCP não apaga linha de Data Table; o **nó** `dataTable` v1.1 apaga, em `operation: deleteRows` — é o que o `krivo-smoke-reset` usa, e é por isso que a remoção deixou de ser trabalho de UI) | `perguntadosJson` chega cheio; a fase pode virar `agendando` no 1º turno, pulando a qualificação que o cenário exige (mesma falha observada em `evidencia.md` §8) |
 | 3 | Lead e conversa no CRM | Postgres do CRM, ordem `messages` → `conversations` → `leads` (FKs sem `onDelete`, `src/db/schema.ts:211-229`) | `externalId = 553499532444`, tenant `triangulo` | `POST /leads` idempotente devolve o lead **velho**, com o `status` terminal do cenário anterior ainda gravado — o cenário seguinte nunca começa do zero |
 
 **Confirmação obrigatória antes do próximo cenário**: não confie em metadado de tabela

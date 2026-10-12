@@ -6,7 +6,7 @@ reduzido pelo usuário em 2026-10-07
 ## Problem Statement
 
 Quando a integração agente↔CRM cai, a única pista hoje é o bloco de saúde do Dashboard (AD-023,
-lote-9): ninguém é avisado. O `crivo-agente-erros` do n8n só manda e-mail quando uma execução falha;
+lote-9): ninguém é avisado. O `krivo-agente-erros` do n8n só manda e-mail quando uma execução falha;
 silêncio (n8n parado, webhook que não chega, workflow despublicado) e recusas do contrato passam
 despercebidos até alguém abrir a tela. Além disso, a rotação da chave de serviço ainda exige um
 `UPDATE` manual no banco para revogar a chave antiga (`n8n/README.md` §12.3), e o roadmap carrega
@@ -45,7 +45,7 @@ itens do L15 já resolvidos ou que não são executáveis sem cliente real.
 | Regra de "problema" | Exatamente a do Dashboard: `resolveIntegrationHealth` com `getLastAgentMessageAt(tenant)` e recusas das últimas 24h do tenant **mais** as sem tenant (`getIntegrationRefusalsSince`) | Uma regra só; o alerta nunca diverge da tela | Sim (usuário: "a mesma regra do Dashboard") |
 | O que é "queda" | Transição de `saudavel` para `problema` em relação ao último estado gravado do tenant | Usuário escolheu "na transição"; evita e-mail diário enquanto o problema persiste | Sim (usuário) |
 | Primeira avaliação de um tenant (sem estado gravado) | Grava o estado observado e não envia e-mail | Tenants fictícios sem tráfego nascem em `problema`; alertar na primeira passada seria ruído no deploy | Sim, default do agente; usuário aprova junto da spec |
-| Destinatário | Um único endereço na variável `CRIVO_OPERATOR_ALERT_EMAIL` (servidor, nunca no repositório) | Usuário: só o operador; endereço pessoal fora do código | Sim (usuário) |
+| Destinatário | Um único endereço na variável `KRIVO_OPERATOR_ALERT_EMAIL` (servidor, nunca no repositório) | Usuário: só o operador; endereço pessoal fora do código | Sim (usuário) |
 | Destinatário ausente | Não envia e não grava a transição para `problema` (o tenant continua `saudavel` no estado gravado), para o alerta sair quando a variável existir | L-030: limite ou configuração ausente não pode virar falha aberta silenciosa | Sim, default do agente |
 | Vários tenants em queda na mesma execução | Um e-mail só, listando cada imobiliária | Destinatário único; um e-mail por tenant seria ruído com recusa sem tenant (afeta todos) | Sim, default do agente |
 | Execuções concorrentes (cron + chamada manual) | A transição é reivindicada por compare-and-set antes do envio; quem não reivindica não envia | Evita e-mail duplicado; detalhe no design | Sim, default do agente |
@@ -80,14 +80,14 @@ imobiliária passar a ter problema, para agir antes que leads fiquem sem respost
 
 **Acceptance Criteria** (ALERTA-02 — e-mail):
 
-1. WHEN a execução tem ao menos um tenant no alerta THEN o sistema SHALL enviar exatamente um e-mail para o endereço de `CRIVO_OPERATOR_ALERT_EMAIL`, com remetente `RESEND_FROM` (ou o padrão do adaptador quando ausente).
-2. The sistema SHALL usar o assunto `[crivo] Integração com problema em N imobiliária(s)`, com N igual ao número de tenants no alerta.
+1. WHEN a execução tem ao menos um tenant no alerta THEN o sistema SHALL enviar exatamente um e-mail para o endereço de `KRIVO_OPERATOR_ALERT_EMAIL`, com remetente `RESEND_FROM` (ou o padrão do adaptador quando ausente).
+2. The sistema SHALL usar o assunto `[krivo] Integração com problema em N imobiliária(s)`, com N igual ao número de tenants no alerta.
 3. The sistema SHALL listar no corpo, para cada tenant no alerta: nome, slug, a contagem de recusas nas 24h por `(code, rota)`, e o último instante de mensagem do agente em ISO 8601 UTC ou a palavra `nunca`.
 4. The sistema SHALL NOT incluir no e-mail conteúdo de mensagem, telefone, nome de lead nem valor de chave ou segredo.
 
 **Acceptance Criteria** (ALERTA-03 — falhas):
 
-1. IF `CRIVO_OPERATOR_ALERT_EMAIL` está ausente ou vazio THEN o sistema SHALL NOT enviar e-mail, SHALL manter `saudavel` como estado gravado dos tenants que entrariam no alerta e SHALL reportar `integrationAlertSkipped: "destinatario-ausente"` no resultado da manutenção.
+1. IF `KRIVO_OPERATOR_ALERT_EMAIL` está ausente ou vazio THEN o sistema SHALL NOT enviar e-mail, SHALL manter `saudavel` como estado gravado dos tenants que entrariam no alerta e SHALL reportar `integrationAlertSkipped: "destinatario-ausente"` no resultado da manutenção.
 2. IF o adaptador de e-mail devolve `ok: false` THEN o sistema SHALL restaurar `saudavel` como estado gravado dos tenants do alerta e SHALL reportar `integrationAlertSendFailed: true`, para a próxima execução tentar de novo.
 3. IF a avaliação do alerta lança erro THEN o sistema SHALL reportar `integrationAlertFailed: true` e SHALL executar os demais grupos da manutenção com o mesmo resultado que teriam sem o alerta.
 4. The sistema SHALL reportar no resultado da manutenção `integrationAlertEvaluated` (tenants avaliados) e `integrationAlertSent` (tenants incluídos num e-mail enviado com `ok: true`).
@@ -111,7 +111,7 @@ autorizada por mim e registrada.
 2. IF algum fato do gate não se confirma THEN o executor SHALL parar antes das tasks de produção e reportar ao usuário.
 3. WHEN o comando de envio de teste roda com autorização do usuário THEN o sistema SHALL enviar ao operador um e-mail com o mesmo formato do alerta e o assunto prefixado por `[teste]`, e o executor SHALL registrar a confirmação de recebimento dada pelo usuário.
 4. The executor SHALL aplicar o schema em produção antes do deploy do código que o lê, cada um com autorização explícita do usuário no momento e registro do resultado.
-5. WHEN o push que faz o deploy é autorizado THEN o executor SHALL já ter registrado a confirmação do usuário de que `CRIVO_OPERATOR_ALERT_EMAIL` existe no ambiente Production da Vercel.
+5. WHEN o push que faz o deploy é autorizado THEN o executor SHALL já ter registrado a confirmação do usuário de que `KRIVO_OPERATOR_ALERT_EMAIL` existe no ambiente Production da Vercel.
 6. WHEN a primeira manutenção de produção após o deploy roda THEN o executor SHALL registrar, com autorização para ler os logs, `integrationAlertFailed: false` e `integrationAlertEvaluated` igual ao número de tenants.
 
 **Independent Test**: e-mail `[teste]` recebido pelo operador; resultado da primeira manutenção de

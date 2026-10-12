@@ -106,7 +106,7 @@ join vitrine.lojas l on l.slug = t.slug
 where p.status = 'disponivel' and p.published;
 
 -- ---------------------------------------------------------------------------
--- 3. Papel `crivo_vitrine` e grants (AD-040)
+-- 3. Papel `krivo_vitrine` e grants (AD-040)
 --
 -- O papel nasce SÓ por SQL, nunca pelo console do Neon: o console o põe em
 -- `neon_superuser` e o isolamento cai sem ninguém notar. Não é membro de papel
@@ -116,15 +116,15 @@ where p.status = 'disponivel' and p.published;
 -- ---------------------------------------------------------------------------
 do $$
 begin
-  if not exists (select 1 from pg_roles where rolname = 'crivo_vitrine') then
-    create role crivo_vitrine login;
+  if not exists (select 1 from pg_roles where rolname = 'krivo_vitrine') then
+    create role krivo_vitrine login;
   end if;
 end
 $$;
 
-alter role crivo_vitrine login;
-alter role crivo_vitrine set default_transaction_read_only = on;
-alter role crivo_vitrine set statement_timeout = '5s';
+alter role krivo_vitrine login;
+alter role krivo_vitrine set default_transaction_read_only = on;
+alter role krivo_vitrine set statement_timeout = '5s';
 
-grant usage on schema vitrine to crivo_vitrine;
-grant select on vitrine.lojas, vitrine.imoveis to crivo_vitrine;
+grant usage on schema vitrine to krivo_vitrine;
+grant select on vitrine.lojas, vitrine.imoveis to krivo_vitrine;

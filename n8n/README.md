@@ -73,7 +73,7 @@ isolando falhas e conservando A–D. O CRM determina mês/fuso, lease/cadência 
 gate de analytics; polling/retry de persistência não consulta Graph. Produção
 continua indisponível sem provas reais de WABA/número/tenant/fuso/acesso.
 
-Runbook de setup + referência da camada n8n do Crivo. Cobre **todos os passos humanos** necessários antes/durante o Execute deste lote e os riscos R1–R3/R6 do design (`.specs/features/lote-6-agente-n8n-whatsapp/design.md`).
+Runbook de setup + referência da camada n8n do Krivo. Cobre **todos os passos humanos** necessários antes/durante o Execute deste lote e os riscos R1–R3/R6 do design (`.specs/features/lote-6-agente-n8n-whatsapp/design.md`).
 
 > **Regra de ouro (AD-014)**: a UI do n8n **nunca** é editada à mão — nem os workflows (`n8n/workflows/*.ts` → `n8n/generated/*.ts` → publicado via MCP), nem as Data Tables (criadas via MCP `create_data_table`/`add_data_table_column`). O único trabalho manual na instância n8n é **credenciais** (Google/Meta exigem OAuth/tokens que só o dono da conta pode gerar) e **templates de mensagem** no painel da Meta (aprovação é um processo da Meta, não do n8n).
 
@@ -109,17 +109,17 @@ Estado confirmado nesta sessão (`list_credentials` via MCP, T9): a instância j
 2. Copiar **ID do aplicativo** e **Chave secreta do aplicativo** (botão "Mostrar").
 3. No n8n: criar credencial do tipo **WhatsApp Trigger API**, colar os dois valores.
 4. **Não existe "verify token" para preencher manualmente no app da Meta.** O nó `whatsAppTrigger` registra e verifica a assinatura do webhook sozinho na ativação, usando o próprio id do nó. Se o painel da Meta pedir uma "Verify Token" ao configurar a URL de callback, o valor é o id do nó (visível no n8n ao configurar o webhook) — nunca inventar uma string.
-5. Isso só fecha o laço em **T12** (fora do escopo deste worker): ativar `crivo-agente-principal` publicado é o que dispara o registro do webhook na Meta.
+5. Isso só fecha o laço em **T12** (fora do escopo deste worker): ativar `krivo-agente-principal` publicado é o que dispara o registro do webhook na Meta.
 
 ### 2.2 WhatsApp send (access token + phone number id) — credencial `whatsAppApi`
 
-**Risco R2 — o mais importante desta seção**: a tela "Configuração da API" do app Meta mostra um **token de acesso temporário (23h)**. Usar esse token na credencial de envio do n8n faz o agente parar de responder em menos de um dia, silenciosamente (a falha só aparece quando `crivo-agente-erros` dispara o e-mail de erro na próxima tentativa de envio). **Nunca usar esse token.**
+**Risco R2 — o mais importante desta seção**: a tela "Configuração da API" do app Meta mostra um **token de acesso temporário (23h)**. Usar esse token na credencial de envio do n8n faz o agente parar de responder em menos de um dia, silenciosamente (a falha só aparece quando `krivo-agente-erros` dispara o e-mail de erro na próxima tentativa de envio). **Nunca usar esse token.**
 
 Passo a passo do token **permanente de System User**:
 
 1. [business.facebook.com/settings](https://business.facebook.com/settings) → **Usuários → Usuários do sistema**.
 2. Criar (ou reusar) um usuário do sistema com papel **Admin**.
-3. **Adicionar ativos** → selecionar o app do WhatsApp do Crivo → conceder controle total.
+3. **Adicionar ativos** → selecionar o app do WhatsApp do Krivo → conceder controle total.
 4. **Gerar novo token** → selecionar o app → marcar os escopos `whatsapp_business_messaging` e `whatsapp_business_management` → **sem prazo de expiração** (a opção existe só para tokens de System User; é o que resolve R2).
 5. Copiar o token gerado (só aparece uma vez, igual às API keys do CRM — guardar num cofre, nunca em texto versionado).
 6. **Phone number ID**: no app Meta → **WhatsApp → Configuração da API** → "ID do número de telefone" do número de teste (mesmo valor que já está na fixture `n8n/fixtures/meta-message-text.json` → `metadata.phone_number_id`, hoje um valor de exemplo — confirmar contra o real na Execute).
@@ -130,7 +130,7 @@ Passo a passo do token **permanente de System User**:
 1. Gerar o token novo no Business Manager (passos 1–5 acima). O antigo continua válido até ser revogado.
 2. Colar o novo em `WHATSAPP_ACCESS_TOKEN` na Vercel (produção) e fazer redeploy.
 3. Colar o novo na credencial **WhatsApp API** do n8n.
-4. Conferir os dois envios: uma resposta do agente (execução `success` do `crivo-tool-responder-lead`) e uma mensagem humana pelo Chats.
+4. Conferir os dois envios: uma resposta do agente (execução `success` do `krivo-tool-responder-lead`) e uma mensagem humana pelo Chats.
 5. Só então revogar o token antigo.
 
 Esquecer um dos cofres derruba só um dos envios: no CRM a falha aparece como "O envio pelo WhatsApp não está configurado" (`credencial-invalida`, com log `envio-humano-falhou`); no n8n, como erro do nó de envio.
@@ -168,12 +168,12 @@ Todas as 3 são criadas com `create_data_table` (colunas com `add_data_table_col
 | coluna | tipo | nota |
 | ------ | ---- | ---- |
 | `phoneNumberId` | string | chave de lookup (evento Meta, `metadata.phone_number_id`) |
-| `tenantSlug` | string | identificação humana do tenant, também usada como valor do header `X-Crivo-Tenant` (seção 12) |
+| `tenantSlug` | string | identificação humana do tenant, também usada como valor do header `X-Krivo-Tenant` (seção 12) |
 | `calendarId` | string | id do Google Calendar (seção 2.3) |
 
 Fase 8: 2 linhas para os 2 tenants reais do seed de produção + 1 linha extra com um `phoneNumberId` fictício (apontando para qualquer um dos 2 tenants reais) só para o teste de isolamento via fixture do T10 — nunca um `phoneNumberId` de produção de verdade.
 
-**Risco R1 — RESOLVIDO (2026-08-15, lote-7 T17)**: a coluna `apiKey` foi removida desta Data Table. `tenant_config` não guarda mais nenhuma chave — os 8+1 pontos do fluxo que montavam `Authorization` por expressão (o valor aparecia em texto claro na Data Table *e* no log de cada execução, porque expressão é material de parâmetro, não de credencial) passaram a usar a credencial `httpHeaderAuth` do cofre do n8n ("Crivo - chave de serviço") mais o header `X-Crivo-Tenant` com o `tenantSlug`. Detalhe completo do mecanismo e do procedimento de rotação: seção 12.
+**Risco R1 — RESOLVIDO (2026-08-15, lote-7 T17)**: a coluna `apiKey` foi removida desta Data Table. `tenant_config` não guarda mais nenhuma chave — os 8+1 pontos do fluxo que montavam `Authorization` por expressão (o valor aparecia em texto claro na Data Table *e* no log de cada execução, porque expressão é material de parâmetro, não de credencial) passaram a usar a credencial `httpHeaderAuth` do cofre do n8n ("Krivo - chave de serviço") mais o header `X-Krivo-Tenant` com o `tenantSlug`. Detalhe completo do mecanismo e do procedimento de rotação: seção 12.
 
 ### `conversa_estado` — estado leve da conversa (chave composta `tenantSlug`+`waId`)
 
@@ -278,7 +278,7 @@ Marketing. Essa informação histórica não autoriza envio ou classificação d
 
 ## 6. Cadência do scheduler (Risco R3 — quota de execuções)
 
-`crivo-agente-scheduler` roda como **1 workflow único** com 3 varreduras sequenciais (lembretes, reengajamento, escalonamento por silêncio), mais a varredura D de purga pedida pelo CRM desde o lote-14 (§15), todas no mesmo trigger exatamente para minimizar o número de execuções contra a quota do plano n8n — 3 workflows separados triplicariam o consumo só de scheduling.
+`krivo-agente-scheduler` roda como **1 workflow único** com 3 varreduras sequenciais (lembretes, reengajamento, escalonamento por silêncio), mais a varredura D de purga pedida pelo CRM desde o lote-14 (§15), todas no mesmo trigger exatamente para minimizar o número de execuções contra a quota do plano n8n — 3 workflows separados triplicariam o consumo só de scheduling.
 
 **Matemática do risco**, a 15 min:
 
@@ -287,7 +287,7 @@ Marketing. Essa informação histórica não autoriza envio ou classificação d
 96 × 30 dias ≈ 2.880 execuções/mês  (design.md arredonda para "~2,9k")
 ```
 
-Isso é **só** o scheduler — soma com toda execução do `crivo-agente-principal` (1 por rajada de mensagem, após debounce) no mesmo plano.
+Isso é **só** o scheduler — soma com toda execução do `krivo-agente-principal` (1 por rajada de mensagem, após debounce) no mesmo plano.
 
 **Antes de publicar em T11**: checar o plano/quota atual da instância (página de uso/billing do n8n Cloud — fora do alcance dos tools MCP disponíveis aqui, é passo humano/painel). Se a quota apertar:
 
@@ -302,15 +302,15 @@ Isso é **só** o scheduler — soma com toda execução do `crivo-agente-princi
 2. `node scripts/n8n-inline.mjs` rodado, `n8n/generated/*.ts` revisado.
 3. Data Tables criadas via MCP (seção 3); `tenant_config` populada seguindo a ordem da seção 4 (seed → captura → linhas).
 4. Templates da seção 5 submetidas no painel Meta (aprovação acompanhada fora do MCP).
-5. Workflows publicados via MCP a partir de `n8n/generated/`; `crivo-agente-erros` ligado a `crivo-agente-principal` e `crivo-agente-scheduler` via `settings.errorWorkflow`.
+5. Workflows publicados via MCP a partir de `n8n/generated/`; `krivo-agente-erros` ligado a `krivo-agente-principal` e `krivo-agente-scheduler` via `settings.errorWorkflow`.
 6. Cadência do scheduler (seção 6) confirmada contra a quota real do plano antes de ativar em produção.
-7. `crivo-agente-principal` ativado → Meta verifica o webhook automaticamente (seção 2.1) → smoke real no número de teste (T12/T13, fora do escopo deste worker).
+7. `krivo-agente-principal` ativado → Meta verifica o webhook automaticamente (seção 2.1) → smoke real no número de teste (T12/T13, fora do escopo deste worker).
 
 ---
 
 ## 8. Nono dígito brasileiro — o `wa_id` recebido ≠ o destinatário do envio
 
-**A armadilha**: desde 2016/2017 (Anatel), todo celular brasileiro tem 9 dígitos locais — o "nono dígito", um `9` acrescentado antes do número antigo de 8 dígitos. O `wa_id` que a Meta entrega no webhook, porém, vem no **formato legado, sem esse 9**: o número real +55 34 99953-2444 chega como `553499532444` (12 dígitos), enquanto o painel da Meta (campo `to` do curl de exemplo) usa `5534999532444` (13 dígitos). Mandar o `wa_id` cru como destinatário faz a Cloud API responder **erro 131030 — "Recipient phone number not in allowed list"**, e o envio falha depois de todo o resto ter dado certo (lead criado, LLM respondido). Foi exatamente isso na execução 354 de `crivo-agente-principal`, e **não é específico do número de teste**: em produção, toda resposta a lead brasileiro falharia.
+**A armadilha**: desde 2016/2017 (Anatel), todo celular brasileiro tem 9 dígitos locais — o "nono dígito", um `9` acrescentado antes do número antigo de 8 dígitos. O `wa_id` que a Meta entrega no webhook, porém, vem no **formato legado, sem esse 9**: o número real +55 34 99953-2444 chega como `553499532444` (12 dígitos), enquanto o painel da Meta (campo `to` do curl de exemplo) usa `5534999532444` (13 dígitos). Mandar o `wa_id` cru como destinatário faz a Cloud API responder **erro 131030 — "Recipient phone number not in allowed list"**, e o envio falha depois de todo o resto ter dado certo (lead criado, LLM respondido). Foi exatamente isso na execução 354 de `krivo-agente-principal`, e **não é específico do número de teste**: em produção, toda resposta a lead brasileiro falharia.
 
 **Como o fluxo trata**: `n8n/src/phone.mjs` (`toWhatsAppMsisdn`) insere o `9` depois do DDD quando o número é brasileiro (prefixo `55`), tem 12 dígitos e o número local começa com 6-9 (faixa de **celular**; fixo começa com 2-5 e nunca recebeu o nono dígito — sem esse discriminador um fixo viraria um celular inexistente). Números já com 13 dígitos e números de outros países voltam inalterados (idempotente). Todo nó de envio passa por ela:
 
@@ -336,7 +336,7 @@ Isso é **só** o scheduler — soma com toda execução do `crivo-agente-princi
 
 ### 10.1 Payload real vs. fixtures — diff zero
 
-Comparado o payload de entrada do nó `WhatsApp Trigger` da execução real **404** de `crivo-agente-principal` (`2026-08-09T02:50:47Z`, `mode:"webhook"`, ~12.6s de duração — round-trip completo com resposta do Gemini e envio confirmado) contra `n8n/fixtures/meta-message-text.json`. Todos os campos que `normalizeEvent` consome batem em presença e tipo: `messaging_product`, `metadata.phone_number_id`, `contacts[].wa_id`, `messages[].id/timestamp/type/text.body`. **Diff estrutural: zero — fixture não alterada.**
+Comparado o payload de entrada do nó `WhatsApp Trigger` da execução real **404** de `krivo-agente-principal` (`2026-08-09T02:50:47Z`, `mode:"webhook"`, ~12.6s de duração — round-trip completo com resposta do Gemini e envio confirmado) contra `n8n/fixtures/meta-message-text.json`. Todos os campos que `normalizeEvent` consome batem em presença e tipo: `messaging_product`, `metadata.phone_number_id`, `contacts[].wa_id`, `messages[].id/timestamp/type/text.body`. **Diff estrutural: zero — fixture não alterada.**
 
 Duas observações honestas, nenhuma bloqueante:
 
@@ -347,12 +347,12 @@ Duas observações honestas, nenhuma bloqueante:
 
 Confirmado por observação em **Meta Business Settings → Usuários → Usuários do sistema → "Conversions API System User"** (sem gerar/regenerar/revogar nada):
 
-- A credencial pertence de fato a um **usuário do sistema** ("Conversions API System User", `Acesso de Employee`), com o app `crivo` instalado com exatamente os escopos `business_management`, `whatsapp_business_management` e `whatsapp_business_messaging` desde **5 de ago de 2026** — mesma data em que a credencial foi criada nesta feature.
-- O assistente "Gerar token" desse usuário do sistema, para o app `crivo`, oferece as opções **"60 dias (recomendado)"** e **"Nunca"** na etapa "Definir expiração" — confirma que o mecanismo de token permanente que o runbook (seção 2.2) descreve existe e está disponível para esta credencial. O fluxo foi fechado nessa etapa (sem avançar/gerar) para não invalidar o token em uso.
+- A credencial pertence de fato a um **usuário do sistema** ("Conversions API System User", `Acesso de Employee`), com o app `krivo` instalado com exatamente os escopos `business_management`, `whatsapp_business_management` e `whatsapp_business_messaging` desde **5 de ago de 2026** — mesma data em que a credencial foi criada nesta feature.
+- O assistente "Gerar token" desse usuário do sistema, para o app `krivo`, oferece as opções **"60 dias (recomendado)"** e **"Nunca"** na etapa "Definir expiração" — confirma que o mecanismo de token permanente que o runbook (seção 2.2) descreve existe e está disponível para esta credencial. O fluxo foi fechado nessa etapa (sem avançar/gerar) para não invalidar o token em uso.
 - Evidência indireta forte de que o token atual **não é** o temporário de 23h do painel "Configuração da API" (a preocupação específica do Risco R2): a execução **404**, de hoje (`2026-08-09`), 4 dias depois da credencial ter sido criada (`2026-08-05`), enviou uma mensagem real com sucesso pelo nó `WhatsApp: enviar resposta` (Graph API respondeu com `wamid` de confirmação). Um token de 23h não sobreviveria 4 dias.
 - **O que não foi possível confirmar**: o Meta não expõe, para um token de usuário do sistema já emitido, se ele foi gerado com "60 dias" ou "Nunca" — essa informação só aparece na tela do próprio assistente de geração, no momento da criação, e não fica visível depois. Não há como ler isso retroativamente sem gerar um token novo (ação que invalidaria o atual e está fora do escopo permitido aqui).
 
-**Conclusão honesta**: confirmado que o token é de usuário do sistema (não o temporário de 23h — a falha específica que o R2 descreve) e que segue funcionando 4 dias depois da criação. Não confirmado com certeza absoluta se a opção escolhida na geração foi "Nunca" (permanente) ou "60 dias". Pendência conhecida, não bloqueante para T12: se o envio parar de funcionar em algum momento (o que `crivo-agente-erros` notificaria por e-mail), gerar um novo token de usuário do sistema escolhendo explicitamente "Nunca" resolve definitivamente.
+**Conclusão honesta**: confirmado que o token é de usuário do sistema (não o temporário de 23h — a falha específica que o R2 descreve) e que segue funcionando 4 dias depois da criação. Não confirmado com certeza absoluta se a opção escolhida na geração foi "Nunca" (permanente) ou "60 dias". Pendência conhecida, não bloqueante para T12: se o envio parar de funcionar em algum momento (o que `krivo-agente-erros` notificaria por e-mail), gerar um novo token de usuário do sistema escolhendo explicitamente "Nunca" resolve definitivamente.
 
 ### 10.3 Resync `tenant_config` (rodado nesta sessão, após `npx vitest run`)
 
@@ -364,18 +364,18 @@ Como o gate deste T12 rodou `npx vitest run` (que rotaciona as API keys via `run
 
 ### 11.1 Bug real: `workflowInputs` de `toolWorkflow` sem `schema` não mapeia nenhum campo
 
-Achado durante a primeira execução real do `crivo-agente-principal` publicado (não hipótese — 8 execuções reais confirmam): os nós `responder_lead` e `agendar_reuniao` (`@n8n/n8n-nodes-langchain.toolWorkflow`, `n8n/workflows/principal.ts`, T11) definiam `workflowInputs.value` com os campos do sub-workflow (um via `fromAi()`, os demais via `expr()`), mas **sem** a propriedade `workflowInputs.schema` — presente em todo outro nó `resourceMapper` deste arquivo (Data Table). Sem `schema`, o resourceMapper não mapeia campo nenhum: o `Execute Workflow Trigger` do sub-workflow chamado recebia **todos os 6 (ou 10) campos como `null`**, inclusive os 5 estáticos que nunca dependem do modelo. Resultado observado: `crivo-tool-responder-lead` tentava enviar ao WhatsApp com `recipientMsisdn: ""` e `mensagem: ""`, e a Cloud API rejeitava com 400 (execuções 454–461). `validate_workflow` (checagem estática) não pega esse erro — só aparece em execução real.
+Achado durante a primeira execução real do `krivo-agente-principal` publicado (não hipótese — 8 execuções reais confirmam): os nós `responder_lead` e `agendar_reuniao` (`@n8n/n8n-nodes-langchain.toolWorkflow`, `n8n/workflows/principal.ts`, T11) definiam `workflowInputs.value` com os campos do sub-workflow (um via `fromAi()`, os demais via `expr()`), mas **sem** a propriedade `workflowInputs.schema` — presente em todo outro nó `resourceMapper` deste arquivo (Data Table). Sem `schema`, o resourceMapper não mapeia campo nenhum: o `Execute Workflow Trigger` do sub-workflow chamado recebia **todos os 6 (ou 10) campos como `null`**, inclusive os 5 estáticos que nunca dependem do modelo. Resultado observado: `krivo-tool-responder-lead` tentava enviar ao WhatsApp com `recipientMsisdn: ""` e `mensagem: ""`, e a Cloud API rejeitava com 400 (execuções 454–461). `validate_workflow` (checagem estática) não pega esse erro — só aparece em execução real.
 
 **Corrigido** em `n8n/workflows/principal.ts`: `schema` adicionado a `workflowInputs` dos dois nós, listando cada campo (`id`, `displayName`, `required`, `type: "string"`, `canBeUsedToMatch: false`). Regenerado via `node scripts/n8n-inline.mjs` e reaplicado na instância. Confirmado corrigido pela execução seguinte (ver §11.2).
 
-**Achado relacionado**: nem `crivo-tool-responder-lead` nem `crivo-tool-agendar-reuniao` tinham `settings.errorWorkflow` linkado a `crivo-agente-erros` (só `crivo-agente-principal` e `crivo-agente-scheduler` tinham, de lotes anteriores) — corrigido via MCP `setWorkflowSettings` nos dois, republicados.
+**Achado relacionado**: nem `krivo-tool-responder-lead` nem `krivo-tool-agendar-reuniao` tinham `settings.errorWorkflow` linkado a `krivo-agente-erros` (só `krivo-agente-principal` e `krivo-agente-scheduler` tinham, de lotes anteriores) — corrigido via MCP `setWorkflowSettings` nos dois, republicados.
 
 ### 11.2 Evidência de execução real (T12 Done-when)
 
-- **Recusa de abertura proibida, sem envio ao lead**: execução `450` de `crivo-tool-responder-lead` (fixture `mensagem: "Show. Qual seu orçamento?"`) — `Code: aplicar barreiras de persona` devolveu `{accepted:false, reason:"abertura-proibida"}`, fluxo terminou em `Code: recusa (devolve motivo ao agente)` sem alcançar `WhatsApp: enviar resposta do agente`.
-- **Caminho feliz até `responder_lead`, com envio real confirmado**: execução `462` de `crivo-agente-principal` (fixture WhatsApp real, tenant `triangulo`, número de teste `553499532444`) — o AI Agent chamou `registrar_qualificacao` (propertyType/region, com uma rejeição de enum inválido corretamente tratada — `motivation: "morar sozinho"` → `400 payload-invalido`, o agente seguiu sem travar) e depois `responder_lead`, que devolveu `{ok:true, leadId:"7fdc4ae6-..."}`. Sub-execução correspondente `463` de `crivo-tool-responder-lead`: `status:"success"` — mensagem realmente enviada via WhatsApp e registrada no CRM.
-- **Reconciliação `n8n/generated/`**: os 52 nós e 61 conexões do `crivo-agente-principal` publicado foram comparados campo a campo contra um workflow-escrutínio criado via `create_workflow_from_code` a partir do `n8n/generated/principal.ts` corrigido — 0 nós/conexões faltando ou sobrando; os 24 nós do "entorno" (trigger, buffer, gate) ficaram intocados por design, com divergências só cosméticas (parâmetros default omitidos vs. explícitos, nunca lógica).
-- Todos os 3 workflows (`crivo-agente-principal`, `crivo-tool-responder-lead`, `crivo-tool-agendar-reuniao`) publicados e ativos; `errorWorkflow` linkado nos 3.
+- **Recusa de abertura proibida, sem envio ao lead**: execução `450` de `krivo-tool-responder-lead` (fixture `mensagem: "Show. Qual seu orçamento?"`) — `Code: aplicar barreiras de persona` devolveu `{accepted:false, reason:"abertura-proibida"}`, fluxo terminou em `Code: recusa (devolve motivo ao agente)` sem alcançar `WhatsApp: enviar resposta do agente`.
+- **Caminho feliz até `responder_lead`, com envio real confirmado**: execução `462` de `krivo-agente-principal` (fixture WhatsApp real, tenant `triangulo`, número de teste `553499532444`) — o AI Agent chamou `registrar_qualificacao` (propertyType/region, com uma rejeição de enum inválido corretamente tratada — `motivation: "morar sozinho"` → `400 payload-invalido`, o agente seguiu sem travar) e depois `responder_lead`, que devolveu `{ok:true, leadId:"7fdc4ae6-..."}`. Sub-execução correspondente `463` de `krivo-tool-responder-lead`: `status:"success"` — mensagem realmente enviada via WhatsApp e registrada no CRM.
+- **Reconciliação `n8n/generated/`**: os 52 nós e 61 conexões do `krivo-agente-principal` publicado foram comparados campo a campo contra um workflow-escrutínio criado via `create_workflow_from_code` a partir do `n8n/generated/principal.ts` corrigido — 0 nós/conexões faltando ou sobrando; os 24 nós do "entorno" (trigger, buffer, gate) ficaram intocados por design, com divergências só cosméticas (parâmetros default omitidos vs. explícitos, nunca lógica).
+- Todos os 3 workflows (`krivo-agente-principal`, `krivo-tool-responder-lead`, `krivo-tool-agendar-reuniao`) publicados e ativos; `errorWorkflow` linkado nos 3.
 
 ---
 
@@ -385,19 +385,19 @@ Achado durante a primeira execução real do `crivo-agente-principal` publicado 
 
 Os 9 pontos que montavam `Authorization` por expressão em `principal.ts` (8) e nos 2 sub-workflows (1 cada) — a chave do tenant lida de `tenant_config.apiKey` e concatenada em `headerParameters` — foram substituídos por:
 
-- **Autenticação do nó**: `authentication: "genericCredentialType"`, `genericAuthType: "httpHeaderAuth"`, `credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") }` (credencial humana, id `YhGcdfGtdEBBU9YP`, `Authorization: Bearer <chave de serviço>` já embutido no cofre — nunca visível em parâmetro nem em log de execução, diferente do esquema anterior).
-- **Header adicional**: `X-Crivo-Tenant` com o `tenantSlug` que já fluía pelo contexto (`Code: combinar evento e tenant` / `Code: gate`) — nenhuma leitura nova de Data Table foi introduzida.
+- **Autenticação do nó**: `authentication: "genericCredentialType"`, `genericAuthType: "httpHeaderAuth"`, `credentials: { httpHeaderAuth: newCredential("Krivo - chave de servico") }` (credencial humana, id `YhGcdfGtdEBBU9YP`, `Authorization: Bearer <chave de serviço>` já embutido no cofre — nunca visível em parâmetro nem em log de execução, diferente do esquema anterior).
+- **Header adicional**: `X-Krivo-Tenant` com o `tenantSlug` que já fluía pelo contexto (`Code: combinar evento e tenant` / `Code: gate`) — nenhuma leitura nova de Data Table foi introduzida.
 
 `apiKey` foi removido de toda a cadeia de contexto: `tenant_config` (Data Table, coluna deletada via `delete_data_table_column`), `Code: combinar evento e tenant`, `Code: contexto do lead`, `Code: finalizar opt-out`, `Code: finalizar mídia`, e o `workflowInputs` dos 2 nós `toolWorkflow` (`responder_lead`, `agendar_reuniao`) e dos 2 `Execute Workflow Trigger` dos sub-workflows. Confirmado por busca nos 3 arquivos-fonte (`n8n/workflows/*.ts`) e nos 3 workflows publicados (`get_workflow_details`): zero ocorrências de `apiKey` ou de um header `Authorization` montado por expressão.
 
 ### 12.2 Por que a evidência real desta task é um workflow-escrutínio, não um webhook real
 
-`crivo-agente-principal` dispara por `whatsAppTrigger`; `execute_workflow` (MCP) só aceita `Schedule Trigger, Webhook Trigger, Form Trigger, Chat Trigger, Manual Trigger` — confirmado pelo próprio erro da ferramenta ao tentar. `test_workflow` (pin data) pinaria justamente os nós HTTP Request que este lote mudou, o que provaria a lógica mas não a autenticação real contra produção. Nenhuma das duas ferramentas MCP prova o que SEC-01 pede.
+`krivo-agente-principal` dispara por `whatsAppTrigger`; `execute_workflow` (MCP) só aceita `Schedule Trigger, Webhook Trigger, Form Trigger, Chat Trigger, Manual Trigger` — confirmado pelo próprio erro da ferramenta ao tentar. `test_workflow` (pin data) pinaria justamente os nós HTTP Request que este lote mudou, o que provaria a lógica mas não a autenticação real contra produção. Nenhuma das duas ferramentas MCP prova o que SEC-01 pede.
 
-Solução (mesmo padrão já usado no T12, seção 10.3 — workflow temporário, arquivado depois): um workflow-escrutínio (`Manual Trigger` → `HTTP Request`) com a **configuração idêntica** ao nó `HTTP: POST /leads (idempotente)` publicado — mesma credencial `httpHeaderAuth`, mesmo header `X-Crivo-Tenant`, mesma URL — executado duas vezes via `execute_workflow` (`Manual Trigger` está na lista permitida):
+Solução (mesmo padrão já usado no T12, seção 10.3 — workflow temporário, arquivado depois): um workflow-escrutínio (`Manual Trigger` → `HTTP Request`) com a **configuração idêntica** ao nó `HTTP: POST /leads (idempotente)` publicado — mesma credencial `httpHeaderAuth`, mesmo header `X-Krivo-Tenant`, mesma URL — executado duas vezes via `execute_workflow` (`Manual Trigger` está na lista permitida):
 
-- **Caso positivo**, execução `664`: `X-Crivo-Tenant: triangulo` → `status:"success"`, `POST /leads` criou o lead `1ed76ddb-5b89-43fc-a30e-d1e216cd4a67` de verdade em produção — a credencial de serviço autentica e o tenant certo é resolvido, sem nenhuma chave em parâmetro.
-- **Caso negativo**, execução `665`: `X-Crivo-Tenant: tenant-que-nao-existe-t17` → corpo da resposta `{"type":"urn:crivo:problem:tenant-nao-identificado","status":401,"code":"tenant-nao-identificado"}` — confirma que um slug desconhecido nunca cai num tenant default.
+- **Caso positivo**, execução `664`: `X-Krivo-Tenant: triangulo` → `status:"success"`, `POST /leads` criou o lead `1ed76ddb-5b89-43fc-a30e-d1e216cd4a67` de verdade em produção — a credencial de serviço autentica e o tenant certo é resolvido, sem nenhuma chave em parâmetro.
+- **Caso negativo**, execução `665`: `X-Krivo-Tenant: tenant-que-nao-existe-t17` → corpo da resposta `{"type":"urn:krivo:problem:tenant-nao-identificado","status":401,"code":"tenant-nao-identificado"}` — confirma que um slug desconhecido nunca cai num tenant default.
 
 Workflow-escrutínio (`3vo8P22DP4EMG9PG`) arquivado (`archive_workflow`) logo depois das duas execuções — nada ficou pendurado na instância.
 
@@ -408,8 +408,8 @@ Workflow-escrutínio (`3vo8P22DP4EMG9PG`) arquivado (`archive_workflow`) logo de
 **Ordem obrigatória — nunca invertida** (mesma lógica de "credencial primeiro, cutover depois" da ativação original, aplicada ao inverso na rotação: a chave nova só substitui a antiga depois de confirmada funcionando):
 
 1. **Gerar a chave nova**: rodar `npm run db:mint-service-key -- "<rótulo novo>"` (aditivo: insere só a chave nova em `service_api_keys` e não revoga nem rotaciona mais nada; não use `npm run db:seed` para isso, que apaga usuários e rotaciona as chaves por tenant). Copiar o valor do stdout imediatamente; ele aparece uma vez só e o banco guarda apenas o hash.
-2. **Atualizar a credencial na instância**: editar a credencial `httpHeaderAuth` "Crivo - chave de serviço" (`YhGcdfGtdEBBU9YP`) na UI do n8n — único campo humano permitido a mudar fora do fluxo de workflow-as-code (mesma exceção de sempre para credenciais) — trocando o valor do header `Authorization` para `Bearer <chave nova>`.
-3. **Confirmar que a chave nova autentica**: repetir a verificação da seção 12.2 (workflow-escrutínio temporário, `X-Crivo-Tenant: triangulo`, espera `status:"success"`) — **antes** do passo 4. Se falhar, a credencial ainda tem o valor antigo ou o valor foi colado errado; não prosseguir.
+2. **Atualizar a credencial na instância**: editar a credencial `httpHeaderAuth` "Krivo - chave de serviço" (`YhGcdfGtdEBBU9YP`) na UI do n8n — único campo humano permitido a mudar fora do fluxo de workflow-as-code (mesma exceção de sempre para credenciais) — trocando o valor do header `Authorization` para `Bearer <chave nova>`.
+3. **Confirmar que a chave nova autentica**: repetir a verificação da seção 12.2 (workflow-escrutínio temporário, `X-Krivo-Tenant: triangulo`, espera `status:"success"`) — **antes** do passo 4. Se falhar, a credencial ainda tem o valor antigo ou o valor foi colado errado; não prosseguir.
 4. **Só então revogar a chave antiga**: rodar `npm run db:revoke-service-key -- "<rótulo da chave antiga>"` (o rótulo é o que o `db:mint-service-key` imprimiu na emissão, ou `Seed — agente n8n` para a chave do seed). O comando revoga todas as chaves ativas daquele rótulo, imprime quantas foram e recusa a operação se ela deixaria o agente sem nenhuma chave de serviço ativa, sem alterar nada nesse caso.
 5. Arquivar o workflow-escrutínio temporário do passo 3.
 
@@ -425,7 +425,7 @@ Confirmado por `search_data_tables` após a remoção da coluna: `tenant_config`
 
 O teto de bytes que a admissão de documentos aplica (`tenant_document_context_limits`) foi medido contra **este** agente: modelo, system message, catálogo de tools e janela de memória. Mudar qualquer um invalida a medição (DOCLIM-01 AC11).
 
-**Depois de toda publicação do `crivo-agente-principal`**, com o `activeVersionId` que a publicação devolveu:
+**Depois de toda publicação do `krivo-agente-principal`**, com o `activeVersionId` que a publicação devolveu:
 
 ```bash
 npx tsx --conditions=react-server scripts/document-context-benchmark.ts check --workflow-version <activeVersionId>
@@ -433,7 +433,7 @@ npx tsx --conditions=react-server scripts/document-context-benchmark.ts check --
 
 O `check` compara a identidade atual (derivada de `principal.ts` e dos módulos do system message) com a gravada e marca `stale` o que mudou. Um teto `stale` continua limitando com o valor antigo, nunca amplia; o banner da página de documentos avisa o gestor.
 
-**Para medir de novo**: o workflow `crivo-benchmark-contexto` (`n8n/workflows/benchmark-contexto.ts`, id `xpsD2PZQ1KoE2sA5`) roda uma faixa por execução, disparado por `execute_workflow` com `{ faixaBytes, modalidade, observacoes, seed }`. Ele replica o agente publicado com tools stub e corpus sintético — nenhum lead, WhatsApp ou memória real é tocado. Registrar as métricas num arquivo como `.specs/archive/lote-14-humano-no-laco/benchmark-contexto-2026-10-01.json` (medição vigente, depois da emenda D12; as anteriores ficam nos arquivos dos lotes 12 e 13) e gravar com `persist <arquivo>`.
+**Para medir de novo**: o workflow `krivo-benchmark-contexto` (`n8n/workflows/benchmark-contexto.ts`, id `xpsD2PZQ1KoE2sA5`) roda uma faixa por execução, disparado por `execute_workflow` com `{ faixaBytes, modalidade, observacoes, seed }`. Ele replica o agente publicado com tools stub e corpus sintético — nenhum lead, WhatsApp ou memória real é tocado. Registrar as métricas num arquivo como `.specs/archive/lote-14-humano-no-laco/benchmark-contexto-2026-10-01.json` (medição vigente, depois da emenda D12; as anteriores ficam nos arquivos dos lotes 12 e 13) e gravar com `persist <arquivo>`.
 
 Cuidados que o benchmark de 2026-09-23 revelou:
 
@@ -451,7 +451,7 @@ O opt-out nasce só da mensagem inteira, normalizada, igual a `sair` (sem acento
 
 ### Depois de publicar
 
-Toda publicação que muda o system message ou a versão do workflow exige o `check` do §13 e a remedição do teto de contexto. O `crivo-benchmark-contexto` inlina o mesmo `system-message.mjs`: quando o texto muda, republicar o benchmark antes de medir. Última remedição: 2026-09-30, depois da D11 (agente `3be9cfed`, benchmark `b228c3de`).
+Toda publicação que muda o system message ou a versão do workflow exige o `check` do §13 e a remedição do teto de contexto. O `krivo-benchmark-contexto` inlina o mesmo `system-message.mjs`: quando o texto muda, republicar o benchmark antes de medir. Última remedição: 2026-09-30, depois da D11 (agente `3be9cfed`, benchmark `b228c3de`).
 
 ---
 
@@ -467,8 +467,8 @@ O corretor assume uma conversa pelo Chats, responde pelo CRM (envio direto pela 
 
 Um turno do agente pode estar em andamento quando o corretor clica em "Assumir". Por isso o agente relê o lead imediatamente antes de enviar, nos dois caminhos de envio:
 
-- `crivo-tool-responder-lead`: `Aceito pelas barreiras de persona?` → `HTTP: GET /leads/{id} (antes do envio)` → `Code: pode enviar no turno?` → `Agente pode enviar no turno?`. O falso devolve ao agente a recusa `conversa-com-humano`; o erro da leitura, `conducao-indisponivel`. Nenhum dos dois envia nem grava abertura.
-- `crivo-agente-principal`, envio de contingência: o mesmo trio de nós antes do envio fixo; o falso e o erro do HTTP vão ao fechamento sem envio.
+- `krivo-tool-responder-lead`: `Aceito pelas barreiras de persona?` → `HTTP: GET /leads/{id} (antes do envio)` → `Code: pode enviar no turno?` → `Agente pode enviar no turno?`. O falso devolve ao agente a recusa `conversa-com-humano`; o erro da leitura, `conducao-indisponivel`. Nenhum dos dois envia nem grava abertura.
+- `krivo-agente-principal`, envio de contingência: o mesmo trio de nós antes do envio fixo; o falso e o erro do HTTP vão ao fechamento sem envio.
 
 `canAgentSendInTurn` olha **só** a marca e o opt-out, nunca o `status`: o agente que acabou de escalar ainda precisa enviar a mensagem de passagem (`system-message.mjs`). Falha da leitura bloqueia o envio (falha fechada).
 

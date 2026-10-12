@@ -21,7 +21,7 @@ export type ProblemCode =
   | "corpo-grande-demais"
   | "rota-inexistente"
   | "metodo-nao-suportado"
-  // lote-7 — SEC-01: chave de serviço válida sem `X-Crivo-Tenant`, ou com
+  // lote-7 — SEC-01: chave de serviço válida sem `X-Krivo-Tenant`, ou com
   // slug desconhecido — nunca cai em nenhum tenant default (auth.ts).
   | "tenant-nao-identificado"
   // lote-8 — ATRIB-02: nenhum corretor ativo tem janela de trabalho cobrindo
@@ -78,7 +78,7 @@ export function problem(
   detail?: string
 ): Response {
   const body = {
-    type: `urn:crivo:problem:${code}`,
+    type: `urn:krivo:problem:${code}`,
     title: TITLES[code],
     status,
     ...(detail !== undefined ? { detail } : {}),

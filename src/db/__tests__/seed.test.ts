@@ -44,9 +44,9 @@ const CATEGORY_COLOR_PALETTE = [
   "gray",
 ] as const;
 
-// lote-7 — REAL-01: só `crivo-demo` recebe o dataset fictício de lead. Os
+// lote-7 — REAL-01: só `krivo-demo` recebe o dataset fictício de lead. Os
 // dois tenants-piloto operam só com dado real a partir daqui.
-const DEMO_SLUG = "crivo-demo";
+const DEMO_SLUG = "krivo-demo";
 const PILOT_SLUGS = ["triangulo", "vale-uberaba"] as const;
 
 async function snapshotIds() {
@@ -129,10 +129,10 @@ describe("db/seed", () => {
     expect(allTenants).toHaveLength(3);
 
     const slugs = allTenants.map((t) => t.slug).sort();
-    expect(slugs).toEqual(["crivo-demo", "triangulo", "vale-uberaba"]);
+    expect(slugs).toEqual(["krivo-demo", "triangulo", "vale-uberaba"]);
   });
 
-  it("só o tenant Crivo Demo tem lead/conversa/mensagem; os dois pilotos têm exatamente 0 de cada (lote-7 — REAL-01 AC1)", async () => {
+  it("só o tenant Krivo Demo tem lead/conversa/mensagem; os dois pilotos têm exatamente 0 de cada (lote-7 — REAL-01 AC1)", async () => {
     const demo = await tenantBySlug(DEMO_SLUG);
 
     const demoLeads = await db.select().from(leads).where(eq(leads.tenantId, demo.id));
@@ -311,7 +311,7 @@ describe("db/seed", () => {
   // o de demonstração — preenchê-lo é sempre ato de quem tem
   // `configuracoes:escrever`, nunca do seed (design.md — Risks: "Seed
   // escreve baseline mockado num tenant"). Substitui a asserção anterior
-  // (lote-7 — REAL-01 AC3), que esperava o Crivo Demo com baseline
+  // (lote-7 — REAL-01 AC3), que esperava o Krivo Demo com baseline
   // pré-preenchido; esse comportamento foi deliberadamente removido.
   it("os cinco baselines nascem nulos nos 3 tenants semeados — seed não inventa baseline (lote-9 — BASE-01)", async () => {
     const allTenants = await db.select().from(tenants);
@@ -357,7 +357,7 @@ describe("db/seed", () => {
     }
   });
 
-  it("Crivo Demo tem 20-30 leads distribuídos pelos 3 status do pipeline, com conversa 1:1 e mensagens (AC 1.2 herdado)", async () => {
+  it("Krivo Demo tem 20-30 leads distribuídos pelos 3 status do pipeline, com conversa 1:1 e mensagens (AC 1.2 herdado)", async () => {
     const demo = await tenantBySlug(DEMO_SLUG);
 
     const demoLeads = await db.select().from(leads).where(eq(leads.tenantId, demo.id));
@@ -381,7 +381,7 @@ describe("db/seed", () => {
     }
   });
 
-  it("leads qualificado_agendado do Crivo Demo têm todos os campos de qualificação do PRD §6.4 e resumo executivo preenchidos (AC 1.4)", async () => {
+  it("leads qualificado_agendado do Krivo Demo têm todos os campos de qualificação do PRD §6.4 e resumo executivo preenchidos (AC 1.4)", async () => {
     const demo = await tenantBySlug(DEMO_SLUG);
     const rows = await db
       .select()
@@ -402,7 +402,7 @@ describe("db/seed", () => {
     }
   });
 
-  it("leads escalado_humano do Crivo Demo têm motivo de escalonamento preenchido (AC 1.5)", async () => {
+  it("leads escalado_humano do Krivo Demo têm motivo de escalonamento preenchido (AC 1.5)", async () => {
     const demo = await tenantBySlug(DEMO_SLUG);
     const rows = await db
       .select()
@@ -521,7 +521,7 @@ describe("db/seed", () => {
     expect(new Set(presentations).size).toBe(allTenants.length);
   });
 
-  it("Crivo Demo tem leads com firstContactAt nas janelas de 7, 30 e 90 dias relativas a agora (lote-4 — datas espalhadas)", async () => {
+  it("Krivo Demo tem leads com firstContactAt nas janelas de 7, 30 e 90 dias relativas a agora (lote-4 — datas espalhadas)", async () => {
     const demo = await tenantBySlug(DEMO_SLUG);
     const demoLeads = await db.select().from(leads).where(eq(leads.tenantId, demo.id));
     expect(demoLeads.length).toBeGreaterThan(0);

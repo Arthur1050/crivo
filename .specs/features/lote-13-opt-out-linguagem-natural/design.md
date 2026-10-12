@@ -8,7 +8,7 @@
 
 ## Architecture Overview
 
-Um classificador de intenção entra na rota `conversa` de `crivo-agente-principal`, depois do bloco
+Um classificador de intenção entra na rota `conversa` de `krivo-agente-principal`, depois do bloco
 de memória e antes do system message do agente. Ele decide a rota do turno. Nenhum efeito novo é
 escrito:
 
@@ -69,7 +69,7 @@ de estrutura, não de comportamento do modelo.
 
 | System | Integration Method |
 | --- | --- |
-| CRM | Nenhuma rota nova. O caminho natural chama o mesmo `POST /leads/{id}/opt-out`, com a credencial de serviço e o `X-Crivo-Tenant` de `$('Code: gate')`. Recusas ≥ 400 já caem em `integration_refusals` (AD-023). |
+| CRM | Nenhuma rota nova. O caminho natural chama o mesmo `POST /leads/{id}/opt-out`, com a credencial de serviço e o `X-Krivo-Tenant` de `$('Code: gate')`. Recusas ≥ 400 já caem em `integration_refusals` (AD-023). |
 | OpenAI | Um segundo nó `lmChatOpenAi`, dedicado ao classificador, com o mesmo snapshot da AD-026. |
 | Benchmark de teto (AD-031) | O system message muda, então a identidade fica `stale`; reexecutar `check`/`persist` depois de publicar (README §13). |
 
@@ -163,7 +163,7 @@ medição):
   `false` mantém `benchmark-contexto.ts`, que inlina o mesmo módulo, com o mesmo texto de hoje.
 - `OPT_OUT_GUIDANCE_INSTRUCTION` fica como está.
 
-### Workflow de medição `n8n/workflows/medicao-opt-out.ts` → `crivo-medicao-opt-out` (novo)
+### Workflow de medição `n8n/workflows/medicao-opt-out.ts` → `krivo-medicao-opt-out` (novo)
 
 - **Purpose**: Medir o classificador isolado sobre o corpus (OPTMED-01), sem CRM, sem WhatsApp e
   sem memória.
@@ -213,7 +213,7 @@ type MeasurementReport = {
   date: string;
   modelId: string;
   classifierHash: string;
-  workflowVersion: string;         // activeVersionId do crivo-medicao-opt-out
+  workflowVersion: string;         // activeVersionId do krivo-medicao-opt-out
   repeticoes: 3;
   porFrase: { id: string; faixa: string; explicita: number; ambigua: number; fora: number }[];
   porFaixa: Record<"explicita" | "ambigua" | "fora", { explicita: number; ambigua: number; fora: number; total: number }>;
@@ -232,7 +232,7 @@ type MeasurementReport = {
 | OpenAI fora do ar ou timeout no classificador | Saída de erro → `Code: rota fora` → agente normal | Nenhum. Se era um pedido explícito, o agente orienta `sair` (rede) |
 | Classificador devolve texto fora das categorias | Auto-fix (+1 chamada); persistindo, `fallback: other` → rota fora | Igual à linha acima |
 | `POST opt-out` natural falha 3× | Saída de erro → `Code: orientar sair` → envio fixo | Uma mensagem pedindo para responder `sair`; `optedOutAt` nulo |
-| `POST opt-out` da palavra-chave falha | Inalterado (erro da execução → `crivo-agente-erros`) | Inalterado |
+| `POST opt-out` da palavra-chave falha | Inalterado (erro da execução → `krivo-agente-erros`) | Inalterado |
 | Resposta "sim" depois do corte de 12h | Sessão vazia → `lastAgentMessage = null` → o "sim" sozinho cai em fora | O agente responde normalmente |
 | Medição reprova | O classificador não é publicado; o lote para para decisão do usuário | Nenhum; a orientação atual segue |
 
@@ -250,7 +250,7 @@ type MeasurementReport = {
 | A mudança do system message torna o teto de contexto `stale` | `n8n/README.md` §13 | O banner avisa o gestor; o teto continua limitando com o valor antigo (fail-closed, AD-031) | Task pós-publicação: `check` → rerodar o benchmark → `persist`, como no lote-12 |
 | Vazão compartilhada da OpenAI (AD-031) | `src/server/documents/context-ceiling.ts` | O classificador consome tokens por minuto fora da fórmula | Cerca de 1–2 mil tokens por turno contra a margem de 0,8 sobre 200 mil TPM (40 mil de folga). Registrar a conta no `n8n/README.md`; a fórmula não muda |
 | Contagem de nós e conexões fixada em teste | `n8n/workflows/__tests__/principal-modelo.test.ts:29-30` | O teste quebra com os nós novos | Atualizar 62/76 para o valor medido por `principal.toJSON()` na própria task, com a origem da conta no comentário (padrão do lote-11) |
-| O roteiro prevê um único número de teste | `n8n/smoke/roteiro.md` §1 | Três casos exigem três leads | Rodar os casos em sequência, com `npm run smoke:reset` + `crivo-smoke-reset` entre eles; cada reset apaga o lead, e o seguinte nasce novo |
+| O roteiro prevê um único número de teste | `n8n/smoke/roteiro.md` §1 | Três casos exigem três leads | Rodar os casos em sequência, com `npm run smoke:reset` + `krivo-smoke-reset` entre eles; cada reset apaga o lead, e o seguinte nasce novo |
 | O primeiro turno de toda conversa paga +1 chamada de modelo | rota `conversa` | +1–2 s sobre o debounce de 10 s | Aceito na escolha da abordagem; a latência do classificador é registrada na medição |
 
 ---

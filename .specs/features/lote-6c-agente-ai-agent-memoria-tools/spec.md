@@ -21,7 +21,7 @@ Sobre isso soma-se o desenho do fluxo: `n8n/workflows/principal.ts` monta o prom
 
 | Feature | Reason |
 | ------- | ------ |
-| RabbitMQ / broker externo | Validado e descartado nesta sessão: ACK rápido já resolvido (webhook `onReceived`), retry/DLQ já existe (`crivo-agente-erros` como `errorWorkflow`), serialização parcialmente coberta por debounce + `checkStillLatest`, e escala horizontal no n8n se resolve com queue mode/Redis. Gatilho para revisitar: FIFO estrito por lead com múltiplos workers, ou migração para o microserviço INT-08 |
+| RabbitMQ / broker externo | Validado e descartado nesta sessão: ACK rápido já resolvido (webhook `onReceived`), retry/DLQ já existe (`krivo-agente-erros` como `errorWorkflow`), serialização parcialmente coberta por debounce + `checkStillLatest`, e escala horizontal no n8n se resolve com queue mode/Redis. Gatilho para revisitar: FIFO estrito por lead com múltiplos workers, ou migração para o microserviço INT-08 |
 | RAG / vector store sobre os documentos | Os documentos do tenant são poucos e curtos; `GET /api/v1/context` sob demanda cobre o caso. Vetorial é resposta para corpus grande, que não é o cenário do piloto |
 | Busca de imóvel, envio de foto, envio de preço | O agente nunca teve essa capacidade. Este lote a torna explícita como **fronteira**, não a implementa |
 | Voz/áudio, lead scoring, escolha de modelo por tenant | Fora do v1 (PRD §3) / pós-piloto (AD-001) |

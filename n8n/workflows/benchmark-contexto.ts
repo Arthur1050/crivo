@@ -1,5 +1,5 @@
 /**
- * crivo-benchmark-contexto — mede o teto de contexto documental do agente
+ * krivo-benchmark-contexto — mede o teto de contexto documental do agente
  * (lote-12 — T34, DOCLIM-01; design.md "Benchmark reproduzível").
  *
  * Reproduz a composição do agente publicado (`principal.ts`) no que pesa para
@@ -60,7 +60,7 @@ const webhookTrigger = trigger({
   config: {
     name: "Webhook: rodar faixa",
     position: [0, 300],
-    parameters: { httpMethod: "POST", path: "crivo-benchmark-contexto", responseMode: "lastNode" },
+    parameters: { httpMethod: "POST", path: "krivo-benchmark-contexto", responseMode: "lastNode" },
   },
   output: [{ body: { faixaBytes: 64000, modalidade: "ambos", observacoes: 1, seed: 1 } }],
 });
@@ -77,9 +77,9 @@ const getSettings = node({
       authentication: "genericCredentialType",
       genericAuthType: "httpHeaderAuth",
       sendHeaders: true,
-      headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: BENCHMARK_TENANT_SLUG }] },
+      headerParameters: { parameters: [{ name: "X-Krivo-Tenant", value: BENCHMARK_TENANT_SLUG }] },
     },
-    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
+    credentials: { httpHeaderAuth: newCredential("Krivo - chave de servico") },
   },
   output: [{ realEstateName: "Imobiliária A", agentName: "Ana" }],
 });
@@ -401,7 +401,7 @@ const scoreBand = node({
   output: [{ aprovado: true }],
 });
 
-export default workflow("crivo-benchmark-contexto", "crivo-benchmark-contexto")
+export default workflow("krivo-benchmark-contexto", "krivo-benchmark-contexto")
   .add(webhookTrigger)
   .to(getSettings)
   .to(buildBand)

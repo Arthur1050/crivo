@@ -7,7 +7,7 @@
 ## Problem Statement
 
 O L16a e o L16b entregam código testado localmente, mas nada disso existe em produção: as colunas,
-as views, o papel `crivo_vitrine`, o segundo projeto na Vercel e as variáveis dos dois lados. Cada
+as views, o papel `krivo_vitrine`, o segundo projeto na Vercel e as variáveis dos dois lados. Cada
 uma dessas ações é externa, difícil de desfazer em parte e exige autorização explícita do usuário no
 momento (auditoria do L14b § 7, item 7). Este lote faz essas ações uma por task, com rollback, e
 prova a vitrine funcionando com dado real.
@@ -95,7 +95,7 @@ sabendo onde avisá-la.
 **Acceptance Criteria**:
 
 1. WHEN o projeto da vitrine for criado THEN ele SHALL ter Root Directory `vitrine` e o mesmo repositório do CRM.
-2. The system SHALL ter no projeto da vitrine, em Production, `VITRINE_DATABASE_URL` com o papel `crivo_vitrine`, `VITRINE_REVALIDATE_SECRET` e `VITRINE_PUBLIC_URL`.
+2. The system SHALL ter no projeto da vitrine, em Production, `VITRINE_DATABASE_URL` com o papel `krivo_vitrine`, `VITRINE_REVALIDATE_SECRET` e `VITRINE_PUBLIC_URL`.
 3. The system SHALL ter no projeto do CRM, em Production, `VITRINE_PUBLIC_URL` e `VITRINE_REVALIDATE_SECRET` com o mesmo segredo da vitrine.
 4. The executor SHALL NOT ler, digitar nem registrar o valor de nenhuma dessas variáveis.
 

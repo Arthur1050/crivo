@@ -5,7 +5,7 @@ Captured: 2026-08-02T03:32:04Z
 ## `npx astryx component` (full component list, 154 components)
 
 ```
-npm notice run crivo@0.1.0 npx
+npm notice run krivo@0.1.0 npx
 npm notice run astryx component
 
 AppShell  ← @astryxdesign/core/AppShell
@@ -196,7 +196,7 @@ Usage: npx astryx component <name>
 ## `npx astryx template --list` (page + block templates)
 
 ```
-npm notice run crivo@0.1.0 npx
+npm notice run krivo@0.1.0 npx
 npm notice run astryx template --list
 
 Page Templates:

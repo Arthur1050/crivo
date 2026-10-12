@@ -52,7 +52,7 @@ describe("L16b T6 — vitrine:dev contra o banco de teste (VPROJ-01)", () => {
     expect(env.VITRINE_PUBLIC_URL).toBe("http://localhost:3100");
     expect(env.VITRINE_REVALIDATE_SECRET).toMatch(/^[0-9a-f]{48}$/);
     const url = new URL(env.VITRINE_DATABASE_URL);
-    expect(url.username).toBe("crivo_vitrine");
+    expect(url.username).toBe("krivo_vitrine");
     expect(decodeURIComponent(url.password)).toBe(SENHA);
     expect(url.hostname).toBe("ep-teste-pooler.us-east-1.aws.neon.tech");
     expect(url.pathname).toBe("/neondb");
@@ -67,7 +67,7 @@ describe("L16b T6 — vitrine:dev contra o banco de teste (VPROJ-01)", () => {
       for (const proibido of proibidos) expect(linha).not.toContain(proibido);
       expect(linha).not.toMatch(/postgres(ql)?:\/\//);
     }
-    expect(linhas.join("\n")).toContain("crivo_vitrine");
+    expect(linhas.join("\n")).toContain("krivo_vitrine");
   });
 
   it("variáveis do CRM (banco real, tokens, chaves) não atravessam para a vitrine", () => {

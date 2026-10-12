@@ -72,7 +72,7 @@ describe("server/data — resolveServiceApiKeyHash / resolveTenantIdBySlug (lote
       );
       expect(withSlug.length).toBeGreaterThanOrEqual(3);
 
-      for (const slug of ["triangulo", "vale-uberaba", "crivo-demo"]) {
+      for (const slug of ["triangulo", "vale-uberaba", "krivo-demo"]) {
         const expected = withSlug.find((t) => t.slug === slug);
         expect(expected, `tenant de slug '${slug}' deveria existir`).toBeDefined();
 

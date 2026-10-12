@@ -1,5 +1,5 @@
 /**
- * crivo-agente-principal — pipeline completo (T10 original; miolo
+ * krivo-agente-principal — pipeline completo (T10 original; miolo
  * conversacional reescrito no lote-6c).
  *
  * Fonte versionada do workflow n8n de qualificação conversacional
@@ -31,7 +31,7 @@
  *     (waId, phoneNumberId, tenantSlug, calendarId, text, hasMedia,
  *     sentAt, messageId, contactName). Autenticação no CRM não passa mais por
  *     aqui (T17, SEC-01): todo nó HTTP/tool usa a credencial `httpHeaderAuth`
- *     "Crivo - chave de servico" + header `X-Crivo-Tenant` com o `tenantSlug`.
+ *     "Krivo - chave de servico" + header `X-Krivo-Tenant` com o `tenantSlug`.
  *   - `Code: contexto do lead` — o checkpoint acima + a resposta do
  *     `POST /leads` (id, status, optedOutAt, campos de qualificação) + o
  *     buffer de mensagens da rajada.
@@ -70,7 +70,7 @@ import {
 
 // IDs reais dos sub-workflows publicados como draft via MCP (T7/T8, mesmo
 // projeto pessoal tTVoFkYzH7IEInaG) — nunca inventados, copiados da resposta
-// do MCP na criação. `crivo-tool-responder-lead` e `crivo-tool-agendar-reuniao`.
+// do MCP na criação. `krivo-tool-responder-lead` e `krivo-tool-agendar-reuniao`.
 const TOOL_RESPONDER_LEAD_WORKFLOW_ID = "Li2hgCX943zKmDXf";
 const TOOL_AGENDAR_REUNIAO_WORKFLOW_ID = "2qCs6rPzmeOqan65";
 
@@ -101,7 +101,7 @@ const whatsAppInboundTrigger = trigger({
       // human gate) — id copiado exatamente de `list_credentials`, nunca
       // inventado (mesma regra da credencial Gemini/Gmail). Nome real na
       // instância é "WhatsApp OAuth account" (o placeholder original
-      // "WhatsApp Trigger — Crivo" nunca resolveu — ficou sem credencial até
+      // "WhatsApp Trigger — Krivo" nunca resolveu — ficou sem credencial até
       // este fix, achado ao tentar ativar o workflow em T12/T13 prep).
       whatsAppTriggerApi: newCredential("WhatsApp OAuth account"),
     },
@@ -158,9 +158,9 @@ const postStatusCrm = node({
   type: "n8n-nodes-base.httpRequest", version: 4.4,
   config: { name: "HTTP: POST /whatsapp/statuses", position: [1160, -400], onError: "continueRegularOutput", retryOnFail: true, maxTries: 3, waitBetweenTries: 1000,
     parameters: { method: "POST", url: CRM_BASE_URL + "/whatsapp/statuses", authentication: "genericCredentialType", genericAuthType: "httpHeaderAuth", sendHeaders: true,
-      headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $json.tenantSlug }}") }] }, sendBody: true, contentType: "json", specifyBody: "json", jsonBody: expr("{{ $json.batch }}"),
+      headerParameters: { parameters: [{ name: "X-Krivo-Tenant", value: expr("{{ $json.tenantSlug }}") }] }, sendBody: true, contentType: "json", specifyBody: "json", jsonBody: expr("{{ $json.batch }}"),
       options: { timeout: 10000, response: { response: { neverError: false, responseFormat: "json" } } },
-    }, credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
+    }, credentials: { httpHeaderAuth: newCredential("Krivo - chave de servico") },
   }, output: [{ processed: 1 }],
 });
 const statusSanitizedResult = node({
@@ -471,7 +471,7 @@ const postLeadIdempotent = node({
       genericAuthType: "httpHeaderAuth",
       sendHeaders: true,
       headerParameters: {
-        parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: combinar evento e tenant').item.json.tenantSlug }}") }],
+        parameters: [{ name: "X-Krivo-Tenant", value: expr("{{ $('Code: combinar evento e tenant').item.json.tenantSlug }}") }],
       },
       sendBody: true,
       contentType: "json",
@@ -480,7 +480,7 @@ const postLeadIdempotent = node({
         "{{ { name: $('Code: combinar evento e tenant').item.json.contactName, phone: $('Code: combinar evento e tenant').item.json.waId, externalId: $('Code: combinar evento e tenant').item.json.waId, firstContactAt: $('Code: combinar evento e tenant').item.json.sentAt, whatsappPhoneNumberId: $('Code: combinar evento e tenant').item.json.phoneNumberId } }}"
       ),
     },
-    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
+    credentials: { httpHeaderAuth: newCredential("Krivo - chave de servico") },
   },
   output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", status: "em_qualificacao", optedOutAt: null, modality: null, region: null, budgetCents: null, propertyType: null, purchaseHorizon: null, motivation: null, creditStatus: null, chainedOperation: null }],
 });
@@ -530,7 +530,7 @@ const postBufferedMessage = node({
       authentication: "genericCredentialType",
       genericAuthType: "httpHeaderAuth",
       sendHeaders: true,
-      headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $json.tenantSlug }}") }] },
+      headerParameters: { parameters: [{ name: "X-Krivo-Tenant", value: expr("{{ $json.tenantSlug }}") }] },
       sendBody: true,
       contentType: "json",
       specifyBody: "json",
@@ -538,7 +538,7 @@ const postBufferedMessage = node({
         "{{ { externalId: $json.bufferArray.messageId, sender: 'lead', content: $json.bufferArray.text, sentAt: $json.bufferArray.sentAt, whatsappPhoneNumberId: $json.phoneNumberId } }}"
       ),
     },
-    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
+    credentials: { httpHeaderAuth: newCredential("Krivo - chave de servico") },
   },
   output: [{ id: "4fa85f64-5717-4562-b3fc-2c963f66afa7", externalId: "wamid.EXEMPLO", sender: "lead", content: "Oi", sentAt: "2026-08-05T12:10:00.000Z" }],
 });
@@ -572,8 +572,8 @@ const postAskedAgentState = node({
   type: "n8n-nodes-base.httpRequest", version: 4.4,
   config: { name: "HTTP: publicar agent-state perguntados", position: [7810, 430], onError: "continueRegularOutput", retryOnFail: true, maxTries: 3, waitBetweenTries: 1000, parameters: {
     method: "POST", url: expr(CRM_BASE_URL + "/leads/{{ $json.leadId }}/agent-state"), authentication: "genericCredentialType", genericAuthType: "httpHeaderAuth", sendHeaders: true,
-    headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $json.tenantSlug }}") }] }, sendBody: true, contentType: "json", specifyBody: "json", jsonBody: expr("{{ $json.payload }}"), options: { timeout: 10000 },
-  }, credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") } }, output: [{ replay: false, state: {} }],
+    headerParameters: { parameters: [{ name: "X-Krivo-Tenant", value: expr("{{ $json.tenantSlug }}") }] }, sendBody: true, contentType: "json", specifyBody: "json", jsonBody: expr("{{ $json.payload }}"), options: { timeout: 10000 },
+  }, credentials: { httpHeaderAuth: newCredential("Krivo - chave de servico") } }, output: [{ replay: false, state: {} }],
 });
 const agentStateConfirmationCode =
   "const p = prepared.payload, state = $json.state;\n" +
@@ -594,9 +594,9 @@ const readFinalAgentStateMetadata = node({
   type: "n8n-nodes-base.httpRequest", version: 4.4,
   config: { name: "HTTP: metadados CRM no fechamento", position: [5780, -130], onError: "continueRegularOutput", parameters: {
     method: "GET", url: expr(CRM_BASE_URL + "/leads/{{ $('Code: gate').first().json.id }}/messages"), authentication: "genericCredentialType", genericAuthType: "httpHeaderAuth", sendHeaders: true,
-    headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }] }, sendQuery: true, queryParameters: { parameters: [{ name: "limit", value: "1" }] },
+    headerParameters: { parameters: [{ name: "X-Krivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }] }, sendQuery: true, queryParameters: { parameters: [{ name: "limit", value: "1" }] },
     options: { timeout: 10000, response: { response: { fullResponse: true } } },
-  }, credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") } }, output: [{ body: [], headers: {} }],
+  }, credentials: { httpHeaderAuth: newCredential("Krivo - chave de servico") } }, output: [{ body: [], headers: {} }],
 });
 const prepareFinalAgentState = node({
   type: "n8n-nodes-base.code", version: 2,
@@ -609,7 +609,7 @@ const prepareFinalAgentState = node({
     "let resetObservedAt = observed.resetObservedAt, ownOptOut = false; if (desired.fase === 'encerrada') phase = 'encerrada';\n" +
     "let expectedRevision = observed.expectedRevision; try { const own = $('Code: agent-state perguntados confirmado').first().json; if (own.confirmed) expectedRevision = own.revision; } catch {}\n" +
     "try { if ($('Code: finalizar opt-out').first().json.fase === 'encerrada') { phase = 'encerrada'; askedFields = []; openingHistory = []; try { const result = $('HTTP: POST /leads/{id}/opt-out').first().json; if (result.memoryResetRequestedAt) { resetObservedAt = result.memoryResetRequestedAt; ownOptOut = true; } } catch {} } } catch {}\n" +
-    "const anchor = $json.headers?.['x-crivo-anchor-message-id']; const rawRevision = $json.headers?.['x-crivo-agent-state-revision']; const revision = rawRevision === 'null' ? 0 : Number(rawRevision);\n" +
+    "const anchor = $json.headers?.['x-krivo-anchor-message-id']; const rawRevision = $json.headers?.['x-krivo-agent-state-revision']; const revision = rawRevision === 'null' ? 0 : Number(rawRevision);\n" +
     "const valid = !$json.error && !!observed.anchorMessageId && anchor === observed.anchorMessageId && rawRevision !== undefined && Number.isSafeInteger(revision) && revision >= 0 && (ownOptOut || [expectedRevision, expectedRevision + 1].includes(revision));\n" +
     "const payload = valid ? { anchorMessageId: anchor, resetObservedAt, expectedRevision: ownOptOut ? revision : expectedRevision, phase, askedFields, openingHistory } : null;\n" +
     "return { json: { desired, payload, tenantSlug: ctx.tenantSlug, leadId: ctx.id } };\n",
@@ -622,8 +622,8 @@ const postFinalAgentState = node({
   type: "n8n-nodes-base.httpRequest", version: 4.4,
   config: { name: "HTTP: publicar agent-state final", position: [5990, -130], onError: "continueRegularOutput", retryOnFail: true, maxTries: 3, waitBetweenTries: 1000, parameters: {
     method: "POST", url: expr(CRM_BASE_URL + "/leads/{{ $json.leadId }}/agent-state"), authentication: "genericCredentialType", genericAuthType: "httpHeaderAuth", sendHeaders: true,
-    headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $json.tenantSlug }}") }] }, sendBody: true, contentType: "json", specifyBody: "json", jsonBody: expr("{{ $json.payload }}"), options: { timeout: 10000 },
-  }, credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") } }, output: [{ replay: false, state: {} }],
+    headerParameters: { parameters: [{ name: "X-Krivo-Tenant", value: expr("{{ $json.tenantSlug }}") }] }, sendBody: true, contentType: "json", specifyBody: "json", jsonBody: expr("{{ $json.payload }}"), options: { timeout: 10000 },
+  }, credentials: { httpHeaderAuth: newCredential("Krivo - chave de servico") } }, output: [{ replay: false, state: {} }],
 });
 const confirmFinalAgentState = node({
   type: "n8n-nodes-base.code", version: 2,
@@ -696,9 +696,9 @@ const postOptOut = node({
       authentication: "genericCredentialType",
       genericAuthType: "httpHeaderAuth",
       sendHeaders: true,
-      headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }] },
+      headerParameters: { parameters: [{ name: "X-Krivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }] },
     },
-    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
+    credentials: { httpHeaderAuth: newCredential("Krivo - chave de servico") },
   },
   output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", optedOutAt: "2026-08-05T12:11:00.000Z" }],
 });
@@ -794,9 +794,9 @@ const getSettings = node({
       authentication: "genericCredentialType",
       genericAuthType: "httpHeaderAuth",
       sendHeaders: true,
-      headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }] },
+      headerParameters: { parameters: [{ name: "X-Krivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }] },
     },
-    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
+    credentials: { httpHeaderAuth: newCredential("Krivo - chave de servico") },
   },
   output: [{ realEstateName: "Imobiliária A", agentName: "Ana", supportedModality: "ambos", agentPresentationMessage: "Oi! Sou a Ana.", meetingDays: null, meetingHoursStart: null, meetingHoursEnd: null }],
 });
@@ -835,10 +835,10 @@ const postSessionContextRead = node({
   type: "n8n-nodes-base.httpRequest", version: 4.4,
   config: { name: "HTTP: POST /leads/{id}/session-context", position: [4860, 170], onError: "continueRegularOutput", parameters: {
     method: "POST", url: expr(CRM_BASE_URL + "/leads/{{ $('Code: iniciar leitura session-context').first().json.leadId }}/session-context"), authentication: "genericCredentialType", genericAuthType: "httpHeaderAuth", sendHeaders: true,
-    headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: iniciar leitura session-context').first().json.tenantSlug }}") }] }, sendBody: true, contentType: "json", specifyBody: "json",
+    headerParameters: { parameters: [{ name: "X-Krivo-Tenant", value: expr("{{ $('Code: iniciar leitura session-context').first().json.tenantSlug }}") }] }, sendBody: true, contentType: "json", specifyBody: "json",
     jsonBody: expr("{{ { bufferMessageIds: $json.bufferMessageIds || $('Code: iniciar leitura session-context').first().json.bufferMessageIds } }}"),
     options: { timeout: expr("{{ Math.max(1, Math.min(10000, $('Code: iniciar leitura session-context').first().json.deadline - Date.now())) }}") },
-  }, credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") } }, output: [{ frame: { revision: 0, resetRequestedAt: null, bridge: null }, history: [], requiresRebuild: false, pendingAcceptance: null }],
+  }, credentials: { httpHeaderAuth: newCredential("Krivo - chave de servico") } }, output: [{ frame: { revision: 0, resetRequestedAt: null, bridge: null }, history: [], requiresRebuild: false, pendingAcceptance: null }],
 });
 const sessionContextReady = node({
   type: "n8n-nodes-base.code", version: 2,
@@ -1268,7 +1268,7 @@ const registrarQualificacaoTool = tool({
       genericAuthType: "httpHeaderAuth",
       sendHeaders: true,
       headerParameters: {
-        parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }],
+        parameters: [{ name: "X-Krivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }],
       },
       sendBody: true,
       contentType: "json",
@@ -1285,7 +1285,7 @@ const registrarQualificacaoTool = tool({
       ),
       options: { response: { response: { neverError: true } } },
     },
-    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
+    credentials: { httpHeaderAuth: newCredential("Krivo - chave de servico") },
   },
   output: [{}],
 });
@@ -1312,7 +1312,7 @@ const escalarParaHumanoTool = tool({
       genericAuthType: "httpHeaderAuth",
       sendHeaders: true,
       headerParameters: {
-        parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }],
+        parameters: [{ name: "X-Krivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }],
       },
       sendBody: true,
       contentType: "json",
@@ -1338,7 +1338,7 @@ const escalarParaHumanoTool = tool({
       fieldsToInclude: "except",
       fields: "name,contactName,phone,externalId",
     },
-    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
+    credentials: { httpHeaderAuth: newCredential("Krivo - chave de servico") },
   },
   output: [{}],
 });
@@ -1386,11 +1386,11 @@ const consultarDocumentosTool = tool({
       genericAuthType: "httpHeaderAuth",
       sendHeaders: true,
       headerParameters: {
-        parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }],
+        parameters: [{ name: "X-Krivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }],
       },
       options: { response: { response: { neverError: true } } },
     },
-    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
+    credentials: { httpHeaderAuth: newCredential("Krivo - chave de servico") },
   },
   output: [{}],
 });
@@ -1398,7 +1398,7 @@ const consultarDocumentosTool = tool({
 // `buscar_imoveis` (lote-11 — BUSCA-04): consulta o inventário real de
 // imóveis. Todo critério é um parâmetro de query próprio e opcional
 // (`$fromAI`) — BUSCA-04 AC4, um parâmetro por critério, nunca um blob único.
-// `X-Crivo-Tenant` vem de `Code: gate` por expressão do fluxo, igual às
+// `X-Krivo-Tenant` vem de `Code: gate` por expressão do fluxo, igual às
 // outras tools — a imobiliária consultada NUNCA é escolhida pelo modelo
 // (BUSCA-04 AC3). `retryOnFail`/`maxTries` ficam em `config`, nunca dentro de
 // `parameters` — é o bug que o commit a80760c corrigiu em
@@ -1433,11 +1433,11 @@ const buscarImoveisTool = tool({
       genericAuthType: "httpHeaderAuth",
       sendHeaders: true,
       headerParameters: {
-        parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }],
+        parameters: [{ name: "X-Krivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }],
       },
       options: { response: { response: { neverError: true } } },
     },
-    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
+    credentials: { httpHeaderAuth: newCredential("Krivo - chave de servico") },
   },
   output: [{}],
 });
@@ -1468,7 +1468,7 @@ const responderLeadTool = tool({
         // ACHADO REAL (T12 — execução MCP, não hipótese): sem `schema` aqui, o
         // resourceMapper de `workflowInputs` não mapeia NENHUM campo — nem os
         // estáticos (expr()) nem o dinâmico (fromAi()). Confirmado via
-        // execução real do sub-workflow (crivo-tool-responder-lead, execução
+        // execução real do sub-workflow (krivo-tool-responder-lead, execução
         // 454-461): `Execute Workflow Trigger` chegava com TODOS os 6 campos
         // `null`, inclusive os 5 que nunca dependem do modelo — o envio
         // falhava na Meta com corpo vazio. `schema` é obrigatório em todo
@@ -1703,9 +1703,9 @@ const getLeadBeforeFallback = node({
       authentication: "genericCredentialType",
       genericAuthType: "httpHeaderAuth",
       sendHeaders: true,
-      headerParameters: { parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }] },
+      headerParameters: { parameters: [{ name: "X-Krivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }] },
     },
-    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
+    credentials: { httpHeaderAuth: newCredential("Krivo - chave de servico") },
   },
   output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", status: "em_qualificacao", optedOutAt: null, humanTakeoverAt: null, memoryResetRequestedAt: null }],
 });
@@ -1965,7 +1965,7 @@ const normalizeFixedReplyRecipient = node({
       mode: "runOnceForAllItems",
       language: "javaScript",
       jsCode:
-        "/**\n * Normalização do destinatário de envio no WhatsApp (nono dígito brasileiro).\n *\n * PROBLEMA REAL (execução 354 de `crivo-agente-principal`, confirmado contra\n * duas fontes): o webhook da Meta entrega o contato em `wa_id` no formato\n * LEGADO, sem o nono dígito — `553499532444` (12 dígitos) — enquanto a Cloud\n * API só aceita como destinatário o número atual, com o 9 — `5534999532444`\n * (13 dígitos, o mesmo valor que o painel da Meta usa no campo `to` do curl\n * de exemplo). Enviar o `wa_id` cru resulta em erro 131030 (\"Recipient phone\n * number not in allowed list\") — ou seja, TODA resposta do agente a um lead\n * brasileiro falha, não só a do número de teste.\n *\n * ESCOPO DELIBERADO: esta função normaliza SÓ o destinatário do envio. O\n * `wa_id` cru continua sendo a chave das Data Tables (`conversa_estado`,\n * `agenda_envios`) e o `externalId` do lead no CRM — mudar essas chaves\n * quebraria o casamento com os eventos recebidos da Meta, que sempre chegam\n * no formato legado.\n *\n * Função pura, sem I/O, sem dependências — roda dentro de um Code node do\n * n8n (sandbox: sem `require`, sem rede).\n */\n\n// Marca do país no formato E.164 sem o \"+\" (é como o `wa_id` chega da Meta).\nconst BRAZIL_COUNTRY_CODE = \"55\";\n\n// Comprimentos brasileiros: 55 + DDD(2) + 8 (formato legado, pré-nono-dígito)\n// e 55 + DDD(2) + 9 (formato atual). Só o primeiro precisa de conserto.\nconst BR_LEGACY_LENGTH = 12;\nconst BR_DDD_END_INDEX = 4; // fim de \"55\" + DDD\n\n// Discriminador celular x fixo (Anatel — Plano de Numeração Brasileiro,\n// cartilha do nono dígito): o 9 foi acrescentado SÓ aos números do Serviço\n// Móvel Pessoal, que no formato legado de 8 dígitos começavam com 6, 7, 8 ou\n// 9; a telefonia fixa também tem 8 dígitos, mas começa com 2, 3, 4 ou 5 e\n// NUNCA recebeu o nono dígito. Sem esse discriminador, um fixo de 8 dígitos\n// gravado como contato viraria um celular inexistente de 9 dígitos.\nconst BR_MOBILE_LOCAL_PREFIX = /^[6-9]/;\n\nconst NON_DIGIT_PATTERN = /\\D/g;\n\n/**\n * Converte um `wa_id` da Meta no MSISDN aceito pela Cloud API como\n * destinatário de envio.\n *\n * Regras (nesta ordem):\n * 1. Entrada não-string ou sem nenhum dígito (null/undefined/\"\"/lixo) → `\"\"`.\n *    Devolver string vazia (em vez do valor cru) evita que o nó de envio\n *    mande literalmente \"undefined\" para a Meta; o envio falha de forma\n *    explícita, que é o comportamento defensivo dos módulos vizinhos\n *    (`normalizeEvent` → null, `detectOptOut` → false).\n * 2. Caracteres não numéricos (`+`, espaço, hífen) são descartados — o\n *    `wa_id` da Meta é sempre só dígitos, mas o valor pode chegar de uma\n *    Data Table preenchida à mão.\n * 3. Número brasileiro (prefixo `55`) no formato legado (12 dígitos) cujo\n *    número local começa com 6-9 (celular) → insere `9` depois do DDD.\n * 4. Qualquer outro caso — brasileiro já com 13 dígitos, fixo brasileiro de\n *    8 dígitos locais, número de outro país, comprimento inesperado — volta\n *    inalterado. Nenhuma regra de outro país é inventada aqui.\n *\n * Idempotente por construção: o resultado da regra 3 tem 13 dígitos e cai na\n * regra 4 numa segunda aplicação.\n *\n * @param {unknown} waId - `wa_id` do contato no evento da Meta\n * @returns {string} MSISDN pronto para `recipientPhoneNumber`\n */\nfunction toWhatsAppMsisdn(waId) {\n  if (typeof waId !== \"string\") return \"\";\n\n  const digits = waId.replace(NON_DIGIT_PATTERN, \"\");\n  if (digits === \"\") return \"\";\n\n  if (!digits.startsWith(BRAZIL_COUNTRY_CODE)) return digits;\n  if (digits.length !== BR_LEGACY_LENGTH) return digits;\n\n  const ddd = digits.slice(0, BR_DDD_END_INDEX);\n  const local = digits.slice(BR_DDD_END_INDEX);\n  if (!BR_MOBILE_LOCAL_PREFIX.test(local)) return digits;\n\n  return `${ddd}9${local}`;\n}" +
+        "/**\n * Normalização do destinatário de envio no WhatsApp (nono dígito brasileiro).\n *\n * PROBLEMA REAL (execução 354 de `krivo-agente-principal`, confirmado contra\n * duas fontes): o webhook da Meta entrega o contato em `wa_id` no formato\n * LEGADO, sem o nono dígito — `553499532444` (12 dígitos) — enquanto a Cloud\n * API só aceita como destinatário o número atual, com o 9 — `5534999532444`\n * (13 dígitos, o mesmo valor que o painel da Meta usa no campo `to` do curl\n * de exemplo). Enviar o `wa_id` cru resulta em erro 131030 (\"Recipient phone\n * number not in allowed list\") — ou seja, TODA resposta do agente a um lead\n * brasileiro falha, não só a do número de teste.\n *\n * ESCOPO DELIBERADO: esta função normaliza SÓ o destinatário do envio. O\n * `wa_id` cru continua sendo a chave das Data Tables (`conversa_estado`,\n * `agenda_envios`) e o `externalId` do lead no CRM — mudar essas chaves\n * quebraria o casamento com os eventos recebidos da Meta, que sempre chegam\n * no formato legado.\n *\n * Função pura, sem I/O, sem dependências — roda dentro de um Code node do\n * n8n (sandbox: sem `require`, sem rede).\n */\n\n// Marca do país no formato E.164 sem o \"+\" (é como o `wa_id` chega da Meta).\nconst BRAZIL_COUNTRY_CODE = \"55\";\n\n// Comprimentos brasileiros: 55 + DDD(2) + 8 (formato legado, pré-nono-dígito)\n// e 55 + DDD(2) + 9 (formato atual). Só o primeiro precisa de conserto.\nconst BR_LEGACY_LENGTH = 12;\nconst BR_DDD_END_INDEX = 4; // fim de \"55\" + DDD\n\n// Discriminador celular x fixo (Anatel — Plano de Numeração Brasileiro,\n// cartilha do nono dígito): o 9 foi acrescentado SÓ aos números do Serviço\n// Móvel Pessoal, que no formato legado de 8 dígitos começavam com 6, 7, 8 ou\n// 9; a telefonia fixa também tem 8 dígitos, mas começa com 2, 3, 4 ou 5 e\n// NUNCA recebeu o nono dígito. Sem esse discriminador, um fixo de 8 dígitos\n// gravado como contato viraria um celular inexistente de 9 dígitos.\nconst BR_MOBILE_LOCAL_PREFIX = /^[6-9]/;\n\nconst NON_DIGIT_PATTERN = /\\D/g;\n\n/**\n * Converte um `wa_id` da Meta no MSISDN aceito pela Cloud API como\n * destinatário de envio.\n *\n * Regras (nesta ordem):\n * 1. Entrada não-string ou sem nenhum dígito (null/undefined/\"\"/lixo) → `\"\"`.\n *    Devolver string vazia (em vez do valor cru) evita que o nó de envio\n *    mande literalmente \"undefined\" para a Meta; o envio falha de forma\n *    explícita, que é o comportamento defensivo dos módulos vizinhos\n *    (`normalizeEvent` → null, `detectOptOut` → false).\n * 2. Caracteres não numéricos (`+`, espaço, hífen) são descartados — o\n *    `wa_id` da Meta é sempre só dígitos, mas o valor pode chegar de uma\n *    Data Table preenchida à mão.\n * 3. Número brasileiro (prefixo `55`) no formato legado (12 dígitos) cujo\n *    número local começa com 6-9 (celular) → insere `9` depois do DDD.\n * 4. Qualquer outro caso — brasileiro já com 13 dígitos, fixo brasileiro de\n *    8 dígitos locais, número de outro país, comprimento inesperado — volta\n *    inalterado. Nenhuma regra de outro país é inventada aqui.\n *\n * Idempotente por construção: o resultado da regra 3 tem 13 dígitos e cai na\n * regra 4 numa segunda aplicação.\n *\n * @param {unknown} waId - `wa_id` do contato no evento da Meta\n * @returns {string} MSISDN pronto para `recipientPhoneNumber`\n */\nfunction toWhatsAppMsisdn(waId) {\n  if (typeof waId !== \"string\") return \"\";\n\n  const digits = waId.replace(NON_DIGIT_PATTERN, \"\");\n  if (digits === \"\") return \"\";\n\n  if (!digits.startsWith(BRAZIL_COUNTRY_CODE)) return digits;\n  if (digits.length !== BR_LEGACY_LENGTH) return digits;\n\n  const ddd = digits.slice(0, BR_DDD_END_INDEX);\n  const local = digits.slice(BR_DDD_END_INDEX);\n  if (!BR_MOBILE_LOCAL_PREFIX.test(local)) return digits;\n\n  return `${ddd}9${local}`;\n}" +
         "\n\n" +
         "const ctx = $input.first().json;\n" +
         "return [{ json: { ...ctx, recipientMsisdn: toWhatsAppMsisdn(ctx.waId) } }];\n",
@@ -2009,7 +2009,7 @@ const registerFixedReply = node({
       genericAuthType: "httpHeaderAuth",
       sendHeaders: true,
       headerParameters: {
-        parameters: [{ name: "X-Crivo-Tenant", value: expr("{{ $('Code: destinatário do envio fixo').first().json.tenantSlug }}") }],
+        parameters: [{ name: "X-Krivo-Tenant", value: expr("{{ $('Code: destinatário do envio fixo').first().json.tenantSlug }}") }],
       },
       sendBody: true,
       contentType: "json",
@@ -2018,7 +2018,7 @@ const registerFixedReply = node({
         "{{ { externalId: $json.messages[0].id, sender: 'agente', content: $('Code: destinatário do envio fixo').first().json.mensagens[0], sentAt: $now.toISO(), whatsappPhoneNumberId: $('Code: destinatário do envio fixo').first().json.phoneNumberId } }}"
       ),
     },
-    credentials: { httpHeaderAuth: newCredential("Crivo - chave de servico") },
+    credentials: { httpHeaderAuth: newCredential("Krivo - chave de servico") },
   },
   output: [{ id: "6fa85f64-5717-4562-b3fc-2c963f66afa9", sender: "agente" }],
 });
@@ -2233,7 +2233,7 @@ const debounceChain = conversaEstadoBeforeBuffer.to(
   )
 );
 
-const principalWorkflow = workflow("crivo-agente-principal", "crivo-agente-principal")
+const principalWorkflow = workflow("krivo-agente-principal", "krivo-agente-principal")
   .add(whatsAppInboundTrigger)
   .to(
     splitWhatsappEnvelopes.to(routeWhatsappEnvelope

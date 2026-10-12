@@ -55,7 +55,7 @@ Toda ambiguidade está resolvida ou registrada aqui — nada fica silenciosament
 | Moeda na fronteira do contrato | A rota `/api/v1` recebe filtro de preço em **reais inteiros** e devolve o preço **já formatado** em pt-BR; centavos nunca atravessam a fronteira | Pedir centavos ao modelo é convidar erro de ordem de grandeza ("500 mil" → `500000` em vez de `50000000`), silencioso e na pergunta mais frequente da qualificação. Devolver o valor formatado tira do modelo a tarefa de formatar moeda. Mesma disciplina do achado do lote-10 `evidencia.md` §15.4: a forma do payload decide o comportamento, não a instrução | y |
 | Transição de status do imóvel | Livre entre `disponivel`, `reservado` e `vendido`, sem tabela de transições permitidas | Diferente de `leads`, o imóvel não tem trava humana nem ator agente — só gestor e administrador escrevem, e um imóvel volta de `reservado` para `disponivel` rotineiramente. A visibilidade é **derivada** (`disponivel` E `publicado`), então nenhum estado precisa de guarda para sumir do agente | y |
 | Ciclo de vida e expiração | Nenhum. Imóvel não expira e não entra na rotina de cron de retenção | `vendido` é estado, não expiração; o dado do imóvel não é dado pessoal e não carrega a obrigação de TTL que `documents` carrega (DOC-07) | y |
-| Rate limit da rota nova | Nenhum próprio — herda o contrato de serviço existente (chave de serviço + `X-Crivo-Tenant`, SEC-01) | Nenhuma rota `/api/v1` tem rate limit próprio hoje; criar um só para esta seria inconsistência sem motivo | y |
+| Rate limit da rota nova | Nenhum próprio — herda o contrato de serviço existente (chave de serviço + `X-Krivo-Tenant`, SEC-01) | Nenhuma rota `/api/v1` tem rate limit próprio hoje; criar um só para esta seria inconsistência sem motivo | y |
 | Exclusão de imóvel | Exclusão real, não soft delete | Nada referencia imóvel (não há relação com lead, por decisão de modelagem), então não há dado órfão possível. Despublicar já é o caminho para "tirar do ar sem perder" | y |
 | Endereço no CRM | O CRM guarda e mostra logradouro, número e complemento; só a rota `/api/v1` não os devolve | O corretor precisa do endereço para atender; o lead não deve recebê-lo antes da reunião. A separação é por camada, não por ausência do dado | y |
 
@@ -167,7 +167,7 @@ critério, para responder ao lead com dado exato em vez de inventar.
 
 **Acceptance Criteria**:
 
-1. WHEN a rota de busca de imóveis receber requisição autenticada com `X-Crivo-Tenant` válido THEN o sistema SHALL devolver apenas imóveis daquela imobiliária que satisfaçam `status = disponivel` E `publicado = verdadeiro`.
+1. WHEN a rota de busca de imóveis receber requisição autenticada com `X-Krivo-Tenant` válido THEN o sistema SHALL devolver apenas imóveis daquela imobiliária que satisfaçam `status = disponivel` E `publicado = verdadeiro`.
 2. The system SHALL aceitar como filtros opcionais modalidade, tipo, bairro, cidade, preço máximo em reais inteiros, preço mínimo em reais inteiros e número mínimo de quartos, combinando por conjunção os filtros presentes.
 3. WHEN nenhum filtro for informado THEN o sistema SHALL devolver os imóveis visíveis da imobiliária sob a mesma ordenação e o mesmo limite.
 4. The system SHALL devolver no máximo 3 imóveis por chamada, ordenados por `updatedAt` decrescente com `id` crescente como desempate.
@@ -176,7 +176,7 @@ critério, para responder ao lead com dado exato em vez de inventar.
 7. The system SHALL NOT incluir na resposta logradouro, número, complemento, descrição nem qualquer URL de foto.
 8. The system SHALL NOT incluir na resposta nenhum campo do corretor de captação — id, nome, telefone ou e-mail.
 9. IF um parâmetro de filtro tiver valor inválido para o seu tipo THEN o sistema SHALL responder `400` em `application/problem+json` com `code` `payload-invalido`.
-10. IF a requisição não trouxer chave de serviço válida ou `X-Crivo-Tenant` reconhecido THEN o sistema SHALL recusá-la pelo mesmo caminho das demais rotas `/api/v1`, sem cair em nenhum tenant default (SEC-01).
+10. IF a requisição não trouxer chave de serviço válida ou `X-Krivo-Tenant` reconhecido THEN o sistema SHALL recusá-la pelo mesmo caminho das demais rotas `/api/v1`, sem cair em nenhum tenant default (SEC-01).
 11. WHEN a rota receber método diferente do método de leitura THEN o sistema SHALL responder `405` em `problem+json`.
 12. The system SHALL registrar toda resposta igual ou superior a `400` desta rota em `integration_refusals` pelo wrapper único de rota, com o export marcado como instrumentado (AD-023).
 

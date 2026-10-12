@@ -35,7 +35,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 | Code Layer | Required Test Type | Coverage Expectation | Location Pattern | Run Command |
 | --- | --- | --- | --- | --- |
 | Lib pura da vitrine (`vitrine/src/lib`, `vitrine/src/tema`, `vitrine/src/revalidacao.ts`) | unit | 1:1 com os ACs; todos os ramos; limites exatos (24/25, 10/11 dígitos) | `vitrine/src/**/__tests__/*.test.ts` | `npx vitest run vitrine/src/<arquivo>` |
-| Consultas (`vitrine/src/dados/consultas.ts`) | integration | Como `crivo_vitrine` na branch do worker; fixture escrita como dono; linha de outra loja na fixture (L-035); todos os estados de imóvel | `src/db/__tests__/vitrine-consultas.test.ts` (suíte raiz, AD-044) | `npx vitest run src/db/__tests__/vitrine-consultas.test.ts` |
+| Consultas (`vitrine/src/dados/consultas.ts`) | integration | Como `krivo_vitrine` na branch do worker; fixture escrita como dono; linha de outra loja na fixture (L-035); todos os estados de imóvel | `src/db/__tests__/vitrine-consultas.test.ts` (suíte raiz, AD-044) | `npx vitest run src/db/__tests__/vitrine-consultas.test.ts` |
 | Conexão, camada de cache e rota (`vitrine/src/db/conexao.ts`, `vitrine/src/dados/cache.ts`, `vitrine/app/api/**`) | unit | Conexão sem a variável falha sem expor URL; `next/cache` simulado: perfil, tag, `revalidateTag` com `{ expire: 0 }`; todos os status da rota | `vitrine/**/__tests__/*.test.ts` | `npx vitest run <arquivo>` |
 | Paridade e isolamento (`src/**/__tests__/*paridade*`, `*isolamento*`) | unit / integration | Quebra quando um lado muda; colunas reais das views | `src/lib/__tests__`, `src/db/__tests__` | `npx vitest run <arquivo>` |
 | Rotas (`vitrine/app/**`) | e2e + captura real | Cada task de rota acrescenta as asserções dela ao harness: sucesso, vazio, não encontrado, erro; PII, isolamento, cache e revalidação por HTTP contra `next start` | `scripts/vitrine-e2e.ts` | `npm run vitrine:e2e` |
@@ -123,7 +123,7 @@ T24 → T25
 
 **Status**: concluída em 2026-10-10 (hash `ddbf72d`; resultado em `validation.md`). Gate: F8, F9, F11 (build), F12, F13 (dois caminhos) e F19 passam; **F10 reprovou** e foi resolvido pela AD-046 (opção b, decisão delegada pelo usuário a um agente Opus 5.5). Protótipo apagado.
 
-**What**: Comprovar F8–F13 e F19 do design com um protótipo descartável em `scratch/vitrine-prova/` (fora do git) lendo a branch `test` como `crivo_vitrine`; registrar resultado e fonte.
+**What**: Comprovar F8–F13 e F19 do design com um protótipo descartável em `scratch/vitrine-prova/` (fora do git) lendo a branch `test` como `krivo_vitrine`; registrar resultado e fonte.
 **Where**: `.specs/features/lote-16b-vitrine-app/validation.md`
 **Depends on**: None
 **Reuses**: design.md § Fatos operacionais; docs em `node_modules/next/dist/docs/`
@@ -133,7 +133,7 @@ T24 → T25
 
 - [ ] F8: status HTTP de `notFound()` dentro de `<Suspense>` registrado (a doc diz 200 em streaming); build com banco vazio, contagem de consultas antes e depois do segundo GET, GET depois de `revalidateTag(tag, { expire: 0 })` refletindo a mudança
 - [ ] F9: `<head>` com `og:title` para o UA do WhatsApp; F10: cor da loja no HTML sem JS; F11: as 4 fontes na build; F12: PNG do `opengraph-image`
-- [ ] F13, dois caminhos: (i) teste dentro do protótipo rodando na suíte raiz, com o `vitest` da raiz e as dependências locais do protótipo; (ii) teste da suíte raiz fora do protótipo importando dele um módulo que cria o `db` com o `drizzle-orm` e o `pg` locais e lê a branch `test` como `crivo_vitrine` (caminho do teste da T4, AD-044)
+- [ ] F13, dois caminhos: (i) teste dentro do protótipo rodando na suíte raiz, com o `vitest` da raiz e as dependências locais do protótipo; (ii) teste da suíte raiz fora do protótipo importando dele um módulo que cria o `db` com o `drizzle-orm` e o `pg` locais e lê a branch `test` como `krivo_vitrine` (caminho do teste da T4, AD-044)
 - [ ] F19: raiz que o Next infere com `package-lock.json` na raiz do repositório e no protótipo, e o efeito de `turbopack.root` apontando para a pasta do protótipo (doc `turbopack.md` § Root directory); o resultado define a config da T1
 - [ ] IF F8 ou F10 falhar THEN parar o lote e levar ao usuário a alternativa do design; IF o caminho (ii) da F13 falhar THEN parar e levar ao usuário (reabre onde fica o teste da T4); demais falhas ajustam a task dona
 - [ ] Protótipo apagado depois do registro; nenhuma credencial registrada
@@ -214,7 +214,7 @@ T24 → T25
 
 ### T4: Consultas e conexão da vitrine
 
-**Status**: concluída em 2026-10-10 (11 testes verdes (8 no banco como crivo_vitrine, 3 de conexão); 5 mutantes mortos; build gate sem erro novo).
+**Status**: concluída em 2026-10-10 (11 testes verdes (8 no banco como krivo_vitrine, 3 de conexão); 5 mutantes mortos; build gate sem erro novo).
 
 **What**: `lojaPorSlug`, `imoveisDaLoja` (ordem destaque → `atualizado_em` desc → referência asc) e `imovelPorReferencia` (sem distinção de caixa), recebendo o `db`; e `vitrine/src/db/conexao.ts` com `criarDb(url)` (Pool `pg` com `max: 3` e Drizzle sobre as views, sem ler ambiente) e a conexão da app por `VITRINE_DATABASE_URL` (`server-only`, criada no primeiro uso).
 **Where**: `vitrine/src/dados/consultas.ts`
@@ -224,7 +224,7 @@ T24 → T25
 
 **Done when**:
 
-- [ ] `src/db/__tests__/vitrine-consultas.test.ts` (suíte raiz, AD-044): fixture escrita como dono, com o `db` e o schema de `src/db`; leitura pelas consultas importadas de `vitrine/`, com o `db` de `criarDb(<URL do papel>)` conectado como `crivo_vitrine` (caminho (ii) da F13). Fixture com duas lojas ativas, uma inativa e imóveis em todos os estados: loja A nunca devolve linha da B (VSEG AC2, AC3); vendido, reservado e despublicado ausentes por lista e por referência direta (AC4); ordem com empate de `atualizado_em` decidido pela referência (VCAT AC2); `ap-0142` acha `AP-0142` (VITEM Edge Case); loja inativa → nulo
+- [ ] `src/db/__tests__/vitrine-consultas.test.ts` (suíte raiz, AD-044): fixture escrita como dono, com o `db` e o schema de `src/db`; leitura pelas consultas importadas de `vitrine/`, com o `db` de `criarDb(<URL do papel>)` conectado como `krivo_vitrine` (caminho (ii) da F13). Fixture com duas lojas ativas, uma inativa e imóveis em todos os estados: loja A nunca devolve linha da B (VSEG AC2, AC3); vendido, reservado e despublicado ausentes por lista e por referência direta (AC4); ordem com empate de `atualizado_em` decidido pela referência (VCAT AC2); `ap-0142` acha `AP-0142` (VITEM Edge Case); loja inativa → nulo
 - [ ] `vitrine/src/db/__tests__/conexao.test.ts`: sem `VITRINE_DATABASE_URL` a conexão da app falha com mensagem sem URL (VPROJ AC6)
 - [ ] Quick + Build passam
 

@@ -1,6 +1,6 @@
 # EXECUTE-PROMPT — Lote 16a, vitrine (lado CRM)
 
-Execute o lote 16a do Crivo com a skill `tlc-spec-driven` (ative pelo nome e siga o Execute e as Critical Rules). Responda sempre em português.
+Execute o lote 16a do Krivo com a skill `tlc-spec-driven` (ative pelo nome e siga o Execute e as Critical Rules). Responda sempre em português.
 
 ## Modelo
 
@@ -20,7 +20,7 @@ Aprovados pelo usuário em 2026-10-09, inclusive as assumptions marcadas `n` nas
 Decisões tomadas:
 
 - **Dados**: tabela 1:1 `tenant_storefronts` + `properties.featured`; edição em Configurações (`configuracoes:escrever`) e destaque em Imóveis (`imoveis:escrever`).
-- **Fronteira**: papel `crivo_vitrine` com `SELECT` só nas views `vitrine.lojas` e `vitrine.imoveis` (AD-040). Papel só por SQL.
+- **Fronteira**: papel `krivo_vitrine` com `SELECT` só nas views `vitrine.lojas` e `vitrine.imoveis` (AD-040). Papel só por SQL.
 - **Revalidação**: `POST /api/revalidar` com segredo, via `after()`, timeout 3 s, sem retry, nunca falha a ação (AD-042).
 - **Fora do lote**: o projeto `vitrine/` (L16b), qualquer ação em produção (L16c), busca do agente por referência, domínio próprio.
 

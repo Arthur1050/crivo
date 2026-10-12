@@ -464,9 +464,9 @@ const TENANT_DEFS: TenantDef[] = [
   // recebe o dataset fictício rico (leads/conversas/mensagens/baseline) —
   // os dois tenants-piloto acima operam só com dado real a partir daqui.
   {
-    key: "crivo-demo",
-    slug: "crivo-demo",
-    name: "Crivo Demo",
+    key: "krivo-demo",
+    slug: "krivo-demo",
+    name: "Krivo Demo",
     agentName: "Sofia",
     supportedModality: "ambos",
     baselineLeadsPerMonth: null,
@@ -478,44 +478,44 @@ const TENANT_DEFS: TenantDef[] = [
     city: "Belo Horizonte",
     state: "MG",
     agentWhatsapp: "+55 31 99300-0003",
-    website: "https://crivo.com.br",
+    website: "https://krivo.com.br",
     // lote-6b — PER-01 AC6: apresenta nome + imobiliária, sem "assistente
     // virtual"/"agente virtual"/"robô"/"IA"/"automatizado".
     agentPresentationMessage:
-      "Oi! Aqui é a Sofia, da Crivo Demo. Me conta o que você procura que eu já vejo o que temos disponível pra você.",
+      "Oi! Aqui é a Sofia, da Krivo Demo. Me conta o que você procura que eu já vejo o que temos disponível pra você.",
     agentVoiceTone:
       "Tom entusiasmado e prestativo, sempre disposto a detalhar as opções. Usa \"legal\" e \"perfeito\" para confirmar o que o lead conta.",
     members: [
       {
         key: "admin",
         name: "Eduardo Mendes Prado",
-        email: "eduardo.prado@crivo.com.br",
+        email: "eduardo.prado@krivo.com.br",
         role: "administrador",
       },
       {
         key: "gestor",
         name: "Patrícia Nogueira Vasques",
-        email: "patricia.vasques@crivo.com.br",
+        email: "patricia.vasques@krivo.com.br",
         role: "gestor",
       },
       {
         key: "b1",
         name: "Larissa Andrade Nunes",
-        email: "larissa.nunes@crivo.com.br",
+        email: "larissa.nunes@krivo.com.br",
         role: "corretor",
         ...MORNING_WINDOW,
       },
       {
         key: "b2",
         name: "Gustavo Ribeiro Cardoso",
-        email: "gustavo.cardoso@crivo.com.br",
+        email: "gustavo.cardoso@krivo.com.br",
         role: "corretor",
         ...AFTERNOON_WINDOW,
       },
       {
         key: "b3",
         name: "Beatriz Moraes Correia",
-        email: "beatriz.correia@crivo.com.br",
+        email: "beatriz.correia@krivo.com.br",
         role: "corretor",
         ...SATURDAY_WINDOW,
       },

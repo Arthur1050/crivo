@@ -1,6 +1,6 @@
 # EXECUTE-PROMPT — Lote 16c, vitrine em produção
 
-Execute o lote 16c do Crivo com a skill `tlc-spec-driven` (ative pelo nome e siga o Execute e as Critical Rules). Responda sempre em português. **Só comece com L16a e L16b fechados com Verifier PASS.**
+Execute o lote 16c do Krivo com a skill `tlc-spec-driven` (ative pelo nome e siga o Execute e as Critical Rules). Responda sempre em português. **Só comece com L16a e L16b fechados com Verifier PASS.**
 
 ## Modelo
 
@@ -20,7 +20,7 @@ A aprovação do lote **não** autoriza nenhuma ação externa. **Cada uma exige
 | T1 | `drizzle-kit push` em produção (plano antes) | executor, com autorização |
 | T2 | SQL das views em produção | executor, com autorização |
 | T3 | SQL do papel e grants em produção, sem senha | executor, com autorização |
-| T4 | `ALTER ROLE crivo_vitrine PASSWORD` no editor SQL do Neon | usuário |
+| T4 | `ALTER ROLE krivo_vitrine PASSWORD` no editor SQL do Neon | usuário |
 | T5 | Consultas de catálogo em produção (leitura) | executor, com autorização |
 | T6 | Full + auditoria de trailer + `git push origin main` | executor, com autorização |
 | T7 | Projeto da vitrine na Vercel com as 3 variáveis | usuário |

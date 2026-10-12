@@ -37,7 +37,7 @@ const input = {
 };
 
 function request(body: unknown, headers?: HeadersInit) {
-  return new Request("https://crivo.test/api/documents/upload", {
+  return new Request("https://krivo.test/api/documents/upload", {
     method: "POST",
     headers: { "content-type": "application/json", ...headers },
     body: JSON.stringify(body),
