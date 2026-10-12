@@ -4,7 +4,7 @@
   "window_days": 45,
   "quarantine_threshold": 2,
   "prune_requires_confirmation": true,
-  "next_id": 72,
+  "next_id": 85,
   "lessons": [
     {
       "id": "L-001",
@@ -1185,6 +1185,195 @@
       ],
       "created": "2026-10-09T17:06:52Z",
       "last_seen": "2026-10-09T17:06:52Z"
+    },
+    {
+      "id": "L-072",
+      "key": "gate_fail::funcao passada como prop a um componente da astryx dentro de um server component quebra o render do rsc o catalogo caia no error tsx mova o glifo ou o handler para um componente de cliente e passe so dados serializaveis",
+      "text": "Função passada como prop a um componente da Astryx dentro de um Server Component quebra o render do RSC (o catálogo caía no error.tsx): mova o glifo ou o handler para um componente de cliente e passe só dados serializáveis.",
+      "signal": "gate_fail",
+      "scope": "vitrine/rsc",
+      "status": "confirmed",
+      "features": [
+        "lote-16b-vitrine-app"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "vitrine/src/templates/comum/espaco-sem-foto.tsx:1 (vitrine/rsc)",
+        "Revisao de fechamento L16b (AD-045, 2026-10-12): promovida; vale para todo Server Component com componente da Astryx que recebe funcao (Icon, render props); espaco-sem-foto.tsx segue 'use client'."
+      ],
+      "created": "2026-10-12T14:23:05Z",
+      "last_seen": "2026-10-12T14:23:05Z"
+    },
+    {
+      "id": "L-073",
+      "key": "gate_fail::notfound ou erro lancado dentro de suspense vira render no cliente e o html sem js sai sem a ui renderize o estado de nao encontrado ou de erro no servidor e prove no html sem script",
+      "text": "notFound() ou erro lançado dentro de <Suspense> vira render no cliente e o HTML sem JS sai sem a UI: renderize o estado de não encontrado ou de erro no servidor e prove no HTML sem script.",
+      "signal": "gate_fail",
+      "scope": "vitrine/suspense",
+      "status": "confirmed",
+      "features": [
+        "lote-16b-vitrine-app"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "vitrine/app/c/[slug]/layout.tsx:49 (vitrine/suspense)",
+        "Revisao de fechamento L16b (AD-045, 2026-10-12): promovida; vale para toda rota com params em <Suspense> sob cacheComponents; layout.tsx e a pagina do imovel renderizam o estado em vez de notFound()."
+      ],
+      "created": "2026-10-12T14:23:05Z",
+      "last_seen": "2026-10-12T14:23:05Z"
+    },
+    {
+      "id": "L-074",
+      "key": "gate_fail::assercao de texto sobre o corpo inteiro da resposta casa com o payload rsc dentro de script e passa sem a ui confira o html visivel sem as tags script e recorte o trecho da pagina antes de procurar o texto",
+      "text": "Asserção de texto sobre o corpo inteiro da resposta casa com o payload RSC dentro de <script> e passa sem a UI: confira o HTML visível, sem as tags script, e recorte o trecho da página antes de procurar o texto.",
+      "signal": "gate_fail",
+      "scope": "testing/e2e",
+      "status": "confirmed",
+      "features": [
+        "lote-16b-vitrine-app"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "scripts/vitrine-e2e.ts:339 (testing/e2e)",
+        "Revisao de fechamento L16b (AD-045, 2026-10-12): promovida; absorve a L-084 (descartada como duplicata): o <head> tambem contamina, og:description repete a cidade (V1, e2e:1041); recortar o trecho vale para script e head."
+      ],
+      "created": "2026-10-12T14:23:05Z",
+      "last_seen": "2026-10-12T14:23:05Z"
+    },
+    {
+      "id": "L-075",
+      "key": "spec_deviation::o next imprime a causa sql e host dos erros de funcoes com use cache antes de qualquer catch lance na camada de cache um erro so com o codigo e capture na pagina ou a regra de log sem dado de linha e violada",
+      "text": "O Next imprime a causa (SQL e host) dos erros de funções com use cache antes de qualquer catch: lance na camada de cache um erro só com o código e capture na página, ou a regra de log sem dado de linha é violada.",
+      "signal": "spec_deviation",
+      "scope": "vitrine/logs",
+      "status": "confirmed",
+      "features": [
+        "lote-16b-vitrine-app"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "vitrine/src/dados/erro-de-leitura.ts:1 (vitrine/logs)",
+        "Revisao de fechamento L16b (AD-045, 2026-10-12): promovida; vale para toda funcao com use cache na vitrine (o CRM segue sem cacheComponents, AD-007); erro-de-leitura.ts e lerDoBanco seguem no cache.ts."
+      ],
+      "created": "2026-10-12T14:23:05Z",
+      "last_seen": "2026-10-12T14:23:05Z"
+    },
+    {
+      "id": "L-076",
+      "key": "gate_fail::o opengraph de uma pagina substitui o do segmento pai por inteiro inclusive a imagem do opengraph image repasse await parent opengraph images quando a pagina nao tem imagem propria e prove com um e2e do caso sem foto",
+      "text": "O openGraph de uma página substitui o do segmento pai por inteiro, inclusive a imagem do opengraph-image: repasse (await parent).openGraph.images quando a página não tem imagem própria e prove com um e2e do caso sem foto.",
+      "signal": "gate_fail",
+      "scope": "next/metadata",
+      "status": "confirmed",
+      "features": [
+        "lote-16b-vitrine-app"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "vitrine/app/c/[slug]/imovel/[ref]/page.tsx:23 (next/metadata)",
+        "Revisao de fechamento L16b (AD-045, 2026-10-12): promovida; merge raso do metadata do Next 16 para todo campo aninhado (openGraph, twitter); imovel/[ref]/page.tsx repassa as imagens do parent."
+      ],
+      "created": "2026-10-12T14:23:05Z",
+      "last_seen": "2026-10-12T14:23:05Z"
+    },
+    {
+      "id": "L-078",
+      "key": "surviving_mutant::fixture com dois campos de mesmo valor 2 quartos e 2 banheiros deixa viva a troca de um campo pelo outro de valores todos distintos aos campos que o teste compara",
+      "text": "Fixture com dois campos de mesmo valor (2 quartos e 2 banheiros) deixa viva a troca de um campo pelo outro: dê valores todos distintos aos campos que o teste compara.",
+      "signal": "surviving_mutant",
+      "scope": "testing/fixture",
+      "status": "confirmed",
+      "features": [
+        "lote-16b-vitrine-app"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "scripts/vitrine-e2e.ts:772 (testing/fixture)",
+        "Revisao de fechamento L16b (AD-045, 2026-10-12): promovida; distinta da L-053 (valor de partida de campo inalterado): aqui sao campos irmaos comparados com o mesmo valor; e2e usa CA-0006 (3, 1, 0, 58)."
+      ],
+      "created": "2026-10-12T14:23:06Z",
+      "last_seen": "2026-10-12T14:23:06Z"
+    },
+    {
+      "id": "L-079",
+      "key": "gate_fail::next dev e next build dividem a pasta next depois de um build o servidor dev que estava no ar responde 404 em rota nova apague next e reinicie o dev antes de capturar",
+      "text": "next dev e next build dividem a pasta .next: depois de um build, o servidor dev que estava no ar responde 404 em rota nova; apague .next e reinicie o dev antes de capturar.",
+      "signal": "gate_fail",
+      "scope": "tooling/next",
+      "status": "candidate",
+      "features": [
+        "lote-16b-vitrine-app"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "vitrine/src/dados/cache.ts:1 (tooling/next)"
+      ],
+      "created": "2026-10-12T14:23:06Z",
+      "last_seen": "2026-10-12T14:23:06Z"
+    },
+    {
+      "id": "L-080",
+      "key": "surviving_mutant::para provar um texto sobre um fundo nome no cartao sobre a cor a assercao precisa variar o texto com o fundo fixo comparar duas lojas de cores diferentes prova so a cor",
+      "text": "Para provar um texto sobre um fundo (nome no cartão sobre a cor), a asserção precisa variar o texto com o fundo fixo; comparar duas lojas de cores diferentes prova só a cor.",
+      "signal": "surviving_mutant",
+      "scope": "testing/e2e",
+      "status": "confirmed",
+      "features": [
+        "lote-16b-vitrine-app"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "scripts/vitrine-e2e.ts:1 (testing/e2e)",
+        "Revisao de fechamento L16b (AD-045, 2026-10-12): promovida; variacao controlada: so o fator sob prova muda (V7 iguala cor, cidade e UF e varia so o nome)."
+      ],
+      "created": "2026-10-12T14:23:06Z",
+      "last_seen": "2026-10-12T14:23:06Z"
+    },
+    {
+      "id": "L-081",
+      "key": "surviving_mutant::todo ac do tipo omita quando nao houver precisa de um caso vazio na fixture ou criado no banco durante o e2e para cada template sem ele o mutante que mostra o elemento mesmo vazio sobrevive",
+      "text": "Todo AC do tipo 'omita quando não houver' precisa de um caso vazio na fixture, ou criado no banco durante o e2e, para cada template: sem ele o mutante que mostra o elemento mesmo vazio sobrevive.",
+      "signal": "surviving_mutant",
+      "scope": "testing/fixture",
+      "status": "confirmed",
+      "features": [
+        "lote-16b-vitrine-app"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "scripts/vitrine-e2e.ts:1 (testing/fixture)",
+        "Revisao de fechamento L16b (AD-045, 2026-10-12): promovida; especializa a L-006 (dado de seed junto do AC) na dimensao por template/variante: E11c morria na grade e E11d sobreviveu no editorial."
+      ],
+      "created": "2026-10-12T14:23:06Z",
+      "last_seen": "2026-10-12T14:23:06Z"
+    },
+    {
+      "id": "L-083",
+      "key": "surviving_mutant::edge case que junta dois mecanismos corte de visibilidade da view e tag de cache precisa de assercao propria no e2e que mude o dado avise e confira a pagina os testes de cada mecanismo isolado deixam o mutante passar",
+      "text": "Edge Case que junta dois mecanismos (corte de visibilidade da view e tag de cache) precisa de asserção própria no e2e que mude o dado, avise e confira a página; os testes de cada mecanismo isolado deixam o mutante passar.",
+      "signal": "surviving_mutant",
+      "scope": "testing/e2e",
+      "status": "confirmed",
+      "features": [
+        "lote-16b-vitrine-app"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "scripts/vitrine-e2e.ts:1 (testing/e2e)",
+        "Revisao de fechamento L16b (AD-045, 2026-10-12): promovida; distinta da L-026 (chamada entre pecas) e da L-041 (precedencia de regras): composicao de dois mecanismos num Edge Case precisa de prova propria (E13 so morria no unitario; V6)."
+      ],
+      "created": "2026-10-12T14:23:06Z",
+      "last_seen": "2026-10-12T14:23:06Z"
     }
   ]
 }

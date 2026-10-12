@@ -338,6 +338,60 @@ Corroborated across multiple features. Safe to apply as guidance.
 - evidence: src/db/test-connection.ts:resolveVitrineTestUrl (scripts,testing) (+1 more)
 - last seen: 2026-10-09T17:06:52Z
 
+### L-072 - Função passada como prop a um componente da Astryx dentro de um Server Component quebra o render do RSC (o catálogo caía no error.tsx): mova o glifo ou o handler para um componente de cliente e passe só dados serializáveis.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `vitrine/rsc` · harmful: 0
+- features: lote-16b-vitrine-app
+- evidence: vitrine/src/templates/comum/espaco-sem-foto.tsx:1 (vitrine/rsc) (+1 more)
+- last seen: 2026-10-12T14:23:05Z
+
+### L-073 - notFound() ou erro lançado dentro de <Suspense> vira render no cliente e o HTML sem JS sai sem a UI: renderize o estado de não encontrado ou de erro no servidor e prove no HTML sem script.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `vitrine/suspense` · harmful: 0
+- features: lote-16b-vitrine-app
+- evidence: vitrine/app/c/[slug]/layout.tsx:49 (vitrine/suspense) (+1 more)
+- last seen: 2026-10-12T14:23:05Z
+
+### L-074 - Asserção de texto sobre o corpo inteiro da resposta casa com o payload RSC dentro de <script> e passa sem a UI: confira o HTML visível, sem as tags script, e recorte o trecho da página antes de procurar o texto.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `testing/e2e` · harmful: 0
+- features: lote-16b-vitrine-app
+- evidence: scripts/vitrine-e2e.ts:339 (testing/e2e) (+1 more)
+- last seen: 2026-10-12T14:23:05Z
+
+### L-075 - O Next imprime a causa (SQL e host) dos erros de funções com use cache antes de qualquer catch: lance na camada de cache um erro só com o código e capture na página, ou a regra de log sem dado de linha é violada.
+- signal: `spec_deviation` · recurrence: 1 feature(s) · scope: `vitrine/logs` · harmful: 0
+- features: lote-16b-vitrine-app
+- evidence: vitrine/src/dados/erro-de-leitura.ts:1 (vitrine/logs) (+1 more)
+- last seen: 2026-10-12T14:23:05Z
+
+### L-076 - O openGraph de uma página substitui o do segmento pai por inteiro, inclusive a imagem do opengraph-image: repasse (await parent).openGraph.images quando a página não tem imagem própria e prove com um e2e do caso sem foto.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `next/metadata` · harmful: 0
+- features: lote-16b-vitrine-app
+- evidence: vitrine/app/c/[slug]/imovel/[ref]/page.tsx:23 (next/metadata) (+1 more)
+- last seen: 2026-10-12T14:23:05Z
+
+### L-078 - Fixture com dois campos de mesmo valor (2 quartos e 2 banheiros) deixa viva a troca de um campo pelo outro: dê valores todos distintos aos campos que o teste compara.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `testing/fixture` · harmful: 0
+- features: lote-16b-vitrine-app
+- evidence: scripts/vitrine-e2e.ts:772 (testing/fixture) (+1 more)
+- last seen: 2026-10-12T14:23:06Z
+
+### L-080 - Para provar um texto sobre um fundo (nome no cartão sobre a cor), a asserção precisa variar o texto com o fundo fixo; comparar duas lojas de cores diferentes prova só a cor.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `testing/e2e` · harmful: 0
+- features: lote-16b-vitrine-app
+- evidence: scripts/vitrine-e2e.ts:1 (testing/e2e) (+1 more)
+- last seen: 2026-10-12T14:23:06Z
+
+### L-081 - Todo AC do tipo 'omita quando não houver' precisa de um caso vazio na fixture, ou criado no banco durante o e2e, para cada template: sem ele o mutante que mostra o elemento mesmo vazio sobrevive.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `testing/fixture` · harmful: 0
+- features: lote-16b-vitrine-app
+- evidence: scripts/vitrine-e2e.ts:1 (testing/fixture) (+1 more)
+- last seen: 2026-10-12T14:23:06Z
+
+### L-083 - Edge Case que junta dois mecanismos (corte de visibilidade da view e tag de cache) precisa de asserção própria no e2e que mude o dado, avise e confira a página; os testes de cada mecanismo isolado deixam o mutante passar.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `testing/e2e` · harmful: 0
+- features: lote-16b-vitrine-app
+- evidence: scripts/vitrine-e2e.ts:1 (testing/e2e) (+1 more)
+- last seen: 2026-10-12T14:23:06Z
+
 ## Candidates (under observation - do NOT load as guidance yet)
 
 Seen once or not yet corroborated. Tracked, not trusted.
@@ -401,6 +455,12 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - features: lote-15-prontidao-operacional
 - evidence: scripts/test-db-push.ts; validation.md § Full e auditoria pré-push (tooling,db)
 - last seen: 2026-10-08T21:06:05Z
+
+### L-079 - next dev e next build dividem a pasta .next: depois de um build, o servidor dev que estava no ar responde 404 em rota nova; apague .next e reinicie o dev antes de capturar.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `tooling/next` · harmful: 0
+- features: lote-16b-vitrine-app
+- evidence: vitrine/src/dados/cache.ts:1 (tooling/next)
+- last seen: 2026-10-12T14:23:06Z
 
 ## Quarantined (failed when applied - ignore)
 

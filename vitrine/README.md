@@ -32,7 +32,7 @@ Na raiz do repositório:
 
 Dentro de `vitrine/`: `npm run lint`, `npm run typecheck` e `npm run build`.
 
-Armadilha: `next dev` e `next build` dividem `vitrine/.next`. Depois de construir (o `vitrine:e2e` constrói), apague `vitrine/.next` antes de subir o `vitrine:dev`, ou ele responde 404 em rota nova.
+Armadilha observada, de causa não estabelecida: depois de construir (o `vitrine:e2e` constrói), um `vitrine:dev` que já estava de pé respondeu 404 em rota nova. Apague `vitrine/.next` e reinicie o `vitrine:dev`.
 
 ## Variáveis
 
