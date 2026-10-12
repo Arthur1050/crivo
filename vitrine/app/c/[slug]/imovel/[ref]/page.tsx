@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, ResolvingMetadata } from "next";
 import { unstable_rethrow } from "next/navigation";
 import { Suspense } from "react";
 import { imovelCacheado, lojaCacheada } from "../../../../../src/dados/cache";
@@ -15,12 +15,13 @@ interface Props {
 /**
  * Metadados de compartilhamento do imóvel (VOG-01 AC1, AC3, AC4): título
  * "<Tipo> em <bairro> — <REF>", descrição "<quartos> quartos · <área> m² ·
- * <preço>" e `og:image` = primeira foto cadastrada. Sem foto, `images` fica de
- * fora e o segmento herda o cartão gerado da loja (`opengraph-image`, T24).
- * Imóvel que a página não mostra (inexistente, vendido, reservado,
+ * <preço>" e `og:image` = primeira foto cadastrada. Sem foto, é o cartão
+ * gerado da loja (`opengraph-image`, T24): o `openGraph` desta página substitui
+ * o do segmento da loja por inteiro, então as imagens dele são repassadas do
+ * `parent`. Imóvel que a página não mostra (inexistente, vendido, reservado,
  * despublicado, de outra loja) fica sem metadados próprios: nada dele vaza.
  */
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params }: Props, parent: ResolvingMetadata): Promise<Metadata> {
   const { slug, ref } = await params;
   const referencia = referenciaDaUrl(ref);
   if (!slugValido(slug) || !referencia) return {};
@@ -29,7 +30,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (!imovel) return {};
     const { titulo, descricao } = metadadosDoItem(imovel);
     const primeiraFoto = imovel.fotos?.[0];
-    const imagens = primeiraFoto ? [primeiraFoto] : undefined;
+    const herdadas = primeiraFoto ? undefined : await parent;
+    const imagensOg = primeiraFoto ? [primeiraFoto] : herdadas?.openGraph?.images;
+    const imagensTwitter = primeiraFoto ? [primeiraFoto] : herdadas?.twitter?.images;
     return {
       title: titulo,
       description: descricao,
@@ -39,13 +42,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         url: `/c/${slug}/imovel/${referenciaParaUrl(imovel.referencia)}`,
         locale: "pt_BR",
         type: "website",
-        ...(imagens ? { images: imagens } : {}),
+        ...(imagensOg ? { images: imagensOg } : {}),
       },
       twitter: {
         card: "summary_large_image",
         title: titulo,
         description: descricao,
-        ...(imagens ? { images: imagens } : {}),
+        ...(imagensTwitter ? { images: imagensTwitter } : {}),
       },
     };
   } catch (erro) {

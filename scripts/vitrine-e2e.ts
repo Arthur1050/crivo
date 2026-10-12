@@ -840,6 +840,160 @@ registrar("T23 og:* do imóvel no <head> para o user-agent do WhatsApp, com a pr
   assert.ok(r.texto.includes("<title>Apartamento em Bairro Alfa 1 — AP-0001</title>"), "<title>");
 });
 
+// ── T24: imagem de compartilhamento da loja ────────────────────────────────
+
+const ASSINATURA_PNG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+
+/** Largura, altura e cor do primeiro pixel de um PNG de 8 bits RGB ou RGBA; `null` se não for PNG. */
+async function lerPng(bytes: Buffer): Promise<{ largura: number; altura: number; primeiroPixel: string } | null> {
+  if (bytes.length < 33 || !ASSINATURA_PNG.every((valor, indice) => bytes[indice] === valor)) return null;
+  const { inflateSync } = await import("node:zlib");
+  const largura = bytes.readUInt32BE(16);
+  const altura = bytes.readUInt32BE(20);
+  assert.equal(bytes[24], 8, "profundidade de cor do PNG");
+  assert.ok([2, 6].includes(bytes[25]), `tipo de cor do PNG ${bytes[25]}`);
+  const dados: Buffer[] = [];
+  for (let posicao = 8; posicao + 12 <= bytes.length; ) {
+    const tamanho = bytes.readUInt32BE(posicao);
+    if (bytes.toString("ascii", posicao + 4, posicao + 8) === "IDAT") {
+      dados.push(bytes.subarray(posicao + 8, posicao + 8 + tamanho));
+    }
+    posicao += 12 + tamanho;
+  }
+  const linhas = inflateSync(Buffer.concat(dados));
+  // Primeira linha, primeiro pixel: com vizinhos à esquerda e acima iguais a
+  // zero, todo filtro do PNG deixa o valor cru igual ao valor real.
+  const primeiroPixel = `#${[linhas[1], linhas[2], linhas[3]].map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+  return { largura, altura, primeiroPixel };
+}
+
+/** Caminho (sem a origem) da imagem `og:image` declarada pelo catálogo da loja. */
+async function caminhoDoCartao(ctx: Contexto, slug: string): Promise<string> {
+  const r = await ctx.pedir(`/c/${slug}`, { cabecalhos: { "user-agent": UA_WHATSAPP } });
+  const url = metaDoHead(r.texto, "og:image");
+  assert.ok(url, `${slug}: o catálogo não declara og:image`);
+  assert.ok(url.startsWith(`${ctx.base}/c/${slug}/opengraph-image`), `${slug}: og:image fora do esperado: ${url}`);
+  return url.slice(ctx.base.length);
+}
+
+async function baixar(ctx: Contexto, caminho: string, base?: string): Promise<{ status: number; tipo: string | null; bytes: Buffer }> {
+  // Registra a resposta (cabeçalhos entram nas asserções globais) e lê os bytes à parte.
+  const registrada = await ctx.pedir(caminho, { binario: true, ...(base ? { base } : {}) });
+  const resposta = await fetch(`${base ?? ctx.base}${caminho}`, { signal: AbortSignal.timeout(30_000) });
+  assert.equal(registrada.status, resposta.status, `${caminho}: status diferente entre as duas leituras`);
+  return { status: resposta.status, tipo: resposta.headers.get("content-type"), bytes: Buffer.from(await resposta.arrayBuffer()) };
+}
+
+registrar("T24 o catálogo e o imóvel sem foto declaram o cartão da própria loja como og:image absoluto (VOG AC1, AC4)", async (ctx) => {
+  const { a, b, d } = ctx.fixture.lojas;
+  const cabecalhos = { "user-agent": UA_WHATSAPP };
+  for (const loja of [a, b, d]) {
+    const r = await ctx.pedir(`/c/${loja.slug}`, { cabecalhos });
+    const imagem = metaDoHead(r.texto, "og:image");
+    assert.ok(imagem?.startsWith(`${ctx.base}/c/${loja.slug}/opengraph-image`), `${loja.slug}: og:image ${imagem}`);
+    assert.equal(metaDoHead(r.texto, "og:image:width"), "1200", `${loja.slug}: largura declarada`);
+    assert.equal(metaDoHead(r.texto, "og:image:height"), "630", `${loja.slug}: altura declarada`);
+    assert.equal(metaDoHead(r.texto, "twitter:image"), imagem, `${loja.slug}: twitter:image`);
+  }
+  // Imóvel sem foto (AP-0005 da A): a imagem da loja; com foto, a foto (provado na T23).
+  const doCatalogo = await caminhoDoCartao(ctx, a.slug);
+  const semFoto = await ctx.pedir(`/c/${a.slug}/imovel/ap-0005`, { cabecalhos });
+  assert.equal(metaDoHead(semFoto.texto, "og:image"), `${ctx.base}${doCatalogo}`, "AP-0005 sem foto");
+});
+
+registrar("T24 o cartão de A e B é um PNG 1200×630 sobre o hex literal da loja; D usa outra cor (VOG AC5)", async (ctx) => {
+  const { a, b, d } = ctx.fixture.lojas;
+  const cartoes: Record<string, { bytes: Buffer; pixel: string }> = {};
+  for (const loja of [a, b, d]) {
+    const { status, tipo, bytes } = await baixar(ctx, await caminhoDoCartao(ctx, loja.slug));
+    assert.equal(status, 200, loja.slug);
+    assert.equal(tipo, "image/png", loja.slug);
+    const png = await lerPng(bytes);
+    assert.ok(png, `${loja.slug}: a resposta não é PNG`);
+    assert.equal(png.largura, 1200, `${loja.slug}: largura`);
+    assert.equal(png.altura, 630, `${loja.slug}: altura`);
+    cartoes[loja.slug] = { bytes, pixel: png.primeiroPixel };
+  }
+  assert.equal(cartoes[a.slug].pixel, a.cor, "A: o fundo é o hex literal da loja, não o accent derivado");
+  assert.equal(cartoes[b.slug].pixel, b.cor, "B: o fundo é o hex literal da loja");
+  assert.equal(a.cor && b.cor && d.cor, null, "D da fixture não tem cor");
+  assert.notEqual(cartoes[d.slug].pixel, a.cor, "D com a cor da A");
+  assert.notEqual(cartoes[d.slug].pixel, b.cor, "D com a cor da B");
+  assert.ok(!cartoes[a.slug].bytes.equals(cartoes[b.slug].bytes), "A e B com o mesmo cartão");
+});
+
+registrar("T24 loja inativa (C), slug sem loja e slug inválido → sem PNG da loja, sem marca (VCAT AC9)", async (ctx) => {
+  const { a, c } = ctx.fixture.lojas;
+  const modelo = await caminhoDoCartao(ctx, a.slug);
+  for (const slug of [c.slug, "vt-e2e-sem-loja", "Slug_Invalido"]) {
+    const caminho = modelo.replace(`/c/${a.slug}/`, `/c/${slug}/`);
+    const { status, tipo, bytes } = await baixar(ctx, caminho);
+    assert.equal(status, 404, `${slug}: status`);
+    assert.notEqual(tipo, "image/png", `${slug}: devolveu imagem`);
+    assert.equal(await lerPng(bytes), null, `${slug}: o corpo é um PNG`);
+    semMarcaDeLoja(ctx, bytes.toString("utf8"));
+  }
+});
+
+registrar("T24 gerar o cartão não faz nenhuma requisição de saída (VOG AC5)", async (ctx) => {
+  const [{ mkdtempSync, readFileSync, rmSync, writeFileSync, existsSync }, { tmpdir }] = await Promise.all([
+    import("node:fs"),
+    import("node:os"),
+  ]);
+  const pasta = mkdtempSync(path.join(tmpdir(), "vitrine-e2e-saidas-"));
+  const registro = path.join(pasta, "saidas.log");
+  const gancho = path.join(pasta, "gancho.cjs");
+  // Pré-carregado no servidor: anota todo `fetch` e toda chamada a `http(s).request/get`,
+  // ainda antes de a requisição sair. A conexão do banco usa `net`/`tls` e não entra aqui.
+  writeFileSync(
+    gancho,
+    [
+      'const fs = require("node:fs");',
+      "const registro = process.env.VITRINE_E2E_SAIDAS;",
+      'const anotar = (tipo, alvo) => { try { fs.appendFileSync(registro, tipo + " " + String(alvo) + "\\n"); } catch {} };',
+      "const original = globalThis.fetch;",
+      'globalThis.fetch = function (entrada, ...resto) { anotar("fetch", entrada && entrada.url ? entrada.url : entrada); return original.call(this, entrada, ...resto); };',
+      'for (const nome of ["node:http", "node:https"]) {',
+      "  const modulo = require(nome);",
+      '  for (const metodo of ["request", "get"]) {',
+      "    const feito = modulo[metodo];",
+      '    modulo[metodo] = function (...args) { const a = args[0]; anotar(nome + "." + metodo, typeof a === "string" ? a : a && (a.href || a.hostname || a.host)); return feito.apply(this, args); };',
+      "  }",
+      "}",
+    ].join("\n")
+  );
+  const outra = await ctx.iniciarInstancia(PORTA_E2E + 2, {
+    NODE_OPTIONS: `--require "${gancho.replace(/\\/g, "/")}"`,
+    VITRINE_E2E_SAIDAS: registro,
+  });
+  try {
+    const { a, b } = ctx.fixture.lojas;
+    for (const loja of [a, b]) {
+      const r = await ctx.pedir(`/c/${loja.slug}`, { base: outra.base, cabecalhos: { "user-agent": UA_WHATSAPP } });
+      const url = metaDoHead(r.texto, "og:image");
+      assert.ok(url, `${loja.slug}: sem og:image`);
+      const { status, tipo } = await baixar(ctx, new URL(url).pathname, outra.base);
+      assert.equal(status, 200, `${loja.slug}: cartão`);
+      assert.equal(tipo, "image/png", `${loja.slug}: tipo`);
+    }
+    const saidas = existsSync(registro)
+      ? readFileSync(registro, "utf8").split("\n").filter((linha) => linha.trim() !== "")
+      : [];
+    // `data:` é o módulo WASM do renderizador lido em memória, não rede; `localhost` é o próprio servidor.
+    const externas = saidas
+      .filter((linha) => !/^[^ ]+ data:/.test(linha) && !/localhost|127\.0\.0\.1|\[::1\]/.test(linha))
+      .map((linha) => linha.slice(0, 160));
+    assert.deepEqual(externas, [], "o servidor fez requisição de saída ao gerar o cartão");
+  } finally {
+    outra.parar();
+    try {
+      rmSync(pasta, { recursive: true, force: true });
+    } catch {
+      // arquivo ainda aberto pelo processo que encerra: o diretório temporário fica para o sistema
+    }
+  }
+});
+
 // ── Globais: olham tudo o que as asserções acima (e as das tasks seguintes) pediram ──
 
 registrarGlobal("Global: X-Robots-Tag \"noindex, nofollow\" em toda resposta (VSEO AC2)", (ctx) => {

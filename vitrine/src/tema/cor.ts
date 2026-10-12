@@ -23,3 +23,17 @@ export function corValida(cor: string | null | undefined): string | null {
 export function corDoCartao(cor: string | null | undefined): string {
   return corValida(cor) ?? COR_PADRAO;
 }
+
+/**
+ * Cor do texto sobre o cartão OG: branco ou quase preto, a de maior contraste
+ * com o fundo (luminância relativa WCAG; o corte de 0,179 é onde o contraste
+ * com o branco e com o preto se igualam). Recebe a cor já validada.
+ */
+export function corDoTextoSobre(fundo: string): string {
+  const canais = [1, 3, 5].map((inicio) => {
+    const c = parseInt(fundo.slice(inicio, inicio + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  const luminancia = 0.2126 * canais[0] + 0.7152 * canais[1] + 0.0722 * canais[2];
+  return luminancia > 0.179 ? "#111111" : "#ffffff";
+}

@@ -665,6 +665,8 @@ T24 → T25
 
 ### T24: Imagem de compartilhamento da loja
 
+**Status**: concluída em 2026-10-12 (hash no `git log`; e2e 47 de 47; 5 mutantes mortos; capturas `t24-01` a `t24-03`; lint, typecheck e build da vitrine sem erro; lint da raiz 0 erros e `tsc` com os mesmos 50). Fecha o `og:image` do imóvel sem foto da T23.
+
 **What**: `app/c/[slug]/opengraph-image.tsx` com `ImageResponse` 1200×630: nome da loja sobre a cor da loja (o hex literal da loja ou a cor padrão, não o accent derivado; AD-046), sem recurso externo.
 **Where**: `vitrine/app/c/[slug]/opengraph-image.tsx`
 **Depends on**: T5, T10, T14
