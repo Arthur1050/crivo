@@ -16,6 +16,9 @@ interface Props {
  * Galeria do imóvel (VITEM-01): carrossel com uma foto por vez e visualizador
  * em tela cheia ao clicar. É componente de cliente porque o visualizador guarda
  * estado; recebe só texto, nunca função, pela fronteira servidor → cliente.
+ * Cada slide tem largura própria (320): o carrossel é um scroller de largura
+ * indefinida e uma porcentagem aí resolve para zero (a foto some), como a
+ * captura da T23 mostrou.
  *
  * A foto vai direto da URL cadastrada, sem otimizador (AD-043): `loading="lazy"`
  * e `referrerPolicy="no-referrer"`. A Astryx não tem primitivo de imagem, então
@@ -35,7 +38,7 @@ export function GaleriaDoImovel({ fotos, textos }: Props) {
             label={`Ampliar a foto ${indice + 1} de ${fotos.length}`}
             onClick={() => lightbox.open(indice)}
             padding={0}
-            width="100%"
+            width={320}
           >
             <AspectRatio ratio={4 / 3} fit="cover">
               {/* eslint-disable-next-line @next/next/no-img-element */}

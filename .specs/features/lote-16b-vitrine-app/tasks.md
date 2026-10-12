@@ -642,6 +642,8 @@ T24 → T25
 
 ### T23: Página de imóvel
 
+**Status**: concluída em 2026-10-12 (hash no `git log`; e2e 43 de 43; 6 mutantes mortos; capturas `t23-01` a `t23-06` com a largura de rolagem no `validation.md`; lint, typecheck e build da vitrine sem erro; lint da raiz 0 erros e `tsc` com os mesmos 50). `og:image` do imóvel sem foto (cartão da loja) fica para a T24.
+
 **What**: `app/c/[slug]/imovel/[ref]/page.tsx`: params em `<Suspense>`, referência inexistente → `notFound()`, `generateMetadata` com a primeira foto ou a imagem da loja.
 **Where**: `vitrine/app/c/[slug]/imovel/[ref]/page.tsx`
 **Depends on**: T22, T16

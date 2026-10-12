@@ -85,12 +85,8 @@ export function PaginaItem({ loja, imovel }: Props) {
             <Text type="label" color="secondary">
               {[referencia, modalidade].filter(Boolean).join(" · ")}
             </Text>
-            <Heading level={1}>
-              {tipo} em {imovel.bairro}
-            </Heading>
-            <Text color="secondary">
-              {imovel.cidade}/{imovel.uf}
-            </Text>
+            <Heading level={1}>{`${tipo} em ${imovel.bairro}`}</Heading>
+            <Text color="secondary">{`${imovel.cidade}/${imovel.uf}`}</Text>
           </VStack>
 
           <Text type="display-3" weight="bold">

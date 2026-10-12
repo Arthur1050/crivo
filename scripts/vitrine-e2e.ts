@@ -645,6 +645,201 @@ registrar("T21 cache: a mudança no banco só aparece depois do aviso certo; a l
   assert.ok(preco((await ctx.pedir(`/c/${b.slug}`)).texto, "R$ 888.000"), "B depois do próprio aviso");
 });
 
+// ── T23: página de imóvel ──────────────────────────────────────────────────
+
+/** Valor que acompanha um rótulo de atributo do imóvel (`>Quartos</span>` → texto do `<span>` seguinte). */
+function valorDoAtributo(html: string, rotulo: string): string | null {
+  const marca = `>${rotulo}</span>`;
+  const inicio = html.indexOf(marca);
+  if (inicio < 0) return null;
+  const resto = html.slice(inicio + marca.length);
+  const abre = resto.indexOf(">");
+  const fecha = resto.indexOf("</span>", abre);
+  return abre < 0 || fecha < 0 ? null : resto.slice(abre + 1, fecha);
+}
+
+/** Tags `<img>` do HTML visível, cada uma só com o próprio conteúdo. */
+function imagens(html: string): string[] {
+  return html.split("<img ").slice(1).map((t) => t.slice(0, t.indexOf(">")));
+}
+
+registrar("T23 imóvel visível da A: 200 com os campos de VITEM AC1 e a descrição como texto", async (ctx) => {
+  const { a } = ctx.fixture.lojas;
+  const imovel = a.imoveis.find((x) => x.referencia === "AP-0001");
+  assert.ok(imovel?.fotos, "AP-0001 da fixture precisa ter foto");
+  const r = await ctx.pedir(`/c/${a.slug}/imovel/ap-0001`);
+  const html = htmlVisivel(r.texto);
+  assert.equal(r.status, 200);
+  assert.ok(!r.texto.includes("<!--$!-->"), "o limite caiu para render no cliente");
+  assert.ok(html.includes(">Apartamento em Bairro Alfa 1<"), "tipo e bairro");
+  assert.ok(html.includes(">Uberaba/MG<"), "cidade e UF");
+  assert.ok(html.includes(">AP-0001 · Usado<"), "referência e modalidade");
+  assert.ok(html.includes(`>R$ ${imovel.precoReais.toLocaleString("pt-BR")}<`), "preço");
+  assert.equal(valorDoAtributo(html, "Quartos"), String(imovel.quartos));
+  assert.equal(valorDoAtributo(html, "Banheiros"), String(imovel.banheiros));
+  assert.equal(valorDoAtributo(html, "Vagas"), String(imovel.vagas));
+  assert.equal(valorDoAtributo(html, "Área"), `${imovel.areaM2} m²`);
+  assert.ok(html.includes(`>${imovel.descricao}<`), "descrição");
+  for (const foto of imovel.fotos) assert.ok(html.includes(foto), `foto ${foto}`);
+  assert.match(r.texto, /<meta name="robots" content="noindex/, "sem noindex");
+  assert.match(html, new RegExp(`data-astryx-theme="loja-${a.slug}"`), "sem a marca da loja A");
+  assert.ok(html.includes(a.creci) && html.includes(a.razaoSocial), "rodapé legal da loja");
+});
+
+registrar("T23 os quatro atributos do imóvel vêm cada um do próprio campo (valores todos distintos)", async (ctx) => {
+  const { a } = ctx.fixture.lojas;
+  const imovel = a.imoveis.find((x) => x.referencia === "CA-0006");
+  assert.ok(imovel, "CA-0006 da fixture");
+  const valores = [imovel.quartos, imovel.banheiros, imovel.vagas, imovel.areaM2];
+  assert.equal(new Set(valores).size, 4, "a fixture precisa de valores distintos para discriminar a troca de campo");
+  const html = htmlVisivel((await ctx.pedir(`/c/${a.slug}/imovel/ca-0006`)).texto);
+  assert.equal(valorDoAtributo(html, "Quartos"), String(imovel.quartos));
+  assert.equal(valorDoAtributo(html, "Banheiros"), String(imovel.banheiros));
+  assert.equal(valorDoAtributo(html, "Vagas"), String(imovel.vagas));
+  assert.equal(valorDoAtributo(html, "Área"), `${imovel.areaM2} m²`);
+});
+
+registrar("T23 AP-0001 e ap-0001 abrem a mesma página, com og:url em minúsculas (VITEM AC2)", async (ctx) => {
+  const { a } = ctx.fixture.lojas;
+  const cabecalhos = { "user-agent": UA_WHATSAPP };
+  const minuscula = await ctx.pedir(`/c/${a.slug}/imovel/ap-0001`, { cabecalhos });
+  const maiuscula = await ctx.pedir(`/c/${a.slug}/imovel/AP-0001`, { cabecalhos });
+  assert.equal(maiuscula.status, 200);
+  for (const r of [minuscula, maiuscula]) {
+    const html = htmlVisivel(r.texto);
+    assert.ok(html.includes(">Apartamento em Bairro Alfa 1<"), "tipo e bairro");
+    assert.ok(html.includes(">R$ 160.000<"), "preço");
+    assert.equal(metaDoHead(r.texto, "og:url"), `${ctx.base}/c/${a.slug}/imovel/ap-0001`);
+  }
+  // Os links que a vitrine gera usam minúsculas (VITEM AC2): o do catálogo é o canônico.
+  const catalogo = await ctx.pedir(`/c/${a.slug}?pagina=2`);
+  assert.ok(referenciasNosLinks(htmlVisivel(catalogo.texto), a.slug).includes("ap-0001"));
+});
+
+registrar("T23 vendido, reservado e despublicado pela URL direta → não encontrado, sem preço nem descrição (VSEG AC4)", async (ctx) => {
+  const { a, b, d } = ctx.fixture.lojas;
+  const ocultos = [
+    ...a.imoveis.filter((x) => !x.visivel).map((x) => ({ loja: a, imovel: x })),
+    ...b.imoveis.filter((x) => !x.visivel).map((x) => ({ loja: b, imovel: x })),
+    ...d.imoveis.filter((x) => !x.visivel).map((x) => ({ loja: d, imovel: x })),
+  ];
+  assert.equal(ocultos.length, 3 + 1 + 3);
+  for (const { loja, imovel } of ocultos) {
+    const ref = imovel.referencia.toLowerCase();
+    const r = await ctx.pedir(`/c/${loja.slug}/imovel/${ref}`, { cabecalhos: { "user-agent": UA_WHATSAPP } });
+    const html = htmlVisivel(r.texto);
+    const onde = `${loja.slug}/${ref}`;
+    assert.equal(r.status, 200, `${onde}: status registrado (F8: 200 pela doc)`);
+    assert.ok(html.includes("Este imóvel não está mais disponível."), `${onde}: falta a mensagem`);
+    assert.ok(!r.texto.includes(imovel.descricao), `${onde}: contém a descrição`);
+    assert.ok(!r.texto.includes(`R$ ${imovel.precoReais.toLocaleString("pt-BR")}`), `${onde}: contém o preço`);
+    assert.ok(!r.texto.includes(`/${ref}-1.jpg`), `${onde}: contém foto do imóvel`);
+    assert.equal(metaDoHead(r.texto, "og:title"), null, `${onde}: tem metadados do imóvel`);
+    assert.match(r.texto, /<meta name="robots" content="noindex/, `${onde}: sem noindex`);
+  }
+});
+
+registrar("T23 loja inativa e referência inválida na URL do imóvel → sem dado de imóvel (VSEG AC3, VCAT AC9)", async (ctx) => {
+  const { a, c } = ctx.fixture.lojas;
+  const inativa = await ctx.pedir(`/c/${c.slug}/imovel/ap-0001`);
+  assert.ok(htmlVisivel(inativa.texto).includes(TEXTO_NEUTRO), "loja inativa: falta a mensagem neutra");
+  semMarcaDeLoja(ctx, htmlVisivel(inativa.texto));
+  for (const ref of ["..%2F..%2Fapi", "ap_0001", "x".repeat(41)]) {
+    const r = await ctx.pedir(`/c/${a.slug}/imovel/${ref}`);
+    assert.ok(htmlVisivel(r.texto).includes("Este imóvel não está mais disponível."), ref);
+  }
+});
+
+registrar("T23 isolamento: referência de uma loja sob o slug de outra → não encontrado; a repetida mostra a própria (VSEG AC2, AC3)", async (ctx) => {
+  const { a, b } = ctx.fixture.lojas;
+
+  // AP-0007 só existe na A: sob o slug da B, é imóvel indisponível.
+  const alheia = await ctx.pedir(`/c/${b.slug}/imovel/ap-0007`);
+  const htmlAlheia = htmlVisivel(alheia.texto);
+  assert.ok(htmlAlheia.includes("Este imóvel não está mais disponível."), "AP-0007 sob a B");
+  assert.ok(!alheia.texto.includes("Bairro Alfa"), "dado da A sob a B");
+
+  // CA-0002 existe nas duas: cada loja mostra o preço, o bairro e o texto da própria.
+  const daA = htmlVisivel((await ctx.pedir(`/c/${a.slug}/imovel/ca-0002`)).texto);
+  assert.ok(daA.includes(">R$ 170.000<") && daA.includes(">Casa em Bairro Alfa 2<"), "A: CA-0002 da A");
+  for (const marca of ["BETA-EXCLUSIVO", "Bairro Beta Exclusivo", "R$ 612.000", "fotos.vitrine-e2e.test/b/"]) {
+    assert.ok(!daA.includes(marca), `CA-0002 sob a A traz "${marca}" da B`);
+  }
+  const daB = htmlVisivel((await ctx.pedir(`/c/${b.slug}/imovel/ca-0002`)).texto);
+  assert.ok(daB.includes(">R$ 612.000<") && daB.includes(">Casa em Bairro Beta Exclusivo<"), "B: CA-0002 da B");
+  for (const marca of ["Bairro Alfa", "R$ 170.000", "fotos.vitrine-e2e.test/a/"]) {
+    assert.ok(!daB.includes(marca), `CA-0002 sob a B traz "${marca}" da A`);
+  }
+});
+
+registrar("T23 <script> na descrição sai escapado como texto, com as quebras de linha (VITEM AC7)", async (ctx) => {
+  const { a } = ctx.fixture.lojas;
+  const r = await ctx.pedir(`/c/${a.slug}/imovel/ap-0009`);
+  assert.equal(r.status, 200);
+  assert.ok(!r.texto.includes("<script>window.__xss_vitrine"), "o <script> da descrição virou tag");
+  assert.ok(
+    htmlVisivel(r.texto).includes(
+      "Primeira linha<br/>&lt;script&gt;window.__xss_vitrine=1&lt;/script&gt;<br/>Terceira linha"
+    ),
+    "texto escapado com as quebras de linha preservadas"
+  );
+});
+
+registrar("T23 fotos do imóvel: <img> com a URL cadastrada, lazy, no-referrer e alt de tipo, bairro e posição (VITEM AC8)", async (ctx) => {
+  const { a } = ctx.fixture.lojas;
+  const html = htmlVisivel((await ctx.pedir(`/c/${a.slug}/imovel/ap-0001`)).texto);
+  const tags = imagens(html);
+  for (const posicao of [1, 2]) {
+    const tag = tags.find((t) => t.includes(`/a/ap-0001-${posicao}.jpg`));
+    assert.ok(tag, `foto ${posicao}`);
+    assert.match(tag, /loading="lazy"/);
+    assert.match(tag, /referrerPolicy="no-referrer"/i);
+    assert.ok(tag.includes(`alt="Apartamento em Bairro Alfa 1, foto ${posicao} de 2"`), `alt da foto ${posicao}: ${tag}`);
+  }
+});
+
+registrar("T23 imóvel sem foto mantém a moldura com espaço reservado e sem <img> (VITEM AC6)", async (ctx) => {
+  const { a } = ctx.fixture.lojas;
+  const html = htmlVisivel((await ctx.pedir(`/c/${a.slug}/imovel/ap-0005`)).texto);
+  assert.ok(html.includes("Sem foto"), "espaço reservado");
+  assert.ok(!html.includes("/a/ap-0005-1.jpg"), "foto inexistente");
+  assert.ok(html.includes(">Apartamento em Bairro Alfa 5<"));
+});
+
+registrar("T23 o botão de interesse abre o wa.me com a referência e o nome da loja (VITEM AC3, AC4)", async (ctx) => {
+  const { a, b } = ctx.fixture.lojas;
+  for (const [loja, ref, REF] of [
+    [a, "ap-0001", "AP-0001"],
+    [b, "ca-0004", "CA-0004"],
+  ] as const) {
+    const html = htmlVisivel((await ctx.pedir(`/c/${loja.slug}/imovel/${ref}`)).texto);
+    const botao = ancoras(html).find((x) => x.texto.includes("Tenho interesse"));
+    assert.ok(botao, `${loja.slug}: sem o botão "Tenho interesse"`);
+    const url = new URL(botao.href);
+    assert.equal(url.origin + url.pathname, `https://wa.me/${loja.whatsappComPrefixo}`, loja.slug);
+    assert.equal(
+      url.searchParams.get("text"),
+      `Olá! Vi o imóvel ${REF} na vitrine da ${loja.nome} e tenho interesse.`,
+      loja.slug
+    );
+    const voltar = ancoras(html).find((x) => x.texto.includes("Ver todos os imóveis"));
+    assert.equal(voltar?.href, `/c/${loja.slug}`);
+  }
+});
+
+registrar("T23 og:* do imóvel no <head> para o user-agent do WhatsApp, com a primeira foto em og:image (VOG AC3, AC4, AC6)", async (ctx) => {
+  const { a } = ctx.fixture.lojas;
+  const cabecalhos = { "user-agent": UA_WHATSAPP };
+  const r = await ctx.pedir(`/c/${a.slug}/imovel/ap-0001`, { cabecalhos });
+  assert.equal(metaDoHead(r.texto, "og:title"), "Apartamento em Bairro Alfa 1 — AP-0001");
+  assert.equal(metaDoHead(r.texto, "og:description"), "2 quartos · 43 m² · R$ 160.000");
+  assert.equal(metaDoHead(r.texto, "og:image"), "https://fotos.vitrine-e2e.test/a/ap-0001-1.jpg");
+  assert.equal(metaDoHead(r.texto, "og:url"), `${ctx.base}/c/${a.slug}/imovel/ap-0001`);
+  assert.equal(metaDoHead(r.texto, "twitter:card"), "summary_large_image");
+  assert.equal(metaDoHead(r.texto, "twitter:image"), "https://fotos.vitrine-e2e.test/a/ap-0001-1.jpg");
+  assert.ok(r.texto.includes("<title>Apartamento em Bairro Alfa 1 — AP-0001</title>"), "<title>");
+});
+
 // ── Globais: olham tudo o que as asserções acima (e as das tasks seguintes) pediram ──
 
 registrarGlobal("Global: X-Robots-Tag \"noindex, nofollow\" em toda resposta (VSEO AC2)", (ctx) => {
