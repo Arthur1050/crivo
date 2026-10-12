@@ -710,6 +710,8 @@ T24 → T25
 
 ### T26: README da vitrine
 
+**Status**: concluída em 2026-10-12 (hash no `git log`; sem credencial nem URL: conferido por busca de `://`, `postgres`, `password`, `neon.tech` e `vercel.app` no arquivo).
+
 **What**: Como rodar (`vitrine:dev`, `vitrine:e2e`), variáveis (nomes, nunca valores), regra de não importar de fora, deploy como segundo projeto (L16c), ADs 040–043.
 **Where**: `vitrine/README.md`
 **Depends on**: T25
