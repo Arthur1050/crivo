@@ -620,7 +620,7 @@ T24 → T25
 
 ### T22: Composição do imóvel
 
-**Status**: concluída em 2026-10-12 (hash no `git log`; lint, typecheck e build da vitrine sem erro; lint da raiz 0 erros e `tsc` com os mesmos 50; o componente é montado e provado na T23).
+**Status**: concluída em 2026-10-12 (hash `67537ed`; lint, typecheck e build da vitrine sem erro; lint da raiz 0 erros e `tsc` com os mesmos 50; o componente é montado e provado na T23).
 
 **What**: Galeria (`Carousel` + `Lightbox`, espaço reservado sem foto), tipo e bairro, referência, preço, atributos, descrição como texto com quebras, botão de interesse. Antes: `npx astryx template product-detail`.
 **Where**: `vitrine/src/item/pagina-item.tsx`
@@ -642,7 +642,7 @@ T24 → T25
 
 ### T23: Página de imóvel
 
-**Status**: concluída em 2026-10-12 (hash no `git log`; e2e 43 de 43; 6 mutantes mortos; capturas `t23-01` a `t23-06` com a largura de rolagem no `validation.md`; lint, typecheck e build da vitrine sem erro; lint da raiz 0 erros e `tsc` com os mesmos 50). `og:image` do imóvel sem foto (cartão da loja) fica para a T24.
+**Status**: concluída em 2026-10-12 (hash `518786f`; e2e 43 de 43; 6 mutantes mortos; capturas `t23-01` a `t23-06` com a largura de rolagem no `validation.md`; lint, typecheck e build da vitrine sem erro; lint da raiz 0 erros e `tsc` com os mesmos 50). `og:image` do imóvel sem foto (cartão da loja) fica para a T24.
 
 **What**: `app/c/[slug]/imovel/[ref]/page.tsx`: params em `<Suspense>`, referência inexistente → `notFound()`, `generateMetadata` com a primeira foto ou a imagem da loja.
 **Where**: `vitrine/app/c/[slug]/imovel/[ref]/page.tsx`
@@ -665,7 +665,7 @@ T24 → T25
 
 ### T24: Imagem de compartilhamento da loja
 
-**Status**: concluída em 2026-10-12 (hash no `git log`; e2e 47 de 47; 5 mutantes mortos; capturas `t24-01` a `t24-03`; lint, typecheck e build da vitrine sem erro; lint da raiz 0 erros e `tsc` com os mesmos 50). Fecha o `og:image` do imóvel sem foto da T23.
+**Status**: concluída em 2026-10-12 (hash `1973d13`; e2e 47 de 47; 5 mutantes mortos; capturas `t24-01` a `t24-03`; lint, typecheck e build da vitrine sem erro; lint da raiz 0 erros e `tsc` com os mesmos 50). Fecha o `og:image` do imóvel sem foto da T23.
 
 **What**: `app/c/[slug]/opengraph-image.tsx` com `ImageResponse` 1200×630: nome da loja sobre a cor da loja (o hex literal da loja ou a cor padrão, não o accent derivado; AD-046), sem recurso externo.
 **Where**: `vitrine/app/c/[slug]/opengraph-image.tsx`
@@ -688,7 +688,7 @@ T24 → T25
 
 ### T25: Capturas de fechamento
 
-**Status**: concluída em 2026-10-12 (hash no `git log`; capturas `t25-01` a `t25-14` listadas no `validation.md`, com a largura de rolagem no quadro de 375 px de grade, editorial, item com e sem foto, indisponível, vazio e erro; a fixture não tem loja de cor sem croma).
+**Status**: concluída em 2026-10-12 (hash `f72850a`; capturas `t25-01` a `t25-14` listadas no `validation.md`, com a largura de rolagem no quadro de 375 px de grade, editorial, item com e sem foto, indisponível, vazio e erro; a fixture não tem loja de cor sem croma).
 
 **What**: Conjunto final de capturas reais com a fixture: os dois layouts × desktop e 375 px × lojas A e B; item com e sem foto; imóvel indisponível; catálogo vazio; erro.
 **Where**: `.specs/features/lote-16b-vitrine-app/capturas/`
@@ -710,7 +710,7 @@ T24 → T25
 
 ### T26: README da vitrine
 
-**Status**: concluída em 2026-10-12 (hash no `git log`; sem credencial nem URL: conferido por busca de `://`, `postgres`, `password`, `neon.tech` e `vercel.app` no arquivo).
+**Status**: concluída em 2026-10-12 (hash `f01b5d0`; sem credencial nem URL: conferido por busca de `://`, `postgres`, `password`, `neon.tech` e `vercel.app` no arquivo).
 
 **What**: Como rodar (`vitrine:dev`, `vitrine:e2e`), variáveis (nomes, nunca valores), regra de não importar de fora, deploy como segundo projeto (L16c), ADs 040–043.
 **Where**: `vitrine/README.md`
