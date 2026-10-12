@@ -620,6 +620,8 @@ T24 → T25
 
 ### T22: Composição do imóvel
 
+**Status**: concluída em 2026-10-12 (hash no `git log`; lint, typecheck e build da vitrine sem erro; lint da raiz 0 erros e `tsc` com os mesmos 50; o componente é montado e provado na T23).
+
 **What**: Galeria (`Carousel` + `Lightbox`, espaço reservado sem foto), tipo e bairro, referência, preço, atributos, descrição como texto com quebras, botão de interesse. Antes: `npx astryx template product-detail`.
 **Where**: `vitrine/src/item/pagina-item.tsx`
 **Depends on**: T8, T9
