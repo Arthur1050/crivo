@@ -1232,6 +1232,76 @@ registrar("V8 slug fora do formato não consulta o banco: com o banco inalcanç�
   }
 });
 
+// ── Fechamento do lote, rodada 2 do Verifier: superfície, modo claro e fontes ──
+
+registrar("V9 sem sitemap e sem Disallow: /robots.txt e /sitemap.xml não existem (VSEO AC3)", async (ctx) => {
+  for (const caminho of ["/robots.txt", "/sitemap.xml", "/sitemap-0.xml", "/sitemap_index.xml"]) {
+    const r = await ctx.pedir(caminho);
+    assert.equal(r.status, 404, `${caminho}: status`);
+    assert.ok(!/disallow/i.test(r.texto), `${caminho}: tem Disallow`);
+    assert.ok(!r.texto.includes("<urlset") && !r.texto.includes("<sitemapindex"), `${caminho}: tem sitemap`);
+    assert.equal(r.cabecalhos.get("x-robots-tag"), "noindex, nofollow", `${caminho}: X-Robots-Tag`);
+  }
+});
+
+registrar("V10 nenhuma outra rota aceita escrita: POST em rotas de API plausíveis → 404; as de /api/revalidar → 405 (VSEG AC6)", async (ctx) => {
+  const { a } = ctx.fixture.lojas;
+  const corpo = JSON.stringify({ slug: a.slug });
+  for (const caminho of ["/api", "/api/leads", "/api/imoveis", "/api/lojas", "/api/revalidate", "/api/revalidar/outra", "/api/v1/leads"]) {
+    const r = await ctx.pedir(caminho, { metodo: "POST", cabecalhos: { authorization: `Bearer ${ctx.segredo}` }, corpo });
+    assert.equal(r.status, 404, `POST ${caminho}`);
+  }
+  for (const metodo of ["PUT", "PATCH", "DELETE"]) {
+    const r = await ctx.pedir("/api/revalidar", { metodo, cabecalhos: { authorization: `Bearer ${ctx.segredo}` }, corpo });
+    assert.equal(r.status, 405, metodo);
+    assert.equal(r.cabecalhos.get("allow"), "POST", metodo);
+  }
+});
+
+registrar("V11 o tema de cada loja é montado em modo claro: wrapper com data-theme=light e <html> em light (VTEMA AC1)", async (ctx) => {
+  for (const loja of [ctx.fixture.lojas.a, ctx.fixture.lojas.b, ctx.fixture.lojas.d]) {
+    const r = await ctx.pedir(`/c/${loja.slug}`);
+    const html = htmlVisivel(r.texto);
+    const marca = `data-astryx-theme="loja-${loja.slug}"`;
+    const inicio = html.indexOf(marca);
+    assert.ok(inicio >= 0, `${loja.slug}: sem o wrapper do tema`);
+    const abre = html.lastIndexOf("<", inicio);
+    const tag = html.slice(abre, html.indexOf(">", inicio));
+    assert.ok(tag.includes('data-theme="light"'), `${loja.slug}: wrapper fora do modo claro: ${tag}`);
+    assert.ok(!html.includes('data-theme="dark"'), `${loja.slug}: há elemento em modo escuro`);
+    const tagHtml = html.slice(html.indexOf("<html"), html.indexOf(">", html.indexOf("<html")));
+    assert.ok(tagHtml.includes('data-theme="light"'), `${loja.slug}: <html> fora do modo claro`);
+  }
+});
+
+registrar("V12 a fonte da loja chega ao HTML: o <html> traz a classe de cada fonte e o CSS declara --font-<fonte> (VTEMA AC3)", async (ctx) => {
+  const fontes = ["inter", "montserrat", "lora", "playfair"];
+  for (const loja of [ctx.fixture.lojas.a, ctx.fixture.lojas.b, ctx.fixture.lojas.d]) {
+    const r = await ctx.pedir(`/c/${loja.slug}`);
+    const html = r.texto;
+    const tagHtml = html.slice(html.indexOf("<html"), html.indexOf(">", html.indexOf("<html")));
+    const classes = (/class="([^"]*)"/.exec(tagHtml)?.[1] ?? "").split(" ").filter(Boolean);
+    for (const fonte of fontes) {
+      assert.ok(
+        classes.some((classe) => classe.startsWith(`${fonte}_`) && classe.endsWith("__variable")),
+        `${loja.slug}: o <html> não declara a variável da fonte ${fonte} (classes: ${classes.join(" ")})`
+      );
+    }
+    // As folhas de estilo da página: precisam definir a variável da fonte desta loja.
+    const caminhos = html
+      .split('rel="stylesheet" href="')
+      .slice(1)
+      .map((trecho) => trecho.slice(0, trecho.indexOf('"')))
+      .filter((href) => href.startsWith("/_next/"));
+    assert.ok(caminhos.length > 0, `${loja.slug}: nenhuma folha de estilo`);
+    let css = "";
+    for (const href of caminhos) css += (await ctx.pedir(href)).texto;
+    for (const fonte of fontes) {
+      assert.ok(css.includes(`--font-${fonte}:`), `${loja.slug}: o CSS não define --font-${fonte}`);
+    }
+  }
+});
+
 // ── Globais: olham tudo o que as asserções acima (e as das tasks seguintes) pediram ──
 
 registrarGlobal("Global: X-Robots-Tag \"noindex, nofollow\" em toda resposta (VSEO AC2)", (ctx) => {

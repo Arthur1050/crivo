@@ -308,3 +308,167 @@ Método: cópia de cada arquivo em scratchpad, mutação no arquivo real, teste-
 ### Lacunas (ranqueadas)
 
 Nenhuma bloqueante. As 5 lacunas da rodada 1 e as menores de prova foram fechadas pela F1 (V1 a V8), conferidas acima. Ficam, aceitas e sem mutante sobrevivente: a proporção do espaço sem foto e da foto quebrada provada só por captura; o PNG do cartão não varrido por PII (proteção estrutural); o teto de 300 s do perfil provado só pela configuração; e as duas asserções fracas apontadas na revisão de V1 e V2.
+
+## Validation — Verifier independente (reverificação final, HEAD b2af87b)
+
+**Result**: FAIL
+
+**Data**: 2026-10-12. **Verifier**: agente novo e independente; não executou task do lote nem participou das rodadas anteriores. A avaliação abaixo foi formada a partir da spec, do código e de execuções próprias, antes de ler as seções anteriores deste arquivo; nenhuma conclusão delas foi usada como evidência.
+
+**Intervalo do diff**: `ddbf72d^..b2af87b` (T0–T26 e a F1; `677f29e`, renomeação para Krivo, fora do escopo). Superfície: `vitrine/`, `scripts/vitrine-*.ts`, `scripts/__tests__/vitrine-*`, `src/lib/storefront-contract.ts`, `src/db/__tests__/vitrine-*`, `src/lib/__tests__/vitrine-*` e `storefront-*`. Os commits depois de `6b2d670` só mexem em `.specs/`.
+
+**Motivo do veredito**: nenhum defeito de produto encontrado; o código cumpre os 75 itens por inspeção. Mas, pela regra evidence-or-zero, 3 ACs não têm teste que prove o valor da spec (VSEG AC6, VTEMA AC8, VSEO AC3) e 2 ACs P1 têm uma metade sem prova (VTEMA AC1 `mode="light"`, VTEMA AC3 fonte declarada no `<html>`). Cada uma dessas 5 lacunas foi confirmada por um mutante que SOBREVIVEU a toda a suíte do lote (unitários, banco e e2e). As rodadas anteriores aceitaram VSEG AC6, VTEMA AC8 e VSEO AC3 "por inspeção"; este Verifier não aceita inspeção como prova. Os 8 alvos obrigatórios do sensor morrem.
+
+**Linha de base medida por este Verifier** (HEAD limpo, um processo de teste por vez): `npm run vitrine:e2e` 55 de 55 (antes de qualquer mutação, e de novo no fim, depois de restaurar tudo, para reconstruir `vitrine/.next` a partir do HEAD); `npx vitest run vitrine/` + `vitrine-isolamento`, `vitrine-tipos-paridade`, `storefront-contract-parity`, `vitrine-consultas`, `vitrine-views-paridade`, `vitrine-privilegios`, `scripts/__tests__/vitrine-dev`, `scripts/__tests__/vitrine-fixture`: 19 arquivos, 153 testes verdes. Suíte completa, lint e `tsc` não foram rodados (fora do escopo pedido). Linhas `e2e:N` são de `scripts/vitrine-e2e.ts` no HEAD.
+
+### Cobertura por requisito e AC
+
+Legenda: **OK** = teste cujo valor asserido é o da spec; **Parcial** = parte provada por teste, parte só por código ou captura; **Captura** = AC visual provado por captura real e medição registrada; **Sem prova** = nenhum teste prova o valor (nota zero).
+
+| Req. | AC | Teste (arquivo:linha) | Código (arquivo:linha) | Nota |
+| --- | --- | --- | --- | --- |
+| VPROJ-01 | AC1 | `src/lib/__tests__/vitrine-isolamento.test.ts:164-171` | `vitrine/package.json:5-11`, `vitrine/next.config.ts`, `vitrine/tsconfig.json`, `vitrine/eslint.config.mjs` | OK |
+| VPROJ-01 | AC2 | `vitrine-isolamento.test.ts:173-176` | `vitrine/next.config.ts:6` | OK |
+| VPROJ-01 | AC3 | `vitrine-isolamento.test.ts:182-187` | ausência de `proxy.ts`/`middleware.ts` | OK |
+| VPROJ-01 | AC4 | `vitrine-isolamento.test.ts:98-153` (a regra recusa), `:189-199` (varredura real) | — | OK |
+| VPROJ-01 | AC5 | `vitrine-isolamento.test.ts:210-219`, `:221-225` | `tsconfig.json:33` e `eslint.config.mjs:18` da raiz | OK |
+| VPROJ-01 | AC6 | `vitrine/src/db/__tests__/conexao.test.ts:9-23`, `:25-35`; e2e:381-383 (troca só `VITRINE_DATABASE_URL` e a app perde o banco) | `vitrine/src/db/conexao.ts:25-33` | OK |
+| VPROJ-02 | AC7 | `src/lib/__tests__/storefront-contract-parity.test.ts:23-51` | `vitrine/src/contrato.ts:11-63` | OK |
+| VPROJ-02 | AC8 | `storefront-contract-parity.test.ts:40-45`; `src/db/__tests__/vitrine-views-paridade.test.ts:37-47` | `vitrine/src/db/views.ts:17-58` | OK |
+| VCAT-01 | AC1 | 200: e2e:237; imóveis: e2e:458-467; nome, título e Sobre: e2e:1045-1057 | `app/c/[slug]/page.tsx:66-101`; `vitrine/src/templates/comum/secoes.tsx:36-60` | OK |
+| VCAT-01 | AC6 | foto e `alt`: e2e:545-552; link: e2e:458-465; preço: e2e:516-517; bairro, cidade e atributos: e2e:1028-1043 | `vitrine/src/templates/grade/catalogo-grade.tsx:12-41`; `editorial/catalogo-editorial.tsx:18-47` | Parcial — o tipo só é asserido dentro do `alt` da foto (e2e:552); o texto "Apartamento · Usado · AP-…" do card não é asserido; no editorial `includes(imovel.cidade)` (e2e:1041) também casa com o `og:description` do `<head>` |
+| VCAT-01 | AC7 | e2e:557-573 | `secoes.tsx:10-33` | OK |
+| VCAT-01 | AC11 | `vitrine/src/lib/__tests__/apresentacao.test.ts:14-28`; e2e:678 | `vitrine/src/lib/apresentacao.ts:10-13` | OK |
+| VCAT-01 | AC12 | e2e:319-332 | `app/c/[slug]/layout.tsx:67`, `:90-98` | OK |
+| VCAT-02 | AC2 | e2e:458-467; `src/db/__tests__/vitrine-consultas.test.ts:152-165` | `vitrine/src/dados/consultas.ts:19-25` | OK |
+| VCAT-02 | AC3 | e2e:458-471; `vitrine/src/lib/__tests__/catalogo.test.ts:13-25` | `vitrine/src/lib/catalogo.ts:7`, `:22-36` | OK |
+| VCAT-02 | AC4 | e2e:474-481; `catalogo.test.ts:27-31` | `catalogo.ts:24-28` | OK |
+| VCAT-02 | AC5 | e2e:482-483; `catalogo.test.ts:33-38` | `catalogo.ts:27` | OK |
+| VCAT-03 | AC8 | e2e:129-136, e2e:1218-1233 (banco inalcançável: página neutra, sem `[vitrine] erro`); `catalogo.test.ts:52-67` | `layout.tsx:54`; `page.tsx:70`; `imovel/[ref]/page.tsx:81` | OK |
+| VCAT-03 | AC9 | e2e:222-232, e2e:344-352, e2e:926-937; `vitrine-consultas.test.ts:180-191` | `layout.tsx:65`; `vitrine/src/loja/nao-encontrado.tsx:9-19` | OK |
+| VCAT-03 | AC10 | noindex: e2e:125, :133, :228; sem imóvel: sentinela do imóvel da loja inativa C na varredura global e2e:1250-1258 | `app/layout.tsx:21`; `nao-encontrado.tsx:9-19` | OK |
+| VITEM-01 | AC1 | e2e:667-688, e2e:690-701 | `vitrine/src/item/pagina-item.tsx:56-127` | OK |
+| VITEM-01 | AC2 | e2e:703-718; `catalogo.test.ts:70-79`; `vitrine-consultas.test.ts:169-176` | `catalogo.ts:46-67`; `consultas.ts:28-44` | OK |
+| VITEM-01 | AC6 | e2e:802-808, e2e:553-554; captura `t23-05`, `t23-03` | `vitrine/src/templates/comum/foto-do-imovel.tsx:19-38` | Parcial — ícone e texto por teste; "mantendo a proporção" só por captura |
+| VITEM-01 | AC7 | e2e:776-787 | `pagina-item.tsx:18-30` | OK |
+| VITEM-01 | AC8 | e2e:789-800, e2e:545-552; `apresentacao.test.ts:57-66` | `vitrine/src/item/galeria-do-imovel.tsx:45`; `foto-do-imovel.tsx:27-32` | OK |
+| VITEM-02 | AC3 | e2e:810-829; `vitrine/src/lib/__tests__/contato.test.ts:36-41` | `vitrine/src/lib/contato.ts:16-25`; `pagina-item.tsx:61` | OK |
+| VITEM-02 | AC4 | `contato.test.ts:16-24`; e2e:820 | `contato.ts:10-13` | OK |
+| VITEM-02 | AC5 | e2e:354-374, e2e:720-741 | `imovel/[ref]/page.tsx:83`, `:95`; `nao-encontrado.tsx:26-35` | OK |
+| VSEG-01 | AC1 | `src/db/__tests__/vitrine-privilegios.test.ts:98-103`, `:166-183` | `views.ts:15-58`; `consultas.ts:13-44` | OK |
+| VSEG-01 | AC2 | `vitrine-consultas.test.ts:114-133`; e2e:754-774 | `consultas.ts:23`, `:38` | OK |
+| VSEG-01 | AC3 | e2e:499-518, e2e:754-774 | idem | OK |
+| VSEG-01 | AC4 | e2e:486-497, e2e:720-741; `vitrine-consultas.test.ts:135-148` | corte na view (L16a, AD-040) | OK |
+| VSEG-01 | AC8 | `vitrine-consultas.test.ts:107-111`, `:114-148` | `conexao.ts:12-14` | OK |
+| VSEG-02 | AC5 | e2e:1250-1258 (sentinelas de logradouro, número, complemento, captador e lead no HTML, no `<head>` e no log) | `opengraph-image.tsx:39-63` | Parcial — o PNG não é varrido (o harness guarda binário como texto vazio, e2e:1444); proteção estrutural (o papel não lê PII, `vitrine-privilegios.test.ts:98-103`) |
+| VSEG-02 | AC6 | só o subconjunto da própria rota: e2e:172-182, `vitrine/app/api/revalidar/__tests__/route.test.ts:80-87` | `vitrine/app/api/revalidar/route.ts:19-49` (único handler; nenhum `use server` em `vitrine/`) | **Sem prova** — nenhum teste afirma "não há outra rota que aceite escrita"; o mutante S2 (segunda rota com `POST` → 204) sobrevive a tudo |
+| VSEG-02 | AC7 | e2e:1244-1248; `route.test.ts:110-118` | — | OK |
+| VSEG-02 | Edge banco indisponível | e2e:378-407; `vitrine/src/dados/__tests__/erro-de-leitura.test.ts:17-42` | `vitrine/src/dados/erro-de-leitura.ts:10-38`; `vitrine/src/loja/indisponivel.tsx:11-32` | OK |
+| VTEMA-01 | AC1 | `defineTheme` do neutro com a cor como accent: `vitrine/src/tema/__tests__/tema-da-loja.test.ts:16-31`; wrapper `data-astryx-theme`: e2e:250-254 | `vitrine/src/tema/tema-da-loja.ts:30-46`; `tema-da-loja-provider.tsx:31` | Parcial — `mode="light"` não é asserido: o mutante S4 (`mode="dark"`) sobrevive |
+| VTEMA-01 | AC2 | `tema-da-loja.test.ts:24-26`, `:33-41`; e2e:266-280 (D sem cor) | `vitrine/src/tema/cor.ts:8-20` | OK |
+| VTEMA-01 | AC3 | `--font-family-*` = `var(--font-<fonte>)` no HTML: e2e:282-294; `tema-da-loja.test.ts:59-71`; captura `t21-01` (serifa da Lora) | `tema-da-loja.ts:34-44`; `vitrine/src/tema/fontes.ts:15-30`; `app/layout.tsx:29` | Parcial — nenhum teste afirma que o `<html>` declara as variáveis `--font-*`: o mutante S5 (sem a classe das fontes no `<html>`) sobrevive; a fonte aplicada só aparece em captura |
+| VTEMA-01 | AC7 | e2e:234-280; `tema-da-loja.test.ts:75-102` | `tema-da-loja.ts:60-66`; `tema-da-loja-provider.tsx:24-37` | OK |
+| VTEMA-02 | AC4 | e2e:520-529, e2e:466-467, e2e:1110-1123 (teto de 6), e2e:575-584, e2e:1050-1051, e2e:296-304 | `catalogo-grade.tsx:49-82`; `page.tsx:87-88` | OK |
+| VTEMA-02 | AC5 | e2e:520-534, e2e:1050-1051 | `catalogo-editorial.tsx:56-90` | OK |
+| VTEMA-02 | AC6 | e2e:1103-1108 (grade), e2e:1125-1133 (editorial) | `catalogo-grade.tsx:54`; `catalogo-editorial.tsx:57`, `:63` | OK |
+| VTEMA-02 | AC8 | nenhum teste | inspeção: `style` só em `opengraph-image.tsx:45-63` (Satori); `globals.css:7-15` só camadas e imports | **Sem prova** — o mutante S3 (`<h2 style={{…}}>` cru na página do imóvel) sobrevive a tudo |
+| VTEMA-02 | AC9 | capturas `t16-02`, `t16-04`, `t17-02`, `t18-02`, `t21-06..08`, `t23-04..06`, `t25-02/04/06/08..14` (conferi `t25-02` e `t23-05`) | tabela de larguras da T25 neste arquivo: `scrollWidth` = `clientWidth` = 375 nas 7 páginas | Captura |
+| VLEGAL-01 | AC1 | e2e:296-304, e2e:1059-1067, e2e:368-369 | `vitrine/src/rodape/rodape-legal.tsx:24-59` | OK |
+| VLEGAL-01 | AC2 | e2e:306-317 | `rodape-legal.tsx:35-55` | OK |
+| VLEGAL-01 | AC3 | e2e:309, e2e:314; `contato.test.ts:66-71` | `contato.ts:39-42` | OK |
+| VLEGAL-01 | AC4 | e2e:310, e2e:315; `contato.test.ts:58-64` | `contato.ts:33-36` | OK |
+| VOG-01 | AC1 | e2e:586-601, e2e:831-842, e2e:888-898 | `app/layout.tsx:8-19`; `page.tsx:26-44`; `imovel/[ref]/page.tsx:24-59` | OK |
+| VOG-01 | AC2 | e2e:590-600; `apresentacao.test.ts:69-87` | `apresentacao.ts:81-89` | OK |
+| VOG-01 | AC3 | e2e:835-836; `apresentacao.test.ts:89-103` | `apresentacao.ts:92-99` | OK |
+| VOG-01 | AC4 | e2e:837, e2e:899-902 | `imovel/[ref]/page.tsx:32-35` | OK |
+| VOG-01 | AC5 | e2e:905-924, e2e:939-996, e2e:1198-1216 | `vitrine/app/c/[slug]/opengraph-image.tsx:25-68` | OK |
+| VOG-01 | AC6 | e2e:586-601, e2e:831-842 (`metaDoHead` lê só antes de `</head>`) | — | OK |
+| VCACHE-01 | AC1 | `vitrine/src/dados/__tests__/cache.test.ts:52-66` | `vitrine/src/dados/cache.ts:21-43` | OK |
+| VCACHE-01 | AC2 | `vitrine-isolamento.test.ts:173-176` | `next.config.ts:7-10` | OK |
+| VCACHE-01 | AC8 | e2e:603-647 | `route.ts:36`; `cache.ts:24`, `:32`, `:40` | OK |
+| VCACHE-01 | AC9 | e2e:629-635, e2e:1180 | `next.config.ts:9` | Parcial — "até o perfil expirar" (300 s) só pela configuração |
+| VCACHE-01 | Edge desativação + aviso | e2e:1170-1196 | `cache.ts:21-27` | OK |
+| VCACHE-02 | AC3 | `route.test.ts:39-50`; e2e:138-146, e2e:638-640 | `route.ts:36-38` | OK |
+| VCACHE-02 | AC4 | `route.test.ts:52-70`; `vitrine/src/__tests__/revalidacao.test.ts:39-45`; e2e:148-161 | `vitrine/src/revalidacao.ts:20-29`; `route.ts:21-28` | OK |
+| VCACHE-02 | AC5 | `route.test.ts:72-78`; `revalidacao.test.ts:61-87`; e2e:163-170 | `revalidacao.ts:36-50` | OK |
+| VCACHE-02 | AC6 | `route.test.ts:80-87`; e2e:172-182 | `route.ts:42-49` | OK |
+| VCACHE-02 | AC7 | `revalidacao.test.ts:47-53` | `revalidacao.ts:28` | OK |
+| VCACHE-02 | AC10 | `route.test.ts:89-108`; e2e:184-189, e2e:1268-1273 | `route.ts:26`, `:32`, `:37` | OK |
+| VSEO-01 | AC1 | e2e:125, :133, :228, :370, :392, :685, :739 | `app/layout.tsx:21` | OK |
+| VSEO-01 | AC2 | e2e:1237-1242 | `next.config.ts:20` | OK |
+| VSEO-01 | AC3 | nenhum teste (nenhum pedido a `/robots.txt` nem `/sitemap.xml`) | inspeção: sem `robots.*`, `sitemap.*` nem `public/` em `vitrine/` | **Sem prova** — o mutante S1 (`app/robots.ts` com `Disallow: /` e `sitemap`) sobrevive a tudo |
+
+**Edge Cases**
+
+| Edge Case | Teste (arquivo:linha) | Nota |
+| --- | --- | --- |
+| Exatamente 24 → uma página, sem paginação | e2e:1142-1168; `catalogo.test.ts:13-19` | OK |
+| 25 → página 2 com 1 | e2e:469-470; `catalogo.test.ts:21-25` | OK |
+| Foto quebrada mantém proporção e `alt` | captura `t21-01-grade-loja-a-desktop-foto-quebrada.jpg` (conferida: moldura 4:3 mantida, `alt` visível) | Captura |
+| `<script>` na descrição | e2e:776-787 | OK |
+| `ap-0142` casa com `AP-0142` | `vitrine-consultas.test.ts:169-176`; e2e:703-713 | OK |
+| Banco indisponível | e2e:378-407; `erro-de-leitura.test.ts:17-32` | OK |
+| Loja desativada + aviso → neutra | e2e:1170-1196 | OK |
+
+**Contagem** (75 itens: 68 ACs e 7 Edge Cases): OK 64; Captura 2 (VTEMA AC9, foto quebrada); Parcial 6 (VCAT AC6, VITEM AC6, VSEG AC5, VTEMA AC1, VTEMA AC3, VCACHE AC9); **Sem prova 3** (VSEG AC6, VTEMA AC8, VSEO AC3).
+
+### Sensor de discriminação
+
+Método: para cada mutante, cópia do arquivo em `scratchpad/verifier2/`, mutação no arquivo real, teste-alvo, restauração imediata da cópia (ou remoção do arquivo criado) e `git status --short` vazio conferido antes do próximo. Um processo de teste por vez; um mutante por execução do e2e. Nenhum teste foi editado. M3 no Next 16.2: a forma sem o 2º argumento não compila; usado o perfil `"max"` (stale-while-revalidate), que compila (`tsc --noEmit` da vitrine sem erro) e é o comportamento equivalente a "sem expirar já".
+
+| # | Arquivo | Mutação | Teste que matou | Desfecho |
+| --- | --- | --- | --- | --- |
+| M1 | `vitrine/src/dados/consultas.ts:23` | `imoveisDaLoja` sem `.where(eq(imoveis.lojaSlug, slug))` | `vitrine-consultas.test.ts:123` (e mais 4 do arquivo) | morto |
+| M2 | `vitrine/src/dados/cache.ts:24,32,40` | `cacheTag("tenant:catalogo")` fixo, sem o slug | `cache.test.ts:57` (as 3 funções) | morto |
+| M3 | `vitrine/app/api/revalidar/route.ts:36` | `{ expire: 0 }` → `"max"` | `route.test.ts:43`; e2e:640 (T21 cache, "A depois do aviso"), e V4, V5, V6 | morto |
+| M4 | `vitrine/src/revalidacao.ts:28` | `===` no lugar de `timingSafeEqual` | `revalidacao.test.ts:49` (espião) | morto |
+| M5 | `vitrine/src/lib/contato.ts:12` | prefixo `55` também com 12 dígitos | `contato.test.ts:22`, `:59` | morto |
+| M6 | `vitrine/src/lib/catalogo.ts:27` | sem `Math.min(pedida, totalPaginas)` | `catalogo.test.ts:35`, `:43`, `:47` | morto |
+| M7a | `vitrine/next.config.ts:20` | sem o cabeçalho `X-Robots-Tag` | e2e:1240 (Global X-Robots-Tag) | morto |
+| M7b | `vitrine/app/layout.tsx:21` | sem `robots` no metadado do layout raiz | e2e:125, :133, :228, :370, :392, :685, :739 (7 asserções) | morto |
+| M8 | `vitrine/src/item/pagina-item.tsx:122` | descrição via `dangerouslySetInnerHTML` com `<br/>` | e2e:780 ("o `<script>` da descrição virou tag") | morto |
+| E1 | `consultas.ts:38` | `imovelPorReferencia` sem o filtro de slug (isolamento na página do imóvel) | `vitrine-consultas.test.ts:131` | morto |
+| E2 | `vitrine/app/c/[slug]/imovel/[ref]/page.tsx:32` | `og:image` ignora a primeira foto (sempre o cartão herdado) | e2e:837 | morto |
+| E3 | `vitrine/app/c/[slug]/opengraph-image.tsx:39` | cartão sempre na cor padrão | e2e:918 (T24), e2e:1209 (V7) | morto |
+| E4 | `vitrine/src/tema/tema-da-loja.ts:35` | tema ignora a cor da loja | `tema-da-loja.test.ts:21` | morto |
+| E5 | `vitrine/src/dados/erro-de-leitura.ts:36` | `lerDoBanco` relança o erro original do driver (SQL e host) | `erro-de-leitura.test.ts:20`, `:36`, `:51` | morto |
+| E7 | `vitrine/app/c/[slug]/layout.tsx:54` | layout sem a validação do slug (consulta o banco) | e2e:1226 (V8) | morto |
+| E8 | `vitrine/app/c/[slug]/page.tsx:95` | paginação com uma página só (`>= 1`) | e2e:583 (T21), e2e:1158 (V5) | morto |
+| E9 | `page.tsx:88` | faixa com até 8 destaques | e2e:1123 (V4) | morto |
+| E10 | `route.ts:25` | autenticação ignorada (`!autorizado && false`) | `route.test.ts:55`, `:64`, `:98` | morto |
+| E12 | `consultas.ts:24` | ordem sem o destaque primeiro | `vitrine-consultas.test.ts:164` | morto |
+| E14 | `catalogo.ts:65` | referência da URL sem `toLowerCase` | `catalogo.test.ts:77` | morto |
+| E15 | `imovel/[ref]/page.tsx:42` | `og:url` com a referência em maiúsculas | e2e:713, e2e:838 | morto |
+| E16 | `vitrine/src/tema/tema-da-loja-provider.tsx:33` | sem o `<style>` do tema no HTML do servidor | e2e:242, :271, :288, :540 | morto |
+| S1 | `vitrine/app/robots.ts` (criado e removido) | `robots.txt` com `Disallow: /` e `sitemap` (VSEO AC3) | nenhum: unitários 98 de 98, e2e 55 de 55 | **SOBREVIVEU** |
+| S2 | `vitrine/app/api/escrever/route.ts` (criado e removido) | segunda rota com `POST` que lê o corpo e responde 204 (VSEG AC6) | nenhum: unitários 98 de 98, e2e 55 de 55 | **SOBREVIVEU** |
+| S3 | `pagina-item.tsx:121` | `<h2 style={{ color, padding }}>` cru no lugar do `Heading` (VTEMA AC8) | nenhum: unitários 98 de 98, e2e 55 de 55 | **SOBREVIVEU** |
+| S4 | `tema-da-loja-provider.tsx:31` | `<Theme mode="dark">` (VTEMA AC1) | nenhum: tema 16 de 16, e2e 55 de 55 | **SOBREVIVEU** |
+| S5 | `vitrine/app/layout.tsx:29` | `<html>` sem a classe que declara `--font-*` (VTEMA AC3) | nenhum: e2e 55 de 55 | **SOBREVIVEU** |
+
+**Placar**: 27 mutantes, 22 mortos, 5 sobreviventes. Os 8 alvos obrigatórios (9 mutantes, M7 em dois) morrem; os 13 extras escolhidos em T22–T24 e no tema/cache/isolamento morrem. Os 5 sobreviventes foram desenhados para sondar ACs que este Verifier achou sem prova, e confirmam as lacunas. Corte de visibilidade pela URL direta: não há mutante útil dentro de `vitrine/` (o papel só lê as views; o corte é da view, L16a); a prova é `vitrine-consultas.test.ts:135-148` e e2e:720-741, e o isolamento por slug na página do imóvel foi sondado por E1.
+
+### Lacunas (ranqueadas)
+
+Todas são de prova; o código do HEAD cumpre cada item por inspeção. Nenhuma pede mudança em `vitrine/`, só testes.
+
+1. **VSEG AC6 sem prova** (P1, segurança): nenhum teste afirma que `POST /api/revalidar` é a única rota que aceita escrita. Fechar com um teste estrutural na suíte raiz (todo `route.ts` sob `vitrine/app` é `api/revalidar/route.ts`, que só exporta `POST` como escrita; nenhum `"use server"` em `vitrine/`) e/ou e2e com `POST` em `/c/<slug>` e `/c/<slug>/imovel/<ref>` sem efeito. Mutante S2 sobrevive.
+2. **VSEO AC3 sem prova** (P2): o e2e não pede `/robots.txt` nem `/sitemap.xml`. Fechar com asserção e2e: `/sitemap.xml` → 404 e `/robots.txt` → 404 ou sem `Disallow`. Mutante S1 sobrevive.
+3. **VTEMA AC8 sem prova** (P1): nenhum teste varre `style=`, `<div>`/`<span>` de layout ou CSS próprio em `vitrine/app` e `vitrine/src` (fora de `opengraph-image.tsx`, a exceção do Satori registrada na T24). Fechar com um teste estrutural na suíte raiz. Mutante S3 sobrevive.
+4. **VTEMA AC1 parcial**: `mode="light"` do `<Theme>` da loja não é asserido. Fechar com asserção sobre o atributo de modo que o `<Theme>` emite no wrapper (ou sobre `color-scheme`). Mutante S4 sobrevive.
+5. **VTEMA AC3 parcial**: o tema aponta para `var(--font-<fonte>)`, mas nada prova que o `<html>` declara essas variáveis; sem a classe, a fonte da loja não se aplica e o e2e segue verde. Fechar com asserção e2e de que a classe do `<html>` declara `--font-<fonte da loja>` (o CSS do `next/font` no HTML define a variável). Mutante S5 sobrevive.
+6. Menores, aceitáveis sem bloquear depois das 5 acima: tipo do card só pelo `alt` e cidade do editorial satisfeita também pelo `<head>` (VCAT AC6); proporção do espaço sem foto só por captura (VITEM AC6); PNG do cartão não varrido por PII (VSEG AC5, proteção estrutural); teto de 300 s só pela configuração (VCACHE AC9).
+
+### Rodada de correção 2 (F2) — lacunas do Verifier independente
+
+A reverificação por um agente novo (sem contexto anterior) reprovou o HEAD `b2af87b`, de novo por prova e não por produto: 5 itens sem teste (VSEG AC6, VTEMA AC8, VSEO AC3, VTEMA AC1, VTEMA AC3), cada um com um mutante que sobreviveu à suíte. As rodadas anteriores tinham aceitado três deles "por inspeção". Nenhum código de `vitrine/` mudou.
+
+| Lacuna | Prova nova |
+| --- | --- |
+| VSEG AC6, só `POST /api/revalidar` aceita escrita | `src/lib/__tests__/vitrine-superficie.test.ts`: um único `route.ts` em `app/`, exportando só POST e os quatro métodos que respondem 405, e nenhuma server action; e2e V10: POST em rotas de API plausíveis → 404 e PUT, PATCH e DELETE em `/api/revalidar` → 405 |
+| VTEMA AC8, sem `style`, `<div>` de layout nem CSS à mão | mesmo teste: nenhum `style=`, `<div>`, `<span>` ou `dangerouslySetInnerHTML` em `app/` e `src/`, fora o cartão de compartilhamento (Satori), `<style>` só no provedor do tema e `globals.css` só com `@layer` e `@import` |
+| VSEO AC3, sem sitemap nem `Disallow` | mesmo teste (nenhum `robots`/`sitemap` em `app/` ou `public/`, nenhum `Disallow` no código); e2e V9: `/robots.txt`, `/sitemap.xml` e variantes → 404 sem `Disallow` nem `urlset` |
+| VTEMA AC1, `mode="light"` | e2e V11: o wrapper de A, B e D traz `data-theme="light"`, o `<html>` também e nada fica em `dark`; o teste estático confere o `<Theme ... mode="light">` |
+| VTEMA AC3, fonte no HTML | e2e V12: o `<html>` declara a classe `__variable` das 4 fontes e as folhas de estilo da página definem `--font-<fonte>` |
+
+Sensor da correção (cópia dos arquivos, restaurados): `robots.ts` com `Disallow` (V9 e estático), segunda rota com POST (estático), `style` cru num título (estático), `mode="dark"` (V11 e estático) e o `<html>` sem a classe das fontes (V12) morrem. Com os cinco aplicados: 5 de 10 testes estáticos reprovam e 3 das 59 asserções do e2e reprovam. Sem mutante: 10 de 10 e 59 de 59.
