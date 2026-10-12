@@ -150,3 +150,161 @@ Nada em produção, nenhum push. A fixture foi removida da branch `test` ao fim 
 
 - **Loja de cor sem croma**: a fixture não tem (A `#d4145a` e B `#12a150`; D sem cor, que usa o accent do próprio tema neutro, sem derivação). A limitação do accent derivado (cinza vira verde, preto vira rosa; AD-046) segue registrada no gate T0 e não foi reexercitada.
 - **Observações**: o indicador do Next em desenvolvimento ("3 Issues") aparece nas capturas de erro; é do modo dev, e o log do servidor dev não contém o host (provado por HTTP no e2e da T18). No editorial a 375 px o título de uma linha com bairro longo é truncado com reticências (registro da T21, sem mudança).
+
+## Validation — Verifier (janela C)
+
+**Result**: FAIL
+
+**Data**: 2026-10-12. **Verifier**: agente independente (não executou nenhuma task do lote). **Intervalo do diff**: `ddbf72d^..f01b5d0` (T0–T26; `677f29e`, renomeação para Krivo, fora do escopo). Foco: `vitrine/`, `scripts/vitrine-*.ts`, `scripts/__tests__/vitrine-*`, `src/lib/storefront-contract.ts`, `src/db/__tests__/vitrine-*`, `src/lib/__tests__/vitrine-*` e `storefront-*`.
+
+**Motivo do veredito**: nenhum defeito de produto foi achado e os 8 mutantes obrigatórios morreram, mas 4 mutantes extras sobreviveram e 5 itens da spec (P1) não têm prova automatizada do valor que a spec define (lacunas 1–5 abaixo). Pela regra evidence-or-zero e "mutante que sobrevive vira lacuna", o lote não fecha até essas asserções existirem.
+
+**Linha de base medida pelo Verifier** (no HEAD, checkout limpo, um processo por vez): `npm run vitrine:e2e` 47 de 47; `npx vitest run vitrine` + os 10 arquivos da raiz do lote (`vitrine-isolamento`, `vitrine-tipos-paridade`, `storefront-contract-parity`, `storefront-contract`, `vitrine-consultas`, `vitrine-views-paridade`, `vitrine-privilegios`, `vitrine-views`, `vitrine-dev`, `vitrine-fixture`): 22 arquivos, 180 testes verdes. Suíte completa, lint e `tsc` não foram rodados de novo (registro do executor: 238 arquivos/3813 testes; lint 0 erros; `tsc` com os 50 de linha de base).
+
+### Cobertura por requisito e AC
+
+Legenda: **OK** = teste cujo valor asserido é o da spec; **Parcial** = parte do AC provada, parte só por código ou captura; **Sem prova** = nenhum teste prova o valor (nota zero). `e2e` = `scripts/vitrine-e2e.ts`.
+
+| Req. | AC | Teste (arquivo:linha) | Código (arquivo:linha) | Nota |
+| --- | --- | --- | --- | --- |
+| VPROJ-01 | AC1 | `src/lib/__tests__/vitrine-isolamento.test.ts:164` | `vitrine/package.json`, `vitrine/next.config.ts`, `vitrine/tsconfig.json`, `vitrine/eslint.config.mjs` | OK |
+| VPROJ-01 | AC2 | `vitrine-isolamento.test.ts:173` | `vitrine/next.config.ts:6` | OK |
+| VPROJ-01 | AC3 | `vitrine-isolamento.test.ts:182` | (ausência de `proxy.ts`/`middleware.ts`) | OK |
+| VPROJ-01 | AC4 | `vitrine-isolamento.test.ts:98-131`, `:189` | regra em `vitrine-isolamento.test.ts` | OK |
+| VPROJ-01 | AC5 | `vitrine-isolamento.test.ts:210`, `:221` | `tsconfig.json`/`eslint.config.mjs` da raiz | OK |
+| VPROJ-01 | AC6 | `vitrine/src/db/__tests__/conexao.test.ts:9`, `:25`, `:37` | `vitrine/src/db/conexao.ts:25-33` | OK |
+| VPROJ-02 | AC7 | `src/lib/__tests__/storefront-contract-parity.test.ts:23-47` | `vitrine/src/contrato.ts:11-26` | OK |
+| VPROJ-02 | AC8 | `storefront-contract-parity.test.ts:40`; `src/db/__tests__/vitrine-views-paridade.test.ts:37`, `:43` | `vitrine/src/db/views.ts:15-61` | OK |
+| VCAT-01 | AC1 | 200: e2e:233-236; imóveis: e2e:457-466; nome: e2e:590, e2e:327; título só no metadado (e2e:591) | `vitrine/src/templates/comum/secoes.tsx:36-60` | **Parcial** — "sobre" e o título no corpo da página sem asserção (mutante E11b sobreviveu) |
+| VCAT-01 | AC6 | foto, `alt` com tipo e bairro: e2e:544-551; link: e2e:457-464; preço: e2e:515, e2e:615 | `vitrine/src/templates/grade/catalogo-grade.tsx:12-41`, `catalogo-editorial.tsx:18-47` | **Parcial** — cidade, quartos, banheiros, vagas e área do card sem asserção por HTTP (E11a sobreviveu); `resumoDosAtributos` só tem teste unitário da função (`vitrine/src/lib/__tests__/apresentacao.test.ts:106-118`) |
+| VCAT-01 | AC7 | e2e:556-572 | `secoes.tsx:10-33` | OK |
+| VCAT-01 | AC11 | `apresentacao.test.ts:13-29`; e2e:677 | `vitrine/src/lib/apresentacao.ts:10-13` | OK |
+| VCAT-01 | AC12 | e2e:318-331 | `vitrine/app/c/[slug]/layout.tsx:67`, `:90-98` | OK |
+| VCAT-02 | AC2 | e2e:457-466; `src/db/__tests__/vitrine-consultas.test.ts:152-165` | `vitrine/src/dados/consultas.ts:19-25` | OK |
+| VCAT-02 | AC3 | e2e:457-470; `vitrine/src/lib/__tests__/catalogo.test.ts:21` | `vitrine/src/lib/catalogo.ts:7`, `:22-36`; `app/c/[slug]/page.tsx:84` | OK |
+| VCAT-02 | AC4 | e2e:473-480; `catalogo.test.ts:27` | `catalogo.ts:24-28` | OK |
+| VCAT-02 | AC5 | e2e:481-482; `catalogo.test.ts:33` | `catalogo.ts:27` | OK |
+| VCAT-03 | AC8 | e2e:128-135, e2e:343-351; `catalogo.test.ts:52-67` | `layout.tsx:54`; `page.tsx:70` | **Parcial** — "sem consultar o banco" só por código; nenhum teste prova a ausência de consulta |
+| VCAT-03 | AC9 | e2e:221-231, e2e:343-351; `vitrine-consultas.test.ts:180-191` | `layout.tsx:65`; `vitrine/src/loja/nao-encontrado.tsx:9-19` | OK |
+| VCAT-03 | AC10 | noindex: e2e:124, e2e:132, e2e:227; sem dado de imóvel: e2e:1012-1020 (sentinela do imóvel da loja inativa), e2e:742-746 | `app/layout.tsx:21` | OK |
+| VITEM-01 | AC1 | e2e:666-687, e2e:689-700 | `vitrine/src/item/pagina-item.tsx:56-127` | OK |
+| VITEM-01 | AC2 | e2e:702-717; `catalogo.test.ts:70-84`; `vitrine-consultas.test.ts:169-176` | `catalogo.ts:46-67`; `consultas.ts:28-44` | OK |
+| VITEM-01 | AC6 | e2e:801-807, e2e:552-553 | `vitrine/src/templates/comum/foto-do-imovel.tsx:19-38` | **Parcial** — "mantendo a proporção" só por captura (`t23-03`, `t23-05`, `t21-01`) |
+| VITEM-01 | AC7 | e2e:775-786 | `pagina-item.tsx:18-30` | OK |
+| VITEM-01 | AC8 | e2e:788-799, e2e:544-551; `apresentacao.test.ts:57` | `vitrine/src/item/galeria-do-imovel.tsx:45`; `foto-do-imovel.tsx:27-32` | OK |
+| VITEM-02 | AC3 | e2e:809-828; `vitrine/src/lib/__tests__/contato.test.ts:36` | `vitrine/src/lib/contato.ts:16-25`; `pagina-item.tsx:61` | OK |
+| VITEM-02 | AC4 | `contato.test.ts:16`, `:21`; e2e:819 | `contato.ts:10-13` | OK |
+| VITEM-02 | AC5 | e2e:353-373, e2e:719-740 | `app/c/[slug]/imovel/[ref]/page.tsx:83`, `:95`; `nao-encontrado.tsx:26-35` | OK |
+| VSEG-01 | AC1 | `src/db/__tests__/vitrine-privilegios.test.ts:98-103`, `:166-185` | `views.ts:15-61` | OK |
+| VSEG-01 | AC2 | `vitrine-consultas.test.ts:114-133`; e2e:753-773 | `consultas.ts:23`, `:38` | OK |
+| VSEG-01 | AC3 | e2e:498-517, e2e:753-773 | idem | OK |
+| VSEG-01 | AC4 | e2e:485-496, e2e:719-740; `vitrine-consultas.test.ts:135-148` | corte na view (L16a, AD-040) | OK |
+| VSEG-01 | AC8 | `vitrine-consultas.test.ts:107`, `:114`, `:135` | `conexao.ts:12-14` | OK |
+| VSEG-02 | AC5 | e2e:1012-1020 (HTML, `<head>` e log) | `opengraph-image.tsx:39-62` (só nome, cidade e UF) | **Parcial** — o PNG não é varrido (o harness guarda binário como texto vazio); a ausência de PII na imagem é só por código |
+| VSEG-02 | AC6 | e2e:171-181 | `vitrine/app/api/revalidar/route.ts:19-49` | OK por inspeção: nenhum outro handler nem `use server` em `vitrine/` |
+| VSEG-02 | AC7 | e2e:1006-1010; `vitrine/app/api/revalidar/__tests__/route.test.ts:110` | — | OK |
+| VSEG-02 | Edge banco indisponível | e2e:377-406; `vitrine/src/dados/__tests__/erro-de-leitura.test.ts:17-60` | `vitrine/src/dados/erro-de-leitura.ts:10-38`; `vitrine/src/loja/indisponivel.tsx:11-32` | OK |
+| VTEMA-01 | AC1 | `vitrine/src/tema/__tests__/tema-da-loja.test.ts:16`, `:24`, `:28` | `vitrine/src/tema/tema-da-loja.ts:30-46`; `tema-da-loja-provider.tsx:31` | OK |
+| VTEMA-01 | AC2 | `tema-da-loja.test.ts:24`, `:33`; e2e:265-279 | `vitrine/src/tema/cor.ts:8-20` | OK |
+| VTEMA-01 | AC3 | e2e:281-293; `tema-da-loja.test.ts:59`, `:68` | `tema-da-loja.ts:34-44`; `vitrine/src/tema/fontes.ts:15-30` | OK |
+| VTEMA-01 | AC7 | e2e:233-279; `tema-da-loja.test.ts:75-108`, `:111` | `tema-da-loja.ts:60-66`; `tema-da-loja-provider.tsx:24-37` | OK |
+| VTEMA-02 | AC4 | cards: e2e:519-528; faixa: e2e:465-466; paginação: e2e:574-583; rodapé: e2e:295-303 | `catalogo-grade.tsx:49-82`; `page.tsx:87-88` | **Parcial** — "Sobre" sem asserção (E11b); teto de 6 destaques não exercitado (fixture com 3, `scripts/vitrine-fixture.ts:126`; `MAXIMO_DE_DESTAQUES` sem teste) |
+| VTEMA-02 | AC5 | e2e:519-533 | `catalogo-editorial.tsx:56-90` | **Parcial** — "Sobre" sem asserção (E11b) |
+| VTEMA-02 | AC6 | grade: e2e:470 (página 2, destaques vazios; E11c morto) | `catalogo-grade.tsx:54`; `catalogo-editorial.tsx:57`, `:63` | **Parcial** — editorial sem destaque mantendo a foto do cabeçalho passa no e2e (E11d sobreviveu); a fixture não tem loja com imóveis e sem destaque |
+| VTEMA-02 | AC8 | nenhum teste | inspeção: sem `style`, `className` arbitrário nem `<div>`/`<span>` em `vitrine/app` e `vitrine/src` fora de `opengraph-image.tsx:45-63` (Satori, exceção registrada na T24); `vitrine/app/globals.css:7-15` só imports e ordem de camadas | OK por inspeção |
+| VTEMA-02 | AC9 | capturas `t16-02`, `t16-04`, `t17-02`, `t18-02`, `t21-06..08`, `t23-04..06`, `t25-02/04/06/08..14` | medições em `validation.md` (T16, T17, T18, T21, T23 e tabela da T25): `scrollWidth` = `clientWidth` ≤ 375 | OK (captura) |
+| VLEGAL-01 | AC1 | catálogo A, B, D: e2e:295-303; item: e2e:686; imóvel indisponível: e2e:367-368 | `vitrine/src/rodape/rodape-legal.tsx:24-59` | OK (o aviso só é asserido no catálogo; item e indisponível usam o mesmo componente do layout) |
+| VLEGAL-01 | AC2 | e2e:305-316 | `rodape-legal.tsx:35-55` | OK |
+| VLEGAL-01 | AC3 | e2e:308, e2e:313; `contato.test.ts:66` | `contato.ts:39-42` | OK |
+| VLEGAL-01 | AC4 | e2e:309, e2e:314; `contato.test.ts:58` | `contato.ts:33-36` | OK |
+| VOG-01 | AC1 | e2e:585-600, e2e:830-841, e2e:887-897 | `app/layout.tsx:8-19`; `page.tsx:26-44`; `imovel/[ref]/page.tsx:24-59` | OK |
+| VOG-01 | AC2 | e2e:589-599; `apresentacao.test.ts:69-88` | `apresentacao.ts:81-89` | OK |
+| VOG-01 | AC3 | e2e:834-835; `apresentacao.test.ts:89` | `apresentacao.ts:92-99` | OK |
+| VOG-01 | AC4 | e2e:836, e2e:899-901 | `imovel/[ref]/page.tsx:32-35` | OK |
+| VOG-01 | AC5 | PNG 1200×630 na cor da loja: e2e:904-923; sem saída: e2e:938-995 | `vitrine/app/c/[slug]/opengraph-image.tsx:25-68` | **Parcial** — "com o nome da loja" sem asserção (E1 sobreviveu); só as capturas `t24-01..03` |
+| VOG-01 | AC6 | e2e:585-600, e2e:830-841 (UA do WhatsApp, `metaDoHead` lê só antes de `</head>`) | — | OK |
+| VCACHE-01 | AC1 | `vitrine/src/dados/__tests__/cache.test.ts:52-61` | `vitrine/src/dados/cache.ts:21-43` | OK |
+| VCACHE-01 | AC2 | `vitrine-isolamento.test.ts:173` | `next.config.ts:7-10` | OK |
+| VCACHE-01 | AC8 | e2e:602-646 | `route.ts:36`; `cache.ts` | OK |
+| VCACHE-01 | AC9 | e2e:628-634 (página antiga sem aviso) | `next.config.ts:9` | Parcial aceito — o teto de 300 s é provado só pela configuração |
+| VCACHE-01 | Edge desativação + aviso | **nenhum** | `cache.ts:21-27`; corte da view (`src/db/__tests__/vitrine-views.test.ts:206`, L16a) | **Sem prova** — nenhum teste desativa a loja, avisa e confere a página neutra; a `lojaCacheada` sem tag (E13) passa no e2e e só morre no teste unitário da tag |
+| VCACHE-02 | AC3 | `route.test.ts:39`, `:46`; e2e:137-145, e2e:637-639 | `route.ts:36-38` | OK |
+| VCACHE-02 | AC4 | e2e:147-160; `route.test.ts:52`, `:60`; `vitrine/src/__tests__/revalidacao.test.ts:39` | `revalidacao.ts:24-28`; `route.ts:21-28` | OK |
+| VCACHE-02 | AC5 | e2e:162-169; `route.test.ts:72`; `revalidacao.test.ts:61-87` | `revalidacao.ts:36-50` | OK |
+| VCACHE-02 | AC6 | e2e:171-181; `route.test.ts:80` | `route.ts:42-49` | OK |
+| VCACHE-02 | AC7 | `revalidacao.test.ts:47` | `revalidacao.ts:28` | OK |
+| VCACHE-02 | AC10 | e2e:183-188, e2e:1030-1035; `route.test.ts:89`, `:105` | `route.ts:26`, `:32`, `:37` | OK |
+| VSEO-01 | AC1 | e2e:124, e2e:132, e2e:227, e2e:369, e2e:684, e2e:738 | `app/layout.tsx:21` | OK |
+| VSEO-01 | AC2 | e2e:999-1004 | `next.config.ts:14-24` | OK |
+| VSEO-01 | AC3 | nenhum teste | inspeção: `git ls-files vitrine` sem `robots`, `sitemap` nem `public/` | OK por inspeção |
+
+**Edge Cases**
+
+| Edge Case | Teste (arquivo:linha) | Nota |
+| --- | --- | --- |
+| Exatamente 24 imóveis → uma página, sem paginação | `catalogo.test.ts:13`; `page.tsx:95` só monta a paginação com mais de uma página; e2e:581-582 (B, 4 imóveis) | Parcial aceito (limite exato só no unitário) |
+| 25 imóveis → página 2 com 1 | e2e:468-469; `catalogo.test.ts:21` | OK |
+| Foto quebrada mantém proporção e `alt` | captura `t21-01-grade-loja-a-desktop-foto-quebrada.jpg` | OK (captura) |
+| `<script>` na descrição | e2e:775-786 | OK |
+| `ap-0142` casa com `AP-0142` | `vitrine-consultas.test.ts:169-176`; e2e:702-712 | OK |
+| Banco indisponível | e2e:377-406 | OK |
+| Loja desativada + aviso → neutra | — | **Sem prova** (lacuna 1) |
+
+Contagem: 75 itens (68 ACs + 7 Edge Cases). OK, inclusive por inspeção ou captura: 63. Parcial aceito (lacuna de precisão menor, sem mutante sobrevivente): 5 (VCAT AC8, VITEM AC6, VSEG AC5 no PNG, VCACHE AC9, Edge de 24). Parcial com mutante sobrevivente ou sem prova: 7 (VCAT AC1, VCAT AC6, VTEMA AC4, VTEMA AC5, VTEMA AC6, VOG AC5, Edge de desativação).
+
+### Sensor de discriminação
+
+Método: cópia de cada arquivo em scratchpad, mutação no arquivo real, teste-alvo, restauração imediata e `git status --short` vazio conferido depois de cada rodada. E2E em rodadas (um processo por vez); os mutantes de uma mesma rodada caem em asserções distintas, citadas uma a uma. Nenhum teste foi editado.
+
+| # | Arquivo | Mutação | Teste que matou | Desfecho |
+| --- | --- | --- | --- | --- |
+| M1 | `vitrine/src/dados/consultas.ts:23` | `imoveisDaLoja` sem `.where(eq(imoveis.lojaSlug, slug))` | `src/db/__tests__/vitrine-consultas.test.ts:114` (e mais 4 do arquivo) | morto |
+| M2 | `vitrine/src/dados/cache.ts:24,32,40` | `cacheTag("tenant:vitrine:catalogo")` fixo | `vitrine/src/dados/__tests__/cache.test.ts:52` (as 3 funções) | morto |
+| M3 | `vitrine/app/api/revalidar/route.ts:36` | `{ expire: 0 }` → `"max"` (stale-while-revalidate; a chamada de 1 argumento não compila no Next 16.2: o tipo exige o segundo) | `route.test.ts:39`; e por comportamento e2e:639 ("A depois do aviso: tem de refletir o banco") | morto |
+| M4 | `vitrine/src/revalidacao.ts:28` | `===` no lugar de `timingSafeEqual` | `vitrine/src/__tests__/revalidacao.test.ts:47` | morto (só pelo espião: tempo constante não tem prova comportamental) |
+| M5 | `vitrine/src/lib/contato.ts:12` | prefixo `55` também com 12 dígitos | `contato.test.ts:21`, `:58` | morto |
+| M6 | `vitrine/src/lib/catalogo.ts:27` | sem `Math.min(pedida, totalPaginas)` | `catalogo.test.ts:33`, `:40`, `:46` | morto |
+| M7a | `vitrine/next.config.ts:20` | sem o cabeçalho `X-Robots-Tag` | e2e:999-1004 (Global X-Robots-Tag) | morto |
+| M7b | `vitrine/app/layout.tsx:21` | sem `robots` no metadado do layout raiz | e2e:124, e2e:132, e2e:227, e2e:369, e2e:391, e2e:684, e2e:738 | morto |
+| M8 | `vitrine/src/item/pagina-item.tsx:22-27` | descrição via `dangerouslySetInnerHTML` (com `<br/>`) | e2e:779 ("o `<script>` da descrição virou tag") | morto |
+| E1 | `vitrine/app/c/[slug]/opengraph-image.tsx:59` | cartão sem o nome da loja | — | **SOBREVIVEU** |
+| E2 | `vitrine/src/dados/consultas.ts:38` | `imovelPorReferencia` sem o filtro de slug | `vitrine-consultas.test.ts:114` (linha 131) | morto |
+| E3 | `vitrine/app/c/[slug]/imovel/[ref]/page.tsx:32` | `og:image` = última foto | e2e:836 | morto |
+| E5 | `vitrine/src/tema/tema-da-loja.ts:38` | nome do tema fixo `loja` | `tema-da-loja.test.ts:75`, `:86` | morto |
+| E10 | `vitrine/src/lib/catalogo.ts:47` | link do imóvel sem `toLowerCase` | `catalogo.test.ts:71` | morto |
+| E11a | `vitrine/src/templates/grade/catalogo-grade.tsx:36` | card sem quartos, banheiros, vagas e área | — | **SOBREVIVEU** |
+| E11b | `vitrine/src/templates/comum/secoes.tsx:51` | seção "Sobre" nunca renderizada | — | **SOBREVIVEU** |
+| E11c | `catalogo-grade.tsx:54` | faixa "Destaques" mesmo sem destaque | e2e:470 | morto |
+| E11d | `vitrine/src/templates/editorial/catalogo-editorial.tsx:57` | cabeçalho editorial usa o primeiro imóvel quando não há destaque | — | **SOBREVIVEU** |
+| E13 | `vitrine/src/dados/cache.ts:24` | `lojaCacheada` sem `cacheTag` | `cache.test.ts:52` (passa no e2e: 47 de 47) | morto só no unitário |
+| E16 | `vitrine/src/lib/contato.ts:24` | mensagem do item sem `toUpperCase` | `contato.test.ts:36`, `:49` | morto |
+| E17 | `vitrine/src/item/pagina-item.tsx:74` | `alt` de toda foto com posição 1 | e2e:797 | morto |
+| E18 | `vitrine/app/c/[slug]/imovel/[ref]/page.tsx:42` | `og:url` do imóvel em maiúsculas | e2e:712, e2e:837 | morto |
+
+**Placar**: 22 mutantes, 18 mortos, 4 sobreviventes (E1, E11a, E11b, E11d). Os 8 alvos obrigatórios (9 mutantes, M7 em dois) morreram. Corte de visibilidade pela URL direta: não há mutante útil dentro de `vitrine/`, porque o papel só lê as views (o corte é da view, L16a); a prova é `vitrine-consultas.test.ts:135` e e2e:719-740. Ausência de PII: idem, estrutural (views e grants), provada por `vitrine-privilegios.test.ts:98-103` e pela varredura de sentinelas e2e:1012-1020.
+
+### Lacunas (ranqueadas)
+
+1. **Edge Case "loja desativada no CRM + aviso → página neutra" sem prova** (VCACHE-01). Nenhum teste faz a transição; `lojaCacheada` sem tag (E13) passa no e2e. Correção: asserção no e2e que, com `ctx.db`, desativa a vitrine de B, chama `POST /api/revalidar` para B, confere a página neutra em `/c/<B>` e restaura.
+2. **VTEMA AC6 (editorial) sem prova**: E11d sobreviveu; a fixture não tem loja com imóveis e sem destaque. Correção: no e2e, tirar o destaque de B pelo banco, avisar, conferir que o cabeçalho não traz foto (e que a grade de A, com o mesmo truque, não traz a faixa) e restaurar.
+3. **VCAT AC6 sem prova no card**: cidade, quartos, banheiros, vagas e área não são asseridos por HTTP (E11a sobreviveu). Correção: asserção no e2e do texto do card de um imóvel com valores distintos (como `CA-0006`) na grade e no editorial.
+4. **"Sobre" sem prova** (VCAT AC1, VTEMA AC4, VTEMA AC5): E11b sobreviveu; o título institucional também não é asserido no corpo. Correção: asserção do `sobre` e do `titulo` da fixture no HTML visível de A e B.
+5. **VOG AC5 "com o nome da loja" sem prova automatizada**: E1 sobreviveu (A ≠ B só pela cor). Correção: comparar o cartão de A com o de uma instância/loja de mesma cor e nome diferente, ou conferir que o nome entra no PNG (por exemplo, pixels de texto na área central diferentes do fundo).
+6. Menores (precisão): teto de 6 destaques não exercitado (fixture com 3); "sem consultar o banco" do slug inválido só por código (a instância de banco inalcançável da T18 pode provar: slug inválido ali deve dar a página neutra, não "indisponível"); PNG não varrido por PII; aviso legal asserido só no catálogo; proporção do espaço sem foto e da foto quebrada só por captura.
+
+### Rodada de correção 1 (F1) — lacunas do Verifier
+
+As lacunas 1 a 5 e a maior parte das menores eram de prova, não de produto. Nenhum código de `vitrine/` mudou na correção: o `scripts/vitrine-e2e.ts` ganhou 8 asserções (V1 a V8), só com acréscimos, e passou de 47 para 55.
+
+| Lacuna | Asserção nova |
+| --- | --- |
+| 1 loja desativada + aviso | V6: desativa a D no banco, confere que sem aviso a página segue do cache, avisa, confere a página neutra, o 404 do cartão e do imóvel, reativa, avisa e confere a volta |
+| 2 VTEMA AC6 no editorial e grade | V4: A sem nenhum destaque (faixa omitida), A com 8 destaques (faixa com os 6 primeiros na ordem do catálogo), B sem destaque (nenhuma foto de cabeçalho, nenhum marcador) |
+| 3 VCAT AC6 | V1: bairro, cidade, quartos, banheiros, vagas e área de cada imóvel da página 1 de A, e o resumo (com o singular) das linhas de B |
+| 4 "Sobre" e título | V2: nome, título institucional e texto do Sobre de A e B; D (sem sobre) sem a seção |
+| 5 VOG AC5, nome no cartão | V7: B recebe a cor e a cidade de A no banco; com tudo igual menos o nome, os dois PNGs têm de diferir |
+| 6 menores | V3 (aviso legal no item e no imóvel indisponível), V5 (exatamente 24 → uma página, sem paginação, e `?pagina=2` mostra os mesmos 24), V8 (slug inválido com o banco inalcançável dá a página neutra, não "indisponível") |
+
+Cada asserção que muda dado restaura o que mudou (`featured`, `published`, `updated_at`, `active`, cor e cidade) e avisa a vitrine de novo, em `finally`. Não corrigidas, por decisão: o PNG não é varrido por PII (a view não traz PII e o cartão só usa nome, cidade e UF) e a proporção do espaço sem foto e da foto quebrada seguem provadas só por captura.
+
+**Sensor da correção** (cópia dos arquivos, restaurados): os cinco mutantes que sobreviveram na rodada 1 morrem, cada um por uma asserção própria. Cartão sem o nome da loja (V7); card sem quartos, banheiros, vagas e área (V1); "Sobre" nunca exibido (V2); editorial com foto no cabeçalho sem destaque (V4); `lojaCacheada` sem tag (V6). Com os cinco aplicados: 50 de 55 asserções, as 5 reprovadas são V1, V2, V4, V6 e V7. Sem mutante: 55 de 55.

@@ -22,6 +22,7 @@ import { randomBytes } from "node:crypto";
 import path from "node:path";
 import { and, eq } from "drizzle-orm";
 import { properties } from "../src/db/schema";
+import { tenants, tenantStorefronts } from "../src/db/schema";
 import {
   abrirBancoDeTeste,
   type BancoDoDono,
@@ -991,6 +992,243 @@ registrar("T24 gerar o cartão não faz nenhuma requisição de saída (VOG AC5)
     } catch {
       // arquivo ainda aberto pelo processo que encerra: o diretório temporário fica para o sistema
     }
+  }
+});
+
+// ── Fechamento do lote: ramos vazios, desativação, texto do catálogo e do cartão ──
+// (lacunas apontadas pelo Verifier na rodada 1; cada asserção que muda dado no banco
+// restaura o que mudou e avisa a vitrine de novo, mesmo em falha)
+
+/** Avisa a vitrine, como o CRM faz depois de uma escrita, e confere o 204. */
+async function avisarVitrine(ctx: Contexto, slug: string): Promise<void> {
+  const r = await ctx.pedir("/api/revalidar", {
+    metodo: "POST",
+    cabecalhos: { authorization: `Bearer ${ctx.segredo}` },
+    corpo: JSON.stringify({ slug }),
+  });
+  assert.equal(r.status, 204, `aviso para ${slug}`);
+}
+
+/** Texto do HTML visível sem os comentários que o React põe entre nós de texto vizinhos. */
+function textoLimpo(html: string): string {
+  return htmlVisivel(html).split("<!-- -->").join("");
+}
+
+/** "3 quartos · 1 banheiro · 0 vagas · 58 m²": singular só para 1 (VCAT AC6). */
+function resumoDoCard(imovel: { quartos: number; banheiros: number; vagas: number; areaM2: number }): string {
+  const contar = (n: number, singular: string, plural: string) => `${n} ${n === 1 ? singular : plural}`;
+  return [
+    contar(imovel.quartos, "quarto", "quartos"),
+    contar(imovel.banheiros, "banheiro", "banheiros"),
+    contar(imovel.vagas, "vaga", "vagas"),
+    `${imovel.areaM2} m²`,
+  ].join(" · ");
+}
+
+registrar("V1 card do catálogo: bairro, cidade, quartos, banheiros, vagas e área de cada imóvel da página (VCAT AC6)", async (ctx) => {
+  const { a, b } = ctx.fixture.lojas;
+  const htmlA = textoLimpo((await ctx.pedir(`/c/${a.slug}`)).texto);
+  const naPagina1 = ordemDoCatalogo(a.imoveis).slice(0, 24);
+  assert.equal(naPagina1.length, 24);
+  for (const imovel of a.imoveis.filter((x) => x.visivel && naPagina1.includes(x.referencia.toLowerCase()))) {
+    assert.ok(htmlA.includes(`>${imovel.bairro}, ${imovel.cidade}<`), `A ${imovel.referencia}: bairro e cidade`);
+    assert.ok(htmlA.includes(`>${resumoDoCard(imovel)}<`), `A ${imovel.referencia}: ${resumoDoCard(imovel)}`);
+  }
+  // Editorial (B): as mesmas informações na linha de cada imóvel, com o singular de 1 banheiro e 1 vaga.
+  const htmlB = textoLimpo((await ctx.pedir(`/c/${b.slug}`)).texto);
+  for (const imovel of b.imoveis.filter((x) => x.visivel)) {
+    assert.ok(htmlB.includes(resumoDoCard(imovel)), `B ${imovel.referencia}: ${resumoDoCard(imovel)}`);
+    assert.ok(htmlB.includes(imovel.bairro) && htmlB.includes(imovel.cidade), `B ${imovel.referencia}: lugar`);
+  }
+});
+
+registrar("V2 título, 'Sobre' e nome da loja no corpo do catálogo; loja sem sobre não mostra a seção (VCAT AC1, VTEMA AC4, AC5)", async (ctx) => {
+  const { a, b, d } = ctx.fixture.lojas;
+  for (const loja of [a, b]) {
+    const html = textoLimpo((await ctx.pedir(`/c/${loja.slug}`)).texto);
+    assert.ok(html.includes(`>${loja.nome}<`), `${loja.slug}: nome`);
+    assert.ok(html.includes(">Sobre<"), `${loja.slug}: seção Sobre`);
+    assert.ok(html.includes(`>${loja.sobre}<`), `${loja.slug}: texto do Sobre`);
+    if (loja.titulo) assert.ok(html.includes(`>${loja.titulo}<`), `${loja.slug}: título institucional`);
+  }
+  const htmlD = textoLimpo((await ctx.pedir(`/c/${d.slug}`)).texto);
+  assert.ok(htmlD.includes(`>${d.nome}<`), "D: nome");
+  assert.ok(!htmlD.includes(">Sobre<"), "D (sem sobre) mostra a seção Sobre");
+});
+
+registrar("V3 aviso legal também na página do imóvel e na do imóvel indisponível (VLEGAL AC1)", async (ctx) => {
+  const { a } = ctx.fixture.lojas;
+  const aviso = "Preços e disponibilidade sujeitos a alteração sem aviso prévio.";
+  for (const caminho of [`/c/${a.slug}/imovel/ap-0001`, `/c/${a.slug}/imovel/ap-9999`]) {
+    const html = htmlVisivel((await ctx.pedir(caminho)).texto);
+    assert.ok(html.includes(aviso), `${caminho}: aviso`);
+    assert.ok(html.includes(a.razaoSocial) && html.includes(a.creci), `${caminho}: razão social e CRECI`);
+  }
+});
+
+registrar("V4 sem destaque o grade omite a faixa e o editorial omite a foto do cabeçalho; com 8 destaques a faixa mostra 6 (VTEMA AC4–AC6)", async (ctx) => {
+  const { a, b } = ctx.fixture.lojas;
+  const fotografar = (tenantId: string) =>
+    ctx.db
+      .select({
+        reference: properties.reference,
+        featured: properties.featured,
+        published: properties.published,
+        updatedAt: properties.updatedAt,
+        status: properties.status,
+      })
+      .from(properties)
+      .where(eq(properties.tenantId, tenantId));
+  const marcar = (tenantId: string, referencias: string[], featured: boolean) =>
+    Promise.all(
+      referencias.map((reference) =>
+        ctx.db
+          .update(properties)
+          .set({ featured })
+          .where(and(eq(properties.tenantId, tenantId), eq(properties.reference, reference)))
+      )
+    );
+  const restaurar = async (tenantId: string, linhas: Awaited<ReturnType<typeof fotografar>>) => {
+    for (const linha of linhas) {
+      await ctx.db
+        .update(properties)
+        .set({ featured: linha.featured, published: linha.published, updatedAt: linha.updatedAt })
+        .where(and(eq(properties.tenantId, tenantId), eq(properties.reference, linha.reference)));
+    }
+  };
+
+  const originaisA = await fotografar(a.id);
+  const originaisB = await fotografar(b.id);
+  try {
+    // A (grade) sem nenhum destaque: a faixa some e a grade segue com os 24 da página.
+    await marcar(a.id, originaisA.filter((x) => x.featured).map((x) => x.reference), false);
+    await avisarVitrine(ctx, a.slug);
+    const semDestaque = textoLimpo((await ctx.pedir(`/c/${a.slug}`)).texto);
+    assert.ok(!semDestaque.includes(">Destaques<"), "grade sem destaque mostra a faixa");
+    assert.equal(referenciasNosLinks(trecho(semDestaque, ">Imóveis disponíveis<"), a.slug).length, 24);
+
+    // A com 8 destaques: a faixa mostra os 6 primeiros da ordem destaque → recente → referência.
+    const escolhidos = ["AP-0001", "CA-0002", "CA-0004", "CA-0006", "CA-0008", "AP-0009", "CA-0010", "CA-0012"];
+    await marcar(a.id, escolhidos, true);
+    await avisarVitrine(ctx, a.slug);
+    const doBanco = await fotografar(a.id);
+    const esperados = doBanco
+      .filter((x) => x.featured && x.published && x.status === "disponivel")
+      .sort((x, y) => y.updatedAt.getTime() - x.updatedAt.getTime() || x.reference.localeCompare(y.reference))
+      .slice(0, 6)
+      .map((x) => x.reference.toLowerCase());
+    assert.equal(esperados.length, 6);
+    const comOito = textoLimpo((await ctx.pedir(`/c/${a.slug}`)).texto);
+    const faixa = referenciasNosLinks(trecho(comOito, ">Destaques<", ">Imóveis disponíveis<"), a.slug);
+    assert.deepEqual(faixa, esperados, "a faixa tem de mostrar só os 6 primeiros destaques, na ordem do catálogo");
+
+    // B (editorial) sem destaque: nenhuma foto de cabeçalho (a foto aparece só na linha) e nenhum marcador.
+    await marcar(b.id, originaisB.filter((x) => x.featured).map((x) => x.reference), false);
+    await avisarVitrine(ctx, b.slug);
+    const editorialSemDestaque = textoLimpo((await ctx.pedir(`/c/${b.slug}`)).texto);
+    const primeira = editorialSemDestaque.indexOf("fotos.vitrine-e2e.test/b/");
+    assert.ok(primeira >= 0, "o editorial perdeu as fotos das linhas");
+    const fotosDaLista = editorialSemDestaque.split("fotos.vitrine-e2e.test/b/").length - 1;
+    assert.equal(fotosDaLista, b.imoveis.filter((x) => x.visivel).length, "uma foto por linha, nenhuma no cabeçalho");
+    assert.ok(!editorialSemDestaque.includes("Destaque"), "o editorial sem destaque mostra o marcador");
+  } finally {
+    await restaurar(a.id, originaisA);
+    await restaurar(b.id, originaisB);
+    await avisarVitrine(ctx, a.slug);
+    await avisarVitrine(ctx, b.slug);
+  }
+});
+
+registrar("V5 loja com exatamente 24 imóveis visíveis → uma página só, sem paginação; ?pagina=2 mostra os mesmos 24 (Edge Case de 24)", async (ctx) => {
+  const { a } = ctx.fixture.lojas;
+  const antes = await ctx.db
+    .select({ published: properties.published, updatedAt: properties.updatedAt })
+    .from(properties)
+    .where(and(eq(properties.tenantId, a.id), eq(properties.reference, "AP-0001")));
+  try {
+    await ctx.db
+      .update(properties)
+      .set({ published: false })
+      .where(and(eq(properties.tenantId, a.id), eq(properties.reference, "AP-0001")));
+    await avisarVitrine(ctx, a.slug);
+    const esperada = ordemDoCatalogo(a.imoveis).filter((ref) => ref !== "ap-0001");
+    assert.equal(esperada.length, 24);
+    for (const caminho of [`/c/${a.slug}`, `/c/${a.slug}?pagina=2`]) {
+      const html = textoLimpo((await ctx.pedir(caminho)).texto);
+      assert.ok(!html.includes("astryx-pagination"), `${caminho}: mostra paginação com 24 imóveis`);
+      assert.deepEqual(referenciasNosLinks(trecho(html, ">Imóveis disponíveis<"), a.slug), esperada, caminho);
+    }
+  } finally {
+    await ctx.db
+      .update(properties)
+      .set({ published: antes[0].published, updatedAt: antes[0].updatedAt })
+      .where(and(eq(properties.tenantId, a.id), eq(properties.reference, "AP-0001")));
+    await avisarVitrine(ctx, a.slug);
+  }
+});
+
+registrar("V6 loja desativada no CRM + aviso → a próxima visita mostra a página neutra; reativada + aviso → volta (Edge Case de VCACHE)", async (ctx) => {
+  const d = ctx.fixture.lojas.d;
+  const ativar = (ativa: boolean) =>
+    ctx.db.update(tenantStorefronts).set({ active: ativa }).where(eq(tenantStorefronts.tenantId, d.id));
+  const vazio = "Nenhum imóvel disponível no momento.";
+  await avisarVitrine(ctx, d.slug);
+  assert.ok(textoLimpo((await ctx.pedir(`/c/${d.slug}`)).texto).includes(vazio), "D de partida");
+  try {
+    await ativar(false);
+    // Sem aviso, a página continua a do cache (VCACHE AC9).
+    assert.ok(textoLimpo((await ctx.pedir(`/c/${d.slug}`)).texto).includes(vazio), "sem aviso tem de seguir do cache");
+    await avisarVitrine(ctx, d.slug);
+    const depois = await ctx.pedir(`/c/${d.slug}`);
+    const visivel = textoLimpo(depois.texto);
+    assert.ok(visivel.includes(TEXTO_NEUTRO), "depois do aviso: página neutra");
+    assert.ok(!visivel.includes(vazio), "depois do aviso: ainda mostra o catálogo");
+    semMarcaDeLoja(ctx, visivel);
+    const cartao = await baixar(ctx, `/c/${d.slug}/opengraph-image`);
+    assert.equal(cartao.status, 404, "o cartão da loja desativada");
+    const imovel = await ctx.pedir(`/c/${d.slug}/imovel/ca-0001`);
+    assert.ok(textoLimpo(imovel.texto).includes(TEXTO_NEUTRO), "o imóvel da loja desativada");
+  } finally {
+    await ativar(true);
+    await avisarVitrine(ctx, d.slug);
+  }
+  assert.ok(textoLimpo((await ctx.pedir(`/c/${d.slug}`)).texto).includes(vazio), "D reativada volta ao catálogo");
+});
+
+registrar("V7 o cartão de compartilhamento traz o nome da loja: com a mesma cor e a mesma cidade, B e A geram PNGs diferentes (VOG AC5)", async (ctx) => {
+  const { a, b } = ctx.fixture.lojas;
+  const doA = await baixar(ctx, `/c/${a.slug}/opengraph-image`);
+  assert.equal(doA.status, 200);
+  try {
+    await ctx.db.update(tenantStorefronts).set({ accentColor: a.cor }).where(eq(tenantStorefronts.tenantId, b.id));
+    await ctx.db.update(tenants).set({ city: a.cidade, state: a.uf }).where(eq(tenants.id, b.id));
+    await avisarVitrine(ctx, b.slug);
+    const doB = await baixar(ctx, `/c/${b.slug}/opengraph-image`);
+    assert.equal(doB.status, 200);
+    const pngB = await lerPng(doB.bytes);
+    assert.equal(pngB?.primeiroPixel, a.cor, "B ficou com a cor da A (preparo da prova)");
+    assert.ok(!doA.bytes.equals(doB.bytes), "só o nome muda e os PNGs saíram iguais: o cartão não traz o nome");
+  } finally {
+    await ctx.db.update(tenantStorefronts).set({ accentColor: b.cor }).where(eq(tenantStorefronts.tenantId, b.id));
+    await ctx.db.update(tenants).set({ city: b.cidade, state: b.uf }).where(eq(tenants.id, b.id));
+    await avisarVitrine(ctx, b.slug);
+  }
+});
+
+registrar("V8 slug fora do formato não consulta o banco: com o banco inalcançável a página neutra sai, não 'indisponível' (VCAT AC8)", async (ctx) => {
+  const outra = await ctx.iniciarInstancia(PORTA_E2E + 3, {
+    VITRINE_DATABASE_URL: "postgresql://krivo_vitrine:senha-de-teste@banco-inalcancavel.invalid:5432/neondb",
+  });
+  try {
+    for (const slug of ["Slug_Invalido", "UPPER", "a".repeat(64)]) {
+      const r = await ctx.pedir(`/c/${slug}`, { base: outra.base });
+      const html = textoLimpo(r.texto);
+      assert.ok(html.includes(TEXTO_NEUTRO), `/c/${slug}: falta a página neutra`);
+      assert.ok(!html.includes("Vitrine temporariamente indisponível."), `/c/${slug}: consultou o banco`);
+    }
+    assert.ok(!outra.saida().includes("[vitrine] erro"), "o servidor registrou erro de leitura para slug inválido");
+  } finally {
+    outra.parar();
   }
 });
 
