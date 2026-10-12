@@ -1,6 +1,6 @@
 # Arquivamento do L16b
 
-Execução concluída em 2026-10-12 (T0 a T26 e fixes F1 a F3). A verificação final está **pendente**: o [validation.md](validation.md) tem a reverificação aprovada depois da F1, duas verificações independentes seguintes reprovadas por prova parcial e fechadas na F2 e na F3, e uma decisão do usuário sobre VOG AC1 na página de imóvel indisponível.
+Execução concluída em 2026-10-12 (T0 a T26 e fixes F1 a F3). A verificação final está **pendente**: o [validation.md](validation.md) tem a reverificação aprovada depois da F1, três verificações independentes seguintes reprovadas (as duas primeiras por prova parcial, fechada na F2 e na F3; a 4ª por VOG AC1 na página de imóvel indisponível e por três provas parciais ainda abertas), e a decisão do usuário sobre VOG AC1.
 Spec e o relatório vigente permanecem neste diretório; o design é comum ao L16 e fica em
 [../lote-16-vitrine-publica/design.md](../lote-16-vitrine-publica/design.md).
 
