@@ -688,6 +688,8 @@ T24 → T25
 
 ### T25: Capturas de fechamento
 
+**Status**: concluída em 2026-10-12 (hash no `git log`; capturas `t25-01` a `t25-14` listadas no `validation.md`, com a largura de rolagem no quadro de 375 px de grade, editorial, item com e sem foto, indisponível, vazio e erro; a fixture não tem loja de cor sem croma).
+
 **What**: Conjunto final de capturas reais com a fixture: os dois layouts × desktop e 375 px × lojas A e B; item com e sem foto; imóvel indisponível; catálogo vazio; erro.
 **Where**: `.specs/features/lote-16b-vitrine-app/capturas/`
 **Depends on**: T21, T23, T24

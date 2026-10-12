@@ -128,3 +128,25 @@ Nada em produção, nenhum push. A fixture foi removida da branch `test` ao fim 
 - **Sensor** (cópia dos arquivos, restaurados): 5 mutantes, todos mortos. Fundo sempre na cor padrão (assertion do hex literal, rodado isolado: `#262626` no lugar de `#d4145a`); `fetch` de uma URL externa dentro do cartão (assertion de saída); altura 600 (assertion de 1200×630); imóvel sem herança das imagens do pai (assertion do imóvel sem foto); limiar do contraste invertido (teste unitário).
 - **Capturas** (`capturas/`, extensão do Chrome, aba visível, `next dev` na porta 3100, escala 0,6): `t24-01-cartao-loja-a`, `t24-02-cartao-loja-b`, `t24-03-cartao-loja-d-cor-padrao`. A fixture não tem loja de cor sem croma; a limitação do accent derivado (AD-046) não se aplica ao cartão, que usa o hex literal.
 - **Gate**: lint, typecheck e build da vitrine sem erro; 16 testes do tema verdes; lint da raiz 0 erros (9 avisos de linha de base); `tsc` da raiz com os mesmos 50 erros.
+
+### T25 — capturas de fechamento
+
+- **Como**: extensão do Chrome com a aba visível, `npm run vitrine:dev` (porta 3100), fixture de sentinelas na branch `test` e fotos locais temporárias; as de 375 px carregam a página real num quadro de 375 px (a janela da extensão não reduz o viewport), em escala 0,6. O quadro e as fotos ficaram em `vitrine/public/` só durante a captura e foram apagados; a fixture foi removida da branch `test` ao fim. Para ter os dois layouts nas duas lojas, o layout de A e de B foi trocado no banco entre as rodadas (A editorial e B grade) e a fixture, removida depois.
+- **Arquivos** (`capturas/`):
+  - layouts × desktop e 375 px × lojas: `t25-01-grade-loja-a-desktop`, `t25-02-grade-loja-a-375`, `t25-03-editorial-loja-b-desktop`, `t25-04-editorial-loja-b-375`, `t25-05-editorial-loja-a-desktop`, `t25-06-editorial-loja-a-375`, `t25-07-grade-loja-b-desktop`, `t25-08-grade-loja-b-375`;
+  - item, indisponível, vazio e erro: `t25-09-item-com-foto-loja-a-375`, `t25-10-item-sem-foto-loja-a-375`, `t25-11-imovel-indisponivel-loja-a-375`, `t25-12-catalogo-vazio-loja-d-375`, `t25-13-erro-vitrine-indisponivel-desktop`, `t25-14-erro-vitrine-indisponivel-375`.
+  - Os desktops do item com e sem foto, do imóvel indisponível e do catálogo vazio são os de `t23-01`, `t23-03`, `t17-01` e `t21-05`: o código dessas páginas não mudou depois deles.
+- **Largura de rolagem do documento no quadro de 375 px (VTEMA AC9)**, `scrollWidth` = `clientWidth` = 375 em todas:
+
+  | Página | Rota | Largura |
+  | --- | --- | --- |
+  | catálogo em grade (A e, com o layout trocado, B) | `/c/vt-e2e-a`, `/c/vt-e2e-b` | 375 e 375 |
+  | catálogo editorial (B e, com o layout trocado, A) | `/c/vt-e2e-b`, `/c/vt-e2e-a` | 375 e 375 |
+  | item com foto | `/c/vt-e2e-a/imovel/ap-0001` | 375 |
+  | item sem foto | `/c/vt-e2e-a/imovel/ap-0005` | 375 |
+  | imóvel indisponível | `/c/vt-e2e-a/imovel/ap-9999` | 375 |
+  | catálogo vazio | `/c/vt-e2e-d` | 375 |
+  | vitrine indisponível (banco inalcançável) | `/c/vt-e2e-a` | 375 |
+
+- **Loja de cor sem croma**: a fixture não tem (A `#d4145a` e B `#12a150`; D sem cor, que usa o accent do próprio tema neutro, sem derivação). A limitação do accent derivado (cinza vira verde, preto vira rosa; AD-046) segue registrada no gate T0 e não foi reexercitada.
+- **Observações**: o indicador do Next em desenvolvimento ("3 Issues") aparece nas capturas de erro; é do modo dev, e o log do servidor dev não contém o host (provado por HTTP no e2e da T18). No editorial a 375 px o título de uma linha com bairro longo é truncado com reticências (registro da T21, sem mudança).
