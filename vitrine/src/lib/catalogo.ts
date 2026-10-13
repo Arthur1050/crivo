@@ -65,3 +65,11 @@ export function referenciaDaUrl(parametro: unknown): string | null {
   const referencia = texto.trim().toLowerCase();
   return REFERENCIA_VALIDA.test(referencia) ? referencia : null;
 }
+
+/**
+ * Destino da navegação da paginação (VCAT AC3): a mesma rota com
+ * `?pagina=<n>`; a página 1 volta à rota sem parâmetro.
+ */
+export function urlDaPagina(caminho: string, pagina: number): string {
+  return pagina === 1 ? caminho : `${caminho}?pagina=${pagina}`;
+}

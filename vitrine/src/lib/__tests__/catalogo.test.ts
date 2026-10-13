@@ -5,6 +5,7 @@ import {
   referenciaDaUrl,
   referenciaParaUrl,
   slugValido,
+  urlDaPagina,
 } from "../catalogo";
 
 const itens = (n: number) => Array.from({ length: n }, (_, i) => i + 1);
@@ -84,5 +85,13 @@ describe("L16b T7 — referência na URL (VITEM-01)", () => {
       expect(referenciaDaUrl(parametro), String(parametro)).toBeNull();
     }
     expect(referenciaDaUrl("a".repeat(40))).toBe("a".repeat(40));
+  });
+});
+
+describe("L16b fechamento — urlDaPagina (VCAT-02 AC3)", () => {
+  it("a página 1 volta à rota sem parâmetro e as demais usam ?pagina=<n>", () => {
+    expect(urlDaPagina("/c/loja-a", 1)).toBe("/c/loja-a");
+    expect(urlDaPagina("/c/loja-a", 2)).toBe("/c/loja-a?pagina=2");
+    expect(urlDaPagina("/c/loja-a", 13)).toBe("/c/loja-a?pagina=13");
   });
 });

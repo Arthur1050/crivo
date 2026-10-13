@@ -383,6 +383,7 @@
 - **Scope**: Toda URL e metadado público da vitrine, a partir do L16. Domínio próprio, quando vier, preserva os paths.
 - **Date**: 2026-10-09
 - **Status**: active
+- **Nota (2026-10-12, L16b, VOG AC1)**: a página de imóvel indisponível é página de loja e emite os metadados de compartilhamento do catálogo (título "<nome> — imóveis", descrição, `og:url` do catálogo, e `og:image` e `twitter:*` herdados do segmento da loja), sem nenhum dado do imóvel pedido; loja que a vitrine não mostra segue com a página neutra, sem metadados de marca. Decisão do usuário, delegada a um agente Opus 5.5 e autorizada por ele.
 
 ### AD-044
 - **Decision**: Fora de `vitrine/`, só arquivos de teste da suíte raiz (`__tests__/`) importam de `vitrine/`: os testes de paridade (contrato e colunas das views), o teste de isolamento do projeto e o teste de banco das consultas (`src/db/__tests__/vitrine-consultas.test.ts`). Código de produção de `src/`, `app/` e `scripts/` continua sem importar de `vitrine/`, e nenhum arquivo de `vitrine/` importa de fora dela. O teste das consultas escreve a fixture como dono, com o `db` e o schema do CRM, e lê como `krivo_vitrine` com o `db` criado pela fábrica de conexão da própria vitrine (`criarDb` em `vitrine/src/db/conexao.ts`).

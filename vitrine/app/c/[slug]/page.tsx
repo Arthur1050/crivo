@@ -4,8 +4,8 @@ import type { Metadata } from "next";
 import { unstable_rethrow } from "next/navigation";
 import { Suspense } from "react";
 import { imoveisCacheados, lojaCacheada } from "../../../src/dados/cache";
-import { metadadosDoCatalogo } from "../../../src/lib/apresentacao";
 import { paginar, POR_PAGINA, slugValido } from "../../../src/lib/catalogo";
+import { metadataDoCatalogo } from "../../../src/lib/compartilhamento";
 import { registrarErro, VitrineIndisponivel } from "../../../src/loja/indisponivel";
 import { MAXIMO_DE_DESTAQUES } from "../../../src/templates/comum/catalogo";
 import { PaginacaoDoCatalogo } from "../../../src/templates/comum/paginacao";
@@ -29,13 +29,7 @@ export async function generateMetadata({ params }: Pick<Props, "params">): Promi
   try {
     const loja = await lojaCacheada(slug);
     if (!loja) return {};
-    const { titulo, descricao } = metadadosDoCatalogo(loja);
-    return {
-      title: titulo,
-      description: descricao,
-      openGraph: { title: titulo, description: descricao, url: `/c/${slug}`, siteName: loja.nome, locale: "pt_BR", type: "website" },
-      twitter: { card: "summary_large_image", title: titulo, description: descricao },
-    };
+    return metadataDoCatalogo(loja);
   } catch (erro) {
     unstable_rethrow(erro);
     registrarErro("metadados", erro);

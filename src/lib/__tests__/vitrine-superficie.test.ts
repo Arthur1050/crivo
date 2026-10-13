@@ -148,3 +148,12 @@ describe("VTEMA AC1: o tema da loja é montado em modo claro", () => {
     expect(provedor?.codigo).toMatch(/<Theme\s+theme=\{tema\}\s+mode="light">/);
   });
 });
+
+describe("VCAT AC3: o controle de paginação navega pelo destino testado", () => {
+  it("o componente usa urlDaPagina e não monta a URL por conta própria", () => {
+    const componente = codigoDaVitrine.find((x) => x.arquivo === "src/templates/comum/paginacao.tsx");
+    expect(componente).toBeDefined();
+    expect(componente?.codigo).toContain("urlDaPagina(caminho, destino)");
+    expect(componente?.codigo).not.toContain("?pagina=");
+  });
+});

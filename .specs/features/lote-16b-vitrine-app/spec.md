@@ -206,7 +206,7 @@ não mostra o link.
 **Acceptance Criteria**:
 
 1. The system SHALL definir `og:title`, `og:description`, `og:image`, `og:url` e `twitter:card` em toda página de loja, com URLs absolutas a partir de `VITRINE_PUBLIC_URL`.
-2. The system SHALL usar no catálogo o título "<nome> — imóveis" e a descrição igual ao título institucional da loja ou, sem ele, "Imóveis disponíveis em <cidade>/<uf>".
+2. The system SHALL usar no catálogo **e na página de imóvel indisponível da loja (VITEM AC5)** o título "<nome> — imóveis", a descrição igual ao título institucional da loja ou, sem ele, "Imóveis disponíveis em <cidade>/<uf>" e o `og:url` do catálogo; nessa página nenhum metadado SHALL conter dado do imóvel pedido. _(Esclarecimento de 2026-10-12, decisão do usuário delegada a um agente Opus 5.5: a página de imóvel indisponível é página de loja, VLEGAL AC1, então VOG AC1 vale para ela. Não muda o escopo.)_
 3. The system SHALL usar no item o título "<Tipo> em <bairro> — <REF>" e a descrição "<quartos> quartos · <área> m² · <preço>".
 4. WHERE o imóvel tiver foto, `og:image` SHALL ser a primeira foto; caso contrário SHALL ser a imagem gerada da loja.
 5. WHEN a imagem gerada da loja for pedida THEN o sistema SHALL responder um PNG de 1200×630 com o nome da loja sobre a cor da loja, sem buscar recurso externo.

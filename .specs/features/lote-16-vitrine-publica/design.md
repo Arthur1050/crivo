@@ -281,7 +281,7 @@ grant select on vitrine.lojas, vitrine.imoveis to krivo_vitrine;
 | --- | --- | --- |
 | Slug fora de `^[a-z0-9-]{1,63}$` | `notFound()` sem consultar o banco | Não encontrado neutro |
 | Loja inexistente, inativa, sem CRECI ou sem WhatsApp | view não devolve linha → `notFound()` no layout da loja | Não encontrado neutro |
-| Referência inexistente, vendida, reservada ou despublicada | `notFound()` dentro da loja | Não encontrado com a marca da loja e link para o catálogo |
+| Referência inexistente, vendida, reservada ou despublicada | `notFound()` dentro da loja | Não encontrado com a marca da loja, link para o catálogo e os metadados de compartilhamento do catálogo (nenhum dado do imóvel) |
 | Banco indisponível na vitrine | erro propaga → `error.tsx` genérico, sem detalhe técnico; log `[vitrine] erro` sem dado de linha | "Vitrine temporariamente indisponível" |
 | Aviso de revalidação falha (rede, 5xx, timeout) | CRM registra `warn`, não repete; a ação do gestor já gravou | Nenhum no CRM; vitrine atualiza em até 5 min |
 | Variáveis da vitrine ausentes no CRM | `"ignorado"` + `info`; nada é enviado | Nenhum |

@@ -735,7 +735,9 @@ registrar("T23 vendido, reservado e despublicado pela URL direta → não encont
     assert.ok(!r.texto.includes(imovel.descricao), `${onde}: contém a descrição`);
     assert.ok(!r.texto.includes(`R$ ${imovel.precoReais.toLocaleString("pt-BR")}`), `${onde}: contém o preço`);
     assert.ok(!r.texto.includes(`/${ref}-1.jpg`), `${onde}: contém foto do imóvel`);
-    assert.equal(metaDoHead(r.texto, "og:title"), null, `${onde}: tem metadados do imóvel`);
+    // F4 (VOG AC1, decisão do usuário): a página de imóvel indisponível é de loja e leva os
+    // metadados do catálogo; que nada do imóvel entra neles é provado pela V17.
+    assert.equal(metaDoHead(r.texto, "og:title"), `${loja.nome} — imóveis`, `${onde}: og:title do catálogo da loja`);
     assert.match(r.texto, /<meta name="robots" content="noindex/, `${onde}: sem noindex`);
   }
 });
@@ -1383,6 +1385,113 @@ registrar("V16 o tipo do imóvel aparece no texto visível de cada card (grade) 
     const titulo = `${rotulo(imovel.tipo)} em ${imovel.bairro}`;
     assert.ok(htmlB.includes(`>${titulo}<`), `B ${imovel.referencia}: falta o título "${titulo}"`);
   }
+});
+
+// ── Fechamento do lote, rodada F4: metadados do imóvel indisponível, preço do card e espaço sem foto ──
+
+registrar("V17 imóvel indisponível: metadados do catálogo da loja e nenhum dado do imóvel pedido (VOG AC1, AC2, AC6; VSEG AC4, AC5)", async (ctx) => {
+  const { a, b, c, d } = ctx.fixture.lojas;
+  const cabecalhos = { "user-agent": UA_WHATSAPP };
+  const chaves = [
+    "og:title", "og:description", "og:url", "og:image", "og:image:width", "og:image:height",
+    "twitter:card", "twitter:title", "twitter:description", "twitter:image",
+  ];
+  type Caso = { loja: typeof a; ref: string; imovel: (typeof a.imoveis)[number] | null };
+  const casos: Caso[] = [
+    ...a.imoveis.filter((x) => !x.visivel).map((imovel) => ({ loja: a, ref: imovel.referencia.toLowerCase(), imovel })),
+    ...b.imoveis.filter((x) => !x.visivel).map((imovel) => ({ loja: b, ref: imovel.referencia.toLowerCase(), imovel })),
+    ...d.imoveis.filter((x) => !x.visivel).map((imovel) => ({ loja: d, ref: imovel.referencia.toLowerCase(), imovel })),
+    { loja: a, ref: "ap-9999", imovel: null },
+    { loja: a, ref: "ref_invalida%24", imovel: null },
+    // AP-0007 existe só na A: sob o slug da B é imóvel indisponível, sem nada da A.
+    { loja: b, ref: "ap-0007", imovel: a.imoveis.find((x) => x.referencia === "AP-0007") ?? null },
+  ];
+  assert.ok(casos.length >= 10);
+
+  const cabeca = (texto: string) => {
+    const fim = texto.indexOf("</head>");
+    assert.ok(fim > 0, "a resposta não tem </head>");
+    return texto.slice(0, fim);
+  };
+
+  for (const loja of [a, b, d]) {
+    const catalogo = await ctx.pedir(`/c/${loja.slug}`, { cabecalhos });
+    for (const caso of casos.filter((x) => x.loja === loja)) {
+      const r = await ctx.pedir(`/c/${loja.slug}/imovel/${caso.ref}`, { cabecalhos });
+      const onde = `${loja.slug}/${caso.ref}`;
+      assert.ok(htmlVisivel(r.texto).includes("Este imóvel não está mais disponível."), `${onde}: não é a página de imóvel indisponível`);
+      for (const chave of chaves) {
+        assert.equal(metaDoHead(r.texto, chave), metaDoHead(catalogo.texto, chave), `${onde}: ${chave} diferente do catálogo da loja`);
+      }
+      assert.equal(metaDoHead(r.texto, "og:url"), `${ctx.base}/c/${loja.slug}`, `${onde}: og:url`);
+      assert.ok(cabeca(r.texto).includes(`<title>${loja.nome} — imóveis</title>`), `${onde}: <title> do catálogo`);
+
+      // Nada do imóvel pedido (nem a referência na URL) nos metadados do <head>.
+      const head = cabeca(r.texto);
+      assert.ok(!head.includes("/imovel/"), `${onde}: a URL do imóvel está nos metadados`);
+      if (caso.imovel) {
+        for (const dado of [
+          caso.imovel.referencia,
+          caso.imovel.referencia.toLowerCase(),
+          caso.imovel.descricao,
+          caso.imovel.bairro,
+          `R$ ${caso.imovel.precoReais.toLocaleString("pt-BR")}`,
+        ]) {
+          assert.ok(!head.includes(dado), `${onde}: "${dado}" nos metadados`);
+        }
+      }
+    }
+  }
+
+  // Loja inativa: página neutra, sem metadados de marca (VCAT AC9).
+  const inativa = await ctx.pedir(`/c/${c.slug}/imovel/ap-0001`, { cabecalhos });
+  for (const chave of ["og:title", "og:description", "og:url"]) {
+    assert.equal(metaDoHead(inativa.texto, chave), null, `loja inativa: ${chave}`);
+  }
+  assert.ok(!cabeca(inativa.texto).includes(c.nome), "loja inativa: nome nos metadados");
+});
+
+registrar("V18 o preço do imóvel aparece como texto visível em cada card da grade e em cada linha do editorial (VCAT AC6)", async (ctx) => {
+  const { a, b } = ctx.fixture.lojas;
+  const reais = (centavos: bigint) => `R$ ${(centavos / 100n).toLocaleString("pt-BR")}`;
+  const precos = async (tenantId: string) =>
+    new Map(
+      (
+        await ctx.db
+          .select({ referencia: properties.reference, preco: properties.priceCents })
+          .from(properties)
+          .where(eq(properties.tenantId, tenantId))
+      ).map((x) => [x.referencia.toLowerCase(), reais(x.preco)])
+    );
+  const precosDaA = await precos(a.id);
+  const htmlA = textoLimpo((await ctx.pedir(`/c/${a.slug}`)).texto);
+  for (const ref of ordemDoCatalogo(a.imoveis).slice(0, 24)) {
+    const preco = precosDaA.get(ref);
+    assert.ok(preco, `A ${ref}: sem preço no banco`);
+    assert.ok(htmlA.includes(`>${preco}<`), `A ${ref}: falta o texto visível ${preco}`);
+  }
+  const precosDaB = await precos(b.id);
+  const htmlB = textoLimpo((await ctx.pedir(`/c/${b.slug}`)).texto);
+  for (const ref of ordemDoCatalogo(b.imoveis)) {
+    const preco = precosDaB.get(ref);
+    assert.ok(preco && htmlB.includes(`>${preco}<`), `B ${ref}: falta o texto visível ${preco}`);
+  }
+});
+
+registrar("V19 imóvel sem foto: a moldura de proporção e o ícone estão no card do catálogo e na página do imóvel (VITEM AC6)", async (ctx) => {
+  const { a } = ctx.fixture.lojas;
+  const conferir = (html: string, onde: string) => {
+    const texto = textoLimpo(html);
+    const indice = texto.indexOf("Sem foto");
+    assert.ok(indice >= 0, `${onde}: falta o texto "Sem foto"`);
+    const moldura = texto.lastIndexOf("astryx-aspect-ratio", indice);
+    assert.ok(moldura >= 0, `${onde}: o espaço sem foto está fora da moldura de proporção`);
+    const trecho = texto.slice(moldura, indice);
+    assert.ok(trecho.includes("<svg"), `${onde}: o espaço sem foto não tem ícone`);
+    assert.ok(!trecho.includes("<img"), `${onde}: a moldura do imóvel sem foto tem <img>`);
+  };
+  conferir((await ctx.pedir(`/c/${a.slug}/imovel/ap-0005`)).texto, "imóvel AP-0005");
+  conferir((await ctx.pedir(`/c/${a.slug}`)).texto, "card de AP-0005 no catálogo");
 });
 
 // ── Globais: olham tudo o que as asserções acima (e as das tasks seguintes) pediram ──

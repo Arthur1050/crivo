@@ -2,6 +2,7 @@
 
 import { Pagination } from "@astryxdesign/core/Pagination";
 import { usePathname, useRouter } from "next/navigation";
+import { urlDaPagina } from "../../lib/catalogo";
 
 interface Props {
   pagina: number;
@@ -24,7 +25,7 @@ export function PaginacaoDoCatalogo({ pagina, total, porPagina }: Props) {
       page={pagina}
       totalItems={total}
       pageSize={porPagina}
-      onChange={(destino) => roteador.push(destino === 1 ? caminho : `${caminho}?pagina=${destino}`)}
+      onChange={(destino) => roteador.push(urlDaPagina(caminho, destino))}
     />
   );
 }
