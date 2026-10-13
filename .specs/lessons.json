@@ -4,7 +4,7 @@
   "window_days": 45,
   "quarantine_threshold": 2,
   "prune_requires_confirmation": true,
-  "next_id": 85,
+  "next_id": 88,
   "lessons": [
     {
       "id": "L-001",
@@ -1374,6 +1374,63 @@
       ],
       "created": "2026-10-12T14:23:06Z",
       "last_seen": "2026-10-12T14:23:06Z"
+    },
+    {
+      "id": "L-085",
+      "key": "surviving_mutant::ac de ausencia nenhuma rota de escrita alem de uma sem style sem robots txt nem sitemap so se prova com inventario estatico dos arquivos e teste que reprova o arquivo a mais teste de comportamento nao enxerga a rota ou o arquivo extra",
+      "text": "AC de ausência (nenhuma rota de escrita além de uma, sem style, sem robots.txt nem sitemap) só se prova com inventário estático dos arquivos e teste que reprova o arquivo a mais: teste de comportamento não enxerga a rota ou o arquivo extra.",
+      "signal": "surviving_mutant",
+      "scope": "testing/spec",
+      "status": "confirmed",
+      "features": [
+        "lote-16b-vitrine-app"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "src/lib/__tests__/vitrine-superficie.test.ts:1 (testing/spec)",
+        "Revisao de fechamento L16b (AD-045, 2026-10-13): promovida; AC de ausencia sobre conjunto aberto (segunda rota de escrita, style cru) so morreu no inventario estatico; S1 (robots.ts) sobreviveu a tudo ate a F2; o e2e V9 cobre so as URLs conhecidas. Distinta da L-081 (caso vazio na fixture)."
+      ],
+      "created": "2026-10-13T03:33:04Z",
+      "last_seen": "2026-10-13T03:33:04Z"
+    },
+    {
+      "id": "L-086",
+      "key": "surviving_mutant::quando o mesmo valor aparece em atributo de acessibilidade aria label e no texto visivel a assercao includes casa com o atributo e deixa viva a remocao do texto ancore no no de texto valor nao no html inteiro",
+      "text": "Quando o mesmo valor aparece em atributo de acessibilidade (aria-label) e no texto visível, a asserção `includes` casa com o atributo e deixa viva a remoção do texto: ancore no nó de texto (`>valor<`), não no HTML inteiro.",
+      "signal": "surviving_mutant",
+      "scope": "testing/e2e",
+      "status": "confirmed",
+      "features": [
+        "lote-16b-vitrine-app"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "scripts/vitrine-e2e.ts:1 (testing/e2e)",
+        "Revisao de fechamento L16b (AD-045, 2026-10-13): promovida; distinta da L-074 (script e head): o aria-label esta no mesmo no do card, entao recortar a regiao nao basta; X1 so morreu com >R$ n< (V18, e2e:1454)."
+      ],
+      "created": "2026-10-13T03:33:04Z",
+      "last_seen": "2026-10-13T03:33:04Z"
+    },
+    {
+      "id": "L-087",
+      "key": "spec_precision_gap::ac do tipo em toda pagina de loja precisa enumerar os estados de pagina indisponivel vazio erro um teste de ausencia escrito para evitar vazamento metadado nulo pode contradizer o ac prove a ausencia do dado sensivel diretamente varredura do head nao a ausencia do campo",
+      "text": "AC do tipo 'em toda página de loja' precisa enumerar os estados de página (indisponível, vazio, erro): um teste de ausência escrito para evitar vazamento (metadado nulo) pode contradizer o AC; prove a ausência do dado sensível diretamente (varredura do head), não a ausência do campo.",
+      "signal": "spec_precision_gap",
+      "scope": "spec/testing",
+      "status": "confirmed",
+      "features": [
+        "lote-16b-vitrine-app"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "vitrine/app/c/[slug]/imovel/[ref]/page.tsx:1 (spec/testing)",
+        "Revisao de fechamento L16b (AD-045, 2026-10-13): promovida; a T23 exigia og:title nulo no imovel indisponivel e contradizia a VOG AC1 ('em toda pagina de loja'), custando a rodada F4; V17 varre o head pelo dado do imovel e page.tsx:42-45 devolve o metadado do catalogo."
+      ],
+      "created": "2026-10-13T03:33:05Z",
+      "last_seen": "2026-10-13T03:33:05Z"
     }
   ]
 }

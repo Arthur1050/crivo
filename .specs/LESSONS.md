@@ -392,6 +392,24 @@ Corroborated across multiple features. Safe to apply as guidance.
 - evidence: scripts/vitrine-e2e.ts:1 (testing/e2e) (+1 more)
 - last seen: 2026-10-12T14:23:06Z
 
+### L-085 - AC de ausência (nenhuma rota de escrita além de uma, sem style, sem robots.txt nem sitemap) só se prova com inventário estático dos arquivos e teste que reprova o arquivo a mais: teste de comportamento não enxerga a rota ou o arquivo extra.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `testing/spec` · harmful: 0
+- features: lote-16b-vitrine-app
+- evidence: src/lib/__tests__/vitrine-superficie.test.ts:1 (testing/spec) (+1 more)
+- last seen: 2026-10-13T03:33:04Z
+
+### L-086 - Quando o mesmo valor aparece em atributo de acessibilidade (aria-label) e no texto visível, a asserção `includes` casa com o atributo e deixa viva a remoção do texto: ancore no nó de texto (`>valor<`), não no HTML inteiro.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `testing/e2e` · harmful: 0
+- features: lote-16b-vitrine-app
+- evidence: scripts/vitrine-e2e.ts:1 (testing/e2e) (+1 more)
+- last seen: 2026-10-13T03:33:04Z
+
+### L-087 - AC do tipo 'em toda página de loja' precisa enumerar os estados de página (indisponível, vazio, erro): um teste de ausência escrito para evitar vazamento (metadado nulo) pode contradizer o AC; prove a ausência do dado sensível diretamente (varredura do head), não a ausência do campo.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `spec/testing` · harmful: 0
+- features: lote-16b-vitrine-app
+- evidence: vitrine/app/c/[slug]/imovel/[ref]/page.tsx:1 (spec/testing) (+1 more)
+- last seen: 2026-10-13T03:33:05Z
+
 ## Candidates (under observation - do NOT load as guidance yet)
 
 Seen once or not yet corroborated. Tracked, not trusted.
