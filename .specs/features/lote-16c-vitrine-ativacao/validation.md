@@ -175,3 +175,11 @@ RESULTADO: tudo conforme (F18 confirmada).
 ## Resumo da Phase 1 (T0 a T5)
 
 Schema (T1), views (T2) e papel (T3) estão em produção, a senha foi definida pelo usuário (T4) e a conferência por catálogo passou (T5). O índice `document_categories_tenant_id_lower_name_idx` existe (conferido na T1; o `drizzle-kit push` nunca rodou em produção). Falta a Phase 2: T15 (usuário), T6 (Full e push), T16, T17 e T18.
+
+## Preparo da renomeação na Vercel (T15, 2026-10-17, ação do usuário)
+
+**Confirmação do usuário (2026-10-17, no chat):** "T15 feita (2026-10-17): criei KRIVO_OPERATOR_ALERT_EMAIL no Production do CRM com o mesmo valor da CRIVO_OPERATOR_ALERT_EMAIL (a antiga continua) e ajustei o nome de exibição do RESEND_FROM para Krivo. Nenhum valor foi compartilhado."
+
+O usuário criou `KRIVO_OPERATOR_ALERT_EMAIL` no Production do CRM com o valor da variável antiga, que fica até a T18, e ajustou o nome de exibição de `RESEND_FROM` para Krivo (ATIV-07 AC1). O executor não leu nem registrou nenhum valor e não consultou o painel. O CRM atual ignora a variável nova, então nada muda até o push da T6.
+
+**Rollback:** remover `KRIVO_OPERATOR_ALERT_EMAIL` e restaurar o nome de exibição anterior de `RESEND_FROM`.

@@ -203,7 +203,7 @@ T13 → T14
 
 **Done when**:
 
-- [ ] Usuário confirma os dois nomes de variável e o `RESEND_FROM`; rollback = remover a variável nova e restaurar o `RESEND_FROM`
+- [x] Usuário confirma os dois nomes de variável e o `RESEND_FROM`; rollback = remover a variável nova e restaurar o `RESEND_FROM` (confirmado em 2026-10-17)
 
 **Tests**: none
 **Gate**: registro
