@@ -110,3 +110,32 @@ COMMIT feito.
 **Resultado (ATIV-02):** colunas das duas views conferidas contra `STOREFRONT_VIEW_COLUMNS` (`src/lib/storefront-contract.ts`), `security_barrier` nas duas, views vazias porque nenhuma loja está ativa. O papel `krivo_vitrine` ainda não existe.
 
 **Rollback:** `DROP SCHEMA vitrine CASCADE;` (remove as views e nada mais; a tabela e a coluna da T1 ficam).
+
+## Papel e grants em produção (T3, 2026-10-17)
+
+**Autorização do usuário (2026-10-17, no chat):** "Autorizo a T3 (2026-10-17): criar em produção, por SQL e sem senha, o papel krivo_vitrine e os dois grants (script l16c-t3-papel, uma transação, conferência antes do COMMIT). Rollback: REVOKE ALL ON SCHEMA vitrine FROM krivo_vitrine; DROP OWNED BY krivo_vitrine; DROP ROLE krivo_vitrine."
+
+**Comando:** `npx tsx scratch/l16c-t3-papel.ts --alvo=producao` (script temporário em `scratch/`, fora do git). Aplica só a seção 3 de `scripts/vitrine/vitrine.sql` (14 linhas, sha256 `920959f316278fa9…`): `create role krivo_vitrine login` (só se não existir, por SQL, nunca pelo console do Neon), `alter role … set default_transaction_read_only = on`, `alter role … set statement_timeout = '5s'`, `grant usage on schema vitrine` e `grant select on vitrine.lojas, vitrine.imoveis`. **Sem senha** (o script aborta se a fatia contiver `password`). Uma transação com `lock_timeout` de 5 s; a conferência vem antes do `COMMIT` e qualquer divergência faz `ROLLBACK`. Antes de produção, o mesmo script foi provado no banco de teste em `--simular` (sempre `ROLLBACK`); a primeira simulação falhou por uma consulta minha a `pg_authid` (exige superusuário) e foi corrigida para `pg_roles` antes de qualquer execução em produção.
+
+**Saída (sem segredo), host `ep-gentle-brook-…`:**
+
+```
+antes: {"papel":false,"schema_vitrine":true,"views":2}
+seção executada dentro da transação
+papel: {"login":true,"super":false,"createrole":false,"createdb":false,"replication":false,"bypassrls":false,
+        "config":["default_transaction_read_only=on","statement_timeout=5s"]}
+membro de: []
+grants de tabela: ["vitrine.imoveis:SELECT","vitrine.lojas:SELECT"]
+acessos: {"vitrine_usage":true,"public_create":false,"tenants_select":false,"properties_select":false,"storefronts_select":false}
+COMMIT feito.
+```
+
+**Resultado (ATIV-02 AC3):** o papel foi criado sem senha, sem atributos de privilégio e sem associação a papel algum (inclui `neon_superuser`); tem exatamente os dois grants `SELECT` e `USAGE` no schema `vitrine`; sem `CREATE` em `public` e sem `SELECT` em `tenants`, `properties` e `tenant_storefronts`. A conferência de catálogo da T5 (F18), depois da senha, repete e completa isso em leitura separada.
+
+**Rollback:**
+
+```sql
+REVOKE ALL ON SCHEMA vitrine FROM krivo_vitrine;
+DROP OWNED BY krivo_vitrine;
+DROP ROLE krivo_vitrine;
+```

@@ -146,7 +146,7 @@ T13 → T14
 
 **Done when**:
 
-- [ ] Saída sem erro; rollback `REVOKE ALL ON SCHEMA vitrine FROM krivo_vitrine; DROP OWNED BY krivo_vitrine; DROP ROLE krivo_vitrine;` registrado
+- [x] Saída sem erro; rollback `REVOKE ALL ON SCHEMA vitrine FROM krivo_vitrine; DROP OWNED BY krivo_vitrine; DROP ROLE krivo_vitrine;` registrado (2026-10-17: papel sem senha, dois grants, conferido antes do COMMIT)
 
 **Tests**: none
 **Gate**: registro
