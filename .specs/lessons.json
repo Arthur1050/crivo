@@ -277,24 +277,6 @@
       "last_seen": "2026-08-23T02:43:24Z"
     },
     {
-      "id": "L-017",
-      "key": "spec_deviation::confirmar a chave do rate limit nativo da biblioteca antes de escrever a ac better auth conta por ip e rota nunca por identidade",
-      "text": "Confirmar a chave do rate limit nativo da biblioteca antes de escrever a AC: better-auth conta por IP e rota, nunca por identidade.",
-      "signal": "spec_deviation",
-      "scope": "auth",
-      "status": "candidate",
-      "features": [
-        "lote-8-usuarios-papeis-atribuicao"
-      ],
-      "recurrence": 1,
-      "harmful": 0,
-      "evidence": [
-        "src/server/auth/config.ts:86 (auth)"
-      ],
-      "created": "2026-08-28T00:13:19Z",
-      "last_seen": "2026-08-28T00:13:19Z"
-    },
-    {
       "id": "L-018",
       "key": "spec_deviation::em conta unica multi tenant escrever desativacao como perda de acesso ao vinculo nunca como recusa de login global",
       "text": "Em conta unica multi-tenant, escrever desativacao como perda de acesso ao vinculo, nunca como recusa de login global.",

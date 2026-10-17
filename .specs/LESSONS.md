@@ -414,12 +414,6 @@ Corroborated across multiple features. Safe to apply as guidance.
 
 Seen once or not yet corroborated. Tracked, not trusted.
 
-### L-017 - Confirmar a chave do rate limit nativo da biblioteca antes de escrever a AC: better-auth conta por IP e rota, nunca por identidade.
-- signal: `spec_deviation` · recurrence: 1 feature(s) · scope: `auth` · harmful: 0
-- features: lote-8-usuarios-papeis-atribuicao
-- evidence: src/server/auth/config.ts:86 (auth)
-- last seen: 2026-08-28T00:13:19Z
-
 ### L-039 - When a spec requires a refusal to identify an existing resource, assert the identifier reaches the user-facing response, not only the service result.
 - signal: `ac_gap` · recurrence: 1 feature(s) · scope: `ui/errors` · harmful: 0
 - features: lote-12-conteudo-de-documentos
