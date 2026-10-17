@@ -381,3 +381,21 @@ update public.tenants set slug = 'crivo-demo', name = 'Crivo Demo', website = 'h
  where id = 'a0744420-585f-4c83-a096-2c348cb57511';
 commit;
 ```
+
+## Conferência da renomeação (T18, 2026-10-17)
+
+**Autorização:** instrução permanente do usuário ("apenas execute"). Somente leitura.
+
+**Execução real do agente depois da troca:** `crivo-agente-scheduler`, execução **4499** (trigger de 15 min, 20:30:00Z, versão nova `e31c635e` ativa, `success`). O nó `HTTP: GET /memory-resets (purga pedida pelo CRM)` chamou o CRM com `X-Krivo-Tenant` e recebeu o corpo válido `{"resets":[]}` (`executionStatus: success`, 2472 ms); sem 401. A execução anterior (4498, 20:15:00Z) ainda foi atendida pelo CRM antigo, antes da troca.
+
+**Logs do CRM em produção** (`get_runtime_logs` do `dpl_hzTEYjvfS6vRSBpKRXYWX5SGNjff`, últimos 20 min, e `get_runtime_errors`, últimos 30 min): a única entrada é o aviso `SECURITY WARNING` de SSL do `pg`, que a Vercel marca como `error` por sair em `stderr` e que existe desde 2026-08-05 (rota `/api/v1/memory-resets`); **nenhum 401 do contrato e nenhum erro de leitura de imóveis**. Logs do n8n: as execuções 4498 e 4499 do agendador terminaram em `success`.
+
+**Limite da prova:** o fluxo do `crivo-agente-principal` (mensagem de WhatsApp recebida) não foi exercitado porque exige uma mensagem real; ele recebeu a mesma troca de cabeçalho, conferida nó a nó. A próxima mensagem real de lead é a confirmação; o agendador (a cada 15 min) segue provando o contrato.
+
+**Variável antiga do alerta:** `CRIVO_OPERATOR_ALERT_EMAIL` **continua na Vercel**. Só o usuário a remove, e só depois de a nova estar em uso: a prova é o cron de manutenção das 03:00 UTC (Hobby, ±59 min) de **2026-10-18**, em que o log deve trazer `[manutencao] alerta` com o destinatário lido da `KRIVO_OPERATOR_ALERT_EMAIL`. Até lá a antiga fica.
+
+**Rollback da renomeação:** T16 (restaurar a versão anterior de cada workflow) e T17 (UPDATE inverso) conforme as seções acima; redeploy do `dpl_5fRN1TqZFC7iUWQt95iNhekgjYM8` do CRM.
+
+## Fim da janela A (2026-10-17)
+
+T0 a T6 e T15 a T18 registradas. Em produção: schema da vitrine (T1), views (T2), papel `krivo_vitrine` sem senha própria do executor (T3, senha do usuário na T4), CRM novo com o código do L16a e do L16b (T6), cabeçalho `X-Krivo-Tenant` nos 5 workflows do n8n (T16) e SQL da marca (T17). **Pendente do usuário:** remover `CRIVO_OPERATOR_ALERT_EMAIL` depois do cron de 2026-10-18 03:00 UTC; janela B (T7 a T13: projeto da vitrine na Vercel, variáveis do CRM, redeploy, configurar a imobiliária piloto, capturas, frescor e prévia do WhatsApp). Nada da T7 em diante foi iniciado.

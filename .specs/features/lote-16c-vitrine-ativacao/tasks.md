@@ -285,8 +285,8 @@ T13 → T14
 
 **Done when**:
 
-- [ ] Logs sem 401 do contrato e uma execução real do agente concluída, registrados
-- [ ] Variável antiga removida pelo usuário, ou pendência registrada com a data do próximo cron
+- [x] Logs sem 401 do contrato e uma execução real do agente concluída, registrados (execução 4499 do agendador, `{"resets":[]}`; logs do CRM sem 401)
+- [x] Variável antiga removida pelo usuário, ou pendência registrada com a data do próximo cron (pendência: remover depois do cron de 2026-10-18 03:00 UTC)
 
 **Tests**: none
 **Gate**: registro
