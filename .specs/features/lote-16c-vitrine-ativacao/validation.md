@@ -325,3 +325,25 @@ O `maintenance.integration.test.ts` (instabilidade conhecida) desta vez passou. 
 O deployment da vitrine não existe ainda (projeto separado, T7 do usuário). A branch de um bot (`sentinel-fix-cron-secret-timing-attack-…`) também tem um deployment de preview na Vercel; não é de produção e não foi tocado.
 
 **Rollback do push:** redeploy do `dpl_5fRN1TqZFC7iUWQt95iNhekgjYM8` na Vercel (a coluna e as tabelas novas são aditivas e ficam).
+
+## Cabeçalho do contrato no n8n (T16, 2026-10-17)
+
+**Autorização:** instrução permanente do usuário ("apenas execute", seção anterior). Escopo: só o nome do cabeçalho `X-Crivo-Tenant` → `X-Krivo-Tenant`; os gerados de `main` **não** foram publicados, nenhum workflow, subscription ou credencial foi criado ou ativado, e o L14b (`crivo-reengagement-contextual`, inativo) não foi tocado.
+
+**Janela:** o deployment do CRM novo ficou READY às **20:16:51Z**; a última publicação no n8n terminou às **20:18:51Z**. Janela de 2 minutos; nenhum tick do agendador (`:00`, `:15`, `:30`, `:45`) caiu dentro dela (20:15:00 antes, 20:30:00 depois).
+
+**Método:** JSON publicado de cada workflow guardado antes em `scratch/n8n-antes/` (fora do git, sem segredo; as datas `updatedAt` conferidas iguais às da leitura inicial); `update_workflow` com `setNodeParameter` em `/headerParameters` de cada nó (objeto copiado do JSON publicado, mudando só o `name`), o que cria só um **rascunho** (a produção segue na versão ativa); comparação nó a nó do rascunho com o publicado de antes (`scratch/l16c-n8n-diff.py`, que só aceita a troca do nome do cabeçalho; qualquer outra diferença em nós, conexões ou settings pararia a ação); só então `publish_workflow`.
+
+| Workflow | ID | Versão antes | Versão nova (ativa) | Nós trocados | Diferença além da marca |
+| --- | --- | --- | --- | --- | --- |
+| `crivo-agente-principal` | `0B1nqjODu7xuYYKF` | `ddb63ae8` | `9ef9ce9e` | 11 | nenhuma (65 nós, conexões e settings iguais) |
+| `crivo-agente-scheduler` | `gmIWxiRrHGIdtPub` | `f1c4ac52` | `e31c635e` | 8 | nenhuma (41 nós) |
+| `crivo-tool-responder-lead` | `Li2hgCX943zKmDXf` | `d8e9931e` | `f4f43c06` | 2 | nenhuma (expressões copiadas do JSON lido; sem comparador porque o JSON veio inline e não foi salvo) |
+| `crivo-tool-agendar-reuniao` | `2qCs6rPzmeOqan65` | `931b8a13` | `c5291b3f` | 1 | nenhuma (14 nós; a sonda também provou que a versão ativa ficou intacta até o publish) |
+| `crivo-benchmark-contexto` | `xpsD2PZQ1KoE2sA5` | `22fe002c` | `d316b342` | 1 | nenhuma (14 nós) |
+
+`get_workflow_history` mostra, para os cinco, a versão nova como a mais recente e igual à devolvida por `publish_workflow` como `activeVersionId` (`versionId` = `activeVersionId`). Os avisos de validação do `update_workflow` (nós `Google Calendar`, `Chat Memory Manager` e `OpenAI Chat Model`) já existiam e não vêm das operações. O `crivo-tool-responder-lead` tem 14 nós (o levantamento anterior listou 11 por engano).
+
+**Descoberta antes da T17:** o `tenantSlug` que o agente envia vem da Data Table `tenant_config` do n8n (`phoneNumberId` → `tenantSlug`), não do JSON dos workflows. A última execução real do principal (webhook, 2026-10-07, execução 3509) lê `triangulo`, não `crivo-demo`, então a renomeação do slug demo não afeta o agente. A tabela não é lida pelo MCP; o risco residual é uma linha `crivo-demo` na `tenant_config` (sem uso nas execuções vistas).
+
+**Rollback da T16:** para cada workflow, `restore_workflow_version` da versão "antes" (ids acima) e `publish_workflow`; se preciso, redeploy do `dpl_5fRN1TqZFC7iUWQt95iNhekgjYM8` do CRM.
