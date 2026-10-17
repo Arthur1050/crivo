@@ -147,3 +147,31 @@ DROP ROLE krivo_vitrine;
 O usuário rodou `ALTER ROLE krivo_vitrine PASSWORD '<senha>'` no editor SQL do Neon de produção e montou, para si, a URL pooler do papel (destino: `VITRINE_DATABASE_URL`, T7). O executor não viu, digitou nem registrou a senha nem a URL; o login do papel só será exercido no primeiro deployment da vitrine (T7), não por este lote.
 
 **Rollback:** `ALTER ROLE krivo_vitrine PASSWORD NULL;`
+
+## Conferência do papel em produção (T5, 2026-10-17, F18)
+
+**Autorização do usuário (2026-10-17, no chat):** "Autorizo a T5 (2026-10-17): rodar em produção a conferência do papel krivo_vitrine por consulta de catálogo, só leitura (script l16c-t5-conferencia). Se algo divergir, mostre antes de aplicar o rollback da T3. Rollback da conferência: nenhum."
+
+**Comando:** `npx tsx scratch/l16c-t5-conferencia.ts --alvo=producao` (script temporário em `scratch/`, fora do git). Uma conexão `READ ONLY`, só `select` em catálogo; não usa a senha do papel nem a URL dele. Antes de produção, o mesmo script foi validado no banco de teste.
+
+**Saída (sem segredo), host `ep-gentle-brook-…`:**
+
+```
+objetos com algum privilégio (exatamente 2 esperados): ["vitrine.imoveis:SELECT","vitrine.lojas:SELECT"]
+role_table_grants: ["vitrine.imoveis:SELECT","vitrine.lojas:SELECT"]
+schemas (usage/create): ["neon_auth:--","public:U-","vitrine:U-"]
+membro de (nenhum esperado): []
+pg_has_role(krivo_vitrine, neon_superuser, member): {"e_membro":false,"existe":true}
+papel: {"rolcanlogin":true,"rolsuper":false,"rolcreaterole":false,"rolcreatedb":false,"rolreplication":false,"rolbypassrls":false,
+        "rolconfig":["default_transaction_read_only=on","statement_timeout=5s"],"rolconnlimit":-1,"rolvaliduntil":null}
+donos das views: ["imoveis:outro","lojas:outro"]
+RESULTADO: tudo conforme (F18 confirmada).
+```
+
+**Resultado (ATIV-02 AC4 e AC5):** o papel tem **exatamente os dois grants** (`SELECT` em `vitrine.imoveis` e `vitrine.lojas`) em todos os schemas do banco, `USAGE` só em `vitrine` (e `public`, de todos) e nenhum `CREATE`; **não é membro de `neon_superuser`** nem de papel algum; `default_transaction_read_only=on` e `statement_timeout=5s`; sem atributos de privilégio; não é dono de view. Nenhuma divergência, então o rollback da T3 **não** foi aplicado.
+
+**Rollback:** nenhum (somente leitura). O rollback da T3 segue disponível, se necessário.
+
+## Resumo da Phase 1 (T0 a T5)
+
+Schema (T1), views (T2) e papel (T3) estão em produção, a senha foi definida pelo usuário (T4) e a conferência por catálogo passou (T5). O índice `document_categories_tenant_id_lower_name_idx` existe (conferido na T1; o `drizzle-kit push` nunca rodou em produção). Falta a Phase 2: T15 (usuário), T6 (Full e push), T16, T17 e T18.

@@ -184,7 +184,7 @@ T13 → T14
 
 **Done when**:
 
-- [ ] Resultados registrados; IF qualquer um divergir THEN rollback da T3 e parar antes do push
+- [x] Resultados registrados; IF qualquer um divergir THEN rollback da T3 e parar antes do push (2026-10-17: nenhum divergiu; F18 confirmada)
 
 **Tests**: none
 **Gate**: registro
