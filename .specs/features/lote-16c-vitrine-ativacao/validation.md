@@ -88,3 +88,25 @@ DROP TYPE storefront_font;
 ```
 
 O CRM em produção hoje não lê nada disso (objetos aditivos, com default), então o deploy atual não é afetado.
+
+## Views em produção (T2, 2026-10-17)
+
+**Autorização do usuário (2026-10-17, no chat):** "Autorizo a T2 (2026-10-17): aplicar em produção só a seção de schema e views do vitrine.sql (script l16c-t2-views, uma transação, conferência das colunas antes do COMMIT). Rollback: DROP SCHEMA vitrine CASCADE."
+
+**Comando:** `npx tsx scratch/l16c-t2-views.ts --alvo=producao` (script temporário em `scratch/`, fora do git). Aplica só a seção 2 de `scripts/vitrine/vitrine.sql` (55 linhas, sha256 `4c6f81041c1e7aa1…`): `create schema if not exists vitrine;` e `create or replace view vitrine.lojas` e `vitrine.imoveis`, ambas `with (security_barrier = true)`. Sem papel, grant nem senha (o script aborta se a fatia tiver `role` ou `grant`). Uma transação com `lock_timeout` de 5 s; as colunas são conferidas antes do `COMMIT`. Antes de produção, o mesmo script foi provado no banco de teste em `--simular` (sempre `ROLLBACK`).
+
+**Saída (sem segredo), host `ep-gentle-brook-…`:**
+
+```
+antes: {"tabela":true,"schema_vitrine":false,"tenants":3}
+seção executada dentro da transação
+vitrine.lojas: 17 colunas, iguais a STOREFRONT_VIEW_COLUMNS (mesma ordem): true
+vitrine.imoveis: 16 colunas, iguais a STOREFRONT_VIEW_COLUMNS (mesma ordem): true
+views e opções: [["imoveis",["security_barrier=true"]],["lojas",["security_barrier=true"]]]
+linhas nas views (dono): {"lojas":0,"imoveis":0}
+COMMIT feito.
+```
+
+**Resultado (ATIV-02):** colunas das duas views conferidas contra `STOREFRONT_VIEW_COLUMNS` (`src/lib/storefront-contract.ts`), `security_barrier` nas duas, views vazias porque nenhuma loja está ativa. O papel `krivo_vitrine` ainda não existe.
+
+**Rollback:** `DROP SCHEMA vitrine CASCADE;` (remove as views e nada mais; a tabela e a coluna da T1 ficam).

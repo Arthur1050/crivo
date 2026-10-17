@@ -127,7 +127,7 @@ T13 → T14
 
 **Done when**:
 
-- [ ] Colunas das duas views conferidas contra `STOREFRONT_VIEW_COLUMNS`; rollback `DROP SCHEMA vitrine CASCADE;` registrado
+- [x] Colunas das duas views conferidas contra `STOREFRONT_VIEW_COLUMNS`; rollback `DROP SCHEMA vitrine CASCADE;` registrado (2026-10-17: 17 e 16 colunas iguais, `security_barrier` nas duas)
 
 **Tests**: none
 **Gate**: registro
