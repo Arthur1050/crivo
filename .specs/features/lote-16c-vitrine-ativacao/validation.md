@@ -399,3 +399,18 @@ commit;
 ## Fim da janela A (2026-10-17)
 
 T0 a T6 e T15 a T18 registradas. Em produção: schema da vitrine (T1), views (T2), papel `krivo_vitrine` sem senha própria do executor (T3, senha do usuário na T4), CRM novo com o código do L16a e do L16b (T6), cabeçalho `X-Krivo-Tenant` nos 5 workflows do n8n (T16) e SQL da marca (T17). **Pendente do usuário:** remover `CRIVO_OPERATOR_ALERT_EMAIL` depois do cron de 2026-10-18 03:00 UTC; janela B (T7 a T13: projeto da vitrine na Vercel, variáveis do CRM, redeploy, configurar a imobiliária piloto, capturas, frescor e prévia do WhatsApp). Nada da T7 em diante foi iniciado.
+
+## T6: gate Full verde depois do push (2026-10-17, rodadas 3 e 4)
+
+O push já tinha sido feito com a exceção do usuário ao gate Full (seção acima). Depois, para fechar o gate de forma legítima, rodei a suíte de novo no `HEAD` `29d6242`, cujo código é idêntico ao publicado em `19fd8be` (os 4 commits locais desde o push mudaram só `.specs`; `git diff --stat 19fd8be HEAD -- . ':!.specs'` vazio), com a máquina ociosa e nenhuma outra janela nos bancos de teste.
+
+| Rodada | Resultado |
+| --- | --- |
+| 3ª `npm test` | `Test Files 1 failed | 239 passed (240)`, `Tests 3797 passed | 35 skipped (3832)`, saída 1. A única falha foi o `seed.test.ts`: `delete from "tenants"` recusado por FK `tenant_document_context_limits_tenant_id_tenants_id_fk` (23503), com 35 testes pulados. Nenhum timeout. Causa: 3 linhas de `tenant_document_context_limits` sobraram na branch do worker 3, deixadas por outro arquivo de teste (5 arquivos escrevem nessa tabela e o `seed.ts` não a limpa) |
+| Limpeza | leitura somente leitura das 5 branches de teste achou `limites_doc = 3` só no worker 3; `delete from tenant_document_context_limits` nessa tabela de teste (3 linhas), com trava contra o host de produção. Nenhum teste foi alterado, pulado ou apagado. Produção não foi tocada |
+| 4ª `npm test` | **`Test Files 240 passed (240)`, `Tests 3832 passed (3832)`, saída 0**, 1172 s, sem timeout |
+| `npm run vitrine:e2e` (depois da suíte, nunca juntos) | **`66 de 66 asserções passaram`, saída 0** |
+
+**Leitura do conjunto:** das 4 rodadas, as 2 primeiras falharam por interferência com outra janela do usuário e por carga (timeouts de 30 s que passam isolados), a 3ª por sobra de dado de um teste na branch do worker 3, e a 4ª, limpa, ficou verde. Os mesmos 240 arquivos e 3832 testes do fechamento do L16b (`dff1775`). **Ressalva de higiene (fix candidato no L16b, não feito aqui por ser código de teste):** o `seed.test.ts` falha se algum teste deixar linhas em `tenant_document_context_limits`; o `vitrine-isolamento.test.ts` (ESLint) estourou 30 s sob carga.
+
+**Resultado da T6:** `npm test` verde e `vitrine:e2e` verde no código publicado, auditoria de trailers sem ocorrência e `git push origin main` sem flags de força, como a task descreve; a ordem foi invertida (push antes do verde) por decisão do usuário, registrada acima.
