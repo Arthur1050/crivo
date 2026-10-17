@@ -68,6 +68,6 @@ Nenhuma escrita do executor em dado de produção, nenhuma variável remota cria
 1. T14.
 2. Verifier novo e independente (Opus), conforme acima. Ele grava `validation.md` sem apagar os registros das ações.
 3. `validate_state.py`. Revisão de lições (AD-028): apresente as candidatas do L16b e do L16c e não promova nenhuma (as do L16a já foram decididas em 2026-10-10: L-069 descartada, L-070 e L-071 confirmadas).
-4. Arquivamento (AD-029): `tasks.md` e `EXECUTE-PROMPT.md` para `archive/lote-16c-vitrine-ativacao/`, com `ARCHIVED.md`.
+4. Arquivamento (AD-029): `tasks.md` e `EXECUTE-PROMPT.md` para `archive/lote-16c-vitrine-ativacao/`, com `ARCHIVED.md`; apague `GOAL-PROMPT.md` (transitório, as metas de `/goal` das janelas).
 5. Atualize só o Handoff do `STATE.md`. Reporte: o que está em produção, medições de frescor (F15), prévia (F17), rollbacks disponíveis, pendências.
 6. Push dos commits de fechamento só com nova ordem explícita do usuário e nova auditoria de trailer.
