@@ -29,3 +29,24 @@ Nada em produção foi tocado. Os scripts abaixo ficam em `scratch/` (fora do gi
 - **Plano sem aplicar:** `npx drizzle-kit push --config scratch/drizzle-l16c-plano.config.ts --strict --verbose` imprime todas as instruções e aborta no prompt interativo, porque sem terminal não há como confirmar (`Interactive prompts require a TTY`). Segunda trava: a URL do script leva `options=-c default_transaction_read_only=on`; o teste `scratch/l16c-ro-check.ts` provou no banco de teste que a sessão fica somente leitura (`default_transaction_read_only = on`; escrita recusada com `25006`). Se o pooler de produção recusar o parâmetro `options`, o comando falha sem tocar em nada.
 - **Estado antes:** `scratch/l16c-t1-estado.ts` (uma conexão `READ ONLY`, só `select`) lista contagem de tenants, existência de `tenant_storefronts`, `properties.featured`, enums, schema `vitrine`, papéis `krivo_vitrine` e `crivo_vitrine` e o índice `document_categories_tenant_id_lower_name_idx`.
 - **Aviso para a T1:** no banco de teste, o plano do CLI traz só ruído antigo (9 `DROP`/`ADD CONSTRAINT` de FKs, 5 `CREATE UNIQUE INDEX` de índices que já existem, `DROP INDEX document_categories_tenant_id_lower_name_idx` e 4 trocas de `DEFAULT`). É o mesmo ruído que o L15 registrou (T11). Em produção o plano deve trazer esse ruído mais os objetos da vitrine; qualquer instrução fora de `tenant_storefronts`, dos dois enums e de `properties.featured` é gatilho de parada da T1.
+
+## Schema em produção, T1 parte 1: leitura do plano (2026-10-17)
+
+**Autorização do usuário (2026-10-17, no chat):** "Autorizo a T1 parte 1 (2026-10-17): rodar em produção só os 3 comandos somente leitura descritos (ro-check, estado e plano do drizzle-kit com --strict), sem aplicar nada. Confirmo que o DATABASE_URL do ambiente local aponta para produção. Rollback: nenhum."
+
+**Alvo:** banco de produção, host `ep-gentle-brook-…` (distinto dos hosts de teste, `ep-holy-rice-…`; os scripts abortam se coincidir).
+
+| # | Comando | Saída (sem segredo) |
+| --- | --- | --- |
+| 1 | `npx tsx scratch/l16c-ro-check.ts --alvo=producao` | `default_transaction_read_only: on`; escrita recusada com `25006` (esperado) |
+| 2 | `npx tsx scratch/l16c-t1-estado.ts --alvo=producao` | 3 tenants; `tenant_storefronts` **não existe**; `properties.featured` **não existe**; enums `storefront_*` **ausentes**; schema `vitrine` **ausente**; papéis `krivo_vitrine` e `crivo_vitrine` **ausentes**; índice `document_categories_tenant_id_lower_name_idx` **existe**; tenant de demonstração `crivo-demo` (nome antigo, T17 pendente) |
+| 3 | `L16C_ALVO=producao npx drizzle-kit push --config scratch/drizzle-l16c-plano.config.ts --strict --verbose` | Plano de 33 instruções impresso, abortado no prompt (`Interactive prompts require a TTY`); nada aplicado |
+
+**Plano do `drizzle-kit` em produção (33 instruções):**
+
+- **Dentro do escopo (5):** `CREATE TYPE storefront_font`, `CREATE TYPE storefront_layout`, `CREATE TABLE tenant_storefronts` (com os dois checks `tenant_storefronts_accent_color_check` e `tenant_storefronts_active_requires_identity_check` dentro do `CREATE TABLE`), `ALTER TABLE properties ADD COLUMN featured boolean DEFAULT false NOT NULL` e `ALTER TABLE tenant_storefronts ADD CONSTRAINT tenant_storefronts_tenant_id_tenants_id_fk` (FK para `tenants`, `ON DELETE cascade`).
+- **Fora do escopo (28), é o ruído antigo que o L15 já registrou:** 9 `DROP CONSTRAINT` e 9 `ADD CONSTRAINT` de FKs compostas (`reengagement_episodes_*` ×6, `lead_agent_state_*` ×2, `whatsapp_message_receipts_message_identity_fk`); `DROP INDEX document_categories_tenant_id_lower_name_idx` e `CREATE UNIQUE INDEX` dele; 4 `CREATE UNIQUE INDEX` de índices que já existem (`leads_tenant_id_id_idx`, `messages_tenant_id_id_idx`, `messages_receipt_identity_idx`, `whatsapp_channels_tenant_phone_idx`), que falhariam; 4 `ALTER COLUMN ... SET DEFAULT` (`lead_agent_state.asked_fields`, `lead_agent_state.opening_history`, `whatsapp_usage.expires_at`, `whatsapp_message_receipts.orphan_expires_at`).
+
+**Resultado: gatilho de parada.** O plano tem mudança além de `tenant_storefronts`, dos dois enums e de `properties.featured`, então a T1 **não foi aplicada** (AC1 de ATIV-02). Nenhuma escrita em produção. Rollback desta parte: nenhum (somente leitura).
+
+**Estado de produção depois:** idêntico ao anterior (nenhum objeto da vitrine criado; o índice de categoria continua existindo).
