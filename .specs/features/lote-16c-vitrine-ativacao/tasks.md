@@ -222,8 +222,8 @@ T13 → T14
 
 **Done when**:
 
-- [ ] Falha fora das instabilidades conhecidas ou trailer encontrado → sem push
-- [ ] Hash, commits e deployment do CRM registrados; rollback = redeploy do deployment anterior
+- [x] Falha fora das instabilidades conhecidas ou trailer encontrado → sem push (2026-10-17: a Full falhou duas vezes por carga, exceção aceita pelo usuário com o código idêntico ao da suíte verde do L16b; e2e 66 de 66; trailers: 0)
+- [x] Hash, commits e deployment do CRM registrados; rollback = redeploy do deployment anterior (`ee13d52..19fd8be`, 97 commits, `dpl_hzTEYjvfS6vRSBpKRXYWX5SGNjff` READY; rollback `dpl_5fRN1TqZFC7iUWQt95iNhekgjYM8`)
 
 **Tests**: integration
 **Gate**: full
