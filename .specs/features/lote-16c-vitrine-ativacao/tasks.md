@@ -87,7 +87,7 @@ T13 → T14
 
 **Done when**:
 
-- [ ] F14 e F16 com fonte e data; IF F14 falhar THEN parar e avisar; IF F16 falhar THEN T7 sem Ignored Build Step
+- [x] F14 e F16 com fonte e data; IF F14 falhar THEN parar e avisar; IF F16 falhar THEN T7 sem Ignored Build Step (feita em 2026-10-17, ambas confirmadas; ver `validation.md` § Gate de produção)
 
 **Tests**: none
 **Gate**: registro

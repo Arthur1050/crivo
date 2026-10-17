@@ -192,7 +192,7 @@ e medir o frescor.
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| ATIV-01 | P1: Gate de produção — AC1–AC3 | Tasks | In Tasks |
+| ATIV-01 | P1: Gate de produção — AC1–AC3 | Tasks | Done (T0, 2026-10-17) |
 | ATIV-02 | P1: Banco de produção — AC1–AC6 | Tasks | In Tasks |
 | ATIV-03 | P1: Projetos e variáveis — AC1–AC4 | Tasks | In Tasks |
 | ATIV-04 | P1: Publicação — AC1–AC3 | Tasks | In Tasks |
