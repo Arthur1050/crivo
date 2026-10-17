@@ -264,9 +264,9 @@ T13 → T14
 
 **Done when**:
 
-- [ ] IF o papel `crivo_vitrine` existir ou os dois tenants de demonstração coexistirem THEN parar (o script também aborta)
-- [ ] Linhas afetadas conferidas por consulta depois; logos carregando no CRM (`curl -I` do asset ou captura do usuário)
-- [ ] Rollback = UPDATE inverso com os valores anteriores registrados
+- [x] IF o papel `crivo_vitrine` existir ou os dois tenants de demonstração coexistirem THEN parar (o script também aborta) (nenhum dos dois ocorreu)
+- [x] Linhas afetadas conferidas por consulta depois; logos carregando no CRM (`curl -I` do asset ou captura do usuário) (5 usuários, 1 tenant, 0 logos; assets `krivo_*` 200 e `crivo_*` 404)
+- [x] Rollback = UPDATE inverso com os valores anteriores registrados (no `validation.md`)
 
 **Tests**: none
 **Gate**: registro

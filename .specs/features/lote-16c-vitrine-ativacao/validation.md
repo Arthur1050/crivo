@@ -347,3 +347,37 @@ O deployment da vitrine não existe ainda (projeto separado, T7 do usuário). A 
 **Descoberta antes da T17:** o `tenantSlug` que o agente envia vem da Data Table `tenant_config` do n8n (`phoneNumberId` → `tenantSlug`), não do JSON dos workflows. A última execução real do principal (webhook, 2026-10-07, execução 3509) lê `triangulo`, não `crivo-demo`, então a renomeação do slug demo não afeta o agente. A tabela não é lida pelo MCP; o risco residual é uma linha `crivo-demo` na `tenant_config` (sem uso nas execuções vistas).
 
 **Rollback da T16:** para cada workflow, `restore_workflow_version` da versão "antes" (ids acima) e `publish_workflow`; se preciso, redeploy do `dpl_5fRN1TqZFC7iUWQt95iNhekgjYM8` do CRM.
+
+## SQL da marca em produção (T17, 2026-10-17)
+
+**Autorização:** instrução permanente do usuário ("apenas execute"). Travas do prompt conferidas antes de aplicar: o papel `crivo_vitrine` **não** existe e os dois tenants de demonstração **não** coexistem.
+
+**Leitura antes (somente leitura, `scratch/l16c-t17-marca.ts --ver`):** papéis presentes `["krivo_vitrine"]`; tenants de demonstração `["crivo-demo"]`; 5 usuários `@crivo.com.br` (todos do tenant `crivo-demo`, e os únicos do banco); tenant `crivo-demo` (`a0744420-585f-4c83-a096-2c348cb57511`, nome `Crivo Demo`, site `https://crivo.com.br`, apresentação do agente com "Crivo Demo", logo `null`); **nenhum** tenant com `logo` contendo `crivo_white_symbol`. Valores anteriores guardados em `scratch/l16c-t17-rollback.json` (fora do git).
+
+**Comando:** `npx tsx scratch/l16c-t17-marca.ts --aplicar` (executa `scripts/brand/rename-to-krivo.sql` inteiro, com o `begin`/`commit` do próprio script), às 20:19:34Z.
+
+**Linhas afetadas, conferidas por consulta depois:**
+
+| Alvo | Linhas | Resultado |
+| --- | --- | --- |
+| `public.users` (`@crivo.com.br` → `@krivo.com.br`, tenant demo) | 5 | 5 com `@krivo.com.br`, 0 restantes com `@crivo.com.br` |
+| `public.tenants` (slug, nome, site, apresentação do `crivo-demo`) | 1 | `krivo-demo` / `Krivo Demo` / `https://krivo.com.br`; os outros 2 tenants (`triangulo`, `vale-uberaba`) intactos |
+| `public.tenants.logo` (assets antigos) | 0 | nada a trocar (todas as logos são `null`); 0 com nome antigo |
+| Papel | 0 | `krivo_vitrine` único, sem `crivo_vitrine` |
+| Contagens | — | 3 tenants, 17 usuários, 12 imóveis (iguais a antes) |
+
+**Assets da marca no CRM novo (`curl -I`, produção):** `krivo_white_symbol.png` 200 `image/png`; `krivo_white_symbol_and_tipography_horizontal.svg` e `…_vertical.svg` 200 `image/svg+xml`; os antigos `crivo_white_symbol.png` e `crivo_white_symbol_and_tipography_horizontal.png` respondem 404 (o CRM novo já não os serve).
+
+**Rollback (UPDATE inverso, valores anteriores acima):**
+
+```sql
+begin;
+update public.users set email = replace(email, '@krivo.com.br', '@crivo.com.br')
+ where id in ('7b04f4c2-3d0d-46c1-b527-9ed1813bb346', '0cef81ec-f5d4-47b5-a885-41c611464453',
+              'f15256d2-b6ab-403b-84a2-862cb5a389f5', '69a59572-0454-4f57-8f6d-c408307315a7',
+              'ef8ac13b-1ed5-4402-b9b1-3c76ec819498');
+update public.tenants set slug = 'crivo-demo', name = 'Crivo Demo', website = 'https://crivo.com.br',
+       agent_presentation_message = replace(agent_presentation_message, 'Krivo Demo', 'Crivo Demo')
+ where id = 'a0744420-585f-4c83-a096-2c348cb57511';
+commit;
+```
