@@ -38,7 +38,8 @@ prova a vitrine funcionando com dado real.
 | Quem cria o projeto da Vercel e as variáveis | Usuário, pelo painel | Envolve segredo e senha do papel; o executor nunca vê nem digita | n |
 | Quem define a senha do papel em produção | Usuário, no editor SQL do Neon, com `ALTER ROLE ... PASSWORD` | O script nunca recebe senha de produção | n |
 | Quem gera o segredo de revalidação | Usuário, com o comando local indicado na task (32 bytes aleatórios) | O executor não vê o valor | n |
-| Ordem | Gate → schema → views/papel → conferência do papel → projeto e variáveis → Full → push → configuração real → prova | Código que lê as colunas não pode ir antes delas; a vitrine não pode subir antes das views | n |
+| Ordem | Gate → schema → views/papel → conferência do papel → preparo da renomeação na Vercel → Full → push → troca do cabeçalho no n8n → SQL da marca → conferência → projeto e variáveis da vitrine → configuração real → prova | Código que lê as colunas não pode ir antes delas; a vitrine não pode subir antes das views; o CRM renomeado (AD-047) só pode ficar em produção com o n8n e o banco já ajustados | y |
+| Coordenação da renomeação para Krivo (AD-047) | Feita neste lote, antes de o código de `main` ficar em produção: variável nova do alerta criada antes do push (usuário), cabeçalho `X-Krivo-*` trocado nas versões já publicadas do n8n logo depois do deploy (executor, com autorização por workflow), SQL da marca em produção (executor, com autorização) | O push de `main` implanta o CRM na Vercel e a renomeação muda o contrato e a variável; sem coordenação o agente do n8n é recusado (401), o alerta do operador deixa de sair e o schema da vitrine não existe | y — usuário, 2026-10-17: opção (a) da auditoria de publicação, executor via MCP no n8n |
 | Imobiliária da prova | A imobiliária piloto, configurada pelo usuário | É o cliente real | n |
 | Medição do frescor | Segundos entre salvar no CRM e a página refletir, em 3 tentativas | Prova F15; o pior caso esperado é 5 min | n |
 | Rollback do deploy | Redeploy do deployment anterior pela Vercel; vitrine: pausar o projeto | Padrão do L15 | n |
@@ -120,6 +121,29 @@ trailer de atribuição.
 
 ---
 
+### P1: Renomeação para Krivo em produção ⭐ MVP
+
+**User Story**: Como responsável pelo produto, quero o CRM renomeado (AD-047) em produção sem quebrar o
+agente do n8n, o alerta do operador nem os logos.
+
+**Why P1**: O push de `main` implanta o CRM; contrato (`X-Krivo-*`), variável do alerta e assets mudaram
+de nome, e o n8n e o banco de produção ainda usam os nomes antigos (auditoria de publicação, 2026-10-17).
+
+**Acceptance Criteria**:
+
+1. WHEN o push do código for pedido THEN o usuário SHALL ter criado antes, no Production do CRM, `KRIVO_OPERATOR_ALERT_EMAIL` com o mesmo valor da variável antiga (mantida até a conferência) e ajustado o nome de exibição de `RESEND_FROM`.
+2. WHEN o deployment do CRM novo estiver pronto THEN o executor SHALL, na mesma janela, trocar `X-Crivo-*` por `X-Krivo-*` somente nas versões já publicadas dos workflows do n8n que chamam o contrato, guardando antes o JSON publicado de cada um.
+3. The executor SHALL NOT publicar os arquivos gerados da branch principal (o L14b não pode ser ativado) nem criar ou ativar workflow, subscription ou credencial.
+4. IF uma versão publicada tiver diferença além da troca de marca THEN o executor SHALL parar e reportar.
+5. WHEN a troca no n8n for feita THEN o executor SHALL conferir que `versionId` e `activeVersionId` coincidem em cada workflow e que uma execução real do agente chama o CRM sem resposta 401.
+6. WHEN o CRM novo estiver em produção THEN o executor SHALL, com autorização, aplicar `scripts/brand/rename-to-krivo.sql` depois de mostrar as linhas afetadas e gravar os valores anteriores como rollback; IF o papel `crivo_vitrine` existir THEN o executor SHALL parar.
+7. WHEN o novo nome da variável do alerta estiver em uso THEN só o usuário SHALL remover a variável antiga; até lá ela SHALL ficar.
+8. The executor SHALL registrar a janela entre o deployment pronto e o fim da troca no n8n, e para cada ação a autorização, a saída e o rollback.
+
+**Independent Test**: `validation.md` com a lista de workflows, as versões antes e depois, a saída do SQL e uma execução real sem 401.
+
+---
+
 ### P1: Prova real ⭐ MVP
 
 **User Story**: Como responsável pelo produto, quero ver a vitrine da imobiliária piloto funcionando
@@ -159,6 +183,8 @@ e medir o frescor.
 - IF o deploy da vitrine falhar THEN o executor SHALL registrar o erro do build e SHALL NOT tentar corrigir código neste lote.
 - IF o CRM subir antes do schema por engano THEN o rollback SHALL ser o redeploy do deployment anterior do CRM.
 - IF a imobiliária piloto não tiver CRECI em mãos THEN a prova real SHALL ficar pendente no Handoff, e as Phases anteriores SHALL continuar válidas.
+- IF o contrato do n8n for recusado entre o deployment do CRM e a troca do cabeçalho THEN o executor SHALL registrar o início e o fim dessa janela; o rollback SHALL ser republicar o JSON guardado e, se preciso, o redeploy do deployment anterior do CRM.
+- IF o cron do alerta ainda não tiver rodado com a variável nova THEN a remoção da variável antiga SHALL ficar pendente no Handoff com a data do próximo cron.
 
 ---
 
@@ -172,8 +198,9 @@ e medir o frescor.
 | ATIV-04 | P1: Publicação — AC1–AC3 | Tasks | In Tasks |
 | ATIV-05 | P1: Prova real — AC1–AC6 e Edge Cases | Tasks | In Tasks |
 | ATIV-06 | P2: Documentação — AC1 | Tasks | In Tasks |
+| ATIV-07 | P1: Renomeação para Krivo em produção — AC1–AC8 e Edge Cases | Tasks | In Tasks |
 
-**Coverage:** 6 total, 6 mapped to tasks, 0 unmapped.
+**Coverage:** 7 total, 7 mapped to tasks, 0 unmapped.
 
 ---
 

@@ -55,10 +55,10 @@ T0
 T0 → T1 → T2 → T3 → T4 → T5
 ```
 
-### Phase 2: Publicação
+### Phase 2: Publicação e renomeação
 
 ```
-T5 → T6 → T7 → T8 → T9
+T5 → T15 → T6 → T16 → T17 → T18 → T7 → T8 → T9
 ```
 
 ### Phase 3: Prova real
@@ -193,11 +193,30 @@ T13 → T14
 
 ---
 
-### T6: Suíte, auditoria e push (executor)
+### T15: Preparo da renomeação na Vercel (usuário)
 
-**What**: `npm test`, depois `npm run vitrine:e2e`; auditar `origin/main..HEAD` e `origin/main` inteiro por trailer de atribuição; pedir autorização com o hash e a lista de commits; `git push origin main` (deploy do CRM).
+**What**: No Production do CRM, o usuário cria `KRIVO_OPERATOR_ALERT_EMAIL` com o mesmo valor de `CRIVO_OPERATOR_ALERT_EMAIL` (a antiga fica até a T18) e ajusta o nome de exibição em `RESEND_FROM` para Krivo. O CRM atual ignora a variável nova, então nada muda até o push.
 **Where**: `.specs/features/lote-16c-vitrine-ativacao/validation.md`
 **Depends on**: T5
+**Reuses**: `docs/renomeacao-krivo.md` (passo 3)
+**Requirement**: ATIV-07
+
+**Done when**:
+
+- [ ] Usuário confirma os dois nomes de variável e o `RESEND_FROM`; rollback = remover a variável nova e restaurar o `RESEND_FROM`
+
+**Tests**: none
+**Gate**: registro
+
+**Commit**: `docs(l16): registrar o preparo da renomeação na vercel`
+
+---
+
+### T6: Suíte, auditoria e push (executor)
+
+**What**: `npm test`, depois `npm run vitrine:e2e`; auditar `origin/main..HEAD` e `origin/main` inteiro por trailer de atribuição; combinar com o usuário uma janela de baixa atividade (a T16 e a T17 rodam logo depois do deploy); pedir autorização com o hash e a lista de commits; `git push origin main` (deploy do CRM).
+**Where**: `.specs/features/lote-16c-vitrine-ativacao/validation.md`
+**Depends on**: T15
 **Reuses**: procedimento do L15 (T13)
 **Requirement**: ATIV-04
 
@@ -213,11 +232,74 @@ T13 → T14
 
 ---
 
+### T16: Cabeçalho do contrato no n8n (executor, com autorização por workflow)
+
+**What**: Logo que o deployment do CRM novo (T6) ficar pronto, em cada workflow publicado que chama o contrato (lista levantada por leitura antes da T6 e mostrada ao usuário): guardar o JSON da versão publicada em `scratch/` (fora do git, sem segredo), trocar `X-Crivo-*` por `X-Krivo-*` nos nós, publicar e conferir `versionId` = `activeVersionId` (L-032, L-061); uma execução real do agente depois deve chamar o CRM sem 401. Não publicar os gerados de `main` (L14b), não criar nem ativar workflow, subscription ou credencial.
+**Where**: `.specs/features/lote-16c-vitrine-ativacao/validation.md`
+**Depends on**: T6
+**Reuses**: `docs/renomeacao-krivo.md` (passo 4); ferramentas MCP do n8n
+**Requirement**: ATIV-07
+
+**Done when**:
+
+- [ ] Autorização do usuário por workflow, com a ação exata e o rollback na mesma mensagem
+- [ ] IF a versão publicada tiver diferença além da troca de marca THEN parar e reportar
+- [ ] `versionId` = `activeVersionId` em cada workflow alterado; execução real do agente sem 401
+- [ ] Janela entre o deployment pronto e o fim desta task registrada; rollback = republicar o JSON guardado e, se preciso, redeploy do deployment anterior do CRM
+
+**Tests**: none
+**Gate**: registro
+
+**Commit**: `docs(l16): registrar a troca do cabeçalho no n8n`
+
+---
+
+### T17: SQL da marca em produção (executor, com autorização)
+
+**What**: Mostrar por leitura as linhas que `scripts/brand/rename-to-krivo.sql` alteraria (tenant `crivo-demo`, e-mails `@crivo.com.br` desse tenant, `logo` com `crivo_white_symbol` e a existência do papel `crivo_vitrine`), gravar os valores anteriores como rollback e aplicar o script logo depois da T16 (o CRM novo já não serve os assets `.png` antigos). Mesmo meio de acesso da T1.
+**Where**: `.specs/features/lote-16c-vitrine-ativacao/validation.md`
+**Depends on**: T16
+**Reuses**: `scripts/brand/rename-to-krivo.sql`; `docs/renomeacao-krivo.md` (passo 2)
+**Requirement**: ATIV-07
+
+**Done when**:
+
+- [ ] IF o papel `crivo_vitrine` existir ou os dois tenants de demonstração coexistirem THEN parar (o script também aborta)
+- [ ] Linhas afetadas conferidas por consulta depois; logos carregando no CRM (`curl -I` do asset ou captura do usuário)
+- [ ] Rollback = UPDATE inverso com os valores anteriores registrados
+
+**Tests**: none
+**Gate**: registro
+
+**Commit**: `docs(l16): registrar o sql da marca em produção`
+
+---
+
+### T18: Conferência da renomeação e limpeza (usuário + executor)
+
+**What**: O executor confere por leitura que os logs do CRM e do n8n depois da troca não têm 401 do contrato nem erro de leitura de imóveis e que uma execução real do agente terminou; o usuário remove `CRIVO_OPERATOR_ALERT_EMAIL` da Vercel quando a variável nova estiver em uso (a prova é o cron das 03:00 UTC; se ainda não rodou, a antiga fica e a pendência vai para o Handoff com a data).
+**Where**: `.specs/features/lote-16c-vitrine-ativacao/validation.md`
+**Depends on**: T17
+**Reuses**: —
+**Requirement**: ATIV-07
+
+**Done when**:
+
+- [ ] Logs sem 401 do contrato e uma execução real do agente concluída, registrados
+- [ ] Variável antiga removida pelo usuário, ou pendência registrada com a data do próximo cron
+
+**Tests**: none
+**Gate**: registro
+
+**Commit**: `docs(l16): registrar a conferência da renomeação`
+
+---
+
 ### T7: Projeto da vitrine na Vercel (usuário)
 
 **What**: O usuário importa o repositório como novo projeto: Root Directory `vitrine`, Production com `VITRINE_DATABASE_URL` (T4), `VITRINE_REVALIDATE_SECRET` (gerado localmente com `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"`) e `VITRINE_PUBLIC_URL` (domínio `.vercel.app` do projeto); Ignored Build Step só se F16 confirmou.
 **Where**: `.specs/features/lote-16c-vitrine-ativacao/validation.md`
-**Depends on**: T6
+**Depends on**: T18
 **Reuses**: —
 **Requirement**: ATIV-03
 
@@ -372,7 +454,7 @@ Phase 0 → Phase 1 → Phase 2 → Phase 3 → Phase 4
 
 Phase 0:  T0
 Phase 1:  T1 → T2 → T3 → T4 → T5
-Phase 2:  T6 → T7 → T8 → T9
+Phase 2:  T15 → T6 → T16 → T17 → T18 → T7 → T8 → T9
 Phase 3:  T10 → T11 → T12 → T13
 Phase 4:  T14
 ```
@@ -383,7 +465,7 @@ Phase 4:  T14
 | --- | --- | --- | --- |
 | T0 | None | — | ✅ |
 | T1–T5 | anterior | T0 → T1 → T2 → T3 → T4 → T5 | ✅ |
-| T6–T9 | anterior | T5 → T6 → T7 → T8 → T9 | ✅ |
+| T15, T6–T9 | anterior | T5 → T15 → T6 → T16 → T17 → T18 → T7 → T8 → T9 | ✅ |
 | T10–T13 | anterior | T9 → T10 → T11 → T12 → T13 | ✅ |
 | T14 | T13 | T13 → T14 | ✅ |
 
@@ -391,7 +473,7 @@ Phase 4:  T14
 
 | Task | Code Layer Created/Modified | Matrix Requires | Task Says | Status |
 | --- | --- | --- | --- | --- |
-| T0–T5, T7–T14 | Ações externas e docs | none | none | ✅ |
+| T0–T5, T15, T16–T18, T7–T14 | Ações externas e docs | none | none | ✅ |
 | T6 | Suíte do código existente | integration + e2e | integration (full) | ✅ |
 
 ## Quem executa
@@ -404,7 +486,11 @@ Phase 4:  T14
 | T3 | SQL do papel e grants em produção, sem senha | executor, com autorização |
 | T4 | Senha do papel | usuário |
 | T5 | Consultas de catálogo em produção | executor, com autorização |
+| T15 | Variável do alerta e `RESEND_FROM` na Vercel | usuário |
 | T6 | `git push origin main` | executor, com autorização |
+| T16 | Cabeçalho `X-Krivo-*` nos workflows publicados do n8n | executor, com autorização por workflow |
+| T17 | SQL da marca em produção | executor, com autorização |
+| T18 | Conferência por leitura e remoção da variável antiga | executor (leitura) / usuário |
 | T7 | Projeto da vitrine e variáveis | usuário |
 | T8 | Variáveis do CRM | usuário |
 | T9 | Redeploy do CRM | usuário |

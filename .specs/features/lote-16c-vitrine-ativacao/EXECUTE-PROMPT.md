@@ -22,7 +22,11 @@ A aprovação do lote **não** autoriza nenhuma ação externa. **Cada uma exige
 | T3 | SQL do papel e grants em produção, sem senha | executor, com autorização |
 | T4 | `ALTER ROLE krivo_vitrine PASSWORD` no editor SQL do Neon | usuário |
 | T5 | Consultas de catálogo em produção (leitura) | executor, com autorização |
-| T6 | Full + auditoria de trailer + `git push origin main` | executor, com autorização |
+| T15 | Variável `KRIVO_OPERATOR_ALERT_EMAIL` e `RESEND_FROM` na Vercel (a antiga fica) | usuário |
+| T6 | Full + auditoria de trailer + `git push origin main` (deploy do CRM, em janela combinada) | executor, com autorização |
+| T16 | Troca `X-Crivo-*` → `X-Krivo-*` nas versões já publicadas dos workflows do n8n (MCP) | executor, com autorização por workflow |
+| T17 | `scripts/brand/rename-to-krivo.sql` em produção | executor, com autorização |
+| T18 | Conferência por leitura; o usuário remove a variável antiga | executor (leitura) / usuário |
 | T7 | Projeto da vitrine na Vercel com as 3 variáveis | usuário |
 | T8 | Variáveis do CRM | usuário |
 | T9 | Redeploy do CRM | usuário |
@@ -31,7 +35,7 @@ A aprovação do lote **não** autoriza nenhuma ação externa. **Cada uma exige
 | T12 | Mudar o status de um imóvel / medir o tempo | usuário / executor |
 | T13 | Prévia do link no WhatsApp | usuário |
 
-Nenhuma escrita do executor em dado de produção, nenhuma variável remota criada pelo executor, nenhuma escrita no n8n.
+Nenhuma escrita do executor em dado de produção, nenhuma variável remota criada pelo executor e nenhuma escrita no n8n, **exceto** as duas autorizadas acima: a troca de marca nas versões publicadas do n8n (T16) e o SQL da marca (T17), cada uma com autorização no momento, ação exata e rollback.
 
 ## Leia só isto antes de começar
 
@@ -44,16 +48,17 @@ Nenhuma escrita do executor em dado de produção, nenhuma variável remota cria
 
 | Janela | Tasks | Termina quando |
 | --- | --- | --- |
-| A | T0–T6 (gate, banco de produção, push) | Push feito e registrado, ou parada registrada |
+| A | T0–T6 e T15–T18 (gate, banco de produção, preparo da renomeação, push, n8n, SQL da marca, conferência) | Push, T16, T17 e T18 registrados, ou parada registrada |
 | B | T7–T13 (Vercel, configuração, prova) | Medições e prévia registradas |
 | C | T14 + fechamento | Verifier PASS, arquivamento feito |
 
 ## Regras de produção
 
-- **Ordem fixa**: schema (T1) → views (T2) → papel (T3) → senha (T4) → conferência (T5) → Full e push (T6) → projeto da vitrine (T7) → variáveis e redeploy do CRM (T8, T9). Código que lê `tenant_storefronts` não sobe antes da T1; a vitrine não sobe antes das views.
+- **Ordem fixa**: schema (T1) → views (T2) → papel (T3) → senha (T4) → conferência (T5) → preparo da renomeação (T15) → Full e push (T6) → cabeçalho no n8n (T16) → SQL da marca (T17) → conferência (T18) → projeto da vitrine (T7) → variáveis e redeploy do CRM (T8, T9). Código que lê `tenant_storefronts` não sobe antes da T1; a vitrine não sobe antes das views.
 - **T1**: mostre o plano do `drizzle-kit` ao usuário antes de aplicar; qualquer mudança além de `tenant_storefronts`, dos dois enums e de `properties.featured` → pare. Confira os checks em `pg_constraint` (o push não aplica check; o SQL da vitrine os adiciona).
 - **T5**: se o papel tiver qualquer grant além dos dois, associação a `neon_superuser` ou faltar `default_transaction_read_only`, aplique o rollback da T3 e pare antes do push.
 - **T6**: `npm test` e `npm run vitrine:e2e` uma vez cada, nunca juntos. Instabilidades conhecidas: timeout de `DOCLIM-01 AC8` e de `maintenance.integration.test.ts`. Antes do push, audite `origin/main..HEAD` **e** `origin/main` inteiro por trailer (AD-014). Peça autorização com o hash e a lista de commits.
+- **Renomeação (AD-047, T15–T18)**: o push de `main` implanta o CRM na Vercel e a renomeação muda o contrato (`X-Krivo-*`), a variável do alerta e os assets. Sem T15 feita não há push. Combine a janela com o usuário e rode T16 e T17 logo depois do deployment pronto; registre o início e o fim da janela. Antes da T6, levante por leitura (MCP do n8n) a lista dos workflows publicados que usam o contrato e mostre-a ao usuário. **Em cada workflow publicado, guarde antes o JSON (L-061) e aplique só a troca de marca**; se houver outra diferença, pare. **Nunca publique os gerados de `main`**: eles incluem o L14b, ainda não ativado. Não crie nem ative workflow, subscription ou credencial. A variável antiga do alerta só o usuário remove, depois de a nova estar em uso (cron de 03:00 UTC).
 - Nunca leia, digite, registre ou peça senha, segredo, token ou connection string. Nunca leia nem cite o arquivo de variáveis do ambiente local, nem escreva o nome dele em comando ou commit.
 - Capturas sem dado de lead; salvas no momento (L-054).
 - Commits em Conventional Commits com escopo `l16`, sem `Co-Authored-By`, "Generated with" ou marca de atribuição (AD-014).
