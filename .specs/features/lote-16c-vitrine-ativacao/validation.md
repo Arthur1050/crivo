@@ -183,3 +183,48 @@ Schema (T1), views (T2) e papel (T3) estão em produção, a senha foi definida 
 O usuário criou `KRIVO_OPERATOR_ALERT_EMAIL` no Production do CRM com o valor da variável antiga, que fica até a T18, e ajustou o nome de exibição de `RESEND_FROM` para Krivo (ATIV-07 AC1). O executor não leu nem registrou nenhum valor e não consultou o painel. O CRM atual ignora a variável nova, então nada muda até o push da T6.
 
 **Rollback:** remover `KRIVO_OPERATOR_ALERT_EMAIL` e restaurar o nome de exibição anterior de `RESEND_FROM`.
+
+## Suíte, auditoria e levantamento do n8n antes do push (T6, 2026-10-17)
+
+**Nada foi enviado nem escrito em produção ou no n8n nesta seção.** O `git push` não foi pedido: a Full reprovou fora das instabilidades conhecidas (gatilho de parada da T6).
+
+### Auditoria de trailers (AD-014)
+
+| Recorte | Commits | Ocorrências de `Co-Authored-By`, `Generated with`, `Claude Code`, `noreply@anthropic` |
+| --- | --- | --- |
+| `origin/main..HEAD` (a publicar) | 93 | **0** |
+| `origin/main` inteiro | 684 | **0** |
+
+`origin/main` = `ee13d52`, HEAD = `dff7b80`; o push seria fast-forward (`origin/main` é ancestral de HEAD). Os 93 commits têm um só autor e committer.
+
+### Levantamento por leitura dos workflows publicados do n8n (MCP, `get_workflow_details`)
+
+Cinco workflows ativos chamam o contrato do CRM com o cabeçalho `X-Crivo-Tenant` (só esse nome; nenhum `X-Crivo-Anchor-Message-Id` nem `X-Crivo-Agent-State-Revision` nas versões publicadas). Em todos `versionId` = `activeVersionId`:
+
+| Workflow | ID | `activeVersionId` | Nós com `X-Crivo-Tenant` |
+| --- | --- | --- | --- |
+| `crivo-agente-principal` | `0B1nqjODu7xuYYKF` | `ddb63ae8-f02f-4e6a-a1b6-3cb05d4b229b` (65 nós) | 11 |
+| `crivo-agente-scheduler` | `gmIWxiRrHGIdtPub` | `f1c4ac52-0332-4330-a112-723d60cda738` (41 nós) | 8 |
+| `crivo-tool-responder-lead` | `Li2hgCX943zKmDXf` | `d8e9931e-aced-4233-a019-f25b353ee614` | 2 |
+| `crivo-tool-agendar-reuniao` | `2qCs6rPzmeOqan65` | `931b8a13-9bbc-431b-a198-0de8e4371d80` (14 nós) | 1 |
+| `crivo-benchmark-contexto` | `xpsD2PZQ1KoE2sA5` | `22fe002c-dbda-4b0a-a068-4b69aa3998a3` (14 nós) | 1 |
+
+Fora da T16: `crivo-agente-erros` (`73Yx70RMJrpLiYQn`, ativo; só o texto `[crivo]` no assunto do e-mail, sem contrato), `crivo-reengagement-contextual` (`q3GKsdptqp58Hq6O`, L14b, **inativo**, não deve ser tocado), `crivo-smoke-memoria` e `crivo-smoke-reset` (inativos). As URLs dos nós apontam para o endereço real da Vercel (`crivo-arthur1050s-projects.vercel.app`), que continua válido e não muda (AD-047). O código do CRM lê `X-Krivo-Tenant` (`src/server/integration/auth.ts`).
+
+### Full (`npm test`), HEAD `dff7b80`, 2026-10-17 13:04 (1210 s)
+
+`npm test`: **exit 1**, `Test Files 7 failed | 233 passed (240)`, `Tests 35 failed | 3797 passed (3832)`. Mesmos 240 arquivos e 3832 testes do fechamento do L16b (que passou com exit 0 no `dff1775`); nenhum teste foi alterado, pulado ou apagado. `npm run vitrine:e2e` **não foi rodado** (a sequência para na falha).
+
+| Arquivo | Falhas | Causa vista no log |
+| --- | --- | --- |
+| `src/db/__tests__/seed.test.ts` | 19 | `delete from "conversations"`/`"messages"` no `runSeed` recusado por FK `23503` (`human_message_sends_message_id_messages_id_fk`, 8 vezes) |
+| `src/server/integration/__tests__/maintenance.integration.test.ts` | 14 | instabilidade **conhecida** (asserções de contagem 0/1 e timeout) |
+| `src/lib/__tests__/vitrine-isolamento.test.ts` | 2 | "o lint da raiz ignora vitrine/…": ESLint estourou 30 s (`Test timed out in 30000ms`) |
+| `src/server/reengagement/__tests__/tick.test.ts` | 1 | `insert into "whatsapp_channels"` com `23505` (`whatsapp_channels_phone_number_id_idx`, chave duplicada) |
+| `src/server/data/__tests__/integration-refusals.test.ts` | 1 | não detalhado |
+| `src/server/data/__tests__/conversation-reads.test.ts` | 1 | não detalhado |
+| `src/server/__tests__/actions.test.ts` | 1 | não detalhado |
+
+**Leitura somente leitura do banco de teste depois da suíte** (`scratch/l16c-t6-sobra-teste.ts`): `human_message_sends` 0, `whatsapp_channels` 0, 3 tenants (`krivo-demo`, `triangulo`, `vale-uberaba`), 0 outras conexões. Não há sobra persistente que explique as falhas de FK e de chave duplicada. Esses erros (FK pendente de outra tabela, `phone_number_id` duplicado, estouro de 30 s do ESLint) têm cara de interferência entre arquivos ou de carga durante a execução, mas **a causa não está estabelecida** e não foi reproduzida; nenhum processo de teste estava ativo depois.
+
+**Resultado:** gatilho de parada ("Full falhar fora das instabilidades conhecidas"), então a T6 **não** segue para o push. Rollback desta seção: nenhum (só leitura e testes locais).
