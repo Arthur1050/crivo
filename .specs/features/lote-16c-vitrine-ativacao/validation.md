@@ -270,3 +270,27 @@ O commit `dff7b80` (autor e committer `Arthur1050`, feito pelo usuário numa out
 **Diagnóstico (não substitui o gate):** o padrão (tenants a mais, chave duplicada, linha ausente) é de dois processos escrevendo nas mesmas branches de teste. Depois da suíte, as 5 branches de teste estão limpas (3 tenants cada, só conexões `idle` do pool). Os 7 arquivos, rodados isolados na branch base (`npx vitest run <os 7 arquivos>`, 318 s), passam: `Test Files 7 passed (7)`, `Tests 183 passed (183)`, inclusive o `maintenance.integration`. Não há como provar a origem da interferência (a outra janela do usuário estava ativa no mesmo horário).
 
 **Resultado da T6:** gatilho de parada (Full fora das instabilidades conhecidas). **Sem push.** `npm run vitrine:e2e` não foi rodado nesta rodada. Rollback: nenhum (só leitura e testes locais).
+
+## Suíte completa da T6, segunda rodada (2026-10-17): FALHOU de novo; parada por "mesma task falhando duas vezes"
+
+**Autorização do usuário (2026-10-17, no chat):** "Autorizo repetir o npm test uma vez (2026-10-17), depois o vitrine:e2e uma vez. Confirmo que nenhuma outra janela minha está usando os bancos de teste agora e que não vou rodar testes enquanto isso. Sem push: o push pedirei à parte."
+
+**Comando:** `npm test` no `HEAD` `ce6321c`, uma vez, em segundo plano (início 15:38:31 local, 1220 s). Árvore limpa antes da rodada.
+
+**Resultado:** `Test Files 2 failed | 238 passed (240)`, `Tests 3 failed | 3829 passed (3832)`, saída 1. Todas as 3 falhas são `Test timed out in 30000ms` (ou consequência de um):
+
+| Teste | Falha |
+| --- | --- |
+| `vitrine-isolamento.test.ts` > o lint da raiz ignora `vitrine/`… | timeout de 30 s (também falhou na 1ª rodada) |
+| `maintenance-alert.integration.test.ts` > alerta que lança… (AC3) | timeout de 30 s |
+| `maintenance-alert.integration.test.ts` > com a dependência, o grupo roda… | `called 2 times` (chamada pendente do teste anterior que estourou o tempo) |
+
+O `maintenance.integration.test.ts` (instabilidade conhecida) desta vez passou. Os 7 arquivos da 1ª rodada que não eram da lista conhecida (`seed`, `actions`, `conversation-reads`, `integration-refusals`, `tick`) passaram na 2ª.
+
+**Diagnóstico (não substitui o gate):**
+
+- Os dois arquivos rodados isolados (`npx vitest run` na branch base, 20 s): `Test Files 2 passed (2)`, `Tests 18 passed (18)`. O teste do ESLint leva **1,7 s** sozinho contra o timeout de 30 s dentro da suíte paralela, o que indica falta de CPU sob a carga de 4 workers e não defeito.
+- **O código testado é idêntico ao da última suíte completa verde.** Entre `dff1775` (L16b, `npm test` 240 arquivos, 3832 testes, saída 0, sem timeout, 2026-10-13) e o `HEAD` há 16 commits, e `git diff --stat dff1775 HEAD -- . ':!.specs' ':!docs'` está vazio: só `.specs` mudou.
+- Somando as duas rodadas, nenhum teste falhou de forma reproduzível: as falhas da 1ª rodada (contaminação) não se repetiram na 2ª, e as da 2ª (timeouts) passam isoladas.
+
+**Resultado da T6:** gatilhos de parada (Full fora das instabilidades conhecidas, duas vezes; mesma task falhando duas vezes). **Sem push.** `npm run vitrine:e2e` **não** foi rodado (a parada veio antes dele). Rollback: nenhum (só testes locais).
