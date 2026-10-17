@@ -139,3 +139,11 @@ REVOKE ALL ON SCHEMA vitrine FROM krivo_vitrine;
 DROP OWNED BY krivo_vitrine;
 DROP ROLE krivo_vitrine;
 ```
+
+## Senha do papel (T4, 2026-10-17, ação do usuário)
+
+**Confirmação do usuário (2026-10-17, no chat):** "T4 feita (2026-10-17): defini a senha do papel krivo_vitrine no editor SQL do Neon de produção e montei a URL pooler para mim. Nenhum valor foi compartilhado. Rollback: ALTER ROLE krivo_vitrine PASSWORD NULL."
+
+O usuário rodou `ALTER ROLE krivo_vitrine PASSWORD '<senha>'` no editor SQL do Neon de produção e montou, para si, a URL pooler do papel (destino: `VITRINE_DATABASE_URL`, T7). O executor não viu, digitou nem registrou a senha nem a URL; o login do papel só será exercido no primeiro deployment da vitrine (T7), não por este lote.
+
+**Rollback:** `ALTER ROLE krivo_vitrine PASSWORD NULL;`

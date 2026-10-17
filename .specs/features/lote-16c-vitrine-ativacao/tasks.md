@@ -165,7 +165,7 @@ T13 → T14
 
 **Done when**:
 
-- [ ] Usuário confirma; nenhum valor registrado; rollback `ALTER ROLE krivo_vitrine PASSWORD NULL;`
+- [x] Usuário confirma; nenhum valor registrado; rollback `ALTER ROLE krivo_vitrine PASSWORD NULL;` (confirmado em 2026-10-17)
 
 **Tests**: none
 **Gate**: registro
