@@ -228,3 +228,45 @@ Fora da T16: `crivo-agente-erros` (`73Yx70RMJrpLiYQn`, ativo; só o texto `[criv
 **Leitura somente leitura do banco de teste depois da suíte** (`scratch/l16c-t6-sobra-teste.ts`): `human_message_sends` 0, `whatsapp_channels` 0, 3 tenants (`krivo-demo`, `triangulo`, `vale-uberaba`), 0 outras conexões. Não há sobra persistente que explique as falhas de FK e de chave duplicada. Esses erros (FK pendente de outra tabela, `phone_number_id` duplicado, estouro de 30 s do ESLint) têm cara de interferência entre arquivos ou de carga durante a execução, mas **a causa não está estabelecida** e não foi reproduzida; nenhum processo de teste estava ativo depois.
 
 **Resultado:** gatilho de parada ("Full falhar fora das instabilidades conhecidas"), então a T6 **não** segue para o push. Rollback desta seção: nenhum (só leitura e testes locais).
+
+## Levantamento dos workflows publicados do n8n (pré-T6, 2026-10-17, somente leitura)
+
+Leitura pelo MCP do n8n (`search_workflows` e `get_workflow_details`), sem escrever. Os JSONs lidos ficaram só no cache local da ferramenta; o JSON de cada workflow será guardado em `scratch/` (fora do git) no momento da T16, logo antes de cada troca. Para cada um, `versionId` = `activeVersionId` e os nós publicados são idênticos aos do rascunho.
+
+| Workflow | ID | Ativo | Versão publicada | Nós | Nós com `X-Crivo-Tenant` | Observação |
+| --- | --- | --- | --- | --- | --- | --- |
+| `crivo-agente-principal` | `0B1nqjODu7xuYYKF` | sim | `ddb63ae8…` | 65 | 11 | chama o contrato |
+| `crivo-agente-scheduler` | `gmIWxiRrHGIdtPub` | sim | `f1c4ac52…` | 41 | 8 | chama o contrato |
+| `crivo-tool-responder-lead` | `Li2hgCX943zKmDXf` | sim | `d8e9931e…` | 11 | 2 | chama o contrato |
+| `crivo-tool-agendar-reuniao` | `2qCs6rPzmeOqan65` | sim | `931b8a13…` | 14 | 1 | chama o contrato |
+| `crivo-benchmark-contexto` | `xpsD2PZQ1KoE2sA5` | sim (webhook manual) | `22fe002c…` | 14 | 1 | só `GET /settings`; é benchmark manual, decisão do usuário se entra na T16 |
+
+**Fora da T16:** `crivo-agente-erros` (`73Yx70RMJrpLiYQn`, ativo): sem cabeçalho do contrato (só Error Trigger e Gmail). `crivo-reengagement-contextual` (`q3GKsdptqp58Hq6O`, inativo, L14b não ativado), `crivo-smoke-memoria` e `crivo-smoke-reset` (inativos): não são publicados e não serão tocados.
+
+**Diferença de marca prevista:** só o `name` do cabeçalho `X-Crivo-Tenant` → `X-Krivo-Tenant` (23 nós no total). As demais ocorrências de "crivo" ficam: o endereço real da Vercel (`crivo-arthur1050s-projects.vercel.app`, continua válido, AD-047), comentários de código que citam nomes de workflow e o path do webhook do benchmark. Nenhum workflow interpreta a URN `urn:crivo:problem:*` do CRM.
+
+**Método da T16 (a confirmar na autorização):** `update_workflow` com operações atômicas `setNodeParameter` apenas no nome do cabeçalho de cada nó, `publish_workflow` da versão nova e conferência de `versionId` = `activeVersionId`. Rollback: `restore_workflow_version` da versão anterior (ids acima) e `publish_workflow`.
+
+## Preparo da renomeação na Vercel (T15): registro do usuário
+
+O commit `dff7b80` (autor e committer `Arthur1050`, feito pelo usuário numa outra janela) registra a T15: `KRIVO_OPERATOR_ALERT_EMAIL` criada no Production do CRM com a antiga mantida, e o nome de exibição de `RESEND_FROM` ajustado. O executor não leu nem verificou valores. A confirmação da T15 nesta conversa será pedida junto com a autorização do push.
+
+## Suíte completa da T6, primeira rodada (2026-10-17): FALHOU fora das instabilidades conhecidas
+
+**Comando:** `npm test` no `HEAD` `dff7b80`, uma vez, em segundo plano (início 16:04:36 UTC, 1210 s). Nenhum push.
+
+**Resultado:** `Test Files 7 failed | 233 passed (240)`, `Tests 35 failed | 3797 passed (3832)`, saída 1.
+
+| Arquivo | Falhas | Causa vista no log |
+| --- | --- | --- |
+| `src/server/integration/__tests__/maintenance.integration.test.ts` | 9 | instabilidade conhecida (timeout) |
+| `src/lib/__tests__/vitrine-isolamento.test.ts` | 1 | `Test timed out in 30000ms` (ESLint sob carga) |
+| `src/db/__tests__/seed.test.ts` | 35 testes (suite) | `delete from "conversations"` falhou; o seed viu 5 tenants em vez de 3 |
+| `src/server/__tests__/actions.test.ts` | 1 | 3 categorias em vez de 4 |
+| `src/server/data/__tests__/conversation-reads.test.ts` | 1 | `duplicate key` em `messages_pkey` |
+| `src/server/data/__tests__/integration-refusals.test.ts` | 1 | 0 linhas em vez de 1 |
+| `src/server/reengagement/__tests__/tick.test.ts` | 1 | `23505` `phone_number_id` `430000000000011` já existe |
+
+**Diagnóstico (não substitui o gate):** o padrão (tenants a mais, chave duplicada, linha ausente) é de dois processos escrevendo nas mesmas branches de teste. Depois da suíte, as 5 branches de teste estão limpas (3 tenants cada, só conexões `idle` do pool). Os 7 arquivos, rodados isolados na branch base (`npx vitest run <os 7 arquivos>`, 318 s), passam: `Test Files 7 passed (7)`, `Tests 183 passed (183)`, inclusive o `maintenance.integration`. Não há como provar a origem da interferência (a outra janela do usuário estava ativa no mesmo horário).
+
+**Resultado da T6:** gatilho de parada (Full fora das instabilidades conhecidas). **Sem push.** `npm run vitrine:e2e` não foi rodado nesta rodada. Rollback: nenhum (só leitura e testes locais).
