@@ -245,7 +245,7 @@ T13 → T14
 - [x] Autorização do usuário por workflow, com a ação exata e o rollback na mesma mensagem (instrução permanente do usuário em 2026-10-17: "apenas execute")
 - [x] IF a versão publicada tiver diferença além da troca de marca THEN parar e reportar (nenhuma; comparador nó a nó)
 - [x] `versionId` = `activeVersionId` em cada workflow alterado; execução real do agente sem 401 (versionId = activeVersionId nos 5; a execução real sem 401 consta na T18)
-- [x] Janela entre o deployment pronto e o fim desta task registrada; rollback = republicar o JSON guardado e, se preciso, redeploy do deployment anterior do CRM (20:16:51Z a 20:18:51Z)
+- [x] Janela entre o deployment pronto e o fim desta task registrada; rollback = republicar o JSON guardado e, se preciso, redeploy do deployment anterior do CRM (20:16:51Z a 20:18:51Z); rollback real: operações inversas em `scratch/n8n-antes/reverso-<id>.json` (o histórico do n8n podou as versões antigas)
 
 **Tests**: none
 **Gate**: registro

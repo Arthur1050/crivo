@@ -346,7 +346,7 @@ O deployment da vitrine não existe ainda (projeto separado, T7 do usuário). A 
 
 **Descoberta antes da T17:** o `tenantSlug` que o agente envia vem da Data Table `tenant_config` do n8n (`phoneNumberId` → `tenantSlug`), não do JSON dos workflows. A última execução real do principal (webhook, 2026-10-07, execução 3509) lê `triangulo`, não `crivo-demo`, então a renomeação do slug demo não afeta o agente. A tabela não é lida pelo MCP; o risco residual é uma linha `crivo-demo` na `tenant_config` (sem uso nas execuções vistas).
 
-**Rollback da T16:** para cada workflow, `restore_workflow_version` da versão "antes" (ids acima) e `publish_workflow`; se preciso, redeploy do `dpl_5fRN1TqZFC7iUWQt95iNhekgjYM8` do CRM.
+**Rollback da T16 (corrigido em 2026-10-17):** **não** é mais o `restore_workflow_version`. A retenção do histórico do n8n podou as versões anteriores logo depois da troca (`get_workflow_history` mostra só a versão nova nos 5 workflows, e `get_workflow_version` da versão antiga responde "not found ... pruned"). O rollback é reverter o nome do cabeçalho com `update_workflow` (`setNodeParameter` em `/headerParameters`, restaurando `X-Crivo-Tenant` com a mesma expressão) e `publish_workflow`. As operações inversas dos 5 workflows estão prontas em `scratch/n8n-antes/reverso-<id>.json` (fora do git; geradas dos JSONs publicados de antes, e, no `crivo-tool-responder-lead`, dos valores lidos no levantamento, porque o JSON dele veio inline e não foi salvo); se preciso, também o redeploy do `dpl_5fRN1TqZFC7iUWQt95iNhekgjYM8` do CRM. Os JSONs de antes de 4 dos 5 workflows continuam em `scratch/n8n-antes/` e são a cópia de segurança.
 
 ## SQL da marca em produção (T17, 2026-10-17)
 
