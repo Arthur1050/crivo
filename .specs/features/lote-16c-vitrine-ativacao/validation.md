@@ -50,3 +50,41 @@ Nada em produção foi tocado. Os scripts abaixo ficam em `scratch/` (fora do gi
 **Resultado: gatilho de parada.** O plano tem mudança além de `tenant_storefronts`, dos dois enums e de `properties.featured`, então a T1 **não foi aplicada** (AC1 de ATIV-02). Nenhuma escrita em produção. Rollback desta parte: nenhum (somente leitura).
 
 **Estado de produção depois:** idêntico ao anterior (nenhum objeto da vitrine criado; o índice de categoria continua existindo).
+
+## Schema em produção, T1 parte 2: aplicação à mão (2026-10-17)
+
+**Autorização do usuário (2026-10-17, no chat; o botão de resposta cortou a mensagem em "document_ca", o resto da frase é o rollback do pedido):** "Autorizo a T1 parte 2 (2026-10-17): aplicar em produção, à mão, só as 5 instruções do escopo (2 enums, tenant_storefronts com os dois checks, properties.featured e a FK de tenant_storefronts), numa transação com lock_timeout de 5 s, e conferir depois os checks em pg_constraint e o índice document_ca…". O pedido do executor, na mesma conversa, trazia o rollback abaixo.
+
+**Por que à mão:** a parte 1 achou 28 instruções de ruído do `drizzle-kit` além das 5 do escopo (gatilho de parada); o usuário escolheu aplicar só as 5, o mesmo caminho do L15 (T11). O `drizzle-kit push` não foi executado em produção.
+
+**Comando:** `npx tsx scratch/l16c-t1-aplicar.ts --alvo=producao` (script temporário em `scratch/`, fora do git). Uma transação com `set local lock_timeout = '5s'`; pré-condição: aborta sem escrever se algum objeto da vitrine já existir. As 5 instruções são as do plano, copiadas literalmente: `CREATE TYPE storefront_font`, `CREATE TYPE storefront_layout`, `CREATE TABLE tenant_storefronts` (com os dois checks dentro), `ALTER TABLE properties ADD COLUMN featured boolean DEFAULT false NOT NULL` e `ALTER TABLE tenant_storefronts ADD CONSTRAINT tenant_storefronts_tenant_id_tenants_id_fk` (FK para `tenants`, `ON DELETE cascade`).
+
+**Saída (sem segredo), host `ep-gentle-brook-…`:**
+
+```
+antes: {"tabela":false,"coluna":false,"enums":0,"tenants":3,"properties":12}
+instrução 1/5 ok … instrução 5/5 ok
+COMMIT feito.
+contagens depois: {"tenants":3,"properties":12,"storefronts":0}
+```
+
+**Conferências (ATIV-02 AC2):**
+
+| Conferência | Resultado |
+| --- | --- |
+| Checks em `pg_constraint` de `tenant_storefronts` | `tenant_storefronts_accent_color_check` (c) e `tenant_storefronts_active_requires_identity_check` (c) presentes; também `tenant_storefronts_pkey` (p) e `tenant_storefronts_tenant_id_tenants_id_fk` (f). Nenhum check faltou, então não foi preciso aplicá-los pelo SQL da vitrine |
+| `properties.featured` | `boolean`, `NOT NULL`, default `false` |
+| Enums | `storefront_font = inter, montserrat, lora, playfair`; `storefront_layout = grade, editorial` |
+| Índice `document_categories_tenant_id_lower_name_idx` | **existe** (nunca foi derrubado neste caminho, então não houve recriação; a pendência do L16b fica atendida por conferência) |
+| Dados | 3 tenants e 12 imóveis, iguais a antes; `tenant_storefronts` vazia |
+
+**Rollback (ordem importa: tabela antes dos tipos):**
+
+```sql
+DROP TABLE tenant_storefronts;
+ALTER TABLE properties DROP COLUMN featured;
+DROP TYPE storefront_layout;
+DROP TYPE storefront_font;
+```
+
+O CRM em produção hoje não lê nada disso (objetos aditivos, com default), então o deploy atual não é afetado.

@@ -106,9 +106,9 @@ T13 → T14
 
 **Done when**:
 
-- [ ] IF o plano mostrar qualquer outra mudança THEN parar e reportar
-- [ ] Checks presentes; se faltarem, aplicados pelo SQL da vitrine e conferidos (L-068)
-- [ ] Rollback registrado: `DROP TABLE tenant_storefronts; ALTER TABLE properties DROP COLUMN featured; DROP TYPE storefront_layout; DROP TYPE storefront_font;`
+- [x] IF o plano mostrar qualquer outra mudança THEN parar e reportar (o plano trouxe 28 instruções de ruído, a T1 parou e o usuário autorizou aplicar à mão só as 5 do escopo, 2026-10-17)
+- [x] Checks presentes; se faltarem, aplicados pelo SQL da vitrine e conferidos (L-068) (os dois vieram no `CREATE TABLE`, conferidos em `pg_constraint`; índice de categoria conferido)
+- [x] Rollback registrado: `DROP TABLE tenant_storefronts; ALTER TABLE properties DROP COLUMN featured; DROP TYPE storefront_layout; DROP TYPE storefront_font;`
 
 **Tests**: none
 **Gate**: registro
