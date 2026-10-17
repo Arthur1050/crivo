@@ -20,3 +20,12 @@ Leitura da documentação da Vercel (`search_vercel_documentation` e `WebFetch` 
 3. O recurso de pular projetos não afetados da Vercel exige workspaces npm/yarn/pnpm/Bun; este repositório não os usa, então o caminho para a vitrine é o Ignored Build Step.
 
 **Decisão do gate:** F14 confirmada, nenhum gatilho de parada. F16 confirmada, então a T7 pode usar `ignoreCommand` (nota 1 acima). Rollback: não há ação externa a desfazer.
+
+## Preparação da T1 (2026-10-17, local, sem produção)
+
+Nada em produção foi tocado. Os scripts abaixo ficam em `scratch/` (fora do git, removidos ao fim da janela) e foram provados só no banco de teste descartável.
+
+- **`pushSchema` do `drizzle-kit/api` não serve:** no `drizzle-kit` 0.31.10 o adaptador interno descarta os parâmetros das consultas de introspecção (`drizzleInstance.execute(sql.raw(query))` sem `params`), e o plano falha com `42P02 there is no parameter $1`. O plano vem do CLI.
+- **Plano sem aplicar:** `npx drizzle-kit push --config scratch/drizzle-l16c-plano.config.ts --strict --verbose` imprime todas as instruções e aborta no prompt interativo, porque sem terminal não há como confirmar (`Interactive prompts require a TTY`). Segunda trava: a URL do script leva `options=-c default_transaction_read_only=on`; o teste `scratch/l16c-ro-check.ts` provou no banco de teste que a sessão fica somente leitura (`default_transaction_read_only = on`; escrita recusada com `25006`). Se o pooler de produção recusar o parâmetro `options`, o comando falha sem tocar em nada.
+- **Estado antes:** `scratch/l16c-t1-estado.ts` (uma conexão `READ ONLY`, só `select`) lista contagem de tenants, existência de `tenant_storefronts`, `properties.featured`, enums, schema `vitrine`, papéis `krivo_vitrine` e `crivo_vitrine` e o índice `document_categories_tenant_id_lower_name_idx`.
+- **Aviso para a T1:** no banco de teste, o plano do CLI traz só ruído antigo (9 `DROP`/`ADD CONSTRAINT` de FKs, 5 `CREATE UNIQUE INDEX` de índices que já existem, `DROP INDEX document_categories_tenant_id_lower_name_idx` e 4 trocas de `DEFAULT`). É o mesmo ruído que o L15 registrou (T11). Em produção o plano deve trazer esse ruído mais os objetos da vitrine; qualquer instrução fora de `tenant_storefronts`, dos dois enums e de `properties.featured` é gatilho de parada da T1.
