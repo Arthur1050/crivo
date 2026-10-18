@@ -286,7 +286,7 @@ T13 → T14
 **Done when**:
 
 - [x] Logs sem 401 do contrato e uma execução real do agente concluída, registrados (execução 4499 do agendador, `{"resets":[]}`; logs do CRM sem 401)
-- [x] Variável antiga removida pelo usuário, ou pendência registrada com a data do próximo cron (pendência: remover depois do cron de 2026-10-18 03:00 UTC)
+- [x] Variável antiga removida pelo usuário, ou pendência registrada com a data do próximo cron (2026-10-18: o usuário trocou `CRIVO_OPERATOR_ALERT_EMAIL` por `KRIVO_OPERATOR_ALERT_EMAIL`; a confirmação pelo log do cron só é possível no cron de 2026-10-19 03:00 UTC, porque o Hobby guarda 1 hora de log; agente principal validado por WhatsApp em 2026-10-18, execuções 4572, 4577 e 4579)
 
 **Tests**: none
 **Gate**: registro

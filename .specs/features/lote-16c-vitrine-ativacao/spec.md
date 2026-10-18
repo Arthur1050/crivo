@@ -198,7 +198,7 @@ e medir o frescor.
 | ATIV-04 | P1: Publicação — AC1–AC3 | Tasks | Done (T6, 2026-10-17) |
 | ATIV-05 | P1: Prova real — AC1–AC6 e Edge Cases | Tasks | In Tasks |
 | ATIV-06 | P2: Documentação — AC1 | Tasks | In Tasks |
-| ATIV-07 | P1: Renomeação para Krivo em produção — AC1–AC8 e Edge Cases | Tasks | Done (T15–T18, 2026-10-17); AC7 (variável antiga) pendente do usuário após o cron de 2026-10-18 |
+| ATIV-07 | P1: Renomeação para Krivo em produção — AC1–AC8 e Edge Cases | Tasks | Done (T15–T18, 2026-10-17 e 2026-10-18; variável antiga trocada pelo usuário em 2026-10-18, confirmação pelo log do cron de 2026-10-19 03:00 UTC) |
 
 **Coverage:** 7 total, 7 mapped to tasks, 0 unmapped.
 
