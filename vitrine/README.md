@@ -74,7 +74,11 @@ Trabalho visual exige captura real pela extensão do Chrome com a aba visível: 
 
 ## Deploy
 
-**Ainda não feito.** A vitrine vai como segundo projeto da Vercel, com Root Directory `vitrine`, no lote 16c (uma ação externa por task, com autorização). Antes disso, o schema `vitrine`, as views e o papel `krivo_vitrine` precisam existir em produção na ordem de `scripts/vitrine/README.md`, e as três variáveis acima definidas no projeto. Este lote não toca produção.
+Segundo projeto da Vercel (`vitrine`), com Root Directory `vitrine`, ativado no lote 16c (2026-10-18); domínio público `vitrine-kappa-tawny.vercel.app`. O schema `vitrine`, as views e o papel `krivo_vitrine` existem em produção (ordem em `scripts/vitrine/README.md`) e as três variáveis acima ficam **no projeto `vitrine`** (o CRM só precisa de `VITRINE_PUBLIC_URL` e `VITRINE_REVALIDATE_SECRET`; `VITRINE_DATABASE_URL` não vai para o CRM).
+
+**Configuração do projeto na Vercel que o build exige:** deixar **desligada** a opção "Include source files outside of the Root Directory in the Build Step" (Settings → Build and Deployment → Root Directory). Ligada, o builder define `outputFileTracingRoot` como a raiz do repositório, o Next passa a usar essa raiz também no Turbopack e compila o `proxy.ts` do CRM (`Can't resolve 'better-auth/cookies'`). Não fixe `outputFileTracingRoot` em `next.config.ts`: o deploy resolve os arquivos das funções a partir de `/vercel/path0` e falha com `ENOENT` em `.next/package.json` (registro no `validation.md` do L16c, T7).
+
+O alias `*-arthur1050s-projects.vercel.app` do projeto fica atrás da Vercel Authentication; o visitante e o crawler do WhatsApp usam o domínio público. Mudar uma variável exige novo deployment (Redeploy) para valer.
 
 ## Decisões
 

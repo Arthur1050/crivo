@@ -194,7 +194,7 @@ e medir o frescor.
 | --- | --- | --- | --- |
 | ATIV-01 | P1: Gate de produção — AC1–AC3 | Tasks | Done (T0, 2026-10-17) |
 | ATIV-02 | P1: Banco de produção — AC1–AC6 | Tasks | Done (T1–T5, 2026-10-17) |
-| ATIV-03 | P1: Projetos e variáveis — AC1–AC4 | Tasks | Done (T7–T9, 2026-10-18) |
+| ATIV-03 | P1: Projetos e variáveis — AC1–AC4 | Tasks | Partial (T8 e T9 feitas; T7 reaberta: o projeto `vitrine` está sem variáveis, G1; AC3 "mesmo segredo" só se prova pela T12, pendente) |
 | ATIV-04 | P1: Publicação — AC1–AC3 | Tasks | Done (T6, 2026-10-17) |
 | ATIV-05 | P1: Prova real — AC1–AC6 e Edge Cases | Tasks | Partial (T10 sem CRECI; T11 só o cabeçalho; T12 e T13 pendentes, 2026-10-18) |
 | ATIV-06 | P2: Documentação — AC1 | Tasks | Done (T14, 2026-10-18) |

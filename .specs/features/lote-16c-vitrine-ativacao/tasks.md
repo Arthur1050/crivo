@@ -305,7 +305,7 @@ T13 → T14
 
 **Done when**:
 
-- [ ] Usuário confirma os nomes das 3 variáveis e o primeiro deployment pronto; rollback = pausar o projeto
+- [ ] Usuário confirma os nomes das 3 variáveis e o primeiro deployment pronto; rollback = pausar o projeto (REABERTA em 2026-10-18: o primeiro deployment ficou pronto, `dpl_5inpqLkWG4w1xDJ9MB9xfc2fk3yy` e `dpl_Hk4H7cdm1o3NNnPN9v2gXE1NYEyd`, e as 3 variáveis foram lidas às 20:48Z, mas o Verifier achou o projeto `vitrine` sem nenhuma variável às ~21:44Z (G1); pendente: o usuário recriar as 3 no projeto `vitrine` e fazer Redeploy)
 
 **Tests**: none
 **Gate**: registro
@@ -324,7 +324,7 @@ T13 → T14
 
 **Done when**:
 
-- [ ] Usuário confirma os nomes; rollback = remover as duas variáveis (o CRM volta a `ignorado`)
+- [x] Usuário confirma os nomes; rollback = remover as duas variáveis (o CRM volta a `ignorado`) (2026-10-18: `VITRINE_PUBLIC_URL` e `VITRINE_REVALIDATE_SECRET` lidas pelo nome no CRM; o AC3 "mesmo segredo nos dois projetos" só se prova pela revalidação da T12, pendente)
 
 **Tests**: none
 **Gate**: registro
@@ -343,7 +343,7 @@ T13 → T14
 
 **Done when**:
 
-- [ ] Deployment pronto confirmado; rollback = redeploy do anterior
+- [x] Deployment pronto confirmado; rollback = redeploy do anterior (2026-10-18: `dpl_2vo8WTZNgYtZyPPrRhXHGo6nTC9v` READY às 20:53Z, depois das variáveis)
 
 **Tests**: none
 **Gate**: registro
@@ -362,7 +362,7 @@ T13 → T14
 
 **Done when**:
 
-- [ ] Usuário confirma a ativação; IF sem CRECI em mãos THEN Phase 3 fica pendente no Handoff (Edge Case)
+- [ ] Usuário confirma a ativação; IF sem CRECI em mãos THEN Phase 3 fica pendente no Handoff (Edge Case) (PENDENTE em 2026-10-18: o usuário não tem CRECI; `tenant_storefronts` vazia em produção)
 
 **Tests**: none
 **Gate**: registro
@@ -381,7 +381,7 @@ T13 → T14
 
 **Done when**:
 
-- [ ] Capturas versionadas na hora (L-054); cabeçalho conferido; nenhum dado de lead nas capturas
+- [ ] Capturas versionadas na hora (L-054); cabeçalho conferido; nenhum dado de lead nas capturas (PENDENTE: sem loja ativa; só o cabeçalho foi conferido por `curl -I`, 2026-10-18)
 
 **Tests**: none
 **Gate**: registro
@@ -400,7 +400,7 @@ T13 → T14
 
 **Done when**:
 
-- [ ] 3 medições registradas; IF alguma > 300 s THEN F15 não confirmada e reportada
+- [ ] 3 medições registradas; IF alguma > 300 s THEN F15 não confirmada e reportada (PENDENTE: sem loja ativa; nenhum imóvel foi tocado)
 
 **Tests**: none
 **Gate**: registro
@@ -419,7 +419,7 @@ T13 → T14
 
 **Done when**:
 
-- [ ] Captura com título e imagem versionada; IF sem prévia THEN registrar e abrir fix no lote de origem
+- [ ] Captura com título e imagem versionada; IF sem prévia THEN registrar e abrir fix no lote de origem (PENDENTE: sem loja ativa)
 
 **Tests**: none
 **Gate**: registro
@@ -438,7 +438,7 @@ T13 → T14
 
 **Done when**:
 
-- [ ] Diff dos dois arquivos revisado
+- [x] Diff dos dois arquivos revisado (`f69ab5b`, 2026-10-18)
 
 **Tests**: none
 **Gate**: registro
