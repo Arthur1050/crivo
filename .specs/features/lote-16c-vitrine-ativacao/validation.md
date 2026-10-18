@@ -461,3 +461,9 @@ O push já tinha sido feito com a exceção do usuário ao gate Full (seção ac
 **Nomes no projeto do CRM (`prj_O9vEsQZlWqMRRkaIn7llpoHh8dNx`, `filter_project_envs` sem decrypt):** `VITRINE_PUBLIC_URL` (production e preview, criada às 20:53:15Z) e `VITRINE_REVALIDATE_SECRET` (production e preview, criada às 20:52:50Z). As duas existem; o segredo é do tipo sensitive (valor inacessível ao executor). O executor não leu nem comparou valores; que o segredo do CRM seja igual ao da vitrine só se prova pelo aviso de revalidação (T12), que depende de uma loja ativa.
 
 **Rollback:** remover as duas variáveis do CRM (o CRM volta a `ignorado` nos avisos de revalidação).
+
+## Redeploy do CRM com a vitrine (T9, 2026-10-18, ação do usuário; conferência por leitura)
+
+Deployment do CRM `dpl_2vo8WTZNgYtZyPPrRhXHGo6nTC9v` (commit `9ce477a`), criado às 20:53:24Z, **READY**, nove segundos depois da última variável da T8 (20:53:15Z). O deployment anterior `dpl_9qf7qZuha3JDmYYd2Z85B7w9ZcfS` (push do `9ce477a`, 20:46:12Z) também está READY, mas é anterior às variáveis.
+
+**Rollback:** redeploy do `dpl_9qf7qZuha3JDmYYd2Z85B7w9ZcfS` ou, mais atrás, do `dpl_hzTEYjvfS6vRSBpKRXYWX5SGNjff`.
