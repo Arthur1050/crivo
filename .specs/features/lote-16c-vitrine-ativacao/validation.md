@@ -467,3 +467,38 @@ O push já tinha sido feito com a exceção do usuário ao gate Full (seção ac
 Deployment do CRM `dpl_2vo8WTZNgYtZyPPrRhXHGo6nTC9v` (commit `9ce477a`), criado às 20:53:24Z, **READY**, nove segundos depois da última variável da T8 (20:53:15Z). O deployment anterior `dpl_9qf7qZuha3JDmYYd2Z85B7w9ZcfS` (push do `9ce477a`, 20:46:12Z) também está READY, mas é anterior às variáveis.
 
 **Rollback:** redeploy do `dpl_9qf7qZuha3JDmYYd2Z85B7w9ZcfS` ou, mais atrás, do `dpl_hzTEYjvfS6vRSBpKRXYWX5SGNjff`.
+
+## Vitrine da imobiliária piloto (T10, 2026-10-18): NÃO configurada; prova real (T11 a T13) pendente
+
+**Declaração do usuário (chat, 2026-10-18):** "Não tenho CRECI. Siga à T14 e ao fechamento com a prova real (T11 a T13) pendente, como previsto no prompt." É o Edge Case da T10 (sem CRECI em mãos, a Phase 3 fica pendente no Handoff). A ativação exige CRECI e razão social (check `tenant_storefronts_active_requires_identity_check`), então nenhuma loja pôde ser ativada.
+
+**Conferência do executor (somente leitura, `scratch/l16c-b-lojas.ts`, uma conexão `READ ONLY`, host `ep-gentle-brook-…`, 2026-10-18):**
+
+```
+tenant_storefronts: []
+vitrine.lojas (slug): []
+```
+
+Nenhuma linha em `tenant_storefronts` e nenhuma loja em `vitrine.lojas`. A consulta de contagem de `vitrine.imoveis` falhou por nome de coluna da minha consulta (`column "slug" does not exist`); como a view de lojas está vazia, não afeta a conclusão e não foi repetida.
+
+**Conferência por HTTP (domínio público `vitrine-kappa-tawny.vercel.app`, `curl`, 2026-10-18):**
+
+| URL | HTTP | `X-Robots-Tag` | Conteúdo |
+| --- | --- | --- | --- |
+| `/` | 404 | `noindex, nofollow` | não encontrado do Next |
+| `/c/triangulo` | 200 | `noindex, nofollow` | corpo com "Página não encontrada" (a página sai em streaming com 200; a garantia é a interface de não encontrado, ver `vitrine/README.md`) |
+| `/c/triangulo/imovel/IM-0001` | 200 | `noindex, nofollow` | idem |
+| `/c/krivo-demo` | 200 | `noindex, nofollow` | idem |
+
+Sem `Set-Cookie` em nenhuma resposta. Reconferido cinco minutos depois (o cache da loja expira em até 300 s): continua "Página não encontrada", então não é cache.
+
+**O que isso prova e o que não prova:** a vitrine está de pé na produção, lê o banco com o papel `krivo_vitrine` sem erro (200, sem 5xx), trata loja inexistente com a página neutra e sai com `noindex, nofollow` em todas as rotas, sem cookie (ATIV-05, parte do cabeçalho da T11). **Não provados, por falta de loja ativa:** as capturas de catálogo e de item em desktop e 375 px (T11), a medição do frescor F15 (T12), a prévia do link no WhatsApp F17 (T13) e que o segredo de revalidação do CRM é igual ao da vitrine. Nenhuma escrita em produção foi feita nesta janela (o imóvel da T12 nunca foi tocado; não há nada a restaurar).
+
+**Para fechar a prova depois (pendente no Handoff):**
+
+1. No CRM, Configurações → Vitrine: CRECI, razão social, cor, fonte, layout, textos; marcar destaques; ativar. O slug da loja é o do tenant.
+2. T11: capturar catálogo e um item em desktop e 375 px pela extensão do Chrome (`save_to_disk` na hora), sem dado de lead; `curl -I` do catálogo.
+3. T12: marcar um imóvel visível como reservado e medir, em segundos a partir do clique em salvar, até `/c/<slug>/imovel/<ref>` mostrar "não encontrado" (`curl` a cada 5 s); voltar a disponível e medir; 3 rodadas; restaurar sempre o status original; acima de 300 s a F15 não se confirma.
+4. T13: digitar (sem enviar) o link do item na conversa de teste do WhatsApp Web e capturar o cartão de prévia; sem prévia, abrir fix no lote de origem (L16b).
+
+**Rollback:** nada a desfazer (nenhuma escrita).
