@@ -1,6 +1,6 @@
 # Lote 16c — Validação
 
-**Verdict:** pendente — a janela A está em execução (registro das ações externas, uma seção por task). O veredito do Verifier (janela C) entra aqui sem apagar as seções abaixo.
+**Verdict:** FAIL — o registro de T0 a T6 e T15 a T18 se sustenta, mas a releitura de produção em 2026-10-18 21:43Z contradiz dois pontos (o projeto `vitrine` não lista nenhuma variável e o `crivo-agente-scheduler` está despublicado sem registro), e `tasks.md`, ATIV-03 e o desvio de código da T7 precisam de correção (seção "Verificação independente" no fim).
 
 Regra de todas as seções: nenhum valor de variável, senha, token ou connection string é lido ou registrado.
 
@@ -502,3 +502,72 @@ Sem `Set-Cookie` em nenhuma resposta. Reconferido cinco minutos depois (o cache 
 4. T13: digitar (sem enviar) o link do item na conversa de teste do WhatsApp Web e capturar o cartão de prévia; sem prévia, abrir fix no lote de origem (L16b).
 
 **Rollback:** nada a desfazer (nenhuma escrita).
+
+## Verificação independente (Verifier Opus 5.5, 2026-10-18)
+
+**Veredito: FAIL.** Autor ≠ verificador: não escrevi nada deste lote. Sem código de produto novo, o sensor de discriminação não se aplica. Diff verificado: `6c30603^..f69ab5b` (30 commits; código só em `vitrine/next.config.ts`, líquido de `08ffe88` + `9ce477a` = 3 linhas de comentário). `origin/main` = `9ce477a`; os 5 commits de registro de `00c6cb8` a `f69ab5b` estão só no local.
+
+**O que conferi por conta própria (somente leitura, sem decrypt, sem escrita):**
+
+| Conferência | Saída |
+| --- | --- |
+| Trailers (AD-014): `git log origin/main --format=%B \| grep -icE 'co-authored-by\|generated with'` e o mesmo em `6c30603^..HEAD` (com `noreply@anthropic` e 🤖) | **0** e **0**; um só autor e committer (`Arthur1050`) |
+| Segredos: varredura do `git diff` e do `git log -p` do lote por `postgres(ql)://…@`, `npg_`, `sk_`, `re_`, JWT, `ghp_`, `Bearer`, `password=` | **0** no lote. Fora do lote, `git grep` só acha URLs de exemplo e de teste já existentes (placeholders). O prefixo do host de produção e os UUIDs do rollback da T17 não são segredo |
+| `curl -I https://vitrine-kappa-tawny.vercel.app` em `/c/triangulo`, `/c/triangulo/imovel/IM-0001` e `/` (21:43Z) | 200, 200 e 404; `X-Robots-Tag: noindex, nofollow` nas três; **sem `Set-Cookie`**; corpo de `/c/triangulo` com "Página não encontrada" (não "indisponível") |
+| `npx tsx scratch/l16c-b-lojas.ts` (`READ ONLY`, host `ep-gentle-brook-…`) | `tenant_storefronts: []`, `vitrine.lojas (slug): []`; a 3ª consulta falha com `column "slug" does not exist`, como o registro diz |
+| Vercel, deployments da `vitrine` | `dpl_8tKm…` ERROR (`49a82c0`), `dpl_BUR7…` ERROR e `dpl_Gf7k…` ERROR (`08ffe88`), `dpl_5inp…` READY e `dpl_Hk4H…` READY (`9ce477a`), igual à tabela da T7; o repositório é `Arthur1050/crivo`. O log de runtime do `dpl_Hk4H…` (últimos 30 min) traz só o aviso SSL do `pg`, ou seja, a função conecta ao banco |
+| Vercel, deployments do `crivo` | `dpl_hzTE…` (`19fd8be`) READY; `dpl_5fRN…` (`ee13d52`) READY; `dpl_2vo8…` (`9ce477a`, 20:53:24Z) READY; `dpl_9qf7…` READY. Confere com a T6 e a T9 |
+| Vercel, variáveis do `crivo` (só nomes) | `VITRINE_PUBLIC_URL` (prod+preview, 20:53:15Z), `VITRINE_REVALIDATE_SECRET` (prod e preview, 20:52:50Z), `VITRINE_DATABASE_URL` (prod e preview, 20:52:34Z), `KRIVO_OPERATOR_ALERT_EMAIL`; **`CRIVO_OPERATOR_ALERT_EMAIL` ausente**. Confere com a T8 e a T18 |
+| Vercel, variáveis da `vitrine` (só nomes; `filter_project_envs` por id e por nome, 2 vezes) | **lista vazia** (`envs: []`, `hiddenProductionEnvCount: 0`); `updatedAt` do projeto = 20:51:54Z, depois do último deployment (20:50:03Z). **Diverge da T7** |
+| n8n, `search_workflows` e `get_workflow_details` | principal, responder-lead, agendar-reuniao e benchmark ativos, sem atualização depois de 2026-10-17 20:18Z; L14b (`q3GKsdptqp58Hq6O`) inativo e intocado desde 2026-10-06. **`crivo-agente-scheduler` (`gmIWxiRrHGIdtPub`): `active: false`, `activeVersionId: null`**, `versionId` `e31c635e` (a da T16). A última execução é a **4571, 2026-10-18 14:30:00Z**; nada depois disso |
+
+### Tabela AC → evidência → situação
+
+| Req. / AC | Evidência | Situação |
+| --- | --- | --- |
+| ATIV-01 AC1–AC3 | § Gate de produção (T0): F14 e F16 com URL, `last_updated` e data | **OK** |
+| ATIV-02 AC1 | § T1 parte 1: plano de 33 instruções, 28 de ruído, parada e nada aplicado | **OK** |
+| ATIV-02 AC2 | § T1 parte 2: as 5 instruções à mão, com a autorização citada; checks conferidos em `pg_constraint` | **OK** (desvio de método autorizado pelo usuário) |
+| ATIV-02 AC3 | § T3: fatia sem `password`; papel sem senha | **OK** |
+| ATIV-02 AC4–AC5 | § T5: 2 grants, fora de `neon_superuser`, `default_transaction_read_only=on`, nenhuma divergência | **OK** (não reexecutei a consulta de catálogo; aceita pelo registro com saída) |
+| ATIV-02 AC6 | § T1 a T5: autorização citada, comando, saída e rollback | **OK** |
+| ATIV-03 AC1 | § T7; deployments da `vitrine` no mesmo repositório que compilam a pasta `vitrine/` | **OK** |
+| ATIV-03 AC2 | § T7 afirma as 3 variáveis no projeto; a releitura de hoje dá lista vazia | **FAIL**: não se reproduz (G1) |
+| ATIV-03 AC3 | § T8: os dois nomes no CRM, conferidos por mim; "mesmo segredo" não provado (o registro reconhece) | **Parcial** (G4) |
+| ATIV-03 AC4 | § T4, T7, T8: nenhum valor lido; consultas sem decrypt | **OK** |
+| ATIV-04 AC1–AC3 | § T6: duas Full vermelhas, exceção do usuário citada, push `ee13d52..19fd8be`, 97 commits, deployments; Full 4 verde e e2e 66/66 depois | **OK com ressalva R1** |
+| ATIV-05 AC1–AC4 | § T10: sem CRECI, nenhuma loja; capturas, F15 e F17 não feitas | **Pendente**, autorizado pelo Edge Case "sem CRECI" (spec.md:185, tasks.md:365) |
+| ATIV-05 AC5 | § T10 (curl) e minha releitura | **OK** |
+| ATIV-05 AC6 | § T10: nenhuma escrita; § T18 (2026-10-18): lead de teste criado em produção pelas mensagens de WhatsApp, a pedido do usuário | **OK com ressalva R3** |
+| ATIV-06 AC1 | diff do `ROADMAP-POS-PILOTO.md` e do `INDEX.md` (`f69ab5b`) | **OK com ressalva** (o gatilho "a prova real terminar" não ocorreu; os dois textos dizem que a prova está pendente). Defeitos de forma em G7 |
+| ATIV-07 AC1 | § T15: confirmação do usuário citada | **OK** |
+| ATIV-07 AC2–AC5 | § T16: JSON guardado, comparador nó a nó, `versionId` = `activeVersionId` nos 5 em 2026-10-17; execuções 4499, 4572, 4577 e 4579 sem 401 | **OK em 2026-10-17; hoje o scheduler está despublicado** (G2) |
+| ATIV-07 AC6 | § T17: travas, linhas afetadas, valores anteriores e UPDATE inverso | **OK** |
+| ATIV-07 AC7 | § T18 (2026-10-18): a remoção da variável antiga é do usuário (confirmei a ausência dela); a prova pelo cron fica para 2026-10-19 03:00 UTC | **OK com ressalva R2** |
+| ATIV-07 AC8 | § T16: janela de 20:16:51Z a 20:18:51Z | **OK** |
+| Edge Case "deploy da vitrine falhar" (spec.md:183) | § T7: erros registrados, mas o executor corrigiu código (`08ffe88`, `9ce477a`) | **Desvio sem frase do usuário registrada** (G5) |
+| Edge Case "sem CRECI" (spec.md:185) | § T10 e a linha do `INDEX.md`; **o Handoff do `STATE.md` ainda não registra** | **Parcial** (G6) |
+
+### Gaps
+
+| # | Gravidade | Gap | O que o executor deve fazer |
+| --- | --- | --- | --- |
+| G1 | **Alta** | O projeto `vitrine` não lista nenhuma variável (`filter_project_envs`, 2026-10-18 ~21:44Z), embora a T7 registre as três. O deployment no ar funciona porque foi construído às 20:50Z, antes da mudança no projeto (20:51:54Z). As três aparecem no CRM criadas entre 20:52:34Z e 20:53:15Z. **Qualquer push de `main` (inclusive o dos commits de fechamento) reimplanta a vitrine**, que subiria sem `VITRINE_DATABASE_URL` e ficaria indisponível | Não fazer push antes de resolver isto. Pedir ao usuário que confira no painel da `vitrine` (Settings → Environment Variables, e as Shared Environment Variables do time) se as três estão em Production. Se faltarem, o usuário as recria (`VITRINE_REVALIDATE_SECRET` igual ao do CRM) e faz Redeploy. Depois, registrar na § T7 a releitura só de nomes (`filter_project_envs`, sem decrypt), com a hora, e o novo deployment READY |
+| G2 | **Alta** | `crivo-agente-scheduler` está despublicado (`active: false`, `activeVersionId: null`). A última execução é a 4571 (2026-10-18 14:30Z). Nenhuma seção registra isso, e a § T18 (linha "o agendador (a cada 15 min) segue provando o contrato") ficou falsa. Lembretes, reengajamento e purga não rodam em produção | Descobrir com o usuário quem despublicou e por quê (o horário coincide com a validação por WhatsApp, por volta de 14:48Z). Registrar o fato com a hora. Se não foi intencional, o usuário decide republicar a `e31c635e`; o executor só publica com ordem explícita para isso. Corrigir a frase da § T18 com uma nota datada, sem apagar o registro |
+| G3 | Média | `tasks.md` deixou T7, T8, T9 e T14 com `[ ]`, mas a spec as dá como Done. T10 a T13 estão `[ ]` sem nota de pendência | Marcar T7, T8 e T9 `[x]` com a evidência (nomes lidos por MCP, deployments) depois de fechar o G1. Marcar T14 `[x]`. Anotar em T10 a T13 "pendente: sem CRECI (Edge Case), 2026-10-18" |
+| G4 | Média | ATIV-03 aparece como "Done" na rastreabilidade (`spec.md:197`), mas o AC2 não se reproduz (G1) e o AC3 ("mesmo segredo") e o "papel `krivo_vitrine`" do AC2 não estão provados. A § T10 afirma que a vitrine "lê o banco com o papel `krivo_vitrine`", o que a evidência não mostra: o HTTP prova a leitura das views com a credencial configurada, não qual papel a usa | Trocar o status de ATIV-03 para "Partial (AC3: igualdade do segredo só se prova pela revalidação da T12; AC2 reconferido em <data>)". Emendar a frase da § T10 com uma nota datada |
+| G5 | Média | `08ffe88` e `9ce477a` mudaram `vitrine/next.config.ts` e foram publicados (o que também reimplantou o CRM), contra o Edge Case de `spec.md:183` ("SHALL NOT tentar corrigir código neste lote") e o Out of Scope. A § T7 traz só a "Decisão delegada (CONDUÇÃO)", sem a frase do usuário que pediu a correção | Acrescentar à § T7 um bloco `SPEC_DEVIATION` com a frase literal do usuário (data e hora) que autorizou corrigir o código e publicar os dois commits, e o efeito líquido (comentário). Ou registrar que a autorização foi só a instrução permanente, se for o caso |
+| G6 | Média | O Edge Case "sem CRECI" pede a prova real pendente **no Handoff**; o Handoff do `STATE.md` ainda descreve a janela B como "próximo passo" | No fechamento, atualizar o Handoff com T7 a T9 e T14 feitas, T10 a T13 pendentes (passos 1 a 4 da § T10), G1 e G2 resolvidos ou pendentes, cron de 2026-10-19 03:00 UTC, `VITRINE_DATABASE_URL` no CRM e Ignored Build Step |
+| G7 | Baixa | Forma: (a) `INDEX.md:58`, a linha do L16a gruda "…L-071 confirmadas**Ativação (L16c, 10-17):**" sem separador; (b) a § "Conferência da renomeação (T18)", linha "Rollback da renomeação", ainda cita "restaurar a versão anterior de cada workflow", que a § T16 corrigiu (as versões foram podadas); (c) a 1ª rodada da Full está descrita duas vezes com detalhamento divergente por arquivo (seed 19 × suite de 35; maintenance 14 × 9; isolamento 2 × 1); (d) `vitrine/README.md` § deploy ainda diz "Ainda não feito" e não registra que "Include source files outside of the Root Directory" precisa ficar desligada | (a) inserir o separador; (b) e (c) acrescentar uma nota datada que aponte a versão correta, sem apagar; (d) atualizar o README da vitrine (só doc) |
+
+### Ressalvas aceitas (não bloqueiam)
+
+- **R1**: push da T6 antes do gate verde, por decisão do usuário citada na § "T6: exceção ao gate Full". O verde veio depois, no código idêntico (`git diff --stat 19fd8be HEAD -- . ':!.specs'` vazio, segundo o registro).
+- **R2**: a T16 e a T17 usaram a instrução permanente do usuário ("apenas execute") no lugar da autorização por workflow. A frase está citada; o escopo e os limites foram mantidos.
+- **R3**: a variável antiga do alerta foi removida antes da prova pelo cron. A inferência (a `KRIVO_OPERATOR_ALERT_EMAIL` existia antes do push) é razoável; a confirmação fica para 2026-10-19 03:00 UTC.
+- **R4**: lead de teste "Arthur T." criado em produção pela validação por WhatsApp, a pedido do usuário e registrado. O usuário decide se exclui.
+- **R5**: a prova real (capturas, F15, F17) fica pendente pelo Edge Case "sem CRECI". O registro é honesto sobre o que não foi provado, e a linha do `INDEX.md` e o `ROADMAP` dizem "prova real pendente".
+- **R6**: o Ignored Build Step não foi conferido, e há `VITRINE_DATABASE_URL` no CRM sem uso. Os dois estão registrados como decisão do usuário.
+- **R7**: o rollback do n8n depende de `scratch/n8n-antes/` (fora do git), porque o histórico foi podado; confirmei `get_workflow_history` do scheduler com uma só versão. O `scratch/` não pode ser apagado no arquivamento enquanto a renomeação não estiver estável.
+
+**Para reverificar:** fechar G1 a G6 (G7 pode ir junto), e então um Verifier novo relê a Vercel (nomes de variáveis da `vitrine`) e o n8n (`activeVersionId` dos 5 workflows) antes de qualquer push.
