@@ -10,6 +10,11 @@ const nextConfig: NextConfig = {
   },
   // F19: com um `package-lock.json` também na raiz do repositório, o Next
   // escolheria a raiz do repositório como raiz do Turbopack (e avisaria).
+  // As duas raízes precisam ser iguais: se divergem, o Next usa
+  // `outputFileTracingRoot`, que a Vercel preenche com a raiz do repositório
+  // (NEXT_PRIVATE_OUTPUT_TRACE_ROOT), e o Turbopack passa a compilar o
+  // `proxy.ts` do CRM (AD-025: a vitrine não tem proxy).
+  outputFileTracingRoot: path.resolve(__dirname),
   turbopack: { root: path.resolve(__dirname) },
   async headers() {
     return [
