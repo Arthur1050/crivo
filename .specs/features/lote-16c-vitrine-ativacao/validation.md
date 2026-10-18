@@ -455,3 +455,9 @@ O push já tinha sido feito com a exceção do usuário ao gate Full (seção ac
 **Observação de segurança:** o projeto do CRM também tem `VITRINE_DATABASE_URL` (production e preview), que a T8 não pede e que o CRM não lê (`src/` não a referencia fora de testes). É a connection string do papel `krivo_vitrine` num projeto que não precisa dela; recomenda-se removê-la do CRM (decisão do usuário).
 
 **Rollback:** pausar o projeto `vitrine` (`pause_project`/painel); nada no CRM ou no banco depende dele. Para voltar ao código anterior: `git revert 9ce477a 08ffe88` (só `vitrine/next.config.ts`).
+
+## Variáveis da vitrine no CRM (T8, 2026-10-18, ação do usuário; conferência por leitura)
+
+**Nomes no projeto do CRM (`prj_O9vEsQZlWqMRRkaIn7llpoHh8dNx`, `filter_project_envs` sem decrypt):** `VITRINE_PUBLIC_URL` (production e preview, criada às 20:53:15Z) e `VITRINE_REVALIDATE_SECRET` (production e preview, criada às 20:52:50Z). As duas existem; o segredo é do tipo sensitive (valor inacessível ao executor). O executor não leu nem comparou valores; que o segredo do CRM seja igual ao da vitrine só se prova pelo aviso de revalidação (T12), que depende de uma loja ativa.
+
+**Rollback:** remover as duas variáveis do CRM (o CRM volta a `ignorado` nos avisos de revalidação).
