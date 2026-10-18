@@ -305,7 +305,13 @@ sinal de cliente real. Tudo que vem antes serve o piloto que já existe; a vitri
 > **Status (2026-10-10)**: planejado em 2026-10-09 e dividido em três lotes (`features/lote-16-vitrine-publica/`
 > com `context.md` e `design.md` comuns). **L16a (lado CRM) executado** em 2026-10-09, Verifier PASS,
 > só nos bancos de teste (`features/lote-16a-vitrine-lado-crm/`, linha no `features/INDEX.md`).
-> **L16b** (projeto `vitrine/`) e **L16c** (ativação em produção) seguem futuros. O isolamento descrito
+> **L16b** (projeto `vitrine/`) executado em 2026-10-12, Verifier PASS. **L16c** (ativação em produção) executado
+> em 2026-10-17 e 2026-10-18 (`features/lote-16c-vitrine-ativacao/`, linha no `features/INDEX.md`): schema,
+> views e papel `krivo_vitrine` em produção, o código da vitrine e do CRM publicados, segundo projeto
+> `vitrine` na Vercel (domínio público `vitrine-kappa-tawny.vercel.app`, `noindex` confirmado) e a renomeação
+> para Krivo. **Prova real pendente**: nenhuma loja foi ativada em produção porque o usuário ainda não tem
+> CRECI (a ativação exige CRECI e razão social); capturas, frescor F15 e prévia do WhatsApp F17 entram quando a
+> primeira loja for ativada. O isolamento descrito
 > abaixo foi refinado pela AD-040 (o papel lê só duas views do schema `vitrine`, não a tabela de imóveis
 > e colunas de `tenants`) e o frescor pela AD-042 (perfil `vitrine` 60/60/300 s em vez de
 > `cacheLife('minutes')`); a pasta `vitrine/` neste repositório é a AD-041 e o contrato público a AD-043.
