@@ -429,3 +429,29 @@ O push já tinha sido feito com a exceção do usuário ao gate Full (seção ac
 **Resultado:** o fluxo real do agente (webhook do WhatsApp, principal, ferramenta de busca de imóveis e `responder-lead`) funciona de ponta a ponta com `X-Krivo-Tenant`, sem 401; o agendador (execução 4499) já tinha provado o contrato na T18. Fecha o "limite da prova" da seção T18 de 2026-10-17. Os workflows `crivo-tool-agendar-reuniao` e `crivo-benchmark-contexto` não foram exercitados nesta validação (a troca deles foi conferida nó a nó).
 
 **Efeito colateral em produção, a pedido do usuário:** o lead de teste "Arthur T." (número do usuário, tenant `triangulo`, status `em_qualificacao`) foi criado no CRM de produção com 2 mensagens do lead e 2 respostas do agente. O usuário pode excluí-lo pelo CRM se não quiser mantê-lo. Aba do WhatsApp fechada ao fim.
+
+## Projeto da vitrine na Vercel (T7, 2026-10-18, ação do usuário; conferência do executor por leitura)
+
+**Quem fez:** o usuário criou o projeto `vitrine` (`prj_Y8y82Mr9zbiP4GGcoK8tq56GK8oB`, time `team_OhaWvx8glCwkSeNa2sSJqQIq`, Root Directory `vitrine`, Next 16.2.11) às 20:12Z. O executor só leu (MCP da Vercel, sem decrypt) e diagnosticou o build.
+
+**Nomes das variáveis no projeto (só nomes; `filter_project_envs` sem decrypt):** `VITRINE_DATABASE_URL` e `VITRINE_REVALIDATE_SECRET` (production e preview, tipo sensitive) e `VITRINE_PUBLIC_URL` (production e preview, criada às 20:48Z). As três existem.
+
+**Deployments e causa dos erros (dois builds falharam antes do primeiro READY):**
+
+| Hora (Z) | Deployment | Resultado | Causa |
+| --- | --- | --- | --- |
+| 20:12 | `dpl_8tKmpPnzRkvyu6Ph3i2QxC6KiuhA` (49a82c0) | ERROR | Com "Include source files outside of the Root Directory" ligada, o builder da Vercel define `outputFileTracingRoot` como a raiz do repositório (`/vercel/path0`); isso diverge de `turbopack.root` e o Next passa a usar a raiz do repositório nas duas, e o Turbopack compila o `proxy.ts` do CRM (`Can't resolve 'better-auth/cookies'`) |
+| 20:24 | `dpl_BUR7pzpipDoML16J3FWGUrtEs69C` (`08ffe88`, fix do agente) | ERROR | `outputFileTracingRoot` fixado em `vitrine/` compila, mas a Vercel resolve os arquivos das funções a partir de `/vercel/path0` e falha com `ENOENT lstat '/vercel/path0/.next/package.json'` |
+| 20:36 | `dpl_Gf7kEKP4o1QLVu2oNzPghVu83u8p` (Redeploy do `08ffe88`, depois de o usuário desligar a opção) | ERROR | mesmo ENOENT: o `08ffe88` quebra o deploy com a opção ligada ou desligada |
+| 20:46 | `dpl_5inpqLkWG4w1xDJ9MB9xfc2fk3yy` (`9ce477a`, git) | **READY** | reversão do override + opção desligada |
+| 20:50 | `dpl_Hk4H7cdm1o3NNnPN9v2gXE1NYEyd` (`9ce477a`, redeploy do usuário, com `VITRINE_PUBLIC_URL`) | **READY** | — |
+
+**Decisão delegada (CONDUÇÃO):** a análise da causa foi dada a um agente Opus 5.5 (esforço alto) em duas rodadas; as duas conclusões acima são dele, com simulação local do builder da Vercel (cópia exportada com `git archive`, `NEXT_PRIVATE_OUTPUT_TRACE_ROOT` na raiz e um adaptador de captura do `onBuildComplete`). Seguida a recomendação: commit `08ffe88` (`outputFileTracingRoot` na pasta da vitrine) e, depois que falhou, a reversão `9ce477a`; no lado da Vercel, o usuário desligou a opção (única mudança de configuração, dele). Os dois commits foram publicados com `git push origin main` sem força (auditoria de trailers: 0 em `origin/main..HEAD` e 0 em `origin/main`); cada push também reimplanta o CRM.
+
+**Domínio público:** `vitrine-kappa-tawny.vercel.app` (é o valor de `og:image` que a própria vitrine emite, ou seja, o de `VITRINE_PUBLIC_URL`). O alias do projeto `vitrine-arthur1050s-projects.vercel.app` responde 302 para o login da Vercel (Vercel Authentication ligada nos aliases do projeto); só o domínio público atende o visitante e o crawler do WhatsApp.
+
+**Ignored Build Step:** não conferido (o campo não aparece no MCP de leitura). Segundo o gate da T0, só se liga depois do primeiro deployment pronto; fica registrado como conferência do usuário.
+
+**Observação de segurança:** o projeto do CRM também tem `VITRINE_DATABASE_URL` (production e preview), que a T8 não pede e que o CRM não lê (`src/` não a referencia fora de testes). É a connection string do papel `krivo_vitrine` num projeto que não precisa dela; recomenda-se removê-la do CRM (decisão do usuário).
+
+**Rollback:** pausar o projeto `vitrine` (`pause_project`/painel); nada no CRM ou no banco depende dele. Para voltar ao código anterior: `git revert 9ce477a 08ffe88` (só `vitrine/next.config.ts`).
