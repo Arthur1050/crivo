@@ -1088,3 +1088,11 @@ Nenhum gap é afirmação falsa sobre produção.
 ## Validation — veredito final do lote 16c (volta 6)
 
 **Result:** PASS (volta 6, HEAD `fc9048a`); evidência em `vitrine/src/dados/cache.ts:30` e `.specs/features/lote-16c-vitrine-ativacao/validation.md:1051`
+
+## Notas finais do executor depois da volta 6 (2026-10-19)
+
+**Y1:** a sonda da § "R15 resolvida" tem **43 amostras** (0 erros), não 21; os tempos citados (ida em 1,6 s e volta em ≤ 5,5 s) não mudam.
+
+**Y4, risco que fica registrado:** o `use cache: remote` depende de a Vercel injetar o Runtime Cache no processo. Se a plataforma deixasse de injetá-lo (ou se o plano não o incluísse), o Next cairia em silêncio no cache em memória da instância (`next/dist/server/use-cache/handlers.js:66-72`, segundo o Verifier da volta 6) e a R15 voltaria sem erro algum, só com cada visita consultando o banco. A medição de produção de 2026-10-19 mostra que hoje ele funciona (inclusive a renovação depois de 60 s, medida pela volta 6). Para detectar um retorno: repetir a medida de retenção (`pg_stat_activity` do papel `krivo_vitrine` antes e depois de 5 pedidos); a doc consultada não diz se o plano Hobby tem limite para o Runtime Cache. O rollback é `git revert e51f8c5`.
+
+**Y2 e Y3 corrigidos nos documentos:** `INDEX.md`, Handoff do `STATE.md` e `ARCHIVED.md` agora citam a 5ª e a 6ª verificação e o veredito PASS da volta 6.
