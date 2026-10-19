@@ -362,7 +362,7 @@ T13 → T14
 
 **Done when**:
 
-- [ ] Usuário confirma a ativação; IF sem CRECI em mãos THEN Phase 3 fica pendente no Handoff (Edge Case) (PENDENTE em 2026-10-18: o usuário não tem CRECI; `tenant_storefronts` vazia em produção)
+- [x] Usuário confirma a ativação; IF sem CRECI em mãos THEN Phase 3 fica pendente no Handoff (Edge Case) (2026-10-18: o usuário não tem CRECI e a Phase 3 ficou pendente; REVISADA em 2026-10-19: por pedido do usuário, o executor ativou a loja de demonstração `krivo-demo` com dados fictícios e a Phase 3 rodou com ela; a loja piloto real `triangulo` segue sem vitrine)
 
 **Tests**: none
 **Gate**: registro
@@ -381,7 +381,7 @@ T13 → T14
 
 **Done when**:
 
-- [ ] Capturas versionadas na hora (L-054); cabeçalho conferido; nenhum dado de lead nas capturas (PENDENTE: sem loja ativa; só o cabeçalho foi conferido por `curl -I`, 2026-10-18)
+- [x] Capturas versionadas na hora (L-054); cabeçalho conferido; nenhum dado de lead nas capturas (2026-10-19: 5 capturas em `capturas/t11-*` com a loja de demonstração e `curl -I` com `X-Robots-Tag: noindex, nofollow`, sem cookie)
 
 **Tests**: none
 **Gate**: registro
@@ -400,7 +400,7 @@ T13 → T14
 
 **Done when**:
 
-- [ ] 3 medições registradas; IF alguma > 300 s THEN F15 não confirmada e reportada (PENDENTE: sem loja ativa; nenhum imóvel foi tocado)
+- [x] 3 medições registradas; IF alguma > 300 s THEN F15 não confirmada e reportada (2026-10-19: 3 rodadas de ida e volta, as 6 mudanças em ≤ 2,9 s; F15 confirmada; `IM-0001` restaurado a Disponível)
 
 **Tests**: none
 **Gate**: registro
@@ -419,7 +419,7 @@ T13 → T14
 
 **Done when**:
 
-- [ ] Captura com título e imagem versionada; IF sem prévia THEN registrar e abrir fix no lote de origem (PENDENTE: sem loja ativa)
+- [x] Captura com título e imagem versionada; IF sem prévia THEN registrar e abrir fix no lote de origem (2026-10-19: `capturas/t13-previa-whatsapp.png`, F17 confirmada)
 
 **Tests**: none
 **Gate**: registro

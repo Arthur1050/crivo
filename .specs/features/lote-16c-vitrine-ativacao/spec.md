@@ -194,9 +194,9 @@ e medir o frescor.
 | --- | --- | --- | --- |
 | ATIV-01 | P1: Gate de produção — AC1–AC3 | Tasks | Done (T0, 2026-10-17) |
 | ATIV-02 | P1: Banco de produção — AC1–AC6 | Tasks | Done (T1–T5, 2026-10-17) |
-| ATIV-03 | P1: Projetos e variáveis — AC1–AC4 | Tasks | Partial (T7, T8 e T9 feitas; AC2 reconferido em 2026-10-19 com sessões `krivo_vitrine`; AC3 "mesmo segredo nos dois projetos" só se prova pela revalidação da T12, pendente) |
+| ATIV-03 | P1: Projetos e variáveis — AC1–AC4 | Tasks | Done (T7 a T9; AC2 com sessões `krivo_vitrine` em 2026-10-19; AC3 "mesmo segredo nos dois projetos" provado pela revalidação da T12 em 2026-10-19) |
 | ATIV-04 | P1: Publicação — AC1–AC3 | Tasks | Done (T6, 2026-10-17) |
-| ATIV-05 | P1: Prova real — AC1–AC6 e Edge Cases | Tasks | Partial (T10 sem CRECI; T11 só o cabeçalho; T12 e T13 pendentes, 2026-10-18) |
+| ATIV-05 | P1: Prova real — AC1–AC6 e Edge Cases | Tasks | Done com ressalva (T10 a T13 feitas em 2026-10-19 com a loja de demonstração `krivo-demo`, dados fictícios, a pedido do usuário; a loja piloto real segue sem vitrine por falta de CRECI) |
 | ATIV-06 | P2: Documentação — AC1 | Tasks | Done (T14, 2026-10-18) |
 | ATIV-07 | P1: Renomeação para Krivo em produção — AC1–AC8 e Edge Cases | Tasks | Done (T15–T18, 2026-10-17 e 2026-10-18; variável antiga trocada pelo usuário em 2026-10-18, confirmação pelo log do cron de 2026-10-19 03:00 UTC) |
 

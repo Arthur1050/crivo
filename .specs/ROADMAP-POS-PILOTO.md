@@ -309,9 +309,9 @@ sinal de cliente real. Tudo que vem antes serve o piloto que já existe; a vitri
 > em 2026-10-17 e 2026-10-18 (`features/lote-16c-vitrine-ativacao/`, linha no `features/INDEX.md`): schema,
 > views e papel `krivo_vitrine` em produção, o código da vitrine e do CRM publicados, segundo projeto
 > `vitrine` na Vercel (domínio público `vitrine-kappa-tawny.vercel.app`, `noindex` confirmado) e a renomeação
-> para Krivo. **Prova real pendente**: nenhuma loja foi ativada em produção porque o usuário ainda não tem
-> CRECI (a ativação exige CRECI e razão social); capturas, frescor F15 e prévia do WhatsApp F17 entram quando a
-> primeira loja for ativada. O isolamento descrito
+> para Krivo. **Prova real feita com a loja de demonstração** (`krivo-demo`, dados fictícios, 2026-10-19): capturas, frescor F15 (≤ 2,9 s) e
+> prévia do WhatsApp F17 confirmados. A loja piloto real continua sem vitrine porque o usuário ainda não tem CRECI
+> (a ativação exige CRECI e razão social). O isolamento descrito
 > abaixo foi refinado pela AD-040 (o papel lê só duas views do schema `vitrine`, não a tabela de imóveis
 > e colunas de `tenants`) e o frescor pela AD-042 (perfil `vitrine` 60/60/300 s em vez de
 > `cacheLife('minutes')`); a pasta `vitrine/` neste repositório é a AD-041 e o contrato público a AD-043.
