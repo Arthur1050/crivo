@@ -1,6 +1,6 @@
 # Arquivamento do L16c
 
-Fechamento em 2026-10-19 (T0 a T18; a prova real T10 a T13 foi feita com a loja de demonstração `krivo-demo`, dados fictícios, a pedido do usuário; a loja piloto real segue sem vitrine), com **PASS com ressalvas** da 2ª verificação independente (Opus 5.5, HEAD `1008ecf`) em [validation.md](validation.md). A 1ª verificação reprovou por estado externo (projeto `vitrine` sem variáveis e agendador do n8n despublicado) e foi fechada com as notas datadas do próprio `validation.md`.
+Fechamento em 2026-10-19 (T0 a T18; a prova real T10 a T13 foi feita com a loja de demonstração `krivo-demo`, dados fictícios, a pedido do usuário; a loja piloto real segue sem vitrine), com a 2ª verificação independente em **PASS com ressalvas** (Opus 5.5, HEAD `1008ecf`) e a **3ª em FAIL** (HEAD `1c88662`, limite de 3 voltas atingido) em [validation.md](validation.md): o aviso de revalidação do CRM falha em produção (`TypeError`) e o registro tinha afirmado que estava provado. Os textos foram corrigidos por notas datadas; o defeito do aviso é de configuração do usuário e o do cache da vitrine é um fix no L16b. A 1ª verificação reprovou por estado externo (projeto `vitrine` sem variáveis e agendador do n8n despublicado).
 Spec e o relatório vigente permanecem neste diretório; o design é comum ao L16 e fica em
 [../lote-16-vitrine-publica/design.md](../lote-16-vitrine-publica/design.md).
 

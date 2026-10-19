@@ -400,7 +400,7 @@ T13 → T14
 
 **Done when**:
 
-- [x] 3 medições registradas; IF alguma > 300 s THEN F15 não confirmada e reportada (2026-10-19: 3 rodadas de ida e volta, as 6 mudanças em ≤ 2,9 s; F15 confirmada; `IM-0001` restaurado a Disponível)
+- [x] 3 medições registradas; IF alguma > 300 s THEN F15 não confirmada e reportada (2026-10-19: 3 rodadas de ida e volta, as 6 mudanças em ≤ 2,9 s; F15 confirmada no tempo, mas sem o aviso de revalidação (falhou com `TypeError`, volta 3); `IM-0001` restaurado a Disponível)
 
 **Tests**: none
 **Gate**: registro
