@@ -4,7 +4,7 @@
   "window_days": 45,
   "quarantine_threshold": 2,
   "prune_requires_confirmation": true,
-  "next_id": 88,
+  "next_id": 91,
   "lessons": [
     {
       "id": "L-001",
@@ -1413,6 +1413,63 @@
       ],
       "created": "2026-10-13T03:33:05Z",
       "last_seen": "2026-10-13T03:33:05Z"
+    },
+    {
+      "id": "L-088",
+      "key": "gate_fail::em projeto da vercel com root directory numa subpasta do monorepo deixe desligada a opcao include source files outside of the root directory e nao fixe outputfiletracingroot no next config a opcao faz o turbopack compilar arquivos da raiz do repositorio o override quebra o empacotamento das funcoes com enoent em next package json e prove qualquer correcao de build num deployment de preview antes de publicar em main porque a simulacao local termina no next build e nao cobre o deploy",
+      "text": "Em projeto da Vercel com Root Directory numa subpasta do monorepo, deixe desligada a opção 'Include source files outside of the Root Directory' e não fixe outputFileTracingRoot no next.config (a opção faz o Turbopack compilar arquivos da raiz do repositório; o override quebra o empacotamento das funções com ENOENT em .next/package.json), e prove qualquer correção de build num deployment de preview antes de publicar em main, porque a simulação local termina no next build e não cobre o deploy.",
+      "signal": "gate_fail",
+      "scope": "vercel/monorepo",
+      "status": "confirmed",
+      "features": [
+        "lote-16c-vitrine-ativacao"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        ".specs/features/lote-16c-vitrine-ativacao/validation.md:441-446 (T7: dpl_8tKm e dpl_BUR7 ERROR; 08ffe88 revertido em 9ce477a) (vercel/monorepo)",
+        "Revisao de fechamento L16c (AD-045, 2026-10-19): promovida; dois builds da vitrine falharam e o fix 08ffe88, validado so por simulacao local do builder, foi publicado em main (reimplantando tambem o CRM) e revertido em 9ce477a; vitrine/README.md secao Deploy e o comentario de vitrine/next.config.ts seguem valendo."
+      ],
+      "created": "2026-10-19T03:31:10Z",
+      "last_seen": "2026-10-19T03:31:10Z"
+    },
+    {
+      "id": "L-089",
+      "key": "ac_gap::estado externo que o usuario altera no painel variaveis de projeto da vercel workflows publicados do n8n vale so na hora em que foi lido antes do veredito e de cada push que reimplanta todos os projetos ligados ao repositorio releia por mcp os nomes das variaveis de cada projeto e o activeversionid dos workflows e registre com a hora cada divergencia do que a task registrou",
+      "text": "Estado externo que o usuário altera no painel (variáveis de projeto da Vercel, workflows publicados do n8n) vale só na hora em que foi lido: antes do veredito e de cada push, que reimplanta todos os projetos ligados ao repositório, releia por MCP os nomes das variáveis de cada projeto e o activeVersionId dos workflows e registre com a hora cada divergência do que a task registrou.",
+      "signal": "ac_gap",
+      "scope": "producao/estado-externo",
+      "status": "confirmed",
+      "features": [
+        "lote-16c-vitrine-ativacao"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        ".specs/features/lote-16c-vitrine-ativacao/validation.md:535,555-556 (volta 1: ATIV-03 AC2 FAIL; G1 variaveis da vitrine sumiram 20:51:54Z; G2 scheduler despublicado) (producao/estado-externo)",
+        "Revisao de fechamento L16c (AD-045, 2026-10-19): promovida; a T7 registrou as 3 variaveis da vitrine e quatro minutos depois o projeto estava vazio (movidas para o CRM), e o agendador foi despublicado fora da conversa; so a releitura do Verifier achou, e um push de fechamento teria subido a vitrine sem VITRINE_DATABASE_URL. Complementa a L-051 (antes da prova real) no momento do veredito e do push."
+      ],
+      "created": "2026-10-19T03:31:10Z",
+      "last_seen": "2026-10-19T03:31:10Z"
+    },
+    {
+      "id": "L-090",
+      "key": "ac_gap::resposta http nao prova com que papel do banco o app le para um ac de menor privilegio faca a requisicao e confira em pg stat activity numa sessao somente leitura que ha sessao com o usename do papel e backend start posterior ao deployment",
+      "text": "Resposta HTTP não prova com que papel do banco o app lê: para um AC de menor privilégio, faça a requisição e confira em pg_stat_activity, numa sessão somente leitura, que há sessão com o usename do papel e backend_start posterior ao deployment.",
+      "signal": "ac_gap",
+      "scope": "db/papeis",
+      "status": "confirmed",
+      "features": [
+        "lote-16c-vitrine-ativacao"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        ".specs/features/lote-16c-vitrine-ativacao/validation.md:558 (volta 1, G4: papel krivo_vitrine sem evidencia) e .specs/features/lote-16c-vitrine-ativacao/validation.md:610 (volta 2: pg_stat_activity) (db/papeis)",
+        "Revisao de fechamento L16c (AD-045, 2026-10-19): promovida; reformula a candidata '200 em streaming esconde o nao encontrado' (essa parte duplica a L-073 e a L-074) no sinal real do lote: a T10 afirmou leitura com krivo_vitrine a partir do curl 200 (G4 da volta 1) e so pg_stat_activity provou o papel na volta 2."
+      ],
+      "created": "2026-10-19T03:31:10Z",
+      "last_seen": "2026-10-19T03:31:10Z"
     }
   ]
 }

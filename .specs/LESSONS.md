@@ -410,6 +410,24 @@ Corroborated across multiple features. Safe to apply as guidance.
 - evidence: vitrine/app/c/[slug]/imovel/[ref]/page.tsx:1 (spec/testing) (+1 more)
 - last seen: 2026-10-13T03:33:05Z
 
+### L-088 - Em projeto da Vercel com Root Directory numa subpasta do monorepo, deixe desligada a opção 'Include source files outside of the Root Directory' e não fixe outputFileTracingRoot no next.config (a opção faz o Turbopack compilar arquivos da raiz do repositório; o override quebra o empacotamento das funções com ENOENT em .next/package.json), e prove qualquer correção de build num deployment de preview antes de publicar em main, porque a simulação local termina no next build e não cobre o deploy.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `vercel/monorepo` · harmful: 0
+- features: lote-16c-vitrine-ativacao
+- evidence: .specs/features/lote-16c-vitrine-ativacao/validation.md:441-446 (T7: dpl_8tKm e dpl_BUR7 ERROR; 08ffe88 revertido em 9ce477a) (vercel/monorepo) (+1 more)
+- last seen: 2026-10-19T03:31:10Z
+
+### L-089 - Estado externo que o usuário altera no painel (variáveis de projeto da Vercel, workflows publicados do n8n) vale só na hora em que foi lido: antes do veredito e de cada push, que reimplanta todos os projetos ligados ao repositório, releia por MCP os nomes das variáveis de cada projeto e o activeVersionId dos workflows e registre com a hora cada divergência do que a task registrou.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `producao/estado-externo` · harmful: 0
+- features: lote-16c-vitrine-ativacao
+- evidence: .specs/features/lote-16c-vitrine-ativacao/validation.md:535,555-556 (volta 1: ATIV-03 AC2 FAIL; G1 variaveis da vitrine sumiram 20:51:54Z; G2 scheduler despublicado) (producao/estado-externo) (+1 more)
+- last seen: 2026-10-19T03:31:10Z
+
+### L-090 - Resposta HTTP não prova com que papel do banco o app lê: para um AC de menor privilégio, faça a requisição e confira em pg_stat_activity, numa sessão somente leitura, que há sessão com o usename do papel e backend_start posterior ao deployment.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `db/papeis` · harmful: 0
+- features: lote-16c-vitrine-ativacao
+- evidence: .specs/features/lote-16c-vitrine-ativacao/validation.md:558 (volta 1, G4: papel krivo_vitrine sem evidencia) e .specs/features/lote-16c-vitrine-ativacao/validation.md:610 (volta 2: pg_stat_activity) (db/papeis) (+1 more)
+- last seen: 2026-10-19T03:31:10Z
+
 ## Candidates (under observation - do NOT load as guidance yet)
 
 Seen once or not yet corroborated. Tracked, not trusted.
