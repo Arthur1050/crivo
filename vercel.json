@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "ignoreCommand": "[ -n \"$VERCEL_GIT_PREVIOUS_SHA\" ] && git diff --quiet \"$VERCEL_GIT_PREVIOUS_SHA\" HEAD -- . \":(exclude).specs\" \":(exclude)vitrine\" \":(exclude)docs\" || exit 1",
   "crons": [
     {
       "path": "/api/cron/expire-documents",
