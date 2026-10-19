@@ -21,6 +21,7 @@ import {
   type Modality,
 } from "@/src/server/data";
 import { getStorefront } from "@/src/server/data/storefront";
+import { normalizarBaseDaVitrine } from "@/src/server/storefront/revalidation";
 import {
   PermissionDeniedError,
   requirePermission,
@@ -115,7 +116,7 @@ export default async function ConfiguracoesPage() {
         }}
         slug={tenant.slug}
         agentWhatsapp={tenant.agentWhatsapp}
-        publicUrl={process.env.VITRINE_PUBLIC_URL || null}
+        publicUrl={normalizarBaseDaVitrine(process.env.VITRINE_PUBLIC_URL)}
         canWrite={can(roles, "configuracoes", "escrever")}
       />
 

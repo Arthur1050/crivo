@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import vitestConfig from "../../../../vitest.config";
-import { requestStorefrontRevalidation, type RevalidationDeps } from "../revalidation";
+import {
+  normalizarBaseDaVitrine,
+  requestStorefrontRevalidation,
+  type RevalidationDeps,
+} from "../revalidation";
 
 const SECRET = "segredo-super-secreto-123";
 const CONFIG = { VITRINE_PUBLIC_URL: "https://vitrine.example.test", VITRINE_REVALIDATE_SECRET: SECRET };
@@ -193,5 +197,156 @@ describe("L16a T11 — cliente de revalidação (VREV-01)", () => {
       expect(networkSpy).not.toHaveBeenCalled();
       networkSpy.mockRestore();
     });
+  });
+});
+
+/**
+ * Endurecimento da configuração (AD-049, R14 do L16c: em produção a variável
+ * estava sem `https://` e o `fetch` lançava `TypeError` sem dizer a causa).
+ *
+ * Decisões documentadas aqui:
+ * - Host sem esquema vira `https://<host>` (a vitrine é pública e só serve HTTPS);
+ *   `host:porta` é host com porta, não esquema.
+ * - Só `https://` e `http://` são aceitos; outro esquema, `//host`, credencial na
+ *   URL ou valor que `new URL` recusa → `falhou` com `erro=UrlInvalida`, sem `fetch`.
+ * - Caminho na base é mantido (`https://x/prefixo` → `https://x/prefixo/api/revalidar`),
+ *   sem `/` final. Query e fragmento são DESCARTADOS: não quebram o caminho da rota
+ *   (`?x=1/api/revalidar` viraria query) e não vazam para a vitrine nem para o log.
+ * - Segredo fora do ASCII imprimível 0x21-0x7E depois do `trim` → `falhou` com
+ *   `erro=SegredoInvalido`, sem `fetch`. Nenhum log traz a URL nem o segredo.
+ */
+describe("AD-049 — base da vitrine e segredo validados antes do envio", () => {
+  describe("normalizarBaseDaVitrine (aviso e link de Configurações)", () => {
+    it.each<[string | null | undefined, string | null]>([
+      [undefined, null],
+      [null, null],
+      ["", null],
+      ["   ", null],
+      ["vitrine-kappa-tawny.vercel.app", "https://vitrine-kappa-tawny.vercel.app"],
+      ["  vitrine.example.test/  ", "https://vitrine.example.test"],
+      ["localhost:3000", "https://localhost:3000"],
+      ["https://vitrine.example.test", "https://vitrine.example.test"],
+      ["https://vitrine.example.test///", "https://vitrine.example.test"],
+      ["HTTPS://Vitrine.Example.Test/", "https://vitrine.example.test"],
+      ["http://localhost:3000/", "http://localhost:3000"],
+      ["https://vitrine.example.test/prefixo/", "https://vitrine.example.test/prefixo"],
+      ["https://vitrine.example.test/prefixo?token=abc#frag", "https://vitrine.example.test/prefixo"],
+      ["vitrine.example.test?x=1", "https://vitrine.example.test"],
+      ["ftp://vitrine.example.test", null],
+      ["javascript:alert(1)", null],
+      ["//vitrine.example.test", null],
+      ["file:///etc/passwd", null],
+      ["data:text/plain,oi", null],
+      ["https:vitrine.example.test", null],
+      ["https://", null],
+      ["https://vitrine .example.test", null],
+      ["https://[::1", null],
+      ["https://usuario:senha@vitrine.example.test", null],
+    ])("%j → %j", (entrada, esperado) => {
+      expect(normalizarBaseDaVitrine(entrada)).toBe(esperado);
+    });
+  });
+
+  describe("URL do pedido", () => {
+    it.each([
+      ["sem esquema", "vitrine-kappa-tawny.vercel.app", "https://vitrine-kappa-tawny.vercel.app/api/revalidar"],
+      ["sem esquema e com / final", "vitrine.example.test/", "https://vitrine.example.test/api/revalidar"],
+      ["host com porta, sem esquema", "localhost:3000", "https://localhost:3000/api/revalidar"],
+      [
+        "https:// com caminho, / finais, query e fragmento",
+        "  https://vitrine.example.test/prefixo//?token=abc#frag  ",
+        "https://vitrine.example.test/prefixo/api/revalidar",
+      ],
+      ["http:// com / final e query", "http://localhost:3000/?x=1", "http://localhost:3000/api/revalidar"],
+    ])("%s (%j) → POST em %s", async (_nome, base, esperado) => {
+      const { fetchMock, logger, deps } = setup(() => new Response(null, { status: 204 }));
+      const outcome = await requestStorefrontRevalidation("imob-x", {
+        ...deps,
+        config: { ...CONFIG, VITRINE_PUBLIC_URL: base },
+      });
+
+      expect(outcome).toBe("enviado");
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock.mock.calls[0][0]).toBe(esperado);
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("URL recusada: erro=UrlInvalida, sem fetch e sem a URL no log", () => {
+    it.each([
+      ["ftp://vitrine.example.test", "vitrine.example.test"],
+      ["javascript:alert(1)", "alert"],
+      ["//vitrine.example.test", "vitrine.example.test"],
+      ["file:///etc/passwd", "passwd"],
+      ["https://vitrine .example.test", "example.test"],
+      ["https://", "https"],
+      ["https://usuario:senha@vitrine.example.test", "senha"],
+    ])("%j", async (base, trecho) => {
+      const { fetchMock, logger, deps } = setup(() => new Response(null, { status: 200 }));
+      const outcome = await requestStorefrontRevalidation("imob-x", {
+        ...deps,
+        config: { ...CONFIG, VITRINE_PUBLIC_URL: base },
+      });
+
+      expect(outcome).toBe("falhou");
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(logger.info).not.toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalledTimes(1);
+      expect(logger.warn.mock.calls[0][0]).toBe("[vitrine] revalidação falhou: slug=imob-x erro=UrlInvalida");
+      const logged = allLogged(logger);
+      expect(logged).not.toContain(trecho);
+      expect(logged).not.toContain(SECRET);
+    });
+  });
+
+  describe("segredo inválido: erro=SegredoInvalido, sem fetch e sem o segredo no log", () => {
+    it.each([
+      ["espaço interno", "segredo com-espaco"],
+      ["tab interno", "segredo\tcom-tab"],
+      ["quebra de linha no meio", "segredo\ncom-quebra"],
+      ["CRLF no meio", "segredo\r\nX-Injetado: 1"],
+      ["caractere de controle", "segredo\u0000nulo"],
+      ["não ASCII", "segredo-ção"],
+      ["DEL (0x7F)", "segredo\u007Fdel"],
+    ])("%s", async (_nome, segredo) => {
+      const { fetchMock, logger, deps } = setup(() => new Response(null, { status: 200 }));
+      const outcome = await requestStorefrontRevalidation("imob-x", {
+        ...deps,
+        config: { ...CONFIG, VITRINE_REVALIDATE_SECRET: segredo },
+      });
+
+      expect(outcome).toBe("falhou");
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalledTimes(1);
+      expect(logger.warn.mock.calls[0][0]).toBe("[vitrine] revalidação falhou: slug=imob-x erro=SegredoInvalido");
+      const logged = allLogged(logger);
+      expect(logged).not.toContain("segredo");
+      expect(logged).not.toContain("vitrine.example.test");
+    });
+
+    it("segredo com os extremos do ASCII imprimível (! e ~) e espaços nas pontas ainda é enviado em Authorization: Bearer", async () => {
+      const segredo = "!AZaz09-_.+/=~";
+      const { fetchMock, logger, deps } = setup(() => new Response(null, { status: 200 }));
+      const outcome = await requestStorefrontRevalidation("imob-x", {
+        ...deps,
+        config: { ...CONFIG, VITRINE_REVALIDATE_SECRET: `  ${segredo}\n` },
+      });
+
+      expect(outcome).toBe("enviado");
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect((fetchMock.mock.calls[0][1]?.headers as Record<string, string>).Authorization).toBe(`Bearer ${segredo}`);
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+  });
+
+  it("URL só com espaços continua ignorada com a mesma mensagem de antes", async () => {
+    const { fetchMock, logger, deps } = setup(() => new Response(null, { status: 200 }));
+    const outcome = await requestStorefrontRevalidation("imob-x", {
+      ...deps,
+      config: { ...CONFIG, VITRINE_PUBLIC_URL: "   " },
+    });
+    expect(outcome).toBe("ignorado");
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(logger.info.mock.calls[0][0]).toBe("[vitrine] revalidação ignorada: slug=imob-x (vitrine não configurada)");
   });
 });
