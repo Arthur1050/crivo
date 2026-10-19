@@ -42,7 +42,7 @@ Só nomes; os valores ficam no ambiente de cada projeto e nunca entram no reposi
 | --- | --- |
 | `VITRINE_DATABASE_URL` | Conexão do papel `krivo_vitrine` (usuário e senha dele, nunca o dono). A única forma de a vitrine conectar ao banco. Ausente: a leitura falha com mensagem sem URL. |
 | `VITRINE_REVALIDATE_SECRET` | Segredo que o CRM envia em `Authorization: Bearer`. Vazio ou ausente: a rota responde 401 e não revalida nada. |
-| `VITRINE_PUBLIC_URL` | Endereço público da vitrine, base das URLs absolutas de `og:url` e `og:image`. Ausente: as URLs saem relativas. |
+| `VITRINE_PUBLIC_URL` | Endereço público da vitrine, base das URLs absolutas de `og:url` e `og:image`. Ausente: as URLs saem relativas. Aqui use a URL completa, com `https://` (sem esquema, `new URL` recusa e as URLs também saem relativas). No CRM a mesma variável aceita só o host e prefixa `https://`; esquema que não seja `http(s)` ou valor inválido faz o aviso registrar `erro=UrlInvalida` (AD-049). |
 
 ## Regras do projeto
 
