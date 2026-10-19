@@ -1096,3 +1096,15 @@ Nenhum gap é afirmação falsa sobre produção.
 **Y4, risco que fica registrado:** o `use cache: remote` depende de a Vercel injetar o Runtime Cache no processo. Se a plataforma deixasse de injetá-lo (ou se o plano não o incluísse), o Next cairia em silêncio no cache em memória da instância (`next/dist/server/use-cache/handlers.js:66-72`, segundo o Verifier da volta 6) e a R15 voltaria sem erro algum, só com cada visita consultando o banco. A medição de produção de 2026-10-19 mostra que hoje ele funciona (inclusive a renovação depois de 60 s, medida pela volta 6). Para detectar um retorno: repetir a medida de retenção (`pg_stat_activity` do papel `krivo_vitrine` antes e depois de 5 pedidos); a doc consultada não diz se o plano Hobby tem limite para o Runtime Cache. O rollback é `git revert e51f8c5`.
 
 **Y2 e Y3 corrigidos nos documentos:** `INDEX.md`, Handoff do `STATE.md` e `ARCHIVED.md` agora citam a 5ª e a 6ª verificação e o veredito PASS da volta 6.
+
+## Ignored Build Step da vitrine e limpeza do `VITRINE_DATABASE_URL` (executor e usuário, 2026-10-19)
+
+**`VITRINE_DATABASE_URL` no CRM (ação do usuário, chat, 2026-10-19):** "Já apaguei a variável". Reconferido pelo executor por leitura (`filter_project_envs` do projeto do CRM, só nomes e datas): a variável **não existe mais** no CRM; ficam `VITRINE_PUBLIC_URL` e `VITRINE_REVALIDATE_SECRET`, como a T8 pede. O CRM não a lia (nenhuma referência no código dele), então a remoção não mudou comportamento e não exigiu redeploy. O executor também tirou o par `VITRINE_DATABASE_URL` do `.env.example` da raiz (o exemplo do CRM) no commit `35703ad`.
+
+**Ignored Build Step (a pedido do usuário, chat, 2026-10-19: "Pode mudar então, pois não achei a opção"):** como a opção não aparece no painel, o executor configurou pelo código, com `vitrine/vercel.json`, que a Vercel lê da raiz do projeto (Root Directory `vitrine`) e que sobrepõe a configuração do painel:
+
+```json
+{ "ignoreCommand": "[ -n \"$VERCEL_GIT_PREVIOUS_SHA\" ] && git diff --quiet \"$VERCEL_GIT_PREVIOUS_SHA\" HEAD ./ || exit 1" }
+```
+
+Significado (exit 0 cancela o build; exit 1 o mantém): compara a pasta `vitrine/` com o último deployment pronto (`VERCEL_GIT_PREVIOUS_SHA`, que cobre pushes de vários commits, ao contrário do `HEAD^`); se nada mudou ali, o build é cancelado; sem o SHA, com SHA inexistente ou com qualquer erro do `git diff`, o build roda. Isso não perde mudança do CRM porque a vitrine não importa nada de fora de `vitrine/` (AD-041). A semântica foi provada localmente com `sh -c`: sem SHA → exit 1; SHA igual ao `HEAD` → exit 0; SHA anterior à mudança do cache (`7db25d6`) → exit 1; SHA inexistente → exit 1. Os testes `vitrine-isolamento` e `vitrine-superficie` seguem verdes (12 e 12). O commit `35703ad` toca `vitrine/`, então o build dele rodou (`dpl_BkAD8YPUib4fybN6mBohjsSTX8Fx`, READY). **Rollback:** apagar `vitrine/vercel.json` (ou o campo `ignoreCommand`) e fazer push; ou `git revert 35703ad`. Para forçar um build sem mudança na pasta, Redeploy no painel.
