@@ -428,6 +428,12 @@ Corroborated across multiple features. Safe to apply as guidance.
 - evidence: .specs/features/lote-16c-vitrine-ativacao/validation.md:558 (volta 1, G4: papel krivo_vitrine sem evidencia) e .specs/features/lote-16c-vitrine-ativacao/validation.md:610 (volta 2: pg_stat_activity) (db/papeis) (+1 more)
 - last seen: 2026-10-19T03:31:10Z
 
+### L-091 - Efeito certo não prova o mecanismo: para provar uma integração entre dois serviços (aviso, webhook, revalidação), cite a linha de sucesso no log do emissor e a do pedido no log do receptor (ou o status HTTP) e descarte a causa alternativa do mesmo efeito (ex.: cache que não retém) antes de escrever 'provado' em validation, spec, INDEX ou Handoff.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `producao/integracao` · harmful: 0
+- features: lote-16c-vitrine-ativacao
+- evidence: .specs/features/lote-16c-vitrine-ativacao/validation.md:744 (T12 deu o aviso de revalidacao e o segredo igual como provados pelo item sumir em <= 2,9 s), :772-775 (volta 3: 7 TypeError no log do CRM, nenhum /api/revalidar no log da vitrine, vitrine le o banco a cada pedido), :818-819 (V1, V2) e :858-859 (R14, R15) (producao/integracao) (+1 more)
+- last seen: 2026-10-19T04:23:17Z
+
 ## Candidates (under observation - do NOT load as guidance yet)
 
 Seen once or not yet corroborated. Tracked, not trusted.

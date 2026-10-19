@@ -4,7 +4,7 @@
   "window_days": 45,
   "quarantine_threshold": 2,
   "prune_requires_confirmation": true,
-  "next_id": 91,
+  "next_id": 92,
   "lessons": [
     {
       "id": "L-001",
@@ -1470,6 +1470,25 @@
       ],
       "created": "2026-10-19T03:31:10Z",
       "last_seen": "2026-10-19T03:31:10Z"
+    },
+    {
+      "id": "L-091",
+      "key": "ac_gap::efeito certo nao prova o mecanismo para provar uma integracao entre dois servicos aviso webhook revalidacao cite a linha de sucesso no log do emissor e a do pedido no log do receptor ou o status http e descarte a causa alternativa do mesmo efeito ex cache que nao retem antes de escrever provado em validation spec index ou handoff",
+      "text": "Efeito certo não prova o mecanismo: para provar uma integração entre dois serviços (aviso, webhook, revalidação), cite a linha de sucesso no log do emissor e a do pedido no log do receptor (ou o status HTTP) e descarte a causa alternativa do mesmo efeito (ex.: cache que não retém) antes de escrever 'provado' em validation, spec, INDEX ou Handoff.",
+      "signal": "ac_gap",
+      "scope": "producao/integracao",
+      "status": "confirmed",
+      "features": [
+        "lote-16c-vitrine-ativacao"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        ".specs/features/lote-16c-vitrine-ativacao/validation.md:744 (T12 deu o aviso de revalidacao e o segredo igual como provados pelo item sumir em <= 2,9 s), :772-775 (volta 3: 7 TypeError no log do CRM, nenhum /api/revalidar no log da vitrine, vitrine le o banco a cada pedido), :818-819 (V1, V2) e :858-859 (R14, R15) (producao/integracao)",
+        "Revisao de fechamento L16c, rodada 2 (AD-045, 2026-10-19): promovida; o executor deu o mecanismo (aviso do CRM, segredo igual, cache 60/60/300) como provado pelo efeito sem ler os logs do emissor e do receptor, e o efeito vinha da vitrine sem cache. Nao duplica a L-073/L-074 (HTML visivel), a L-090 (papel do banco em pg_stat_activity), a L-089 (estado externo relido) nem a L-083 (e2e que muda o dado e confere a pagina, que tambem passaria com a vitrine sem cache). Absorve, na clausula final, a 2a proposta (afirmacao de producao propagada a validation, spec, INDEX e Handoff), recusada como licao separada: a causa e a mesma e conferir a evidencia antes de cita-la ja e a L-011."
+      ],
+      "created": "2026-10-19T04:23:17Z",
+      "last_seen": "2026-10-19T04:23:17Z"
     }
   ]
 }
