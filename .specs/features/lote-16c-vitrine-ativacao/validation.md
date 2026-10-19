@@ -746,3 +746,17 @@ O limite superior soma ~0,5 s de latência do `curl` ao início da primeira amos
 **Restauração:** ao fim, o CRM lista o `IM-0001` como **Disponível** e **Publicado** (conferido na tela às 03:58Z) e a sonda recebeu `A` nas amostras seguintes; os outros três imóveis (`IM-0002`, `IM-0003`, `IM-0004`) não foram tocados. O CRM mostra o `IM-0001` com a mesma publicação e sem destaque. A sonda foi encerrada (3 processos).
 
 **Rollback:** nenhum além da própria restauração acima (o estado original já foi devolvido).
+
+## Prévia no WhatsApp (T13, F17, 2026-10-19)
+
+**Autorização:** instrução do usuário no chat de 2026-10-19 ("faça T11 a T13") e a diretriz da meta (WhatsApp Web, conversa "Test Number (Crivo)", digitar o link **sem enviar**, capturar só o cartão de prévia e apagar o texto). Executor, pela extensão do Chrome, em aba nova, fechada ao fim. Nenhuma outra conversa foi aberta (a pesquisa do nome mostrou só a conversa de teste, e foi a única clicada).
+
+**O que foi feito:** no campo de mensagem da conversa de teste, o executor digitou `https://vitrine-kappa-tawny.vercel.app/c/krivo-demo/imovel/IM-0001` (sem pressionar Enter nem o botão de enviar). O WhatsApp montou o cartão de prévia em 6 s.
+
+**Captura (`capturas/t13-previa-whatsapp.png`, só o cartão, sem o histórico da conversa):** imagem com o texto "Krivo Demo / Imóveis disponíveis em Belo Horizonte/MG" (o cartão `opengraph-image` da loja, sobre a cor dela), título **`Apartamento em Abadia — IM-0001`**, descrição **`2 quartos · 72 m² · R$ 380.000`** e domínio `vitrine-kappa-tawny.vercel.app`.
+
+**Resultado:** **F17 confirmada**: o link do item gera prévia com título, descrição e imagem (VOG, AD-043).
+
+**Limpeza:** o texto do campo foi apagado (Ctrl+A e Delete; o campo voltou a "Digite uma mensagem"). **Nenhuma mensagem foi enviada**: a última mensagem da conversa continua sendo a resposta do agente de 2026-10-18, 11:49. O executor também desfez o tenant ativo do CRM, devolvendo o seletor a `Triângulo Imóveis`.
+
+**Rollback:** nada a desfazer (nenhuma mensagem, nenhum dado gravado).
