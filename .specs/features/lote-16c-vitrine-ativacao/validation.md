@@ -845,4 +845,19 @@ A volta 3 (seção anterior) reprovou. Estas são as notas datadas do executor; 
 
 ## Validation — veredito vigente do lote 16c (volta 3, 2026-10-19)
 
-**Result:** FAIL na 3ª verificação independente (HEAD `1c88662`, relatório `4ad48d3`), com o limite de 3 voltas atingido. O que reprovou: o aviso de revalidação do CRM falha em produção (`TypeError`) e o registro tinha dado a prova como feita; as correções de texto já estão nas notas acima. O defeito de configuração do aviso é do usuário (ver V1), e o do cache da vitrine é um fix no L16b (V2). Substitui, só para efeito do gate, o bloco anterior "resultado final do lote 16c"; evidência: `src/server/storefront/revalidation.ts:46` e os logs de produção citados em V1.
+**Veredito da volta 3:** FAIL na 3ª verificação independente (HEAD `1c88662`, relatório `4ad48d3`), com o limite de 3 voltas atingido. O que reprovou: o aviso de revalidação do CRM falha em produção (`TypeError`) e o registro tinha dado a prova como feita; as correções de texto já estão nas notas acima. O defeito de configuração do aviso é do usuário (ver V1), e o do cache da vitrine é um fix no L16b (V2). Substitui, só para efeito do gate, o bloco anterior "resultado final do lote 16c"; evidência: `src/server/storefront/revalidation.ts:46` e os logs de produção citados em V1.
+
+## Aceite do usuário e fechamento do lote (2026-10-19)
+
+**Decisão do usuário (chat, 2026-10-19), literal:** "Aceito o aviso de revalidação e o cache da vitrine como ressalvas abertas (fix depois). Feche o lote assim."
+
+**O que ficou aceito como ressalva aberta (não bloqueia o fechamento, mas segue pendente):**
+
+| # | Ressalva | Dono e próximo passo |
+| --- | --- | --- |
+| R14 (era V1/R8) | O aviso de revalidação do CRM falha em produção com `TypeError` (7 de 7 gravações); o segredo igual nos dois projetos não está provado; o ATIV-03 AC3 não está atendido | Usuário: conferir `VITRINE_PUBLIC_URL` (URL completa com `https://`, sem espaços) e `VITRINE_REVALIDATE_SECRET` (igual ao da vitrine, ASCII imprimível) no projeto do CRM, Redeploy e salvar de novo a Vitrine do `Krivo Demo`; conferir no log da vitrine `[vitrine] revalidar: krivo-demo (204)` |
+| R15 (era V2) | O `use cache` da vitrine não retém em produção (cada visita consulta o banco como `krivo_vitrine`); a F15 (≤ 2,9 s) vale como medição, não pelo cache | Fix candidato no L16b: investigar o `use cache` na Vercel (AD-042) |
+
+**Marcador do gate:** a linha `**Result:** FAIL …` do bloco "veredito vigente (volta 3)" acima foi o marcador de gate do executor para aquele momento; ela foi renomeada para `**Veredito da volta 3:**` para o `validate_state.py` ler um único resultado atual (o do bloco final abaixo). O texto do Verifier da volta 3 (`4ad48d3`, "Veredito: FAIL") **permanece intacto** e é o registro da reprovação.
+
+**Verificação depois do aceite:** com a decisão acima, o executor pediu uma 4ª verificação independente, restrita ao que mudou desde a volta 3 (V3 a V5 corrigidos, V1 e V2 como ressalvas abertas nos lugares certos), sem refazer o resto. O resultado está na seção seguinte.
