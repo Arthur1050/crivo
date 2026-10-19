@@ -1,6 +1,6 @@
 # Lote 16c — Validação
 
-**Verdict:** FAIL — o registro de T0 a T6 e T15 a T18 se sustenta, mas a releitura de produção em 2026-10-18 21:43Z contradiz dois pontos (o projeto `vitrine` não lista nenhuma variável e o `crivo-agente-scheduler` está despublicado sem registro), e `tasks.md`, ATIV-03 e o desvio de código da T7 precisam de correção (seção "Verificação independente" no fim).
+**Verdict:** PASS com ressalvas — volta 2: G1 e G2 fechados com evidência própria (variáveis da `vitrine` recriadas, vitrine conectando como `krivo_vitrine`, agendador despublicado por decisão registrada do usuário); restam só correções de forma em `tasks.md` (T7), `spec.md` (ATIV-03) e `INDEX.md`, a fazer no arquivamento, e a prova real fica pendente pelo Edge Case "sem CRECI" (seção "Verificação independente, volta 2" no fim).
 
 Regra de todas as seções: nenhum valor de variável, senha, token ou connection string é lido ou registrado.
 
@@ -593,3 +593,82 @@ Resposta aos gaps do Verifier (seção anterior, veredito FAIL). Só notas datad
 **G2, agendador do n8n (decisão do usuário, no chat, 2026-10-19):** "Não republique o agendador (eu o despubliquei de propósito)." O `crivo-agente-scheduler` (`gmIWxiRrHGIdtPub`) segue `active: false` (relido em 2026-10-19), e o executor não o republica. Efeito conhecido e aceito pelo usuário: lembretes, reengajamento e purga de memória do piloto não rodam enquanto estiver despublicado. Republicar é decisão do usuário (`publish_workflow` do `gmIWxiRrHGIdtPub`; rollback = `unpublish_workflow`). A ressalva fica no Handoff.
 
 **Push:** retido até o fim do fechamento (ver abaixo); com as variáveis de volta, um deployment novo da vitrine disparado por `git push origin main` sai com as três.
+
+## Verificação independente, volta 2 (Verifier Opus 5.5, 2026-10-19)
+
+**Veredito: PASS com ressalvas.** Verifier novo: não participei do lote nem da volta 1. Sem código de produto novo (o diff fora de `.specs` em `6c30603^..HEAD` é só `vitrine/next.config.ts`, 3 linhas de comentário, e `vitrine/README.md`), então o sensor de discriminação não se aplica. `HEAD` = `5d151e1`; `origin/main` = `9ce477a` (8 commits locais de registro, `00c6cb8`…`5d151e1`, sem push). Todas as conferências abaixo são minhas, feitas entre 03:23Z e 03:27Z de 2026-10-19, somente leitura, sem decrypt e sem registrar valor algum.
+
+### Conferências próprias
+
+| Conferência | Saída |
+| --- | --- |
+| Vercel, `filter_project_envs` do `vitrine` (`prj_Y8y82…`, sem decrypt; só nomes e datas) | `VITRINE_DATABASE_URL` (production e preview, sensitive, criada 03:19:54Z), `VITRINE_REVALIDATE_SECRET` (production e preview, sensitive, 03:20:16Z), `VITRINE_PUBLIC_URL` (production e preview, 03:20:35Z); `hiddenProductionEnvCount: 0` |
+| Vercel, deployments do `vitrine` | `dpl_14WVAGz1UCe8HBDcja2LGxdiFbTW`: commit `9ce477a`, `source: redeploy`, criado 03:20:47Z (depois das 3 variáveis), READY às 03:21:27Z, aliases `vitrine-kappa-tawny.vercel.app` e `vitrine-arthur1050s-projects.vercel.app`, `isRollbackCandidate: true`. Os 5 anteriores conferem com a tabela da T7 (3 ERROR, 2 READY) |
+| Vercel, `filter_project_envs` do `crivo` (só nomes) | `VITRINE_PUBLIC_URL`, `VITRINE_REVALIDATE_SECRET`, `VITRINE_DATABASE_URL` (prod e preview), `KRIVO_OPERATOR_ALERT_EMAIL`; `CRIVO_OPERATOR_ALERT_EMAIL` ausente |
+| `curl -I` / `curl` no domínio público (com `?v=<aleatório>`) | `/c/triangulo` 200, `/c/triangulo/imovel/IM-0001` 200 (`X-Vercel-Cache: PRERENDER`, `Age: 0`), `/` 404; `X-Robots-Tag: noindex, nofollow` nas três; **nenhum `Set-Cookie`**; corpo com "Página não encontrada" e **sem** "Vitrine temporariamente indisponível." |
+| Código da vitrine (`vitrine/app/c/[slug]/layout.tsx:56-64`) | erro de leitura do banco cai no `catch` e renderiza `VitrineIndisponivel` ("Vitrine temporariamente indisponível."); "não encontrado" só sai quando a consulta **responde** sem loja. Logo, o corpo acima já indica leitura bem-sucedida |
+| Produção, `pg_stat_activity` (script temporário em `scratch/`, sessão `READ ONLY`, só `select`, host `ep-gentle-brook-…`; removido em seguida), logo depois de pedir `/c/vale-uberaba`, `/c/krivo-demo` e `/c/inexistente-v2` | 2 sessões com `usename = krivo_vitrine`, `backend_start` 03:22:26Z (depois do redeploy), `query_start` 03:25:36Z, consultas `select "slug", "nome", …` (lojas) e `select "loja_slug", "referencia", …` (imóveis). **A vitrine em produção conecta e lê como `krivo_vitrine`** |
+| Produção, `npx tsx scratch/l16c-b-lojas.ts` (`READ ONLY`) | `tenant_storefronts: []`, `vitrine.lojas (slug): []`; 3ª consulta `column "slug" does not exist`, como o registro diz |
+| Vercel, `get_runtime_logs` do `crivo` (`since 55m`, busca `manutencao`) | `2026-10-19T03:01:32Z GET /api/cron/expire-documents` no `dpl_2vo8…`: `[manutencao] alerta { evaluated: 3, sent: 0, skipped: null, sendFailed: false, failed: false }`. `skipped` não é `destinatario-ausente`: o cron rodou com o destinatário lido da `KRIVO_OPERATOR_ALERT_EMAIL` (critério da § T18 de 2026-10-18) |
+| n8n, `search_workflows` e `get_workflow_details` (5 workflows da T16) | principal `9ef9ce9e`, responder-lead `f4f43c06`, agendar-reuniao `c5291b3f`, benchmark `d316b342`: `active: true`, `versionId` = `activeVersionId`, `updatedAt` 2026-10-17 20:17–20:18Z; versão ativa com 11, 2, 1 e 1 `X-Krivo-Tenant` e 0 `X-Crivo-*` (65, 14, 14, 14 nós). Scheduler `gmIWxiRrHGIdtPub`: `active: false`, `activeVersionId: null`, `versionId` `e31c635e` com 8 `X-Krivo-Tenant` e 0 `X-Crivo-*` (41 nós); última execução 4571 (2026-10-18 14:30:00Z, `success`), nenhuma depois. L14b `q3GKsdptqp58Hq6O` inativo, `updatedAt` 2026-10-06 |
+| Trailers (AD-014) | `git log origin/main --format=%B \| grep -icE 'co-authored-by\|generated with'` = **0**; o mesmo em `origin/main..HEAD` (com `noreply@anthropic`) = **0**; em `6c30603^..HEAD` (com 🤖) = **0**; 32 commits, todos autor e committer `Arthur1050` |
+| Segredos | `git log -p 6c30603^..HEAD` por `postgres(ql)://…:…@`, `npg_`, `sk_`, `re_`, JWT, `ghp_`, `Bearer`, `password=`: 1 ocorrência, falso positivo (a linha da volta 1 que descreve a própria varredura); `git grep` nos arquivos do lote, `vitrine/README.md`, `vitrine/next.config.ts`, `INDEX.md` e `STATE.md`: 0 |
+| `git status --short` | só ` M .env.example` (edição do usuário, fora do lote) |
+
+### Gaps da volta 1
+
+| # | Situação | Evidência |
+| --- | --- | --- |
+| G1 (alta) | **Fechado** | as 3 variáveis no projeto `vitrine` desde 03:19:54Z–03:20:35Z, `dpl_14WV…` READY depois delas, `curl` 200 com `noindex` e sem cookie, e sessões `krivo_vitrine` abertas pelo deployment novo (tabela acima) |
+| G2 (alta) | **Fechado como ressalva aceita (R9)** | scheduler despublicado confirmado no n8n; a § "G1 e G2 fechados" cita a frase do usuário ("Não republique o agendador (eu o despubliquei de propósito)"), diz o efeito (lembretes, reengajamento e purga parados) e corrige a frase da § T18 por nota datada. A troca de cabeçalho dele está no rascunho `e31c635e` (8 nós), pronta se o usuário republicar. Não é gap: o estado de produção é decisão do dono, registrada com o efeito |
+| G3 (média) | **Parcial → N1** | T8, T9 e T14 `[x]`; T10 a T13 com nota "PENDENTE"; mas a T7 continua `[ ]` com a nota "REABERTA … pendente: o usuário recriar as 3 … e fazer Redeploy", que ficou falsa depois do fechamento do G1 |
+| G4 (média) | **Fechado no mérito; texto desatualizado → N2** | a leitura com o papel `krivo_vitrine` agora está provada (`pg_stat_activity`); o AC3 "mesmo segredo" segue só provável pela T12 (R8). A linha de ATIV-03 em `spec.md:197` ainda diz "T7 reaberta: o projeto `vitrine` está sem variáveis, G1". A nota G4 da § "Correções depois da 1ª verificação" afirma que o resultado "seria o mesmo se a conexão falhasse"; pelo código isso não vale (falha mostra "indisponível"), mas a nota é conservadora e fica superada pela evidência acima, sem ação |
+| G5 (média) | **Fechado** | `SPEC_DEVIATION` com a frase literal do usuário (2026-10-18) e o efeito líquido; o diff confirma: `vitrine/next.config.ts` só ganhou comentário |
+| G6 (média) | **Fora do gap bloqueante, como combinado** | o Edge Case "sem CRECI" (`spec.md:185`) manda a prova real para o Handoff; o Handoff do `STATE.md` ainda não foi atualizado e será no arquivamento (o executor deve incluir os itens de N4) |
+| G7 (baixa) | **Fechado** | (a) `INDEX.md:58` agora tem ". **Ativação"; (b) e (c) nota datada na § "Correções…"; (d) `vitrine/README.md` § Deploy atualizado com a opção que precisa ficar desligada e sem "Ainda não feito" |
+
+### Tabela AC → evidência → situação
+
+| Req. / AC | Evidência | Situação |
+| --- | --- | --- |
+| ATIV-01 AC1–AC3 | § Gate (T0): F14 e F16 com URL, `last_updated` e data; nenhuma ação externa | **OK** |
+| ATIV-02 AC1 | § T1 parte 1: autorização citada, plano de 33 instruções, parada, nada aplicado | **OK** |
+| ATIV-02 AC2 | § T1 parte 2: autorização citada, 5 instruções à mão, checks em `pg_constraint`, rollback | **OK** |
+| ATIV-02 AC3 | § T3: autorização, fatia sem `password`, conferência antes do COMMIT, rollback | **OK** |
+| ATIV-02 AC4–AC5 | § T5: autorização, 2 grants, fora de `neon_superuser`, read-only e 5 s | **OK** (aceita pelo registro com saída; o uso real do papel agora visto em `pg_stat_activity`) |
+| ATIV-02 AC6 | § T1–T5 com autorização, comando, data, saída e rollback | **OK** |
+| ATIV-03 AC1 | deployments do `vitrine` do repositório `Arthur1050/crivo`, Root Directory `vitrine` | **OK** |
+| ATIV-03 AC2 | 3 nomes no projeto `vitrine` (Production), deployment READY depois deles, sessões `krivo_vitrine` | **OK** (G1 fechado) |
+| ATIV-03 AC3 | 2 nomes no Production do CRM; igualdade do segredo não provada | **Parcial, ressalva R8** |
+| ATIV-03 AC4 | nenhum valor lido; consultas sem decrypt (inclusive esta volta) | **OK** |
+| ATIV-04 AC1–AC3 | § T6: Full, exceção do usuário citada, push `ee13d52..19fd8be` (97 commits), deployments; Full 4 verde e e2e 66/66 depois | **OK com R1** |
+| ATIV-05 AC1–AC4 | § T10: sem CRECI; `tenant_storefronts` vazia (reconferido) | **Pendente, autorizado pelo Edge Case "sem CRECI" (R5)** |
+| ATIV-05 AC5 | `X-Robots-Tag: noindex, nofollow` em 3 rotas, sem cookie (reconferido) | **OK** |
+| ATIV-05 AC6 | nenhuma escrita do executor em imóvel ou configuração; lead de teste a pedido do usuário | **OK com R4** |
+| ATIV-06 AC1 | `f69ab5b`; `ROADMAP` e `INDEX` dizem "prova real pendente" | **OK com ressalva** (gatilho "prova real terminar" não ocorreu; N3) |
+| ATIV-07 AC1 | § T15 com a confirmação do usuário | **OK** |
+| ATIV-07 AC2–AC5 | § T16 e T18; releitura: 4 workflows ativos com `versionId` = `activeVersionId` e só `X-Krivo-Tenant`; execuções 4499, 4572, 4577, 4579 sem 401 | **OK com R9** (scheduler despublicado pelo usuário depois da prova) |
+| ATIV-07 AC6 | § T17: travas, linhas afetadas, valores anteriores, UPDATE inverso | **OK** |
+| ATIV-07 AC7 | variável antiga ausente no CRM; cron de 2026-10-19 03:01Z com `skipped: null` | **OK** (R3 da volta 1 fechada) |
+| ATIV-07 AC8 | § T16: janela 20:16:51Z–20:18:51Z | **OK** |
+| Edge Case "deploy da vitrine falhar" | § T7 + `SPEC_DEVIATION` com a frase do usuário | **OK (desvio autorizado)** |
+| Edge Case "sem CRECI" | § T10; previsto em `spec.md:185`; Handoff a atualizar no arquivamento | **OK, pendência no Handoff (N4)** |
+| Edge Case "cron do alerta" | cron de 2026-10-19 03:01Z observado | **OK** |
+
+### Gaps novos (nenhum bloqueante; correções de forma para o arquivamento, sem nova verificação)
+
+| # | Gravidade | Gap | O que o executor deve fazer |
+| --- | --- | --- | --- |
+| N1 | Baixa | `tasks.md`, T7: `[ ]` com a nota "REABERTA … pendente: o usuário recriar as 3 …", desmentida pela § "G1 e G2 fechados" | Marcar `[x]` e acrescentar à nota, sem apagá-la: "fechada em 2026-10-19: as 3 recriadas no projeto `vitrine` (03:19:54Z–03:20:35Z), `dpl_14WVAGz1UCe8HBDcja2LGxdiFbTW` READY às 03:21:27Z; Verifier volta 2 viu sessões `krivo_vitrine`" |
+| N2 | Baixa | `spec.md:197`, ATIV-03: "Partial (… T7 reaberta: o projeto `vitrine` está sem variáveis, G1; …)" | Trocar por "Partial (T7, T8 e T9 feitas; AC2 reconferido em 2026-10-19 com sessões `krivo_vitrine`; AC3 "mesmo segredo" só se prova pela revalidação da T12, pendente)" |
+| N3 | Baixa | `INDEX.md:60`, linha do L16c: não registra que o `crivo-agente-scheduler` está despublicado por decisão do usuário nem a recriação das variáveis da `vitrine`; a coluna de pendências é onde o backlog deferido aparece | Acrescentar na coluna de pendências: "agendador do n8n despublicado pelo usuário em 2026-10-18 (~14:30–14:45Z), lembretes, reengajamento e purga parados; republicar é decisão dele". Substituir o `VERIFIER_PLACEHOLDER` pelo veredito desta volta |
+| N4 | Baixa | Handoff (G6) ainda por fazer; a § "G1 e G2 fechados" diz "conferência … ~03:25Z", mas o commit `5d151e1` é de 03:22:39Z, e termina com "ver abaixo" sem seção abaixo | No Handoff do `STATE.md`: prova real pendente (passos 1 a 4 da § T10), scheduler despublicado (R9), R6, R7, R8 e o lead de teste (R4). As duas imprecisões de forma não exigem ação (esta seção registra a hora real da releitura) |
+
+### Ressalvas aceitas
+
+- **R1, R2, R4, R5, R6, R7** da volta 1 continuam valendo como estão. **R3 fechada**: o cron de 2026-10-19 03:01Z rodou com o destinatário presente (`skipped: null`).
+- **R8**: a igualdade de `VITRINE_REVALIDATE_SECRET` entre CRM e `vitrine` (ATIV-03 AC3) não é verificável sem ler valores; o segredo da `vitrine` foi recriado em 2026-10-19 com id novo. Só a revalidação da T12 prova. Se o aviso do CRM der 401 na T12, o usuário recria um dos dois.
+- **R9**: `crivo-agente-scheduler` despublicado pelo usuário de propósito, com a frase registrada e o efeito dito. A T16 nele está feita (rascunho `e31c635e` com `X-Krivo-Tenant`) e provada pela execução 4499; republicar (`publish_workflow`) é decisão dele. Enquanto estiver despublicado, ATIV-07 AC5 vale para os 4 ativos.
+- **R10**: o rollback da T7 (`pause_project`) e da T16 (operações inversas em `scratch/n8n-antes/`) seguem disponíveis; o `scratch/` não pode ser apagado no arquivamento.
+
+**Push:** nada impede o push dos commits de fechamento pelo lado da vitrine (o próximo deployment sai com as 3 variáveis); continua exigindo ordem explícita do usuário e nova auditoria de trailer.
