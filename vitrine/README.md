@@ -56,7 +56,9 @@ Só nomes; os valores ficam no ambiente de cada projeto e nunca entram no reposi
 
 ## Cache e revalidação (AD-042)
 
-Toda leitura de uma loja (loja, lista, imóvel) usa `use cache` com o perfil `vitrine` (`stale` 60 s, `revalidate` 60 s, `expire` 300 s) e a tag `tenant:<slug>:catalogo`; revalidar a loja derruba as três. O CRM avisa depois de cada escrita relevante. Sem aviso, a mudança aparece em até 5 minutos. A conexão da app é criada no primeiro uso, com `max: 3`.
+Toda leitura de uma loja (loja, lista, imóvel) usa `'use cache: remote'` com o perfil `vitrine` (`stale` 60 s, `revalidate` 60 s, `expire` 300 s) e a tag `tenant:<slug>:catalogo`; revalidar a loja derruba as três. O CRM avisa depois de cada escrita relevante. Sem aviso, a mudança aparece em até 5 minutos. A conexão da app é criada no primeiro uso, com `max: 3`.
+
+Por que `remote` (AD-048): as leituras acontecem no pedido, e o `use cache` comum guarda em memória da instância, que no serverless da Vercel não sobrevive entre invocações (cada visita consultava o banco). Com `remote`, a Vercel guarda no Runtime Cache dela, compartilhado entre instâncias e expirado pelo `revalidateTag`; não há `cacheHandlers` a configurar. No `next start` local o `remote` usa o mesmo cache em memória do processo. O `vitrine:e2e` prova o mecanismo numa instância com os handlers de uma plataforma serverless simulados (`scripts/vitrine-e2e-plataforma.cjs`); a retenção no Runtime Cache real só se confere em produção, contando as sessões do papel `krivo_vitrine` em `pg_stat_activity`.
 
 ## Tema (AD-046)
 

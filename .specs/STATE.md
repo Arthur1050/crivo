@@ -374,7 +374,7 @@
 - **Trade-off**: Superfície externa nova (uma rota com segredo). Em ambiente com várias instâncias, a invalidação pode não se propagar (doc `how-revalidation-works.md`); a medição na Vercel é do L16c, e o pior caso continua limitado pelo `expire`. Mais consultas ao banco do que com o perfil `minutes`.
 - **Scope**: Frescor da vitrine e a ponte CRM → vitrine, a partir do L16. Emenda a AD-025 só no perfil de cache.
 - **Date**: 2026-10-09
-- **Status**: active
+- **Status**: amended by AD-048 (a diretiva passa de `use cache` para `use cache: remote`, porque a memória da instância não retém no serverless da Vercel). Perfil, tag, rota de revalidação e `{ expire: 0 }` continuam ativos e inalterados
 
 ### AD-043
 - **Decision**: O contrato público da vitrine é estável: catálogo em `/c/<slug>` e imóvel em `/c/<slug>/imovel/<referência em minúsculas>` (a referência legível e imutável do L11), e o botão de interesse abre `https://wa.me/<dígitos do WhatsApp do agente>?text=` com a mensagem "Olá! Vi o imóvel <REF> na vitrine da <imobiliária> e tenho interesse.". Toda página e rota respondem com `noindex, nofollow` (meta e `X-Robots-Tag`), sem sitemap e sem `Disallow` no `robots.txt`. Fotos são exibidas pela URL externa cadastrada, sem o otimizador de imagem do Next; o OG do item é a primeira foto e o do catálogo (e de item sem foto) é um cartão gerado com nome e cor da loja, sem buscar recurso externo. Imóvel que deixou de estar visível mostra a página de não encontrado com a marca da loja e link para o catálogo; essas páginas saem em streaming com HTTP 200 e `noindex` (doc `loading.md:105-113`), porque um 404 de verdade exigiria consultar o banco num `proxy`.
@@ -415,6 +415,14 @@
 - **Trade-off**: Ambientes instalados precisam de atualização coordenada do CRM e dos consumidores do contrato; o papel e os dados de demonstração existentes têm migração dedicada que preserva IDs. Endereços externos, o remoto Git e o caminho real do checkout continuam válidos até serem migrados. As grafias antigas ficam somente nessas referências reais e na origem da migração.
 - **Scope**: Todo o projeto. Procedimento em `docs/renomeacao-krivo.md`; SQL em `scripts/brand/rename-to-krivo.sql`. A mudança local não publica workflows nem altera produção.
 - **Date**: 2026-10-11
+- **Status**: active
+
+### AD-048
+- **Decision**: As três leituras de loja da vitrine (`lojaCacheada`, `imoveisCacheados`, `imovelCacheado` em `vitrine/src/dados/cache.ts`) usam a diretiva `'use cache: remote'` no lugar de `'use cache'`. Perfil (`vitrine`: `stale` 60 s, `revalidate` 60 s, `expire` 300 s), tag `tenant:<slug>:catalogo`, rota `POST /api/revalidar` e `revalidateTag(tag, { expire: 0 })` não mudam. Nenhum `cacheHandlers` é configurado: na Vercel o handler `remote` é o Runtime Cache que a plataforma injeta (símbolo `@next/cache-handlers`); no `next start` o `remote` cai no mesmo handler em memória do `use cache` (`next/dist/server/use-cache/handlers.js`).
+- **Reason**: Ressalva R15 do L16c (2026-10-19): em produção cada visita consultava o banco como `krivo_vitrine`. As leituras rodam no pedido (dependem do `params`, sem `generateStaticParams`), e o `use cache` comum guarda em memória da instância, que no serverless não sobrevive entre invocações (doc do Next 16.2.11: `use-cache.md` § Runtime caching considerations e `use-cache-remote.md`; doc da Vercel: Runtime Cache com `'use cache: remote'`). Medido localmente (`scratch/r15-cache/medir.ts`, banco de TESTE, `pg_stat_activity`): o `next start` puro já retinha (1 rodada de consultas por chave), e com os handlers de uma plataforma serverless simulados (memória efêmera e cache remoto) o `use cache` consultava o banco em 11 de 11 visitas e o `use cache: remote`, só na 1ª visita de cada chave e na 1ª depois do aviso.
+- **Trade-off**: Cada leitura passa a fazer uma ida ao Runtime Cache da Vercel (latência de rede e uso cobrado pelo plano) em troca de não ir ao banco; item de no máximo 2 MB (a lista de imóveis de uma loja cabe com folga no piloto). O cache é regional e a invalidação por tag da Vercel se propaga a todas as regiões, o que também resolve o risco de várias instâncias registrado na AD-042. A retenção na Vercel só se prova em produção: o e2e prova o mecanismo com a plataforma simulada, não o Runtime Cache real.
+- **Scope**: Cache de dados da vitrine pública, a partir da correção da R15 (L16b). Emenda a AD-042 só na diretiva de cache.
+- **Date**: 2026-10-19
 - **Status**: active
 
 ## Handoff
