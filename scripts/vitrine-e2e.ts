@@ -20,7 +20,7 @@ import assert from "node:assert/strict";
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import path from "node:path";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { properties } from "../src/db/schema";
 import { tenants, tenantStorefronts } from "../src/db/schema";
 import {
@@ -644,6 +644,59 @@ registrar("T21 cache: a mudança no banco só aparece depois do aviso certo; a l
   // O aviso da B, por fim, a atualiza.
   assert.equal((await avisar(b.slug, ctx.segredo)).status, 204);
   assert.ok(preco((await ctx.pedir(`/c/${b.slug}`)).texto, "R$ 888.000"), "B depois do próprio aviso");
+});
+
+registrar("R15 serverless: com a memória da instância efêmera, a leitura sai do cache remoto e não consulta o banco a cada visita; o aviso a derruba (AD-048)", async (ctx) => {
+  // A Vercel não guarda o `use cache` comum entre invocações; o `use cache: remote`
+  // vai para o cache que a plataforma injeta. A pré-carga imita os dois handlers.
+  const preCarga = path.join(__dirname, "vitrine-e2e-plataforma.cjs").replace(/\\/g, "/");
+  const outra = await ctx.iniciarInstancia(PORTA_E2E + 4, { NODE_OPTIONS: `--require "${preCarga}"` });
+  const { a } = ctx.fixture.lojas;
+  const caminhos = [`/c/${a.slug}/imovel/${ctx.fixture.ordemDaA[0].toLowerCase()}`, `/c/${a.slug}`];
+  /** Sessões do papel da vitrine que rodaram consulta durante `acao` (L-090). */
+  const sessoesQueConsultaram = async (acao: () => Promise<unknown>): Promise<number> => {
+    const { rows: antes } = await ctx.db.execute<{ t: string }>(sql`select clock_timestamp()::text as t`);
+    await acao();
+    await new Promise((r) => setTimeout(r, 400));
+    const { rows } = await ctx.db.execute<{ n: number }>(
+      sql`select count(*)::int as n from pg_stat_activity
+          where usename = 'krivo_vitrine' and query_start > ${antes[0].t}::timestamptz`
+    );
+    return rows[0].n;
+  };
+  const visitar = (caminho: string) =>
+    sessoesQueConsultaram(async () => assert.equal((await ctx.pedir(caminho, { base: outra.base })).status, 200));
+  try {
+    assert.ok(outra.saida().includes("[plataforma] handlers injetados"), "a pré-carga da plataforma não rodou");
+    for (const caminho of caminhos) {
+      assert.ok((await visitar(caminho)) > 0, `${caminho}: a 1ª visita tem de ler o banco (prova que a contagem enxerga a consulta)`);
+      for (let visita = 2; visita <= 4; visita += 1) {
+        assert.equal(await visitar(caminho), 0, `${caminho}: a visita ${visita} consultou o banco (o cache não reteve)`);
+      }
+    }
+    const saida = outra.saida();
+    assert.ok(!saida.includes("[plataforma] default.get"), "a leitura passou pelo handler do `use cache` comum (memória efêmera)");
+    assert.match(saida, /\[plataforma\] remote\.get HIT/, "nenhuma leitura veio do cache remoto");
+    assert.match(
+      saida,
+      new RegExp(`\\[plataforma\\] remote\\.set tags=[^\\n]*tenant:${a.slug}:catalogo[^\\n]* revalidate=60 expire=300`),
+      "a entrada remota não leva a tag da loja e o perfil vitrine (60/300 s)"
+    );
+
+    // O aviso do CRM, recebido por esta instância, derruba a entrada remota.
+    const aviso = await ctx.pedir("/api/revalidar", {
+      base: outra.base,
+      metodo: "POST",
+      cabecalhos: { authorization: `Bearer ${ctx.segredo}` },
+      corpo: JSON.stringify({ slug: a.slug }),
+    });
+    assert.equal(aviso.status, 204);
+    assert.ok(outra.saida().includes(`[plataforma] remote.updateTags tenant:${a.slug}:catalogo`), "o aviso não chegou ao cache remoto");
+    assert.ok((await visitar(caminhos[0])) > 0, "depois do aviso, a próxima visita tem de ler o banco");
+    assert.equal(await visitar(caminhos[0]), 0, "depois da releitura, a visita seguinte volta a sair do cache");
+  } finally {
+    outra.parar();
+  }
 });
 
 // ── T23: página de imóvel ──────────────────────────────────────────────────

@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -65,6 +66,17 @@ describe("L16b T5 — camada de cache por loja (VCACHE-01 AC1)", () => {
       expect(consulta()).toHaveBeenCalledWith(...argumentos("loja-a"));
     });
   }
+
+  it("as três leituras usam `use cache: remote`, não a memória da instância (AD-048, R15 do L16c)", () => {
+    // O `use cache` comum não retém entre invocações serverless; na Vercel cada
+    // visita consultava o banco. A diretiva é string: só o fonte a mostra.
+    const fonte = readFileSync(new URL("../cache.ts", import.meta.url), "utf8");
+    for (const nome of ["lojaCacheada", "imoveisCacheados", "imovelCacheado"]) {
+      const corpo = new RegExp(`export async function ${nome}\\([^)]*\\) \\{\\s*"([^"]+)";`).exec(fonte);
+      expect(corpo?.[1], nome).toBe("use cache: remote");
+    }
+    expect(fonte.match(/^\s*"use cache[^"]*";/gm)).toHaveLength(3);
+  });
 
   it("devolve o resultado da consulta sem alterá-lo", async () => {
     expect(await lojaCacheada("loja-a")).toEqual({ slug: "loja-a" });
