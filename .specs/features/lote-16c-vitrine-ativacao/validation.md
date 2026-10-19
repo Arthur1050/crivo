@@ -695,3 +695,31 @@ vitrine.lojas (slug): [{"slug":"krivo-demo"}]
 **Correção de método do § T10 anterior:** a contagem de `Página não encontrada` no corpo HTML que o executor usou para dizer "interface de não encontrado" é **frágil**: o texto aparece também no payload do Next (a prop `notFound` do layout) de uma página que existe. A prova que vale é o `<title>` (`Krivo Demo — imóveis` no catálogo e `Apartamento em Abadia — IM-0001` no item, ou o título genérico quando o imóvel não está visível), a leitura de `vitrine.lojas` e a captura. A conclusão daquela seção (nenhuma loja ativa) continua certa porque vem do banco.
 
 **O que ficou em produção:** a loja `krivo-demo` ativa, pública em `https://vitrine-kappa-tawny.vercel.app/c/krivo-demo`. **Rollback:** desligar "Vitrine publicada" na seção Vitrine do `Krivo Demo` e salvar (a loja volta a `não encontrado` em até 5 minutos, ou na hora pelo aviso de revalidação), ou, por SQL: `update tenant_storefronts set active = false where tenant_id = (select id from tenants where slug = 'krivo-demo');`; para apagar a linha, `delete` na mesma condição.
+
+## Prova visual (T11, 2026-10-19)
+
+**Autorização:** instrução do usuário no chat de 2026-10-19 ("faça T11 a T13", sobre a loja de demonstração). Executor, pela extensão do Chrome, em aba nova, fechada ao fim. Domínio público `https://vitrine-kappa-tawny.vercel.app`, loja `krivo-demo`, item `IM-0001`.
+
+**Capturas (salvas na hora, L-054; sem dado de lead; só dados fictícios da loja de demonstração)** em `capturas/`:
+
+| Arquivo | O que mostra |
+| --- | --- |
+| `t11-catalogo-desktop.jpg` | catálogo, 1384 px: cabeçalho, título da loja, **um** imóvel (`IM-0001`, apartamento, R$ 380.000, Abadia, Belo Horizonte, 2 quartos, 2 banheiros, 1 vaga, 72 m², sem foto) e o botão "Falar no WhatsApp" |
+| `t11-catalogo-rodape-desktop.jpg` | o mesmo catálogo rolado até o rodapé legal: razão social, CRECI, endereço, telefone, WhatsApp, Instagram e o aviso de preços |
+| `t11-imovel-desktop.jpg` | página do imóvel `IM-0001` em 1384 px, com "Tenho interesse" e "Ver todos os imóveis" e o mesmo rodapé |
+| `t11-catalogo-375.jpg` | catálogo no quadro de 375 px |
+| `t11-imovel-375.jpg` | página do imóvel no quadro de 375 px |
+
+As de 375 px usam a página real num `iframe` de 375 px (o `resize_window` da extensão não mudou o viewport, a janela continuou em 1440×900; é o mesmo procedimento do L16b, `vitrine/README.md` § Testes).
+
+**O que as capturas provam sobre a visibilidade:** o catálogo lista só o `IM-0001`. Dos 4 imóveis do tenant, o `IM-0002` (disponível, **não publicado**), o `IM-0003` (**reservado**, publicado) e o `IM-0004` (**vendido**, não publicado) não aparecem; a página do `IM-0003` mostra o título genérico da loja (`Krivo Demo — imóveis`), não o do imóvel.
+
+**Cabeçalhos (`curl -I`, 2026-10-19 ~03:51Z):**
+
+```
+/c/krivo-demo                     HTTP/1.1 200 OK  Content-Type: text/html  X-Robots-Tag: noindex, nofollow  Referrer-Policy: strict-origin-when-cross-origin
+/c/krivo-demo/imovel/IM-0001      HTTP/1.1 200 OK  Content-Type: text/html  X-Robots-Tag: noindex, nofollow  Referrer-Policy: strict-origin-when-cross-origin
+/c/krivo-demo/opengraph-image     HTTP/1.1 200 OK  Content-Type: image/png  X-Robots-Tag: noindex, nofollow  Referrer-Policy: strict-origin-when-cross-origin
+```
+
+Nenhuma das três respostas traz `Set-Cookie`. **Rollback:** não há ação a desfazer (só leitura e capturas).
