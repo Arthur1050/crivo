@@ -1006,3 +1006,24 @@ Nenhum gap é afirmação falsa sobre produção.
 ## Validation — veredito final do lote 16c (volta 5)
 
 **Result:** PASS com ressalvas (volta 5, HEAD `5b820d5`); evidência em `src/server/storefront/revalidation.ts:69` e `.specs/features/lote-16c-vitrine-ativacao/validation.md:966`
+
+## R15 resolvida: cache da vitrine retém em produção (executor, 2026-10-19)
+
+**Autorização do usuário (chat, 2026-10-19):** "Ok. Faça a correção do use cache". Código de produto mudado por pedido explícito do usuário (nova SPEC_DEVIATION de escopo do L16c, que não tinha código: a correção é um fix do L16b, commits `fix(l16b)` e `docs(l16b)`).
+
+**Causa (estabelecida por um agente Opus 5.5, esforço alto, com evidência):** as três leituras de loja (`lojaCacheada`, `imoveisCacheados`, `imovelCacheado` em `vitrine/src/dados/cache.ts`) rodam no pedido (dependem do `params`, sem `generateStaticParams`) e usavam `"use cache"`, que guarda em **memória da instância**; no serverless da Vercel essa memória não sobrevive entre invocações (doc do Next 16.2.11, `use-cache.md` e `use-cache-remote.md`). Localmente o cache já retinha (`next start` é um processo só), por isso o L16b não viu o defeito. O agente reproduziu o sintoma com a plataforma simulada (2 consultas em todas as 11 visitas, igual ao `pg_stat_activity` de produção) e descartou as outras hipóteses (argumentos instáveis, dado de pedido no escopo cacheado, perfil 60/60/300, `revalidateTag` extra, conexão).
+
+**Correção:** `"use cache: remote"` nas três funções (cache remoto da plataforma, Runtime Cache da Vercel, compartilhado entre instâncias). Perfil (`vitrine`: 60/60/300 s), tag (`tenant:<slug>:catalogo`) e a rota `/api/revalidar` **não mudaram**; nenhum `cacheHandlers` foi configurado. Commits `e51f8c5` (código, teste de unidade que fixa a diretiva, e a asserção R15 no `scripts/vitrine-e2e.ts` com a plataforma simulada por `scripts/vitrine-e2e-plataforma.cjs`) e `292e6e9` (AD-048, que emenda a AD-042 só na diretiva, e `vitrine/README.md`). Provas locais do agente: lint, typecheck e build da vitrine em 0; `vitest` da vitrine 94 testes; os cinco testes de paridade/isolamento/superfície, um por vez; `npm run vitrine:e2e` **67 de 67**; mutante (voltar para `use cache`) derruba o teste de unidade e as três checagens R15 do e2e; simulação do builder da Vercel (só `vitrine/` na cópia) com build em 0. Publicado com `git push origin main` sem força (`7db25d6..292e6e9`, 0 trailers); deployment `dpl_3KUDJ7rxkVWrqtoqc7qCS6MujDtG`, commit `292e6e9`, READY.
+
+**Prova em produção (executor, somente leitura mais uma troca de status restaurada), 13:14Z a 13:17Z:**
+
+| Prova | Resultado |
+| --- | --- |
+| **Retenção:** 6 `curl` em `/c/krivo-demo/imovel/IM-0001`, ~9 s de intervalo (44 s no total), com um instantâneo de `pg_stat_activity` (`usename = 'krivo_vitrine'`, só leitura) depois de cada um | consulta nova **só no 1º pedido** (`query_start` 13:14:27.680Z e 13:14:27.683Z, as 2 sessões); os pedidos 2 a 6 **sem nenhum `query_start` novo**. Antes da correção cada pedido gerava consulta nova |
+| **Aviso depois do fix:** `IM-0001` Reservado às ~13:16:18Z e Disponível às ~13:16:42Z (sessão do usuário no Chrome, tenant `Krivo Demo` conferido na tela) | logs da vitrine: `POST /api/revalidar` às 13:16:18.552Z e 13:16:42.623Z, ambos `[vitrine] revalidar: krivo-demo (204)`, deployment `dpl_3KUDJ7…`; logs do CRM: nenhuma linha `revalidação falhou` |
+| **Frescor com o cache retendo (F15):** sonda a cada ~5,6 s (`scratch/l16c-poller.sh`, 21 amostras, 0 erros) | ida (some da vitrine): **1,6 s** depois do clique; volta (reaparece): ≤ **5,5 s** (a amostra anterior ainda estava no estado antigo). Os dois bem abaixo de 300 s, agora **por revalidação, não por falta de cache** |
+| **Restauração:** `IM-0001` | Disponível e Publicado (conferido no CRM), e a sessão do CRM voltou ao tenant `Triângulo Imóveis`; só uma ida e volta de status neste teste |
+
+**Resultado:** o cache de dados **retém** (um pedido ao banco por página, depois cache) e o aviso do CRM o **derruba na hora** (204); a F15 continua cumprida. **R15 fechada.** O que o executor não provou: o uso do Runtime Cache no painel da Vercel (a doc consultada não diz se o Hobby inclui o recurso; a medição acima mostra que ele funciona), e o comportamento depois dos 60 s do perfil (renovação em segundo plano), que não foi medido em produção.
+
+**Rollback:** `git revert e51f8c5` (volta a `"use cache"`; o aviso e o perfil não dependem dele). A AD-048 é emenda da AD-042; reverter o código exige reverter a AD-048.
