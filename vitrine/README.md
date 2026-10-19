@@ -82,6 +82,8 @@ Segundo projeto da Vercel (`vitrine`), com Root Directory `vitrine`, ativado no 
 
 O alias `*-arthur1050s-projects.vercel.app` do projeto fica atrás da Vercel Authentication; o visitante e o crawler do WhatsApp usam o domínio público. Mudar uma variável exige novo deployment (Redeploy) para valer.
 
+**Ignored Build Step (`vercel.json` desta pasta):** o build da vitrine só roda se algo dentro de `vitrine/` mudou desde o último deployment pronto (`git diff --quiet $VERCEL_GIT_PREVIOUS_SHA HEAD ./`; sem esse SHA, ou se o `git diff` falhar, o build roda). Commits só de documentação ou do CRM não reimplantam a vitrine, porque ela não importa nada de fora de `vitrine/` (AD-041). Para forçar um build sem mudança na pasta, use Redeploy no painel.
+
 ## Decisões
 
 AD-025 (projeto separado, leitura pura), AD-040 (fronteira por views e papel), AD-041 (pasta `vitrine/` e contrato espelhado), AD-042 (ponte de revalidação e perfil de cache), AD-043 (URLs, `noindex` e fotos externas), AD-044 (testes que cruzam a fronteira), AD-046 (tema no HTML do servidor). Texto completo em `.specs/STATE.md`.
