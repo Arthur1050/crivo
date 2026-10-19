@@ -1,6 +1,6 @@
 # Lote 16c — Validação
 
-**Verdict:** PASS com ressalvas — volta 4: V1 a V4 estão corrigidos como texto e o aviso de revalidação (R14) e o cache da vitrine (R15) seguem como ressalvas abertas aceitas pelo usuário, mas a nota V5 do executor diz ter atualizado o Handoff com os deployments de produção sem tê-lo feito, e o marcador da linha 861 derruba o `validate_state.py` (seção "Verificação independente, volta 4" no fim).
+**Verdict:** PASS com ressalvas — volta 5: a R14 (aviso de revalidação) está fechada e comprovada pelos logs das duas pontas relidos pelo Verifier, e o que resta são só ressalvas já aceitas pelo usuário (R15 cache da vitrine, R9, R11, loja piloto sem vitrine, `VITRINE_DATABASE_URL` no CRM, Ignored Build Step) mais textos desatualizados de gravidade baixa (seção "Verificação independente, volta 5" no fim).
 
 Regra de todas as seções: nenhum valor de variável, senha, token ou connection string é lido ou registrado.
 
@@ -953,3 +953,56 @@ O `204` prova o aviso e **também que o segredo é o mesmo nos dois projetos** (
 **Verificação:** esta prova foi feita pelo executor com logs; não passou por um Verifier independente (as voltas já foram usadas e o veredito do lote já foi dado com a R14 aceita como ressalva). O usuário pode pedir uma 5ª verificação se quiser.
 
 **Rollback:** a variável antiga era o valor inválido (sem `https://`); não há por que voltar. Para desfazer o teste, nada a fazer (o `IM-0001` já está restaurado e a sessão do CRM voltou ao tenant `Triângulo Imóveis`).
+
+## Verificação independente, volta 5 (Verifier Opus 5.5, 2026-10-19)
+
+Escopo restrito a um fato: o fechamento da R14 (aviso de revalidação do CRM para a vitrine) registrado na § "R14 resolvida" acima (`5b820d5`). Verifier novo, sem participação nas voltas 1 a 4. Tudo por leitura: nenhum acesso ao CRM nem ao WhatsApp, nenhuma escrita na Vercel, no n8n ou no banco, nenhum valor de variável decifrado ou impresso, nenhum aviso novo provocado. Releitura feita entre 12:22Z e 12:27Z, dentro da retenção de 1 hora do plano Hobby, então os logs da janela da prova (12:19Z a 12:21Z) ainda existiam e foram lidos diretamente.
+
+### Conferências
+
+| # | Item | Evidência que o Verifier viu | Resultado |
+| --- | --- | --- | --- |
+| 1 | Causa: URL sem esquema produz `TypeError` | `src/server/storefront/revalidation.ts:48` só faz `.trim()` em `VITRINE_PUBLIC_URL`; a linha 69 chama o `fetch` com `baseUrl` + `/api/revalidar`; o `catch` da linha 85 registra `[vitrine] revalidação falhou: slug=… erro=<error.name>` (linha 87). Prova local sem rede: `node -e "fetch('vitrine-x.example/api/revalidar').catch(e=>console.log(e.name))"` imprime `TypeError` (`ERR_INVALID_URL`, "Failed to parse URL"); com `https://` o mesmo `fetch` não dá `TypeError` (dá `TimeoutError` com um `AbortSignal.timeout(1)`). O emissor só registra log na falha (status fora de 2xx, timeout ou exceção) ou quando a vitrine não está configurada; no sucesso, nada | **Confirmado** |
+| 2a | Receptor (projeto `vitrine`, `get_runtime_logs`, busca `revalidar`, 12:00Z a 12:22:44Z) | Exatamente duas linhas: `POST /api/revalidar` às 12:19:43.500Z e às 12:20:26.975Z, ambas `[vitrine] revalidar: krivo-demo (204)`, deployment `dpl_HeVqDGU4wuqvR1qsHMcUzguVh3Zr` (produção, commit `b8101c6`). Em `vitrine/app/api/revalidar/route.ts:20-27` o segredo é conferido antes de ler o corpo e recusa com `(401)`; o `(204)` só é registrado na linha 37, depois da autorização | **Confirmado** (também fecha a R8: o Bearer do CRM foi aceito pela vitrine) |
+| 2b | Emissor (projeto `crivo`, busca `vitrine`, 12:00Z a 12:22:47Z) | "No logs found". Para não depender da busca textual, li também **todos** os logs do CRM de 12:15Z a 12:23Z sem filtro: 7 linhas, todas o aviso de SSL do `pg` (stderr), entre elas `POST /imoveis` às 12:19:42.950Z e às 12:20:26.667Z no `dpl_HBwBgyFWEK78gJMWfBK9B3jrDxfF`, ~0,5 s antes de cada `204` da vitrine; nenhuma linha `revalidação falhou`. O 3º `POST /imoveis` (12:21:05.980Z, seguido de `GET /imoveis`) não gerou aviso na vitrine e é compatível com a troca de tenant registrada pelo executor (`setActiveTenant` em `src/server/tenant.ts:77` é server action chamável de qualquer página). As buscas de 1 hora (`falhou`, nível warning/error) foram recusadas pela API por retenção (400), sem efeito no resultado porque a listagem sem filtro cobre a janela da prova | **Confirmado** |
+| 3 | Variável e redeploy | `filter_project_envs` do `crivo` (só nomes e datas, `decrypted: false`): `VITRINE_PUBLIC_URL` id `ESSCvHhAhADUJPxQ`, production e preview, `updatedAt` 1792412145601 = 2026-10-19T12:15:45.601Z, editada pela conta `arthur1050` (token do usuário). `list_deployments`: `dpl_HBwBgyFWEK78gJMWfBK9B3jrDxfF` criado 12:15:56.955Z (11 s depois), READY, produção, commit `b8101c6c…` ("chore(l16): documentar as variáveis da vitrine…"); as duas gravações da prova foram servidas por ele (2b) | **Confirmado** |
+| 4a | Escopo na Vercel | No `crivo`, a única variável com `updatedAt` em 2026-10-19 é a `VITRINE_PUBLIC_URL` (as outras são de 2026-10-18 ou antes). No `vitrine`, nenhuma variável alterada depois de 2026-10-19T03:20:35Z (as três de lá são da recriação anterior à volta 2). Uma variável alterada, como registrado | **Confirmado** |
+| 4b | Escopo no git | `git log 5b820d5 -8 --stat`: `5b820d5` toca só 6 arquivos `.specs` (ROADMAP, STATE, INDEX, ARCHIVED, spec, validation); `b8101c6` toca só `.env.example` (+10/−1); os 6 commits anteriores só `.specs`. Nenhum código de produto novo | **Confirmado** |
+| 4c | `.env.example` sem credencial | Diff de `b8101c6`: só `VITRINE_DATABASE_URL="postgresql://example:password@localhost/vitrine"`, `VITRINE_REVALIDATE_SECRET="your-secret-key"` e `VITRINE_PUBLIC_URL="https://your-vitrine-domain.com"`, mais comentários. Valores de exemplo | **Confirmado** |
+| 4d | Trailers | `git log origin/main --format=%B` filtrado por `co-authored-by` ou `generated with` (sem diferenciar maiúsculas) = 0; o mesmo no HEAD = 0. `origin/main` = HEAD = `5b820d5` | **Confirmado** |
+| 4e | Estado restaurado | `GET https://vitrine-kappa-tawny.vercel.app/c/krivo-demo` → 200, catálogo lista "Apartamento em Abadia, IM-0001, R$ 380.000" | **Confirmado** (leitura pública, sem tocar no CRM) |
+| 5 | Coerência dos documentos | ROADMAP:312, STATE:422, INDEX:60, ARCHIVED:3 e spec (ATIV-03) dizem que a R14 foi resolvida pela correção da `VITRINE_PUBLIC_URL`, que a prova foi do executor e que a R15 segue aberta. Nenhum afirma algo falso sobre produção. Restam textos desatualizados (X1 a X4) | **Coerente, com gaps baixos** |
+| 6 | `validate_state.py` | Antes de escrever: exit 0. Depois: ver abaixo | ver abaixo |
+
+### Estado das ressalvas
+
+| # | Estado na volta 5 |
+| --- | --- |
+| R14 (aviso de revalidação) | **Fechada e comprovada.** Causa reproduzida localmente; correção vista na Vercel (`updatedAt` 12:15:45Z, deployment 11 s depois); par de logs relido pelo Verifier dentro da retenção: dois `204` na vitrine casados com dois `POST /imoveis` do CRM no mesmo deployment, nenhum aviso de falha no CRM |
+| R8 (segredo igual nos dois projetos) | **Fechada**: o `204` só é emitido depois de `verificarSegredo` aceitar o Bearer do CRM (`vitrine/app/api/revalidar/route.ts:20-37`) |
+| ATIV-03 AC3 | **Atendido** |
+| R15 (`use cache` da vitrine não retém) | Aberta, aceita; não foi tocada nesta rodada. A F15 (≤ 2,9 s) segue como medição sem cache |
+| R9 (agendador do n8n despublicado) | Aberta, aceita (não relida: fora do escopo desta volta) |
+| R11 (prova na loja demo) | Aberta, aceita; a demo continua pública (4e) |
+| Loja piloto real sem vitrine | Aberta, aceita (falta CRECI) |
+| `VITRINE_DATABASE_URL` no CRM | Aberta, aceita; **relida: continua no `crivo`** (production e preview) |
+| Ignored Build Step do `vitrine` | Aberta, aceita; **indício novo**: os pushes de `b8101c6` (só `.env.example`) e de `5b820d5` (só `.specs`) geraram builds de produção novos da vitrine (`dpl_HeVqDGU4wuqvR1qsHMcUzguVh3Zr` e `dpl_7MTXMeytD5naEkAk4DCUE5ghwMG3`) |
+
+O que resta são **apenas ressalvas já aceitas pelo usuário** e os textos desatualizados abaixo, nenhum deles sobre comportamento de produção.
+
+### Gaps novos
+
+| # | Gravidade | Gap | Correção exata (para o executor; o Verifier não tocou nesses arquivos) |
+| --- | --- | --- | --- |
+| X1 | Baixa | `INDEX.md:60` diz no mesmo texto que a R14 foi resolvida e, mais adiante, "ATIV-03 AC3 não atendido", o que contradiz o `spec.md` (ATIV-03 `Done`, "AC3 provado em 2026-10-19") e a § R14 resolvida | Em `INDEX.md:60`, trocar "ATIV-03 AC3 não atendido" por "ATIV-03 AC3 atendido em 2026-10-19 (R14 resolvida)"; e trocar "(sem verificação independente)" por "(confirmada pela 5ª verificação independente, `validation.md`)" |
+| X2 | Baixa | `STATE.md:422` (Handoff): o item "(7) o `.env.example` da raiz tem uma edição do usuário não commitada (variáveis `VITRINE_*` de exemplo), fora do lote" ficou falso para o repositório (foi commitado em `b8101c6`); o trecho "**Ressalva aberta aceita pelo usuário ("fix depois"):** o **aviso de revalidação do CRM falhava** (resolvido, ver acima) (…); (b) o **`use cache`** …" lista como aberta uma ressalva resolvida e tem um "(b)" sem "(a)"; "sem verificação independente" ficou desatualizado | Trocar o item (7) por "(7) o `.env.example` da raiz, com as variáveis `VITRINE_*` de exemplo, foi commitado em `b8101c6` a pedido do usuário"; trocar o trecho da ressalva aberta, do "**Ressalva aberta aceita**" até antes de "**Pendente do usuário**", por "**Ressalva aberta aceita pelo usuário ("fix depois"):** o **`use cache` da vitrine não retém** (R15; cada visita consulta o banco como `krivo_vitrine`; por isso a F15 deu ≤ 2,9 s; fix candidato no L16b)."; trocar "sem verificação independente" por "confirmada pela 5ª verificação independente (`validation.md`)" |
+| X3 | Baixa | `ARCHIVED.md:3` mantém no presente "o aviso de revalidação do CRM falha em produção (`TypeError`)" antes do parêntese que diz "resolvida depois" | Trocar "falha em produção" por "falhava em produção" e acrescentar, no fim da frase da 4ª verificação, "; a 5ª verificação confirmou a R14 fechada (PASS com ressalvas, só ressalvas aceitas)" |
+| X4 | Baixa | O push de `5b820d5` para `origin/main` (12:21:53Z, pelo `reflog`; gerou `dpl_6FUuPUzKHUh6CXjiseYYhwJA7Wu9` no CRM e `dpl_7MTXMeytD5naEkAk4DCUE5ghwMG3` na vitrine) não está registrado, e a frase do usuário citada na § R14 autoriza "commitar" o `.env.example`, não o push que publicou `b8101c6` (o push era o meio do redeploy necessário para "resolver os erros em produção", e a auditoria de trailers dá 0, então não houve dano). Mesmo padrão da W4 da volta 4. Na mesma §, a tabela diz "12:05Z a 12:20Z", mas a 2ª linha da vitrine é de 12:20:26.975Z (cosmético) | Nota datada no fim deste arquivo com os dois pushes (`cbcb06c..b8101c6` às 12:15:52Z e `b8101c6..5b820d5` às 12:21:53Z), a base da autorização e a auditoria de trailers (0); trocar "12:05Z a 12:20Z" por "12:05Z a 12:21Z" |
+
+Nenhum gap é afirmação falsa sobre produção.
+
+**Saída do `validate_state.py` depois de escrever esta seção (2026-10-19, ~12:28Z):** `validate_state: 0 error(s) across [...]` (23 lotes, entre eles `lote-16c-vitrine-ativacao`), exit 0. Rodado de novo depois deste parágrafo, antes do commit.
+
+## Validation — veredito final do lote 16c (volta 5)
+
+**Result:** PASS com ressalvas (volta 5, HEAD `5b820d5`); evidência em `src/server/storefront/revalidation.ts:69` e `.specs/features/lote-16c-vitrine-ativacao/validation.md:966`
