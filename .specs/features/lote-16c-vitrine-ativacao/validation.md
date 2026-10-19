@@ -858,7 +858,7 @@ A volta 3 (seção anterior) reprovou. Estas são as notas datadas do executor; 
 | R14 (era V1/R8) | O aviso de revalidação do CRM falha em produção com `TypeError` (7 de 7 gravações); o segredo igual nos dois projetos não está provado; o ATIV-03 AC3 não está atendido | Usuário: conferir `VITRINE_PUBLIC_URL` (URL completa com `https://`, sem espaços) e `VITRINE_REVALIDATE_SECRET` (igual ao da vitrine, ASCII imprimível) no projeto do CRM, Redeploy e salvar de novo a Vitrine do `Krivo Demo`; conferir no log da vitrine `[vitrine] revalidar: krivo-demo (204)` |
 | R15 (era V2) | O `use cache` da vitrine não retém em produção (cada visita consulta o banco como `krivo_vitrine`); a F15 (≤ 2,9 s) vale como medição, não pelo cache | Fix candidato no L16b: investigar o `use cache` na Vercel (AD-042) |
 
-**Marcador do gate:** a linha `**Result:** FAIL …` do bloco "veredito vigente (volta 3)" acima foi o marcador de gate do executor para aquele momento; ela foi renomeada para `**Veredito da volta 3:**` para o `validate_state.py` ler um único resultado atual (o do bloco final abaixo). O texto do Verifier da volta 3 (`4ad48d3`, "Veredito: FAIL") **permanece intacto** e é o registro da reprovação.
+**Marcador do gate:** a linha de resultado com a palavra FAIL do bloco "veredito vigente (volta 3)" acima foi o marcador de gate do executor para aquele momento; ela foi renomeada para `**Veredito da volta 3:**` para o `validate_state.py` ler um único resultado atual (o do bloco final abaixo). O texto do Verifier da volta 3 (`4ad48d3`, "Veredito: FAIL") **permanece intacto** e é o registro da reprovação.
 
 **Verificação depois do aceite:** com a decisão acima, o executor pediu uma 4ª verificação independente, restrita ao que mudou desde a volta 3 (V3 a V5 corrigidos, V1 e V2 como ressalvas abertas nos lugares certos), sem refazer o resto. O resultado está na seção seguinte.
 
@@ -924,3 +924,11 @@ A volta 3 (seção anterior) reprovou. Estas são as notas datadas do executor; 
 ## Validation — veredito final do lote 16c (volta 4)
 
 **Result:** PASS com ressalvas (verificação da volta 4, HEAD `9ddf612`); evidência em `src/server/storefront/revalidation.ts:46` e `.specs/features/lote-16c-vitrine-ativacao/validation.md:858`
+
+## Publicação dos registros (executor, 2026-10-19)
+
+Dois `git push origin main` sem força, depois de auditar trailers (0 em `origin/main..HEAD` e 0 em `origin/main`) e segredos (0): `010c2d9..f4e58c3` (os 7 commits da prova real e das correções da volta 3, sob a autorização permanente da meta de publicar o fechamento; a publicação foi feita antes do aceite do usuário para não deixar o registro honesto só local) e, depois do aceite e da volta 4, o push final do fechamento (hashes no Handoff). Cada push reimplanta o CRM e a vitrine com **código idêntico** ao do commit `9ce477a` (as mudanças foram só em `.specs`); os IDs dos deployments mudam a cada push, então os documentos citam o commit, não o ID. O sinal de que o Ignored Build Step da vitrine não está ligado (um commit só de documentação gerou build da vitrine) já estava na pendência do usuário.
+
+## Fechamento (executor, 2026-10-19)
+
+O resultado vigente do lote é o da volta 4, **PASS com ressalvas** (bloco `## Validation — veredito final do lote 16c (volta 4)` acima), com R14 (aviso de revalidação) e R15 (cache da vitrine) aceitas como ressalvas abertas pelo usuário. INDEX, ARCHIVED e Handoff foram atualizados com o aceite. O `validate_state.py` roda depois desta seção.
