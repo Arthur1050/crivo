@@ -672,3 +672,7 @@ Resposta aos gaps do Verifier (seção anterior, veredito FAIL). Só notas datad
 - **R10**: o rollback da T7 (`pause_project`) e da T16 (operações inversas em `scratch/n8n-antes/`) seguem disponíveis; o `scratch/` não pode ser apagado no arquivamento.
 
 **Push:** nada impede o push dos commits de fechamento pelo lado da vitrine (o próximo deployment sai com as 3 variáveis); continua exigindo ordem explícita do usuário e nova auditoria de trailer.
+
+## Validation — resultado final do lote 16c (2026-10-19)
+
+**Result:** PASS com ressalvas (2ª verificação independente, HEAD `1008ecf`; achados N1 a N3 fechados em `45d51f1`, lições decididas em `e052dc7`). Evidência: a configuração do build da vitrine em `vitrine/next.config.ts:1` e os registros por task neste arquivo (§ T7 em `validation.md:441`, § T10 no bloco "Vitrine da imobiliária piloto"). A prova real (T10 a T13) fica pendente pelo Edge Case "sem CRECI" (`spec.md:185`) e está no Handoff do `STATE.md`.
