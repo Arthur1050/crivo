@@ -676,3 +676,22 @@ Resposta aos gaps do Verifier (seção anterior, veredito FAIL). Só notas datad
 ## Validation — resultado final do lote 16c (2026-10-19)
 
 **Result:** PASS com ressalvas (2ª verificação independente, HEAD `1008ecf`; achados N1 a N3 fechados em `45d51f1`, lições decididas em `e052dc7`). Evidência: a configuração do build da vitrine em `vitrine/next.config.ts:1` e os registros por task neste arquivo (§ T7 em `validation.md:441`, § T10 no bloco "Vitrine da imobiliária piloto"). A prova real (T10 a T13) fica pendente pelo Edge Case "sem CRECI" (`spec.md:185`) e está no Handoff do `STATE.md`.
+
+## Loja de demonstração ativada para a prova real (T10 revisada, 2026-10-19, pedido do usuário)
+
+**Autorização do usuário (chat, 2026-10-19):** "Certo. Elabore dados fictícios para que possamos dar andamento nas demais tasks. Use a extensão para fazer isso", e, depois de eu perguntar o tenant: "Fiz o login no CRM na aba aberta do Chrome (usuário do tenant krivo-demo). Siga: ative a loja de demonstração com dados fictícios e faça T11 a T13." Esta é a única escrita em produção desta janela além da T12 (que também foi autorizada), e ela substitui a pendência "sem CRECI" do § anterior **só para a prova real**: a loja piloto de verdade (`triangulo`) continua sem vitrine, sem escrita e sem CRECI.
+
+**Ponto de atenção (o executor corrigiu a sessão):** a aba do CRM aberta pelo usuário estava no tenant `Triângulo Imóveis`, não no `Krivo Demo`. Antes de qualquer escrita o executor trocou o tenant ativo pelo seletor do menu lateral (cabeçalho `Krivo Demo`, recarga da página, WhatsApp do agente `+55 31 99300-0003`, 4 imóveis de Belo Horizonte) e conferiu o tenant na tela antes de salvar. Ao final, devolveu o seletor a `Triângulo Imóveis`. Nada foi escrito no `triangulo`.
+
+**O que foi escrito (CRM, aba do Chrome do usuário, às 03:49Z):** na seção Vitrine de Configurações do `Krivo Demo`: vitrine publicada, layout `grade`, fonte `inter`, cor padrão, CRECI `TESTE-DEMO 00000 (fictício)`, razão social `Krivo Demo Imóveis (teste, fictício) Ltda`, título `Krivo Demo Imóveis — vitrine de teste`, texto institucional que se declara de teste, Instagram `krivodemo.teste`, telefone `3130000000`, endereço `Rua Fictícia, 100, Belo Horizonte/MG (endereço de teste)`. Todos os dados são inventados e a página sai com `noindex, nofollow`.
+
+**Conferência por leitura (`scratch/l16c-b-lojas.ts`, `READ ONLY`, 03:49:58Z):**
+
+```
+tenant_storefronts: [{"slug":"krivo-demo","active":true,"layout":"grade","font":"inter","tem_creci":true,"tem_razao":true,"tem_cor":false}]
+vitrine.lojas (slug): [{"slug":"krivo-demo"}]
+```
+
+**Correção de método do § T10 anterior:** a contagem de `Página não encontrada` no corpo HTML que o executor usou para dizer "interface de não encontrado" é **frágil**: o texto aparece também no payload do Next (a prop `notFound` do layout) de uma página que existe. A prova que vale é o `<title>` (`Krivo Demo — imóveis` no catálogo e `Apartamento em Abadia — IM-0001` no item, ou o título genérico quando o imóvel não está visível), a leitura de `vitrine.lojas` e a captura. A conclusão daquela seção (nenhuma loja ativa) continua certa porque vem do banco.
+
+**O que ficou em produção:** a loja `krivo-demo` ativa, pública em `https://vitrine-kappa-tawny.vercel.app/c/krivo-demo`. **Rollback:** desligar "Vitrine publicada" na seção Vitrine do `Krivo Demo` e salvar (a loja volta a `não encontrado` em até 5 minutos, ou na hora pelo aviso de revalidação), ou, por SQL: `update tenant_storefronts set active = false where tenant_id = (select id from tenants where slug = 'krivo-demo');`; para apagar a linha, `delete` na mesma condição.
