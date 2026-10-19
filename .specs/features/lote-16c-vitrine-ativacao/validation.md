@@ -932,3 +932,24 @@ Dois `git push origin main` sem força, depois de auditar trailers (0 em `origin
 ## Fechamento (executor, 2026-10-19)
 
 O resultado vigente do lote é o da volta 4, **PASS com ressalvas** (bloco `## Validation — veredito final do lote 16c (volta 4)` acima), com R14 (aviso de revalidação) e R15 (cache da vitrine) aceitas como ressalvas abertas pelo usuário. INDEX, ARCHIVED e Handoff foram atualizados com o aceite. O `validate_state.py` roda depois desta seção.
+
+## R14 resolvida: causa do `TypeError` e prova do aviso de revalidação (executor, 2026-10-19)
+
+**Autorização do usuário (chat, 2026-10-19):** "Confira e resolva essa questão dos erros em produção. Pode commitar o .env.example". A mudança em variável de ambiente da Vercel abaixo é a única escrita de configuração do executor na Vercel neste lote; o valor é um endereço público, não um segredo. O `.env.example` do usuário foi commitado em `b8101c6` e publicado.
+
+**Causa (sem ler segredo nem decifrar variável):** a tela de Configurações do CRM, no tenant `Krivo Demo` (loja ativa), monta o link "Abrir vitrine" com `VITRINE_PUBLIC_URL`; o `href` dele era `vitrine-kappa-tawny.vercel.app/c/krivo-demo`, **sem `https://`**. Em `src/server/storefront/revalidation.ts:69` o `fetch` recebe `vitrine-kappa-tawny.vercel.app/api/revalidar`, uma URL inválida, e lança `TypeError` antes de qualquer pedido; o `catch` da linha 85 registra o aviso. É exatamente a causa possível nº 1 apontada pelo Verifier da volta 3. O segredo não era o problema (o `.trim()` dele não foi tocado e depois do conserto ele funcionou).
+
+**Correção:** `edit_project_env` no projeto do CRM, variável `VITRINE_PUBLIC_URL` (id `ESSCvHhAhADUJPxQ`, production e preview, tipo `encrypted`/config), valor trocado para `https://vitrine-kappa-tawny.vercel.app` (às 12:15Z, `updatedAt` 1792412145601). Nenhum código foi mudado. O push do `.env.example` (`b8101c6`) reimplantou o CRM com o valor novo: `dpl_HBwBgyFWEK78gJMWfBK9B3jrDxfF`, READY.
+
+**Prova (as duas pontas dos logs, L-091), 2026-10-19:** na loja `krivo-demo`, o `IM-0001` foi salvo como Reservado às ~12:19:43Z e de volta a Disponível às ~12:20:26Z, pela sessão do usuário no Chrome (restaurado: Disponível e Publicado; o título público `Apartamento em Abadia — IM-0001` voltou às 12:20:45Z).
+
+| Ponta | Log (`get_runtime_logs`, 12:05Z a 12:20Z) |
+| --- | --- |
+| Vitrine (receptor), projeto `vitrine` | `POST /api/revalidar` às 12:19:43.500Z e às 12:20:26.975Z, ambos `[vitrine] revalidar: krivo-demo (204)`, deployment `dpl_HeVqDGU4wuqvR1qsHMcUzguVh3Zr` |
+| CRM (emissor), projeto `crivo` | busca `vitrine` e `revalida`: **nenhum aviso**, nenhuma linha `revalidação falhou` (o emissor só loga na falha) |
+
+O `204` prova o aviso e **também que o segredo é o mesmo nos dois projetos** (a vitrine responderia 401 se não fosse). **R8 e R14 fechadas; o ATIV-03 AC3 passa a atendido.** O que **não** foi refeito é o tempo da F15 com revalidação (a medição de 2,9 s segue valendo como medição sem cache, R15); o cache da vitrine (R15) segue aberto, fix no L16b.
+
+**Verificação:** esta prova foi feita pelo executor com logs; não passou por um Verifier independente (as voltas já foram usadas e o veredito do lote já foi dado com a R14 aceita como ressalva). O usuário pode pedir uma 5ª verificação se quiser.
+
+**Rollback:** a variável antiga era o valor inválido (sem `https://`); não há por que voltar. Para desfazer o teste, nada a fazer (o `IM-0001` já está restaurado e a sessão do CRM voltou ao tenant `Triângulo Imóveis`).

@@ -194,7 +194,7 @@ e medir o frescor.
 | --- | --- | --- | --- |
 | ATIV-01 | P1: Gate de produção — AC1–AC3 | Tasks | Done (T0, 2026-10-17) |
 | ATIV-02 | P1: Banco de produção — AC1–AC6 | Tasks | Done (T1–T5, 2026-10-17) |
-| ATIV-03 | P1: Projetos e variáveis — AC1–AC4 | Tasks | Partial (T7 a T9 feitas; AC2 com sessões `krivo_vitrine`; **AC3 não atendido**: o aviso de revalidação do CRM falha em produção com `TypeError` e a igualdade do segredo não está provada, ver `validation.md` § V1, 2026-10-19) |
+| ATIV-03 | P1: Projetos e variáveis — AC1–AC4 | Tasks | Done (T7 a T9; AC2 com sessões `krivo_vitrine`; AC3 provado em 2026-10-19 pelo par de logs: a vitrine respondeu `(204)` ao aviso do CRM, depois de a `VITRINE_PUBLIC_URL` do CRM ser corrigida para ter `https://`; ver `validation.md` § R14 resolvida) |
 | ATIV-04 | P1: Publicação — AC1–AC3 | Tasks | Done (T6, 2026-10-17) |
 | ATIV-05 | P1: Prova real — AC1–AC6 e Edge Cases | Tasks | Done com ressalva (T10 a T13 feitas em 2026-10-19 com a loja de demonstração `krivo-demo`, dados fictícios, a pedido do usuário; a loja piloto real segue sem vitrine por falta de CRECI) |
 | ATIV-06 | P2: Documentação — AC1 | Tasks | Done (T14, 2026-10-18) |
