@@ -305,7 +305,7 @@ T13 → T14
 
 **Done when**:
 
-- [ ] Usuário confirma os nomes das 3 variáveis e o primeiro deployment pronto; rollback = pausar o projeto (REABERTA em 2026-10-18: o primeiro deployment ficou pronto, `dpl_5inpqLkWG4w1xDJ9MB9xfc2fk3yy` e `dpl_Hk4H7cdm1o3NNnPN9v2gXE1NYEyd`, e as 3 variáveis foram lidas às 20:48Z, mas o Verifier achou o projeto `vitrine` sem nenhuma variável às ~21:44Z (G1); pendente: o usuário recriar as 3 no projeto `vitrine` e fazer Redeploy)
+- [x] Usuário confirma os nomes das 3 variáveis e o primeiro deployment pronto; rollback = pausar o projeto (FECHADA em 2026-10-19: as 3 recriadas no projeto `vitrine` (03:19:54Z a 03:20:35Z), `dpl_14WVAGz1UCe8HBDcja2LGxdiFbTW` READY às 03:21:27Z; o Verifier da volta 2 viu sessões `krivo_vitrine` abertas pelo deployment novo. Antes disso, REABERTA em 2026-10-18: o primeiro deployment ficou pronto, `dpl_5inpqLkWG4w1xDJ9MB9xfc2fk3yy` e `dpl_Hk4H7cdm1o3NNnPN9v2gXE1NYEyd`, e as 3 variáveis foram lidas às 20:48Z, mas o Verifier achou o projeto `vitrine` sem nenhuma variável às ~21:44Z (G1); pendente: o usuário recriar as 3 no projeto `vitrine` e fazer Redeploy)
 
 **Tests**: none
 **Gate**: registro
