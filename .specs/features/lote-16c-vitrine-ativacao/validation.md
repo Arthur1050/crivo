@@ -723,3 +723,26 @@ As de 375 px usam a página real num `iframe` de 375 px (o `resize_window` da ex
 ```
 
 Nenhuma das três respostas traz `Set-Cookie`. **Rollback:** não há ação a desfazer (só leitura e capturas).
+
+## Medição do frescor (T12, F15, 2026-10-19)
+
+**Autorização:** instrução do usuário no chat de 2026-10-19 ("faça T11 a T13") e a diretriz da meta (única escrita em produção da T12: um imóvel, status original sempre restaurado). Executor, pela sessão do usuário no Chrome, tenant `Krivo Demo` conferido na tela. **Imóvel:** `IM-0001`, estado original **Disponível, Publicado, sem destaque**.
+
+**Método:** uma sonda em segundo plano (`scratch/l16c-poller.sh`, fora do git) fez `curl` em `https://vitrine-kappa-tawny.vercel.app/c/krivo-demo/imovel/IM-0001` a cada ~5,5 s (intervalo de 5 s mais a latência do `curl`), gravando o horário em milissegundos e o estado pelo `<title>`: `A` = `Apartamento em Abadia — IM-0001` (disponível) e `U` = `Krivo Demo — imóveis` (indisponível). O horário do clique em "Salvar" foi gravado pelo próprio navegador (`Date.now()` num ouvinte de clique), logo o relógio é o mesmo da sonda. Em cada rodada, ida = Disponível → Reservado e volta = Reservado → Disponível.
+
+| Rodada | Sentido | Clique em Salvar (UTC) | Última amostra antes do clique | Primeira amostra no estado novo (segundos depois do clique) | Limite superior do frescor |
+| --- | --- | --- | --- | --- | --- |
+| 1 | ida (some da vitrine) | 03:54:03.747 | A | **2,4 s** (U) | ≤ 2,9 s |
+| 1 | volta (reaparece) | 03:55:05.933 | U | **1,6 s** (A) | ≤ 2,1 s |
+| 2 | ida | 03:55:38.913 | A | **2,3 s** (U) | ≤ 2,8 s |
+| 2 | volta | 03:56:03.291 | U | **0,1 s** (A) | ≤ 0,6 s |
+| 3 | ida | 03:57:29.974 | A | **2,3 s** (U) | ≤ 2,8 s |
+| 3 | volta | 03:58:10.271 | U | **0,8 s** (A) | ≤ 1,3 s |
+
+O limite superior soma ~0,5 s de latência do `curl` ao início da primeira amostra no estado novo; o tempo real de cada mudança está entre o clique e esse limite. A sonda fez 71 amostras (03:53:10Z a 03:59:40Z), 49 `A` e 22 `U`, **nenhuma com erro** (nenhum código diferente de 200).
+
+**Resultado:** as 6 mudanças apareceram em **≤ 2,9 s**, bem abaixo do teto de 300 s. **F15 confirmada** (AD-042, perfil `vitrine` 60/60/300 s). Isto também prova, de ponta a ponta, o aviso de revalidação do CRM (`VITRINE_PUBLIC_URL` e `VITRINE_REVALIDATE_SECRET` do CRM) e que o `VITRINE_REVALIDATE_SECRET` recriado no projeto `vitrine` é o mesmo do CRM: sem isso a revalidação responderia 401 e a mudança levaria até 300 s para aparecer (ressalva R8 do Verifier fechada).
+
+**Restauração:** ao fim, o CRM lista o `IM-0001` como **Disponível** e **Publicado** (conferido na tela às 03:58Z) e a sonda recebeu `A` nas amostras seguintes; os outros três imóveis (`IM-0002`, `IM-0003`, `IM-0004`) não foram tocados. O CRM mostra o `IM-0001` com a mesma publicação e sem destaque. A sonda foi encerrada (3 processos).
+
+**Rollback:** nenhum além da própria restauração acima (o estado original já foi devolvido).
