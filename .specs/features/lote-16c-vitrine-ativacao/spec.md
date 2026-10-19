@@ -14,10 +14,10 @@ prova a vitrine funcionando com dado real.
 
 ## Goals
 
-- [ ] A vitrine da imobiliária piloto responde em produção, com o papel de banco provado restrito.
-- [ ] Um imóvel marcado como reservado no CRM some da vitrine, e o tempo até sumir fica medido e
+- [x] A vitrine responde em produção, com o papel de banco provado restrito (2026-10-19, com a loja de demonstração `krivo-demo`; a da imobiliária piloto real segue pendente por falta de CRECI).
+- [x] Um imóvel marcado como reservado no CRM some da vitrine, e o tempo até sumir fica medido e
       registrado.
-- [ ] Toda ação externa tem autorização, saída e rollback registrados em `validation.md`.
+- [x] Toda ação externa tem autorização, saída e rollback registrados em `validation.md`.
 
 ## Out of Scope
 
@@ -26,7 +26,7 @@ prova a vitrine funcionando com dado real.
 | Domínio próprio, DNS, certificado | Fora do L16 |
 | Qualquer mudança de código de produto | Código é do L16a/L16b; defeito encontrado vira fix task no lote de origem ou lote novo |
 | Indexação, sitemap | `noindex` (AD-043) |
-| `ignoreCommand` no projeto do CRM | Ideia adiada (context.md) |
+| `ignoreCommand` no projeto do CRM | Ideia adiada (context.md); **feito em 2026-10-19 a pedido do usuário, depois do fechamento** (`vercel.json` do CRM e da vitrine; `validation.md`) |
 | Escrita do executor em dado de produção (imóveis, configurações) | Feita pelo usuário pela tela do CRM |
 
 ---
@@ -206,6 +206,6 @@ e medir o frescor.
 
 ## Success Criteria
 
-- [ ] A vitrine da imobiliária piloto responde em produção com a identidade dela.
-- [ ] O papel de produção tem só os dois grants, provado por consulta.
-- [ ] O tempo de saída de um imóvel reservado está medido; o pior caso não passa de 5 min.
+- [x] A vitrine responde em produção com a identidade da loja (demonstração `krivo-demo`; a piloto real segue pendente por falta de CRECI).
+- [x] O papel de produção tem só os dois grants, provado por consulta (T5).
+- [x] O tempo de saída de um imóvel reservado está medido (de 1,6 s a ≤ 5,5 s com o cache remoto); o pior caso não passa de 5 min.

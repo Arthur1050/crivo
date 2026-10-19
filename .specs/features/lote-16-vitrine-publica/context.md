@@ -114,4 +114,4 @@ página de imóvel indisponível com a marca da imobiliária.
 - Domínio próprio por imobiliária, sitemap e indexação.
 - Upload de foto para Blob e otimização de imagem (L12 item 1).
 - Filtros de busca na vitrine (tipo, bairro, preço).
-- `ignoreCommand` no projeto Vercel do CRM para não rebuildar quando só `vitrine/` muda.
+- `ignoreCommand` no projeto Vercel do CRM para não rebuildar quando só `vitrine/` muda. (**Feito em 2026-10-19**, a pedido do usuário, junto com o da vitrine: `vercel.json` com `VERCEL_GIT_PREVIOUS_SHA`; ver `features/lote-16c-vitrine-ativacao/validation.md`.)

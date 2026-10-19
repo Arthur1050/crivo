@@ -302,20 +302,20 @@ usuário em 2026-10-07: dos oito itens originais, três saíram do lote (1, 3, 7
 **Posição**: deliberadamente a última preocupação deste roadmap (usuário, 2026-09-05), apesar de ter
 sinal de cliente real. Tudo que vem antes serve o piloto que já existe; a vitrine amplia superfície.
 
-> **Status (2026-10-10)**: planejado em 2026-10-09 e dividido em três lotes (`features/lote-16-vitrine-publica/`
-> com `context.md` e `design.md` comuns). **L16a (lado CRM) executado** em 2026-10-09, Verifier PASS,
-> só nos bancos de teste (`features/lote-16a-vitrine-lado-crm/`, linha no `features/INDEX.md`).
-> **L16b** (projeto `vitrine/`) executado em 2026-10-12, Verifier PASS. **L16c** (ativação em produção) executado
-> em 2026-10-17 e 2026-10-18 (`features/lote-16c-vitrine-ativacao/`, linha no `features/INDEX.md`): schema,
-> views e papel `krivo_vitrine` em produção, o código da vitrine e do CRM publicados, segundo projeto
-> `vitrine` na Vercel (domínio público `vitrine-kappa-tawny.vercel.app`, `noindex` confirmado) e a renomeação
-> para Krivo. **Prova real feita com a loja de demonstração** (`krivo-demo`, dados fictícios, 2026-10-19): capturas, frescor F15 (≤ 2,9 s, por leitura sem cache da vitrine, e depois do fix do cache remoto ≤ 5,5 s por revalidação; o aviso de revalidação do CRM falhava por uma URL sem `https://` e foi resolvido em 2026-10-19) e
-> prévia do WhatsApp F17 confirmados. A loja piloto real continua sem vitrine porque o usuário ainda não tem CRECI
-> (a ativação exige CRECI e razão social). O isolamento descrito
+> **Status (2026-10-19)**: planejado em 2026-10-09 e dividido em três lotes (`features/lote-16-vitrine-publica/`
+> com `context.md` e `design.md` comuns). **L16a (lado CRM)** executado em 2026-10-09 e **L16b** (projeto `vitrine/`) em
+> 2026-10-12, os dois com Verifier PASS. **L16c (ativação em produção)** executado em 2026-10-17 a 2026-10-19
+> (`features/lote-16c-vitrine-ativacao/`, linha no `features/INDEX.md`), PASS na 6ª verificação: schema, views e papel
+> `krivo_vitrine` em produção, o código da vitrine e do CRM publicados, segundo projeto `vitrine` na Vercel (domínio
+> público `vitrine-kappa-tawny.vercel.app`, `noindex` confirmado) e a renomeação para Krivo. **Prova real feita com a loja de
+> demonstração** (`krivo-demo`, dados fictícios): capturas, frescor F15 (1,6 s a ≤ 5,5 s, por revalidação, com o cache remoto da
+> AD-048) e prévia do WhatsApp F17. Depois do fechamento foram corrigidos o aviso de revalidação do CRM (a URL estava sem
+> `https://`; endurecido pela AD-049) e o `ignoreCommand` (vitrine e CRM). **Pendente:** a loja piloto real continua sem vitrine
+> porque o usuário ainda não tem CRECI nem razão social real (a ativação exige os dois). O isolamento descrito
 > abaixo foi refinado pela AD-040 (o papel lê só duas views do schema `vitrine`, não a tabela de imóveis
 > e colunas de `tenants`) e o frescor pela AD-042 (perfil `vitrine` 60/60/300 s em vez de
-> `cacheLife('minutes')`); a pasta `vitrine/` neste repositório é a AD-041 e o contrato público a AD-043.
-> O texto abaixo é o registro da decisão de 2026-09-05.
+> `cacheLife('minutes')`, com a diretiva `use cache: remote` da AD-048); a pasta `vitrine/` neste repositório é a AD-041 e o
+> contrato público a AD-043. O texto abaixo é o registro da decisão de 2026-09-05.
 
 **Arquitetura decidida (2026-09-05): projeto separado, leitura pura, usuário de banco SELECT-only.**
 Ver AD-025 em `STATE.md`.
