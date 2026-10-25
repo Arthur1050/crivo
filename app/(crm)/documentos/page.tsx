@@ -5,7 +5,7 @@ import { Heading, Text } from "@astryxdesign/core/Text";
 import { describeBenchmarkNotice } from "@/src/components/documents/benchmark-notice";
 import { CategoryManagerDialog } from "@/src/components/documents/category-manager-dialog";
 import { DocumentProcessingRefresh } from "@/src/components/documents/document-processing-refresh";
-import { DocumentsTable } from "@/src/components/documents/documents-table";
+import { DocumentsBrowser } from "@/src/components/documents/documents-browser";
 import { DocumentsToolbar } from "@/src/components/documents/documents-toolbar";
 import { UploadDialog } from "@/src/components/documents/upload-dialog";
 import { NavLink } from "@/src/components/shared/nav-link";
@@ -39,6 +39,10 @@ interface DocumentosPageProps {
  * `searchParams` (modalidade/categoria/q) e consulta o banco já filtrado via
  * `getActiveTenantId()`. Duas condições de vazio são distintas: tenant sem
  * nenhum documento vs. filtro/busca sem resultado.
+ *
+ * Composta como gerenciador de arquivos: cabeçalho com ações, busca com o
+ * menu "Filtrar e ordenar" e "Todos os arquivos" em grade ou lista. As pastas
+ * ficam para o lote 17 (`.specs/ROADMAP-POS-PILOTO.md`).
  */
 export default async function DocumentosPage({
   searchParams,
@@ -75,7 +79,7 @@ export default async function DocumentosPage({
 
   return (
     <VStack gap={6}>
-      <HStack vAlign="start" gap={4} wrap="wrap">
+      <HStack vAlign="end" gap={4} wrap="wrap">
         <StackItem size="fill">
           <VStack gap={1}>
             <Heading level={1}>Documentos de Contexto</Heading>
@@ -107,26 +111,31 @@ export default async function DocumentosPage({
 
       {hasAnyDocuments && <DocumentsToolbar categories={categories} />}
 
-      {!hasAnyDocuments ? (
-        <EmptyState
-          title="Nenhum documento ainda"
-          description="Documentos de contexto desta imobiliária aparecerão aqui."
-        />
-      ) : filteredDocuments.length === 0 ? (
-        <EmptyState
-          title="Nenhum resultado encontrado"
-          description="Ajuste os filtros ou o termo de busca para ver mais documentos."
-          actions={
-            hasActiveFilters ? (
-              <NavLink href="/documentos" isStandalone>
-                Limpar filtros
-              </NavLink>
-            ) : undefined
-          }
-        />
-      ) : (
-        <DocumentsTable documents={filteredDocuments} categories={categories} canWrite={canWrite} />
-      )}
+      <DocumentsBrowser
+        documents={filteredDocuments}
+        categories={categories}
+        canWrite={canWrite}
+        emptyState={
+          !hasAnyDocuments ? (
+            <EmptyState
+              title="Nenhum documento ainda"
+              description="Documentos de contexto desta imobiliária aparecerão aqui."
+            />
+          ) : (
+            <EmptyState
+              title="Nenhum resultado encontrado"
+              description="Ajuste os filtros ou o termo de busca para ver mais documentos."
+              actions={
+                hasActiveFilters ? (
+                  <NavLink href="/documentos" isStandalone>
+                    Limpar filtros
+                  </NavLink>
+                ) : undefined
+              }
+            />
+          )
+        }
+      />
     </VStack>
   );
 }

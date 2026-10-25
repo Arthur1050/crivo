@@ -2,10 +2,22 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Selector, SelectorOption } from "@astryxdesign/core/Selector";
-import { HStack } from "@astryxdesign/core/Stack";
+import { SearchIcon, SlidersHorizontalIcon } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSubMenu,
+} from "@astryxdesign/core/DropdownMenu";
+import { Divider } from "@astryxdesign/core/Divider";
+import { HStack, StackItem } from "@astryxdesign/core/Stack";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { Token } from "@astryxdesign/core/Token";
+import {
+  DEFAULT_DOCUMENT_SORT,
+  DOCUMENT_SORT_OPTIONS,
+} from "@/src/components/documents/document-sort";
 import type { DocumentCategory, Modality } from "@/src/server/data";
 
 const MODALITY_OPTIONS: { value: Modality; label: string }[] = [
@@ -14,6 +26,9 @@ const MODALITY_OPTIONS: { value: Modality; label: string }[] = [
   { value: "ambos", label: "Ambos" },
 ];
 
+/** Valor sentinela do item "todas": o rádio precisa de string, a URL não. */
+const ALL = "todas";
+
 const SEARCH_DEBOUNCE_MS = 300;
 
 interface DocumentsToolbarProps {
@@ -21,11 +36,12 @@ interface DocumentsToolbarProps {
 }
 
 /**
- * Barra de filtros/busca de `/documentos` (lote-2 — DOC-01). Cada mudança é
- * escrita na URL (`modalidade`, `categoria`, `q`) via `router.replace`, para
- * que o RSC da página releia `searchParams` e refaça a consulta filtrada no
- * servidor — nenhum filtro é aplicado no client. A busca por nome é
- * debounced (~300ms); modalidade e categoria aplicam imediatamente.
+ * Barra de busca e filtros de `/documentos` (lote-2 — DOC-01), no desenho do
+ * gerenciador de arquivos: busca à esquerda e um único menu "Filtrar e
+ * ordenar" à direita. Cada mudança é escrita na URL (`modalidade`,
+ * `categoria`, `q`, `ordem`) via `router.replace`, para que o RSC da página
+ * releia `searchParams` e refaça a consulta filtrada no servidor. A busca por
+ * nome é debounced (~300ms); os itens do menu aplicam imediatamente.
  */
 export function DocumentsToolbar({ categories }: DocumentsToolbarProps) {
   const router = useRouter();
@@ -41,12 +57,19 @@ export function DocumentsToolbar({ categories }: DocumentsToolbarProps) {
     };
   }, []);
 
-  function updateParam(key: string, value: string | null) {
+  const modality = searchParams.get("modalidade");
+  const categoryId = searchParams.get("categoria");
+  const sort = searchParams.get("ordem") ?? DEFAULT_DOCUMENT_SORT;
+  const activeFilterCount = Number(Boolean(modality)) + Number(Boolean(categoryId));
+
+  function updateParams(changes: Record<string, string | null>) {
     const params = new URLSearchParams(searchParams.toString());
-    if (value) {
-      params.set(key, value);
-    } else {
-      params.delete(key);
+    for (const [key, value] of Object.entries(changes)) {
+      if (value) {
+        params.set(key, value);
+      } else {
+        params.delete(key);
+      }
     }
     const query = params.toString();
     router.replace(query ? `${pathname}?${query}` : pathname);
@@ -56,55 +79,86 @@ export function DocumentsToolbar({ categories }: DocumentsToolbarProps) {
     setSearch(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      updateParam("q", value.trim() ? value : null);
+      updateParams({ q: value.trim() ? value : null });
     }, SEARCH_DEBOUNCE_MS);
   }
 
   return (
-    <HStack gap={3} wrap="wrap" vAlign="end">
-      <TextInput
-        label="Buscar"
-        placeholder="Nome do documento…"
-        value={search}
-        onChange={handleSearchChange}
-        hasClear
-        width={260}
-      />
-      <Selector
-        label="Modalidade"
-        placeholder="Todas as modalidades"
-        hasClear
-        value={searchParams.get("modalidade")}
-        onChange={(value) => updateParam("modalidade", value)}
-        options={MODALITY_OPTIONS}
-        width={200}
-      />
-      <Selector
-        label="Categoria"
-        placeholder="Todas as categorias"
-        hasClear
-        value={searchParams.get("categoria")}
-        onChange={(value) => updateParam("categoria", value)}
-        options={categories.map((category) => ({
-          value: category.id,
-          label: category.name,
-        }))}
-        renderOption={(option) => {
-          const category = categories.find((c) => c.id === option.value);
-          return (
-            <SelectorOption
-              label={
-                category ? (
-                  <Token label={category.name} color={category.color} size="sm" />
-                ) : (
-                  option.label
-                )
-              }
-            />
-          );
+    <HStack gap={3} vAlign="center" wrap="wrap">
+      <StackItem size="fill">
+        <TextInput
+          label="Buscar documentos"
+          isLabelHidden
+          placeholder="Buscar documentos…"
+          startIcon={SearchIcon}
+          value={search}
+          onChange={handleSearchChange}
+          hasClear
+          width="min(100%, 512px)"
+        />
+      </StackItem>
+      <DropdownMenu
+        button={{
+          label:
+            activeFilterCount > 0
+              ? `Filtrar e ordenar (${activeFilterCount})`
+              : "Filtrar e ordenar",
+          icon: <SlidersHorizontalIcon size={16} />,
+          size: "sm",
         }}
-        width={200}
-      />
+        hasChevron={false}
+        menuWidth={220}
+      >
+        <DropdownMenuRadioGroup
+          aria-label="Modalidade"
+          value={modality ?? ALL}
+          onChange={(value) => updateParams({ modalidade: value === ALL ? null : value })}
+        >
+          <DropdownMenuRadioItem value={ALL} label="Todos os documentos" />
+          {MODALITY_OPTIONS.map((option) => (
+            <DropdownMenuRadioItem key={option.value} value={option.value} label={option.label} />
+          ))}
+        </DropdownMenuRadioGroup>
+        <Divider />
+        <DropdownMenuSubMenu label="Categoria" menuWidth={220}>
+          <DropdownMenuRadioGroup
+            aria-label="Categoria"
+            value={categoryId ?? ALL}
+            onChange={(value) => updateParams({ categoria: value === ALL ? null : value })}
+          >
+            <DropdownMenuRadioItem value={ALL} label="Todas as categorias" />
+            {categories.map((category) => (
+              <DropdownMenuRadioItem
+                key={category.id}
+                value={category.id}
+                label={<Token label={category.name} color={category.color} size="sm" />}
+              />
+            ))}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuSubMenu>
+        <DropdownMenuSubMenu label="Ordenar por" menuWidth={200}>
+          <DropdownMenuRadioGroup
+            aria-label="Ordenar por"
+            value={sort}
+            onChange={(value) =>
+              updateParams({ ordem: value === DEFAULT_DOCUMENT_SORT ? null : value })
+            }
+          >
+            {DOCUMENT_SORT_OPTIONS.map((option) => (
+              <DropdownMenuRadioItem key={option.value} value={option.value} label={option.label} />
+            ))}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuSubMenu>
+        {activeFilterCount > 0 && (
+          <>
+            <Divider />
+            <DropdownMenuItem
+              label="Limpar filtros"
+              onClick={() => updateParams({ modalidade: null, categoria: null })}
+            />
+          </>
+        )}
+      </DropdownMenu>
     </HStack>
   );
 }

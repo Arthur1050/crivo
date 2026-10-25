@@ -44,6 +44,30 @@ const HUE_ICON_CLASS: Record<FileHue, string> = {
   gray: "text-gray-vivid",
 };
 
+/** Rótulo curto do tipo, mostrado no card da visão em grade. */
+export const FILE_KIND_LABELS: Record<FileKind, string> = {
+  pdf: "PDF",
+  documento: "Documento",
+  planilha: "Planilha",
+  apresentacao: "Apresentação",
+  imagem: "Imagem",
+  generico: "Arquivo",
+};
+
+interface FileKindGlyphProps {
+  mimeType: string;
+  size?: number;
+}
+
+/**
+ * Ícone do tipo de arquivo sem o chip colorido, no traço neutro do
+ * gerenciador de arquivos: linha da visão em lista e prévia da visão em grade.
+ */
+export function FileKindGlyph({ mimeType, size = 16 }: FileKindGlyphProps) {
+  const Icon = KIND_ICON[resolveFileKind(mimeType)];
+  return <Icon size={size} className="text-secondary" />;
+}
+
 interface FileTypeIconProps {
   mimeType: string;
   size?: number;
