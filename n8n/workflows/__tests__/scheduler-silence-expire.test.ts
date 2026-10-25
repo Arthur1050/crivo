@@ -74,8 +74,8 @@ describe("T55 — expire de âncora e espelhamento após commit", () => {
     const critical: [string, number, string][] = [[EXPIRE, 0, CONFIRM], [CONFIRM, 0, "Escalada C confirmada?"], ["Escalada C confirmada?", 0, MIRROR]];
     const proved = (data: Graph) => critical.every(([from, output, to]) => edges(from, output, data).some(edge => edge.node === to)); expect(proved(graph)).toBe(true);
     for (const [from, output, to] of critical) { const broken = structuredClone(graph); broken.connections[from].main![output] = edges(from, output, broken).filter(edge => edge.node !== to); expect(proved(broken)).toBe(false); }
-    expect(edges("A cada 15min")).toContainEqual({ node: "Data Table: lembretes devidos (agenda_envios)", type: "main", index: 0 });
-    expect(edges("A cada 15min")).toContainEqual({ node: "Data Table: tenants (purga pedida pelo CRM)", type: "main", index: 0 });
-    expect(edges("A cada 15min")).toContainEqual({ node: "Data Table: tenants B", type: "main", index: 0 });
+    expect(edges("A cada 1h")).toContainEqual({ node: "Data Table: lembretes devidos (agenda_envios)", type: "main", index: 0 });
+    expect(edges("A cada 1h")).toContainEqual({ node: "Data Table: tenants (purga pedida pelo CRM)", type: "main", index: 0 });
+    expect(edges("A cada 1h")).toContainEqual({ node: "Data Table: tenants B", type: "main", index: 0 });
   });
 });

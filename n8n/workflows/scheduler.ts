@@ -1,5 +1,5 @@
 /**
- * krivo-agente-scheduler — varreduras A–E no mesmo tick de 15 minutos.
+ * krivo-agente-scheduler — varreduras A–E no mesmo tick de 1 hora.
  *
  * Fonte versionada do workflow único de varreduras agendadas (design.md —
  * "Scheduler"; AGT-05 AC2, AGT-06, AGT-07 AC3, LGPD-03 AC2). Texto de
@@ -8,8 +8,8 @@
  * customizadas (nem `function`, nem arrow function) no nível do arquivo —
  * confirmado pelo parser do SDK no T10.
  *
- * Cadência: 15 min (design.md — R3, risco de quota documentado no
- * n8n/README.md §6; ajustável em 1 parâmetro — `minutesInterval` abaixo).
+ * Cadência: 1 hora desde 2026-10-25 (era 15 min; R3, quota documentada no
+ * n8n/README.md §6; ajustável em 1 parâmetro — `hoursInterval` abaixo).
  *
  * Fan-out de 1 Schedule Trigger só para as 3 varreduras (não 3 triggers
  * separados) — confirmado válido via `validate_workflow` no T11 (chamar
@@ -30,14 +30,14 @@ const TENANT_CONFIG_TABLE_ID = "xRHckWWd6fxGeNta";
 const CONVERSA_ESTADO_TABLE_ID = "ZsplBxJjXv3kwKZ8";
 const AGENDA_ENVIOS_TABLE_ID = "m83dxX8YZYg1NDYq";
 
-const scheduleEveryFifteenMinutes = trigger({
+const scheduleEveryHour = trigger({
   type: "n8n-nodes-base.scheduleTrigger",
   version: 1.3,
   config: {
-    name: "A cada 15min",
+    name: "A cada 1h",
     position: [0, 0],
     parameters: {
-      rule: { interval: [{ field: "minutes", minutesInterval: 15 }] },
+      rule: { interval: [{ field: "hours", hoursInterval: 1 }] },
     },
   },
   output: [{}],
@@ -653,9 +653,9 @@ const candidateCWired = candidateC.to(candidateRouteC.onCase(0, contactCWired).o
 const pageCWired = candidatesLoopC.onEachBatch(candidateCWired).onDone(nextPageC.to(hasNextPageC.onTrue(cursorC).onFalse(nextBatch(tenantsLoopC))));
 const escalonamentoChain = getTenantsForC.to(uniqueTenantsC.to(tenantsLoopC.onEachBatch(cursorC.to(candidatesC.to(pageC.to(pageCWired))))));
 
-scheduleEveryFifteenMinutes.to(lembretesChain);
-scheduleEveryFifteenMinutes.to(reengajamentoChain);
-scheduleEveryFifteenMinutes.to(escalonamentoChain);
+scheduleEveryHour.to(lembretesChain);
+scheduleEveryHour.to(reengajamentoChain);
+scheduleEveryHour.to(escalonamentoChain);
 
 // lote-14 (T27): a saída falsa do IF fica sem ligação — pedido já atendido.
 const purgaPedidaChain = getTenantsForPurge.to(
@@ -669,7 +669,7 @@ const purgaPedidaChain = getTenantsForPurge.to(
     )
   )
 );
-scheduleEveryFifteenMinutes.to(purgaPedidaChain);
+scheduleEveryHour.to(purgaPedidaChain);
 
 const endEWired = endChannelE.to(nextBatch(channelsLoopE));
 const channelEWired = channelE.to(enabledChannelE.onTrue(syncUsageE.to(endEWired)).onFalse(endEWired));
@@ -677,8 +677,8 @@ const channelsEWired = channelsE.to(channelJobsE.to(channelsLoopE.onEachBatch(ch
 tenantE.to(reconcileE.to(reconcileResultE));
 tenantE.to(channelsEWired);
 const automationChain = getTenantsForE.to(uniqueTenantsE.to(tenantsLoopE.onEachBatch(tenantE)));
-scheduleEveryFifteenMinutes.to(automationChain);
+scheduleEveryHour.to(automationChain);
 
-const schedulerWorkflow = workflow("krivo-agente-scheduler", "krivo-agente-scheduler").add(scheduleEveryFifteenMinutes);
+const schedulerWorkflow = workflow("krivo-agente-scheduler", "krivo-agente-scheduler").add(scheduleEveryHour);
 schedulerWorkflow.regenerateNodeIds(new Map());
 export default schedulerWorkflow;

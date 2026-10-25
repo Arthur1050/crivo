@@ -18,7 +18,7 @@ type WorkflowJson = {
 
 const workflow = scheduler.toJSON() as unknown as WorkflowJson;
 
-const TRIGGER = "A cada 15min";
+const TRIGGER = "A cada 1h";
 
 function nodeByName(name: string) {
   const found = workflow.nodes.find((n) => n.name === name);
