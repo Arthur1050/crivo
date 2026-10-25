@@ -349,11 +349,15 @@ function PropertyForm({ property, captadores, onClose }: PropertyFormProps) {
                 width={220}
               />
               <Switch label="Publicado" value={published} onChange={setPublished} />
+              {/* Vitrine pausada (AD-050): o destaque fica visível, mas bloqueado. */}
               {isEditing && (
                 <Switch
                   label="Destaque na vitrine"
+                  description="Em breve"
                   value={featured}
                   onChange={setFeatured}
+                  isDisabled
+                  disabledMessage="Em breve"
                 />
               )}
             </HStack>
