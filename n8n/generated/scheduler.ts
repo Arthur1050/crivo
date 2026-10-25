@@ -60,7 +60,8 @@ const getDueReminders = node({
       matchType: "allConditions",
       filters: {
         conditions: [
-          { keyName: "meetingAt", condition: "lte", keyValue: expr("{{ $now.plus({ minutes: 60 }).toISO() }}") },
+          // Janela de 90 min com tick de 1 h: o lembrete sai entre 30 e 90 min antes.
+          { keyName: "meetingAt", condition: "lte", keyValue: expr("{{ $now.plus({ minutes: 90 }).toISO() }}") },
           { keyName: "sentAt", condition: "isEmpty", keyValue: "" },
         ],
       },

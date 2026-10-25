@@ -43,8 +43,11 @@ describe("T56 — tick CRM de consumo e reconciliação", () => {
       expect(node(name).parameters.authentication).toBe("genericCredentialType"); expect(node(name).parameters.genericAuthType).toBe("httpHeaderAuth");
     }
   });
-  it("cadência15min mantém A–D e liga operações E reais; remoção de aresta crítica falha", () => {
+  it("cadência de 1h mantém A–D e liga operações E reais; remoção de aresta crítica falha", () => {
     expect(node("A cada 1h").parameters.rule).toEqual({ interval: [{ field: "hours", hoursInterval: 1 }] });
+    // Com tick de 1 h, a janela de 90 min faz o lembrete sair entre 30 e 90 min antes da reunião.
+    const lembrete = node("Data Table: lembretes devidos (agenda_envios)").parameters.filters as { conditions: { keyName: string; condition: string; keyValue: string }[] };
+    expect(lembrete.conditions).toContainEqual({ keyName: "meetingAt", condition: "lte", keyValue: "={{ $now.plus({ minutes: 90 }).toISO() }}" });
     for (const target of ["Data Table: lembretes devidos (agenda_envios)", "Data Table: tenants B", "Data Table: tenants C", "Data Table: tenants (purga pedida pelo CRM)", "Data Table: tenants E"]) expect(edges("A cada 1h")).toContainEqual({ node: target, type: "main", index: 0 });
     const critical: [string, number, string][] = [["Data Table: tenants E", 0, "Code: tenants únicos E"], ["Code: tenants únicos E", 0, "Loop: tenants E"], ["Loop: tenants E", 1, "Code: tenant E"], ["Code: tenant E", 0, "HTTP: reconciliar E sem transporte"], ["Code: tenant E", 0, "HTTP: canais habilitados E"], ["HTTP: canais habilitados E", 0, "Code: canais E prontos"], ["Code: canais E prontos", 0, "Loop: canais E"], ["Loop: canais E", 1, "Code: canal E"], ["Code: canal E", 0, "Canal E habilitado?"], ["Canal E habilitado?", 0, "HTTP: sincronizar consumo E"], ["Canal E habilitado?", 1, "Code: concluir canal E"], ["HTTP: sincronizar consumo E", 0, "Code: concluir canal E"], ["Code: concluir canal E", 0, "Loop: canais E"], ["Loop: canais E", 0, "Loop: tenants E"], ["HTTP: reconciliar E sem transporte", 0, "Code: resultado reconciliação E"]];
     const valid = (data: Graph) => critical.every(([from, port, to]) => edges(from, port, data).some(edge => edge.node === to)); expect(valid(graph)).toBe(true);
