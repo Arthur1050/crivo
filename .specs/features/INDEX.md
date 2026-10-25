@@ -10,7 +10,7 @@ interstitiais. **100% executado** em 2026-08-30 (`STATE.md` § Handoff).
 
 Trabalho futuro: `../ROADMAP-POS-PILOTO.md` — lotes 10 a 16 a partir do backlog deferido e das
 frentes novas (catálogo de imóveis, vitrine pública), com o que foi descartado e por quê. **L10,
-L11, L12, L13, L14, L14b, L15, L16a, L16b e L16c já foram executados** (linhas abaixo; o L16c com a prova real feita só na loja de demonstração e a vitrine da loja piloto real à espera de CRECI); L14c (ativação em produção + telas de consumo, agora com a verificação Meta) segue futuro.
+L11, L12, L13, L14, L14b, L15, L16a, L16b e L16c já foram executados** (linhas abaixo; o L16c com a prova real feita só na loja de demonstração). A vitrine foi pausada em 2026-10-25 (AD-050: seção "Em breve" em Configurações). L14c (ativação em produção + telas de consumo, com a verificação Meta, depende de tenant real) e L17 (pastas de documentos, só com rascunho em `lote-17-pastas-de-documentos/rascunho/`) seguem futuros.
 
 ---
 

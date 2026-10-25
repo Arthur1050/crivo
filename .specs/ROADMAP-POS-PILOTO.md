@@ -310,8 +310,9 @@ sinal de cliente real. Tudo que vem antes serve o piloto que já existe; a vitri
 > público `vitrine-kappa-tawny.vercel.app`, `noindex` confirmado) e a renomeação para Krivo. **Prova real feita com a loja de
 > demonstração** (`krivo-demo`, dados fictícios): capturas, frescor F15 (1,6 s a ≤ 5,5 s, por revalidação, com o cache remoto da
 > AD-048) e prévia do WhatsApp F17. Depois do fechamento foram corrigidos o aviso de revalidação do CRM (a URL estava sem
-> `https://`; endurecido pela AD-049) e o `ignoreCommand` (vitrine e CRM). **Pendente:** a loja piloto real continua sem vitrine
-> porque o usuário ainda não tem CRECI nem razão social real (a ativação exige os dois). O isolamento descrito
+> `https://`; endurecido pela AD-049) e o `ignoreCommand` (vitrine e CRM). **Pausada em 2026-10-25 (AD-050):** a vitrine
+> precisa de mais arquitetura e travava a divulgação do sistema; Configurações mostra a seção desabilitada com "Em breve", e a
+> `triangulo` é fictícia (não há loja piloto real à espera de CRECI). O isolamento descrito
 > abaixo foi refinado pela AD-040 (o papel lê só duas views do schema `vitrine`, não a tabela de imóveis
 > e colunas de `tenants`) e o frescor pela AD-042 (perfil `vitrine` 60/60/300 s em vez de
 > `cacheLife('minutes')`, com a diretiva `use cache: remote` da AD-048); a pasta `vitrine/` neste repositório é a AD-041 e o
@@ -378,6 +379,17 @@ templates bem-feitos.
 (mitigável publicando o subset de tipos, ou duplicando as duas tabelas, que mudam pouco). É
 burocracia adiantada, visível e limitada — preferida ao custo difuso e permanente de uma fronteira
 mantida só por revisão de código.
+
+---
+
+## L17 — Pastas de documentos *(futuro, não especificado)*
+
+**Origem**: usuário, 2026-10-25. O redesign de Documentos (gerenciador de arquivos com busca, "Filtrar e
+ordenar" e "Todos os arquivos" em grade ou lista) foi publicado sem as pastas, que hoje não existem no banco.
+Este lote cria o sistema de pastas por tenant: modelo e DAL, criar/renomear/excluir pasta, mover documento,
+contagem e tamanho por pasta, permissões por papel e a grade de pastas na página. O rascunho visual da grade
+e o formato dos dados de exemplo estão em `features/lote-17-pastas-de-documentos/rascunho/` (fora do build).
+Decidir no Specify: pasta substitui ou convive com categoria, e se o agente enxerga a pasta.
 
 ---
 

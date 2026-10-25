@@ -1,0 +1,59 @@
+/**
+ * Pastas de exemplo da página de Documentos. Ainda não existe pasta no banco:
+ * estes dados só sustentam o layout do gerenciador de arquivos até o sistema
+ * de pastas ser implementado. Quando ele chegar, este módulo dá lugar a uma
+ * leitura por tenant na camada de dados, com o mesmo formato.
+ */
+
+export interface DocumentFolder {
+  id: string;
+  name: string;
+  fileCount: number;
+  sizeBytes: number;
+  updatedLabel: string;
+}
+
+export const MOCK_DOCUMENT_FOLDERS: DocumentFolder[] = [
+  {
+    id: "contratos",
+    name: "Contratos",
+    fileCount: 24,
+    sizeBytes: 18_400_000,
+    updatedLabel: "Atualizada há 12 min",
+  },
+  {
+    id: "lancamentos",
+    name: "Lançamentos",
+    fileCount: 38,
+    sizeBytes: 96_200_000,
+    updatedLabel: "Atualizada ontem",
+  },
+  {
+    id: "documentacao-legal",
+    name: "Documentação legal",
+    fileCount: 16,
+    sizeBytes: 8_800_000,
+    updatedLabel: "Atualizada em 29 de jul.",
+  },
+  {
+    id: "financiamento",
+    name: "Financiamento",
+    fileCount: 11,
+    sizeBytes: 6_500_000,
+    updatedLabel: "Atualizada em 27 de jul.",
+  },
+  {
+    id: "tabelas-de-preco",
+    name: "Tabelas de preço",
+    fileCount: 29,
+    sizeBytes: 24_100_000,
+    updatedLabel: "Atualizada em 25 de jul.",
+  },
+  {
+    id: "treinamento",
+    name: "Treinamento da equipe",
+    fileCount: 18,
+    sizeBytes: 12_600_000,
+    updatedLabel: "Atualizada em 22 de jul.",
+  },
+];

@@ -611,7 +611,7 @@
       "text": "When a spec requires a refusal to identify an existing resource, assert the identifier reaches the user-facing response, not only the service result.",
       "signal": "ac_gap",
       "scope": "ui/errors",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-12-conteudo-de-documentos"
       ],
@@ -647,7 +647,7 @@
       "text": "Um AC que só reafirma comportamento preexistente ainda precisa de uma tarefa com asserção própria; 'já funciona' não é evidência.",
       "signal": "ac_gap",
       "scope": "spec,tasks",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-13-opt-out-linguagem-natural"
       ],
@@ -937,7 +937,7 @@
       "text": "Mantenha o consumidor de status WhatsApp fechado até um probe instalado comprovar HMAC sobre raw-body, credencial e activeVersionId do forwarder; proofs de fixture não concedem autenticação de origem.",
       "signal": "ac_gap",
       "scope": "whatsapp/statuses",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-14b-reengajamento-contextual"
       ],
@@ -956,7 +956,7 @@
       "text": "Nas tools HTTP do n8n, teste o tipo e a serialização exigidos pelo nó instalado, além do conteúdo decodificado dos filtros.",
       "signal": "ac_gap",
       "scope": "n8n",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-14b-reengajamento-contextual"
       ],
@@ -1046,7 +1046,7 @@
       "text": "Quando o chamador calcula a fronteira de uma janela (since = agora - X) e a passa a um DAL que já tem teste de fronteira próprio, teste a fronteira também pelo chamador; o teste do DAL com since dado não prova o X de quem chama.",
       "signal": "surviving_mutant",
       "scope": "testing",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-15-prontidao-operacional"
       ],
@@ -1064,7 +1064,7 @@
       "text": "Um compare-and-set em lote pode vencer só parte das linhas: teste a vitória parcial e afirme que o efeito colateral (e-mail, contagem) usa só as linhas reivindicadas, não o plano inteiro.",
       "signal": "surviving_mutant",
       "scope": "server/data,concorrencia",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-15-prontidao-operacional"
       ],
@@ -1082,7 +1082,7 @@
       "text": "Quando um AC fixa uma chave de agrupamento para o que se exibe e a fonte junta duas origens (com e sem tenant), diga na spec se elas se somam e teste com as duas origens na mesma chave.",
       "signal": "spec_precision_gap",
       "scope": "spec,testing",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-15-prontidao-operacional"
       ],
@@ -1100,7 +1100,7 @@
       "text": "Antes de fazer uma task depender de uma prova de execução, confirme que a fonte da prova existe: o plano Hobby da Vercel retém só 1 h de log, então 'o cron rodou nos últimos 3 dias' não era comprovável pelos logs.",
       "signal": "gate_fail",
       "scope": "processo,gate",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-15-prontidao-operacional"
       ],
@@ -1118,7 +1118,7 @@
       "text": "Num comando de preparação que chama uma ferramenta de schema, confira o estado final e saia com erro se falhar: o db:push:test imprimiu o erro do drizzle-kit e saiu com 0, deixando um check e um índice único sem aplicar e sem aviso.",
       "signal": "gate_fail",
       "scope": "tooling,db",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-15-prontidao-operacional"
       ],

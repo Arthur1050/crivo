@@ -206,11 +206,23 @@ Corroborated across multiple features. Safe to apply as guidance.
 - evidence: M3 src/server/documents/context-ceiling.ts:70 (config/policy)
 - last seen: 2026-09-26T02:11:11Z
 
+### L-039 - When a spec requires a refusal to identify an existing resource, assert the identifier reaches the user-facing response, not only the service result.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `ui/errors` · harmful: 0
+- features: lote-12-conteudo-de-documentos
+- evidence: DOCBIN-01 AC4; src/server/actions/documents.ts:186 (ui/errors)
+- last seen: 2026-09-26T02:11:12Z
+
 ### L-041 - Quando um AC fixa a precedência entre duas regras de roteamento, teste a entrada que satisfaz as duas ao mesmo tempo; se a suíte existente estiver congelada por outro AC, crie o teste num arquivo novo.
 - signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `n8n/gate,compliance` · harmful: 0
 - features: lote-13-opt-out-linguagem-natural
 - evidence: M8 n8n/src/gate.mjs:69-70; OPTKEY-01 AC3 (n8n/gate,compliance)
 - last seen: 2026-09-30T00:32:10Z
+
+### L-042 - Um AC que só reafirma comportamento preexistente ainda precisa de uma tarefa com asserção própria; 'já funciona' não é evidência.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `spec,tasks` · harmful: 0
+- features: lote-13-opt-out-linguagem-natural
+- evidence: OPTKEY-01 AC3 (sem file:line) (spec,tasks)
+- last seen: 2026-09-30T00:32:11Z
 
 ### L-043 - Quando uma trava determinística passa a alterar o desfecho de uma decisão do modelo, emende o AC que prometia o desfecho original na mesma decisão, não só o design.
 - signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `spec,llm` · harmful: 0
@@ -302,6 +314,18 @@ Corroborated across multiple features. Safe to apply as guidance.
 - evidence: validation.md G2; REEN-02 AC1/AC2 (n8n/agent) (+1 more)
 - last seen: 2026-10-06T13:35:41Z
 
+### L-058 - Mantenha o consumidor de status WhatsApp fechado até um probe instalado comprovar HMAC sobre raw-body, credencial e activeVersionId do forwarder; proofs de fixture não concedem autenticação de origem.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `whatsapp/statuses` · harmful: 0
+- features: lote-14b-reengajamento-contextual
+- evidence: validation.md G3; PRECO-01 AC1/AC2/AC3/AC6/AC7 (whatsapp/statuses) (+1 more)
+- last seen: 2026-10-06T13:35:41Z
+
+### L-059 - Nas tools HTTP do n8n, teste o tipo e a serialização exigidos pelo nó instalado, além do conteúdo decodificado dos filtros.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `n8n` · harmful: 0
+- features: lote-14b-reengajamento-contextual
+- evidence: T70 / n8n/workflows/reengagement-contextual.ts:29 (n8n)
+- last seen: 2026-10-06T13:35:41Z
+
 ### L-060 - Para testar recusa por identidade de ferramenta, use uma observação válida; um envelope inválido pode mascarar a remoção da allowlist.
 - signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `n8n` · harmful: 0
 - features: lote-14b-reengajamento-contextual
@@ -325,6 +349,36 @@ Corroborated across multiple features. Safe to apply as guidance.
 - features: lote-13b-opt-out-por-palavra
 - evidence: validation.md gaps 3-4 (AC1 PASS com residuos): n8n/README.md:464, n8n/src/system-message.mjs:106-112, src/server/documents/benchmark-identity.ts:33 (docs,remocao)
 - last seen: 2026-10-07T14:55:20Z
+
+### L-064 - Quando o chamador calcula a fronteira de uma janela (since = agora - X) e a passa a um DAL que já tem teste de fronteira próprio, teste a fronteira também pelo chamador; o teste do DAL com since dado não prova o X de quem chama.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `testing` · harmful: 0
+- features: lote-15-prontidao-operacional
+- evidence: validation.md Verificação independente, mutantes 5d/5e (integration-alert.ts:11, :37); teste da janela em src/server/integration/__tests__/integration-alert.integration.test.ts:206; commit b913b8d (testing)
+- last seen: 2026-10-08T21:06:04Z
+
+### L-065 - Um compare-and-set em lote pode vencer só parte das linhas: teste a vitória parcial e afirme que o efeito colateral (e-mail, contagem) usa só as linhas reivindicadas, não o plano inteiro.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `server/data,concorrencia` · harmful: 0
+- features: lote-15-prontidao-operacional
+- evidence: validation.md Verificação independente, mutantes x1/x2 (integration-alert.ts:65, :75); integration-alert.integration.test.ts:224, :227; commit b913b8d (server/data,concorrencia)
+- last seen: 2026-10-08T21:06:04Z
+
+### L-066 - Quando um AC fixa uma chave de agrupamento para o que se exibe e a fonte junta duas origens (com e sem tenant), diga na spec se elas se somam e teste com as duas origens na mesma chave.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `spec,testing` · harmful: 0
+- features: lote-15-prontidao-operacional
+- evidence: validation.md D1 e lacuna de precisão de ALERTA-02 AC3; src/server/data/integration-health.ts; commit b913b8d (spec,testing)
+- last seen: 2026-10-08T21:06:04Z
+
+### L-067 - Antes de fazer uma task depender de uma prova de execução, confirme que a fonte da prova existe: o plano Hobby da Vercel retém só 1 h de log, então 'o cron rodou nos últimos 3 dias' não era comprovável pelos logs.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `processo,gate` · harmful: 0
+- features: lote-15-prontidao-operacional
+- evidence: validation.md § Gate de viabilidade (T0) F2 e § Primeira manutenção de produção; commit 352e8cd (processo,gate)
+- last seen: 2026-10-08T21:06:05Z
+
+### L-068 - Num comando de preparação que chama uma ferramenta de schema, confira o estado final e saia com erro se falhar: o db:push:test imprimiu o erro do drizzle-kit e saiu com 0, deixando um check e um índice único sem aplicar e sem aviso.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `tooling,db` · harmful: 0
+- features: lote-15-prontidao-operacional
+- evidence: scripts/test-db-push.ts; validation.md § Full e auditoria pré-push (tooling,db)
+- last seen: 2026-10-08T21:06:05Z
 
 ### L-070 - O drizzle-kit push derruba a cada execucao o indice unico de expressao lower(name) e aborta no CREATE UNIQUE INDEX seguinte, com saida 0; depois de qualquer push recrie e confira esse indice, senao a recusa de categoria duplicada some do banco e um teste da suite falha longe da causa.
 - signal: `gate_fail` · recurrence: 1 feature(s) · scope: `tooling,db` · harmful: 0
@@ -437,60 +491,6 @@ Corroborated across multiple features. Safe to apply as guidance.
 ## Candidates (under observation - do NOT load as guidance yet)
 
 Seen once or not yet corroborated. Tracked, not trusted.
-
-### L-039 - When a spec requires a refusal to identify an existing resource, assert the identifier reaches the user-facing response, not only the service result.
-- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `ui/errors` · harmful: 0
-- features: lote-12-conteudo-de-documentos
-- evidence: DOCBIN-01 AC4; src/server/actions/documents.ts:186 (ui/errors)
-- last seen: 2026-09-26T02:11:12Z
-
-### L-042 - Um AC que só reafirma comportamento preexistente ainda precisa de uma tarefa com asserção própria; 'já funciona' não é evidência.
-- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `spec,tasks` · harmful: 0
-- features: lote-13-opt-out-linguagem-natural
-- evidence: OPTKEY-01 AC3 (sem file:line) (spec,tasks)
-- last seen: 2026-09-30T00:32:11Z
-
-### L-058 - Mantenha o consumidor de status WhatsApp fechado até um probe instalado comprovar HMAC sobre raw-body, credencial e activeVersionId do forwarder; proofs de fixture não concedem autenticação de origem.
-- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `whatsapp/statuses` · harmful: 0
-- features: lote-14b-reengajamento-contextual
-- evidence: validation.md G3; PRECO-01 AC1/AC2/AC3/AC6/AC7 (whatsapp/statuses) (+1 more)
-- last seen: 2026-10-06T13:35:41Z
-
-### L-059 - Nas tools HTTP do n8n, teste o tipo e a serialização exigidos pelo nó instalado, além do conteúdo decodificado dos filtros.
-- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `n8n` · harmful: 0
-- features: lote-14b-reengajamento-contextual
-- evidence: T70 / n8n/workflows/reengagement-contextual.ts:29 (n8n)
-- last seen: 2026-10-06T13:35:41Z
-
-### L-064 - Quando o chamador calcula a fronteira de uma janela (since = agora - X) e a passa a um DAL que já tem teste de fronteira próprio, teste a fronteira também pelo chamador; o teste do DAL com since dado não prova o X de quem chama.
-- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `testing` · harmful: 0
-- features: lote-15-prontidao-operacional
-- evidence: validation.md Verificação independente, mutantes 5d/5e (integration-alert.ts:11, :37); teste da janela em src/server/integration/__tests__/integration-alert.integration.test.ts:206; commit b913b8d (testing)
-- last seen: 2026-10-08T21:06:04Z
-
-### L-065 - Um compare-and-set em lote pode vencer só parte das linhas: teste a vitória parcial e afirme que o efeito colateral (e-mail, contagem) usa só as linhas reivindicadas, não o plano inteiro.
-- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `server/data,concorrencia` · harmful: 0
-- features: lote-15-prontidao-operacional
-- evidence: validation.md Verificação independente, mutantes x1/x2 (integration-alert.ts:65, :75); integration-alert.integration.test.ts:224, :227; commit b913b8d (server/data,concorrencia)
-- last seen: 2026-10-08T21:06:04Z
-
-### L-066 - Quando um AC fixa uma chave de agrupamento para o que se exibe e a fonte junta duas origens (com e sem tenant), diga na spec se elas se somam e teste com as duas origens na mesma chave.
-- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `spec,testing` · harmful: 0
-- features: lote-15-prontidao-operacional
-- evidence: validation.md D1 e lacuna de precisão de ALERTA-02 AC3; src/server/data/integration-health.ts; commit b913b8d (spec,testing)
-- last seen: 2026-10-08T21:06:04Z
-
-### L-067 - Antes de fazer uma task depender de uma prova de execução, confirme que a fonte da prova existe: o plano Hobby da Vercel retém só 1 h de log, então 'o cron rodou nos últimos 3 dias' não era comprovável pelos logs.
-- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `processo,gate` · harmful: 0
-- features: lote-15-prontidao-operacional
-- evidence: validation.md § Gate de viabilidade (T0) F2 e § Primeira manutenção de produção; commit 352e8cd (processo,gate)
-- last seen: 2026-10-08T21:06:05Z
-
-### L-068 - Num comando de preparação que chama uma ferramenta de schema, confira o estado final e saia com erro se falhar: o db:push:test imprimiu o erro do drizzle-kit e saiu com 0, deixando um check e um índice único sem aplicar e sem aviso.
-- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `tooling,db` · harmful: 0
-- features: lote-15-prontidao-operacional
-- evidence: scripts/test-db-push.ts; validation.md § Full e auditoria pré-push (tooling,db)
-- last seen: 2026-10-08T21:06:05Z
 
 ### L-079 - next dev e next build dividem a pasta .next: depois de um build, o servidor dev que estava no ar responde 404 em rota nova; apague .next e reinicie o dev antes de capturar.
 - signal: `gate_fail` · recurrence: 1 feature(s) · scope: `tooling/next` · harmful: 0
