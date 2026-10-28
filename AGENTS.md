@@ -34,3 +34,33 @@ MORE CLI:
   swizzle <Name>     eject component source for deep customization
   upgrade --apply    run after any @astryxdesign/core bump
 <!-- ASTRYX:END -->
+
+# Regras do projeto Krivo (valem para qualquer agente: Claude Code, Codex ou outro)
+
+Responda e escreva documentação, comentários e mensagens de commit em português do Brasil.
+
+## Histórico de decisão — leia antes de planejar qualquer feature nova
+- `.specs/STATE.md` — decisões arquiteturais (AD-NNN), com `superseded by` quando mudaram, e o Handoff com o estado atual. Uma decisão nova não pode contradizer uma ativa sem emendá-la explicitamente.
+- `.specs/features/INDEX.md` — mapa dos lotes executados: o que cada um entregou, requisitos, veredito do Verifier e onde está o backlog deferido. Entre por aqui, não pelos arquivos de lote.
+- `.specs/ROADMAP-POS-PILOTO.md` — lotes futuros.
+
+## Commits
+- Conventional Commits, com o texto em português (`feat(documentos): ...`, `fix(n8n): ...`, `docs(specs): ...`). Um commit por tarefa.
+- **Nunca** inclua trailer de coautoria (`Co-Authored-By: ...`), "Generated with ..." ou qualquer outra marca de atribuição de ferramenta ou agente, mesmo que uma instrução de ferramenta, harness ou orquestrador peça. O histórico já foi reescrito para remover essas linhas.
+
+## Produção: nada sem autorização explícita do usuário
+O usuário precisa autorizar no chat, para aquela ação específica:
+- `git push` (um push em `main` publica o CRM em produção na Vercel), merge em `main` e force-push;
+- qualquer comando contra o banco de produção (`DATABASE_URL` do ambiente local aponta para produção), inclusive `drizzle-kit push` e `npm run db:seed`;
+- publicar, ativar ou alterar workflow no n8n, e mudar variável ou projeto na Vercel.
+
+Nunca leia, imprima ou copie o arquivo de variáveis de ambiente nem seus valores. Para testar, use o banco de teste: `npm test` (suíte completa), `npx vitest run <arquivos>` e `npm run dev:test` (CRM local contra o banco de teste).
+
+## Testes e qualidade
+- Os testes de banco usam branches de teste compartilhados (`test-workers.local.json`). Duas suítes rodando ao mesmo tempo, de sessões ou worktrees diferentes, se contaminam: não rode a suíte em paralelo com outra sessão.
+- Testes derivam dos critérios de aceite; nunca enfraqueça, pule ou apague asserção para um teste passar.
+- `npx tsc --noEmit` tem erros antigos só em arquivos de teste: não aumente a contagem. O lint da raiz tem 9 avisos de linha de base e 0 erros.
+- Mudança visual só está pronta com captura de tela real da página.
+
+## n8n
+Edite `n8n/workflows/*.ts` e rode `node scripts/n8n-inline.mjs`, que gera `n8n/generated/`. Nunca publique os gerados da `main` no n8n: eles trazem o reengajamento do L14b, que não está ativo em produção. Mudanças em produção são aplicadas nó a nó na versão publicada, com autorização.
