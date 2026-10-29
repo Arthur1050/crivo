@@ -805,8 +805,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `src/components/documents/__tests__/upload-client.test.ts`: `folderId` no `clientPayload`; resposta 404 `upload_folder_not_found` → mensagem de PUPLOAD-01 AC7
-- [ ] Quick + Build passam
+- [x] `src/components/documents/__tests__/upload-client.test.ts`: `folderId` no `clientPayload`; resposta 404 `upload_folder_not_found` → mensagem de PUPLOAD-01 AC7
+- [x] Quick + Build passam
 
 **Tests**: unit
 **Gate**: quick
@@ -814,6 +814,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 **Commit**: `feat(documentos): enviar a pasta no upload`
 
 ---
+
+**Execução C1**: 23 testes aprovados; payload com pasta e null e mensagem exata do 404 em upload-client.test.ts. TypeScript: 0 erros. ESLint: 0 erros, 7 avisos.
 
 #### T31: Envio dentro da pasta
 
