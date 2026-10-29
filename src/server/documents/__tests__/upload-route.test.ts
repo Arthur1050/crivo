@@ -233,8 +233,13 @@ describe("document upload route (lote-12 T9)", () => {
 
   it("confirma callback mesmo quando a compensação será reconciliada pelo serviço", async () => {
     const pendingFinalize = vi.fn(async () => ({ kind: "compensation_pending" as const }));
+    type DuplicateUpload = Extract<
+      Awaited<ReturnType<NonNullable<DocumentUploadRouteDependencies["intake"]>["reserve"]>>,
+      { kind: "duplicate_upload" }
+    >;
+    // O callback só chama finalize; reserve permanece um stub parcial não executado.
     const { handler } = fixture({
-      intake: { reserve: async () => ({ kind: "duplicate_upload" }), finalize: pendingFinalize },
+      intake: { reserve: async () => ({ kind: "duplicate_upload" } as DuplicateUpload), finalize: pendingFinalize },
     });
     const response = await handler(request(completedEvent()));
 
