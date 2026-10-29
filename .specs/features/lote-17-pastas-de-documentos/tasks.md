@@ -578,8 +578,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] Título e descrição de `deleteFolderCopy`; cancelar não chama a action; sucesso → `router.replace(afterDeleteHref)` ou `router.refresh()`
-- [ ] Build passa
+- [x] Título e descrição de `deleteFolderCopy`; cancelar não chama a action; sucesso → `router.replace(afterDeleteHref)` ou `router.refresh()`
+- [x] Build passa
 
 **Tests**: none (componente; captura na T34)
 **Gate**: build

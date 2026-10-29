@@ -12,7 +12,31 @@ vi.mock("@astryxdesign/core/Dialog", () => ({}));
 vi.mock("@astryxdesign/core/Layout", () => ({}));
 vi.mock("@astryxdesign/core/Stack", () => ({}));
 vi.mock("@astryxdesign/core/TextInput", () => ({}));
+vi.mock("@astryxdesign/core/AlertDialog", () => ({}));
 vi.mock("../../../server/actions/document-folders", () => ({}));
+
+describe("confirmação de exclusão (T20, sem banco)", () => {
+  it.each([
+    [0, "A pasta está vazia."],
+    [1, "O arquivo dela volta para Sem pasta."],
+    [3, "Os 3 arquivos dela voltam para Sem pasta."],
+  ] as const)("preserva a consequência com %s arquivos ao acrescentar erro", async (fileCount, consequence) => {
+    const { submitFolderDeletion } = await import("../delete-folder-dialog");
+    const action = vi.fn(async () => ({ ok: false as const, code: "pasta-nao-encontrada" as const, error: "ignorado" }));
+    expect(await submitFolderDeletion({ id: FOLDER_FIXTURES[0].id, name: "Contratos", fileCount }, action)).toEqual({
+      ok: false, description: `${consequence} Pasta não encontrada.`,
+    });
+    expect(action).toHaveBeenCalledWith({ folderId: FOLDER_FIXTURES[0].id });
+    await Promise.resolve();
+    expect(action).toHaveBeenCalledTimes(1);
+  });
+  it("devolve sucesso sem erro nem nova tentativa", async () => {
+    const { submitFolderDeletion } = await import("../delete-folder-dialog");
+    const action = vi.fn(async () => ({ ok: true as const, movedToRootCount: 24 }));
+    expect(await submitFolderDeletion(FOLDER_FIXTURES[0], action)).toEqual({ ok: true });
+    expect(action).toHaveBeenCalledTimes(1);
+  });
+});
 
 describe("envio do nome da pasta (T19, sem banco)", () => {
   it.each(["a".repeat(120), `  ${"a".repeat(120)}  `])("aceita 120 caracteres após trim", async (name) => {
