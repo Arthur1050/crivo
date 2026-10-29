@@ -247,9 +247,9 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `src/server/data/__tests__/pg-errors.test.ts`: código direto, código em `.cause` (forma do `DrizzleQueryError`), sem código → `undefined`
-- [ ] `npx vitest run src/server/data/__tests__/documents.test.ts` passa (categoria duplicada continua recusada)
-- [ ] Quick + Build passam
+- [x] `src/server/data/__tests__/pg-errors.test.ts`: código direto, código em `.cause` (forma do `DrizzleQueryError`), sem código → `undefined`
+- [x] `npx vitest run src/server/data/__tests__/documents.test.ts` passa (categoria duplicada continua recusada)
+- [x] Quick + Build passam
 
 **Tests**: unit
 **Gate**: quick
@@ -269,9 +269,9 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `src/server/data/__tests__/document-folders.test.ts` (fixture em dois tenants, limpa no `afterAll`): só pastas do tenant (AC1); documento excluído e documento de outro tenant apontando para a pasta fora da contagem e do tamanho (AC2, L-035); `lastActivityAt` = `uploaded_at` mais recente quando é maior que `updated_at`, e = `updated_at` quando é maior (AC3, os dois sentidos, L-053); pasta vazia com 0, 0 e `updated_at` (AC4, L-081); ordem "Ágape", "banco", "Zeta" e empate por id (AC5); `getDocumentFolder` com dono, outro tenant, inexistente e `"abc"` — este último sem consulta, provado com espião no `db` (AC6–AC8)
-- [ ] `totalSizeBytes` de uma pasta com documentos somando mais de 2^31 bytes exato
-- [ ] Quick + Build passam
+- [x] `src/server/data/__tests__/document-folders.test.ts` (fixture em dois tenants, limpa no `afterAll`): só pastas do tenant (AC1); documento excluído e documento de outro tenant apontando para a pasta fora da contagem e do tamanho (AC2, L-035); `lastActivityAt` = `uploaded_at` mais recente quando é maior que `updated_at`, e = `updated_at` quando é maior (AC3, os dois sentidos, L-053); pasta vazia com 0, 0 e `updated_at` (AC4, L-081); ordem "Ágape", "banco", "Zeta" e empate por id (AC5); `getDocumentFolder` com dono, outro tenant, inexistente e `"abc"` — este último sem consulta, provado com espião no `db` (AC6–AC8)
+- [x] `totalSizeBytes` de uma pasta com documentos somando mais de 2^31 bytes exato
+- [x] Quick + Build passam
 
 **Tests**: integration
 **Gate**: quick
@@ -291,9 +291,9 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] Testes em `src/server/data/__tests__/document-folders.test.ts`: criar; nome repetido com outra caixa → `duplicate_name`; duas criações simultâneas com o mesmo nome → uma `created` e uma `duplicate_name`, nenhuma lança (PCRIAR-01 AC4); renomear atualiza nome e `updated_at` (partindo de `updated_at` antigo, L-053); renomear só a caixa aceito; nome de outra pasta → `duplicate_name`; pasta de outro tenant e `"abc"` → `not_found` com a pasta estrangeira intacta (L-001)
-- [ ] Excluir: `movedToRootCount` conta só não excluídos (documento excluído na pasta não conta); documentos e intenções ficam com `folder_id` nulo e os demais campos iguais (`status`, `category_id`, `deleted_at`) (PEXC-01 AC1, AC2); outro tenant → `not_found` sem apagar
-- [ ] Quick + Build passam
+- [x] Testes em `src/server/data/__tests__/document-folders.test.ts`: criar; nome repetido com outra caixa → `duplicate_name`; duas criações simultâneas com o mesmo nome → uma `created` e uma `duplicate_name`, nenhuma lança (PCRIAR-01 AC4); renomear atualiza nome e `updated_at` (partindo de `updated_at` antigo, L-053); renomear só a caixa aceito; nome de outra pasta → `duplicate_name`; pasta de outro tenant e `"abc"` → `not_found` com a pasta estrangeira intacta (L-001)
+- [x] Excluir: `movedToRootCount` conta só não excluídos (documento excluído na pasta não conta); documentos e intenções ficam com `folder_id` nulo e os demais campos iguais (`status`, `category_id`, `deleted_at`) (PEXC-01 AC1, AC2); outro tenant → `not_found` sem apagar
+- [x] Quick + Build passam
 
 **Tests**: integration
 **Gate**: quick
@@ -313,10 +313,10 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] Testes: mover 2 documentos de pastas diferentes para uma terceira → `movedCount` 2 e `updated_at` do destino e das duas origens atualizados (AC1, AC3); destino `null` (AC2); id repetido conta uma vez (AC4); `[]`, 101 ids e id não UUID → `invalid_selection` (AC5); pasta de outro tenant → `folder_not_found` sem mudar nada (AC6); um id de outro tenant ou excluído na lista → `document_not_found` e nenhum documento da lista mudou (AC7, tudo ou nada); todos já no destino → `movedCount` 0 e nenhum `updated_at` mudou
-- [ ] Concorrência (L-052): uma transação separada segura a pasta com `for update` (como a exclusão); a movimentação espera (conferido em `pg_stat_activity`); depois da exclusão confirmada, a movimentação devolve `folder_not_found` sem lançar (AC8)
-- [ ] `status`, `extracted_text` e `processing_attempt` iguais antes e depois (AC9)
-- [ ] Quick + Build passam
+- [x] Testes: mover 2 documentos de pastas diferentes para uma terceira → `movedCount` 2 e `updated_at` do destino e das duas origens atualizados (AC1, AC3); destino `null` (AC2); id repetido conta uma vez (AC4); `[]`, 101 ids e id não UUID → `invalid_selection` (AC5); pasta de outro tenant → `folder_not_found` sem mudar nada (AC6); um id de outro tenant ou excluído na lista → `document_not_found` e nenhum documento da lista mudou (AC7, tudo ou nada); todos já no destino → `movedCount` 0 e nenhum `updated_at` mudou
+- [x] Concorrência (L-052): uma transação separada segura a pasta com `for update` (como a exclusão); a movimentação espera (conferido em `pg_stat_activity`); depois da exclusão confirmada, a movimentação devolve `folder_not_found` sem lançar (AC8)
+- [x] `status`, `extracted_text` e `processing_attempt` iguais antes e depois (AC9)
+- [x] Quick + Build passam
 
 **Tests**: integration
 **Gate**: quick
@@ -336,10 +336,10 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `src/server/data/__tests__/documents.test.ts`: filtro de pasta, "sem pasta", sem filtro (todas) e pasta combinada com modalidade, categoria e busca (PFILT-01 AC1–AC4); cada documento traz `folderId` (AC6)
-- [ ] `src/server/data/__tests__/isolation.test.ts`: filtro com pasta de outro tenant → lista vazia (PFILT-01 AC5)
-- [ ] `updateDocument` com `folderId` de outra pasta grava e atualiza `updated_at` de origem e destino; `null` tira da pasta; sem a chave mantém; pasta de outro tenant → `DocumentFolderNotFoundError` e nenhum campo gravado, inclusive o nome (PEDIT-01 AC2–AC5 no nível da DAL)
-- [ ] Quick + Build passam
+- [x] `src/server/data/__tests__/documents.test.ts`: filtro de pasta, "sem pasta", sem filtro (todas) e pasta combinada com modalidade, categoria e busca (PFILT-01 AC1–AC4); cada documento traz `folderId` (AC6)
+- [x] `src/server/data/__tests__/isolation.test.ts`: filtro com pasta de outro tenant → lista vazia (PFILT-01 AC5)
+- [x] `updateDocument` com `folderId` de outra pasta grava e atualiza `updated_at` de origem e destino; `null` tira da pasta; sem a chave mantém; pasta de outro tenant → `DocumentFolderNotFoundError` e nenhum campo gravado, inclusive o nome (PEDIT-01 AC2–AC5 no nível da DAL)
+- [x] Quick + Build passam
 
 **Tests**: integration
 **Gate**: quick
@@ -351,6 +351,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 #### T10: Pasta na intenção de upload
 
 **What**: `folderId` em `CreateUploadIntentInput`; verificação com trava em `createUploadIntent` e desfecho `folder_not_found`; `commitUploadIntent` levando `intent.folderId` ao documento (§ 4.3).
+**Ajuste de execução (aprovado pelo orquestrador)**: Redistribuição aprovada: antecipa de T11 somente as unions Begin/Reserve e o repasse de folder_not_found; antecipa de T12 somente o 404 da rota. Cada caminho tem teste neste commit, para manter tsc sem erros.
+
 **Where**: `src/server/documents/repository.ts` (modificar)
 **Depends on**: T9
 **Reuses**: `createUploadIntent`, `commitUploadIntent`
@@ -359,8 +361,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `src/server/documents/__tests__/repository.test.ts`: intenção com pasta do tenant → documento confirmado com a mesma pasta (AC4); sem pasta → documento sem pasta (AC3); pasta de outro tenant → `folder_not_found` e nenhuma intenção criada (AC6); pasta apagada entre reserva e confirmação → documento sem pasta (AC8)
-- [ ] Quick + Build passam
+- [x] `src/server/documents/__tests__/repository.test.ts`: intenção com pasta do tenant → documento confirmado com a mesma pasta (AC4); sem pasta → documento sem pasta (AC3); pasta de outro tenant → `folder_not_found` e nenhuma intenção criada (AC6); pasta apagada entre reserva e confirmação → documento sem pasta (AC8)
+- [x] Quick + Build passam
 
 **Tests**: integration
 **Gate**: quick
@@ -372,6 +374,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 #### T11: Pasta na reserva do upload
 
 **What**: `CreateDocumentUploadInput.folderId`; `reserve` repassa e devolve `folder_not_found` (id não UUID sem consulta); novos desfechos em `ReserveDocumentUploadResult` e `BeginDocumentUploadResult`.
+**Ajuste de execução (aprovado pelo orquestrador)**: Redistribuição aprovada: as unions Begin/Reserve e o repasse de folder_not_found foram entregues com testes na T10. Esta task conserva folderId no payload, validação de UUID e repasse ao repositório.
+
 **Where**: `src/server/documents/uploads.ts` (modificar)
 **Depends on**: T10
 **Reuses**: `createDocumentUploadIntake`
@@ -380,8 +384,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `src/server/documents/__tests__/uploads.test.ts`: `folderId` repassado ao repositório; `null` e ausente viram `null`; `"abc"` → `folder_not_found` sem chamar o repositório; `folder_not_found` do repositório repassado
-- [ ] Quick + Build passam
+- [x] `src/server/documents/__tests__/uploads.test.ts`: `folderId` repassado ao repositório; `null` e ausente viram `null`; `"abc"` → `folder_not_found` sem chamar o repositório; `folder_not_found` do repositório repassado
+- [x] Quick + Build passam
 
 **Tests**: unit
 **Gate**: quick
@@ -393,6 +397,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 #### T12: Pasta no payload da rota de upload
 
 **What**: `parseInput` aceita `folderId` ausente, `null` ou string; outro tipo → 400 `upload_payload_invalid`; `folder_not_found` → 404 `{ "error": "upload_folder_not_found" }`.
+**Ajuste de execução (aprovado pelo orquestrador)**: Redistribuição aprovada: a resposta 404 upload_folder_not_found e seu teste foram entregues na T10. Esta task conserva o parsing do payload folderId e seus testes.
+
 **Where**: `app/api/documents/upload/route.ts` (modificar)
 **Depends on**: T11
 **Reuses**: `createDocumentUploadPostHandler`
@@ -401,8 +407,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `src/server/documents/__tests__/upload-route.test.ts`: `folderId` string chega ao `reserve` (AC4); número e objeto → 400 (AC5); `folder_not_found` → 404 com o corpo exato (AC6); testes existentes intactos
-- [ ] Quick + Build passam; PR A2 aberto para `lote-17` com T5–T12
+- [x] `src/server/documents/__tests__/upload-route.test.ts`: `folderId` string chega ao `reserve` (AC4); número e objeto → 400 (AC5); `folder_not_found` → 404 com o corpo exato (AC6); testes existentes intactos
+- [x] Quick + Build passam; PR A2 aberto para `lote-17` com T5–T12
 
 **Tests**: unit
 **Gate**: quick

@@ -1,4 +1,7 @@
 import "server-only";
+
+import { isUniqueViolation, isForeignKeyViolation } from "./pg-errors";
+import { isUuid, type DocumentFolderFilter } from "../../lib/document-folders";
 import { createHash, randomUUID } from "node:crypto";
 import {
   and,
@@ -24,6 +27,7 @@ import {
   accounts,
   conversations,
   documentCategories,
+  documentFolders,
   documents,
   humanMessageSends,
   integrationRefusals,
@@ -564,6 +568,7 @@ export interface DocumentFilters {
   modality?: Modality;
   categoryId?: string;
   search?: string;
+  folder?: DocumentFolderFilter;
 }
 
 /**
@@ -608,6 +613,7 @@ export async function getDocuments(
   tenantId: string,
   filters?: DocumentFilters
 ): Promise<DocumentListRow[]> {
+  if (filters?.folder?.kind === "pasta" && !isUuid(filters.folder.folderId)) return [];
   return db
     .select(DOCUMENT_LIST_COLUMNS)
     .from(documents)
@@ -615,6 +621,8 @@ export async function getDocuments(
       and(
         eq(documents.tenantId, tenantId),
         isNull(documents.deletedAt),
+        filters?.folder?.kind === "pasta" ? eq(documents.folderId, filters.folder.folderId)
+          : filters?.folder?.kind === "sem-pasta" ? isNull(documents.folderId) : undefined,
         filters?.modality ? eq(documents.modality, filters.modality) : undefined,
         filters?.categoryId
           ? eq(documents.categoryId, filters.categoryId)
@@ -1152,27 +1160,6 @@ export async function getLeadDistributions(
 // Toda escrita abaixo filtra por tenantId no WHERE — nunca só pelo id do
 // registro — para que um id vazado/adivinhado de outro tenant nunca seja
 // afetado por engano.
-
-const POSTGRES_UNIQUE_VIOLATION = "23505";
-const POSTGRES_FOREIGN_KEY_VIOLATION = "23503";
-
-function pgErrorCode(err: unknown): string | undefined {
-  if (typeof err !== "object" || err === null) return undefined;
-  const record = err as { code?: unknown; cause?: unknown };
-  if (typeof record.code === "string") return record.code;
-  // drizzle-orm envolve o erro do driver `pg` em `DrizzleQueryError`,
-  // preservando o erro original em `.cause` (que tem `.code`).
-  if (record.cause !== undefined) return pgErrorCode(record.cause);
-  return undefined;
-}
-
-function isUniqueViolation(err: unknown): boolean {
-  return pgErrorCode(err) === POSTGRES_UNIQUE_VIOLATION;
-}
-
-function isForeignKeyViolation(err: unknown): boolean {
-  return pgErrorCode(err) === POSTGRES_FOREIGN_KEY_VIOLATION;
-}
 
 export interface TenantSettingsUpdate {
   name: string;
@@ -2574,6 +2561,7 @@ export interface UpdateDocumentInput {
   name: string;
   modality: Modality;
   categoryId?: string | null;
+  folderId?: string | null;
   /** Undefined preserves validity; null is the explicit "sem validade". */
   expiresAt?: Date | null;
 }
@@ -2583,6 +2571,10 @@ export interface UpdateDocumentInput {
  * (documento inexistente OU pertencente a outro tenant) — sinal explícito de
  * "não encontrado", nunca confundido com sucesso silencioso.
  */
+export class DocumentFolderNotFoundError extends Error {
+  constructor() { super("Pasta não encontrada."); this.name = "DocumentFolderNotFoundError"; }
+}
+
 export async function updateDocument(
   tenantId: string,
   documentId: string,
@@ -2597,6 +2589,29 @@ export async function updateDocument(
   }
   if ("expiresAt" in updates) {
     setValues.expiresAt = updates.expiresAt ?? null;
+  }
+
+  if ("folderId" in updates) {
+    const folderId = updates.folderId ?? null;
+    if (folderId !== null && !isUuid(folderId)) throw new DocumentFolderNotFoundError();
+    return db.transaction(async (tx) => {
+      if (folderId !== null) {
+        const [target] = await tx.select({ id: documentFolders.id }).from(documentFolders)
+          .where(and(eq(documentFolders.tenantId, tenantId), eq(documentFolders.id, folderId))).for("key share");
+        if (!target) throw new DocumentFolderNotFoundError();
+      }
+      const [before] = await tx.select({ folderId: documents.folderId }).from(documents)
+        .where(and(eq(documents.tenantId, tenantId), eq(documents.id, documentId), isNull(documents.deletedAt))).for("update");
+      if (!before) return null;
+      const [updated] = await tx.update(documents).set({ ...setValues, folderId })
+        .where(and(eq(documents.tenantId, tenantId), eq(documents.id, documentId), isNull(documents.deletedAt))).returning();
+      if (before.folderId !== folderId) {
+        const touched = [before.folderId, folderId].filter((id): id is string => id !== null);
+        if (touched.length > 0) await tx.update(documentFolders).set({ updatedAt: new Date() })
+          .where(and(eq(documentFolders.tenantId, tenantId), inArray(documentFolders.id, touched)));
+      }
+      return updated;
+    });
   }
 
   const rows = await db

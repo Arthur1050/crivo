@@ -74,6 +74,7 @@ function parseInput(clientPayload: string | null): CreateDocumentUploadInput | n
       typeof value.sizeBytes !== "number" ||
       (value.modality !== "novo" && value.modality !== "usado" && value.modality !== "ambos") ||
       (value.categoryId !== undefined && value.categoryId !== null && typeof value.categoryId !== "string") ||
+      (value.folderId !== undefined && value.folderId !== null && typeof value.folderId !== "string") ||
       (expiresAt instanceof Date && Number.isNaN(expiresAt.getTime()))
     ) {
       return null;
@@ -85,6 +86,7 @@ function parseInput(clientPayload: string | null): CreateDocumentUploadInput | n
       sizeBytes: value.sizeBytes,
       modality: value.modality,
       categoryId: value.categoryId as string | null | undefined,
+      folderId: value.folderId as string | null | undefined,
       expiresAt,
     };
   } catch {
@@ -127,6 +129,7 @@ export function createDocumentUploadPostHandler(
       try {
         const reserved = await intake.reserve(input);
         if (reserved.kind === "invalid") return safeError(400, reserved.code);
+        if (reserved.kind === "folder_not_found") return safeError(404, "upload_folder_not_found");
         if (reserved.kind === "duplicate_upload") {
           // O nome é do próprio tenant do ator (a reserva é tenant-scoped).
           return Response.json({ error: "duplicate_upload", existingName: reserved.existingName }, { status: 409 });
