@@ -757,9 +757,9 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] "Sem pasta" grava `pasta=sem-pasta`, "Todas" remove `pasta`; conta como filtro ativo; outros parâmetros preservados (PRAIZ-01 AC8)
-- [ ] Sem a prop, menu igual ao de hoje (PABRIR-01 AC2)
-- [ ] Build passa; PR B2 aberto para `lote-17` com T25–T28
+- [x] "Sem pasta" grava `pasta=sem-pasta`, "Todas" remove `pasta`; conta como filtro ativo; outros parâmetros preservados (PRAIZ-01 AC8)
+- [x] Sem a prop, menu igual ao de hoje (PABRIR-01 AC2)
+- [x] Build passa; PR B2 aberto para `lote-17` com T25–T28
 
 **Tests**: none (componente; captura na T34)
 **Gate**: build
