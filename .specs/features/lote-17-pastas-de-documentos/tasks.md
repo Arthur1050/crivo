@@ -199,11 +199,11 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `npm run db:push:test` sai 0 e a conferência lista 0 problemas em todos os alvos
-- [ ] Nomes de FK em `pg_constraint` iguais aos de `schema.sql`; se divergirem, corrigir `schema.sql` neste commit e registrar
-- [ ] `src/db/__tests__/schema-document-folders.test.ts`: nome repetido com outra caixa no mesmo tenant recusado (`23505`), mesmo nome em outro tenant aceito (PMOD-01 AC2, AC3); apagar pasta zera `folder_id` de documento e de intenção, que continuam existindo (AC4–AC6); apagar tenant apaga as pastas (AC7); `schema.sql` aplicado duas vezes sem erro e `verifyDocumentFoldersState` = `[]` (PBANCO-01 AC4); com o índice de pasta derrubado dentro de `try/finally` que reaplica o SQL, a conferência acusa o índice (AC3)
-- [ ] Testes de documentos existentes passam com a coluna nova (`npx vitest run src/server/data/__tests__/documents.test.ts src/server/documents/__tests__/repository.test.ts`)
-- [ ] Quick + Build passam
+- [x] `npm run db:push:test` sai 0 e a conferência lista 0 problemas em todos os alvos
+- [x] Nomes de FK em `pg_constraint` iguais aos de `schema.sql`; se divergirem, corrigir `schema.sql` neste commit e registrar
+- [x] `src/db/__tests__/schema-document-folders.test.ts`: nome repetido com outra caixa no mesmo tenant recusado (`23505`), mesmo nome em outro tenant aceito (PMOD-01 AC2, AC3); apagar pasta zera `folder_id` de documento e de intenção, que continuam existindo (AC4–AC6); apagar tenant apaga as pastas (AC7); `schema.sql` aplicado duas vezes sem erro e `verifyDocumentFoldersState` = `[]` (PBANCO-01 AC4); com o índice de pasta derrubado dentro de `try/finally` que reaplica o SQL, a conferência acusa o índice (AC3)
+- [x] Testes de documentos existentes passam com a coluna nova (`npx vitest run src/server/data/__tests__/documents.test.ts src/server/documents/__tests__/repository.test.ts`)
+- [x] Quick + Build passam
 
 **Tests**: integration
 **Gate**: quick

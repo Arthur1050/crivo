@@ -581,6 +581,7 @@ const DOCUMENT_LIST_COLUMNS = {
   mimeType: documents.mimeType,
   sizeBytes: documents.sizeBytes,
   categoryId: documents.categoryId,
+  folderId: documents.folderId,
   uploadedAt: documents.uploadedAt,
   expiresAt: documents.expiresAt,
   storageProvider: documents.storageProvider,

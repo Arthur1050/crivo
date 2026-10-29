@@ -177,6 +177,7 @@ export async function listTenantDocuments(tenantId: string): Promise<DocumentLis
       mimeType: documents.mimeType,
       sizeBytes: documents.sizeBytes,
       categoryId: documents.categoryId,
+      folderId: documents.folderId,
       uploadedAt: documents.uploadedAt,
       expiresAt: documents.expiresAt,
       storageProvider: documents.storageProvider,
