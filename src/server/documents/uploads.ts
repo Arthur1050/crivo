@@ -47,6 +47,7 @@ export interface CreateDocumentUploadInput {
 export type BeginDocumentUploadResult =
   | { kind: "ready"; intentId: string; grant: ClientUploadGrant }
   | { kind: "duplicate_upload"; existingName: string | null }
+  | { kind: "folder_not_found" }
   | { kind: "invalid"; code: "upload_input_invalid" }
   | { kind: "storage_failure" };
 
@@ -61,6 +62,7 @@ export type ReserveDocumentUploadResult =
       expiresAt: Date;
     }
   | { kind: "duplicate_upload"; existingName: string | null }
+  | { kind: "folder_not_found" }
   | { kind: "invalid"; code: "upload_input_invalid" };
 
 export type FinalizeDocumentUploadResult =
@@ -250,6 +252,7 @@ export function createDocumentUploadIntake(
         startedAt
       );
       if (created.kind === "active_duplicate") return { kind: "duplicate_upload", existingName: created.existingName };
+      if (created.kind === "folder_not_found") return created;
       return {
         kind: "reserved",
         intentId: created.intent.id,

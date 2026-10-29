@@ -89,6 +89,14 @@ function fixture(overrides: Partial<DocumentUploadRouteDependencies> = {}) {
 }
 
 describe("document upload route (lote-12 T9)", () => {
+  it("T10: pasta não encontrada responde 404 com o código do contrato sem emitir token", async () => {
+    const reserve = vi.fn(async () => ({ kind: "folder_not_found" as const }));
+    const { handler, handle } = fixture({ intake: { reserve, finalize: vi.fn() } });
+    const response = await handler(request(generateEvent()));
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ error: "upload_folder_not_found" });
+    expect(handle).not.toHaveBeenCalled();
+  });
   it("emite token somente depois de reservar a intenção validada", async () => {
     const { handler, reserve, handle } = fixture();
     const response = await handler(request(generateEvent()));

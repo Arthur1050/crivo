@@ -2,8 +2,10 @@ import "server-only";
 
 import { and, desc, eq, gt, isNull, lte, sql } from "drizzle-orm";
 import { db } from "../../db";
+import { isUuid } from "../../lib/document-folders";
 import {
   documentUploadIntents,
+  documentFolders,
   documents,
   tenantDocumentContextLimits,
 } from "../../db/schema";
@@ -62,6 +64,7 @@ export interface CreateUploadIntentInput {
   sizeBytes: bigint | number;
   modality: "novo" | "usado" | "ambos";
   categoryId?: string | null;
+  folderId?: string | null;
   expiresAt?: Date | null;
   storageKey: string;
   expiresAtIntent: Date;
@@ -98,7 +101,8 @@ export type CreateUploadIntentResult =
   // `existingName` identifica, dentro do mesmo tenant, o documento ou o envio
   // em andamento com os mesmos bytes (DOCBIN-01 AC4). `null` só na corrida
   // fina resolvida pelo índice único, quando nenhum dos dois é legível.
-  | { kind: "active_duplicate"; existingName: string | null };
+  | { kind: "active_duplicate"; existingName: string | null }
+  | { kind: "folder_not_found" };
 
 export interface CommitUploadIntentInput {
   storageProvider: string;
@@ -208,7 +212,13 @@ export async function createUploadIntent(
   input: CreateUploadIntentInput,
   now = new Date()
 ): Promise<CreateUploadIntentResult> {
+  if (input.folderId != null && !isUuid(input.folderId)) return { kind: "folder_not_found" };
   return db.transaction(async (tx) => {
+    if (input.folderId != null) {
+      const [folder] = await tx.select({ id: documentFolders.id }).from(documentFolders)
+        .where(and(eq(documentFolders.tenantId, tenantId), eq(documentFolders.id, input.folderId))).for("key share");
+      if (!folder) return { kind: "folder_not_found" };
+    }
     await tx
       .update(documentUploadIntents)
       .set({ state: "failed" })
@@ -336,6 +346,7 @@ export async function commitUploadIntent(
         sizeBytes: intent.sizeBytes,
         modality: intent.modality,
         categoryId: intent.categoryId,
+        folderId: intent.folderId,
         expiresAt: intent.expiresAt,
         storageProvider: input.storageProvider,
         storageKey: intent.storageKey,

@@ -113,6 +113,14 @@ async function documentCount(tenantId: string) {
 }
 
 describe("document upload intake (lote-12 T8)", () => {
+  it.each(["reserve", "begin"] as const)("T10: %s propaga folder_not_found sem gerar token", async (method) => {
+    const bytes = encoder.encode("Pasta inexistente");
+    const storage = storageFixture(bytes);
+    const create = vi.fn<typeof repository.createUploadIntent>().mockResolvedValue({ kind: "folder_not_found" });
+    const service = intake(storage, { repository: { ...repository, createUploadIntent: create } });
+    expect(await service[method](inputFor(bytes), actorA)).toEqual({ kind: "folder_not_found" });
+    expect(storage.authorizeClientUpload).not.toHaveBeenCalled();
+  });
   beforeAll(async () => {
     await db.delete(documentUploadIntents).where(inArray(documentUploadIntents.tenantId, [TENANT_A, TENANT_B]));
     await db.delete(documents).where(inArray(documents.tenantId, [TENANT_A, TENANT_B]));
