@@ -534,9 +534,9 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `src/components/documents/__tests__/folder-presentation.test.ts`: `formatFileCount` 0/1/2; `formatFolderCount` 1/2; `formatFolderUpdatedLabel` nas fronteiras exatas — 59 s, 1 min, 59 min, 60 min, futuro, 23:59 e 00:00 de São Paulo com o servidor em UTC, ontem, 31/12 → 1/1, outro ano (PRAIZ-01 AC3, L-023); `deleteFolderCopy` para 0, 1 e 3 (PEXC-01 AC4); `folderErrorMessage` para cada código; `folderSelectorOptions` com "Sem pasta" primeiro; `folderIdFromSelector` da sentinela e de `null`
-- [ ] Teste de pureza: sem import de `src/server/` (L-020)
-- [ ] Quick (sem banco) + Build passam
+- [x] `src/components/documents/__tests__/folder-presentation.test.ts`: `formatFileCount` 0/1/2; `formatFolderCount` 1/2; `formatFolderUpdatedLabel` nas fronteiras exatas — 59 s, 1 min, 59 min, 60 min, futuro, 23:59 e 00:00 de São Paulo com o servidor em UTC, ontem, 31/12 → 1/1, outro ano (PRAIZ-01 AC3, L-023); `deleteFolderCopy` para 0, 1 e 3 (PEXC-01 AC4); `folderErrorMessage` para cada código; `folderSelectorOptions` com "Sem pasta" primeiro; `folderIdFromSelector` da sentinela e de `null`
+- [x] Teste de pureza: sem import de `src/server/` (L-020)
+- [x] Quick (sem banco) + Build passam
 
 **Tests**: unit
 **Gate**: quick
