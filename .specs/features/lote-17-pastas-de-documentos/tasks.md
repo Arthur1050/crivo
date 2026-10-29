@@ -621,9 +621,9 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] Cartão com `href={folderHref(id)}`, nome, contagem, rótulo e tamanho já prontos (sem cálculo de data no cliente)
-- [ ] Lista vazia → `EmptyState` com o texto da spec para escrever e para ler (PVAZIO-01 AC1)
-- [ ] Build passa
+- [x] Cartão com `href={folderHref(id)}`, nome, contagem, rótulo e tamanho já prontos (sem cálculo de data no cliente)
+- [x] Lista vazia → `EmptyState` com o texto da spec para escrever e para ler (PVAZIO-01 AC1)
+- [x] Build passa
 
 **Tests**: none (componente; captura na T34)
 **Gate**: build
