@@ -643,8 +643,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] Pasta atual pré-selecionada (sentinela quando sem pasta); confirmar chama `moveDocumentsToFolderAction({ documentIds: [id], folderId })`; erro em `Banner` com o diálogo aberto
-- [ ] Build passa
+- [x] Pasta atual pré-selecionada (sentinela quando sem pasta); confirmar chama `moveDocumentsToFolderAction({ documentIds: [id], folderId })`; erro em `Banner` com o diálogo aberto
+- [x] Build passa
 
 **Tests**: none (componente; captura na T34)
 **Gate**: build
