@@ -664,8 +664,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `Breadcrumbs label="Caminho"`; "Documentos" com `href="/documentos"`; pasta com `isCurrent`; `FolderActionsMenu` com `showOpen={false}` e `afterDeleteHref="/documentos"` (PEXC-01 AC6)
-- [ ] Build passa; PR B1 aberto para `lote-17` com T18–T24
+- [x] `Breadcrumbs label="Caminho"`; "Documentos" com `href="/documentos"`; pasta com `isCurrent`; `FolderActionsMenu` com `showOpen={false}` e `afterDeleteHref="/documentos"` (PEXC-01 AC6)
+- [x] Build passa; PR B1 aberto para `lote-17` com T18–T24
 
 **Tests**: none (componente; captura na T34)
 **Gate**: build
