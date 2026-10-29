@@ -247,9 +247,9 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `src/server/data/__tests__/pg-errors.test.ts`: código direto, código em `.cause` (forma do `DrizzleQueryError`), sem código → `undefined`
-- [ ] `npx vitest run src/server/data/__tests__/documents.test.ts` passa (categoria duplicada continua recusada)
-- [ ] Quick + Build passam
+- [x] `src/server/data/__tests__/pg-errors.test.ts`: código direto, código em `.cause` (forma do `DrizzleQueryError`), sem código → `undefined`
+- [x] `npx vitest run src/server/data/__tests__/documents.test.ts` passa (categoria duplicada continua recusada)
+- [x] Quick + Build passam
 
 **Tests**: unit
 **Gate**: quick
