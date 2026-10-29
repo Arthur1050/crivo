@@ -453,8 +453,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] Testes: sucesso com `movedCount`; cada `kind` da DAL traduzido para o código e a mensagem fixos; corretor recusado sem mudar `folder_id` de nenhum documento
-- [ ] Quick + Build passam
+- [x] Testes: sucesso com `movedCount`; cada `kind` da DAL traduzido para o código e a mensagem fixos; corretor recusado sem mudar `folder_id` de nenhum documento
+- [x] Quick + Build passam
 
 **Tests**: integration
 **Gate**: quick

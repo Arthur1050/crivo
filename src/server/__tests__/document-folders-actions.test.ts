@@ -5,7 +5,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 import { db } from "../../db";
 import { documentFolders, documents, tenants } from "../../db/schema";
 import type { AuthContext } from "../auth/session";
-import { createDocumentFolderAction, deleteDocumentFolderAction, renameDocumentFolderAction } from "../actions/document-folders";
+import { createDocumentFolderAction, deleteDocumentFolderAction, moveDocumentsToFolderAction, renameDocumentFolderAction } from "../actions/document-folders";
 
 const session = vi.hoisted(() => ({ tenantId: "", roles: ["gestor"] as AuthContext["roles"] }));
 vi.mock("../auth/session", async (importActual) => {
@@ -30,10 +30,49 @@ async function addFolder(name: string, tenantId = tenantA) {
   return row;
 }
 
+async function addDocument(folderId: string | null = null) {
+  const [row] = await db.insert(documents).values({ tenantId: tenantA, folderId, name: "Mover action", modality: "novo", mimeType: "text/plain", sizeBytes: 10n,
+    storageProvider: "teste", storageKey: randomUUID(), storageEtag: "etag", contentSha256: randomUUID().replaceAll("-", "").repeat(2), status: "pronto" }).returning();
+  return row;
+}
+
 beforeAll(async () => {
   await db.insert(tenants).values([tenantA, tenantB].map((id) => ({
     id, name: "Actions pastas", slug: `actions-pastas-${id}`, agentName: "Agente", supportedModality: "ambos" as const,
   })));
+});
+
+describe("T14 — action de mover (PMOVER-01, PPERM-01)", () => {
+  it("move no tenant ativo, devolve movedCount real e revalida; null retira da pasta", async () => {
+    const row = await addFolder("Mover action");
+    const doc = await addDocument();
+    expect(await moveDocumentsToFolderAction({ documentIds: [doc.id], folderId: row.id })).toEqual({ ok: true, movedCount: 1 });
+    expect((await db.select().from(documents).where(eq(documents.id, doc.id)))[0]).toEqual({ ...doc, folderId: row.id });
+    expect(revalidatePath).toHaveBeenCalledExactlyOnceWith("/documentos");
+    expect(await moveDocumentsToFolderAction({ documentIds: [doc.id], folderId: row.id })).toEqual({ ok: true, movedCount: 0 });
+    expect(await moveDocumentsToFolderAction({ documentIds: [doc.id], folderId: null })).toEqual({ ok: true, movedCount: 1 });
+    expect((await db.select().from(documents).where(eq(documents.id, doc.id)))[0]).toEqual(doc);
+  });
+
+  it("traduz cada erro de domínio com mensagem exata e não revalida ou muda linhas", async () => {
+    const row = await addFolder("Destino estrangeiro action", tenantB);
+    const doc = await addDocument();
+    expect(await moveDocumentsToFolderAction({ documentIds: [], folderId: null })).toEqual({ ok: false, code: "selecao-invalida", error: "Selecione de 1 a 100 documentos." });
+    expect(await moveDocumentsToFolderAction({ documentIds: [doc.id], folderId: row.id })).toEqual({ ok: false, code: "pasta-nao-encontrada", error: "Pasta não encontrada." });
+    expect(await moveDocumentsToFolderAction({ documentIds: [doc.id, randomUUID()], folderId: null })).toEqual({ ok: false, code: "documento-nao-encontrado", error: "Documento não encontrado." });
+    expect((await db.select().from(documents).where(eq(documents.id, doc.id)))[0]).toEqual(doc);
+    expect((await db.select().from(documentFolders).where(eq(documentFolders.id, row.id)))[0]).toEqual(row);
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it("corretor recebe sem-permissao e mantém a pasta atual do documento", async () => {
+    const row = await addFolder("Origem protegida action");
+    const doc = await addDocument(row.id);
+    session.roles = ["corretor"];
+    expect(await moveDocumentsToFolderAction({ documentIds: [doc.id], folderId: null })).toEqual({ ok: false, code: "sem-permissao", error: "Sem permissão para escrever documentos." });
+    expect((await db.select().from(documents).where(eq(documents.id, doc.id)))[0]).toEqual(doc);
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
 });
 beforeEach(() => { session.tenantId = tenantA; session.roles = ["gestor"]; vi.clearAllMocks(); });
 afterAll(async () => {

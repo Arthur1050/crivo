@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getActiveTenantId } from "../tenant";
 import { denyIfForbidden } from "./permission";
 import { validateName } from "../validation";
-import { createDocumentFolder, deleteDocumentFolder, renameDocumentFolder } from "../data/document-folders";
+import { createDocumentFolder, deleteDocumentFolder, moveDocumentsToFolder, renameDocumentFolder } from "../data/document-folders";
 
 export interface CreateDocumentFolderInput { name: string }
 export interface RenameDocumentFolderInput { folderId: string; name: string }
@@ -53,6 +53,17 @@ export async function deleteDocumentFolderAction(
 export async function moveDocumentsToFolderAction(
   input: MoveDocumentsToFolderInput
 ): Promise<FolderActionResult<{ movedCount: number }>> {
-  void input;
-  throw new Error("L17: implementado na T14");
+  const denied = await denyIfForbidden("documentos", "escrever");
+  if (denied) return { ok: false, code: "sem-permissao", error: denied.error };
+  const result = await moveDocumentsToFolder(await getActiveTenantId(), input.documentIds, input.folderId);
+  if (result.kind !== "moved") {
+    const code = {
+      invalid_selection: "selecao-invalida",
+      folder_not_found: "pasta-nao-encontrada",
+      document_not_found: "documento-nao-encontrado",
+    } as const;
+    return { ok: false, code: code[result.kind], error: FOLDER_ERROR_MESSAGES[code[result.kind]] };
+  }
+  revalidatePath("/documentos");
+  return { ok: true, movedCount: result.movedCount };
 }
