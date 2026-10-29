@@ -828,8 +828,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] Com `folder`, texto e `folderId: folder.id`; sem `folder`, `folderId: null` (PUPLOAD-01 AC2, AC3)
-- [ ] Build passa
+- [x] Com `folder`, texto e `folderId: folder.id`; sem `folder`, `folderId: null` (PUPLOAD-01 AC2, AC3)
+- [x] Build passa
 
 **Tests**: none (componente; captura na T34)
 **Gate**: build
@@ -837,6 +837,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 **Commit**: `feat(documentos): enviar arquivo direto na pasta`
 
 ---
+
+**Execução C1**: prop e mensagem conferidas no código; folderId sempre explícito no ticket. TypeScript: 0 erros. ESLint: 0 erros, 7 avisos. Prova visual pendente na T34.
 
 #### T32: Raiz com a grade de pastas
 
