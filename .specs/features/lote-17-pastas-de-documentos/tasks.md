@@ -735,9 +735,9 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] Sem as props novas, render igual ao de hoje (título "Todos os arquivos", sem item de mover)
-- [ ] "Mover para pasta" só com `canWrite` (PPERM-01 AC4)
-- [ ] Build passa
+- [x] Sem as props novas, render igual ao de hoje (título "Todos os arquivos", sem item de mover)
+- [x] "Mover para pasta" só com `canWrite` (PPERM-01 AC4)
+- [x] Build passa
 
 **Tests**: none (componente; captura na T34)
 **Gate**: build
