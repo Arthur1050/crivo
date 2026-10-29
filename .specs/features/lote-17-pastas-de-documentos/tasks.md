@@ -177,9 +177,9 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `scripts/__tests__/test-db-push.test.ts`: `realSteps().restoreIndexes` chama `restoreDrizzleBlindIndexes` e `applyDocumentFoldersSql` e `realSteps().verify` junta os problemas das duas conferências — teste que falha se qualquer chamada for removida (L-026); testes existentes intactos
-- [ ] `verifyDocumentFoldersState` confere tabela, 2 colunas, 3 FKs com `confdeltype` (`c`, `n`, `n`) e 3 índices (inclusive `document_categories_tenant_id_lower_name_idx`), com uma mensagem por item ausente
-- [ ] Quick + Build passam (a prova contra banco é a T3)
+- [x] `scripts/__tests__/test-db-push.test.ts`: `realSteps().restoreIndexes` chama `restoreDrizzleBlindIndexes` e `applyDocumentFoldersSql` e `realSteps().verify` junta os problemas das duas conferências — teste que falha se qualquer chamada for removida (L-026); testes existentes intactos
+- [x] `verifyDocumentFoldersState` confere tabela, 2 colunas, 3 FKs com `confdeltype` (`c`, `n`, `n`) e 3 índices (inclusive `document_categories_tenant_id_lower_name_idx`), com uma mensagem por item ausente
+- [x] Quick + Build passam (a prova contra banco é a T3)
 
 **Tests**: unit
 **Gate**: quick
