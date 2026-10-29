@@ -693,8 +693,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] Sem `folderById`, a tabela é a de hoje; com ela, nome da pasta ou `NO_FOLDER_LABEL` (PRAIZ-01 AC7)
-- [ ] Build passa
+- [x] Sem `folderById`, a tabela é a de hoje; com ela, nome da pasta ou `NO_FOLDER_LABEL` (PRAIZ-01 AC7)
+- [x] Build passa
 
 **Tests**: none (componente; captura na T34)
 **Gate**: build
@@ -714,8 +714,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] Com `folders`: campo com a pasta atual e envio de `folderId` (`string | null`) sempre; sem `folders`: campo ausente e `folderId` fora do pedido (PEDIT-01 AC1, AC4)
-- [ ] Build passa
+- [x] Com `folders`: campo com a pasta atual e envio de `folderId` (`string | null`) sempre; sem `folders`: campo ausente e `folderId` fora do pedido (PEDIT-01 AC1, AC4)
+- [x] Build passa
 
 **Tests**: none (componente; captura na T34)
 **Gate**: build
@@ -735,9 +735,9 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] Sem as props novas, render igual ao de hoje (título "Todos os arquivos", sem item de mover)
-- [ ] "Mover para pasta" só com `canWrite` (PPERM-01 AC4)
-- [ ] Build passa
+- [x] Sem as props novas, render igual ao de hoje (título "Todos os arquivos", sem item de mover)
+- [x] "Mover para pasta" só com `canWrite` (PPERM-01 AC4)
+- [x] Build passa
 
 **Tests**: none (componente; captura na T34)
 **Gate**: build
@@ -757,9 +757,9 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] "Sem pasta" grava `pasta=sem-pasta`, "Todas" remove `pasta`; conta como filtro ativo; outros parâmetros preservados (PRAIZ-01 AC8)
-- [ ] Sem a prop, menu igual ao de hoje (PABRIR-01 AC2)
-- [ ] Build passa; PR B2 aberto para `lote-17` com T25–T28
+- [x] "Sem pasta" grava `pasta=sem-pasta`, "Todas" remove `pasta`; conta como filtro ativo; outros parâmetros preservados (PRAIZ-01 AC8)
+- [x] Sem a prop, menu igual ao de hoje (PABRIR-01 AC2)
+- [x] Build passa; PR B2 aberto para `lote-17` com T25–T28
 
 **Tests**: none (componente; captura na T34)
 **Gate**: build
