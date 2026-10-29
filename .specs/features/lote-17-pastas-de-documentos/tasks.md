@@ -599,9 +599,9 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] Sem `canWrite`, só "Abrir pasta" e "Copiar link" (PPERM-01 AC4, AC5); `showOpen={false}` esconde "Abrir pasta"
-- [ ] "Copiar link" com `folderHref` e os dois avisos da spec (PLINK-01)
-- [ ] Build passa
+- [x] Sem `canWrite`, só "Abrir pasta" e "Copiar link" (PPERM-01 AC4, AC5); `showOpen={false}` esconde "Abrir pasta"
+- [x] "Copiar link" com `folderHref` e os dois avisos da spec (PLINK-01)
+- [x] Build passa
 
 **Tests**: none (componente; captura na T34)
 **Gate**: build
