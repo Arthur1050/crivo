@@ -382,14 +382,23 @@ mantida só por revisão de código.
 
 ---
 
-## L17 — Pastas de documentos *(futuro, não especificado)*
+## L17 — Pastas de documentos *(em planejamento desde 2026-10-29)*
 
 **Origem**: usuário, 2026-10-25. O redesign de Documentos (gerenciador de arquivos com busca, "Filtrar e
 ordenar" e "Todos os arquivos" em grade ou lista) foi publicado sem as pastas, que hoje não existem no banco.
 Este lote cria o sistema de pastas por tenant: modelo e DAL, criar/renomear/excluir pasta, mover documento,
 contagem e tamanho por pasta, permissões por papel e a grade de pastas na página. O rascunho visual da grade
 e o formato dos dados de exemplo estão em `features/lote-17-pastas-de-documentos/rascunho/` (fora do build).
-Decidir no Specify: pasta substitui ou convive com categoria, e se o agente enxerga a pasta.
+
+**Decidido (AD-051, 2026-10-29)**: a pasta convive com a categoria (pasta é o lugar, categoria é a etiqueta;
+no máximo uma de cada por documento); um nível só, sem subpastas, e documento sem pasta fica na raiz; o
+agente não enxerga a pasta (contexto, API v1 e n8n não mudam); excluir uma pasta devolve os documentos à
+raiz, com confirmação que mostra quantos arquivos serão movidos. As duas perguntas que ficavam para o
+Specify estão respondidas.
+
+**Planejamento**: `features/lote-17-pastas-de-documentos/` (`spec.md`, `design.md`, `tasks.md`), executado em
+três frentes (dados, interface e integração) sobre o branch de integração `lote-17`. O schema de produção é
+aplicado pelo usuário, com `scripts/document-folders/schema.sql`, antes do merge final em `main`.
 
 ---
 
