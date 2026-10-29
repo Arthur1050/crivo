@@ -781,8 +781,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `src/components/documents/__tests__/documents-page-state.test.ts`: os quatro `FolderParam` com e sem pasta encontrada → três modos; `folderFilterFor` devolve o filtro da pasta aberta e o "sem pasta" da raiz (mata o alvo 8 do sensor); `clearFiltersHref` na raiz e na pasta (PABRIR-01 AC4)
-- [ ] Quick + Build passam
+- [x] `src/components/documents/__tests__/documents-page-state.test.ts`: os quatro `FolderParam` com e sem pasta encontrada → três modos; `folderFilterFor` devolve o filtro da pasta aberta e o "sem pasta" da raiz (mata o alvo 8 do sensor); `clearFiltersHref` na raiz e na pasta (PABRIR-01 AC4)
+- [x] Quick + Build passam
 
 **Tests**: unit
 **Gate**: quick
@@ -790,6 +790,9 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 **Commit**: `feat(documentos): estado da página com pasta aberta`
 
 ---
+
+
+**Execução C1**: 5 testes puros aprovados; TypeScript sem erros e lint sem erros (7 avisos). Evidências: src/components/documents/__tests__/documents-page-state.test.ts, casos de resolução, filtro exato e links (PABRIR-01/PFILT-01/PVAZIO-01).
 
 #### T30: Pasta no cliente de upload
 
