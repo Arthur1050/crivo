@@ -875,7 +875,7 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 **Done when**:
 
 - [ ] `pasta` inexistente, de outro tenant e `abc` → 200 com o mesmo estado e o mesmo texto, sem lista, busca nem botões (PVAZIO-01 AC4, AC5), conferido com `curl -s -o /dev/null -w "%{http_code}"` no CRM local autenticado ou pela captura
-- [ ] Build passa
+- [x] Build passa
 
 **Tests**: none (página; captura na T34)
 **Gate**: build
@@ -883,6 +883,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 **Commit**: `feat(documentos): abrir pasta pela url`
 
 ---
+
+**Execução C1**: modos integrados conforme design §7.2; TypeScript 0 erros; ESLint 0 erros/8 avisos (7 da base e 1 da rota gerada pelo servidor de teste). Testes puros de C1: 28/28. HTTP 200 autenticado e prova visual pendentes na T34.
 
 #### T34: Capturas reais
 

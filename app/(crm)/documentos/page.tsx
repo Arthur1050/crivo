@@ -7,7 +7,8 @@ import { CategoryManagerDialog } from "@/src/components/documents/category-manag
 import { DocumentProcessingRefresh } from "@/src/components/documents/document-processing-refresh";
 import { DocumentsBrowser } from "@/src/components/documents/documents-browser";
 import { DocumentsToolbar } from "@/src/components/documents/documents-toolbar";
-import { folderFilterFor, resolveDocumentsPageMode } from "@/src/components/documents/documents-page-state";
+import { clearFiltersHref, folderFilterFor, resolveDocumentsPageMode } from "@/src/components/documents/documents-page-state";
+import { FolderHeader } from "@/src/components/documents/folder-header";
 import { CreateFolderDialog } from "@/src/components/documents/folder-name-dialog";
 import { FoldersGrid } from "@/src/components/documents/folders-grid";
 import { toFolderCardItems } from "@/src/components/documents/folder-presentation";
@@ -93,24 +94,40 @@ export default async function DocumentosPage({
     (document) => document.status === "processando"
   );
   const benchmarkNotice = describeBenchmarkNotice(limitSummary, canWrite);
+  const pageHeader = (
+    <VStack gap={1}>
+      <Heading level={1}>Documentos de Contexto</Heading>
+      <Text type="body" color="secondary">
+        Arquivos usados pelo agente {tenant?.agentName} para responder com
+        precisão nas conversas
+      </Text>
+    </VStack>
+  );
+
+  if (mode.kind === "pasta-inexistente") {
+    return (
+      <VStack gap={6}>
+        {pageHeader}
+        <EmptyState
+          title="Pasta não encontrada"
+          description="Esta pasta não existe ou foi excluída."
+          actions={<NavLink href="/documentos" isStandalone>Voltar para Documentos</NavLink>}
+        />
+      </VStack>
+    );
+  }
 
   return (
     <VStack gap={6}>
       <HStack vAlign="end" gap={4} wrap="wrap">
         <StackItem size="fill">
-          <VStack gap={1}>
-            <Heading level={1}>Documentos de Contexto</Heading>
-            <Text type="body" color="secondary">
-              Arquivos usados pelo agente {tenant?.agentName} para responder com
-              precisão nas conversas
-            </Text>
-          </VStack>
+          {pageHeader}
         </StackItem>
         {canWrite && (
           <HStack gap={2} wrap="wrap">
-            <CreateFolderDialog />
+            {mode.kind === "raiz" && <CreateFolderDialog />}
             <CategoryManagerDialog categories={categories} />
-            <UploadDialog categories={categories} />
+            <UploadDialog categories={categories} folder={mode.kind === "pasta" ? mode.folder : undefined} />
           </HStack>
         )}
       </HStack>
@@ -127,17 +144,32 @@ export default async function DocumentosPage({
         <DocumentProcessingRefresh hasProcessingDocuments={hasProcessingDocuments} />
       )}
 
-      <FoldersGrid folders={folderItems} canWrite={canWrite} createAction={<CreateFolderDialog />} />
+      {mode.kind === "raiz" ? (
+        <FoldersGrid folders={folderItems} canWrite={canWrite} createAction={<CreateFolderDialog />} />
+      ) : (
+        <FolderHeader
+          folder={{ ...mode.folder, fileCount: summaries.find((item) => item.id === mode.folder.id)?.fileCount ?? 0 }}
+          canWrite={canWrite}
+        />
+      )}
 
-      {hasAnyDocuments && <DocumentsToolbar categories={categories} showFolderFilter />}
+      {(hasAnyDocuments || mode.kind === "pasta") && (
+        <DocumentsToolbar categories={categories} showFolderFilter={mode.kind === "raiz"} />
+      )}
 
       <DocumentsBrowser
         documents={filteredDocuments}
         categories={categories}
         canWrite={canWrite}
         folders={folderOptions}
+        heading={mode.kind === "pasta" ? <Heading level={2}>{mode.folder.name}</Heading> : undefined}
         emptyState={
-          !hasAnyDocuments ? (
+          mode.kind === "pasta" && !hasActiveFilters ? (
+            <EmptyState
+              title="Esta pasta está vazia"
+              description={canWrite ? "Envie um arquivo ou mova documentos para cá." : "Nenhum arquivo nesta pasta."}
+            />
+          ) : mode.kind === "raiz" && !hasAnyDocuments ? (
             <EmptyState
               title="Nenhum documento ainda"
               description="Documentos de contexto desta imobiliária aparecerão aqui."
@@ -148,7 +180,7 @@ export default async function DocumentosPage({
               description="Ajuste os filtros ou o termo de busca para ver mais documentos."
               actions={
                 hasActiveFilters ? (
-                  <NavLink href="/documentos" isStandalone>
+                  <NavLink href={clearFiltersHref(mode)} isStandalone>
                     Limpar filtros
                   </NavLink>
                 ) : undefined
