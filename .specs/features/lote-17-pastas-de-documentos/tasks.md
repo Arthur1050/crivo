@@ -430,10 +430,10 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `src/server/__tests__/document-folders-actions.test.ts` (sessão simulada como em `src/server/__tests__/actions.test.ts`): sucesso das três com o tenant da sessão; nome com espaços nas pontas gravado sem eles; `""`, `"   "`, 121 caracteres → `nome-invalido` com a mensagem de `validateName`; 120 aceitos; duplicado → `nome-duplicado` com a mensagem fixa; pasta de outro tenant → `pasta-nao-encontrada` com a pasta intacta
-- [ ] Corretor (`documentos: ler`) recusado nas três com `sem-permissao` e contagem de pastas igual antes e depois (PPERM-01 AC2, L-001)
-- [ ] `revalidatePath("/documentos")` chamado no sucesso e não na recusa (espião), com teste que falha se a chamada for removida (L-026)
-- [ ] Quick + Build passam
+- [x] `src/server/__tests__/document-folders-actions.test.ts` (sessão simulada como em `src/server/__tests__/actions.test.ts`): sucesso das três com o tenant da sessão; nome com espaços nas pontas gravado sem eles; `""`, `"   "`, 121 caracteres → `nome-invalido` com a mensagem de `validateName`; 120 aceitos; duplicado → `nome-duplicado` com a mensagem fixa; pasta de outro tenant → `pasta-nao-encontrada` com a pasta intacta
+- [x] Corretor (`documentos: ler`) recusado nas três com `sem-permissao` e contagem de pastas igual antes e depois (PPERM-01 AC2, L-001)
+- [x] `revalidatePath("/documentos")` chamado no sucesso e não na recusa (espião), com teste que falha se a chamada for removida (L-026)
+- [x] Quick + Build passam
 
 **Tests**: integration
 **Gate**: quick
