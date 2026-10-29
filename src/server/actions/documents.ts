@@ -77,6 +77,7 @@ export interface UpdateDocumentInput {
   name: string;
   modality: Modality;
   categoryId?: string | null;
+  folderId?: string | null;
   /** Omit preserves the existing date; an empty form field explicitly clears it. */
   expiresAt?: string;
 }

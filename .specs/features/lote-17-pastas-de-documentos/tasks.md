@@ -223,9 +223,9 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] Assinaturas idênticas a `design.md` § 5.1 (B compila contra elas)
-- [ ] Nenhum consumidor ainda (os corpos são trocados nas T13–T15, os consumidores chegam em B e C)
-- [ ] Build passa; PR A1 aberto para `lote-17` com T1–T4
+- [x] Assinaturas idênticas a `design.md` § 5.1 (B compila contra elas)
+- [x] Nenhum consumidor ainda (os corpos são trocados nas T13–T15, os consumidores chegam em B e C)
+- [x] Build passa; PR A1 aberto para `lote-17` com T1–T4
 
 **Tests**: none (só assinatura; corpos e testes de integração entram nas T13–T15 deste mesmo arquivo)
 **Gate**: build
