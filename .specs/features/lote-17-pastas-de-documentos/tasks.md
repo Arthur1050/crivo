@@ -921,9 +921,9 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] Orquestrador confirmou que nenhuma outra sessão está rodando suíte (L-033)
+- [x] Orquestrador confirmou que nenhuma outra sessão está rodando suíte (L-033)
 - [ ] `npm test` passa, com a contagem de arquivos e testes registrada; nenhuma asserção alterada fora das tasks (L-055)
-- [ ] `tsc` 0 erros; `eslint` 0 erros e ≤ 9 avisos; PR C1 aberto para `lote-17` com T29–T35
+- [x] `tsc` 0 erros; `eslint` 0 erros e ≤ 9 avisos; PR C1 aberto para `lote-17` com T29–T35
 
 **Tests**: full
 **Gate**: full
@@ -931,6 +931,10 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 **Commit**: nenhum (registro no PR)
 
 ---
+
+**Execução C1 — T35 reprovada (única Full, sem repetição)**: usuário confirmou que esta é a única sessão autorizada ao banco. Em `a431948`, sobre `origin/lote-17` (`40593b7`), `npm test` saiu 1: 249 arquivos (246 aprovados, 3 com falha), 4012 testes (4004 aprovados, 8 com falha), 1164,78 s. Sete falhas em `scripts/__tests__/reengagement-proof.test.ts`: seis `proof-scheduler-link-missing` em `scripts/reengagement-proof.ts:41` e uma conexão ausente (`main`) em `reengagement-proof.test.ts:147`. Falha de teste em `vitrine/src/tema/__tests__/tema-da-loja.test.ts:115` por `Theme.js` ausente; suíte `vitrine/src/i18n/__tests__/mensagens.test.ts:8` não carregou por `locales/en.json` ausente. Ambos sob `vitrine/node_modules/@astryxdesign/core/`. Arquivos envolvidos idênticos à base; nenhum reparo fora do lote nem mudança em `n8n/` ou `vitrine/`.
+
+`npx tsc --noEmit -p .`: exit 0, 0 erros. `npx eslint .`: exit 0, 0 erros e 8 avisos (7 da base e 1 em rota ignorada gerada pelo servidor de teste). Checks remotos do PR aprovados. C1: https://github.com/Arthur1050/crivo/pull/14 (rascunho; base `lote-17`). T32/T33 mantêm a prova autenticada pendente; T34 sem capturas. **Banco liberado**; nenhum servidor de teste continua iniciado por esta sessão.
 
 ### Phase 7: Fechamento (Fase 2 do lote, PR de fechamento)
 
