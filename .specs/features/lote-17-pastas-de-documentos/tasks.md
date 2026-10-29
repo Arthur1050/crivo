@@ -495,9 +495,9 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] Documento elegível: `getDirectDocumentContext` igual (`toEqual`) antes e depois de movê-lo para uma pasta, entre pastas e de volta à raiz
-- [ ] `git diff lote-17 -- src/server/integration/context.ts app/api/v1 openapi.yaml n8n` vazio (registrado no commit)
-- [ ] Quick + Build passam
+- [x] Documento elegível: `getDirectDocumentContext` igual (`toEqual`) antes e depois de movê-lo para uma pasta, entre pastas e de volta à raiz
+- [x] `git diff lote-17 -- src/server/integration/context.ts app/api/v1 openapi.yaml n8n` vazio (registrado no commit)
+- [x] Quick + Build passam
 
 **Tests**: integration
 **Gate**: quick
