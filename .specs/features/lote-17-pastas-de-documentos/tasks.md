@@ -155,9 +155,9 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `src/lib/__tests__/document-folders.test.ts`: `parseFolderParam` para ausente, `""`, `"sem-pasta"`, UUID minúsculo, UUID maiúsculo (normaliza para minúsculas), array (usa o 1º), `"abc"`, UUID com um caractere a mais → `todas`/`sem-pasta`/`pasta`/`invalida`; `isUuid` com 8-4-4-4-12 válido e inválidos; `folderHref`; as quatro mensagens fixas iguais às da spec
-- [ ] Teste de pureza: o módulo não importa de `src/server/` nem de `src/db/` (L-020)
-- [ ] Quick + Build passam
+- [x] `src/lib/__tests__/document-folders.test.ts`: `parseFolderParam` para ausente, `""`, `"sem-pasta"`, UUID minúsculo, UUID maiúsculo (normaliza para minúsculas), array (usa o 1º), `"abc"`, UUID com um caractere a mais → `todas`/`sem-pasta`/`pasta`/`invalida`; `isUuid` com 8-4-4-4-12 válido e inválidos; `folderHref`; as quatro mensagens fixas iguais às da spec
+- [x] Teste de pureza: o módulo não importa de `src/server/` nem de `src/db/` (L-020)
+- [x] Quick + Build passam
 
 **Tests**: unit
 **Gate**: quick
@@ -177,9 +177,9 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `scripts/__tests__/test-db-push.test.ts`: `realSteps().restoreIndexes` chama `restoreDrizzleBlindIndexes` e `applyDocumentFoldersSql` e `realSteps().verify` junta os problemas das duas conferências — teste que falha se qualquer chamada for removida (L-026); testes existentes intactos
-- [ ] `verifyDocumentFoldersState` confere tabela, 2 colunas, 3 FKs com `confdeltype` (`c`, `n`, `n`) e 3 índices (inclusive `document_categories_tenant_id_lower_name_idx`), com uma mensagem por item ausente
-- [ ] Quick + Build passam (a prova contra banco é a T3)
+- [x] `scripts/__tests__/test-db-push.test.ts`: `realSteps().restoreIndexes` chama `restoreDrizzleBlindIndexes` e `applyDocumentFoldersSql` e `realSteps().verify` junta os problemas das duas conferências — teste que falha se qualquer chamada for removida (L-026); testes existentes intactos
+- [x] `verifyDocumentFoldersState` confere tabela, 2 colunas, 3 FKs com `confdeltype` (`c`, `n`, `n`) e 3 índices (inclusive `document_categories_tenant_id_lower_name_idx`), com uma mensagem por item ausente
+- [x] Quick + Build passam (a prova contra banco é a T3)
 
 **Tests**: unit
 **Gate**: quick
@@ -199,11 +199,11 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `npm run db:push:test` sai 0 e a conferência lista 0 problemas em todos os alvos
-- [ ] Nomes de FK em `pg_constraint` iguais aos de `schema.sql`; se divergirem, corrigir `schema.sql` neste commit e registrar
-- [ ] `src/db/__tests__/schema-document-folders.test.ts`: nome repetido com outra caixa no mesmo tenant recusado (`23505`), mesmo nome em outro tenant aceito (PMOD-01 AC2, AC3); apagar pasta zera `folder_id` de documento e de intenção, que continuam existindo (AC4–AC6); apagar tenant apaga as pastas (AC7); `schema.sql` aplicado duas vezes sem erro e `verifyDocumentFoldersState` = `[]` (PBANCO-01 AC4); com o índice de pasta derrubado dentro de `try/finally` que reaplica o SQL, a conferência acusa o índice (AC3)
-- [ ] Testes de documentos existentes passam com a coluna nova (`npx vitest run src/server/data/__tests__/documents.test.ts src/server/documents/__tests__/repository.test.ts`)
-- [ ] Quick + Build passam
+- [x] `npm run db:push:test` sai 0 e a conferência lista 0 problemas em todos os alvos
+- [x] Nomes de FK em `pg_constraint` iguais aos de `schema.sql`; se divergirem, corrigir `schema.sql` neste commit e registrar
+- [x] `src/db/__tests__/schema-document-folders.test.ts`: nome repetido com outra caixa no mesmo tenant recusado (`23505`), mesmo nome em outro tenant aceito (PMOD-01 AC2, AC3); apagar pasta zera `folder_id` de documento e de intenção, que continuam existindo (AC4–AC6); apagar tenant apaga as pastas (AC7); `schema.sql` aplicado duas vezes sem erro e `verifyDocumentFoldersState` = `[]` (PBANCO-01 AC4); com o índice de pasta derrubado dentro de `try/finally` que reaplica o SQL, a conferência acusa o índice (AC3)
+- [x] Testes de documentos existentes passam com a coluna nova (`npx vitest run src/server/data/__tests__/documents.test.ts src/server/documents/__tests__/repository.test.ts`)
+- [x] Quick + Build passam
 
 **Tests**: integration
 **Gate**: quick
@@ -223,9 +223,9 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] Assinaturas idênticas a `design.md` § 5.1 (B compila contra elas)
-- [ ] Nenhum consumidor ainda (os corpos são trocados nas T13–T15, os consumidores chegam em B e C)
-- [ ] Build passa; PR A1 aberto para `lote-17` com T1–T4
+- [x] Assinaturas idênticas a `design.md` § 5.1 (B compila contra elas)
+- [x] Nenhum consumidor ainda (os corpos são trocados nas T13–T15, os consumidores chegam em B e C)
+- [x] Build passa; PR A1 aberto para `lote-17` com T1–T4
 
 **Tests**: none (só assinatura; corpos e testes de integração entram nas T13–T15 deste mesmo arquivo)
 **Gate**: build
