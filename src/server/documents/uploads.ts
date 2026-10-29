@@ -1,5 +1,6 @@
 import "server-only";
 import { createHash, randomUUID } from "node:crypto";
+import { isUuid } from "../../lib/document-folders";
 import {
   authorizeOrThrow,
   type AuthContext,
@@ -41,6 +42,7 @@ export interface CreateDocumentUploadInput {
   sizeBytes: number;
   modality: (typeof MODALITIES)[number];
   categoryId?: string | null;
+  folderId?: string | null;
   expiresAt?: Date | null;
 }
 
@@ -232,6 +234,7 @@ export function createDocumentUploadIntake(
       if (!validInput(input, startedAt)) {
         return { kind: "invalid", code: "upload_input_invalid" };
       }
+      if (input.folderId != null && !isUuid(input.folderId)) return { kind: "folder_not_found" };
 
       const intentId = randomUUID();
       const created = await repository.createUploadIntent(
@@ -245,6 +248,7 @@ export function createDocumentUploadIntake(
           sizeBytes: input.sizeBytes,
           modality: input.modality,
           categoryId: input.categoryId ?? null,
+          folderId: input.folderId ?? null,
           expiresAt: input.expiresAt ?? null,
           storageKey: createDocumentStorageKey(actor.tenantId, intentId),
           expiresAtIntent: new Date(startedAt.getTime() + UPLOAD_INTENT_TTL_MS),

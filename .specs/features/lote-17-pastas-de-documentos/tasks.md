@@ -384,8 +384,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `src/server/documents/__tests__/uploads.test.ts`: `folderId` repassado ao repositório; `null` e ausente viram `null`; `"abc"` → `folder_not_found` sem chamar o repositório; `folder_not_found` do repositório repassado
-- [ ] Quick + Build passam
+- [x] `src/server/documents/__tests__/uploads.test.ts`: `folderId` repassado ao repositório; `null` e ausente viram `null`; `"abc"` → `folder_not_found` sem chamar o repositório; `folder_not_found` do repositório repassado
+- [x] Quick + Build passam
 
 **Tests**: unit
 **Gate**: quick
