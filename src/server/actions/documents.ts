@@ -5,6 +5,7 @@ import { getActiveTenantId } from "../tenant";
 import { denyIfForbidden } from "./permission";
 import {
   createDocument,
+  DocumentFolderNotFoundError,
   createDocumentCategory,
   deleteDocumentCategory,
   updateDocument,
@@ -25,6 +26,7 @@ import { VercelBlobDocumentStorage } from "../documents/vercel-blob-storage";
 import { startDocumentProcessingRun } from "../documents/workflow-start";
 import { createDocumentUploadIntake } from "../documents/uploads";
 import { duplicateDocumentMessage } from "../../lib/duplicate-document";
+import { FOLDER_ERROR_MESSAGES, isUuid } from "../../lib/document-folders";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -111,14 +113,24 @@ export async function updateDocumentAction(
 
   const expiry = resolveExpiresAt(input.expiresAt);
   if (!expiry.ok) return expiry;
+  if (input.folderId != null && !isUuid(input.folderId)) {
+    return { ok: false, error: FOLDER_ERROR_MESSAGES["pasta-nao-encontrada"] };
+  }
 
   const tenantId = await getActiveTenantId();
-  const updated = await updateDocument(tenantId, input.documentId, {
-    name: input.name.trim(),
-    modality: input.modality,
-    categoryId: input.categoryId,
-    ...(expiry.value === undefined ? {} : { expiresAt: expiry.value }),
-  });
+  let updated: Awaited<ReturnType<typeof updateDocument>>;
+  try {
+    updated = await updateDocument(tenantId, input.documentId, {
+      name: input.name.trim(),
+      modality: input.modality,
+      categoryId: input.categoryId,
+      ...(expiry.value === undefined ? {} : { expiresAt: expiry.value }),
+      ...("folderId" in input ? { folderId: input.folderId } : {}),
+    });
+  } catch (error) {
+    if (error instanceof DocumentFolderNotFoundError) return { ok: false, error: FOLDER_ERROR_MESSAGES["pasta-nao-encontrada"] };
+    throw error;
+  }
 
   if (!updated) {
     return { ok: false, error: "Documento não encontrado." };

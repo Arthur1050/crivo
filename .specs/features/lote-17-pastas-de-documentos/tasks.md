@@ -430,10 +430,10 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `src/server/__tests__/document-folders-actions.test.ts` (sessão simulada como em `src/server/__tests__/actions.test.ts`): sucesso das três com o tenant da sessão; nome com espaços nas pontas gravado sem eles; `""`, `"   "`, 121 caracteres → `nome-invalido` com a mensagem de `validateName`; 120 aceitos; duplicado → `nome-duplicado` com a mensagem fixa; pasta de outro tenant → `pasta-nao-encontrada` com a pasta intacta
-- [ ] Corretor (`documentos: ler`) recusado nas três com `sem-permissao` e contagem de pastas igual antes e depois (PPERM-01 AC2, L-001)
-- [ ] `revalidatePath("/documentos")` chamado no sucesso e não na recusa (espião), com teste que falha se a chamada for removida (L-026)
-- [ ] Quick + Build passam
+- [x] `src/server/__tests__/document-folders-actions.test.ts` (sessão simulada como em `src/server/__tests__/actions.test.ts`): sucesso das três com o tenant da sessão; nome com espaços nas pontas gravado sem eles; `""`, `"   "`, 121 caracteres → `nome-invalido` com a mensagem de `validateName`; 120 aceitos; duplicado → `nome-duplicado` com a mensagem fixa; pasta de outro tenant → `pasta-nao-encontrada` com a pasta intacta
+- [x] Corretor (`documentos: ler`) recusado nas três com `sem-permissao` e contagem de pastas igual antes e depois (PPERM-01 AC2, L-001)
+- [x] `revalidatePath("/documentos")` chamado no sucesso e não na recusa (espião), com teste que falha se a chamada for removida (L-026)
+- [x] Quick + Build passam
 
 **Tests**: integration
 **Gate**: quick
@@ -453,8 +453,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] Testes: sucesso com `movedCount`; cada `kind` da DAL traduzido para o código e a mensagem fixos; corretor recusado sem mudar `folder_id` de nenhum documento
-- [ ] Quick + Build passam
+- [x] Testes: sucesso com `movedCount`; cada `kind` da DAL traduzido para o código e a mensagem fixos; corretor recusado sem mudar `folder_id` de nenhum documento
+- [x] Quick + Build passam
 
 **Tests**: integration
 **Gate**: quick
@@ -474,8 +474,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `src/server/__tests__/actions.test.ts` (bloco de documentos): `folderId` de pasta do tenant grava; `null` tira; ausente mantém (partindo de documento já em pasta, L-053); `"abc"` e pasta de outro tenant → `{ ok: false, error: "Pasta não encontrada." }` e o nome enviado no mesmo pedido não gravado
-- [ ] Quick + Build passam
+- [x] `src/server/__tests__/actions.test.ts` (bloco de documentos): `folderId` de pasta do tenant grava; `null` tira; ausente mantém (partindo de documento já em pasta, L-053); `"abc"` e pasta de outro tenant → `{ ok: false, error: "Pasta não encontrada." }` e o nome enviado no mesmo pedido não gravado
+- [x] Quick + Build passam
 
 **Tests**: integration
 **Gate**: quick
@@ -495,9 +495,9 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] Documento elegível: `getDirectDocumentContext` igual (`toEqual`) antes e depois de movê-lo para uma pasta, entre pastas e de volta à raiz
-- [ ] `git diff lote-17 -- src/server/integration/context.ts app/api/v1 openapi.yaml n8n` vazio (registrado no commit)
-- [ ] Quick + Build passam
+- [x] Documento elegível: `getDirectDocumentContext` igual (`toEqual`) antes e depois de movê-lo para uma pasta, entre pastas e de volta à raiz
+- [x] `git diff lote-17 -- src/server/integration/context.ts app/api/v1 openapi.yaml n8n` vazio (registrado no commit)
+- [x] Quick + Build passam
 
 **Tests**: integration
 **Gate**: quick
@@ -517,8 +517,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `src/db/__tests__/seed.test.ts`: cada tenant do seed com as seis pastas e os ids `id("folder:<tenant>:<chave>")`; duas execuções seguidas → mesmos ids e nenhuma pasta a mais (PSEED-01 AC1, AC2)
-- [ ] Quick + Build passam; PR A3 aberto para `lote-17` com T13–T17
+- [x] `src/db/__tests__/seed.test.ts`: cada tenant do seed com as seis pastas e os ids `id("folder:<tenant>:<chave>")`; duas execuções seguidas → mesmos ids e nenhuma pasta a mais (PSEED-01 AC1, AC2)
+- [x] Quick + Build passam; PR A3 aberto para `lote-17` com T13–T17
 
 **Tests**: integration
 **Gate**: quick
