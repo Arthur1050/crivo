@@ -693,8 +693,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] Sem `folderById`, a tabela é a de hoje; com ela, nome da pasta ou `NO_FOLDER_LABEL` (PRAIZ-01 AC7)
-- [ ] Build passa
+- [x] Sem `folderById`, a tabela é a de hoje; com ela, nome da pasta ou `NO_FOLDER_LABEL` (PRAIZ-01 AC7)
+- [x] Build passa
 
 **Tests**: none (componente; captura na T34)
 **Gate**: build
