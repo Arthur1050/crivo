@@ -269,9 +269,9 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `src/server/data/__tests__/document-folders.test.ts` (fixture em dois tenants, limpa no `afterAll`): só pastas do tenant (AC1); documento excluído e documento de outro tenant apontando para a pasta fora da contagem e do tamanho (AC2, L-035); `lastActivityAt` = `uploaded_at` mais recente quando é maior que `updated_at`, e = `updated_at` quando é maior (AC3, os dois sentidos, L-053); pasta vazia com 0, 0 e `updated_at` (AC4, L-081); ordem "Ágape", "banco", "Zeta" e empate por id (AC5); `getDocumentFolder` com dono, outro tenant, inexistente e `"abc"` — este último sem consulta, provado com espião no `db` (AC6–AC8)
-- [ ] `totalSizeBytes` de uma pasta com documentos somando mais de 2^31 bytes exato
-- [ ] Quick + Build passam
+- [x] `src/server/data/__tests__/document-folders.test.ts` (fixture em dois tenants, limpa no `afterAll`): só pastas do tenant (AC1); documento excluído e documento de outro tenant apontando para a pasta fora da contagem e do tamanho (AC2, L-035); `lastActivityAt` = `uploaded_at` mais recente quando é maior que `updated_at`, e = `updated_at` quando é maior (AC3, os dois sentidos, L-053); pasta vazia com 0, 0 e `updated_at` (AC4, L-081); ordem "Ágape", "banco", "Zeta" e empate por id (AC5); `getDocumentFolder` com dono, outro tenant, inexistente e `"abc"` — este último sem consulta, provado com espião no `db` (AC6–AC8)
+- [x] `totalSizeBytes` de uma pasta com documentos somando mais de 2^31 bytes exato
+- [x] Quick + Build passam
 
 **Tests**: integration
 **Gate**: quick
