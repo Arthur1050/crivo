@@ -96,7 +96,7 @@ describe("routes: POST /api/v1/context", () => {
 
   describe("autenticação e tenant (AC12)", () => {
     it("sem header Authorization responde 401 sem revelar contagem nem metadado", async () => {
-      const response = await POST(makeRequest({ modality: "novo", question: QUESTION }));
+      const response = await POST(makeRequest({ modality: "novo", question: QUESTION }), undefined);
       expect(response.status).toBe(401);
       const body = await response.json();
       expect(body.code).toBe("nao-autenticado");
@@ -104,14 +104,14 @@ describe("routes: POST /api/v1/context", () => {
     });
 
     it("credencial inválida responde 401 sem indício de documentos", async () => {
-      const response = await POST(makeRequest({ modality: "novo", question: QUESTION }, "chave-errada"));
+      const response = await POST(makeRequest({ modality: "novo", question: QUESTION }, "chave-errada"), undefined);
       expect(response.status).toBe(401);
       expect(JSON.stringify(await response.json())).not.toContain("texto do novo");
     });
 
     it("o tenant vem da credencial, nunca de campo do corpo", async () => {
       const response = await POST(
-        makeRequest({ modality: "ambos", question: QUESTION, tenantId: tenantBId }, apiKeyA)
+        makeRequest({ modality: "ambos", question: QUESTION, tenantId: tenantBId }, apiKeyA), undefined
       );
       expect(response.status).toBe(200);
       const body = await response.json();
@@ -120,7 +120,7 @@ describe("routes: POST /api/v1/context", () => {
     });
 
     it("cada credencial recebe apenas o corpus do próprio tenant", async () => {
-      const respostaB = await POST(makeRequest({ modality: "ambos", question: QUESTION }, apiKeyB));
+      const respostaB = await POST(makeRequest({ modality: "ambos", question: QUESTION }, apiKeyB), undefined);
       const body = await respostaB.json();
       expect(body.documents.map((d: { id: string }) => d.id)).toEqual([docBId]);
     });
@@ -128,7 +128,7 @@ describe("routes: POST /api/v1/context", () => {
 
   describe("validação do corpo (AC9)", () => {
     it("campo 'question' ausente é recusado com detalhe de obrigatoriedade", async () => {
-      const response = await POST(makeRequest({ modality: "novo" }, apiKeyA));
+      const response = await POST(makeRequest({ modality: "novo" }, apiKeyA), undefined);
       expect(response.status).toBe(400);
       const body = await response.json();
       expect(body.code).toBe("payload-invalido");
@@ -136,66 +136,66 @@ describe("routes: POST /api/v1/context", () => {
     });
 
     it("campo 'question' vazio depois de trim é recusado com detalhe próprio", async () => {
-      const response = await POST(makeRequest({ modality: "novo", question: "   " }, apiKeyA));
+      const response = await POST(makeRequest({ modality: "novo", question: "   " }, apiKeyA), undefined);
       expect(response.status).toBe(400);
       const body = await response.json();
       expect(body.detail).toBe("Campo 'question' não pode ser vazio.");
     });
 
     it("'question' ausente e 'question' vazia produzem detalhes distintos", async () => {
-      const ausente = await (await POST(makeRequest({ modality: "novo" }, apiKeyA))).json();
-      const vazia = await (await POST(makeRequest({ modality: "novo", question: "" }, apiKeyA))).json();
+      const ausente = await (await POST(makeRequest({ modality: "novo" }, apiKeyA), undefined)).json();
+      const vazia = await (await POST(makeRequest({ modality: "novo", question: "" }, apiKeyA), undefined)).json();
       expect(ausente.detail).not.toBe(vazia.detail);
     });
 
     it("'question' não string é recusada", async () => {
-      const response = await POST(makeRequest({ modality: "novo", question: 42 }, apiKeyA));
+      const response = await POST(makeRequest({ modality: "novo", question: 42 }, apiKeyA), undefined);
       expect(response.status).toBe(400);
       expect((await response.json()).detail).toBe("Campo 'question' deve ser uma string.");
     });
 
     it("'question' com exatamente 4.096 caracteres é aceita", async () => {
       const response = await POST(
-        makeRequest({ modality: "novo", question: "a".repeat(MAX_CONTEXT_QUESTION_LENGTH) }, apiKeyA)
+        makeRequest({ modality: "novo", question: "a".repeat(MAX_CONTEXT_QUESTION_LENGTH) }, apiKeyA), undefined
       );
       expect(response.status).toBe(200);
     });
 
     it("'question' com 4.097 caracteres é recusada", async () => {
       const response = await POST(
-        makeRequest({ modality: "novo", question: "a".repeat(MAX_CONTEXT_QUESTION_LENGTH + 1) }, apiKeyA)
+        makeRequest({ modality: "novo", question: "a".repeat(MAX_CONTEXT_QUESTION_LENGTH + 1) }, apiKeyA), undefined
       );
       expect(response.status).toBe(400);
       expect((await response.json()).detail).toContain(String(MAX_CONTEXT_QUESTION_LENGTH));
     });
 
     it("campo 'modality' ausente é recusado", async () => {
-      const response = await POST(makeRequest({ question: QUESTION }, apiKeyA));
+      const response = await POST(makeRequest({ question: QUESTION }, apiKeyA), undefined);
       expect(response.status).toBe(400);
       expect((await response.json()).detail).toBe("Campo 'modality' é obrigatório.");
     });
 
     it("modalidade fora do enum é recusada e lista os valores aceitos", async () => {
-      const response = await POST(makeRequest({ modality: "alugado", question: QUESTION }, apiKeyA));
+      const response = await POST(makeRequest({ modality: "alugado", question: QUESTION }, apiKeyA), undefined);
       expect(response.status).toBe(400);
       expect((await response.json()).detail).toContain("novo, usado, ambos");
     });
 
     it("corpo que não é JSON válido é recusado como payload inválido", async () => {
-      const response = await POST(makeRequest("{isso não é json", apiKeyA));
+      const response = await POST(makeRequest("{isso não é json", apiKeyA), undefined);
       expect(response.status).toBe(400);
       expect((await response.json()).detail).toBe("Corpo da requisição não é JSON válido.");
     });
 
     it("corpo que não é objeto JSON é recusado", async () => {
-      const response = await POST(makeRequest("[1,2,3]", apiKeyA));
+      const response = await POST(makeRequest("[1,2,3]", apiKeyA), undefined);
       expect(response.status).toBe(400);
       expect((await response.json()).detail).toBe("Corpo da requisição deve ser um objeto JSON.");
     });
 
     it("corpo acima do limite responde 413 antes de qualquer leitura de documento", async () => {
       const response = await POST(
-        makeRequest({ modality: "novo", question: "a".repeat(200 * 1024) }, apiKeyA)
+        makeRequest({ modality: "novo", question: "a".repeat(200 * 1024) }, apiKeyA), undefined
       );
       expect(response.status).toBe(413);
       expect((await response.json()).code).toBe("corpo-grande-demais");
@@ -204,7 +204,7 @@ describe("routes: POST /api/v1/context", () => {
 
   describe("resposta (AC1, AC2, AC3, AC4, AC11)", () => {
     it("devolve o envelope direct com o corpus da modalidade pedida", async () => {
-      const response = await POST(makeRequest({ modality: "novo", question: QUESTION }, apiKeyA));
+      const response = await POST(makeRequest({ modality: "novo", question: QUESTION }, apiKeyA), undefined);
       expect(response.status).toBe(200);
       const body = await response.json();
       expect(body.retrievalMode).toBe("direct");
@@ -212,31 +212,31 @@ describe("routes: POST /api/v1/context", () => {
     });
 
     it("modalidade usado devolve usado e ambos, na ordem de upload", async () => {
-      const response = await POST(makeRequest({ modality: "usado", question: QUESTION }, apiKeyA));
+      const response = await POST(makeRequest({ modality: "usado", question: QUESTION }, apiKeyA), undefined);
       const body = await response.json();
       expect(body.documents.map((d: { id: string }) => d.id)).toEqual([docAmbosAId, docUsadoAId]);
     });
 
     it("modalidade ambos devolve as três, sem duplicar", async () => {
-      const response = await POST(makeRequest({ modality: "ambos", question: QUESTION }, apiKeyA));
+      const response = await POST(makeRequest({ modality: "ambos", question: QUESTION }, apiKeyA), undefined);
       const body = await response.json();
       expect(body.documents.map((d: { id: string }) => d.id)).toEqual([docNovoAId, docAmbosAId, docUsadoAId]);
     });
 
     it("a resposta declara Cache-Control no-store", async () => {
-      const response = await POST(makeRequest({ modality: "novo", question: QUESTION }, apiKeyA));
+      const response = await POST(makeRequest({ modality: "novo", question: QUESTION }, apiKeyA), undefined);
       expect(response.headers.get("cache-control")).toBe("no-store");
     });
 
     it("a pergunta não é ecoada na resposta", async () => {
       const marcador = `pergunta-sensivel-${randomUUID()}`;
-      const response = await POST(makeRequest({ modality: "novo", question: marcador }, apiKeyA));
+      const response = await POST(makeRequest({ modality: "novo", question: marcador }, apiKeyA), undefined);
       expect(JSON.stringify(await response.json())).not.toContain(marcador);
     });
 
     it("perguntas diferentes devolvem o mesmo corpus na mesma ordem", async () => {
-      const uma = await (await POST(makeRequest({ modality: "ambos", question: "posso financiar?" }, apiKeyA))).json();
-      const outra = await (await POST(makeRequest({ modality: "ambos", question: "qual o prazo?" }, apiKeyA))).json();
+      const uma = await (await POST(makeRequest({ modality: "ambos", question: "posso financiar?" }, apiKeyA), undefined)).json();
+      const outra = await (await POST(makeRequest({ modality: "ambos", question: "qual o prazo?" }, apiKeyA), undefined)).json();
       expect(JSON.stringify(outra)).toBe(JSON.stringify(uma));
     });
   });
@@ -244,7 +244,7 @@ describe("routes: POST /api/v1/context", () => {
   describe("instrumentação de recusa (AD-023)", () => {
     it("recusa de payload é registrada sem a pergunta e sem query string", async () => {
       const marcador = `pergunta-registrada-${randomUUID()}`;
-      await POST(makeRequest({ modality: "alugado", question: marcador }, apiKeyA));
+      await POST(makeRequest({ modality: "alugado", question: marcador }, apiKeyA), undefined);
 
       const rows = await db
         .select()
@@ -261,7 +261,7 @@ describe("routes: POST /api/v1/context", () => {
 
     it("o caminho de sucesso não gera registro de recusa", async () => {
       const antes = await db.select().from(integrationRefusals).where(eq(integrationRefusals.tenantId, tenantAId));
-      await POST(makeRequest({ modality: "novo", question: QUESTION }, apiKeyA));
+      await POST(makeRequest({ modality: "novo", question: QUESTION }, apiKeyA), undefined);
       const depois = await db.select().from(integrationRefusals).where(eq(integrationRefusals.tenantId, tenantAId));
       expect(depois).toHaveLength(antes.length);
     });

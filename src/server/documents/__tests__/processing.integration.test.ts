@@ -6,6 +6,7 @@ import { db } from "../../../db";
 import { documentUploadIntents, documents, tenantDocumentContextLimits, tenants, users } from "../../../db/schema";
 import { createDocumentProcessingService } from "../processing";
 import type { DocumentStorage } from "../storage";
+import type { extractDocument } from "../extraction";
 
 const TENANT_A = randomUUID();
 const TENANT_B = randomUUID();
@@ -37,7 +38,7 @@ async function createDocument(seed: string, overrides: Partial<typeof documents.
   }).returning();
   return row;
 }
-function service(input: { storage?: DocumentStorage; extract?: ReturnType<typeof vi.fn>; start?: ReturnType<typeof vi.fn> } = {}) {
+function service(input: Partial<Pick<Parameters<typeof createDocumentProcessingService>[0], "storage" | "extract" | "start">> = {}) {
   return createDocumentProcessingService({
     storage: input.storage ?? storage(),
     extract: input.extract ?? vi.fn(async () => ({ ok: true as const, text: "texto integral", extractedBytes: bytes.byteLength })),
@@ -83,8 +84,8 @@ describe("document processing integration (lote-12 T13)", () => {
   it("não reativa tombstone", async () => { const d = await createDocument("deleted", { deletedAt: NOW }); await expect(service().process({ tenantId: TENANT_A, documentId: d.id, attempt: 1 })).resolves.toEqual({ kind: "stale" }); expect(await row(d.id)).toMatchObject({ deletedAt: NOW, extractedText: null }); });
   it("trata expiresAt igual a now como stale", async () => { const d = await createDocument("boundary", { expiresAt: NOW }); await expect(service().process({ tenantId: TENANT_A, documentId: d.id, attempt: 1 })).resolves.toEqual({ kind: "stale" }); expect(await row(d.id)).toMatchObject({ status: "processando", extractedText: null }); });
   it("preserva linha e original ao marcar original ausente", async () => { const d = await createDocument("missing"); await expect(service({ storage: storage(vi.fn(async () => null)) }).process({ tenantId: TENANT_A, documentId: d.id, attempt: 1 })).resolves.toEqual({ kind: "failed", code: "original_ausente" }); expect(await row(d.id)).toMatchObject({ status: "falha", failureCode: "original_ausente", storageKey: d.storageKey }); });
-  it("persiste falha de texto vazio com código seguro", async () => { const d = await createDocument("empty"); await service({ extract: vi.fn(async () => ({ ok: false as const, code: "nenhum_texto_extraivel" })) }).process({ tenantId: TENANT_A, documentId: d.id, attempt: 1 }); expect(await row(d.id)).toMatchObject({ status: "falha", failureCode: "nenhum_texto_extraivel", extractedText: null }); });
-  it("mantém processando para erro transitório de extração", async () => { const d = await createDocument("transient"); await expect(service({ extract: vi.fn(async () => ({ ok: false as const, code: "extracao_transitoria" })) }).process({ tenantId: TENANT_A, documentId: d.id, attempt: 1 })).resolves.toEqual({ kind: "retryable", code: "extracao_transitoria" }); expect(await row(d.id)).toMatchObject({ status: "processando", extractedText: null }); });
+  it("persiste falha de texto vazio com código seguro", async () => { const d = await createDocument("empty"); await service({ extract: vi.fn<typeof extractDocument>(async () => ({ ok: false as const, code: "nenhum_texto_extraivel" })) }).process({ tenantId: TENANT_A, documentId: d.id, attempt: 1 }); expect(await row(d.id)).toMatchObject({ status: "falha", failureCode: "nenhum_texto_extraivel", extractedText: null }); });
+  it("mantém processando para erro transitório de extração", async () => { const d = await createDocument("transient"); await expect(service({ extract: vi.fn<typeof extractDocument>(async () => ({ ok: false as const, code: "extracao_transitoria" })) }).process({ tenantId: TENANT_A, documentId: d.id, attempt: 1 })).resolves.toEqual({ kind: "retryable", code: "extracao_transitoria" }); expect(await row(d.id)).toMatchObject({ status: "processando", extractedText: null }); });
   it("limpa erro anterior ao concluir com sucesso", async () => { const d = await createDocument("clear-error", { failureCode: "old", failureMessage: "old" }); await service().process({ tenantId: TENANT_A, documentId: d.id, attempt: 1 }); expect(await row(d.id)).toMatchObject({ status: "pronto", failureCode: null, failureMessage: null }); });
   it("claim de retry incrementa falha para um attempt novo", async () => { const d = await createDocument("retry", { status: "falha", failureCode: "x" }); const start = vi.fn(async () => ({ id: "run-retry" })); await expect(service({ start }).retry({ tenantId: TENANT_A, documentId: d.id })).resolves.toEqual({ kind: "scheduled", attempt: 2, runId: "run-retry" }); expect(await row(d.id)).toMatchObject({ status: "processando", processingAttempt: 2, failureCode: null }); });
   it("retry concorrente converge no mesmo attempt", async () => { const d = await createDocument("retry-race", { status: "falha" }); const start = vi.fn(async () => ({ id: "run-race" })); const s = service({ start }); const results = await Promise.all([s.retry({ tenantId: TENANT_A, documentId: d.id }), s.retry({ tenantId: TENANT_A, documentId: d.id })]); expect(results.map((r) => r.kind).sort()).toEqual(["active", "scheduled"]); expect(results.map((r) => "attempt" in r ? r.attempt : null)).toEqual([2, 2]); expect(start).toHaveBeenCalledTimes(1); expect((await row(d.id)).processingAttempt).toBe(2); });

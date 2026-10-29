@@ -21,7 +21,7 @@ describe("document storage contract", () => {
     const key = createDocumentStorageKey(
       TENANT_ID.toUpperCase(),
       INTENT_ID.toUpperCase(),
-      OBJECT_ID.toUpperCase()
+      OBJECT_ID.toUpperCase() as Parameters<typeof createDocumentStorageKey>[2]
     );
 
     expect(key).toBe(key.toLowerCase());

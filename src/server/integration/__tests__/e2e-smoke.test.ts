@@ -93,7 +93,7 @@ describe("e2e smoke — criar lead → qualificar → mensagens → escalar (2 t
             externalId: externalLeadId,
             firstContactAt: "2026-08-01T10:00:00Z",
           }),
-        })
+        }), undefined
       );
       expect(createRes.status).toBe(201);
       const lead = await createRes.json();

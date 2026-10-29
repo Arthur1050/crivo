@@ -154,7 +154,7 @@ describe("routes: GET /api/v1/properties", () => {
     const id = await insertProperty(tenantAId, capturerAId);
     const [row] = await db.select().from(properties).where(eq(properties.id, id));
 
-    const response = await GET(makeRequest(""));
+    const response = await GET(makeRequest(""), undefined);
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body.imoveis.map((p: { referencia: string }) => p.referencia)).toContain(
@@ -171,7 +171,7 @@ describe("routes: GET /api/v1/properties", () => {
     await insertProperty(tenantAId, capturerAId, { kind: "casa", modality: "novo" });
     const [matchRow] = await db.select().from(properties).where(eq(properties.id, matchId));
 
-    const response = await GET(makeRequest("?tipo=cobertura&modalidade=usado"));
+    const response = await GET(makeRequest("?tipo=cobertura&modalidade=usado"), undefined);
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body.imoveis.map((p: { referencia: string }) => p.referencia)).toEqual([
@@ -180,7 +180,7 @@ describe("routes: GET /api/v1/properties", () => {
   });
 
   it("filtro inválido responde 400 payload-invalido, e a recusa é registrada em integration_refusals (AD-023)", async () => {
-    const response = await GET(makeRequest("?precoMin=abc"));
+    const response = await GET(makeRequest("?precoMin=abc"), undefined);
     expect(response.status).toBe(400);
     const body = await response.json();
     expect(body.code).toBe("payload-invalido");
@@ -196,26 +196,26 @@ describe("routes: GET /api/v1/properties", () => {
   });
 
   it("precoMin maior que precoMax responde 400 payload-invalido", async () => {
-    const response = await GET(makeRequest("?precoMin=500000&precoMax=100000"));
+    const response = await GET(makeRequest("?precoMin=500000&precoMax=100000"), undefined);
     expect(response.status).toBe(400);
     const body = await response.json();
     expect(body.code).toBe("payload-invalido");
   });
 
   it("sem header Authorization responde 401, sem cair em tenant default (SEC-01)", async () => {
-    const response = await GET(makeRequest("", { apiKey: null }));
+    const response = await GET(makeRequest("", { apiKey: null }), undefined);
     expect(response.status).toBe(401);
   });
 
   it("chave de serviço sem X-Krivo-Tenant responde 401 tenant-nao-identificado (SEC-01)", async () => {
-    const response = await GET(makeRequest("", { tenantSlug: null }));
+    const response = await GET(makeRequest("", { tenantSlug: null }), undefined);
     expect(response.status).toBe(401);
     const body = await response.json();
     expect(body.code).toBe("tenant-nao-identificado");
   });
 
   it("X-Krivo-Tenant com slug desconhecido responde 401 tenant-nao-identificado, sem cair em tenant default (SEC-01)", async () => {
-    const response = await GET(makeRequest("", { tenantSlug: `slug-desconhecido-${randomUUID()}` }));
+    const response = await GET(makeRequest("", { tenantSlug: `slug-desconhecido-${randomUUID()}` }), undefined);
     expect(response.status).toBe(401);
     const body = await response.json();
     expect(body.code).toBe("tenant-nao-identificado");
@@ -227,8 +227,8 @@ describe("routes: GET /api/v1/properties", () => {
     const [rowA] = await db.select().from(properties).where(eq(properties.id, idA));
     const [rowB] = await db.select().from(properties).where(eq(properties.id, idB));
 
-    const responseA = await GET(makeRequest("", { tenantSlug: tenantASlug }));
-    const responseB = await GET(makeRequest("", { tenantSlug: tenantBSlug }));
+    const responseA = await GET(makeRequest("", { tenantSlug: tenantASlug }), undefined);
+    const responseB = await GET(makeRequest("", { tenantSlug: tenantBSlug }), undefined);
     const bodyA = await responseA.json();
     const bodyB = await responseB.json();
 

@@ -3,6 +3,7 @@ import path from "node:path";
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import SwaggerParser from "@apidevtools/swagger-parser";
+import type { OpenAPIV3_1 } from "openapi-types";
 import { agentPhaseEnum, reengagementStateEnum, senderEnum } from "../../../db/schema";
 import { AGENT_WRITABLE_SENDERS, MAX_BODY_BYTES, MAX_CONTEXT_QUESTION_LENGTH, parseAgentState, parseAutomationCandidatesQuery, parsePreparationFailure, parseReengagementAcknowledgement, parseReengagementPrepare, parseReengagementSend, parseSessionContext, parseUsageSync } from "../parsers";
 import { FIELD_LABELS } from "../../../../n8n/src/phase.mjs";
@@ -129,8 +130,17 @@ describe("docs/integration/openapi.yaml — SwaggerParser.validate()", () => {
     }
   });
 
-  /** Nó do documento já validado pelo SwaggerParser, navegado por chave. */
-  type OpenApiNode = { [key: string]: OpenApiNode };
+  /** Campos navegados pelo contrato de contexto após a validação do documento. */
+  type ContextSchema = Omit<OpenAPIV3_1.SchemaObject, "properties"> & {
+    properties: Record<string, OpenAPIV3_1.SchemaObject>;
+  };
+  type ContextResponse = Omit<OpenAPIV3_1.ResponseObject, "content"> & {
+    content: Record<string, OpenAPIV3_1.MediaTypeObject>;
+  };
+  type ContextOperation = Omit<OpenAPIV3_1.OperationObject, "requestBody" | "responses"> & {
+    requestBody: OpenAPIV3_1.RequestBodyObject;
+    responses: Record<string, ContextResponse>;
+  };
 
   // lote-12 — T22: o contrato de contexto passou a POST. As asserções abaixo
   // travam a paridade com o handler real: se o limite da pergunta, o envelope
@@ -138,8 +148,8 @@ describe("docs/integration/openapi.yaml — SwaggerParser.validate()", () => {
   describe("POST /context (lote-12 — DOCCTX-01)", () => {
     async function contextPath() {
       const api = (await SwaggerParser.validate(OPENAPI_PATH)) as {
-        paths: Record<string, Record<string, OpenApiNode>>;
-        components: { schemas: Record<string, OpenApiNode> };
+        paths: Record<string, { post: ContextOperation; get?: OpenAPIV3_1.OperationObject }>;
+        components: { schemas: Record<string, ContextSchema> };
       };
       return { post: api.paths["/context"].post, get: api.paths["/context"].get, api };
     }
@@ -190,7 +200,7 @@ describe("docs/integration/openapi.yaml — SwaggerParser.validate()", () => {
 
     it("a resposta anuncia Cache-Control no-store, como o handler devolve", async () => {
       const { post } = await contextPath();
-      expect(post.responses["200"].headers["Cache-Control"]).toBeDefined();
+      expect(post.responses["200"].headers!["Cache-Control"]).toBeDefined();
     });
 
     // lote-12 — T36: o GET legado saiu do contrato junto com o handler.
