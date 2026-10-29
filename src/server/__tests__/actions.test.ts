@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "../../db";
-import { documents, leads, tenantDocumentContextLimits, tenant_members, users } from "../../db/schema";
+import { documentFolders, documents, leads, tenantDocumentContextLimits, tenant_members, users } from "../../db/schema";
 import type { Action, Resource, Role } from "../../lib/permissions";
 import type { AuthContext } from "../auth/session";
 import {
@@ -1084,6 +1084,40 @@ describe("server actions", () => {
   });
 
   describe("createDocumentAction / updateDocumentAction / deleteDocumentAction", () => {
+    it("T15: edição escolhe pasta do tenant, omissão mantém e null retira", async () => {
+      const folders = await db.insert(documentFolders).values([
+        { tenantId: activeTenantId, name: `Origem edição ${randomUUID()}` },
+        { tenantId: activeTenantId, name: `Destino edição ${randomUUID()}` },
+      ]).returning();
+      const doc = await createDocument(activeTenantId, { name: "Pasta na edição.txt", mimeType: "text/plain", sizeBytes: 10, modality: "novo" });
+      try {
+        await db.update(documents).set({ folderId: folders[0].id }).where(eq(documents.id, doc.id));
+        expect(await updateDocumentAction({ documentId: doc.id, name: "Movido.txt", modality: "novo", folderId: folders[1].id })).toEqual({ ok: true });
+        expect((await db.select().from(documents).where(eq(documents.id, doc.id)))[0]).toMatchObject({ name: "Movido.txt", folderId: folders[1].id });
+        expect(await updateDocumentAction({ documentId: doc.id, name: "Mantido.txt", modality: "novo" })).toEqual({ ok: true });
+        expect((await db.select().from(documents).where(eq(documents.id, doc.id)))[0]).toMatchObject({ name: "Mantido.txt", folderId: folders[1].id });
+        expect(await updateDocumentAction({ documentId: doc.id, name: "Raiz.txt", modality: "novo", folderId: null })).toEqual({ ok: true });
+        expect((await db.select().from(documents).where(eq(documents.id, doc.id)))[0]).toMatchObject({ name: "Raiz.txt", folderId: null });
+      } finally {
+        await db.delete(documents).where(eq(documents.id, doc.id));
+        await db.delete(documentFolders).where(inArray(documentFolders.id, folders.map((f) => f.id)));
+      }
+    });
+
+    it("T15: pasta inválida, ausente ou estrangeira não grava o nome do mesmo pedido", async () => {
+      const [foreign] = await db.insert(documentFolders).values({ tenantId: otherTenantId, name: `Pasta estrangeira edição ${randomUUID()}` }).returning();
+      const doc = await createDocument(activeTenantId, { name: "Nome preservado.txt", mimeType: "text/plain", sizeBytes: 10, modality: "novo" });
+      try {
+        for (const folderId of ["abc", foreign.id, randomUUID()]) {
+          expect(await updateDocumentAction({ documentId: doc.id, name: "Não gravar.txt", modality: "usado", folderId })).toEqual({ ok: false, error: "Pasta não encontrada." });
+          expect((await db.select().from(documents).where(eq(documents.id, doc.id)))[0]).toEqual(doc);
+        }
+        expect((await db.select().from(documentFolders).where(eq(documentFolders.id, foreign.id)))[0]).toEqual(foreign);
+      } finally {
+        await db.delete(documents).where(eq(documents.id, doc.id));
+        await db.delete(documentFolders).where(eq(documentFolders.id, foreign.id));
+      }
+    });
     it("cria um documento no tenant ativo (happy path) e chama revalidatePath('/documentos')", async () => {
       const name = `Doc Action ${randomUUID()}.pdf`;
       const result = await createDocumentAction({

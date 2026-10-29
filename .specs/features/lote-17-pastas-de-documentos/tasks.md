@@ -474,8 +474,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `src/server/__tests__/actions.test.ts` (bloco de documentos): `folderId` de pasta do tenant grava; `null` tira; ausente mantém (partindo de documento já em pasta, L-053); `"abc"` e pasta de outro tenant → `{ ok: false, error: "Pasta não encontrada." }` e o nome enviado no mesmo pedido não gravado
-- [ ] Quick + Build passam
+- [x] `src/server/__tests__/actions.test.ts` (bloco de documentos): `folderId` de pasta do tenant grava; `null` tira; ausente mantém (partindo de documento já em pasta, L-053); `"abc"` e pasta de outro tenant → `{ ok: false, error: "Pasta não encontrada." }` e o nome enviado no mesmo pedido não gravado
+- [x] Quick + Build passam
 
 **Tests**: integration
 **Gate**: quick
