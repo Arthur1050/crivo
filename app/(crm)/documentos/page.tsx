@@ -7,9 +7,14 @@ import { CategoryManagerDialog } from "@/src/components/documents/category-manag
 import { DocumentProcessingRefresh } from "@/src/components/documents/document-processing-refresh";
 import { DocumentsBrowser } from "@/src/components/documents/documents-browser";
 import { DocumentsToolbar } from "@/src/components/documents/documents-toolbar";
+import { folderFilterFor, resolveDocumentsPageMode } from "@/src/components/documents/documents-page-state";
+import { CreateFolderDialog } from "@/src/components/documents/folder-name-dialog";
+import { FoldersGrid } from "@/src/components/documents/folders-grid";
+import { toFolderCardItems } from "@/src/components/documents/folder-presentation";
 import { UploadDialog } from "@/src/components/documents/upload-dialog";
 import { NavLink } from "@/src/components/shared/nav-link";
 import { can } from "@/src/lib/permissions";
+import { parseFolderParam } from "@/src/lib/document-folders";
 import { requirePermission } from "@/src/server/auth/session";
 import {
   getDocumentCategories,
@@ -18,6 +23,7 @@ import {
   type Modality,
 } from "@/src/server/data";
 import { getTenantContextLimitSummary } from "@/src/server/documents/repository";
+import { getDocumentFolder, listDocumentFolderSummaries } from "@/src/server/data/document-folders";
 import { getActiveTenantId } from "@/src/server/tenant";
 
 const VALID_MODALITIES: readonly string[] = ["novo", "usado", "ambos"];
@@ -31,6 +37,7 @@ interface DocumentosPageProps {
     modalidade?: string;
     categoria?: string;
     q?: string;
+    pasta?: string;
   }>;
 }
 
@@ -41,8 +48,7 @@ interface DocumentosPageProps {
  * nenhum documento vs. filtro/busca sem resultado.
  *
  * Composta como gerenciador de arquivos: cabeçalho com ações, busca com o
- * menu "Filtrar e ordenar" e "Todos os arquivos" em grade ou lista. As pastas
- * ficam para o lote 17 (`.specs/ROADMAP-POS-PILOTO.md`).
+ * menu "Filtrar e ordenar", pastas e arquivos em grade ou lista.
  */
 export default async function DocumentosPage({
   searchParams,
@@ -58,16 +64,27 @@ export default async function DocumentosPage({
   const modality = asModality(params.modalidade);
   const categoryId = params.categoria || undefined;
   const search = params.q?.trim() || undefined;
-  const hasActiveFilters = Boolean(modality || categoryId || search);
+  const folderParam = parseFolderParam(params.pasta);
+  const folder = folderParam.kind === "pasta"
+    ? await getDocumentFolder(tenantId, folderParam.folderId)
+    : null;
+  const mode = resolveDocumentsPageMode(folderParam, folder);
+  const hasActiveFilters = Boolean(modality || categoryId || search || folderParam.kind === "sem-pasta");
 
-  const [allDocuments, filteredDocuments, categories, tenant, limitSummary] =
+  const [allDocuments, filteredDocuments, categories, tenant, limitSummary, summaries] =
     await Promise.all([
       getDocuments(tenantId),
-      getDocuments(tenantId, { modality, categoryId, search }),
+      mode.kind === "pasta-inexistente"
+        ? Promise.resolve([])
+        : getDocuments(tenantId, { modality, categoryId, search, folder: folderFilterFor(mode) }),
       getDocumentCategories(tenantId),
       getTenant(tenantId),
       getTenantContextLimitSummary(tenantId),
+      listDocumentFolderSummaries(tenantId),
     ]);
+  const now = new Date();
+  const folderItems = toFolderCardItems(summaries, now);
+  const folderOptions = summaries.map(({ id, name }) => ({ id, name }));
 
   const hasAnyDocuments = allDocuments.length > 0;
   // O polling só existe enquanto alguma extração está em curso, e a decisão é
@@ -90,7 +107,8 @@ export default async function DocumentosPage({
           </VStack>
         </StackItem>
         {canWrite && (
-          <HStack gap={2}>
+          <HStack gap={2} wrap="wrap">
+            <CreateFolderDialog />
             <CategoryManagerDialog categories={categories} />
             <UploadDialog categories={categories} />
           </HStack>
@@ -109,12 +127,15 @@ export default async function DocumentosPage({
         <DocumentProcessingRefresh hasProcessingDocuments={hasProcessingDocuments} />
       )}
 
-      {hasAnyDocuments && <DocumentsToolbar categories={categories} />}
+      <FoldersGrid folders={folderItems} canWrite={canWrite} createAction={<CreateFolderDialog />} />
+
+      {hasAnyDocuments && <DocumentsToolbar categories={categories} showFolderFilter />}
 
       <DocumentsBrowser
         documents={filteredDocuments}
         categories={categories}
         canWrite={canWrite}
+        folders={folderOptions}
         emptyState={
           !hasAnyDocuments ? (
             <EmptyState

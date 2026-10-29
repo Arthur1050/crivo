@@ -851,7 +851,7 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `searchParams.pasta` lido; `getDocuments` recebe `folderFilterFor(mode)`; `now` único e `toFolderCardItems` no servidor
+- [x] `searchParams.pasta` lido; `getDocuments` recebe `folderFilterFor(mode)`; `now` único e `toFolderCardItems` no servidor
 - [ ] Build passa; CRM local abre a raiz sem erro no console do servidor
 
 **Tests**: none (página; captura na T34)
@@ -860,6 +860,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 **Commit**: `feat(documentos): grade de pastas na página`
 
 ---
+
+**Execução C1**: implementação pronta; TypeScript 0 erros; ESLint 0 erros/7 avisos. CRM de teste em 3013 iniciou sem erro. HTTP sem autenticação: 307 para login. Abertura autenticada pendente por falta de extensão (T34); critério correspondente continua aberto.
 
 #### T33: Pasta aberta e pasta inexistente
 
