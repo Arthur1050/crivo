@@ -30,6 +30,22 @@ function respond(status: number, body: unknown): typeof fetch {
 
 describe("upload-client (lote-12 T23)", () => {
   describe("requestUploadTicket", () => {
+    it.each(["00000000-0000-4000-8000-000000000001", null])("envia folderId %j no clientPayload (PUPLOAD-01 AC4)", async (folderId) => {
+      const fetchImpl = respond(200, { clientToken: "t", pathname: "p", intentId: "i" });
+      await requestUploadTicket({ ...input, folderId }, fetchImpl);
+      const [, init] = vi.mocked(fetchImpl).mock.calls[0] as [string, RequestInit];
+      const sent = JSON.parse(init.body as string);
+      expect(JSON.parse(sent.payload.clientPayload).folderId).toBe(folderId);
+    });
+
+    it("404 de pasta ausente orienta recarregar e enviar novamente (PUPLOAD-01 AC7)", async () => {
+      expect(await requestUploadTicket(input, respond(404, { error: "upload_folder_not_found" }))).toEqual({
+        ok: false,
+        code: "upload_folder_not_found",
+        message: "A pasta escolhida não existe mais. Recarregue a página e envie de novo.",
+      });
+    });
+
     it("devolve token e a chave reservada pelo servidor", async () => {
       const result = await requestUploadTicket(
         input,

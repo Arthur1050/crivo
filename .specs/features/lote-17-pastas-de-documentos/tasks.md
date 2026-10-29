@@ -781,8 +781,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `src/components/documents/__tests__/documents-page-state.test.ts`: os quatro `FolderParam` com e sem pasta encontrada → três modos; `folderFilterFor` devolve o filtro da pasta aberta e o "sem pasta" da raiz (mata o alvo 8 do sensor); `clearFiltersHref` na raiz e na pasta (PABRIR-01 AC4)
-- [ ] Quick + Build passam
+- [x] `src/components/documents/__tests__/documents-page-state.test.ts`: os quatro `FolderParam` com e sem pasta encontrada → três modos; `folderFilterFor` devolve o filtro da pasta aberta e o "sem pasta" da raiz (mata o alvo 8 do sensor); `clearFiltersHref` na raiz e na pasta (PABRIR-01 AC4)
+- [x] Quick + Build passam
 
 **Tests**: unit
 **Gate**: quick
@@ -790,6 +790,9 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 **Commit**: `feat(documentos): estado da página com pasta aberta`
 
 ---
+
+
+**Execução C1**: 5 testes puros aprovados; TypeScript sem erros e lint sem erros (7 avisos). Evidências: src/components/documents/__tests__/documents-page-state.test.ts, casos de resolução, filtro exato e links (PABRIR-01/PFILT-01/PVAZIO-01).
 
 #### T30: Pasta no cliente de upload
 
@@ -802,8 +805,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `src/components/documents/__tests__/upload-client.test.ts`: `folderId` no `clientPayload`; resposta 404 `upload_folder_not_found` → mensagem de PUPLOAD-01 AC7
-- [ ] Quick + Build passam
+- [x] `src/components/documents/__tests__/upload-client.test.ts`: `folderId` no `clientPayload`; resposta 404 `upload_folder_not_found` → mensagem de PUPLOAD-01 AC7
+- [x] Quick + Build passam
 
 **Tests**: unit
 **Gate**: quick
@@ -811,6 +814,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 **Commit**: `feat(documentos): enviar a pasta no upload`
 
 ---
+
+**Execução C1**: 23 testes aprovados; payload com pasta e null e mensagem exata do 404 em upload-client.test.ts. TypeScript: 0 erros. ESLint: 0 erros, 7 avisos.
 
 #### T31: Envio dentro da pasta
 
@@ -823,8 +828,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] Com `folder`, texto e `folderId: folder.id`; sem `folder`, `folderId: null` (PUPLOAD-01 AC2, AC3)
-- [ ] Build passa
+- [x] Com `folder`, texto e `folderId: folder.id`; sem `folder`, `folderId: null` (PUPLOAD-01 AC2, AC3)
+- [x] Build passa
 
 **Tests**: none (componente; captura na T34)
 **Gate**: build
@@ -832,6 +837,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 **Commit**: `feat(documentos): enviar arquivo direto na pasta`
 
 ---
+
+**Execução C1**: prop e mensagem conferidas no código; folderId sempre explícito no ticket. TypeScript: 0 erros. ESLint: 0 erros, 7 avisos. Prova visual pendente na T34.
 
 #### T32: Raiz com a grade de pastas
 
@@ -844,7 +851,7 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `searchParams.pasta` lido; `getDocuments` recebe `folderFilterFor(mode)`; `now` único e `toFolderCardItems` no servidor
+- [x] `searchParams.pasta` lido; `getDocuments` recebe `folderFilterFor(mode)`; `now` único e `toFolderCardItems` no servidor
 - [ ] Build passa; CRM local abre a raiz sem erro no console do servidor
 
 **Tests**: none (página; captura na T34)
@@ -853,6 +860,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 **Commit**: `feat(documentos): grade de pastas na página`
 
 ---
+
+**Execução C1**: implementação pronta; TypeScript 0 erros; ESLint 0 erros/7 avisos. CRM de teste em 3013 iniciou sem erro. HTTP sem autenticação: 307 para login. Abertura autenticada pendente por falta de extensão (T34); critério correspondente continua aberto.
 
 #### T33: Pasta aberta e pasta inexistente
 
@@ -866,7 +875,7 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 **Done when**:
 
 - [ ] `pasta` inexistente, de outro tenant e `abc` → 200 com o mesmo estado e o mesmo texto, sem lista, busca nem botões (PVAZIO-01 AC4, AC5), conferido com `curl -s -o /dev/null -w "%{http_code}"` no CRM local autenticado ou pela captura
-- [ ] Build passa
+- [x] Build passa
 
 **Tests**: none (página; captura na T34)
 **Gate**: build
@@ -874,6 +883,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 **Commit**: `feat(documentos): abrir pasta pela url`
 
 ---
+
+**Execução C1**: modos integrados conforme design §7.2; TypeScript 0 erros; ESLint 0 erros/8 avisos (7 da base e 1 da rota gerada pelo servidor de teste). Testes puros de C1: 28/28. HTTP 200 autenticado e prova visual pendentes na T34.
 
 #### T34: Capturas reais
 
@@ -897,6 +908,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 ---
 
+**Execução C1 — T34 bloqueada**: a consulta às superfícies de navegador retornou nenhuma conexão e o erro `browser access host is unavailable`. Nenhuma captura foi feita, inventada ou reaproveitada. Permanecem pendentes os 16 cenários acima, incluindo as variações de exclusão (1/N), raiz vazia (escrita/leitura) e raiz/pasta em 375 px, além de conferir o clique no menu sem navegar e os textos em português. CRM de teste iniciou na porta 3013; não houve seed nem uso de outro navegador. T35 seguirá uma vez, conforme a orientação do usuário para reportar T34 aberta quando a extensão estiver inacessível.
+
 #### T35: Gate final da Fase 1
 
 **What**: `npm test` completo uma vez, `npx tsc --noEmit -p .` e `npx eslint .` no topo de `lote-17` com C1; resultado no corpo do PR C1.
@@ -908,9 +921,9 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] Orquestrador confirmou que nenhuma outra sessão está rodando suíte (L-033)
+- [x] Orquestrador confirmou que nenhuma outra sessão está rodando suíte (L-033)
 - [ ] `npm test` passa, com a contagem de arquivos e testes registrada; nenhuma asserção alterada fora das tasks (L-055)
-- [ ] `tsc` 0 erros; `eslint` 0 erros e ≤ 9 avisos; PR C1 aberto para `lote-17` com T29–T35
+- [x] `tsc` 0 erros; `eslint` 0 erros e ≤ 9 avisos; PR C1 aberto para `lote-17` com T29–T35
 
 **Tests**: full
 **Gate**: full
@@ -918,6 +931,10 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 **Commit**: nenhum (registro no PR)
 
 ---
+
+**Execução C1 — T35 reprovada (única Full, sem repetição)**: usuário confirmou que esta é a única sessão autorizada ao banco. Em `a431948`, sobre `origin/lote-17` (`40593b7`), `npm test` saiu 1: 249 arquivos (246 aprovados, 3 com falha), 4012 testes (4004 aprovados, 8 com falha), 1164,78 s. Sete falhas em `scripts/__tests__/reengagement-proof.test.ts`: seis `proof-scheduler-link-missing` em `scripts/reengagement-proof.ts:41` e uma conexão ausente (`main`) em `reengagement-proof.test.ts:147`. Falha de teste em `vitrine/src/tema/__tests__/tema-da-loja.test.ts:115` por `Theme.js` ausente; suíte `vitrine/src/i18n/__tests__/mensagens.test.ts:8` não carregou por `locales/en.json` ausente. Ambos sob `vitrine/node_modules/@astryxdesign/core/`. Arquivos envolvidos idênticos à base; nenhum reparo fora do lote nem mudança em `n8n/` ou `vitrine/`.
+
+`npx tsc --noEmit -p .`: exit 0, 0 erros. `npx eslint .`: exit 0, 0 erros e 8 avisos (7 da base e 1 em rota ignorada gerada pelo servidor de teste). Checks remotos do PR aprovados. C1: https://github.com/Arthur1050/crivo/pull/14 (rascunho; base `lote-17`). T32/T33 mantêm a prova autenticada pendente; T34 sem capturas. **Banco liberado**; nenhum servidor de teste continua iniciado por esta sessão.
 
 ### Phase 7: Fechamento (Fase 2 do lote, PR de fechamento)
 
