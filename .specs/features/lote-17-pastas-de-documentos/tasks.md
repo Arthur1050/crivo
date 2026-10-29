@@ -556,9 +556,9 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] Erro da action no `status` do `TextInput` com o diálogo aberto (PRAIZ-01 AC10); `router.refresh()` no sucesso
-- [ ] Autoverificação Astryx do AGENTS.md (sem `div`, `style`, valor cru)
-- [ ] Build passa
+- [x] Erro da action no `status` do `TextInput` com o diálogo aberto (PRAIZ-01 AC10); `router.refresh()` no sucesso
+- [x] Autoverificação Astryx do AGENTS.md (sem `div`, `style`, valor cru)
+- [x] Build passa
 
 **Tests**: none (componente; captura na T34)
 **Gate**: build

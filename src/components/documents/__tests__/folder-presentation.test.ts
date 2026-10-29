@@ -1,11 +1,41 @@
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { FOLDER_FIXTURES, FOLDER_NOW } from "./folder-fixtures";
 import {
   deleteFolderCopy, folderErrorMessage, folderIdFromSelector,
   folderSelectorOptions, formatFileCount, formatFolderCount,
   formatFolderUpdatedLabel, NO_FOLDER_OPTION_VALUE, toFolderCardItems,
 } from "../folder-presentation";
+
+vi.mock("@astryxdesign/core/Button", () => ({}));
+vi.mock("@astryxdesign/core/Dialog", () => ({}));
+vi.mock("@astryxdesign/core/Layout", () => ({}));
+vi.mock("@astryxdesign/core/Stack", () => ({}));
+vi.mock("@astryxdesign/core/TextInput", () => ({}));
+vi.mock("../../../server/actions/document-folders", () => ({}));
+
+describe("envio do nome da pasta (T19, sem banco)", () => {
+  it.each(["a".repeat(120), `  ${"a".repeat(120)}  `])("aceita 120 caracteres após trim", async (name) => {
+    const { submitFolderName } = await import("../folder-name-dialog");
+    const result = { ok: true as const, folder: { id: FOLDER_FIXTURES[0].id, name: name.trim() } };
+    const action = vi.fn(async () => result);
+    expect(await submitFolderName(name, action)).toEqual(result);
+    expect(action).toHaveBeenCalledWith({ name });
+  });
+  it.each(["a".repeat(121), `  ${"a".repeat(121)}  `])("recusa 121 sem chamar a action", async (name) => {
+    const { submitFolderName } = await import("../folder-name-dialog");
+    const action = vi.fn();
+    expect(await submitFolderName(name, action)).toEqual({
+      ok: false, code: "nome-invalido", error: "Nome da pasta deve ter no máximo 120 caracteres.",
+    });
+    expect(action).not.toHaveBeenCalled();
+  });
+  it("preserva o erro nome-invalido devolvido pelo servidor", async () => {
+    const { submitFolderName } = await import("../folder-name-dialog");
+    const result = { ok: false as const, code: "nome-invalido" as const, error: "Nome da pasta não pode ser vazio." };
+    expect(await submitFolderName("Nome", async () => result)).toEqual(result);
+  });
+});
 
 describe("apresentação das pastas (T18)", () => {
   it.each([[0, "0 arquivos"], [1, "1 arquivo"], [2, "2 arquivos"]])("conta %s arquivos", (count, label) => {
