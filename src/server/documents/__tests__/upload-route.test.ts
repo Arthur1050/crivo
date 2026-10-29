@@ -89,6 +89,22 @@ function fixture(overrides: Partial<DocumentUploadRouteDependencies> = {}) {
 }
 
 describe("document upload route (lote-12 T9)", () => {
+  it.each([randomUUID(), null, undefined])("T12: aceita folderId %s no payload e o entrega à reserva", async (folderId) => {
+    const { handler, reserve } = fixture();
+    const payload = folderId === undefined ? input : { ...input, folderId };
+    const response = await handler(request(generateEvent(JSON.stringify(payload))));
+    expect(response.status).toBe(200);
+    expect(reserve).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ ...input, folderId }));
+  });
+
+  it.each([42, {}, true, []])("T12: folderId com tipo inválido %j responde 400 sem reservar", async (folderId) => {
+    const { handler, reserve, handle } = fixture();
+    const response = await handler(request(generateEvent(JSON.stringify({ ...input, folderId }))));
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "upload_payload_invalid" });
+    expect(reserve).not.toHaveBeenCalled();
+    expect(handle).not.toHaveBeenCalled();
+  });
   it("T10: pasta não encontrada responde 404 com o código do contrato sem emitir token", async () => {
     const reserve = vi.fn(async () => ({ kind: "folder_not_found" as const }));
     const { handler, handle } = fixture({ intake: { reserve, finalize: vi.fn() } });

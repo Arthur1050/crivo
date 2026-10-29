@@ -351,7 +351,7 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 #### T10: Pasta na intenção de upload
 
 **What**: `folderId` em `CreateUploadIntentInput`; verificação com trava em `createUploadIntent` e desfecho `folder_not_found`; `commitUploadIntent` levando `intent.folderId` ao documento (§ 4.3).
-**Ajuste de execucao (aprovado pelo orquestrador)**: Redistribuicao aprovada: antecipa de T11 somente as unions Begin/Reserve e o repasse de folder_not_found; antecipa de T12 somente o 404 da rota. Cada caminho tem teste neste commit, para manter tsc sem erros.
+**Ajuste de execução (aprovado pelo orquestrador)**: Redistribuição aprovada: antecipa de T11 somente as unions Begin/Reserve e o repasse de folder_not_found; antecipa de T12 somente o 404 da rota. Cada caminho tem teste neste commit, para manter tsc sem erros.
 
 **Where**: `src/server/documents/repository.ts` (modificar)
 **Depends on**: T9
@@ -374,7 +374,7 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 #### T11: Pasta na reserva do upload
 
 **What**: `CreateDocumentUploadInput.folderId`; `reserve` repassa e devolve `folder_not_found` (id não UUID sem consulta); novos desfechos em `ReserveDocumentUploadResult` e `BeginDocumentUploadResult`.
-**Ajuste de execucao (aprovado pelo orquestrador)**: Redistribuicao aprovada: as unions Begin/Reserve e o repasse de folder_not_found foram entregues com testes na T10. Esta task conserva folderId no payload, validacao de UUID e repasse ao repositorio.
+**Ajuste de execução (aprovado pelo orquestrador)**: Redistribuição aprovada: as unions Begin/Reserve e o repasse de folder_not_found foram entregues com testes na T10. Esta task conserva folderId no payload, validação de UUID e repasse ao repositório.
 
 **Where**: `src/server/documents/uploads.ts` (modificar)
 **Depends on**: T10
@@ -397,7 +397,7 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 #### T12: Pasta no payload da rota de upload
 
 **What**: `parseInput` aceita `folderId` ausente, `null` ou string; outro tipo → 400 `upload_payload_invalid`; `folder_not_found` → 404 `{ "error": "upload_folder_not_found" }`.
-**Ajuste de execucao (aprovado pelo orquestrador)**: Redistribuicao aprovada: a resposta 404 upload_folder_not_found e seu teste foram entregues na T10. Esta task conserva o parsing do payload folderId e seus testes.
+**Ajuste de execução (aprovado pelo orquestrador)**: Redistribuição aprovada: a resposta 404 upload_folder_not_found e seu teste foram entregues na T10. Esta task conserva o parsing do payload folderId e seus testes.
 
 **Where**: `app/api/documents/upload/route.ts` (modificar)
 **Depends on**: T11
@@ -407,8 +407,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `src/server/documents/__tests__/upload-route.test.ts`: `folderId` string chega ao `reserve` (AC4); número e objeto → 400 (AC5); `folder_not_found` → 404 com o corpo exato (AC6); testes existentes intactos
-- [ ] Quick + Build passam; PR A2 aberto para `lote-17` com T5–T12
+- [x] `src/server/documents/__tests__/upload-route.test.ts`: `folderId` string chega ao `reserve` (AC4); número e objeto → 400 (AC5); `folder_not_found` → 404 com o corpo exato (AC6); testes existentes intactos
+- [x] Quick + Build passam; PR A2 aberto para `lote-17` com T5–T12
 
 **Tests**: unit
 **Gate**: quick
