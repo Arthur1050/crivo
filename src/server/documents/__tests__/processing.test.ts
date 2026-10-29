@@ -6,6 +6,7 @@ import {
   type ProcessingRepository,
 } from "../processing";
 import type { DocumentStorage } from "../storage";
+import type { extractDocument } from "../extraction";
 
 const NOW = new Date("2030-01-10T12:00:00.000Z");
 const bytes = new TextEncoder().encode("conteúdo canônico");
@@ -35,7 +36,7 @@ function dependencies(overrides: Partial<ProcessingRepository> = {}) {
     authorizeClientUpload: vi.fn(), head: vi.fn(), delete: vi.fn(),
     open: vi.fn(async (key) => ({ key, etag: "etag", contentType: "text/plain", size: bytes.byteLength, stream: stream() })),
   };
-  const extract = vi.fn(async () => ({ ok: true as const, text: "conteúdo canônico", extractedBytes: bytes.byteLength }));
+  const extract = vi.fn<typeof extractDocument>(async () => ({ ok: true as const, text: "conteúdo canônico", extractedBytes: bytes.byteLength }));
   const start = vi.fn(async () => ({ id: "run-1" }));
   return { repository, storage, extract, start };
 }
