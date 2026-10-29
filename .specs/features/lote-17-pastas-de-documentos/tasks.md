@@ -155,9 +155,9 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `src/lib/__tests__/document-folders.test.ts`: `parseFolderParam` para ausente, `""`, `"sem-pasta"`, UUID minúsculo, UUID maiúsculo (normaliza para minúsculas), array (usa o 1º), `"abc"`, UUID com um caractere a mais → `todas`/`sem-pasta`/`pasta`/`invalida`; `isUuid` com 8-4-4-4-12 válido e inválidos; `folderHref`; as quatro mensagens fixas iguais às da spec
-- [ ] Teste de pureza: o módulo não importa de `src/server/` nem de `src/db/` (L-020)
-- [ ] Quick + Build passam
+- [x] `src/lib/__tests__/document-folders.test.ts`: `parseFolderParam` para ausente, `""`, `"sem-pasta"`, UUID minúsculo, UUID maiúsculo (normaliza para minúsculas), array (usa o 1º), `"abc"`, UUID com um caractere a mais → `todas`/`sem-pasta`/`pasta`/`invalida`; `isUuid` com 8-4-4-4-12 válido e inválidos; `folderHref`; as quatro mensagens fixas iguais às da spec
+- [x] Teste de pureza: o módulo não importa de `src/server/` nem de `src/db/` (L-020)
+- [x] Quick + Build passam
 
 **Tests**: unit
 **Gate**: quick
