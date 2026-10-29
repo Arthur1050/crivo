@@ -714,8 +714,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] Com `folders`: campo com a pasta atual e envio de `folderId` (`string | null`) sempre; sem `folders`: campo ausente e `folderId` fora do pedido (PEDIT-01 AC1, AC4)
-- [ ] Build passa
+- [x] Com `folders`: campo com a pasta atual e envio de `folderId` (`string | null`) sempre; sem `folders`: campo ausente e `folderId` fora do pedido (PEDIT-01 AC1, AC4)
+- [x] Build passa
 
 **Tests**: none (componente; captura na T34)
 **Gate**: build

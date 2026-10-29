@@ -10,6 +10,7 @@ import { Selector, SelectorOption } from "@astryxdesign/core/Selector";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { Token } from "@astryxdesign/core/Token";
+import { NO_FOLDER_LABEL, type DocumentFolderOption } from "@/src/lib/document-folders";
 import { updateDocumentAction } from "@/src/server/actions/documents";
 import type { Document, DocumentCategory, Modality } from "@/src/server/data";
 import { validateModality, validateName } from "@/src/server/validation";
@@ -28,6 +29,7 @@ interface FieldErrors {
 interface EditDocumentDialogProps {
   document: Omit<Document, "extractedText"> | null;
   categories: DocumentCategory[];
+  folders?: DocumentFolderOption[];
   onClose: () => void;
 }
 
@@ -41,6 +43,7 @@ interface EditDocumentDialogProps {
 export function EditDocumentDialog({
   document,
   categories,
+  folders,
   onClose,
 }: EditDocumentDialogProps) {
   return (
@@ -57,6 +60,7 @@ export function EditDocumentDialog({
           key={document.id}
           document={document}
           categories={categories}
+          folders={folders}
           onClose={onClose}
         />
       )}
@@ -68,16 +72,18 @@ interface EditDocumentFormProps {
   // Metadados apenas: o texto extraído nunca chega ao cliente pela listagem.
   document: Omit<Document, "extractedText">;
   categories: DocumentCategory[];
+  folders?: DocumentFolderOption[];
   onClose: () => void;
 }
 
-function EditDocumentForm({ document, categories, onClose }: EditDocumentFormProps) {
+function EditDocumentForm({ document, categories, folders, onClose }: EditDocumentFormProps) {
   const router = useRouter();
   const [name, setName] = useState(document.name);
   const [modality, setModality] = useState<Modality>(document.modality);
   const [categoryId, setCategoryId] = useState<string | null>(
     document.categoryId ?? null
   );
+  const [folderId, setFolderId] = useState<string | null>(document.folderId ?? null);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [banner, setBanner] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -105,6 +111,7 @@ function EditDocumentForm({ document, categories, onClose }: EditDocumentFormPro
       name,
       modality,
       categoryId,
+      ...(folders === undefined ? {} : { folderId }),
     });
 
     setIsSubmitting(false);
@@ -190,6 +197,17 @@ function EditDocumentForm({ document, categories, onClose }: EditDocumentFormPro
               }}
               isOptional
             />
+            {folders !== undefined && (
+              <Selector
+                label="Pasta"
+                placeholder={NO_FOLDER_LABEL}
+                hasClear
+                isOptional
+                value={folderId}
+                onChange={setFolderId}
+                options={folders.map((folder) => ({ value: folder.id, label: folder.name }))}
+              />
+            )}
           </VStack>
         </LayoutContent>
       }
