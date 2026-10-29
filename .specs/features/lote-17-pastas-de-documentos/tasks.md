@@ -534,9 +534,9 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `src/components/documents/__tests__/folder-presentation.test.ts`: `formatFileCount` 0/1/2; `formatFolderCount` 1/2; `formatFolderUpdatedLabel` nas fronteiras exatas — 59 s, 1 min, 59 min, 60 min, futuro, 23:59 e 00:00 de São Paulo com o servidor em UTC, ontem, 31/12 → 1/1, outro ano (PRAIZ-01 AC3, L-023); `deleteFolderCopy` para 0, 1 e 3 (PEXC-01 AC4); `folderErrorMessage` para cada código; `folderSelectorOptions` com "Sem pasta" primeiro; `folderIdFromSelector` da sentinela e de `null`
-- [ ] Teste de pureza: sem import de `src/server/` (L-020)
-- [ ] Quick (sem banco) + Build passam
+- [x] `src/components/documents/__tests__/folder-presentation.test.ts`: `formatFileCount` 0/1/2; `formatFolderCount` 1/2; `formatFolderUpdatedLabel` nas fronteiras exatas — 59 s, 1 min, 59 min, 60 min, futuro, 23:59 e 00:00 de São Paulo com o servidor em UTC, ontem, 31/12 → 1/1, outro ano (PRAIZ-01 AC3, L-023); `deleteFolderCopy` para 0, 1 e 3 (PEXC-01 AC4); `folderErrorMessage` para cada código; `folderSelectorOptions` com "Sem pasta" primeiro; `folderIdFromSelector` da sentinela e de `null`
+- [x] Teste de pureza: sem import de `src/server/` (L-020)
+- [x] Quick (sem banco) + Build passam
 
 **Tests**: unit
 **Gate**: quick
@@ -556,9 +556,9 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] Erro da action no `status` do `TextInput` com o diálogo aberto (PRAIZ-01 AC10); `router.refresh()` no sucesso
-- [ ] Autoverificação Astryx do AGENTS.md (sem `div`, `style`, valor cru)
-- [ ] Build passa
+- [x] Erro da action no `status` do `TextInput` com o diálogo aberto (PRAIZ-01 AC10); `router.refresh()` no sucesso
+- [x] Autoverificação Astryx do AGENTS.md (sem `div`, `style`, valor cru)
+- [x] Build passa
 
 **Tests**: none (componente; captura na T34)
 **Gate**: build
@@ -578,8 +578,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] Título e descrição de `deleteFolderCopy`; cancelar não chama a action; sucesso → `router.replace(afterDeleteHref)` ou `router.refresh()`
-- [ ] Build passa
+- [x] Título e descrição de `deleteFolderCopy`; cancelar não chama a action; sucesso → `router.replace(afterDeleteHref)` ou `router.refresh()`
+- [x] Build passa
 
 **Tests**: none (componente; captura na T34)
 **Gate**: build
@@ -599,9 +599,9 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] Sem `canWrite`, só "Abrir pasta" e "Copiar link" (PPERM-01 AC4, AC5); `showOpen={false}` esconde "Abrir pasta"
-- [ ] "Copiar link" com `folderHref` e os dois avisos da spec (PLINK-01)
-- [ ] Build passa
+- [x] Sem `canWrite`, só "Abrir pasta" e "Copiar link" (PPERM-01 AC4, AC5); `showOpen={false}` esconde "Abrir pasta"
+- [x] "Copiar link" com `folderHref` e os dois avisos da spec (PLINK-01)
+- [x] Build passa
 
 **Tests**: none (componente; captura na T34)
 **Gate**: build
@@ -621,9 +621,9 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] Cartão com `href={folderHref(id)}`, nome, contagem, rótulo e tamanho já prontos (sem cálculo de data no cliente)
-- [ ] Lista vazia → `EmptyState` com o texto da spec para escrever e para ler (PVAZIO-01 AC1)
-- [ ] Build passa
+- [x] Cartão com `href={folderHref(id)}`, nome, contagem, rótulo e tamanho já prontos (sem cálculo de data no cliente)
+- [x] Lista vazia → `EmptyState` com o texto da spec para escrever e para ler (PVAZIO-01 AC1)
+- [x] Build passa
 
 **Tests**: none (componente; captura na T34)
 **Gate**: build
@@ -643,8 +643,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] Pasta atual pré-selecionada (sentinela quando sem pasta); confirmar chama `moveDocumentsToFolderAction({ documentIds: [id], folderId })`; erro em `Banner` com o diálogo aberto
-- [ ] Build passa
+- [x] Pasta atual pré-selecionada (sentinela quando sem pasta); confirmar chama `moveDocumentsToFolderAction({ documentIds: [id], folderId })`; erro em `Banner` com o diálogo aberto
+- [x] Build passa
 
 **Tests**: none (componente; captura na T34)
 **Gate**: build
@@ -664,8 +664,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `Breadcrumbs label="Caminho"`; "Documentos" com `href="/documentos"`; pasta com `isCurrent`; `FolderActionsMenu` com `showOpen={false}` e `afterDeleteHref="/documentos"` (PEXC-01 AC6)
-- [ ] Build passa; PR B1 aberto para `lote-17` com T18–T24
+- [x] `Breadcrumbs label="Caminho"`; "Documentos" com `href="/documentos"`; pasta com `isCurrent`; `FolderActionsMenu` com `showOpen={false}` e `afterDeleteHref="/documentos"` (PEXC-01 AC6)
+- [x] Build passa; PR B1 aberto para `lote-17` com T18–T24
 
 **Tests**: none (componente; captura na T34)
 **Gate**: build
