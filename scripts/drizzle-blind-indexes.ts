@@ -23,4 +23,3 @@ export async function restoreDrizzleBlindIndexes(url: string): Promise<void> {
     await client.end();
   }
 }
-
