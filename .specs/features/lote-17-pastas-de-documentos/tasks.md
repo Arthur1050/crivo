@@ -336,10 +336,10 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `src/server/data/__tests__/documents.test.ts`: filtro de pasta, "sem pasta", sem filtro (todas) e pasta combinada com modalidade, categoria e busca (PFILT-01 AC1–AC4); cada documento traz `folderId` (AC6)
-- [ ] `src/server/data/__tests__/isolation.test.ts`: filtro com pasta de outro tenant → lista vazia (PFILT-01 AC5)
-- [ ] `updateDocument` com `folderId` de outra pasta grava e atualiza `updated_at` de origem e destino; `null` tira da pasta; sem a chave mantém; pasta de outro tenant → `DocumentFolderNotFoundError` e nenhum campo gravado, inclusive o nome (PEDIT-01 AC2–AC5 no nível da DAL)
-- [ ] Quick + Build passam
+- [x] `src/server/data/__tests__/documents.test.ts`: filtro de pasta, "sem pasta", sem filtro (todas) e pasta combinada com modalidade, categoria e busca (PFILT-01 AC1–AC4); cada documento traz `folderId` (AC6)
+- [x] `src/server/data/__tests__/isolation.test.ts`: filtro com pasta de outro tenant → lista vazia (PFILT-01 AC5)
+- [x] `updateDocument` com `folderId` de outra pasta grava e atualiza `updated_at` de origem e destino; `null` tira da pasta; sem a chave mantém; pasta de outro tenant → `DocumentFolderNotFoundError` e nenhum campo gravado, inclusive o nome (PEDIT-01 AC2–AC5 no nível da DAL)
+- [x] Quick + Build passam
 
 **Tests**: integration
 **Gate**: quick
