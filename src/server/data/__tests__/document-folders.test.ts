@@ -4,7 +4,7 @@ import { eq, inArray } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { db } from "../../../db";
 import { documentCategories, documentFolders, documents, documentUploadIntents, tenants, users } from "../../../db/schema";
-import { createDocumentFolder, deleteDocumentFolder, getDocumentFolder, listDocumentFolderSummaries, renameDocumentFolder } from "../document-folders";
+import { createDocumentFolder, deleteDocumentFolder, getDocumentFolder, listDocumentFolderSummaries, moveDocumentsToFolder, renameDocumentFolder } from "../document-folders";
 
 const tenantA = randomUUID();
 const tenantB = randomUUID();
@@ -143,5 +143,93 @@ describe("T6 — leitura das pastas (PLER-01)", () => {
       expect(await getDocumentFolder(tenantA, "abc")).toBeNull();
       expect(select).not.toHaveBeenCalled();
     } finally { select.mockRestore(); }
+  });
+});
+
+
+describe("T8: movimentacao atomica (PMOVER-01)", () => {
+  it("move de duas origens, atualiza as tres pastas e preserva todos os outros campos", async () => {
+    const fromA = await folder("Mover origem A");
+    const fromB = await folder("Mover origem B");
+    const dest = await folder("Mover destino");
+    const docs = [await document(fromA.id), await document(fromB.id, { status: "fora_do_agente" })];
+    expect(await moveDocumentsToFolder(tenantA, docs.map((d) => d.id), dest.id, NOW)).toEqual({ kind: "moved", movedCount: 2 });
+    for (const doc of docs) {
+      expect((await db.select().from(documents).where(eq(documents.id, doc.id)))[0]).toEqual({ ...doc, folderId: dest.id });
+    }
+    for (const row of [fromA, fromB, dest]) {
+      expect((await db.select().from(documentFolders).where(eq(documentFolders.id, row.id)))[0].updatedAt).toEqual(NOW);
+    }
+  });
+
+  it("deduplica, retira para a raiz e nao toca data quando todos ja estao no destino", async () => {
+    const row = await folder("Mover repetido");
+    const doc = await document(null);
+    expect(await moveDocumentsToFolder(tenantA, [doc.id, doc.id], row.id, NOW)).toEqual({ kind: "moved", movedCount: 1 });
+    expect(await moveDocumentsToFolder(tenantA, [doc.id], row.id, new Date("2025-01-01"))).toEqual({ kind: "moved", movedCount: 0 });
+    expect((await db.select().from(documentFolders).where(eq(documentFolders.id, row.id)))[0].updatedAt).toEqual(NOW);
+    expect(await moveDocumentsToFolder(tenantA, [doc.id], null, UPLOADED)).toEqual({ kind: "moved", movedCount: 1 });
+    expect((await db.select().from(documents).where(eq(documents.id, doc.id)))[0]).toEqual(doc);
+    expect((await db.select().from(documentFolders).where(eq(documentFolders.id, row.id)))[0].updatedAt).toEqual(UPLOADED);
+  });
+
+  it("recusa selecoes invalidas e destinos invalidos sem alterar linhas", async () => {
+    const source = await folder("Origem invalida");
+    const foreign = await folder("Destino estrangeiro", tenantB);
+    const doc = await document(source.id);
+    for (const ids of [[], Array.from({ length: 101 }, () => randomUUID()), [doc.id, "abc"]]) {
+      expect(await moveDocumentsToFolder(tenantA, ids, null)).toEqual({ kind: "invalid_selection" });
+    }
+    for (const target of [foreign.id, randomUUID(), "abc"]) {
+      expect(await moveDocumentsToFolder(tenantA, [doc.id], target)).toEqual({ kind: "folder_not_found" });
+    }
+    expect((await db.select().from(documents).where(eq(documents.id, doc.id)))[0]).toEqual(doc);
+    expect((await db.select().from(documentFolders).where(eq(documentFolders.id, source.id)))[0]).toEqual(source);
+    expect((await db.select().from(documentFolders).where(eq(documentFolders.id, foreign.id)))[0]).toEqual(foreign);
+  });
+
+  it("um documento ausente, excluido ou estrangeiro impede a lista inteira", async () => {
+    const source = await folder("Origem atomica");
+    const dest = await folder("Destino atomico");
+    const valid = await document(source.id);
+    const foreign = await document(null, { tenantId: tenantB });
+    const deleted = await document(source.id, { deletedAt: NOW });
+    for (const missing of [foreign.id, deleted.id, randomUUID()]) {
+      expect(await moveDocumentsToFolder(tenantA, [valid.id, missing], dest.id)).toEqual({ kind: "document_not_found" });
+      expect((await db.select().from(documents).where(eq(documents.id, valid.id)))[0]).toEqual(valid);
+    }
+    expect((await db.select().from(documents).where(eq(documents.id, foreign.id)))[0]).toEqual(foreign);
+    expect((await db.select().from(documents).where(eq(documents.id, deleted.id)))[0]).toEqual(deleted);
+    expect((await db.select().from(documentFolders).where(eq(documentFolders.id, dest.id)))[0]).toEqual(dest);
+  });
+
+  it("espera a exclusao concorrente da pasta e retorna folder_not_found (L-052)", async () => {
+    const dest = await folder("Destino concorrente");
+    const doc = await document(null);
+    const locker = await db.$client.connect();
+    let pending: ReturnType<typeof moveDocumentsToFolder> | undefined;
+    try {
+      await locker.query("begin");
+      const pid = (await locker.query<{ pid: number }>("select pg_backend_pid() as pid")).rows[0].pid;
+      await locker.query("select id from document_folders where id=$1 and tenant_id=$2 for update", [dest.id, tenantA]);
+      pending = moveDocumentsToFolder(tenantA, [doc.id], dest.id);
+      let waiting = false;
+      for (let attempt = 0; attempt < 100 && !waiting; attempt++) {
+        const result = await db.$client.query<{ waiting: boolean }>(
+          "select exists(select 1 from pg_stat_activity where datname=current_database() and wait_event_type='Lock' and $1=any(pg_blocking_pids(pid))) as waiting", [pid]
+        );
+        waiting = result.rows[0].waiting;
+        if (!waiting) await new Promise((resolve) => setTimeout(resolve, 50));
+      }
+      expect(waiting).toBe(true);
+      await locker.query("delete from document_folders where id=$1 and tenant_id=$2", [dest.id, tenantA]);
+      await locker.query("commit");
+      expect(await pending).toEqual({ kind: "folder_not_found" });
+      expect((await db.select().from(documents).where(eq(documents.id, doc.id)))[0]).toEqual(doc);
+    } finally {
+      await locker.query("rollback");
+      locker.release();
+      await pending;
+    }
   });
 });

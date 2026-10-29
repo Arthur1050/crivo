@@ -313,10 +313,10 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] Testes: mover 2 documentos de pastas diferentes para uma terceira → `movedCount` 2 e `updated_at` do destino e das duas origens atualizados (AC1, AC3); destino `null` (AC2); id repetido conta uma vez (AC4); `[]`, 101 ids e id não UUID → `invalid_selection` (AC5); pasta de outro tenant → `folder_not_found` sem mudar nada (AC6); um id de outro tenant ou excluído na lista → `document_not_found` e nenhum documento da lista mudou (AC7, tudo ou nada); todos já no destino → `movedCount` 0 e nenhum `updated_at` mudou
-- [ ] Concorrência (L-052): uma transação separada segura a pasta com `for update` (como a exclusão); a movimentação espera (conferido em `pg_stat_activity`); depois da exclusão confirmada, a movimentação devolve `folder_not_found` sem lançar (AC8)
-- [ ] `status`, `extracted_text` e `processing_attempt` iguais antes e depois (AC9)
-- [ ] Quick + Build passam
+- [x] Testes: mover 2 documentos de pastas diferentes para uma terceira → `movedCount` 2 e `updated_at` do destino e das duas origens atualizados (AC1, AC3); destino `null` (AC2); id repetido conta uma vez (AC4); `[]`, 101 ids e id não UUID → `invalid_selection` (AC5); pasta de outro tenant → `folder_not_found` sem mudar nada (AC6); um id de outro tenant ou excluído na lista → `document_not_found` e nenhum documento da lista mudou (AC7, tudo ou nada); todos já no destino → `movedCount` 0 e nenhum `updated_at` mudou
+- [x] Concorrência (L-052): uma transação separada segura a pasta com `for update` (como a exclusão); a movimentação espera (conferido em `pg_stat_activity`); depois da exclusão confirmada, a movimentação devolve `folder_not_found` sem lançar (AC8)
+- [x] `status`, `extracted_text` e `processing_attempt` iguais antes e depois (AC9)
+- [x] Quick + Build passam
 
 **Tests**: integration
 **Gate**: quick
