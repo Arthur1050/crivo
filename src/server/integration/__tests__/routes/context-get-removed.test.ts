@@ -142,7 +142,7 @@ describe("routes: GET /api/v1/context removido (lote-12 T36)", () => {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ modality: "ambos", question: "Quais são as regras?" }),
-      })
+      }), undefined
     );
     expect(response.status).toBe(200);
     expect((await response.json()).retrievalMode).toBe("direct");

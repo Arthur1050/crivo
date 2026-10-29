@@ -81,7 +81,7 @@ describe("routes: GET /api/v1/settings", () => {
   }
 
   it("200 com o shape completo do tenant A, incluindo horário comercial configurado (INT-09 AC2)", async () => {
-    const response = await GET(makeRequest(apiKeyA));
+    const response = await GET(makeRequest(apiKeyA), undefined);
     expect(response.status).toBe(200);
 
     const body = await response.json();
@@ -98,7 +98,7 @@ describe("routes: GET /api/v1/settings", () => {
   });
 
   it("tenant sem horário comercial nem tom de voz configurado responde null nos campos opcionais (CONF-05 AC4, PER-03 AC4)", async () => {
-    const response = await GET(makeRequest(apiKeyB));
+    const response = await GET(makeRequest(apiKeyB), undefined);
     expect(response.status).toBe(200);
 
     const body = await response.json();
@@ -113,8 +113,8 @@ describe("routes: GET /api/v1/settings", () => {
   });
 
   it("2 tenants distintos → payloads distintos (isolamento por chave, INT-01 AC2)", async () => {
-    const responseA = await GET(makeRequest(apiKeyA));
-    const responseB = await GET(makeRequest(apiKeyB));
+    const responseA = await GET(makeRequest(apiKeyA), undefined);
+    const responseB = await GET(makeRequest(apiKeyB), undefined);
     const bodyA = await responseA.json();
     const bodyB = await responseB.json();
 
@@ -123,14 +123,14 @@ describe("routes: GET /api/v1/settings", () => {
   });
 
   it("sem header Authorization responde 401 (INT-01 AC1)", async () => {
-    const response = await GET(makeRequest());
+    const response = await GET(makeRequest(), undefined);
     expect(response.status).toBe(401);
     const body = await response.json();
     expect(body.code).toBe("nao-autenticado");
   });
 
   it("chave inválida responde 401 (INT-01 AC1)", async () => {
-    const response = await GET(makeRequest("chave-que-nao-existe"));
+    const response = await GET(makeRequest("chave-que-nao-existe"), undefined);
     expect(response.status).toBe(401);
     const body = await response.json();
     expect(body.code).toBe("nao-autenticado");
