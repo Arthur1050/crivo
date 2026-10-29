@@ -517,8 +517,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `src/db/__tests__/seed.test.ts`: cada tenant do seed com as seis pastas e os ids `id("folder:<tenant>:<chave>")`; duas execuções seguidas → mesmos ids e nenhuma pasta a mais (PSEED-01 AC1, AC2)
-- [ ] Quick + Build passam; PR A3 aberto para `lote-17` com T13–T17
+- [x] `src/db/__tests__/seed.test.ts`: cada tenant do seed com as seis pastas e os ids `id("folder:<tenant>:<chave>")`; duas execuções seguidas → mesmos ids e nenhuma pasta a mais (PSEED-01 AC1, AC2)
+- [x] Quick + Build passam; PR A3 aberto para `lote-17` com T13–T17
 
 **Tests**: integration
 **Gate**: quick
