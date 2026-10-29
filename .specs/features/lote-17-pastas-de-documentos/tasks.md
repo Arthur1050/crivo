@@ -908,6 +908,8 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 ---
 
+**Execução C1 — T34 bloqueada**: a consulta às superfícies de navegador retornou nenhuma conexão e o erro `browser access host is unavailable`. Nenhuma captura foi feita, inventada ou reaproveitada. Permanecem pendentes os 16 cenários acima, incluindo as variações de exclusão (1/N), raiz vazia (escrita/leitura) e raiz/pasta em 375 px, além de conferir o clique no menu sem navegar e os textos em português. CRM de teste iniciou na porta 3013; não houve seed nem uso de outro navegador. T35 seguirá uma vez, conforme a orientação do usuário para reportar T34 aberta quando a extensão estiver inacessível.
+
 #### T35: Gate final da Fase 1
 
 **What**: `npm test` completo uma vez, `npx tsc --noEmit -p .` e `npx eslint .` no topo de `lote-17` com C1; resultado no corpo do PR C1.
