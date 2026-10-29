@@ -441,6 +441,14 @@
 - **Date**: 2026-10-25
 - **Status**: active
 
+### AD-051
+- **Decision**: Pastas de documentos por tenant (L17) com quatro regras de produto. (1) A pasta convive com a categoria: a pasta é onde o arquivo fica e a categoria continua sendo a etiqueta colorida; um documento tem no máximo uma pasta e no máximo uma categoria. (2) Um nível só, sem subpastas; documento sem pasta fica na raiz ("Sem pasta"). (3) O agente do WhatsApp não enxerga a pasta: `src/server/integration/context.ts`, as rotas `/api/v1/*`, o `openapi.yaml` e `n8n/` não mudam, e mover um documento não altera o contexto que o agente recebe. (4) Excluir uma pasta com documentos apaga a pasta e devolve os documentos para a raiz (`documents.folder_id` com `on delete set null`), depois de uma confirmação que mostra quantos arquivos serão movidos.
+- **Reason**: Decisões do usuário em 2026-10-29, na abertura do L17, respondendo às duas perguntas que o `ROADMAP-POS-PILOTO.md` deixou para o Specify (substitui ou convive com categoria; o agente enxerga a pasta) e fixando profundidade e exclusão.
+- **Trade-off**: Dois eixos de organização (pasta e categoria) que o usuário precisa entender como coisas diferentes. Sem subpastas, um acervo grande achata em muitas pastas na raiz. O agente não usa a organização da equipe para escolher documento; isso exigiria mudar o contexto, o contrato v1 e republicar o workflow.
+- **Scope**: Documentos do CRM (modelo, camada de dados, actions, página e seed), a partir do L17. Não emenda a AD-030 nem a AD-031 (binário, extração e contexto continuam iguais).
+- **Date**: 2026-10-29
+- **Status**: active
+
 ## Handoff
 
 - **Estado atual (2026-10-25): vitrine pausada (AD-050), Documentos sem pastas, lições decididas**
