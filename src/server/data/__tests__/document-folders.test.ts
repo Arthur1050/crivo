@@ -3,8 +3,8 @@ import { randomUUID } from "node:crypto";
 import { eq, inArray } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { db } from "../../../db";
-import { documentFolders, documents, documentUploadIntents, tenants, users } from "../../../db/schema";
-import { getDocumentFolder, listDocumentFolderSummaries } from "../document-folders";
+import { documentCategories, documentFolders, documents, documentUploadIntents, tenants, users } from "../../../db/schema";
+import { createDocumentFolder, deleteDocumentFolder, getDocumentFolder, listDocumentFolderSummaries, renameDocumentFolder } from "../document-folders";
 
 const tenantA = randomUUID();
 const tenantB = randomUUID();
@@ -35,9 +35,63 @@ beforeAll(async () => {
   await db.insert(users).values({ id: userId, name: "Pastas DAL", email: `${userId}@example.test` });
 });
 
+describe("T7 — escrita das pastas (PCRIAR-01, PREN-01, PEXC-01)", () => {
+  it("cria com data explícita, recusa duplicada e resolve corrida sem lançar", async () => {
+    const result = await createDocumentFolder(tenantA, "Criada", NOW);
+    expect(result).toMatchObject({ kind: "created", folder: { name: "Criada" } });
+    if (result.kind !== "created") throw new Error("Pasta não criada");
+    const [stored] = await db.select().from(documentFolders).where(eq(documentFolders.id, result.folder.id));
+    expect(stored).toEqual({ id: result.folder.id, tenantId: tenantA, name: "Criada", createdAt: NOW, updatedAt: NOW });
+    expect(await createDocumentFolder(tenantA, "CRIADA")).toEqual({ kind: "duplicate_name" });
+    const race = await Promise.all([createDocumentFolder(tenantA, "Corrida"), createDocumentFolder(tenantA, "CORRIDA")]);
+    expect(race.map((r) => r.kind).sort()).toEqual(["created", "duplicate_name"]);
+  });
+
+  it("renomeia, aceita a própria grafia e só a caixa, mas recusa nome de outra pasta", async () => {
+    const row = await folder("Antes");
+    const doc = await document(row.id);
+    expect(await renameDocumentFolder(tenantA, row.id, "Depois", NOW)).toEqual({ kind: "renamed", folder: { id: row.id, name: "Depois" } });
+    expect((await db.select().from(documentFolders).where(eq(documentFolders.id, row.id)))[0].updatedAt).toEqual(NOW);
+    expect(await renameDocumentFolder(tenantA, row.id, "DEPOIS")).toEqual({ kind: "renamed", folder: { id: row.id, name: "DEPOIS" } });
+    expect(await renameDocumentFolder(tenantA, row.id, "DEPOIS")).toEqual({ kind: "renamed", folder: { id: row.id, name: "DEPOIS" } });
+    await folder("Ocupada");
+    const [before] = await db.select().from(documentFolders).where(eq(documentFolders.id, row.id));
+    expect(await renameDocumentFolder(tenantA, row.id, "OCUPADA")).toEqual({ kind: "duplicate_name" });
+    expect((await db.select().from(documentFolders).where(eq(documentFolders.id, row.id)))[0]).toEqual(before);
+    expect((await db.select().from(documents).where(eq(documents.id, doc.id)))[0]).toEqual(doc);
+  });
+
+  it("escritas em pasta estrangeira, inexistente ou id inválido não mudam linhas", async () => {
+    const foreign = await folder("Protegida", tenantB);
+    for (const id of [foreign.id, randomUUID(), "abc"]) {
+      expect(await renameDocumentFolder(tenantA, id, "Intrusa")).toEqual({ kind: "not_found" });
+      expect(await deleteDocumentFolder(tenantA, id)).toEqual({ kind: "not_found" });
+    }
+    expect((await db.select().from(documentFolders).where(eq(documentFolders.id, foreign.id)))[0]).toEqual(foreign);
+  });
+
+  it("exclui contando só os ativos e preservando todos os demais campos e as intenções", async () => {
+    const row = await folder("Excluir");
+    const [category] = await db.insert(documentCategories).values({ tenantId: tenantA, name: "Preservada" }).returning();
+    const live = await document(row.id, { categoryId: category.id });
+    const deleted = await document(row.id, { status: "falha", deletedAt: NOW, categoryId: category.id });
+    const [intent] = await db.insert(documentUploadIntents).values({
+      tenantId: tenantA, folderId: row.id, requestedByUserId: userId, name: "Envio", mimeType: "text/plain",
+      sizeBytes: 21n, modality: "usado", storageKey: randomUUID(), clientSha256: randomUUID().replaceAll("-", "").repeat(2), expiresAtIntent: NOW,
+    }).returning();
+    expect(await deleteDocumentFolder(tenantA, row.id)).toEqual({ kind: "deleted", movedToRootCount: 1 });
+    expect(await getDocumentFolder(tenantA, row.id)).toBeNull();
+    for (const doc of [live, deleted]) {
+      expect((await db.select().from(documents).where(eq(documents.id, doc.id)))[0]).toEqual({ ...doc, folderId: null });
+    }
+    expect((await db.select().from(documentUploadIntents).where(eq(documentUploadIntents.id, intent.id)))[0]).toEqual({ ...intent, folderId: null });
+  });
+});
+
 afterAll(async () => {
   await db.delete(documentUploadIntents).where(inArray(documentUploadIntents.tenantId, [tenantA, tenantB]));
   await db.delete(documents).where(inArray(documents.tenantId, [tenantA, tenantB]));
+  await db.delete(documentCategories).where(inArray(documentCategories.tenantId, [tenantA, tenantB]));
   await db.delete(tenants).where(inArray(tenants.id, [tenantA, tenantB]));
   await db.delete(users).where(eq(users.id, userId));
   await db.$client.end();

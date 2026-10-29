@@ -4,6 +4,7 @@ import { and, count, eq, isNull, max, sql } from "drizzle-orm";
 import { db } from "../../db";
 import { documentFolders, documents } from "../../db/schema";
 import { isUuid, type DocumentFolderOption, type DocumentFolderSummary } from "../../lib/document-folders";
+import { isUniqueViolation } from "./pg-errors";
 
 export async function listDocumentFolderSummaries(tenantId: string): Promise<DocumentFolderSummary[]> {
   const rows = await db.select({
@@ -25,4 +26,54 @@ export async function getDocumentFolder(tenantId: string, folderId: string): Pro
   const [folder] = await db.select({ id: documentFolders.id, name: documentFolders.name }).from(documentFolders)
     .where(and(eq(documentFolders.tenantId, tenantId), eq(documentFolders.id, folderId)));
   return folder ?? null;
+}
+
+export type CreateDocumentFolderResult =
+  | { kind: "created"; folder: DocumentFolderOption }
+  | { kind: "duplicate_name" };
+
+export async function createDocumentFolder(tenantId: string, name: string, now = new Date()): Promise<CreateDocumentFolderResult> {
+  try {
+    const [folder] = await db.insert(documentFolders).values({ tenantId, name, createdAt: now, updatedAt: now })
+      .returning({ id: documentFolders.id, name: documentFolders.name });
+    return { kind: "created", folder };
+  } catch (error) {
+    if (isUniqueViolation(error)) return { kind: "duplicate_name" };
+    throw error;
+  }
+}
+
+export type RenameDocumentFolderResult =
+  | { kind: "renamed"; folder: DocumentFolderOption }
+  | { kind: "not_found" }
+  | { kind: "duplicate_name" };
+
+export async function renameDocumentFolder(tenantId: string, folderId: string, name: string, now = new Date()): Promise<RenameDocumentFolderResult> {
+  if (!isUuid(folderId)) return { kind: "not_found" };
+  try {
+    const [folder] = await db.update(documentFolders).set({ name, updatedAt: now })
+      .where(and(eq(documentFolders.tenantId, tenantId), eq(documentFolders.id, folderId)))
+      .returning({ id: documentFolders.id, name: documentFolders.name });
+    return folder ? { kind: "renamed", folder } : { kind: "not_found" };
+  } catch (error) {
+    if (isUniqueViolation(error)) return { kind: "duplicate_name" };
+    throw error;
+  }
+}
+
+export type DeleteDocumentFolderResult =
+  | { kind: "deleted"; movedToRootCount: number }
+  | { kind: "not_found" };
+
+export async function deleteDocumentFolder(tenantId: string, folderId: string): Promise<DeleteDocumentFolderResult> {
+  if (!isUuid(folderId)) return { kind: "not_found" };
+  return db.transaction(async (tx) => {
+    const [folder] = await tx.select({ id: documentFolders.id }).from(documentFolders)
+      .where(and(eq(documentFolders.tenantId, tenantId), eq(documentFolders.id, folderId))).for("update");
+    if (!folder) return { kind: "not_found" };
+    const [summary] = await tx.select({ fileCount: count() }).from(documents)
+      .where(and(eq(documents.tenantId, tenantId), eq(documents.folderId, folderId), isNull(documents.deletedAt)));
+    await tx.delete(documentFolders).where(and(eq(documentFolders.tenantId, tenantId), eq(documentFolders.id, folderId)));
+    return { kind: "deleted", movedToRootCount: summary.fileCount };
+  });
 }

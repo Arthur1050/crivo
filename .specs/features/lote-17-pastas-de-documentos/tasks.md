@@ -291,9 +291,9 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] Testes em `src/server/data/__tests__/document-folders.test.ts`: criar; nome repetido com outra caixa → `duplicate_name`; duas criações simultâneas com o mesmo nome → uma `created` e uma `duplicate_name`, nenhuma lança (PCRIAR-01 AC4); renomear atualiza nome e `updated_at` (partindo de `updated_at` antigo, L-053); renomear só a caixa aceito; nome de outra pasta → `duplicate_name`; pasta de outro tenant e `"abc"` → `not_found` com a pasta estrangeira intacta (L-001)
-- [ ] Excluir: `movedToRootCount` conta só não excluídos (documento excluído na pasta não conta); documentos e intenções ficam com `folder_id` nulo e os demais campos iguais (`status`, `category_id`, `deleted_at`) (PEXC-01 AC1, AC2); outro tenant → `not_found` sem apagar
-- [ ] Quick + Build passam
+- [x] Testes em `src/server/data/__tests__/document-folders.test.ts`: criar; nome repetido com outra caixa → `duplicate_name`; duas criações simultâneas com o mesmo nome → uma `created` e uma `duplicate_name`, nenhuma lança (PCRIAR-01 AC4); renomear atualiza nome e `updated_at` (partindo de `updated_at` antigo, L-053); renomear só a caixa aceito; nome de outra pasta → `duplicate_name`; pasta de outro tenant e `"abc"` → `not_found` com a pasta estrangeira intacta (L-001)
+- [x] Excluir: `movedToRootCount` conta só não excluídos (documento excluído na pasta não conta); documentos e intenções ficam com `folder_id` nulo e os demais campos iguais (`status`, `category_id`, `deleted_at`) (PEXC-01 AC1, AC2); outro tenant → `not_found` sem apagar
+- [x] Quick + Build passam
 
 **Tests**: integration
 **Gate**: quick
