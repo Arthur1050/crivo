@@ -1,6 +1,9 @@
 import "dotenv/config";
 import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { eq, inArray, sql } from "drizzle-orm";
+import { getTableConfig } from "drizzle-orm/pg-core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { applyDocumentFoldersSql, verifyDocumentFoldersState } from "../../../scripts/document-folders/apply";
 import { db } from "../index";
@@ -87,6 +90,64 @@ describe("L17 T3 — modelo e SQL de pastas (PMOD-01, PBANCO-01)", () => {
       { conname: "document_upload_intents_folder_id_document_folders_id_fk", confdeltype: "n" },
       { conname: "documents_folder_id_document_folders_id_fk", confdeltype: "n" },
     ]);
+  });
+
+  it("declara no Drizzle as três FKs com os nomes, destinos e regras exigidos", () => {
+    const definitions = [
+      [documentFolders, documentFolders.tenantId, tenants.id, "cascade", "document_folders_tenant_id_tenants_id_fk"],
+      [documents, documents.folderId, documentFolders.id, "set null", "documents_folder_id_document_folders_id_fk"],
+      [documentUploadIntents, documentUploadIntents.folderId, documentFolders.id, "set null", "document_upload_intents_folder_id_document_folders_id_fk"],
+    ] as const;
+    for (const [table, column, target, onDelete, name] of definitions) {
+      const keys = getTableConfig(table).foreignKeys.filter((key) => key.reference().columns.includes(column));
+      expect(keys).toHaveLength(1);
+      expect(keys[0].getName()).toBe(name);
+      expect(keys[0].onDelete).toBe(onDelete);
+      expect(keys[0].reference().columns).toEqual([column]);
+      expect(keys[0].reference().foreignColumns).toEqual([target]);
+      expect(keys[0].reference().foreignTable).toBe(target.table);
+    }
+  });
+
+  it("cria pelo SQL entregue as três FKs ausentes e restaura o estado anterior", async () => {
+    const deliveredSql = readFileSync(path.resolve(process.cwd(), "scripts/document-folders/schema.sql"), "utf8");
+    expect(deliveredSql).toMatch(/\bbegin;\s*[\s\S]*\bcommit;\s*$/i);
+    // Só o envelope é removido: o corpo entregue roda na mesma conexão da
+    // transação externa, cujo rollback restaura inclusive os OIDs das FKs.
+    const body = deliveredSql.replace(/^([\s\S]*?)\bbegin;/i, "$1").replace(/\bcommit;\s*$/i, "");
+    const client = await db.$client.connect();
+    const stateQuery = `select oid, conname, conrelid, confrelid, confdeltype,
+      pg_get_constraintdef(oid) as definition from pg_constraint
+      where conrelid in ('public.document_folders'::regclass, 'public.documents'::regclass,
+        'public.document_upload_intents'::regclass) order by oid`;
+    try {
+      const before = (await client.query(stateQuery)).rows;
+      try {
+        await client.query("begin");
+        await client.query(`alter table public.documents drop constraint documents_folder_id_document_folders_id_fk;
+          alter table public.document_upload_intents drop constraint document_upload_intents_folder_id_document_folders_id_fk;
+          alter table public.document_folders drop constraint document_folders_tenant_id_tenants_id_fk`);
+        const names = ["document_folders_tenant_id_tenants_id_fk",
+          "document_upload_intents_folder_id_document_folders_id_fk", "documents_folder_id_document_folders_id_fk"];
+        const readKeys = () => client.query(`select conname, confdeltype, pg_get_constraintdef(oid) as definition
+          from pg_constraint where connamespace = 'public'::regnamespace and conname = any($1) order by conname`, [names]);
+        expect((await readKeys()).rows).toEqual([]);
+        await client.query(body);
+        const expected = [
+          { conname: names[0], confdeltype: "c", definition: "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE" },
+          { conname: names[1], confdeltype: "n", definition: "FOREIGN KEY (folder_id) REFERENCES document_folders(id) ON DELETE SET NULL" },
+          { conname: names[2], confdeltype: "n", definition: "FOREIGN KEY (folder_id) REFERENCES document_folders(id) ON DELETE SET NULL" },
+        ];
+        expect((await readKeys()).rows).toEqual(expected);
+        await client.query(body);
+        expect((await readKeys()).rows).toEqual(expected);
+      } finally {
+        await client.query("rollback");
+        expect((await client.query(stateQuery)).rows).toEqual(before);
+      }
+    } finally {
+      client.release();
+    }
   });
 
   it("detecta índice de pasta ausente e o SQL o restaura", async () => {
