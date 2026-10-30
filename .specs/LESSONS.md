@@ -498,6 +498,18 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: vitrine/src/dados/cache.ts:1 (tooling/next)
 - last seen: 2026-10-12T14:23:06Z
 
+### L-092 - Nos testes de schema, prove a regra de exclusão a partir do SQL e do Drizzle entregues, além de conferir a FK já instalada.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `db/schema` · harmful: 0
+- features: lote-17-pastas-de-documentos
+- evidence: M9; PBANCO-01 AC1; src/db/__tests__/schema-document-folders.test.ts:78 (db/schema)
+- last seen: 2026-10-30T01:31:36Z
+
+### L-093 - Exercite cada controle de limpar filtros com busca e ordenação ativas, conferindo a URL final completa.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `ui/filtros` · harmful: 0
+- features: lote-17-pastas-de-documentos
+- evidence: PABRIR-01 AC4; src/components/documents/documents-toolbar.tsx:173 (ui/filtros)
+- last seen: 2026-10-30T01:31:37Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
