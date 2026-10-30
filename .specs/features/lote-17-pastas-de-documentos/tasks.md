@@ -940,6 +940,10 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 #### T36: Verificação independente
 
+**Correção G1 — ciclo 1 concluído (2026-10-30)**: PBANCO-01 AC1 / alvo 9. Acrescentados dois testes em `src/db/__tests__/schema-document-folders.test.ts`, mantendo os cinco originais: configuração Drizzle (nome, coluna, destino e exclusão das três FKs) e criação pelo corpo do SQL entregue após remover as três constraints numa transação externa. Apenas o envelope `begin/commit` é removido para impedir commit do estado temporário; o corpo roda duas vezes, com regras CASCADE/SET NULL/SET NULL explícitas. `finally` faz rollback e compara todas as constraints das três tabelas com o estado anterior, inclusive OIDs e definições; a conexão é liberada em outro `finally`. Nenhuma mudança de dado é necessária.
+
+Gate: `npx vitest run src/db/__tests__/schema-document-folders.test.ts` → 7/7 PASS, sem skips. M9 aplicado simultaneamente em `src/db/schema.ts` e `scripts/document-folders/schema.sql`, só na FK de `documents.folder_id`: saída 1, 2 FAIL / 5 PASS. Saída observada: `AssertionError: expected 'cascade' to be 'set null'` (linha 105) e diferença `confdeltype: n → c`, `ON DELETE SET NULL → ON DELETE CASCADE` (linha 141). A asserção de restauração no `finally` passou inclusive no mutante. Arquivos restaurados byte a byte, sem stash; rodada final sem mutante: 7/7 PASS. `npx tsc --noEmit -p .`: 0 erros; `npx eslint .`: 0 erros / 7 avisos. Banco liberado.
+
 **What**: Sub-agente Verifier que não escreveu código do lote grava `validation.md`: PASS/FAIL, evidência `arquivo:linha` ou captura por AC dos 17 requisitos e dos Edge Cases, sensor de discriminação com os 10 alvos obrigatórios de `design.md` § 9 numa cópia isolada (nunca `git stash`), faixa de diff `origin/main...lote-17`, conferência de que `context.ts`, `app/api/v1`, `openapi.yaml` e `n8n/` não mudaram, `tsc`, `eslint` e auditoria de trailer em `origin/main...lote-17` (AD-014). Gaps viram tasks de correção; até 3 ciclos.
 **Where**: `.specs/features/lote-17-pastas-de-documentos/validation.md`
 **Depends on**: T35
