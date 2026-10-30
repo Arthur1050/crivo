@@ -249,7 +249,7 @@ por link e trabalhar só com os arquivos dela.
 1. WHEN a URL tem `pasta=<id>` de uma pasta do tenant THEN o sistema SHALL mostrar o caminho "Documentos / <nome da pasta>", com "Documentos" levando a `/documentos`, e listar só os documentos dessa pasta.
 2. WHILE uma pasta está aberta the system SHALL esconder a seção "Pastas" e o submenu "Pasta" de "Filtrar e ordenar".
 3. WHILE uma pasta está aberta the system SHALL aplicar busca, modalidade, categoria, ordem e visão só aos documentos dela, mantendo `pasta` na URL a cada mudança.
-4. WHILE uma pasta está aberta the system SHALL levar "Limpar filtros" para `/documentos?pasta=<id>`.
+4. **Emendado por decisão do usuário em 2026-10-30.** Texto original preservado: “WHILE uma pasta está aberta the system SHALL levar "Limpar filtros" para `/documentos?pasta=<id>`.” Regra vigente: WHILE uma pasta está aberta the system SHALL fazer o item "Limpar filtros" do menu "Filtrar e ordenar" remover somente `modalidade` e `categoria`, mantendo `pasta`, `q`, `ordem` e `visao`, como na raiz; o link "Limpar filtros" do estado vazio (PVAZIO-01 AC3) SHALL levar exatamente para `/documentos?pasta=<id>`, via `clearFiltersHref`.
 5. WHILE uma pasta está aberta the system SHALL usar o nome da pasta como título da seção de arquivos, com o menu da pasta ("Copiar link" e, para quem escreve, "Renomear" e "Excluir") ao lado.
 
 #### PUPLOAD-01 — Envio dentro da pasta
