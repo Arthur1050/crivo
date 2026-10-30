@@ -4,7 +4,7 @@
   "window_days": 45,
   "quarantine_threshold": 2,
   "prune_requires_confirmation": true,
-  "next_id": 92,
+  "next_id": 94,
   "lessons": [
     {
       "id": "L-001",
@@ -1489,6 +1489,42 @@
       ],
       "created": "2026-10-19T04:23:17Z",
       "last_seen": "2026-10-19T04:23:17Z"
+    },
+    {
+      "id": "L-092",
+      "key": "surviving_mutant::nos testes de schema prove a regra de exclusao a partir do sql e do drizzle entregues alem de conferir a fk ja instalada",
+      "text": "Nos testes de schema, prove a regra de exclusão a partir do SQL e do Drizzle entregues, além de conferir a FK já instalada.",
+      "signal": "surviving_mutant",
+      "scope": "db/schema",
+      "status": "candidate",
+      "features": [
+        "lote-17-pastas-de-documentos"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "M9; PBANCO-01 AC1; src/db/__tests__/schema-document-folders.test.ts:78 (db/schema)"
+      ],
+      "created": "2026-10-30T01:31:36Z",
+      "last_seen": "2026-10-30T01:31:36Z"
+    },
+    {
+      "id": "L-093",
+      "key": "ac_gap::exercite cada controle de limpar filtros com busca e ordenacao ativas conferindo a url final completa",
+      "text": "Exercite cada controle de limpar filtros com busca e ordenação ativas, conferindo a URL final completa.",
+      "signal": "ac_gap",
+      "scope": "ui/filtros",
+      "status": "candidate",
+      "features": [
+        "lote-17-pastas-de-documentos"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "PABRIR-01 AC4; src/components/documents/documents-toolbar.tsx:173 (ui/filtros)"
+      ],
+      "created": "2026-10-30T01:31:37Z",
+      "last_seen": "2026-10-30T01:31:37Z"
     }
   ]
 }
