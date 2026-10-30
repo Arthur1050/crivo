@@ -1,4 +1,0 @@
-## 2024-10-12 - [Critical] Timing Attack in Token Comparison
-**Vulnerability:** The `/api/cron/expire-documents` route used a standard string equality operator (`===`) to compare the provided `CRON_SECRET` with the expected value. This allows an attacker to guess the token character by character based on the response time.
-**Learning:** String comparisons (`===` or `!==`) in JavaScript evaluate byte-by-byte and short-circuit on the first mismatch, leading to timing variations that leak the secret's structure.
-**Prevention:** Always use `crypto.timingSafeEqual` with a hashed version of the strings for sensitive token or secret comparisons. Hash both sides first (e.g., using `crypto.createHash("sha256").update(val).digest()`) to normalize lengths and prevent length-mismatch exceptions from acting as an alternative side channel.
