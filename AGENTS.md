@@ -62,5 +62,10 @@ Nunca leia, imprima ou copie o arquivo de variáveis de ambiente nem seus valore
 - `npx tsc --noEmit` tem erros antigos só em arquivos de teste: não aumente a contagem. O lint da raiz tem 9 avisos de linha de base e 0 erros.
 - Mudança visual só está pronta com captura de tela real da página.
 
+## Verificação visual (capturas)
+- `npm run preview:test` recria os usuários de verificação no banco de teste e sobe o CRM local contra ele (porta em `PORT`, padrão 3000). No orquestrador, use `ao preview start crm-teste` (`.ao/launch.json`, porta automática) e capture com `ao browser`; o app desktop precisa estar aberto com o painel do navegador visível.
+- Logins de teste, só do banco de teste, na imobiliária `krivo-demo`: estão em `scripts/preview-test-users.ts` (um administrador e um corretor, para as visões de escrita e de só leitura). O seed apaga os usuários a cada suíte; o comando os recria.
+- Uma sessão de captura por vez.
+
 ## n8n
 Edite `n8n/workflows/*.ts` e rode `node scripts/n8n-inline.mjs`, que gera `n8n/generated/`. Nunca publique os gerados da `main` no n8n: eles trazem o reengajamento do L14b, que não está ativo em produção. Mudanças em produção são aplicadas nó a nó na versão publicada, com autorização.

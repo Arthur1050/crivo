@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "configurations": [
+    {
+      "name": "crm-teste",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/preview-test.mjs"],
+      "port": 3010,
+      "autoPort": true,
+      "url": "http://127.0.0.1:${PORT}/login",
+      "env": {
+        "PORT": "${PORT}",
+        "BETTER_AUTH_URL": "http://127.0.0.1:${PORT}"
+      },
+      "targetKind": "app",
+      "readyTimeoutMs": 55000
+    }
+  ]
+}
