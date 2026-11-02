@@ -7,6 +7,10 @@ import {
   formatFolderUpdatedLabel, NO_FOLDER_OPTION_VALUE, toFolderCardItems,
 } from "../folder-presentation";
 
+// Fora de São Paulo de propósito: no fuso local do projeto, perder o `timeZone` fixo não mudaria nada.
+// Antes dos imports, porque o formatador é criado ao carregar o módulo.
+vi.hoisted(() => { process.env.TZ = "UTC"; });
+
 vi.mock("@astryxdesign/core/Button", () => ({}));
 vi.mock("@astryxdesign/core/Dialog", () => ({}));
 vi.mock("@astryxdesign/core/Layout", () => ({}));
