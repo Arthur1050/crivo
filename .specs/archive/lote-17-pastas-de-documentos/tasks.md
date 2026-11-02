@@ -970,13 +970,15 @@ Gate: `npx vitest run src/db/__tests__/schema-document-folders.test.ts` → 7/7 
 
 **Done when**:
 
-- [ ] `python3 <skill-dir>/scripts/validate_state.py lote-17-pastas-de-documentos` sai 0 (PASS com evidência)
-- [ ] Capturas da T34 citadas por AC visual
+- [x] `python3 <skill-dir>/scripts/validate_state.py lote-17-pastas-de-documentos` sai 0 (PASS com evidência)
+- [x] Capturas da T34 citadas por AC visual
 
 **Tests**: none (verificação)
 **Gate**: registro
 
 **Commit**: `docs(specs): verificar o lote 17 de pastas de documentos`
+
+**Execução**: PASS no 4º ciclo, em `5d7d98f`, commit `fef157b` (ciclos anteriores: `validation.md`). Autorizado pelo usuário além do limite de 3.
 
 ---
 
@@ -991,7 +993,7 @@ Gate: `npx vitest run src/db/__tests__/schema-document-folders.test.ts` → 7/7 
 
 **Done when**:
 
-- [ ] Referências reconciliadas depois da movimentação; `validate_spec.py` e `validate_state.py` saem 0
+- [x] Referências reconciliadas depois da movimentação; `validate_spec.py` e `validate_state.py` saem 0
 
 **Tests**: none (docs)
 **Gate**: registro

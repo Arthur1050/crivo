@@ -382,13 +382,13 @@ mantida só por revisão de código.
 
 ---
 
-## L17 — Pastas de documentos *(em planejamento desde 2026-10-29)*
+## L17 — Pastas de documentos — ✅ EXECUTADO (2026-11-02), falta publicar
 
 **Origem**: usuário, 2026-10-25. O redesign de Documentos (gerenciador de arquivos com busca, "Filtrar e
 ordenar" e "Todos os arquivos" em grade ou lista) foi publicado sem as pastas, que hoje não existem no banco.
 Este lote cria o sistema de pastas por tenant: modelo e DAL, criar/renomear/excluir pasta, mover documento,
 contagem e tamanho por pasta, permissões por papel e a grade de pastas na página. O rascunho visual da grade
-e o formato dos dados de exemplo estão em `features/lote-17-pastas-de-documentos/rascunho/` (fora do build).
+e o formato dos dados de exemplo ficaram no rascunho, apagado no fechamento (AD-029) e recuperável pelo Git.
 
 **Decidido (AD-051, 2026-10-29)**: a pasta convive com a categoria (pasta é o lugar, categoria é a etiqueta;
 no máximo uma de cada por documento); um nível só, sem subpastas, e documento sem pasta fica na raiz; o
@@ -396,9 +396,11 @@ agente não enxerga a pasta (contexto, API v1 e n8n não mudam); excluir uma pas
 raiz, com confirmação que mostra quantos arquivos serão movidos. As duas perguntas que ficavam para o
 Specify estão respondidas.
 
-**Planejamento**: `features/lote-17-pastas-de-documentos/` (`spec.md`, `design.md`, `tasks.md`), executado em
+**Planejamento**: `features/lote-17-pastas-de-documentos/` (`spec.md`, `design.md`; `tasks.md` arquivado em `archive/`), executado em
 três frentes (dados, interface e integração) sobre o branch de integração `lote-17`. O schema de produção é
-aplicado pelo usuário, com `scripts/document-folders/schema.sql`, antes do merge final em `main`.
+aplicado com `scripts/document-folders/schema.sql` antes do merge final em `main`, com autorização do usuário.
+
+**Estado (2026-11-02)**: PASS no 4º ciclo de verificação (`validation.md`). O schema de produção e o merge em `main` ainda não foram feitos.
 
 ---
 

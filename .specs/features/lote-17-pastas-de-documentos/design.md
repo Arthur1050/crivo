@@ -419,7 +419,7 @@ página (que é de C) ter mudado.
 ### 6.1 Lógica de apresentação — `src/components/documents/folder-presentation.ts` (novo, puro)
 
 Testes em `src/components/documents/__tests__/folder-presentation.test.ts` (L-003). Fixtures de B em
-`src/components/documents/__tests__/folder-fixtures.ts` (a partir de `rascunho/mock-folders.ts.txt`,
+`src/components/documents/__tests__/folder-fixtures.ts` (a partir do rascunho apagado no fechamento, `rascunho/mock-folders.ts.txt`,
 com `DocumentFolderSummary`).
 
 ```ts
@@ -460,7 +460,7 @@ timeZone: "America/Sao_Paulo" })`, com `year` só no último caso). Teste nas fr
 | --- | --- | --- | --- |
 | `folders-grid.tsx` (`"use client"`) | `FoldersGrid` | `VStack`, `HStack`, `StackItem`, `Heading` (h2 "Pastas"), `Text` (supporting, contagem), `Grid` (`columns={{ minWidth: 220, max: 4 }}`, `gap={3}`), `ClickableCard` (`href={folderHref(id)}`, `label="Pasta <nome>"`, `padding={3}`), `Card variant="muted" padding={2}` (fundo do ícone), `Icon icon="clock" size="xsm"`, `EmptyState` (`isCompact`), `LinkProvider component={NextLink}` | `{ folders: FolderCardItem[]; canWrite: boolean; createAction?: ReactNode }` |
 | `folder-actions-menu.tsx` (`"use client"`) | `FolderActionsMenu` | `DropdownMenu` (botão ghost `sm` só ícone `EllipsisVerticalIcon`, `hasChevron={false}`, `menuWidth={180}`, `divider` antes de "Excluir"), `useToast` | `{ folder: { id: string; name: string; fileCount: number }; canWrite: boolean; showOpen?: boolean /* padrão true; false dentro da pasta */; afterDeleteHref?: string /* "/documentos" quando é a pasta aberta */ }` |
-| `folder-name-dialog.tsx` (`"use client"`) | `CreateFolderDialog` (gatilho próprio, botão secundário "Nova pasta" com `FolderPlusIcon`) e `RenameFolderDialog` (controlado) | `Dialog`, `DialogHeader`, `Layout`/`LayoutContent`/`LayoutFooter`, `TextInput` (`label="Nome da pasta"`, `status` de erro, `maxLength` 120), `Button` | `CreateFolderDialog: {}`; `RenameFolderDialog: { folder: { id: string; name: string } \| null; onClose: () => void }` |
+| `folder-name-dialog.tsx` (`"use client"`) | `CreateFolderDialog` (gatilho próprio, botão secundário "Nova pasta" com `FolderPlusIcon`) e `RenameFolderDialog` (controlado) | `Dialog`, `DialogHeader`, `Layout`/`LayoutContent`/`LayoutFooter`, `TextInput` (`label="Nome da pasta"`, `status` de erro, 120 caracteres por `validateName`, desvio da T19), `Button` | `CreateFolderDialog: {}`; `RenameFolderDialog: { folder: { id: string; name: string } \| null; onClose: () => void }` |
 | `delete-folder-dialog.tsx` (`"use client"`) | `DeleteFolderDialog` | `AlertDialog` (`actionVariant="destructive"`, `actionLabel="Excluir pasta"`, `isActionLoading`) | `{ folder: { id: string; name: string; fileCount: number } \| null; onClose: () => void; afterDeleteHref?: string }` |
 | `move-document-dialog.tsx` (`"use client"`) | `MoveDocumentDialog` | `Dialog`, `DialogHeader`, `Layout`, `Selector` (`label="Pasta"`, opções de `folderSelectorOptions`), `Banner` (erro), `Button` ("Mover") | `{ document: { id: string; name: string; folderId: string \| null } \| null; folders: DocumentFolderOption[]; onClose: () => void }` |
 | `folder-header.tsx` (`"use client"`) | `FolderPath` e `FolderHeading` (emenda da T34: um `FolderHeader` único repetia o nome em dois títulos) | `FolderPath`: `Breadcrumbs` (`label="Caminho"`, `variant="supporting"`) + `BreadcrumbItem` (`href="/documentos"` com `as={NextLink}`; pasta com `isCurrent`). `FolderHeading`: `HStack`, `Heading` (h2, nome), `FolderActionsMenu` | `FolderPath`: `{ name: string }`. `FolderHeading`: `{ folder: { id: string; name: string; fileCount: number }; canWrite: boolean }` |
@@ -604,7 +604,7 @@ produção sem autorização.
    `UpdateDocumentInput.folderId` em `src/server/actions/documents.ts` (só o campo).
 
 Depois do merge de A1 em `lote-17`, B começa (sem banco) e A segue com A2 e A3. C começa quando A3 e
-B2 estiverem em `lote-17`. Detalhe e dependências em `tasks.md`.
+B2 estiverem em `lote-17`. Detalhe e dependências em `.specs/archive/lote-17-pastas-de-documentos/tasks.md`.
 
 ---
 

@@ -4,7 +4,7 @@
 
 **Data:** 2026-11-02. **Tarefa:** T36, ciclo 4.
 **Autorização do ciclo:** o processo limita a verificação a 3 ciclos. O ciclo 3 reprovou, e o usuário autorizou este 4º ciclo no chat, em 2026-11-02 ("Sim, rode o 4º ciclo").
-**Verificador:** sessão independente; não escreveu implementação, testes nem relatórios anteriores do lote. Os registros de `tasks.md` e o relatório do ciclo 3 foram lidos como hipóteses.
+**Verificador:** sessão independente; não escreveu implementação, testes nem relatórios anteriores do lote. Os registros de `tasks.md` (arquivado depois em `.specs/archive/lote-17-pastas-de-documentos/`, AD-029) e o relatório do ciclo 3 foram lidos como hipóteses.
 **Spec:** `.specs/features/lote-17-pastas-de-documentos/spec.md` (97 ACs e 9 Edge Cases; PABRIR-01 AC4 emendado em 2026-10-30; PAGENTE-01 AC3 acrescentado em 2026-11-02).
 **Faixa:** `origin/main...HEAD`, com HEAD `5d7d98f` em `lote-17`. Base comum `2406f5f`; `origin/main` local em `9d24d51`. São 69 commits e 108 arquivos. Desde o ciclo 3 (`1c22119..HEAD`) só mudaram `src/components/documents/__tests__/folder-presentation.test.ts`, `src/server/__tests__/actions.test.ts`, `tasks.md`, este relatório e os dois arquivos de lições. Nenhum arquivo de produção mudou, então a verificação não foi ampliada a código.
 

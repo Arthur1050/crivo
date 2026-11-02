@@ -1,9 +1,9 @@
 # Lote 17 — Pastas de documentos — Specification
 
 **Design**: `.specs/features/lote-17-pastas-de-documentos/design.md`
-**Tasks**: `.specs/features/lote-17-pastas-de-documentos/tasks.md`
+**Tasks**: `.specs/archive/lote-17-pastas-de-documentos/tasks.md` (arquivado, AD-029)
 **Decisão de produto**: AD-051 (`.specs/STATE.md`)
-**Rascunho visual**: `.specs/features/lote-17-pastas-de-documentos/rascunho/` (fora do build)
+**Rascunho visual**: apagado no fechamento (AD-029), recuperável pelo histórico do Git
 
 ## Problem Statement
 
@@ -60,6 +60,7 @@ pastas por tenant, de ponta a ponta: banco, camada de dados, actions, permissõe
 | Pasta inexistente na URL | Página responde 200 com o estado "Pasta não encontrada", sem `notFound()` | L-073; a mesma resposta para pasta de outro tenant não revela que o id existe | n |
 | Pasta excluída durante um upload em curso | O documento é gravado sem pasta (a FK da intenção zera o `folder_id`) | Sem perda do arquivo; a regra da FK já resolve | n |
 | Pastas do seed | Seis pastas do rascunho em cada tenant do seed, todas vazias | O seed não cria documentos desde o L12 | n |
+| Editar a categoria reconcilia a admissão | Sim, junto com nome, modalidade e validade; só a pasta não reconcilia | Preserva o comportamento anterior a `04de389`. PAGENTE-01 AC3 só proíbe o caso da pasta, e a reconciliação não lê a categoria, então tirá-la do comparador é uma simplificação possível (ressalva da verificação, ciclo 4) | n |
 | Mudança de schema em produção | SQL idempotente em `scripts/document-folders/schema.sql`, o mesmo que o `db:push:test` aplica e confere nos bancos de teste; o usuário o aplica em produção | `drizzle-kit push` derruba índice de expressão e aborta com saída 0 (L-068, L-070); provar no teste o SQL que vai para produção | n |
 
 **Open questions:** none — as quatro decisões de produto estão na AD-051; o resto está registrado acima como suposição, para o usuário aprovar junto com o PR.
@@ -321,27 +322,27 @@ aberta, os diálogos, os estados vazios e a largura de 375 px.
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| PMOD-01 | P1: Pastas no banco e na camada de dados | Tasks | Pending |
-| PBANCO-01 | P1: Pastas no banco e na camada de dados | Tasks | Pending |
-| PLER-01 | P1: Pastas no banco e na camada de dados | Tasks | Pending |
-| PFILT-01 | P1: Pastas no banco e na camada de dados | Tasks | Pending |
-| PCRIAR-01 | P1: Escrever pastas e mover documentos | Tasks | Pending |
-| PREN-01 | P1: Escrever pastas e mover documentos | Tasks | Pending |
-| PEXC-01 | P1: Escrever pastas e mover documentos | Tasks | Pending |
-| PMOVER-01 | P1: Escrever pastas e mover documentos | Tasks | Pending |
-| PEDIT-01 | P1: Escrever pastas e mover documentos | Tasks | Pending |
-| PPERM-01 | P1: Permissões e isolamento | Tasks | Pending |
-| PAGENTE-01 | P1: Permissões e isolamento | Tasks | Pending |
-| PRAIZ-01 | P1: Página de Documentos com pastas | Tasks | Pending |
-| PABRIR-01 | P1: Página de Documentos com pastas | Tasks | Pending |
-| PUPLOAD-01 | P1: Página de Documentos com pastas | Tasks | Pending |
-| PLINK-01 | P1: Página de Documentos com pastas | Tasks | Pending |
-| PVAZIO-01 | P1: Página de Documentos com pastas | Tasks | Pending |
-| PSEED-01 | P2: Dados de exemplo | Tasks | Pending |
+| PMOD-01 | P1: Pastas no banco e na camada de dados | Validate | Verified |
+| PBANCO-01 | P1: Pastas no banco e na camada de dados | Validate | Verified |
+| PLER-01 | P1: Pastas no banco e na camada de dados | Validate | Verified |
+| PFILT-01 | P1: Pastas no banco e na camada de dados | Validate | Verified |
+| PCRIAR-01 | P1: Escrever pastas e mover documentos | Validate | Verified |
+| PREN-01 | P1: Escrever pastas e mover documentos | Validate | Verified |
+| PEXC-01 | P1: Escrever pastas e mover documentos | Validate | Verified |
+| PMOVER-01 | P1: Escrever pastas e mover documentos | Validate | Verified |
+| PEDIT-01 | P1: Escrever pastas e mover documentos | Validate | Verified |
+| PPERM-01 | P1: Permissões e isolamento | Validate | Verified |
+| PAGENTE-01 | P1: Permissões e isolamento | Validate | Verified |
+| PRAIZ-01 | P1: Página de Documentos com pastas | Validate | Verified |
+| PABRIR-01 | P1: Página de Documentos com pastas | Validate | Verified |
+| PUPLOAD-01 | P1: Página de Documentos com pastas | Validate | Verified |
+| PLINK-01 | P1: Página de Documentos com pastas | Validate | Verified |
+| PVAZIO-01 | P1: Página de Documentos com pastas | Validate | Verified |
+| PSEED-01 | P2: Dados de exemplo | Validate | Verified |
 
 **ID format:** `P<ÁREA>-NN`.
 
-**Coverage:** 17 requisitos, 17 mapeados para tasks em `tasks.md`, 0 sem task.
+**Coverage:** 17 requisitos, 17 mapeados para tasks em `.specs/archive/lote-17-pastas-de-documentos/tasks.md`, 0 sem task; 17 verificados em `validation.md`.
 
 ---
 
