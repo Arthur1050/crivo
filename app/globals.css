@@ -18,6 +18,22 @@
 @import "@astryxdesign/core/tailwind-theme.css";
 @import "tailwindcss/utilities.css" layer(utilities);
 
+/*
+ * O tema neutro só define as cores de superfície invertida dentro de `<Theme>`, que o CRM não usa.
+ * Sem estas regras, o texto do Toast sai na cor normal sobre o fundo invertido e fica ilegível.
+ */
+@layer astryx-theme {
+  [data-astryx-media="dark"] {
+    --color-text-primary: var(--color-on-dark);
+    --color-icon-primary: var(--color-on-dark);
+  }
+
+  [data-astryx-media="light"] {
+    --color-text-primary: var(--color-on-light);
+    --color-icon-primary: var(--color-on-light);
+  }
+}
+
 :root {
   /*
    * Liga as fontes carregadas por `next/font` (app/layout.tsx) aos três
