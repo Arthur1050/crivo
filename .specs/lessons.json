@@ -1496,17 +1496,18 @@
       "text": "Nos testes de schema, prove a regra de exclusão a partir do SQL e do Drizzle entregues, além de conferir a FK já instalada.",
       "signal": "surviving_mutant",
       "scope": "db/schema",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-17-pastas-de-documentos"
       ],
       "recurrence": 1,
       "harmful": 0,
       "evidence": [
-        "M9; PBANCO-01 AC1; src/db/__tests__/schema-document-folders.test.ts:78 (db/schema)"
+        "M9; PBANCO-01 AC1; src/db/__tests__/schema-document-folders.test.ts:78 (db/schema)",
+        "Revisao de fechamento L17 (AD-045, 2026-11-02): decisao confirmar; M9 sobreviveu no ciclo 1 porque o teste so lia a FK ja instalada; hoje M9, M9s, M9d e M9i morrem em src/db/__tests__/schema-document-folders.test.ts:105 e :141 (a citacao :78 original e de outro AC). Nao duplica a L-068/L-070, que tratam do estado final depois do push."
       ],
       "created": "2026-10-30T01:31:36Z",
-      "last_seen": "2026-10-30T01:31:36Z"
+      "last_seen": "2026-11-02T12:17:51Z"
     },
     {
       "id": "L-093",
@@ -1514,17 +1515,18 @@
       "text": "Exercite cada controle de limpar filtros com busca e ordenação ativas, conferindo a URL final completa.",
       "signal": "ac_gap",
       "scope": "ui/filtros",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-17-pastas-de-documentos"
       ],
       "recurrence": 1,
       "harmful": 0,
       "evidence": [
-        "PABRIR-01 AC4; src/components/documents/documents-toolbar.tsx:173 (ui/filtros)"
+        "PABRIR-01 AC4; src/components/documents/documents-toolbar.tsx:173 (ui/filtros)",
+        "Revisao de fechamento L17 (AD-045, 2026-11-02): decisao confirmar; N6 a N9 morrem em src/components/documents/__tests__/documents-toolbar.test.ts:72 com q, ordem e visao ativos; o controle hoje esta em documents-toolbar.tsx:183 (a citacao :173 deslocou). Ha outra superficie igual em src/components/properties/properties-view.tsx:67."
       ],
       "created": "2026-10-30T01:31:37Z",
-      "last_seen": "2026-10-30T01:31:37Z"
+      "last_seen": "2026-11-02T12:17:51Z"
     },
     {
       "id": "L-094",
@@ -1539,28 +1541,11 @@
       "recurrence": 1,
       "harmful": 0,
       "evidence": [
-        "N3 / src/components/documents/documents-toolbar.tsx:61 (components/testes)"
+        "N3 / src/components/documents/documents-toolbar.tsx:61 (components/testes)",
+        "Revisao de fechamento L17 (AD-045, 2026-11-02): decisao nao confirmar; correta (documents-toolbar.test.ts:16-20, N3 morre em :129), mas simular useState existe num unico arquivo de teste do repositorio, entao nao generaliza alem do incidente. Nao e duplicata: fica candidata, sem exclusao."
       ],
       "created": "2026-11-02T04:40:07Z",
-      "last_seen": "2026-11-02T04:40:07Z"
-    },
-    {
-      "id": "L-095",
-      "key": "surviving_mutant::cubra pelo handler real cada controle novo que grava parametro na url nao so os que motivaram a correcao",
-      "text": "Cubra pelo handler real cada controle novo que grava parâmetro na URL, não só os que motivaram a correção.",
-      "signal": "surviving_mutant",
-      "scope": "components/testes",
-      "status": "candidate",
-      "features": [
-        "lote-17-pastas-de-documentos"
-      ],
-      "recurrence": 1,
-      "harmful": 0,
-      "evidence": [
-        "N10 / src/components/documents/documents-toolbar.tsx:159 (components/testes)"
-      ],
-      "created": "2026-11-02T04:40:07Z",
-      "last_seen": "2026-11-02T04:40:07Z"
+      "last_seen": "2026-11-02T12:17:51Z"
     },
     {
       "id": "L-096",
@@ -1568,17 +1553,18 @@
       "text": "Teste de fuso precisa fixar um TZ de processo diferente do fuso exigido para discriminar na máquina local.",
       "signal": "surviving_mutant",
       "scope": "testes",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-17-pastas-de-documentos"
       ],
       "recurrence": 1,
       "harmful": 0,
       "evidence": [
-        "M10L / src/components/documents/__tests__/folder-presentation.test.ts:83 (testes)"
+        "M10L / src/components/documents/__tests__/folder-presentation.test.ts:83 (testes)",
+        "Revisao de fechamento L17 (AD-045, 2026-11-02): decisao confirmar; TZ=UTC em src/components/documents/__tests__/folder-presentation.test.ts:12, antes do import, porque a maquina roda em America/Sao_Paulo; T1 e M10 morrem sem variavel externa. O produto fixa fuso em 10 arquivos de src."
       ],
       "created": "2026-11-02T04:40:07Z",
-      "last_seen": "2026-11-02T04:40:07Z"
+      "last_seen": "2026-11-02T12:17:51Z"
     },
     {
       "id": "L-097",
@@ -1586,17 +1572,18 @@
       "text": "Quando um requisito diz que algo não muda numa operação, nomeie todos os caminhos de escrita que a realizam e teste cada um.",
       "signal": "spec_precision_gap",
       "scope": "spec",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-17-pastas-de-documentos"
       ],
       "recurrence": 1,
       "harmful": 0,
       "evidence": [
-        "PAGENTE-01 AC2 / src/server/actions/documents.ts:139 (spec)"
+        "PAGENTE-01 AC2 / src/server/actions/documents.ts:139 (spec)",
+        "Revisao de fechamento L17 (AD-045, 2026-11-02): decisao confirmar; PAGENTE-01 AC2 nomeava so a movimentacao, e o caminho da edicao reconciliava o tenant (G4 do ciclo 2), fechado por src/server/actions/documents.ts:143 (a citacao :139 deslocou) e pelo teste src/server/__tests__/actions.test.ts:1406. Nao e a mesma regra da L-102: esta enumera os caminhos do caso proibido, aquela define o complemento."
       ],
       "created": "2026-11-02T04:40:08Z",
-      "last_seen": "2026-11-02T04:40:08Z"
+      "last_seen": "2026-11-02T12:17:51Z"
     },
     {
       "id": "L-098",
@@ -1604,17 +1591,18 @@
       "text": "Capture cada ramo visual de um critério, inclusive o estado com valor preenchido, não só o vazio.",
       "signal": "ac_gap",
       "scope": "capturas",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-17-pastas-de-documentos"
       ],
       "recurrence": 1,
       "harmful": 0,
       "evidence": [
-        "PEDIT-01 AC1 / captura 24 (capturas)"
+        "PEDIT-01 AC1 / captura 24 (capturas)",
+        "Revisao de fechamento L17 (AD-045, 2026-11-02): decisao confirmar; PEDIT-01 AC1 tinha so a captura 24 (Sem pasta), e a 39 (Contratos), feita depois do G3 do ciclo 2, cobre o ramo preenchido; as duas abertas nesta revisao. Acrescenta a L-009 e a regra de captura do AGENTS.md a exigencia de cada ramo."
       ],
       "created": "2026-11-02T04:40:08Z",
-      "last_seen": "2026-11-02T04:40:08Z"
+      "last_seen": "2026-11-02T12:17:52Z"
     },
     {
       "id": "L-099",
@@ -1622,17 +1610,18 @@
       "text": "Ao condicionar um efeito à mudança de vários campos, teste cada campo sozinho disparando o efeito, não só o campo que motivou a condição.",
       "signal": "surviving_mutant",
       "scope": "actions",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-17-pastas-de-documentos"
       ],
       "recurrence": 1,
       "harmful": 0,
       "evidence": [
-        "D4 (actions)"
+        "D4 (actions)",
+        "Revisao de fechamento L17 (AD-045, 2026-11-02): decisao confirmar; D3 e D4 sobreviveram no ciclo 3 ao comparador de src/server/data/index.ts:2592-2596, e hoje morrem so nos casos proprios src/server/__tests__/actions.test.ts:1423 e :1436. Nao e a mesma regra da L-100: aqui o caso varia um campo sozinho, la o instante precisa separar os fusos."
       ],
       "created": "2026-11-02T08:30:12Z",
-      "last_seen": "2026-11-02T08:30:12Z"
+      "last_seen": "2026-11-02T12:17:52Z"
     },
     {
       "id": "L-100",
@@ -1640,17 +1629,18 @@
       "text": "Com mais de um formatador de data no mesmo fluxo, cubra cada um com um instante em que os fusos caem em dias diferentes.",
       "signal": "surviving_mutant",
       "scope": "apresentação",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-17-pastas-de-documentos"
       ],
       "recurrence": 1,
       "harmful": 0,
       "evidence": [
-        "T2 (apresentação)"
+        "T2 (apresentação)",
+        "Revisao de fechamento L17 (AD-045, 2026-11-02): decisao confirmar; T2 sobreviveu com TZ=UTC ja aplicado, porque nenhum instante separava os dias no segundo formatador (src/components/documents/folder-presentation.ts:45); morre em folder-presentation.test.ts:94 no caso de :92. Prova que a L-096 sozinha nao basta, entao nao a duplica."
       ],
       "created": "2026-11-02T08:30:12Z",
-      "last_seen": "2026-11-02T08:30:12Z"
+      "last_seen": "2026-11-02T12:17:52Z"
     },
     {
       "id": "L-101",
@@ -1658,17 +1648,18 @@
       "text": "Em teste sobre banco compartilhado, não deixe o tempo crescer com as linhas de rodadas anteriores: limpe o que criou e restaure em lote, não linha a linha.",
       "signal": "gate_fail",
       "scope": "testes de integração",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-17-pastas-de-documentos"
       ],
       "recurrence": 1,
       "harmful": 0,
       "evidence": [
-        "src/server/__tests__/actions.test.ts:1364 (testes de integração)"
+        "src/server/__tests__/actions.test.ts:1364 (testes de integração)",
+        "Revisao de fechamento L17 (AD-045, 2026-11-02): decisao confirmar; 5 timeouts observados com 147 documentos ativos e 86 de 86 depois do seed (validation.md, ressalvas); o restauro linha a linha segue em src/server/__tests__/actions.test.ts:1364-1367, entao a divida continua aberta. Nao duplica a L-033, que trata de processos simultaneos."
       ],
       "created": "2026-11-02T12:10:38Z",
-      "last_seen": "2026-11-02T12:10:38Z"
+      "last_seen": "2026-11-02T12:17:52Z"
     },
     {
       "id": "L-102",
@@ -1676,17 +1667,18 @@
       "text": "Quando um AC proíbe um efeito para um caso, diga também quais casos continuam disparando o efeito, para o teste positivo ter desfecho definido pela spec.",
       "signal": "spec_precision_gap",
       "scope": "spec",
-      "status": "candidate",
+      "status": "confirmed",
       "features": [
         "lote-17-pastas-de-documentos"
       ],
       "recurrence": 1,
       "harmful": 0,
       "evidence": [
-        "src/server/__tests__/actions.test.ts:1436 (spec)"
+        "src/server/__tests__/actions.test.ts:1436 (spec)",
+        "Revisao de fechamento L17 (AD-045, 2026-11-02): decisao confirmar; PAGENTE-01 AC3 so proibe o caso da pasta, e src/server/__tests__/actions.test.ts:1436 trava reconciliar ao mudar a categoria sem AC, embora src/server/documents/repository.ts:491 nao leia a categoria; a suposicao ficou em spec.md:63. Nao e a mesma regra da L-097, ver a nota dela."
       ],
       "created": "2026-11-02T12:10:38Z",
-      "last_seen": "2026-11-02T12:10:38Z"
+      "last_seen": "2026-11-02T12:17:52Z"
     }
   ]
 }

@@ -1013,7 +1013,7 @@ Gate: `npx vitest run src/db/__tests__/schema-document-folders.test.ts` → 7/7 
 
 **Done when**:
 
-- [ ] Decisões listadas no relatório de fechamento; nenhum `prune` sem confirmação do usuário
+- [x] Decisões listadas no relatório de fechamento; nenhum `prune` sem confirmação do usuário
 
 **Tests**: none (processo)
 **Gate**: registro

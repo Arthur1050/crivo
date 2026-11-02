@@ -488,6 +488,60 @@ Corroborated across multiple features. Safe to apply as guidance.
 - evidence: .specs/features/lote-16c-vitrine-ativacao/validation.md:744 (T12 deu o aviso de revalidacao e o segredo igual como provados pelo item sumir em <= 2,9 s), :772-775 (volta 3: 7 TypeError no log do CRM, nenhum /api/revalidar no log da vitrine, vitrine le o banco a cada pedido), :818-819 (V1, V2) e :858-859 (R14, R15) (producao/integracao) (+1 more)
 - last seen: 2026-10-19T04:23:17Z
 
+### L-092 - Nos testes de schema, prove a regra de exclusão a partir do SQL e do Drizzle entregues, além de conferir a FK já instalada.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `db/schema` · harmful: 0
+- features: lote-17-pastas-de-documentos
+- evidence: M9; PBANCO-01 AC1; src/db/__tests__/schema-document-folders.test.ts:78 (db/schema) (+1 more)
+- last seen: 2026-11-02T12:17:51Z
+
+### L-093 - Exercite cada controle de limpar filtros com busca e ordenação ativas, conferindo a URL final completa.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `ui/filtros` · harmful: 0
+- features: lote-17-pastas-de-documentos
+- evidence: PABRIR-01 AC4; src/components/documents/documents-toolbar.tsx:173 (ui/filtros) (+1 more)
+- last seen: 2026-11-02T12:17:51Z
+
+### L-096 - Teste de fuso precisa fixar um TZ de processo diferente do fuso exigido para discriminar na máquina local.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `testes` · harmful: 0
+- features: lote-17-pastas-de-documentos
+- evidence: M10L / src/components/documents/__tests__/folder-presentation.test.ts:83 (testes) (+1 more)
+- last seen: 2026-11-02T12:17:51Z
+
+### L-097 - Quando um requisito diz que algo não muda numa operação, nomeie todos os caminhos de escrita que a realizam e teste cada um.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `spec` · harmful: 0
+- features: lote-17-pastas-de-documentos
+- evidence: PAGENTE-01 AC2 / src/server/actions/documents.ts:139 (spec) (+1 more)
+- last seen: 2026-11-02T12:17:51Z
+
+### L-098 - Capture cada ramo visual de um critério, inclusive o estado com valor preenchido, não só o vazio.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `capturas` · harmful: 0
+- features: lote-17-pastas-de-documentos
+- evidence: PEDIT-01 AC1 / captura 24 (capturas) (+1 more)
+- last seen: 2026-11-02T12:17:52Z
+
+### L-099 - Ao condicionar um efeito à mudança de vários campos, teste cada campo sozinho disparando o efeito, não só o campo que motivou a condição.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `actions` · harmful: 0
+- features: lote-17-pastas-de-documentos
+- evidence: D4 (actions) (+1 more)
+- last seen: 2026-11-02T12:17:52Z
+
+### L-100 - Com mais de um formatador de data no mesmo fluxo, cubra cada um com um instante em que os fusos caem em dias diferentes.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `apresentação` · harmful: 0
+- features: lote-17-pastas-de-documentos
+- evidence: T2 (apresentação) (+1 more)
+- last seen: 2026-11-02T12:17:52Z
+
+### L-101 - Em teste sobre banco compartilhado, não deixe o tempo crescer com as linhas de rodadas anteriores: limpe o que criou e restaure em lote, não linha a linha.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `testes de integração` · harmful: 0
+- features: lote-17-pastas-de-documentos
+- evidence: src/server/__tests__/actions.test.ts:1364 (testes de integração) (+1 more)
+- last seen: 2026-11-02T12:17:52Z
+
+### L-102 - Quando um AC proíbe um efeito para um caso, diga também quais casos continuam disparando o efeito, para o teste positivo ter desfecho definido pela spec.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `spec` · harmful: 0
+- features: lote-17-pastas-de-documentos
+- evidence: src/server/__tests__/actions.test.ts:1436 (spec) (+1 more)
+- last seen: 2026-11-02T12:17:52Z
+
 ## Candidates (under observation - do NOT load as guidance yet)
 
 Seen once or not yet corroborated. Tracked, not trusted.
@@ -498,71 +552,11 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: vitrine/src/dados/cache.ts:1 (tooling/next)
 - last seen: 2026-10-12T14:23:06Z
 
-### L-092 - Nos testes de schema, prove a regra de exclusão a partir do SQL e do Drizzle entregues, além de conferir a FK já instalada.
-- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `db/schema` · harmful: 0
-- features: lote-17-pastas-de-documentos
-- evidence: M9; PBANCO-01 AC1; src/db/__tests__/schema-document-folders.test.ts:78 (db/schema)
-- last seen: 2026-10-30T01:31:36Z
-
-### L-093 - Exercite cada controle de limpar filtros com busca e ordenação ativas, conferindo a URL final completa.
-- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `ui/filtros` · harmful: 0
-- features: lote-17-pastas-de-documentos
-- evidence: PABRIR-01 AC4; src/components/documents/documents-toolbar.tsx:173 (ui/filtros)
-- last seen: 2026-10-30T01:31:37Z
-
 ### L-094 - Ao simular hooks de estado num teste de componente, semeie estados que entrem em cada ramo condicional; o valor inicial fixo deixa o ramo sem execução.
 - signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `components/testes` · harmful: 0
 - features: lote-17-pastas-de-documentos
-- evidence: N3 / src/components/documents/documents-toolbar.tsx:61 (components/testes)
-- last seen: 2026-11-02T04:40:07Z
-
-### L-095 - Cubra pelo handler real cada controle novo que grava parâmetro na URL, não só os que motivaram a correção.
-- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `components/testes` · harmful: 0
-- features: lote-17-pastas-de-documentos
-- evidence: N10 / src/components/documents/documents-toolbar.tsx:159 (components/testes)
-- last seen: 2026-11-02T04:40:07Z
-
-### L-096 - Teste de fuso precisa fixar um TZ de processo diferente do fuso exigido para discriminar na máquina local.
-- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `testes` · harmful: 0
-- features: lote-17-pastas-de-documentos
-- evidence: M10L / src/components/documents/__tests__/folder-presentation.test.ts:83 (testes)
-- last seen: 2026-11-02T04:40:07Z
-
-### L-097 - Quando um requisito diz que algo não muda numa operação, nomeie todos os caminhos de escrita que a realizam e teste cada um.
-- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `spec` · harmful: 0
-- features: lote-17-pastas-de-documentos
-- evidence: PAGENTE-01 AC2 / src/server/actions/documents.ts:139 (spec)
-- last seen: 2026-11-02T04:40:08Z
-
-### L-098 - Capture cada ramo visual de um critério, inclusive o estado com valor preenchido, não só o vazio.
-- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `capturas` · harmful: 0
-- features: lote-17-pastas-de-documentos
-- evidence: PEDIT-01 AC1 / captura 24 (capturas)
-- last seen: 2026-11-02T04:40:08Z
-
-### L-099 - Ao condicionar um efeito à mudança de vários campos, teste cada campo sozinho disparando o efeito, não só o campo que motivou a condição.
-- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `actions` · harmful: 0
-- features: lote-17-pastas-de-documentos
-- evidence: D4 (actions)
-- last seen: 2026-11-02T08:30:12Z
-
-### L-100 - Com mais de um formatador de data no mesmo fluxo, cubra cada um com um instante em que os fusos caem em dias diferentes.
-- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `apresentação` · harmful: 0
-- features: lote-17-pastas-de-documentos
-- evidence: T2 (apresentação)
-- last seen: 2026-11-02T08:30:12Z
-
-### L-101 - Em teste sobre banco compartilhado, não deixe o tempo crescer com as linhas de rodadas anteriores: limpe o que criou e restaure em lote, não linha a linha.
-- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `testes de integração` · harmful: 0
-- features: lote-17-pastas-de-documentos
-- evidence: src/server/__tests__/actions.test.ts:1364 (testes de integração)
-- last seen: 2026-11-02T12:10:38Z
-
-### L-102 - Quando um AC proíbe um efeito para um caso, diga também quais casos continuam disparando o efeito, para o teste positivo ter desfecho definido pela spec.
-- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `spec` · harmful: 0
-- features: lote-17-pastas-de-documentos
-- evidence: src/server/__tests__/actions.test.ts:1436 (spec)
-- last seen: 2026-11-02T12:10:38Z
+- evidence: N3 / src/components/documents/documents-toolbar.tsx:61 (components/testes) (+1 more)
+- last seen: 2026-11-02T12:17:51Z
 
 ## Quarantined (failed when applied - ignore)
 
