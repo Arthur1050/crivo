@@ -1,3 +1,4 @@
+import { LEAD_STATUS, PROBLEM_CODE, SENDER } from "../../lib/vocabulary";
 import "server-only";
 import {
   assignBrokerForEscalation,
@@ -127,9 +128,9 @@ type LeadStatusValue = Lead["status"];
  * integração (T10).
  */
 export const TRANSITIONS: Record<LeadStatusValue, LeadStatusValue[]> = {
-  em_qualificacao: ["qualificado_agendado", "escalado_humano"],
-  qualificado_agendado: [],
-  escalado_humano: [],
+  [LEAD_STATUS.engaged]: [LEAD_STATUS.goal_reached, LEAD_STATUS.escalated],
+  [LEAD_STATUS.goal_reached]: [],
+  [LEAD_STATUS.escalated]: [],
 };
 
 /**
@@ -169,12 +170,12 @@ export async function patchLead(
   // Caminho do contrato (SEC-01): credencial de serviço, imobiliária
   // inteira — o agente não é usuário e não tem carteira.
   const lead = await getLead(serviceScope(tenantId), leadId);
-  if (!lead) return { ok: false, code: "recurso-nao-encontrado" };
+  if (!lead) return { ok: false, code: PROBLEM_CODE.not_found };
 
   if (dto.status !== undefined) {
     const allowedTargets = TRANSITIONS[lead.status];
     if (!allowedTargets.includes(dto.status)) {
-      return { ok: false, code: "transicao-invalida" };
+      return { ok: false, code: PROBLEM_CODE.invalid_transition };
     }
   }
 
@@ -185,7 +186,7 @@ export async function patchLead(
     lead.humanTakeoverAt &&
     (dto.status !== undefined || dto.meetingAt !== undefined)
   ) {
-    return { ok: false, code: "lead-conduzido-por-humano" };
+    return { ok: false, code: PROBLEM_CODE.lead_under_human_control };
   }
 
   if (dto.status !== undefined) {
@@ -193,12 +194,12 @@ export async function patchLead(
     // tabela — uma transição já inválida por si (ex.: sair de
     // escalado_humano) reporta 'transicao-invalida', nunca
     // 'lead-travado-por-humano', mesmo que o lead também esteja travado.
-    if (lead.statusChangedBy === "humano") {
-      return { ok: false, code: "lead-travado-por-humano" };
+    if (lead.statusChangedBy === SENDER.human) {
+      return { ok: false, code: PROBLEM_CODE.lead_locked_by_human };
     }
 
-    if (dto.status === "escalado_humano" && !dto.escalationReason?.trim()) {
-      return { ok: false, code: "motivo-escalonamento-obrigatorio" };
+    if (dto.status === LEAD_STATUS.escalated && !dto.escalationReason?.trim()) {
+      return { ok: false, code: PROBLEM_CODE.escalation_reason_required };
     }
   }
 
@@ -215,13 +216,13 @@ export async function patchLead(
 
     if (!assigned.ok) {
       switch (assigned.reason) {
-        case "sem-corretor-disponivel":
+        case PROBLEM_CODE.no_assignee_available:
           // AC5: nada é gravado — nem a reunião, nem o resto do patch.
-          return { ok: false, code: "sem-corretor-disponivel" };
-        case "conflito-de-agenda":
-          return { ok: false, code: "conflito-de-agenda" };
+          return { ok: false, code: PROBLEM_CODE.no_assignee_available };
+        case PROBLEM_CODE.appointment_conflict:
+          return { ok: false, code: PROBLEM_CODE.appointment_conflict };
         default:
-          return { ok: false, code: "recurso-nao-encontrado" };
+          return { ok: false, code: PROBLEM_CODE.not_found };
       }
     }
 
@@ -238,7 +239,7 @@ export async function patchLead(
   // é gravado na MESMA operação que grava o status. Lead que já tem
   // responsável não é reatribuído (AC5), e imobiliária sem corretor ativo
   // registra o escalonamento assim mesmo (AC4).
-  if (dto.status === "escalado_humano") {
+  if (dto.status === LEAD_STATUS.escalated) {
     const assigned = await assignBrokerForEscalation(
       tenantId,
       leadId,
@@ -246,7 +247,7 @@ export async function patchLead(
       dto
     );
 
-    if (!assigned.ok) return { ok: false, code: "recurso-nao-encontrado" };
+    if (!assigned.ok) return { ok: false, code: PROBLEM_CODE.not_found };
 
     return {
       ok: true,
@@ -260,7 +261,7 @@ export async function patchLead(
   const updated = await updateLeadFromAgent(tenantId, leadId, dto);
   if (!updated) {
     // Corrida rara: o lead foi removido entre o SELECT acima e o UPDATE.
-    return { ok: false, code: "recurso-nao-encontrado" };
+    return { ok: false, code: PROBLEM_CODE.not_found };
   }
 
   return { ok: true, lead: updated };

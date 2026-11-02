@@ -1,3 +1,4 @@
+import { HUMAN_SEND_STATE } from "../../lib/vocabulary";
 import "server-only";
 import type { RevalidationRequest } from "../../lib/storefront-contract";
 
@@ -56,7 +57,7 @@ export function normalizarBaseDaVitrine(valor: string | null | undefined): strin
   return `${url.origin}${url.pathname.replace(/\/+$/, "")}`;
 }
 
-export type RevalidationOutcome = "enviado" | "ignorado" | "falhou";
+export type RevalidationOutcome = "enviado" | "ignorado" | typeof HUMAN_SEND_STATE.failed;
 
 export interface RevalidationLogger {
   info: (message: string) => void;
@@ -96,11 +97,11 @@ export async function requestStorefrontRevalidation(
     const base = normalizarBaseDaVitrine(baseUrl);
     if (base === null) {
       safeLog(logger.warn, `[vitrine] revalidação falhou: slug=${slug} erro=UrlInvalida`);
-      return "falhou";
+      return HUMAN_SEND_STATE.failed;
     }
     if (!SEGREDO_VALIDO.test(secret)) {
       safeLog(logger.warn, `[vitrine] revalidação falhou: slug=${slug} erro=SegredoInvalido`);
-      return "falhou";
+      return HUMAN_SEND_STATE.failed;
     }
 
     const body: RevalidationRequest = { slug };
@@ -127,7 +128,7 @@ export async function requestStorefrontRevalidation(
       ]);
       if (response.status < 200 || response.status > 299) {
         safeLog(logger.warn, `[vitrine] revalidação falhou: slug=${slug} status=${response.status}`);
-        return "falhou";
+        return HUMAN_SEND_STATE.failed;
       }
       return "enviado";
     } finally {
@@ -136,6 +137,6 @@ export async function requestStorefrontRevalidation(
   } catch (error) {
     const name = error instanceof Error ? error.name : "Error";
     safeLog(logger.warn, `[vitrine] revalidação falhou: slug=${slug} erro=${name}`);
-    return "falhou";
+    return HUMAN_SEND_STATE.failed;
   }
 }

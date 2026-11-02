@@ -1,3 +1,4 @@
+import { ROLE } from "./vocabulary";
 /**
  * Matriz de permissões do produto (lote-8 — PERM-01; design.md — Matriz de
  * permissões).
@@ -10,7 +11,7 @@
  * servidor (AC5).
  */
 
-export const ROLES = ["administrador", "gestor", "corretor"] as const;
+export const ROLES = [ROLE.admin, ROLE.manager, ROLE.attendant] as const;
 export type Role = (typeof ROLES)[number];
 
 export const RESOURCES = [
@@ -43,7 +44,7 @@ export type Action = (typeof ACTIONS)[number];
  * produto, então ninguém a recebe.
  */
 const PERMISSION_MATRIX: Record<Role, Record<Resource, readonly Action[]>> = {
-  administrador: {
+  [ROLE.admin]: {
     dashboard: ["ler"],
     pipeline: ["ler", "escrever"],
     chats: ["ler", "escrever"],
@@ -55,7 +56,7 @@ const PERMISSION_MATRIX: Record<Role, Record<Resource, readonly Action[]>> = {
     // IMOV-04 AC1: administrador e gestor cadastram e mantêm o catálogo.
     imoveis: ["ler", "escrever"],
   },
-  gestor: {
+  [ROLE.manager]: {
     dashboard: ["ler"],
     pipeline: ["ler", "escrever"],
     chats: ["ler", "escrever"],
@@ -64,7 +65,7 @@ const PERMISSION_MATRIX: Record<Role, Record<Resource, readonly Action[]>> = {
     usuarios: [],
     imoveis: ["ler", "escrever"],
   },
-  corretor: {
+  [ROLE.attendant]: {
     dashboard: ["ler"],
     pipeline: ["ler", "escrever"],
     chats: ["ler", "escrever"],

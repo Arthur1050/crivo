@@ -1,3 +1,4 @@
+import { DOCUMENT_STATUS } from "../../lib/vocabulary";
 import "server-only";
 
 import { and, desc, eq, gt, isNull, lte, sql } from "drizzle-orm";
@@ -18,7 +19,7 @@ export type DocumentListItem = Omit<
 
 /** Minimal, tenant-scoped projection for the CRM's on-demand text preview. */
 export interface DocumentTextPreview {
-  status: "pronto" | "fora_do_agente";
+  status: typeof DOCUMENT_STATUS.ready | typeof DOCUMENT_STATUS.outside_agent;
   extractedText: string;
 }
 
@@ -48,7 +49,7 @@ export async function findDocumentTextPreview(
       eq(documents.id, documentId),
       isNull(documents.deletedAt),
       sql`(${documents.expiresAt} is null or ${documents.expiresAt} > ${now})`,
-      sql`${documents.status} in ('pronto', 'fora_do_agente')`,
+      sql`${documents.status} in (${sql.raw("'" + DOCUMENT_STATUS.ready + "'")}, ${sql.raw("'" + DOCUMENT_STATUS.outside_agent + "'")})`,
       sql`${documents.extractedText} is not null`
     ));
   if (!document?.extractedText) return null;
@@ -130,7 +131,7 @@ export type ClaimUploadIntentResult =
 export interface CompleteProcessingInput {
   documentId: string;
   processingAttempt: number;
-  status: "pronto" | "falha" | "fora_do_agente";
+  status: typeof DOCUMENT_STATUS.ready | typeof DOCUMENT_STATUS.failed | typeof DOCUMENT_STATUS.outside_agent;
   extractedText?: string | null;
   extractedBytes?: number | null;
   extractorVersion?: string | null;
@@ -352,7 +353,7 @@ export async function commitUploadIntent(
         storageKey: intent.storageKey,
         storageEtag: input.storageEtag,
         contentSha256: input.contentSha256,
-        status: "processando",
+        status: DOCUMENT_STATUS.processing,
         processingStartedAt: now,
       })
       .onConflictDoNothing({
@@ -394,7 +395,7 @@ export async function retryDocumentProcessing(
   const rows = await db
     .update(documents)
     .set({
-      status: "processando",
+      status: DOCUMENT_STATUS.processing,
       processingAttempt: sql`${documents.processingAttempt} + 1`,
       processingStartedAt: now,
       processedAt: null,
@@ -408,7 +409,7 @@ export async function retryDocumentProcessing(
       and(
         eq(documents.tenantId, tenantId),
         eq(documents.id, documentId),
-        eq(documents.status, "falha"),
+        eq(documents.status, DOCUMENT_STATUS.failed),
         isNull(documents.deletedAt),
         sql`(${documents.expiresAt} is null or ${documents.expiresAt} > ${now})`
       )
@@ -435,7 +436,7 @@ export async function claimDocumentProcessingRetry(
     .select({ processingAttempt: documents.processingAttempt, status: documents.status, deletedAt: documents.deletedAt, expiresAt: documents.expiresAt })
     .from(documents)
     .where(and(eq(documents.tenantId, tenantId), eq(documents.id, documentId)));
-  if (active?.status === "processando" && !active.deletedAt && (!active.expiresAt || active.expiresAt > now)) {
+  if (active?.status === DOCUMENT_STATUS.processing && !active.deletedAt && (!active.expiresAt || active.expiresAt > now)) {
     return { kind: "active", attempt: active.processingAttempt };
   }
   return { kind: "stale" };
@@ -463,14 +464,14 @@ export async function getDocumentForProcessing(
     .where(and(
       eq(documents.tenantId, tenantId),
       eq(documents.id, documentId),
-      eq(documents.status, "processando"),
+      eq(documents.status, DOCUMENT_STATUS.processing),
       eq(documents.processingAttempt, attempt),
       isNull(documents.deletedAt),
       sql`(${documents.expiresAt} is null or ${documents.expiresAt} > ${now})`
     ));
   // O predicado já restringe o estado; estreitar aqui mantém o tipo do retorno
   // fiel ao que a query garante, em vez do enum inteiro da coluna.
-  return document ? { ...document, status: "processando" as const } : null;
+  return document ? { ...document, status: DOCUMENT_STATUS.processing } : null;
 }
 
 /** Reapplies the published direct-context limits after text becomes available. */
@@ -494,7 +495,7 @@ export async function reconcileTenantDocumentAdmission(tenantId: string, now = n
       eq(documents.tenantId, tenantId),
       isNull(documents.deletedAt),
       sql`(${documents.expiresAt} is null or ${documents.expiresAt} > ${now})`,
-      sql`${documents.status} in ('pronto', 'fora_do_agente')`,
+      sql`${documents.status} in (${sql.raw("'" + DOCUMENT_STATUS.ready + "'")}, ${sql.raw("'" + DOCUMENT_STATUS.outside_agent + "'")})`,
       sql`${documents.extractedText} is not null`
     ));
   const candidates: ContextBudgetDocument[] = rows.map((row) => ({
@@ -525,7 +526,7 @@ export async function completeDocumentProcessing(
   input: CompleteProcessingInput
 ): Promise<CompareAndSetResult> {
   const now = input.now ?? new Date();
-  const completion = input.status === "falha"
+  const completion = input.status === DOCUMENT_STATUS.failed
     ? {
         extractedText: null,
         extractedBytes: null,
@@ -547,7 +548,7 @@ export async function completeDocumentProcessing(
       and(
         eq(documents.tenantId, tenantId),
         eq(documents.id, input.documentId),
-        eq(documents.status, "processando"),
+        eq(documents.status, DOCUMENT_STATUS.processing),
         eq(documents.processingAttempt, input.processingAttempt),
         isNull(documents.deletedAt),
         sql`(${documents.expiresAt} is null or ${documents.expiresAt} > ${now})`

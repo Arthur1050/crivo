@@ -1,3 +1,4 @@
+import { AGENT_PHASE, LEAD_STATUS, SENDER } from "../../lib/vocabulary";
 import "server-only";
 import { and, desc, eq, gte } from "drizzle-orm";
 import { FIELD_LABELS, nextFieldToAsk } from "../../../n8n/src/phase.mjs";
@@ -13,7 +14,7 @@ type Lead = typeof leads.$inferSelect;
 export interface PreparationFrame {
   tenantId: string; leadId: string; episodeId: string; phoneNumberId: string; channelRevision: number; preparedAt: string;
   anchor: { id: string; sentAt: string }; resetObservedAt: string | null;
-  agent: { phase: "qualificando" | "agendando"; revision: number; askedFields: string[]; openingHistory: string[] };
+  agent: { phase: typeof AGENT_PHASE.qualifying | typeof AGENT_PHASE.closing; revision: number; askedFields: string[]; openingHistory: string[] };
   facts: Pick<Lead, "name" | "modality" | "region" | "propertyType" | "purchaseHorizon" | "motivation" | "creditStatus" | "chainedOperation" | "executiveSummary"> & { budgetCents: string | null };
   pendingField: string | null;
   origin: { startMessageId: string; endMessageId: string };
@@ -58,7 +59,7 @@ export async function prepareFrame(
       const [settings] = await tx.select({ meetingDays: tenants.meetingDays, meetingHoursStart: tenants.meetingHoursStart, meetingHoursEnd: tenants.meetingHoursEnd }).from(tenants).where(eq(tenants.id, context.tenantId));
       const decision = evaluateReengagement({ lead, anchor: { messageId: anchor.id, sentAt: anchor.sentAt }, phase: agent.phase,
         channel, destination: toWhatsAppMsisdn(lead.externalId), now, settings });
-      if (decision.action !== "prepare" || (agent.phase !== "qualificando" && agent.phase !== "agendando")) return { ok: false, reason: "not-eligible" };
+      if (decision.action !== "prepare" || (agent.phase !== AGENT_PHASE.qualifying && agent.phase !== AGENT_PHASE.closing)) return { ok: false, reason: "not-eligible" };
       if (!Array.isArray(agent.askedFields) || agent.askedFields.some((field) => !Object.hasOwn(FIELD_LABELS, field))
           || !Array.isArray(agent.openingHistory) || agent.openingHistory.some((opening) => typeof opening !== "string")) return { ok: false, reason: "context-read-failed" };
       const rows = await tx.select({ id: messages.id, sender: messages.sender, content: messages.content, sentAt: messages.sentAt, authorName: messages.authorName })
@@ -122,9 +123,9 @@ export async function getSessionFrame(
       const frame: SessionFrame = { revision: 0, resetRequestedAt: lead.memoryResetRequestedAt?.toISOString() ?? null, bridge: null };
       let pendingAcceptance: { episodeId: string; deadline: string } | null = null;
       const [channel] = lead.whatsappPhoneNumberId ? await tx.select().from(whatsappChannels).where(and(eq(whatsappChannels.tenantId, context.tenantId), eq(whatsappChannels.phoneNumberId, lead.whatsappPhoneNumberId))) : [];
-      const conduction = current && lead.status === "em_qualificacao" && lead.optedOutAt === null && lead.humanTakeoverAt === null
+      const conduction = current && lead.status === LEAD_STATUS.engaged && lead.optedOutAt === null && lead.humanTakeoverAt === null
         && channel?.ownershipVerifiedAt && finite(channel.ownershipVerifiedAt) && current.phoneNumberId === channel.phoneNumberId
-        && agent?.anchorMessageId === current.id && agent.phase !== "encerrada" && sameTime(agent.resetObservedAt, lead.memoryResetRequestedAt);
+        && agent?.anchorMessageId === current.id && agent.phase !== AGENT_PHASE.ended && sameTime(agent.resetObservedAt, lead.memoryResetRequestedAt);
       if (conduction && current && channel) for (const episode of episodes) {
         if (episode.phoneNumberId !== channel.phoneNumberId || episode.bridgeInvalidatedAt || !sameTime(episode.resetObservedAt, lead.memoryResetRequestedAt)
             || !Number.isSafeInteger(episode.bridgeRevision) || episode.bridgeRevision < 1 || !finite(episode.anchorSentAt)
@@ -142,7 +143,7 @@ export async function getSessionFrame(
           frame.revision = episode.bridgeRevision; break;
         }
         const resume = rows.find((message) => message.id === episode.messageId);
-        if (episode.state !== "accepted" || !resume || resume.sender !== "agente" || resume.phoneNumberId !== channel.phoneNumberId
+        if (episode.state !== "accepted" || !resume || resume.sender !== SENDER.agent || resume.phoneNumberId !== channel.phoneNumberId
             || !episode.bridgeLastInboundAt || !sameTime(episode.bridgeLastInboundAt, current.sentAt)
             || episode.bridgeLastInboundAt.getTime() < first.sentAt.getTime() || isSessionExpired(episode.bridgeLastInboundAt.toISOString(), now.toISOString())) continue;
         frame.revision = episode.bridgeRevision;

@@ -1,3 +1,4 @@
+import { PROBLEM_CODE } from "../../lib/vocabulary";
 import "server-only";
 import { createHash } from "node:crypto";
 import {
@@ -35,7 +36,7 @@ export async function authenticate(
 ): Promise<AuthResult | Response> {
   const header = request.headers.get("authorization");
   if (!header) {
-    return problem(401, "nao-autenticado", "Header Authorization ausente.");
+    return problem(401, PROBLEM_CODE.unauthenticated, "Header Authorization ausente.");
   }
 
   const match = BEARER_PATTERN.exec(header);
@@ -43,7 +44,7 @@ export async function authenticate(
   if (!key) {
     return problem(
       401,
-      "nao-autenticado",
+      PROBLEM_CODE.unauthenticated,
       "Formato do header Authorization inválido. Use 'Bearer <chave>'."
     );
   }
@@ -56,7 +57,7 @@ export async function authenticate(
     if (!slug) {
       return problem(
         401,
-        "tenant-nao-identificado",
+        PROBLEM_CODE.tenant_not_identified,
         "Chave de serviço exige o header X-Krivo-Tenant."
       );
     }
@@ -65,7 +66,7 @@ export async function authenticate(
     if (!tenantId) {
       return problem(
         401,
-        "tenant-nao-identificado",
+        PROBLEM_CODE.tenant_not_identified,
         "X-Krivo-Tenant não corresponde a nenhum tenant conhecido."
       );
     }
@@ -77,7 +78,7 @@ export async function authenticate(
   if (!tenantId) {
     return problem(
       401,
-      "nao-autenticado",
+      PROBLEM_CODE.unauthenticated,
       "Chave de API inválida ou revogada."
     );
   }

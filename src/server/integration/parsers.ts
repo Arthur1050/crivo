@@ -1,3 +1,4 @@
+import { AGENT_PHASE, SENDER } from "../../lib/vocabulary";
 /**
  * Parsers puros payload→DTO da API de integração (design.md —
  * `src/server/integration/parsers.ts`). Sem I/O, sem dependências externas —
@@ -96,7 +97,7 @@ export function parseAgentState(value: unknown): ParseResult<PublishAgentStateIn
   const { anchorMessageId, expectedRevision, phase, askedFields, openingHistory } = value;
   if (typeof anchorMessageId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(anchorMessageId)
       || !Number.isSafeInteger(expectedRevision) || (expectedRevision as number) < 0
-      || (phase !== null && phase !== "qualificando" && phase !== "agendando" && phase !== "encerrada")
+      || (phase !== null && phase !== AGENT_PHASE.qualifying && phase !== AGENT_PHASE.closing && phase !== AGENT_PHASE.ended)
       || !Array.isArray(askedFields) || askedFields.length > 8 || !askedFields.every((field) => typeof field === "string" && Object.hasOwn(FIELD_LABELS, field))
       || !Array.isArray(openingHistory) || !openingHistory.every((opening) => typeof opening === "string")) {
     return { ok: false, detail: "Âncora, revisão ou projeção do agente inválida." };
@@ -406,7 +407,7 @@ export function parseLeadPatch(json: unknown): ParseResult<LeadPatchDto> {
  * (envio pela tela de Chats); aceitar `senderEnum.enumValues` aqui deixaria o
  * agente fabricar a fala de um corretor.
  */
-export const AGENT_WRITABLE_SENDERS = ["agente", "lead"] as const satisfies readonly Sender[];
+export const AGENT_WRITABLE_SENDERS = [SENDER.agent, "lead"] as const satisfies readonly Sender[];
 
 export interface MessageCreateDto {
   externalId: string;

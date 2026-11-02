@@ -1,3 +1,4 @@
+import { LEAD_STATUS } from "../lib/vocabulary";
 /**
  * Regras de validação compartilhadas por configurações de tenant e por
  * documentos (lote-2 — CONF-01/02, DOC-01/02/04/05/06/07). Funções puras,
@@ -144,9 +145,9 @@ export function validateCategoryColor(color: string): ValidationResult {
 // 1:1 com o enum `lead_status` do schema — usado para validar o destino do
 // drag-and-drop no Kanban (lote-3 — PIPE-02) antes de chamar a DAL.
 export const LEAD_STATUSES = [
-  "em_qualificacao",
-  "qualificado_agendado",
-  "escalado_humano",
+  LEAD_STATUS.engaged,
+  LEAD_STATUS.goal_reached,
+  LEAD_STATUS.escalated,
 ] as const;
 
 export type LeadStatusValue = (typeof LEAD_STATUSES)[number];

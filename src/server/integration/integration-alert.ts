@@ -1,3 +1,4 @@
+import { INTEGRATION_HEALTH } from "../../lib/vocabulary";
 import "server-only";
 import { formatIntegrationAlertEmail, planIntegrationAlerts } from "../../lib/integration-alert";
 import type { EmailResult } from "../auth/email";
@@ -45,7 +46,7 @@ export async function runIntegrationAlert(
 
   await recordTenantHealthStates([
     ...plan.initialize.map(({ tenantId, state }) => ({ tenantId, state, at: now })),
-    ...plan.recover.map((tenantId) => ({ tenantId, state: "saudavel" as const, at: now })),
+    ...plan.recover.map((tenantId) => ({ tenantId, state: INTEGRATION_HEALTH.healthy, at: now })),
   ]);
 
   const to = deps.operatorEmail?.trim();

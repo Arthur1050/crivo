@@ -1,3 +1,4 @@
+import { DOCUMENT_STATUS } from "../../lib/vocabulary";
 import { Buffer } from "node:buffer";
 
 export type DocumentModality = "novo" | "usado" | "ambos";
@@ -8,7 +9,7 @@ export interface ContextBudgetDocument {
   modality: DocumentModality;
   content: string;
   uploadedAt: Date;
-  status: "pronto" | "fora_do_agente" | "processando";
+  status: typeof DOCUMENT_STATUS.ready | typeof DOCUMENT_STATUS.outside_agent | typeof DOCUMENT_STATUS.processing;
   category?: { name: string; color: string } | null;
 }
 
@@ -51,7 +52,7 @@ export function measureCanonicalContext(envelope: DocumentContextEnvelope) {
 }
 
 export interface AdmissionResult {
-  statusByDocumentId: Map<string, "pronto" | "fora_do_agente">;
+  statusByDocumentId: Map<string, typeof DOCUMENT_STATUS.ready | typeof DOCUMENT_STATUS.outside_agent>;
   contexts: Record<DocumentModality, DocumentContextEnvelope>;
 }
 
@@ -79,7 +80,7 @@ export function findCorpusOverflow(
     const corpusBytes = measureCanonicalContext(buildCanonicalContext(documents, modality));
     if (corpusBytes <= ceilingBytes) return [];
     const excludedDocuments = documents.filter(
-      (document) => applies(document, modality) && result.statusByDocumentId.get(document.id) === "fora_do_agente"
+      (document) => applies(document, modality) && result.statusByDocumentId.get(document.id) === DOCUMENT_STATUS.outside_agent
     ).length;
     return [{ modality, corpusBytes, ceilingBytes, excludedDocuments }];
   });
@@ -93,17 +94,17 @@ export function reconcileDocumentAdmission(
   documents: ContextBudgetDocument[],
   limits: ContextLimits
 ): AdmissionResult {
-  const currentIncumbents = sortDocuments(documents.filter((document) => document.status === "pronto"));
+  const currentIncumbents = sortDocuments(documents.filter((document) => document.status === DOCUMENT_STATUS.ready));
   const requiresRebalance = (["novo", "usado", "ambos"] as const).some(
     (modality) => measureCanonicalContext(buildCanonicalContext(currentIncumbents, modality)) > limits[modality]
   );
   const incumbents = requiresRebalance ? [] : currentIncumbents;
   const outsiders = requiresRebalance
     ? sortDocuments(documents)
-    : sortDocuments(documents.filter((document) => document.status !== "pronto"));
+    : sortDocuments(documents.filter((document) => document.status !== DOCUMENT_STATUS.ready));
   const admitted = [...incumbents];
-  const statusByDocumentId = new Map<string, "pronto" | "fora_do_agente">();
-  for (const document of incumbents) statusByDocumentId.set(document.id, "pronto");
+  const statusByDocumentId = new Map<string, typeof DOCUMENT_STATUS.ready | typeof DOCUMENT_STATUS.outside_agent>();
+  for (const document of incumbents) statusByDocumentId.set(document.id, DOCUMENT_STATUS.ready);
 
   for (const candidate of outsiders) {
     const proposed = [...admitted, candidate];
@@ -112,9 +113,9 @@ export function reconcileDocumentAdmission(
     );
     if (fits) {
       admitted.push(candidate);
-      statusByDocumentId.set(candidate.id, "pronto");
+      statusByDocumentId.set(candidate.id, DOCUMENT_STATUS.ready);
     } else {
-      statusByDocumentId.set(candidate.id, "fora_do_agente");
+      statusByDocumentId.set(candidate.id, DOCUMENT_STATUS.outside_agent);
     }
   }
   return {

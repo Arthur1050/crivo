@@ -1,3 +1,4 @@
+import { SENDER } from "../../lib/vocabulary";
 import "server-only";
 import { createHash, timingSafeEqual } from "node:crypto";
 import type { AuthResult } from "../integration/auth";
@@ -300,7 +301,7 @@ async function linkReceiptBatch(
     WHERE receipt.tenant_id = ${scope.tenantId} AND receipt.phone_number_id = ${phoneNumberId}
       AND receipt.wamid IN (${sql.join(wamids.map((wamid) => sql`${wamid}`), sql`, `)})
       AND message.tenant_id = receipt.tenant_id AND message.whatsapp_phone_number_id = receipt.phone_number_id
-      AND message.external_id = receipt.wamid AND message.sender IN ('agente', 'humano')
+      AND message.external_id = receipt.wamid AND message.sender IN (${sql.raw("'" + SENDER.agent + "'")}, ${sql.raw("'" + SENDER.human + "'")})
       AND channel.ownership_verified_at IS NOT NULL
       AND (receipt.message_id IS NULL OR receipt.message_id = message.id)
       ${scope.assignedUserId === null ? sql`` : sql`AND lead.assigned_user_id = ${scope.assignedUserId}`}
@@ -328,7 +329,7 @@ export async function attachReceipt(
       .from(messages)
       .innerJoin(conversations, and(eq(conversations.id, messages.conversationId), eq(conversations.tenantId, messages.tenantId)))
       .innerJoin(leads, and(eq(leads.id, conversations.leadId), eq(leads.tenantId, conversations.tenantId)))
-      .where(and(eq(messages.tenantId, scope.tenantId), eq(messages.id, messageId), inArray(messages.sender, ["agente", "humano"]),
+      .where(and(eq(messages.tenantId, scope.tenantId), eq(messages.id, messageId), inArray(messages.sender, [SENDER.agent, SENDER.human]),
         scope.assignedUserId === null ? undefined : eq(leads.assignedUserId, scope.assignedUserId)))
       .for("update", { of: leads });
     if (!message?.phoneNumberId || !message.wamid) return false;

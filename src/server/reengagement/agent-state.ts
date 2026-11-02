@@ -1,3 +1,4 @@
+import { AGENT_PHASE } from "../../lib/vocabulary";
 import "server-only";
 import { and, desc, eq } from "drizzle-orm";
 import { FIELD_LABELS } from "../../../n8n/src/phase.mjs";
@@ -9,7 +10,7 @@ export interface PublishAgentStateInput {
   anchorMessageId: string;
   resetObservedAt: Date | null;
   expectedRevision: number;
-  phase: "qualificando" | "agendando" | "encerrada" | null;
+  phase: typeof AGENT_PHASE.qualifying | typeof AGENT_PHASE.closing | typeof AGENT_PHASE.ended | null;
   askedFields: string[];
   openingHistory: string[];
 }
@@ -21,7 +22,7 @@ function valid(input: PublishAgentStateInput): boolean {
   return typeof input.anchorMessageId === "string" && UUID.test(input.anchorMessageId)
     && Number.isSafeInteger(input.expectedRevision) && input.expectedRevision >= 0
     && (input.resetObservedAt === null || (input.resetObservedAt instanceof Date && Number.isFinite(input.resetObservedAt.getTime())))
-    && (input.phase === null || ["qualificando", "agendando", "encerrada"].includes(input.phase))
+    && (input.phase === null || [AGENT_PHASE.qualifying, AGENT_PHASE.closing, AGENT_PHASE.ended].includes(input.phase))
     && Array.isArray(input.askedFields) && input.askedFields.length <= 8 && input.askedFields.every((field) => typeof field === "string" && Object.hasOwn(FIELD_LABELS, field))
     && Array.isArray(input.openingHistory) && input.openingHistory.every((opening) => typeof opening === "string");
 }
@@ -61,8 +62,8 @@ export async function publishAgentState(
       return { ok: true, replay: true, state: previous };
     }
     if (input.expectedRevision !== (previous?.revision ?? 0)) return { ok: false, reason: "revision-conflict" };
-    if (previous?.phase === "encerrada" && previous.anchorMessageId === input.anchorMessageId
-        && sameTime(previous.resetObservedAt, input.resetObservedAt) && input.phase !== "encerrada") {
+    if (previous?.phase === AGENT_PHASE.ended && previous.anchorMessageId === input.anchorMessageId
+        && sameTime(previous.resetObservedAt, input.resetObservedAt) && input.phase !== AGENT_PHASE.ended) {
       return { ok: false, reason: "phase-closed" };
     }
     const values = { tenantId: context.tenantId, leadId, anchorMessageId: input.anchorMessageId,

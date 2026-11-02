@@ -1,3 +1,4 @@
+import { PROBLEM_CODE } from "../../lib/vocabulary";
 /**
  * Fábrica de respostas `application/problem+json` (RFC 9457) para toda a API
  * de integração `/api/v1` (design.md — `src/server/integration/problem.ts`).
@@ -12,58 +13,58 @@ import { INSTRUMENTED, recordRefusalFor } from "./route";
 // `extractProblemCode()`), quando os dois módulos já terminaram de avaliar.
 
 export type ProblemCode =
-  | "nao-autenticado"
-  | "recurso-nao-encontrado"
-  | "payload-invalido"
-  | "transicao-invalida"
-  | "lead-travado-por-humano"
-  | "motivo-escalonamento-obrigatorio"
-  | "corpo-grande-demais"
-  | "rota-inexistente"
-  | "metodo-nao-suportado"
+  | typeof PROBLEM_CODE.unauthenticated
+  | typeof PROBLEM_CODE.not_found
+  | typeof PROBLEM_CODE.invalid_payload
+  | typeof PROBLEM_CODE.invalid_transition
+  | typeof PROBLEM_CODE.lead_locked_by_human
+  | typeof PROBLEM_CODE.escalation_reason_required
+  | typeof PROBLEM_CODE.body_too_large
+  | typeof PROBLEM_CODE.route_not_found
+  | typeof PROBLEM_CODE.method_not_allowed
   // lote-7 — SEC-01: chave de serviço válida sem `X-Krivo-Tenant`, ou com
   // slug desconhecido — nunca cai em nenhum tenant default (auth.ts).
-  | "tenant-nao-identificado"
+  | typeof PROBLEM_CODE.tenant_not_identified
   // lote-8 — ATRIB-02: nenhum corretor ativo tem janela de trabalho cobrindo
   // o horário pedido (AC5). Código próprio para o agente distinguir "esse
   // horário não dá" de qualquer outra recusa e oferecer outro ao lead.
-  | "sem-corretor-disponivel"
+  | typeof PROBLEM_CODE.no_assignee_available
   // lote-8 — ATRIB-02 AC7: dois agendamentos disputaram o mesmo corretor no
   // mesmo intervalo; o índice único do banco confirmou só um.
-  | "conflito-de-agenda"
+  | typeof PROBLEM_CODE.appointment_conflict
   // lote-14 — SILENCIO-01 AC9: o lead tem a marca de condução humana; o
   // contrato não muda `status` nem `meetingAt` enquanto um humano conduz.
-  | "lead-conduzido-por-humano"
-  | "canal-nao-vinculado"
-  | "contexto-alterado"
-  | "episodio-em-preparacao"
-  | "claim-expirada"
-  | "episodio-consumido"
-  | "estado-agente-desconhecido"
-  | "servico-indisponivel";
+  | typeof PROBLEM_CODE.lead_under_human_control
+  | typeof PROBLEM_CODE.channel_not_linked
+  | typeof PROBLEM_CODE.context_changed
+  | typeof PROBLEM_CODE.episode_preparing
+  | typeof PROBLEM_CODE.claim_expired
+  | typeof PROBLEM_CODE.episode_consumed
+  | typeof PROBLEM_CODE.unknown_agent_state
+  | typeof PROBLEM_CODE.service_unavailable;
 
 // Exportada para o teste de paridade com o `ProblemCode` do openapi.yaml.
 export const TITLES: Record<ProblemCode, string> = {
-  "nao-autenticado": "Não autenticado",
-  "recurso-nao-encontrado": "Recurso não encontrado",
-  "payload-invalido": "Payload inválido",
-  "transicao-invalida": "Transição de status inválida",
-  "lead-travado-por-humano": "Lead travado por ação humana",
-  "motivo-escalonamento-obrigatorio": "Motivo de escalonamento obrigatório",
-  "corpo-grande-demais": "Corpo da requisição excede o tamanho máximo",
-  "rota-inexistente": "Rota inexistente",
-  "metodo-nao-suportado": "Método não suportado",
-  "tenant-nao-identificado": "Tenant não identificado",
-  "sem-corretor-disponivel": "Nenhum corretor disponível no horário",
-  "conflito-de-agenda": "Conflito de agenda",
-  "lead-conduzido-por-humano": "Lead conduzido por um humano",
-  "canal-nao-vinculado": "Número não vinculado ao tenant",
-  "contexto-alterado": "Contexto da conversa alterado",
-  "episodio-em-preparacao": "Episódio já em preparação",
-  "claim-expirada": "Prazo de preparação expirado",
-  "episodio-consumido": "Episódio já consumido",
-  "estado-agente-desconhecido": "Estado do agente indisponível",
-  "servico-indisponivel": "Serviço temporariamente indisponível",
+  [PROBLEM_CODE.unauthenticated]: "Não autenticado",
+  [PROBLEM_CODE.not_found]: "Recurso não encontrado",
+  [PROBLEM_CODE.invalid_payload]: "Payload inválido",
+  [PROBLEM_CODE.invalid_transition]: "Transição de status inválida",
+  [PROBLEM_CODE.lead_locked_by_human]: "Lead travado por ação humana",
+  [PROBLEM_CODE.escalation_reason_required]: "Motivo de escalonamento obrigatório",
+  [PROBLEM_CODE.body_too_large]: "Corpo da requisição excede o tamanho máximo",
+  [PROBLEM_CODE.route_not_found]: "Rota inexistente",
+  [PROBLEM_CODE.method_not_allowed]: "Método não suportado",
+  [PROBLEM_CODE.tenant_not_identified]: "Tenant não identificado",
+  [PROBLEM_CODE.no_assignee_available]: "Nenhum corretor disponível no horário",
+  [PROBLEM_CODE.appointment_conflict]: "Conflito de agenda",
+  [PROBLEM_CODE.lead_under_human_control]: "Lead conduzido por um humano",
+  [PROBLEM_CODE.channel_not_linked]: "Número não vinculado ao tenant",
+  [PROBLEM_CODE.context_changed]: "Contexto da conversa alterado",
+  [PROBLEM_CODE.episode_preparing]: "Episódio já em preparação",
+  [PROBLEM_CODE.claim_expired]: "Prazo de preparação expirado",
+  [PROBLEM_CODE.episode_consumed]: "Episódio já consumido",
+  [PROBLEM_CODE.unknown_agent_state]: "Estado do agente indisponível",
+  [PROBLEM_CODE.service_unavailable]: "Serviço temporariamente indisponível",
 };
 
 export const PROBLEM_CONTENT_TYPE = "application/problem+json";
@@ -115,7 +116,7 @@ export function methodNotAllowed(
   const handler = (request?: Request): Response => {
     const response = problem(
       405,
-      "metodo-nao-suportado",
+      PROBLEM_CODE.method_not_allowed,
       `Método não suportado nesta rota. Métodos permitidos: ${allowed.join(", ")}.`
     );
     response.headers.set("Allow", allowed.join(", "));

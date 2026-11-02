@@ -1,3 +1,4 @@
+import { AGENT_PHASE, LEAD_STATUS, SENDER } from "../../lib/vocabulary";
 import "server-only";
 import { and, asc, eq, isNull, lte, sql } from "drizzle-orm";
 import { isSessionExpired } from "../../../n8n/src/session.mjs";
@@ -56,11 +57,11 @@ export async function purgeReengagementMetadata(
           const start = rows.find((item) => item.id === episode.originSessionStartMessageId), end = rows.find((item) => item.id === episode.originSessionEndMessageId);
           const output = rows.find((item) => item.id === episode.messageId);
           const active = episode.state === "accepted" && !episode.bridgeInvalidatedAt && !!episode.dispatchAuthorizedAt
-            && lead.status === "em_qualificacao" && !lead.optedOutAt && !lead.humanTakeoverAt && !!channel?.ownershipVerifiedAt
-            && channel.phoneNumberId === episode.phoneNumberId && agent?.anchorMessageId === current?.id && agent?.phase !== "encerrada"
+            && lead.status === LEAD_STATUS.engaged && !lead.optedOutAt && !lead.humanTakeoverAt && !!channel?.ownershipVerifiedAt
+            && channel.phoneNumberId === episode.phoneNumberId && agent?.anchorMessageId === current?.id && agent?.phase !== AGENT_PHASE.ended
             && agent?.resetObservedAt?.getTime() === lead.memoryResetRequestedAt?.getTime()
             && episode.resetObservedAt?.getTime() === lead.memoryResetRequestedAt?.getTime()
-            && !!anchor && !!first && !!start && !!end && !!current && !!output && output.sender === "agente"
+            && !!anchor && !!first && !!start && !!end && !!current && !!output && output.sender === SENDER.agent
             && [anchor, first, start, end, current, output].every((item) => item.phoneNumberId === channel.phoneNumberId && item.conversationId === current.conversationId)
             && anchor.sender === "lead" && first.sender === "lead" && anchor.sentAt.getTime() === episode.anchorSentAt.getTime()
             && start.sentAt <= anchor.sentAt && end.sentAt >= anchor.sentAt && first.sentAt > anchor.sentAt

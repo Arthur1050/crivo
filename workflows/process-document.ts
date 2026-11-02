@@ -1,3 +1,4 @@
+import { DOCUMENT_STATUS } from "../src/lib/vocabulary";
 import { FatalError, RetryableError } from "workflow";
 import { VercelBlobDocumentStorage } from "../src/server/documents/vercel-blob-storage";
 import { createDocumentProcessingService } from "../src/server/documents/processing";
@@ -9,7 +10,7 @@ export interface ProcessDocumentInput {
 }
 
 export type ProcessDocumentOutput =
-  | { kind: "completed"; status: "pronto" }
+  | { kind: "completed"; status: typeof DOCUMENT_STATUS.ready }
   | { kind: "failed"; code: string }
   | { kind: "stale" };
 

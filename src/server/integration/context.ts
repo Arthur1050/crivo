@@ -1,3 +1,4 @@
+import { DOCUMENT_STATUS } from "../../lib/vocabulary";
 import "server-only";
 import { and, eq, gt, isNull, or, sql } from "drizzle-orm";
 import { db } from "../../db";
@@ -54,7 +55,7 @@ export async function getDirectDocumentContext(
     .where(
       and(
         eq(documents.tenantId, tenantId),
-        eq(documents.status, "pronto"),
+        eq(documents.status, DOCUMENT_STATUS.ready),
         isNull(documents.deletedAt),
         or(isNull(documents.expiresAt), gt(documents.expiresAt, now)),
         sql`${documents.extractedText} is not null`
@@ -67,7 +68,7 @@ export async function getDirectDocumentContext(
     modality: row.modality,
     content: row.extractedText!,
     uploadedAt: row.uploadedAt,
-    status: "pronto",
+    status: DOCUMENT_STATUS.ready,
     category:
       row.categoryName !== null && row.categoryColor !== null
         ? { name: row.categoryName, color: row.categoryColor }

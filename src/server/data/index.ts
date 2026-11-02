@@ -1,3 +1,4 @@
+import { AGENT_PHASE, DOCUMENT_STATUS, HUMAN_SEND_STATE, LEAD_STATUS, PROBLEM_CODE, ROLE, SENDER } from "../../lib/vocabulary";
 import "server-only";
 
 import { isUniqueViolation, isForeignKeyViolation } from "./pg-errors";
@@ -201,7 +202,7 @@ export async function resolveTenantIdBySlug(
  * ao conjunto, nunca igualdade: quem acumula corretor com outro papel
  * continua sendo corretor, que é a mesma união de permissões da PERM-01 AC4.
  */
-const HAS_BROKER_ROLE = sql`'corretor' = any(string_to_array(${tenant_members.role}, ','))`;
+const HAS_BROKER_ROLE = sql`${sql.raw("'" + ROLE.attendant + "'")} = any(string_to_array(${tenant_members.role}, ','))`;
 
 /**
  * Corretor **elegível a receber lead**: papel corretor e vínculo ativo
@@ -1000,12 +1001,12 @@ export async function getDashboardKpis(
         ) / respondedCount;
 
   const qualifiedCount = periodLeads.filter(
-    (lead) => lead.status === "qualificado_agendado"
+    (lead) => lead.status === LEAD_STATUS.goal_reached
   ).length;
   const qualificationRate = leadCount === 0 ? null : qualifiedCount / leadCount;
 
   const escalatedCount = periodLeads.filter(
-    (lead) => lead.status === "escalado_humano"
+    (lead) => lead.status === LEAD_STATUS.escalated
   ).length;
   const escalationRate = leadCount === 0 ? null : escalatedCount / leadCount;
 
@@ -1274,7 +1275,7 @@ export async function updateTenantSettings(
   return rows[0] ?? null;
 }
 
-export type StatusActor = "humano" | "agente";
+export type StatusActor = typeof SENDER.human | typeof SENDER.agent;
 
 type ConductionTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type ConductionOptions = { now?: () => Date; database?: Pick<typeof db, "transaction"> };
@@ -1337,7 +1338,7 @@ export async function updateLeadStatus(
   scope: LeadScope,
   leadId: string,
   status: LeadStatus,
-  actor: StatusActor = "humano",
+  actor: StatusActor = SENDER.human,
   options: ConductionOptions = {},
 ): Promise<Lead | null> {
   return (options.database ?? db).transaction(async (tx) => {
@@ -1449,7 +1450,7 @@ export async function takeOverConversation(
     if (!locked) return { outcome: "fora-do-escopo" };
     const clock = conductionClock(options.now ?? (() => now));
     if (locked.lead.optedOutAt) return { outcome: "opt-out" };
-    if (locked.lead.humanTakeoverAt || locked.lead.status === "escalado_humano") return { outcome: "ja-humano", lead: locked.lead };
+    if (locked.lead.humanTakeoverAt || locked.lead.status === LEAD_STATUS.escalated) return { outcome: "ja-humano", lead: locked.lead };
     await invalidateConduction(tx, locked, clock, "human-takeover");
     const [lead] = await tx.update(leads).set({ humanTakeoverAt: clock, humanTakeoverBy: userId, updatedAt: clock })
       .where(eq(leads.id, leadId)).returning();
@@ -1483,11 +1484,11 @@ export async function returnConversationToAgent(
     if (!locked) return { outcome: "fora-do-escopo" };
     const clock = conductionClock(options.now ?? (() => now));
     if (locked.lead.optedOutAt) return { outcome: "opt-out" };
-    if (!locked.lead.humanTakeoverAt && locked.lead.status !== "escalado_humano") return { outcome: "ja-agente", lead: locked.lead };
+    if (!locked.lead.humanTakeoverAt && locked.lead.status !== LEAD_STATUS.escalated) return { outcome: "ja-agente", lead: locked.lead };
     await invalidateConduction(tx, locked, clock, "memory-reset", true);
     const [lead] = await tx.update(leads).set({
       humanTakeoverAt: null, humanTakeoverBy: null,
-      status: locked.lead.status === "escalado_humano" ? "em_qualificacao" : locked.lead.status,
+      status: locked.lead.status === LEAD_STATUS.escalated ? LEAD_STATUS.engaged : locked.lead.status,
       statusChangedBy: null, memoryResetRequestedAt: clock, updatedAt: clock,
     }).where(eq(leads.id, leadId)).returning();
     return { outcome: "devolvido", lead };
@@ -1585,7 +1586,7 @@ export async function reserveHumanSend(
       leadId,
       requestId,
       userId,
-      state: "enviando",
+      state: HUMAN_SEND_STATE.sending,
       createdAt: now,
       updatedAt: now,
     })
@@ -1612,7 +1613,7 @@ export async function reserveHumanSend(
     throw new Error("reserveHumanSend: conflito sem reserva existente.");
   }
 
-  if (existing.state === "enviada") {
+  if (existing.state === HUMAN_SEND_STATE.sent) {
     const [message] = existing.messageId
       ? await db
           .select()
@@ -1625,13 +1626,13 @@ export async function reserveHumanSend(
   }
 
   const age = now.getTime() - existing.updatedAt.getTime();
-  if (existing.state === "enviando" && age < HUMAN_SEND_STALE_MS) {
+  if (existing.state === HUMAN_SEND_STATE.sending && age < HUMAN_SEND_STALE_MS) {
     return { outcome: "envio-em-andamento" };
   }
 
   const resumed = await db
     .update(humanMessageSends)
-    .set({ state: "enviando", userId, failure: null, updatedAt: now })
+    .set({ state: HUMAN_SEND_STATE.sending, userId, failure: null, updatedAt: now })
     .where(
       and(
         eq(humanMessageSends.id, existing.id),
@@ -1657,12 +1658,12 @@ export async function failHumanSend(
 ): Promise<void> {
   await db
     .update(humanMessageSends)
-    .set({ state: "falhou", failure, updatedAt: now })
+    .set({ state: HUMAN_SEND_STATE.failed, failure, updatedAt: now })
     .where(
       and(
         eq(humanMessageSends.tenantId, tenantId),
         eq(humanMessageSends.requestId, requestId),
-        eq(humanMessageSends.state, "enviando")
+        eq(humanMessageSends.state, HUMAN_SEND_STATE.sending)
       )
     );
 }
@@ -1708,12 +1709,12 @@ export async function recordHumanMessage(
         .where(and(eq(humanMessageSends.tenantId, tenantId), eq(humanMessageSends.requestId, input.requestId))).for("update");
       if (reservation && reservation.leadId !== leadId) return null;
       const ownHumanMessage = async (message: Message | undefined) => {
-        if (!message || message.sender !== "humano") return false;
+        if (!message || message.sender !== SENDER.human) return false;
         const [owner] = await tx.select({ leadId: conversations.leadId }).from(conversations)
           .where(and(eq(conversations.tenantId, tenantId), eq(conversations.id, message.conversationId)));
         return owner?.leadId === leadId;
       };
-      if (reservation?.state === "enviada") {
+      if (reservation?.state === HUMAN_SEND_STATE.sent) {
         const [original] = reservation.messageId ? await tx.select().from(messages)
           .where(and(eq(messages.tenantId, tenantId), eq(messages.id, reservation.messageId))) : [];
         if (!original || !await ownHumanMessage(original)) return null;
@@ -1738,7 +1739,7 @@ export async function recordHumanMessage(
         .values({
           tenantId,
           conversationId: conversation!.id,
-          sender: "humano",
+          sender: SENDER.human,
           content: input.content,
           sentAt: input.sentAt,
           externalId: input.wamid,
@@ -1769,7 +1770,7 @@ export async function recordHumanMessage(
       await tx
         .update(humanMessageSends)
         .set({
-          state: "enviada",
+          state: HUMAN_SEND_STATE.sent,
           wamid: input.wamid,
           messageId: message.id,
           failure: null,
@@ -1859,7 +1860,7 @@ export async function getLastAgentMessageAt(tenantId: string): Promise<Date | nu
   const rows = await db
     .select({ lastSentAt: max(messages.sentAt) })
     .from(messages)
-    .where(and(eq(messages.tenantId, tenantId), eq(messages.sender, "agente")));
+    .where(and(eq(messages.tenantId, tenantId), eq(messages.sender, SENDER.agent)));
   return rows[0]?.lastSentAt ?? null;
 }
 
@@ -1907,7 +1908,7 @@ export async function updateLeadFromAgent(
 
   if (input.status !== undefined) {
     setValues.status = input.status;
-    setValues.statusChangedBy = "agente";
+    setValues.statusChangedBy = SENDER.agent;
   }
   if ("modality" in input) setValues.modality = input.modality;
   if ("region" in input) setValues.region = input.region;
@@ -1938,7 +1939,7 @@ export async function updateLeadFromAgent(
 
 // Únicos status que contam como "carga ativa" de um corretor (lote-7 —
 // ATRIB-01): um lead já agendado ou perdido não ocupa mais a atenção dele.
-const ACTIVE_LEAD_STATUSES: LeadStatus[] = ["em_qualificacao", "escalado_humano"];
+const ACTIVE_LEAD_STATUSES: LeadStatus[] = [LEAD_STATUS.engaged, LEAD_STATUS.escalated];
 
 /**
  * Carga ativa de cada corretor do tenant (lote-7 — ATRIB-01), para
@@ -2089,8 +2090,8 @@ export async function getBrokerContact(
 
 export type AssignFailureReason =
   | "lead-nao-encontrado"
-  | "sem-corretor-disponivel"
-  | "conflito-de-agenda";
+  | typeof PROBLEM_CODE.no_assignee_available
+  | typeof PROBLEM_CODE.appointment_conflict;
 
 export type AssignResult =
   | {
@@ -2131,7 +2132,7 @@ export async function assignBrokerForMeeting(
     selectForMeeting(candidates, meetingAt, meetingEnd)
   );
 
-  if (!brokerId) return { ok: false, reason: "sem-corretor-disponivel" };
+  if (!brokerId) return { ok: false, reason: PROBLEM_CODE.no_assignee_available };
 
   try {
     const updated = await updateLeadFromAgent(tenantId, leadId, {
@@ -2143,7 +2144,7 @@ export async function assignBrokerForMeeting(
     return { ok: true, brokerId, lead: updated };
   } catch (error) {
     if (isUniqueViolation(error)) {
-      return { ok: false, reason: "conflito-de-agenda" };
+      return { ok: false, reason: PROBLEM_CODE.appointment_conflict };
     }
     throw error;
   }
@@ -2228,7 +2229,7 @@ export async function createAgentLead(
       phone: input.phone,
       externalId: input.externalId,
       firstContactAt: input.firstContactAt,
-      status: "em_qualificacao",
+      status: LEAD_STATUS.engaged,
     })
     .onConflictDoNothing({
       target: [leads.tenantId, leads.externalId],
@@ -2429,7 +2430,7 @@ export async function ingestAgentMessage(
 
       if (inserted.length > 0) {
         const message = inserted[0];
-        if (input.sender === "agente" && leadRows[0].firstResponseAt === null) {
+        if (input.sender === SENDER.agent && leadRows[0].firstResponseAt === null) {
           await tx
             .update(leads)
             .set({ firstResponseAt: input.sentAt })
@@ -2453,8 +2454,8 @@ export async function ingestAgentMessage(
             }
             if (episode.bridgeInvalidatedAt || !["authorized", "accepted_pending_record", "accepted"].includes(episode.state)) continue;
             const reset = lead.memoryResetRequestedAt?.getTime(), observed = episode.resetObservedAt?.getTime();
-            const eligible = lead.status === "em_qualificacao" && lead.optedOutAt === null && lead.humanTakeoverAt === null
-              && previousPhase !== "encerrada"
+            const eligible = lead.status === LEAD_STATUS.engaged && lead.optedOutAt === null && lead.humanTakeoverAt === null
+              && previousPhase !== AGENT_PHASE.ended
               && validPreviousProjection
               && channel?.ownershipVerifiedAt && Number.isFinite(channel.ownershipVerifiedAt.getTime())
               && lead.whatsappPhoneNumberId === channel.phoneNumberId && episode.phoneNumberId === channel.phoneNumberId
@@ -2473,7 +2474,7 @@ export async function ingestAgentMessage(
               && (first || (firstInbound?.sender === "lead" && firstInbound.whatsappPhoneNumberId === episode.phoneNumberId
                 && Number.isFinite(firstInbound.sentAt.getTime()) && firstInbound.sentAt.getTime() > episode.anchorSentAt.getTime()
                 && firstInbound.sentAt.getTime() < episode.anchorSentAt.getTime() + 48 * 3600000))
-              && (episode.state !== "accepted" || (resume?.sender === "agente" && resume.whatsappPhoneNumberId === episode.phoneNumberId && Number.isFinite(resume.sentAt.getTime())));
+              && (episode.state !== "accepted" || (resume?.sender === SENDER.agent && resume.whatsappPhoneNumberId === episode.phoneNumberId && Number.isFinite(resume.sentAt.getTime())));
             const continuous = first ? message.sentAt.getTime() < episode.anchorSentAt.getTime() + 48 * 3600000
               : episode.bridgeLastInboundAt && Number.isFinite(episode.bridgeLastInboundAt.getTime()) && message.sentAt.getTime() - episode.bridgeLastInboundAt.getTime() <= 12 * 3600000;
             if (!eligible || !validOrigin || !continuous) {
@@ -2484,7 +2485,7 @@ export async function ingestAgentMessage(
             }
           }
         }
-        if (message.sender === "agente" || message.sender === "humano") await attachReceipt(serviceScope(tenantId), message.id, tx);
+        if (message.sender === SENDER.agent || message.sender === SENDER.human) await attachReceipt(serviceScope(tenantId), message.id, tx);
         return { created: true, message, anchorMessageId: anchor?.id ?? null, agentStateRevision: agent?.revision ?? null };
       }
 
@@ -2549,7 +2550,7 @@ export async function createDocument(
       contentSha256: createHash("sha256")
         .update(`${tenantId}:${legacyId}`)
         .digest("hex"),
-      status: "falha",
+      status: DOCUMENT_STATUS.failed,
       failureCode: "LEGACY_METADATA_UPLOAD_DISABLED",
       failureMessage: "O documento precisa ser reenviado pelo fluxo de upload atual.",
     })
@@ -2956,7 +2957,7 @@ export async function setMemberWorkWindow(
 }
 
 /** Vínculo com o papel administrador e ativo (`deactivatedAt` nulo). */
-const HAS_ADMIN_ROLE = sql`'administrador' = any(string_to_array(${tenant_members.role}, ','))`;
+const HAS_ADMIN_ROLE = sql`${sql.raw("'" + ROLE.admin + "'")} = any(string_to_array(${tenant_members.role}, ','))`;
 
 /**
  * Quantos administradores ATIVOS a imobiliária tem, ignorando opcionalmente um

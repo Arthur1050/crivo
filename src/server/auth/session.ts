@@ -1,3 +1,4 @@
+import { ROLE } from "../../lib/vocabulary";
 import "server-only";
 import { cache } from "react";
 import { headers } from "next/headers";
@@ -57,7 +58,7 @@ export type AuthResolution = { ok: true; context: AuthContext } | AuthFailure;
  * interseção.
  */
 function isBrokerOnly(roles: Role[]): boolean {
-  return roles.length > 0 && roles.every((role) => role === "corretor");
+  return roles.length > 0 && roles.every((role) => role === ROLE.attendant);
 }
 
 /**

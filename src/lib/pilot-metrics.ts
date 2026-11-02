@@ -1,3 +1,5 @@
+import { INTEGRATION_HEALTH } from "./vocabulary";
+export { INTEGRATION_HEALTH } from "./vocabulary";
 /**
  * Regras puras de instrumentação de métricas do piloto (lote-9 — BASE-02,
  * PRES-01, PRES-02, SAUDE-02).
@@ -89,9 +91,9 @@ export function isPendingAttendance(
 export function resolveIntegrationHealth(
   input: { lastSuccessAt: Date | null; refusalCount: number },
   now: Date
-): "saudavel" | "problema" {
-  if (input.refusalCount > 0) return "problema";
-  if (input.lastSuccessAt === null) return "problema";
-  if (now.getTime() - input.lastSuccessAt.getTime() > HEALTH_STALE_MS) return "problema";
-  return "saudavel";
+): typeof INTEGRATION_HEALTH.healthy | typeof INTEGRATION_HEALTH.problem {
+  if (input.refusalCount > 0) return INTEGRATION_HEALTH.problem;
+  if (input.lastSuccessAt === null) return INTEGRATION_HEALTH.problem;
+  if (now.getTime() - input.lastSuccessAt.getTime() > HEALTH_STALE_MS) return INTEGRATION_HEALTH.problem;
+  return INTEGRATION_HEALTH.healthy;
 }

@@ -1,3 +1,4 @@
+import { AGENT_PHASE, LEAD_STATUS, SENDER } from "../../lib/vocabulary";
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
@@ -122,7 +123,7 @@ export async function listCandidates(
     // Escalada dispensa fase publicada e canal verificado (turno do agente que
     // falhou), mas não a projeção do inbound atual: lead sem ela é anterior ao
     // L14b ou tem reset pendente, e fica com o bootstrap da ativação.
-    if (decision.action === "escalate" && (!stateCurrent || row.escalatedAt || row.statusChangedBy === "humano")) continue;
+    if (decision.action === "escalate" && (!stateCurrent || row.escalatedAt || row.statusChangedBy === SENDER.human)) continue;
     const verifiedPhone = row.ownershipVerifiedAt && row.anchorPhoneNumberId === row.phoneNumberId ? row.phoneNumberId : null;
     if (decision.action && row.anchorMessageId && row.anchorSentAt && (verifiedPhone || decision.action === "escalate")) candidates.push({
       leadId: row.leadId, anchorMessageId: row.anchorMessageId, anchorSentAt: row.anchorSentAt.toISOString(), phoneNumberId: verifiedPhone, action: decision.action,
@@ -327,10 +328,10 @@ export async function reconcileAcceptance(
       .innerJoin(conversations, and(eq(conversations.id, messages.conversationId), eq(conversations.tenantId, messages.tenantId)))
       .where(and(eq(messages.tenantId, context.tenantId), eq(messages.id, episode.anchorMessageId), eq(conversations.leadId, leadId), eq(messages.sender, "lead")));
     if (!anchor) return { ok: false, reason: "anchor-not-found" };
-    await tx.insert(messages).values({ tenantId: context.tenantId, conversationId: anchor.conversationId, sender: "agente",
+    await tx.insert(messages).values({ tenantId: context.tenantId, conversationId: anchor.conversationId, sender: SENDER.agent,
       content: episode.submittedText, sentAt: acceptedAt, externalId: wamid, whatsappPhoneNumberId: episode.phoneNumberId }).onConflictDoNothing();
     const [message] = await tx.select().from(messages).where(and(eq(messages.tenantId, context.tenantId), eq(messages.externalId, wamid)));
-    if (!message || message.conversationId !== anchor.conversationId || message.sender !== "agente" || message.content !== episode.submittedText
+    if (!message || message.conversationId !== anchor.conversationId || message.sender !== SENDER.agent || message.content !== episode.submittedText
         || message.whatsappPhoneNumberId !== episode.phoneNumberId) return { ok: false, reason: "identity-conflict" };
     await attachReceipt(serviceScope(context.tenantId), message.id, tx);
     const [agent] = await tx.select({ phase: leadAgentState.phase, anchorMessageId: leadAgentState.anchorMessageId, revision: leadAgentState.revision, resetObservedAt: leadAgentState.resetObservedAt })
@@ -354,9 +355,9 @@ export async function reconcileAcceptance(
     const validRecordedLast = episode.bridgeLastInboundAt === null || (!!latestCandidate && Number.isFinite(episode.bridgeLastInboundAt.getTime())
       && episode.bridgeLastInboundAt.getTime() <= latestCandidate.sentAt.getTime());
     const validContext = validCurrentInbound && !!channel?.ownershipVerifiedAt && Number.isFinite(channel.ownershipVerifiedAt.getTime())
-      && (agent?.phase === "qualificando" || agent?.phase === "agendando" || candidateInvalidatedPhase)
+      && (agent?.phase === AGENT_PHASE.qualifying || agent?.phase === AGENT_PHASE.closing || candidateInvalidatedPhase)
       && lead.memoryResetRequestedAt?.getTime() === episode.resetObservedAt?.getTime()
-      && lead.optedOutAt === null && lead.humanTakeoverAt === null && lead.status === "em_qualificacao" && lead.whatsappPhoneNumberId === episode.phoneNumberId;
+      && lead.optedOutAt === null && lead.humanTakeoverAt === null && lead.status === LEAD_STATUS.engaged && lead.whatsappPhoneNumberId === episode.phoneNumberId;
     const invalidated = !validOrigin || !validFirst || !validContext || !validRecordedLast;
     await tx.update(reengagementEpisodes).set({ state: "accepted", acceptedAt, wamid, messageId: message.id, reasonCode: null, updatedAt: now,
       bridgeInvalidatedAt: episode.bridgeInvalidatedAt ?? (invalidated ? now : null),
@@ -408,7 +409,7 @@ export async function expireEpisode(
     // Canal verificado só é exigido para gravar episódio novo (FK do canal) e
     // para omitir; a escalada é interna e não pode depender dele (M1).
     const verified = !!channel?.ownershipVerifiedAt && Number.isFinite(channel.ownershipVerifiedAt.getTime()) && lead.whatsappPhoneNumberId === channel.phoneNumberId;
-    if (lead.statusChangedBy === "humano") return { ok: false, reason: "human-status-lock" };
+    if (lead.statusChangedBy === SENDER.human) return { ok: false, reason: "human-status-lock" };
     const decision = evaluateReengagement({ lead, anchor: { messageId: anchor.id, sentAt: anchor.sentAt }, phase: agent.phase,
       channel: verified ? channel : null, destination: toWhatsAppMsisdn(lead.externalId), now });
     if (decision.action !== "omit" && decision.action !== "escalate") {
@@ -419,7 +420,7 @@ export async function expireEpisode(
     if (!verified && !episode) {
       // Sem canal verificado não há episódio a gravar; a escalada continua, e o
       // status escalado_humano torna a lead inelegível para o próximo tick.
-      const assigned = await assignBrokerForEscalation(context.tenantId, leadId, now, { status: "escalado_humano", escalationReason: "Ausência de resposta por 48h; retomada omitida." }, tx);
+      const assigned = await assignBrokerForEscalation(context.tenantId, leadId, now, { status: LEAD_STATUS.escalated, escalationReason: "Ausência de resposta por 48h; retomada omitida." }, tx);
       if (!assigned.ok) throw new Error("escalation-lead-not-found");
       return { ok: true, action: "escalated", episodeId: null, brokerId: assigned.brokerId, result: "omitted" };
     }
@@ -436,7 +437,7 @@ export async function expireEpisode(
     const result: SilenceResult = ["accepted", "accepted_pending_record"].includes(episode.state) ? "accepted"
       : episode.state === "refused" ? "refused" : episode.dispatchAuthorizedAt ? "uncertain" : "omitted";
     const reason = `Ausência de resposta por 48h; retomada ${result === "accepted" ? "aceita" : result === "refused" ? "recusada" : result === "uncertain" ? "incerta" : "omitida"}.`;
-    const assigned = await assignBrokerForEscalation(context.tenantId, leadId, now, { status: "escalado_humano", escalationReason: reason }, tx);
+    const assigned = await assignBrokerForEscalation(context.tenantId, leadId, now, { status: LEAD_STATUS.escalated, escalationReason: reason }, tx);
     if (!assigned.ok) throw new Error("escalation-lead-not-found");
     await tx.update(reengagementEpisodes).set({ escalatedAt: now, escalationResult: result, escalationReasonCode: "silence-48h", updatedAt: now,
       ...(!episode.dispatchAuthorizedAt ? { state: "omitted" as const, reasonCode: "window-closed", claimToken: null, claimExpiresAt: null } : {}),

@@ -6,9 +6,9 @@
  * inicializar, recuperar, alertar ou nada, e monta assunto e corpo do e-mail.
  * Quem lê o banco e envia o e-mail está em `src/server/integration/`.
  */
-import { resolveIntegrationHealth } from "./pilot-metrics";
+import { INTEGRATION_HEALTH, resolveIntegrationHealth } from "./pilot-metrics";
 
-export type IntegrationHealthState = "saudavel" | "problema";
+export type IntegrationHealthState = typeof INTEGRATION_HEALTH.healthy | typeof INTEGRATION_HEALTH.problem;
 
 export interface TenantHealthSnapshot {
   tenantId: string;
@@ -38,9 +38,9 @@ export function planIntegrationAlerts(snapshots: TenantHealthSnapshot[], now: Da
     );
     if (snapshot.storedState === null) {
       plan.initialize.push({ tenantId: snapshot.tenantId, state });
-    } else if (snapshot.storedState === "saudavel" && state === "problema") {
+    } else if (snapshot.storedState === INTEGRATION_HEALTH.healthy && state === INTEGRATION_HEALTH.problem) {
       plan.alert.push(snapshot);
-    } else if (snapshot.storedState === "problema" && state === "saudavel") {
+    } else if (snapshot.storedState === INTEGRATION_HEALTH.problem && state === INTEGRATION_HEALTH.healthy) {
       plan.recover.push(snapshot.tenantId);
     }
   }
