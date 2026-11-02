@@ -135,10 +135,24 @@ T41 → T42 → T43 → T44 → T45
 
 **Done when**:
 
-- [ ] A primeira coisa da task é confirmar que `generateDrizzleJson` roda sem banco e sem variável de ambiente. Se não servir, usar `drizzle-kit export` com linhas ordenadas e registrar a troca no commit.
-- [ ] `scripts/boundary/schema-baseline.json` gerado sem nenhuma mudança em `src/db/schema.ts`.
-- [ ] Teste falha quando uma coluna, índice, check ou valor de enum muda: um caso por tipo, sobre fixture.
-- [ ] Teste passa sobre a árvore real.
+- [x] A primeira coisa da task é confirmar que `generateDrizzleJson` roda sem banco e sem variável de ambiente. Se não servir, usar `drizzle-kit export` com linhas ordenadas e registrar a troca no commit.
+- [x] `scripts/boundary/schema-baseline.json` gerado sem nenhuma mudança em `src/db/schema.ts`.
+- [x] Teste falha quando uma coluna, índice, check ou valor de enum muda: um caso por tipo, sobre fixture.
+- [x] Teste passa sobre a árvore real.
+
+**Execução**: `generateDrizzleJson` sem banco: 27 tabelas e 19 enums; schema sem diferença de `bf5e646`. Quick: 1 arquivo, 5 testes, 0 falhas. TypeScript: 0 erros. ESLint: 0 erros, 9 avisos. Boundary ainda não existe (T4).
+
+| Critério / KEEP-03 | Evidência | Resultado esperado |
+| --- | --- | --- |
+| Foto da árvore real | `scripts/__tests__/boundary-schema.test.ts:23`, `expect(snapshotSchema(schema)).toEqual(baseline)` | Igualdade com a base |
+| Coluna, índice, check e enum | `scripts/__tests__/boundary-schema.test.ts:27`, `expect(snapshotSchema(fixture(change))).not.toEqual(snapshotSchema(fixture()))` | Diferença para cada uma das quatro fixtures |
+
+| Asserção | Origem | Necessária |
+| --- | --- | --- |
+| `boundary-schema.test.ts:23`, igualdade com baseline | KEEP-03 AC1 | Sim |
+| `boundary-schema.test.ts:27`, quatro diferenças | T1, detecção por tipo | Sim |
+
+**Adequação**: critérios cobertos, sem alteração de teste existente; fixtures derivadas da T1, conforme AGENTS.md.
 
 **Tests**: unit
 **Gate**: quick

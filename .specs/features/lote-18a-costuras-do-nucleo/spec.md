@@ -379,7 +379,7 @@ mercado, porque uma loja não tem `novo` e `usado`.
 | BOUND-04 | P1: Fronteira verificável | Tasks | In Tasks |
 | KEEP-01 | P1: Comportamento preservado | Tasks | In Tasks |
 | KEEP-02 | P1: Comportamento preservado | Tasks | In Tasks |
-| KEEP-03 | P1: Comportamento preservado | Tasks | In Tasks |
+| KEEP-03 | P1: Comportamento preservado | Execute | Implementing |
 | KEEP-04 | P1: Comportamento preservado | Tasks | In Tasks |
 | KEEP-05 | P1: Comportamento preservado | Tasks | In Tasks |
 | KEEP-06 | P1: Comportamento preservado | Tasks | In Tasks |
