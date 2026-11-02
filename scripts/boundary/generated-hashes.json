@@ -1,0 +1,11 @@
+{
+  "benchmark-contexto.ts": "bf4e4fb7b72fc317a8a8bfe417fb2bdf8667eb1175c1fbfeeb2148c8bd46f5a1",
+  "erros.ts": "aff4f674fa7bc0cc9daeae0aeffc469d3b5da8a743b832f49ed21142e02c4a58",
+  "principal.ts": "a3fdcb081b6368a12232e64fc6c7142082165ee23a169cc1906bbda4ac0d76f1",
+  "reengagement-contextual.ts": "8f054cac7447d42f4cceca5972825db4d33037245b59d1329227e6a31331a8f9",
+  "scheduler.ts": "e437e98d6007852058ba6075c6c877f27267768546b0231c1a48562df9e28ea7",
+  "smoke-memoria.ts": "ebc149e29db667f07c4304daa6be7b46c459f8f6ed04547fcbfd0ca8d413dca1",
+  "smoke-reset.ts": "659ab88d4c538a1fe1a43eb165fc5f3e15a1c59d0f1c8d14adf92cf3c6aeca06",
+  "tool-agendar-reuniao.ts": "eaab8be26510f92f632f53004988a23e5582a4aef51252488f1a917e1fd5e404",
+  "tool-responder-lead.ts": "6e536f172aaa1cb4d50e2660644f2341b4822c98e68a666ed831c6c8ed8fa262"
+}

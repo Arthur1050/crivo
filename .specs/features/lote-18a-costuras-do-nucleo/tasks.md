@@ -172,10 +172,26 @@ T41 → T42 → T43 → T44 → T45
 
 **Done when**:
 
-- [ ] `scripts/boundary/generated-hashes.json` com os 9 arquivos, com CRLF normalizado como o inliner faz.
-- [ ] O teste regenera em pasta temporária e compara com os hashes, citando o arquivo e a primeira linha diferente quando falha.
-- [ ] O teste também compara o disco: `n8n/generated/` editado à mão falha.
-- [ ] Injetar uma mudança em `n8n/src/gate.mjs` faz o teste falhar; reverter a injeção.
+- [x] `scripts/boundary/generated-hashes.json` com os 9 arquivos, com CRLF normalizado como o inliner faz.
+- [x] O teste regenera em pasta temporária e compara com os hashes, citando o arquivo e a primeira linha diferente quando falha.
+- [x] O teste também compara o disco: `n8n/generated/` editado à mão falha.
+- [x] Injetar uma mudança em `n8n/src/gate.mjs` faz o teste falhar; reverter a injeção.
+
+**Execução**: hashes derivados de `git show bf5e646`, sem alteração do gerado. Quick: 1 arquivo, 4 testes, 0 falhas. TypeScript: 0 erros. ESLint: 0 erros, 9 avisos. Boundary ainda não existe (T4). Injeções feitas em cópias temporárias de `gate.mjs` e do gerado, descartadas pelo teste; a árvore real fica intacta.
+
+| Critério / KEEP-02 | Evidência em `scripts/__tests__/boundary-generated.test.ts` | Resultado esperado |
+| --- | --- | --- |
+| Nove arquivos e hashes | `:49`, `expect(generated).toHaveLength(9)`; `:50`, `expect(checkGenerated(directory)).toEqual([])` | 9 arquivos idênticos à base |
+| Disco atual | `:54`, `expect(checkGenerated(DEFAULT_GENERATED_DIR)).toEqual([])` | Sem diferença |
+| Edição manual | `:62`, `expect(checkGenerated(directory)).toEqual(["erros.ts:1: primeira linha diferente da base"])` | Nome e linha 1 |
+| Mudança na fonte | `:72`, `expect(checkGenerated(directory)).toContainEqual(expect.stringMatching(/^principal\.ts:\d+: primeira linha diferente da base$/))` | Diferença em principal |
+
+| Asserções | Origem | Necessárias |
+| --- | --- | --- |
+| `boundary-generated.test.ts:49`, `:50`, `:54` | KEEP-02 AC1/AC3 e T2 | Sim |
+| `boundary-generated.test.ts:62`, `:72` | KEEP-02 AC2 e injeções exigidas pela T2 | Sim |
+
+**Adequação**: critérios cobertos; nenhum teste existente alterado, conforme AGENTS.md.
 
 **Tests**: unit
 **Gate**: quick
