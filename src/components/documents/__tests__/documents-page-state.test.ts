@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { FolderParam } from "../../../lib/document-folders";
-import { clearFiltersHref, folderFilterFor, resolveDocumentsPageMode } from "../documents-page-state";
+import { clearFiltersHref, folderFilterFor, resolveDocumentsPageMode, searchAfterUrlChange } from "../documents-page-state";
 
 const folder = { id: "00000000-0000-4000-8000-000000000001", name: "Contratos" };
 
@@ -29,5 +29,19 @@ describe("estado da página de Documentos", () => {
     expect(clearFiltersHref({ kind: "raiz", folderFilter: { kind: "sem-pasta" } })).toBe("/documentos");
     expect(clearFiltersHref({ kind: "raiz", folderFilter: undefined })).toBe("/documentos");
     expect(clearFiltersHref({ kind: "pasta-inexistente" })).toBe("/documentos");
+  });
+});
+
+describe("campo de busca quando a URL muda", () => {
+  it("mantém o que foi digitado depois da escrita que a URL acaba de refletir", () => {
+    expect(searchAfterUrlChange("contr", "contr", "contrato")).toBe("contrato");
+  });
+
+  it("esvazia o campo quando Limpar filtros tira a busca da URL", () => {
+    expect(searchAfterUrlChange("", "Memorial", "Memorial")).toBe("");
+  });
+
+  it("adota a busca que voltou para a URL pelo navegador", () => {
+    expect(searchAfterUrlChange("Memorial", "", "")).toBe("Memorial");
   });
 });

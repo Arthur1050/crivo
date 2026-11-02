@@ -20,6 +20,7 @@ import {
 } from "@/src/components/documents/document-sort";
 import { NO_FOLDER_LABEL, NO_FOLDER_PARAM } from "@/src/lib/document-folders";
 import type { DocumentCategory, Modality } from "@/src/server/data";
+import { searchAfterUrlChange } from "./documents-page-state";
 
 const MODALITY_OPTIONS: { value: Modality; label: string }[] = [
   { value: "novo", label: "Novo" },
@@ -50,7 +51,15 @@ export function DocumentsToolbar({ categories, showFolderFilter = false }: Docum
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const [search, setSearch] = useState(searchParams.get("q") ?? "");
+  const urlSearch = searchParams.get("q") ?? "";
+  const [search, setSearch] = useState(urlSearch);
+  const [previousUrlSearch, setPreviousUrlSearch] = useState(urlSearch);
+  const [writtenSearch, setWrittenSearch] = useState(urlSearch);
+  if (urlSearch !== previousUrlSearch) {
+    setPreviousUrlSearch(urlSearch);
+    setWrittenSearch(urlSearch);
+    setSearch(searchAfterUrlChange(urlSearch, writtenSearch, search));
+  }
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -83,7 +92,9 @@ export function DocumentsToolbar({ categories, showFolderFilter = false }: Docum
     setSearch(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      updateParams({ q: value.trim() ? value : null });
+      const nextSearch = value.trim() ? value : "";
+      setWrittenSearch(nextSearch);
+      updateParams({ q: nextSearch || null });
     }, SEARCH_DEBOUNCE_MS);
   }
 

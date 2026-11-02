@@ -34,3 +34,12 @@ export function folderFilterFor(mode: DocumentsPageMode): DocumentFolderFilter |
 export function clearFiltersHref(mode: DocumentsPageMode): string {
   return mode.kind === "pasta" ? folderHref(mode.folder.id) : "/documentos";
 }
+
+/**
+ * Valor do campo de busca quando o `q` da URL muda. A URL que a própria digitação escreveu não
+ * volta para o campo, senão apagaria o que foi digitado depois; qualquer outra mudança ("Limpar
+ * filtros" do estado vazio, voltar do navegador) vence o campo.
+ */
+export function searchAfterUrlChange(urlSearch: string, writtenSearch: string, search: string): string {
+  return urlSearch === writtenSearch ? search : urlSearch;
+}
