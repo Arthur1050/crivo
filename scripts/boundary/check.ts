@@ -177,6 +177,10 @@ export function checkImports(sources: Sources, rules: readonly BoundaryRule[], t
     if (!origin) continue;
     for (const item of importsOf(file, source)) {
       const target = item.target === "server-only" ? item.target : resolveImport(file, item.target, sources);
+      if (origin.package === "@core/vertical-kit" && target !== "src/lib/vocabulary.ts") {
+        violations.push({ file, line: item.line, message: `Import proibido: ${file} -> ${target ?? item.target}` });
+        continue;
+      }
       if (!target) continue;
       const destination = classifyFile(target, rules);
       const prohibited = origin.layer === "core" && (destination?.layer === "vertical" || destination?.layer === "app")

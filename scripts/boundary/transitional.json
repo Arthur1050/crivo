@@ -2322,5 +2322,12 @@
     "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
     "removedIn": "L18a",
     "category": "identifier"
+  },
+  {
+    "path": "src/vertical-kit/index.ts",
+    "term": "market:property",
+    "reason": "Tipo das colunas de qualificação transitórias do lead; remoção na migração física do L18c.",
+    "removedIn": "L18c",
+    "category": "market"
   }
 ]
