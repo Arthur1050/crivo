@@ -382,7 +382,7 @@ mantida só por revisão de código.
 
 ---
 
-## L17 — Pastas de documentos — ✅ EXECUTADO (2026-11-02), falta publicar
+## L17 — Pastas de documentos — ✅ PUBLICADO (2026-11-02)
 
 **Origem**: usuário, 2026-10-25. O redesign de Documentos (gerenciador de arquivos com busca, "Filtrar e
 ordenar" e "Todos os arquivos" em grade ou lista) foi publicado sem as pastas, que hoje não existem no banco.
