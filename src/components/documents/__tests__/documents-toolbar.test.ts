@@ -1,9 +1,11 @@
 import { Children, isValidElement, type ReactNode } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { clearFiltersHref } from "../documents-page-state";
 import { DocumentsToolbar } from "../documents-toolbar";
 
 const navigation = vi.hoisted(() => ({ query: "", replace: vi.fn() }));
+// Na ordem dos useState da barra: busca, último `q` visto na URL e último `q` escrito pela digitação.
+const state = vi.hoisted(() => ({ seeds: [] as string[], setters: [] as ReturnType<typeof vi.fn>[] }));
 vi.mock("next/navigation", () => ({
   usePathname: () => "/documentos",
   useSearchParams: () => new URLSearchParams(navigation.query),
@@ -11,7 +13,11 @@ vi.mock("next/navigation", () => ({
 }));
 vi.mock("react", async (importOriginal) => ({
   ...await importOriginal<typeof import("react")>(),
-  useState: (initial: unknown) => [initial, vi.fn()],
+  useState: (initial: unknown) => {
+    const setter = vi.fn();
+    state.setters.push(setter);
+    return [state.seeds.length > 0 ? state.seeds.shift() : initial, setter];
+  },
   useRef: (initial: unknown) => ({ current: initial }),
   useEffect: vi.fn(),
 }));
@@ -90,5 +96,67 @@ describe("Limpar filtros do menu de Documentos — PABRIR-01 AC4 emendado", () =
     const href = clearFiltersHref({ kind: "pasta", folder });
     expect(href).toBe(`/documentos?pasta=${folder.id}`);
     expect([...new URL(href, "https://krivo.test").searchParams]).toEqual([["pasta", folder.id]]);
+  });
+});
+
+describe("submenu Pasta da raiz — PRAIZ-01 AC8 e Edge Case 6", () => {
+  beforeEach(() => navigation.replace.mockClear());
+
+  it.each([
+    ["sem-pasta", "q=contrato&ordem=nome", "/documentos?q=contrato&ordem=nome&pasta=sem-pasta"],
+    ["sem-pasta", "pasta=sem-pasta&q=contrato", "/documentos?pasta=sem-pasta&q=contrato"],
+    ["todas", "pasta=sem-pasta&q=contrato", "/documentos?q=contrato"],
+  ])("o onChange real com %s sobre %s leva à URL completa", (value, query, expected) => {
+    navigation.query = query;
+    findControl(DocumentsToolbar({ categories: [], showFolderFilter: true }), "Pasta").onChange!(value);
+    expect(navigation.replace.mock.calls).toEqual([[expected]]);
+  });
+});
+
+describe("campo de busca acompanha a URL", () => {
+  beforeEach(() => {
+    navigation.replace.mockClear();
+    state.seeds = [];
+    state.setters = [];
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it("esvazia o campo quando a URL perde a busca sem passar pela digitação", () => {
+    navigation.query = `pasta=${folder.id}`;
+    state.seeds = ["Memorial", "Memorial", "Memorial"];
+    DocumentsToolbar({ categories: [] });
+    const [setSearch, setPreviousUrlSearch, setWrittenSearch] = state.setters;
+    expect(setSearch.mock.calls).toEqual([[""]]);
+    expect(setPreviousUrlSearch.mock.calls).toEqual([[""]]);
+    expect(setWrittenSearch.mock.calls).toEqual([[""]]);
+  });
+
+  it("mantém o que foi digitado depois quando a URL reflete a própria digitação", () => {
+    navigation.query = "q=contr";
+    state.seeds = ["contrato", "", "contr"];
+    DocumentsToolbar({ categories: [] });
+    expect(state.setters[0].mock.calls).toEqual([["contrato"]]);
+  });
+
+  it("não mexe no campo enquanto a URL não muda", () => {
+    navigation.query = "q=contr";
+    state.seeds = ["contrato", "contr", "contrato"];
+    DocumentsToolbar({ categories: [] });
+    expect(state.setters[0]).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["contrato", "contrato", "/documentos?q=contrato"],
+    ["   ", "", "/documentos"],
+  ])("a digitação de %j registra o que escreveu na URL", (typed, written, expected) => {
+    vi.useFakeTimers();
+    navigation.query = "";
+    const control = findControl(DocumentsToolbar({ categories: [] }), "Buscar documentos");
+    control.onChange!(typed);
+    const setWrittenSearch = state.setters[2];
+    expect(setWrittenSearch).not.toHaveBeenCalled();
+    vi.runAllTimers();
+    expect(setWrittenSearch.mock.calls).toEqual([[written]]);
+    expect(navigation.replace.mock.calls).toEqual([[expected]]);
   });
 });
