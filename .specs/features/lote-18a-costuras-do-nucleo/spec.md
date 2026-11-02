@@ -387,9 +387,9 @@ mercado, porque uma loja não tem `novo` e `usado`.
 | VOCAB-02 | P1: Vocabulário em inglês | Tasks | In Tasks |
 | VOCAB-03 | P1: Vocabulário em inglês | Tasks | In Tasks |
 | ENG-01 | P1: Vocabulário em inglês | Execute | Implementing |
-| VERT-01 | P1: Contrato do vertical | Tasks | In Tasks |
-| VERT-02 | P1: Contrato do vertical | Tasks | In Tasks |
-| VERT-03 | P1: Contrato do vertical | Tasks | In Tasks |
+| VERT-01 | P1: Contrato do vertical | Execute | Implementing |
+| VERT-02 | P1: Contrato do vertical | Execute | Implementing |
+| VERT-03 | P1: Contrato do vertical | Execute | Implementing |
 | ACCESS-01 | P1: Permissões compostas | Tasks | In Tasks |
 | QUAL-01 | P1: Qualificação atrás de costura | Tasks | In Tasks |
 | QUAL-02 | P1: Qualificação atrás de costura | Tasks | In Tasks |

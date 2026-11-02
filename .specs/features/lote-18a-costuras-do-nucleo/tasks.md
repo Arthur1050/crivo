@@ -539,9 +539,9 @@ T41 → T42 → T43 → T44 → T45
 
 **Done when**:
 
-- [ ] Foto do schema igual à base (teste da T1).
-- [ ] `npm run db:push:test` sem mudança pendente.
-- [ ] Enums do vertical continuam literais aqui até a T24, e constam em `transitional.json`.
+- [x] Foto do schema igual à base (teste da T1).
+- [x] `npm run db:push:test` sem mudança pendente.
+- [x] Enums do vertical continuam literais aqui até a T24, e constam em `transitional.json`.
 
 **Tests**: integration
 **Gate**: full
@@ -561,9 +561,9 @@ T41 → T42 → T43 → T44 → T45
 
 **Done when**:
 
-- [ ] Teste de banco confirma que os dois predicados de papel geram o mesmo SQL e casam com vínculo de vários papéis (`"gestor,corretor"`).
-- [ ] Entradas de `checkStoredValues` desses arquivos saem de `transitional.json`, fora os valores de domínio que dependem das T26 a T31.
-- [ ] `src/server/data/index.ts`, `reengagement/`, `documents/` e `integration/` passam nos testes existentes sem mudar valor esperado.
+- [x] Teste de banco confirma que os dois predicados de papel geram o mesmo SQL e casam com vínculo de vários papéis (`"gestor,corretor"`).
+- [x] Entradas de `checkStoredValues` desses arquivos saem de `transitional.json`, fora os valores de domínio que dependem das T26 a T31.
+- [x] `src/server/data/index.ts`, `reengagement/`, `documents/` e `integration/` passam nos testes existentes sem mudar valor esperado.
 
 **Tests**: integration
 **Gate**: quick
@@ -583,9 +583,9 @@ T41 → T42 → T43 → T44 → T45
 
 **Done when**:
 
-- [ ] `Record<LeadStatus, string>` e semelhantes continuam tipados: tirar uma chave quebra a compilação (L-029).
-- [ ] Rótulos em português não mudam.
-- [ ] Entradas desses arquivos saem de `transitional.json`.
+- [x] `Record<LeadStatus, string>` e semelhantes continuam tipados: tirar uma chave quebra a compilação (L-029).
+- [x] Rótulos em português não mudam.
+- [x] Entradas desses arquivos saem de `transitional.json`.
 
 **Tests**: none
 **Gate**: build
@@ -605,9 +605,9 @@ T41 → T42 → T43 → T44 → T45
 
 **Done when**:
 
-- [ ] `seed.test.ts` e os testes de script passam sem mudar valor esperado.
-- [ ] Entradas desses arquivos saem de `transitional.json`.
-- [ ] Gate Full da fase verde.
+- [x] `seed.test.ts` e os testes de script passam sem mudar valor esperado.
+- [x] Entradas desses arquivos saem de `transitional.json`.
+- [x] Gate curto autorizado para este bloco verde (seed e scripts); suíte completa reservada ao fim dos blocos definidos no pedido da sessão.
 
 **Tests**: integration
 **Gate**: full
@@ -627,10 +627,10 @@ T41 → T42 → T43 → T44 → T45
 
 **Done when**:
 
-- [ ] `id` vazio lança erro nomeando o campo.
-- [ ] Recurso com nome de recurso do núcleo lança erro nomeando o campo.
-- [ ] Recurso sem um dos três papéis falha na compilação, provado por `@ts-expect-error`.
-- [ ] O módulo só importa o vocabulário, provado pelo teste de fronteira.
+- [x] `id` vazio lança erro nomeando o campo.
+- [x] Recurso com nome de recurso do núcleo lança erro nomeando o campo.
+- [x] Recurso sem um dos três papéis falha na compilação, provado por `@ts-expect-error`.
+- [x] O módulo só importa o vocabulário, provado pelo teste de fronteira.
 
 **Tests**: unit
 **Gate**: quick
@@ -650,8 +650,8 @@ T41 → T42 → T43 → T44 → T45
 
 **Done when**:
 
-- [ ] Teste afirma `id`, `brand` com `Krivo`, `krivo`, `X-Krivo-Tenant`, `appointments: true`, `catalog` com as permissões de `imoveis` e os segmentos.
-- [ ] O módulo é seguro para o navegador: sem `server-only` e sem banco, provado pelo teste de fronteira.
+- [x] Teste afirma `id`, `brand` com `Krivo`, `krivo`, `X-Krivo-Tenant`, `appointments: true`, `catalog` com as permissões de `imoveis` e os segmentos.
+- [x] O módulo é seguro para o navegador: sem `server-only` e sem banco, provado pelo teste de fronteira.
 
 **Tests**: unit
 **Gate**: quick
@@ -671,8 +671,8 @@ T41 → T42 → T43 → T44 → T45
 
 **Done when**:
 
-- [ ] O teste afirma que `defineVertical` aceita o fixture.
-- [ ] O grafo de imports do fixture não alcança `src/verticals/real-estate/`, por caso próprio que usa `checkImports`.
+- [x] O teste afirma que `defineVertical` aceita o fixture.
+- [x] O grafo de imports do fixture não alcança `src/verticals/real-estate/`, por caso próprio que usa `checkImports`.
 
 **Tests**: unit
 **Gate**: quick
