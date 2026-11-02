@@ -1,3 +1,4 @@
+import { timingSafeEqual, createHash } from "node:crypto";
 import type { DocumentStorage } from "../../../../src/server/documents/storage";
 import { VercelBlobDocumentStorage } from "../../../../src/server/documents/vercel-blob-storage";
 import { sendIntegrationAlertEmail } from "../../../../src/server/auth/email";
@@ -35,7 +36,14 @@ export function createExpireDocumentsHandler(
     const header = request.headers.get("authorization");
     const provided = /^Bearer\s+(.+)$/i.exec(header ?? "")?.[1]?.trim();
 
-    if (!secret || !provided || provided !== secret) {
+    if (!secret || !provided) {
+      return problem(401, "nao-autenticado", "Secret do cron ausente ou inválido.");
+    }
+
+    const secretHash = createHash("sha256").update(secret).digest();
+    const providedHash = createHash("sha256").update(provided).digest();
+
+    if (!timingSafeEqual(secretHash, providedHash)) {
       return problem(401, "nao-autenticado", "Secret do cron ausente ou inválido.");
     }
 
