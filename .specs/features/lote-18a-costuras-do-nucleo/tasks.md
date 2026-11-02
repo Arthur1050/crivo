@@ -312,9 +312,23 @@ T41 → T42 → T43 → T44 → T45
 
 **Done when**:
 
-- [ ] Import proibido em arquivo `core` dá erro de `no-restricted-imports`, provado por teste que chama a API do ESLint sobre texto de fixture.
-- [ ] As exceções de `transitional.json` valem também aqui.
-- [ ] `npx eslint .` termina com 0 erros e no máximo 9 avisos.
+- [x] Import proibido em arquivo `core` dá erro de `no-restricted-imports`, provado por teste que chama a API do ESLint sobre texto de fixture.
+- [x] As exceções de `transitional.json` valem também aqui.
+- [x] `npx eslint .` termina com 0 erros e no máximo 9 avisos.
+
+**Execução**: Quick + Boundary: 2 arquivos, 21 testes, 0 falhas. TypeScript: 0 erros. ESLint: 0 erros, 9 avisos. Primeira rodada de lint: 4 erros falsos em `app/api/v1/properties/route.ts` (`no-restricted-imports`), por aceitar `..` depois da raiz de destino num padrão relativo. Corrigido o padrão; segunda rodada verde, com fixture para o caminho válido. Nenhuma exceção acrescentada.
+
+| Critério | Evidência em `scripts/__tests__/boundary-eslint.test.ts` | Resultado esperado |
+| --- | --- | --- |
+| Import proibido | `:15`, `expect(await violations(...)).toEqual([{ ruleId: "no-restricted-imports", severity: 2 }])` | Erro do ESLint para alias e relativo |
+| Exceção restrita ao alvo | `:21`, igualdade com `[]`; `:25`, igualdade com erro de severidade 2 | Exceção permite só o alvo registrado |
+| Direção válida | `:31`, `expect(await violations("app/api/v1/properties/route.ts", "import '../../../../src/server/integration/problem';")).toEqual([])` | Vertical pode importar core |
+
+| Asserções | Origem | Necessárias |
+| --- | --- | --- |
+| `boundary-eslint.test.ts:15`, `:21`, `:25`, `:31` | BOUND-02 AC1, exceções da T6 e direção do design §1 | Sim |
+
+**Adequação**: fixtures usam a API real do ESLint; casos de permissão e recusa cobertos, conforme AGENTS.md.
 
 **Tests**: unit
 **Gate**: quick
