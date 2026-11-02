@@ -1,3 +1,4 @@
+import { PROBLEM_CODE } from "../../../../src/lib/vocabulary";
 import { deliverLead, serializeLead } from "../../../../src/server/integration/leads";
 import {
   MAX_BODY_BYTES,
@@ -17,7 +18,7 @@ export const POST = withIntegrationRoute(async (request, auth) => {
   if (Buffer.byteLength(bodyText, "utf8") > MAX_BODY_BYTES) {
     return problem(
       413,
-      "corpo-grande-demais",
+      PROBLEM_CODE.body_too_large,
       `Corpo da requisição excede o limite de ${MAX_BODY_BYTES} bytes.`
     );
   }
@@ -26,11 +27,11 @@ export const POST = withIntegrationRoute(async (request, auth) => {
   try {
     json = bodyText.trim() === "" ? {} : JSON.parse(bodyText);
   } catch {
-    return problem(400, "payload-invalido", "Corpo da requisição não é JSON válido.");
+    return problem(400, PROBLEM_CODE.invalid_payload, "Corpo da requisição não é JSON válido.");
   }
 
   const parsed = parseLeadCreate(json);
-  if (!parsed.ok) return problem(400, "payload-invalido", parsed.detail);
+  if (!parsed.ok) return problem(400, PROBLEM_CODE.invalid_payload, parsed.detail);
 
   const { created, lead } = await deliverLead(auth.tenantId, parsed.dto);
   return Response.json(serializeLead(lead), { status: created ? 201 : 200 });

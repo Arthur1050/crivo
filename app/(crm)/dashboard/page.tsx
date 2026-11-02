@@ -1,3 +1,4 @@
+import { MODALITY, MOTIVATION } from "../../../src/verticals/real-estate/vocabulary";
 import type { ReactNode } from "react";
 import { Card } from "@astryxdesign/core/Card";
 import { Grid, GridSpan } from "@astryxdesign/core/Grid";
@@ -38,15 +39,15 @@ interface DashboardPageProps {
 }
 
 const MODALITY_LABELS: Record<string, string> = {
-  novo: "Novo",
-  usado: "Usado",
-  ambos: "Ambos",
+  [MODALITY.new]: "Novo",
+  [MODALITY.used]: "Usado",
+  [MODALITY.both]: "Ambos",
   nao_informado: "Não informado",
 };
 
 const MOTIVATION_LABELS: Record<string, string> = {
-  investidor: "Investidor",
-  morador: "Morador",
+  [MOTIVATION.investor]: "Investidor",
+  [MOTIVATION.resident]: "Morador",
   nao_informado: "Não informado",
 };
 

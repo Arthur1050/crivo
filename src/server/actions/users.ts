@@ -1,5 +1,6 @@
 "use server";
 
+import { ROLE } from "../../lib/vocabulary";
 import { revalidatePath } from "next/cache";
 import { verifySession } from "../auth/session";
 import { sendInvitationEmail } from "../auth/email";
@@ -247,8 +248,8 @@ export async function updateMemberRolesAction(
   // ignora o vínculo que está sendo alterado — é justamente ele que deixaria
   // de ser administrador.
   const losesAdmin =
-    member.roles.includes("administrador") &&
-    !input.roles.includes("administrador");
+    member.roles.includes(ROLE.admin) &&
+    !input.roles.includes(ROLE.admin);
 
   if (losesAdmin) {
     const remaining = await countActiveAdministrators(

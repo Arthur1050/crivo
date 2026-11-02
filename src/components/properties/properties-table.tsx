@@ -1,5 +1,6 @@
 "use client";
 
+import { PROPERTY_KIND, PROPERTY_STATUS } from "../../verticals/real-estate/vocabulary";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { SquarePenIcon, Trash2Icon } from "lucide-react";
@@ -18,25 +19,25 @@ import { deletePropertyAction } from "@/src/server/actions/properties";
 import type { Property, PropertyKind, PropertyStatus } from "@/src/server/data";
 
 const KIND_LABELS: Record<PropertyKind, string> = {
-  casa: "Casa",
-  apartamento: "Apartamento",
-  sobrado: "Sobrado",
-  cobertura: "Cobertura",
-  terreno: "Terreno",
-  sala_comercial: "Sala comercial",
-  chacara: "Chácara",
+  [PROPERTY_KIND.house]: "Casa",
+  [PROPERTY_KIND.apartment]: "Apartamento",
+  [PROPERTY_KIND.townhouse]: "Sobrado",
+  [PROPERTY_KIND.penthouse]: "Cobertura",
+  [PROPERTY_KIND.land]: "Terreno",
+  [PROPERTY_KIND.commercial_room]: "Sala comercial",
+  [PROPERTY_KIND.farmhouse]: "Chácara",
 };
 
 const STATUS_LABELS: Record<PropertyStatus, string> = {
-  disponivel: "Disponível",
-  reservado: "Reservado",
-  vendido: "Vendido",
+  [PROPERTY_STATUS.available]: "Disponível",
+  [PROPERTY_STATUS.reserved]: "Reservado",
+  [PROPERTY_STATUS.sold]: "Vendido",
 };
 
 const STATUS_DOT_VARIANTS: Record<PropertyStatus, "success" | "warning" | "neutral"> = {
-  disponivel: "success",
-  reservado: "warning",
-  vendido: "neutral",
+  [PROPERTY_STATUS.available]: "success",
+  [PROPERTY_STATUS.reserved]: "warning",
+  [PROPERTY_STATUS.sold]: "neutral",
 };
 
 interface PropertyRow extends Record<string, unknown> {

@@ -1,5 +1,6 @@
 "use client";
 
+import { ROLE } from "../../lib/vocabulary";
 import { useState } from "react";
 import {
   CalendarClockIcon,
@@ -39,15 +40,15 @@ export interface MemberRow extends Record<string, unknown> {
 }
 
 const ROLE_LABELS: Record<Role, string> = {
-  administrador: "Administrador",
-  gestor: "Gestor",
-  corretor: "Corretor",
+  [ROLE.admin]: "Administrador",
+  [ROLE.manager]: "Gestor",
+  [ROLE.attendant]: "Corretor",
 };
 
 const ROLE_COLORS: Record<Role, "purple" | "blue" | "teal"> = {
-  administrador: "purple",
-  gestor: "blue",
-  corretor: "teal",
+  [ROLE.admin]: "purple",
+  [ROLE.manager]: "blue",
+  [ROLE.attendant]: "teal",
 };
 
 // ISO 1(segunda)–7(domingo), mesma convenção do schema e do formulário de
@@ -94,7 +95,7 @@ export function UsersTable({ members }: UsersTableProps) {
   // Só corretor ativo pode receber carteira (USER-01 AC10).
   const activeBrokers = members
     .filter(
-      (member) => !member.isDeactivated && member.roles.includes("corretor")
+      (member) => !member.isDeactivated && member.roles.includes(ROLE.attendant)
     )
     .map((member) => ({ userId: member.userId, name: member.name }));
 
@@ -189,7 +190,7 @@ export function UsersTable({ members }: UsersTableProps) {
               // atende. Só o corretor tem janela útil — é ela que decide a
               // atribuição por agenda —, então a ação não aparece para os
               // demais papéis.
-              ...(row.roles.includes("corretor")
+              ...(row.roles.includes(ROLE.attendant)
                 ? [
                     {
                       label: "Janela de trabalho",

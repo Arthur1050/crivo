@@ -1,5 +1,6 @@
 "use server";
 
+import { ROLE } from "../../lib/vocabulary";
 import { revalidatePath } from "next/cache";
 import { verifySession } from "../auth/session";
 import { getTenantMemberById, setMemberWorkWindow } from "../data";
@@ -33,7 +34,7 @@ export interface SaveWorkWindowInput {
 }
 
 /** Papéis que administram a agenda de terceiros (AGENDA-01 AC6). */
-const MANAGES_OTHERS = ["administrador", "gestor"] as const;
+const MANAGES_OTHERS = [ROLE.admin, ROLE.manager] as const;
 
 export async function saveWorkWindowAction(
   input: SaveWorkWindowInput

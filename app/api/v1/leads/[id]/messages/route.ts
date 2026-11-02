@@ -1,3 +1,4 @@
+import { PROBLEM_CODE } from "../../../../../../src/lib/vocabulary";
 import {
   ingestMessage,
   listMessages,
@@ -29,7 +30,7 @@ export const GET = withIntegrationRoute<MessagesRouteContext>(
 
     const parsedQuery = parseMessagesQuery(new URL(request.url));
     if (!parsedQuery.ok) {
-      return problem(400, "payload-invalido", parsedQuery.detail);
+      return problem(400, PROBLEM_CODE.invalid_payload, parsedQuery.detail);
     }
 
     const result = await listMessages(auth.tenantId, id, parsedQuery.limit);
@@ -59,7 +60,7 @@ export const POST = withIntegrationRoute<MessagesRouteContext>(
     if (Buffer.byteLength(bodyText, "utf8") > MAX_BODY_BYTES) {
       return problem(
         413,
-        "corpo-grande-demais",
+        PROBLEM_CODE.body_too_large,
         `Corpo da requisição excede o limite de ${MAX_BODY_BYTES} bytes.`
       );
     }
@@ -68,15 +69,15 @@ export const POST = withIntegrationRoute<MessagesRouteContext>(
     try {
       json = bodyText.trim() === "" ? {} : JSON.parse(bodyText);
     } catch {
-      return problem(400, "payload-invalido", "Corpo da requisição não é JSON válido.");
+      return problem(400, PROBLEM_CODE.invalid_payload, "Corpo da requisição não é JSON válido.");
     }
 
     const parsed = parseMessageCreate(json);
-    if (!parsed.ok) return problem(400, "payload-invalido", parsed.detail);
+    if (!parsed.ok) return problem(400, PROBLEM_CODE.invalid_payload, parsed.detail);
 
     const result = await ingestMessage(auth.tenantId, id, parsed.dto);
     if (!result.ok) {
-      if (result.code === "canal-nao-vinculado") return problem(409, result.code, "Número não vinculado e verificado neste tenant.");
+      if (result.code === PROBLEM_CODE.channel_not_linked) return problem(409, result.code, "Número não vinculado e verificado neste tenant.");
       return problem(404, result.code, "Lead não encontrado.");
     }
 

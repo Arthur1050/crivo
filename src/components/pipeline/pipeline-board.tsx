@@ -1,5 +1,7 @@
 "use client";
 
+import { LEAD_STATUS } from "../../lib/vocabulary";
+import { MODALITY, PROPERTY_KIND } from "../../verticals/real-estate/vocabulary";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { ComponentType } from "react";
@@ -41,20 +43,20 @@ import type {
 } from "@/src/server/data";
 
 const MODALITY_LABELS: Record<Modality, string> = {
-  novo: "Novo",
-  usado: "Usado",
-  ambos: "Ambos",
+  [MODALITY.new]: "Novo",
+  [MODALITY.used]: "Usado",
+  [MODALITY.both]: "Ambos",
 };
 
 const MODALITY_BADGE_VARIANT: Record<Modality, "blue" | "purple" | "teal"> = {
-  novo: "blue",
-  usado: "purple",
-  ambos: "teal",
+  [MODALITY.new]: "blue",
+  [MODALITY.used]: "purple",
+  [MODALITY.both]: "teal",
 };
 
 const PROPERTY_TYPE_LABELS: Record<NonNullable<Lead["propertyType"]>, string> = {
-  casa: "Casa",
-  apartamento: "Apartamento",
+  [PROPERTY_KIND.house]: "Casa",
+  [PROPERTY_KIND.apartment]: "Apartamento",
 };
 
 type StatusVariant = "warning" | "success" | "error";
@@ -83,21 +85,21 @@ const BADGE_VARIANT: Record<StatusVariant, "yellow" | "green" | "red"> = {
 // "status desconhecido" (spec.md — Edge Cases).
 const COLUMNS: ColumnDefinition[] = [
   {
-    status: "em_qualificacao",
+    status: LEAD_STATUS.engaged,
     title: "Em qualificação",
     emptyDescription: "Leads em atendimento pelo agente aparecerão aqui.",
     variant: "warning",
     icon: MessageCircleIcon,
   },
   {
-    status: "qualificado_agendado",
+    status: LEAD_STATUS.goal_reached,
     title: "Qualificado e agendado",
     emptyDescription: "Leads qualificados com reunião agendada aparecerão aqui.",
     variant: "success",
     icon: CheckIcon,
   },
   {
-    status: "escalado_humano",
+    status: LEAD_STATUS.escalated,
     title: "Escalado para humano",
     emptyDescription: "Leads que precisam de atenção humana aparecerão aqui.",
     variant: "error",

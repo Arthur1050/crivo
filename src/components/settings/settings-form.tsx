@@ -1,5 +1,6 @@
 "use client";
 
+import { MODALITY } from "../../verticals/real-estate/vocabulary";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { ReactNode } from "react";
@@ -26,9 +27,9 @@ import {
 } from "@/src/server/validation";
 
 const MODALITY_OPTIONS: { value: Modality; label: string }[] = [
-  { value: "novo", label: "Novo" },
-  { value: "usado", label: "Usado" },
-  { value: "ambos", label: "Ambos" },
+  { value: MODALITY.new, label: "Novo" },
+  { value: MODALITY.used, label: "Usado" },
+  { value: MODALITY.both, label: "Ambos" },
 ];
 
 const AGENT_NAME_HELPER =

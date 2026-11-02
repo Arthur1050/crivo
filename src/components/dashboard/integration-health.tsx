@@ -1,3 +1,4 @@
+import { INTEGRATION_HEALTH } from "../../lib/vocabulary";
 import type { ReactNode } from "react";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { List, ListItem } from "@astryxdesign/core/List";
@@ -51,7 +52,7 @@ export function IntegrationHealth({
 }: IntegrationHealthProps): ReactNode {
   const refusalCount = refusals.reduce((sum, refusal) => sum + refusal.count, 0);
   const state = resolveIntegrationHealth({ lastSuccessAt, refusalCount }, now);
-  const isProblem = state === "problema";
+  const isProblem = state === INTEGRATION_HEALTH.problem;
 
   return (
     <VStack gap={4}>

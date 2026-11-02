@@ -1,3 +1,4 @@
+import { MODALITY } from "../../verticals/real-estate/vocabulary";
 import { duplicateDocumentMessage } from "../../lib/duplicate-document";
 
 /**
@@ -7,7 +8,7 @@ import { duplicateDocumentMessage } from "../../lib/duplicate-document";
  * privado.
  */
 
-export type UploadModality = "novo" | "usado" | "ambos";
+export type UploadModality = typeof MODALITY.new | typeof MODALITY.used | typeof MODALITY.both;
 
 export interface UploadTicketInput {
   clientSha256: string;

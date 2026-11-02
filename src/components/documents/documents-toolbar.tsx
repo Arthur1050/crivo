@@ -1,5 +1,6 @@
 "use client";
 
+import { MODALITY } from "../../verticals/real-estate/vocabulary";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { SearchIcon, SlidersHorizontalIcon } from "lucide-react";
@@ -23,9 +24,9 @@ import type { DocumentCategory, Modality } from "@/src/server/data";
 import { searchAfterUrlChange } from "./documents-page-state";
 
 const MODALITY_OPTIONS: { value: Modality; label: string }[] = [
-  { value: "novo", label: "Novo" },
-  { value: "usado", label: "Usado" },
-  { value: "ambos", label: "Ambos" },
+  { value: MODALITY.new, label: "Novo" },
+  { value: MODALITY.used, label: "Usado" },
+  { value: MODALITY.both, label: "Ambos" },
 ];
 
 /** Valor sentinela do item "todas": o rádio precisa de string, a URL não. */

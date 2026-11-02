@@ -1,3 +1,4 @@
+import { ROLE } from "../../lib/vocabulary";
 import type { Role } from "@/src/lib/permissions";
 
 /**
@@ -11,18 +12,18 @@ export const ROLE_OPTIONS: {
   description: string;
 }[] = [
   {
-    value: "administrador",
+    value: ROLE.admin,
     label: "Administrador",
     description: "Tudo do gestor, mais a gestão de usuários e papéis.",
   },
   {
-    value: "gestor",
+    value: ROLE.manager,
     label: "Gestor",
     description:
       "Vê a imobiliária inteira e edita Documentos e Configurações do agente.",
   },
   {
-    value: "corretor",
+    value: ROLE.attendant,
     label: "Corretor",
     description: "Vê apenas a própria carteira e recebe leads e reuniões.",
   },

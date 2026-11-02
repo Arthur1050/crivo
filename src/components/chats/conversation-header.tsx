@@ -1,5 +1,6 @@
 "use client";
 
+import { SENDER } from "../../lib/vocabulary";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AlertDialog } from "@astryxdesign/core/AlertDialog";
@@ -33,8 +34,8 @@ const OPT_OUT_DESCRIPTION =
   "O lead não receberá mais mensagens, nem do agente nem da equipe. Esta ação não pode ser desfeita pela tela.";
 
 const CONDUCTOR_DOT = {
-  agente: "success",
-  humano: "accent",
+  [SENDER.agent]: "success",
+  [SENDER.human]: "accent",
   escalado: "warning",
   "opt-out": "neutral",
 } as const;

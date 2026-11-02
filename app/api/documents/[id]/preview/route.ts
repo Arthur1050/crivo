@@ -1,3 +1,4 @@
+import { DOCUMENT_STATUS } from "../../../../../src/lib/vocabulary";
 import { PermissionDeniedError, requirePermission, type AuthContext } from "../../../../../src/server/auth/session";
 import { findDocumentTextPreview, type DocumentTextPreview } from "../../../../../src/server/documents/repository";
 
@@ -38,7 +39,7 @@ export function createDocumentPreviewGetHandler(
     const document = await find(auth.tenantId, id, now());
     if (!document) return notFound();
 
-    if (document.status === "fora_do_agente") {
+    if (document.status === DOCUMENT_STATUS.outside_agent) {
       return Response.json({
         status: document.status,
         text: document.extractedText,

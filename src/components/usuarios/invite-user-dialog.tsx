@@ -1,5 +1,6 @@
 "use client";
 
+import { ROLE } from "../../lib/vocabulary";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { UserPlusIcon } from "lucide-react";
@@ -52,7 +53,7 @@ function InviteUserForm({ onClose }: { onClose: () => void }) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [roles, setRoles] = useState<string[]>(["corretor"]);
+  const [roles, setRoles] = useState<string[]>([ROLE.attendant]);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [banner, setBanner] = useState<
     { status: "error" | "warning"; title: string } | null

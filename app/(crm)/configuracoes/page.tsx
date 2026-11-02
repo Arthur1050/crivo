@@ -1,3 +1,4 @@
+import { MODALITY } from "../../../src/verticals/real-estate/vocabulary";
 import { notFound } from "next/navigation";
 import { FileTextIcon } from "lucide-react";
 import { Badge } from "@astryxdesign/core/Badge";
@@ -26,17 +27,17 @@ import {
 import { getActiveTenantId } from "@/src/server/tenant";
 
 const MODALITY_LABELS: Record<Modality, string> = {
-  novo: "Novo",
-  usado: "Usado",
-  ambos: "Ambos",
+  [MODALITY.new]: "Novo",
+  [MODALITY.used]: "Usado",
+  [MODALITY.both]: "Ambos",
 };
 
 // Mesmas cores por modalidade da tabela de Documentos
 // (`src/components/documents/documents-table.tsx`) — UI-02 AC4.
 const MODALITY_BADGE_VARIANT: Record<Modality, "blue" | "purple" | "teal"> = {
-  novo: "blue",
-  usado: "purple",
-  ambos: "teal",
+  [MODALITY.new]: "blue",
+  [MODALITY.used]: "purple",
+  [MODALITY.both]: "teal",
 };
 
 const NO_CATEGORY_LABEL = "Sem categoria";

@@ -1,3 +1,5 @@
+import { DOCUMENT_STATUS } from "../../../src/lib/vocabulary";
+import { MODALITY } from "../../../src/verticals/real-estate/vocabulary";
 import { Banner } from "@astryxdesign/core/Banner";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
@@ -27,7 +29,7 @@ import { getTenantContextLimitSummary } from "@/src/server/documents/repository"
 import { getDocumentFolder, listDocumentFolderSummaries } from "@/src/server/data/document-folders";
 import { getActiveTenantId } from "@/src/server/tenant";
 
-const VALID_MODALITIES: readonly string[] = ["novo", "usado", "ambos"];
+const VALID_MODALITIES: readonly string[] = [MODALITY.new, MODALITY.used, MODALITY.both];
 
 function asModality(value: string | undefined): Modality | undefined {
   return value && VALID_MODALITIES.includes(value) ? (value as Modality) : undefined;
@@ -91,7 +93,7 @@ export default async function DocumentosPage({
   // O polling só existe enquanto alguma extração está em curso, e a decisão é
   // do servidor: a ilha cliente nem monta quando não há o que observar.
   const hasProcessingDocuments = allDocuments.some(
-    (document) => document.status === "processando"
+    (document) => document.status === DOCUMENT_STATUS.processing
   );
   const benchmarkNotice = describeBenchmarkNotice(limitSummary, canWrite);
   const pageHeader = (

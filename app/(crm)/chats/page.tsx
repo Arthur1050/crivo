@@ -1,3 +1,4 @@
+import { SENDER } from "../../../src/lib/vocabulary";
 import { Avatar } from "@astryxdesign/core/Avatar";
 import { Banner } from "@astryxdesign/core/Banner";
 import { Divider } from "@astryxdesign/core/Divider";
@@ -102,9 +103,9 @@ export default async function ChatsPage({ searchParams }: ChatsPageProps) {
   const agentName = tenant?.agentName ?? "SDR";
   const conductorLabel = !controls
     ? ""
-    : controls.conductor === "agente"
+    : controls.conductor === SENDER.agent
       ? `Conduzida pelo agente ${agentName}`
-      : controls.conductor === "humano"
+      : controls.conductor === SENDER.human
         ? `Conduzida por ${takeoverUser?.name ?? "alguém da equipe"}`
         : controls.conductor === "escalado"
           ? "Escalado para humano"

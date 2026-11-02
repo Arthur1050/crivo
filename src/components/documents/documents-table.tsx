@@ -1,5 +1,6 @@
 "use client";
 
+import { DOCUMENT_STATUS } from "../../lib/vocabulary";
 import type { ReactNode } from "react";
 import { Badge } from "@astryxdesign/core/Badge";
 import { HStack, StackItem } from "@astryxdesign/core/Stack";
@@ -104,11 +105,11 @@ export function DocumentsTable({ documents, categoryById, renderActions, folderB
               variant={presentation.variant}
               label={presentation.label}
               tooltip={
-                presentation.state === "falha"
+                presentation.state === DOCUMENT_STATUS.failed
                   ? describeFailure(document.failureCode)
                   : presentation.description
               }
-              isPulsing={presentation.state === "processando"}
+              isPulsing={presentation.state === DOCUMENT_STATUS.processing}
             />
             <Text type="body">{presentation.label}</Text>
           </HStack>

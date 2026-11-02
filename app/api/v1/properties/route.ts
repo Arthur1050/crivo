@@ -1,3 +1,4 @@
+import { PROBLEM_CODE } from "../../../../src/lib/vocabulary";
 import { parsePropertyFilters } from "../../../../src/server/integration/property-filters";
 import { searchVisibleProperties } from "../../../../src/server/integration/properties";
 import { methodNotAllowed, problem } from "../../../../src/server/integration/problem";
@@ -16,7 +17,7 @@ export const GET = withIntegrationRoute(async (request, auth) => {
   const params = new URL(request.url).searchParams;
   const parsed = parsePropertyFilters(params);
   if (!parsed.ok) {
-    return problem(400, "payload-invalido", parsed.detail);
+    return problem(400, PROBLEM_CODE.invalid_payload, parsed.detail);
   }
 
   const result = await searchVisibleProperties(auth.tenantId, parsed.filters);

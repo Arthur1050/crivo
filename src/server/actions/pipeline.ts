@@ -1,5 +1,6 @@
 "use server";
 
+import { SENDER } from "../../lib/vocabulary";
 import { revalidatePath } from "next/cache";
 import { getLeadScope } from "../auth/session";
 import {
@@ -43,7 +44,7 @@ export async function updateLeadStatusAction(
     scope,
     input.leadId,
     input.status as LeadStatus,
-    "humano"
+    SENDER.human
   );
 
   if (!updated) {

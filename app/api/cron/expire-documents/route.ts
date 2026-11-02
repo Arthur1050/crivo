@@ -1,3 +1,4 @@
+import { PROBLEM_CODE } from "../../../../src/lib/vocabulary";
 import { timingSafeEqual, createHash } from "node:crypto";
 import type { DocumentStorage } from "../../../../src/server/documents/storage";
 import { VercelBlobDocumentStorage } from "../../../../src/server/documents/vercel-blob-storage";
@@ -37,14 +38,14 @@ export function createExpireDocumentsHandler(
     const provided = /^Bearer\s+(.+)$/i.exec(header ?? "")?.[1]?.trim();
 
     if (!secret || !provided) {
-      return problem(401, "nao-autenticado", "Secret do cron ausente ou inválido.");
+      return problem(401, PROBLEM_CODE.unauthenticated, "Secret do cron ausente ou inválido.");
     }
 
     const secretHash = createHash("sha256").update(secret).digest();
     const providedHash = createHash("sha256").update(provided).digest();
 
     if (!timingSafeEqual(secretHash, providedHash)) {
-      return problem(401, "nao-autenticado", "Secret do cron ausente ou inválido.");
+      return problem(401, PROBLEM_CODE.unauthenticated, "Secret do cron ausente ou inválido.");
     }
 
     const storage = deps.storage ?? new VercelBlobDocumentStorage();

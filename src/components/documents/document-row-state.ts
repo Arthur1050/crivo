@@ -1,3 +1,4 @@
+import { DOCUMENT_STATUS } from "../../lib/vocabulary";
 /**
  * Estado observável e ações disponíveis por linha da tabela de documentos
  * (lote-12 — T25). Puro e sem DOM, para que estado e papel sejam verificáveis
@@ -10,7 +11,7 @@
 
 import type { DocumentFailureCode } from "@/src/server/documents/processing";
 
-export type DocumentStatus = "processando" | "pronto" | "falha" | "fora_do_agente";
+export type DocumentStatus = typeof DOCUMENT_STATUS.processing | typeof DOCUMENT_STATUS.ready | typeof DOCUMENT_STATUS.failed | typeof DOCUMENT_STATUS.outside_agent;
 
 /**
  * `expirado` não existe no banco: ele é derivado do instante da leitura. Um
@@ -18,10 +19,10 @@ export type DocumentStatus = "processando" | "pronto" | "falha" | "fora_do_agent
  * mesmo que a rotina diária ainda não tenha rodado.
  */
 export type DocumentRowState =
-  | "processando"
-  | "pronto"
-  | "falha"
-  | "fora_do_agente"
+  | typeof DOCUMENT_STATUS.processing
+  | typeof DOCUMENT_STATUS.ready
+  | typeof DOCUMENT_STATUS.failed
+  | typeof DOCUMENT_STATUS.outside_agent
   | "expirado";
 
 export interface DocumentRowInput {
@@ -38,22 +39,22 @@ export interface DocumentStatePresentation {
 }
 
 const PRESENTATION: Record<DocumentRowState, Omit<DocumentStatePresentation, "state">> = {
-  processando: {
+  [DOCUMENT_STATUS.processing]: {
     label: "Processando",
     variant: "accent",
     description: "O texto está sendo extraído. O original já pode ser baixado.",
   },
-  pronto: {
+  [DOCUMENT_STATUS.ready]: {
     label: "Pronto",
     variant: "success",
     description: "O conteúdo está disponível para o agente.",
   },
-  falha: {
+  [DOCUMENT_STATUS.failed]: {
     label: "Falha",
     variant: "error",
     description: "A extração não produziu texto. O original continua disponível.",
   },
-  fora_do_agente: {
+  [DOCUMENT_STATUS.outside_agent]: {
     label: "Fora do agente",
     variant: "warning",
     description: "O conteúdo excede o limite do contexto e não é enviado ao agente.",
@@ -113,12 +114,12 @@ export function deriveRowActions(
     };
   }
 
-  const hasExtractedText = state === "pronto" || state === "fora_do_agente";
+  const hasExtractedText = state === DOCUMENT_STATUS.ready || state === DOCUMENT_STATUS.outside_agent;
   return {
     canPreview: hasExtractedText,
     canDownload: true,
     canEdit: canWrite,
-    canRetry: canWrite && state === "falha",
+    canRetry: canWrite && state === DOCUMENT_STATUS.failed,
     canDelete: canWrite,
   };
 }

@@ -1,3 +1,4 @@
+import { PROBLEM_CODE } from "../../../../src/lib/vocabulary";
 import { findMemoryResets } from "../../../../src/server/integration/memory-resets";
 import { parseMemoryResetsQuery } from "../../../../src/server/integration/parsers";
 import { methodNotAllowed, problem } from "../../../../src/server/integration/problem";
@@ -12,7 +13,7 @@ import { withIntegrationRoute } from "../../../../src/server/integration/route";
  */
 export const GET = withIntegrationRoute(async (request, auth) => {
   const parsed = parseMemoryResetsQuery(new URL(request.url));
-  if (!parsed.ok) return problem(400, "payload-invalido", parsed.detail);
+  if (!parsed.ok) return problem(400, PROBLEM_CODE.invalid_payload, parsed.detail);
 
   const resets = await findMemoryResets(auth.tenantId, parsed.since);
   return Response.json({ resets });

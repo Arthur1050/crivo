@@ -1,3 +1,4 @@
+import { PROBLEM_CODE } from "../../../../src/lib/vocabulary";
 import { Buffer } from "node:buffer";
 import { DocumentContextBudgetExceeded, getDirectDocumentContext } from "../../../../src/server/integration/context";
 import {
@@ -27,7 +28,7 @@ export const POST = withIntegrationRoute(async (request, auth) => {
   if (Buffer.byteLength(bodyText, "utf8") > MAX_BODY_BYTES) {
     return problem(
       413,
-      "corpo-grande-demais",
+      PROBLEM_CODE.body_too_large,
       `Corpo da requisição excede o limite de ${MAX_BODY_BYTES} bytes.`
     );
   }
@@ -36,20 +37,20 @@ export const POST = withIntegrationRoute(async (request, auth) => {
   try {
     json = bodyText.trim() === "" ? {} : JSON.parse(bodyText);
   } catch {
-    return problem(400, "payload-invalido", "Corpo da requisição não é JSON válido.");
+    return problem(400, PROBLEM_CODE.invalid_payload, "Corpo da requisição não é JSON válido.");
   }
 
   const parsed = parseContextQuery(json);
   if (!parsed.ok) {
-    return problem(400, "payload-invalido", parsed.detail);
+    return problem(400, PROBLEM_CODE.invalid_payload, parsed.detail);
   }
 
   try {
     const envelope = await getDirectDocumentContext(auth.tenantId, parsed.dto);
     return Response.json(envelope, { headers: NO_STORE });
   } catch (error) {
-    if (error instanceof DocumentContextBudgetExceeded) return problem(400, "payload-invalido", "Contexto documental excede o orçamento disponível após a reserva proativa.");
-    return problem(503, "servico-indisponivel", "Leitura documental temporariamente indisponível.");
+    if (error instanceof DocumentContextBudgetExceeded) return problem(400, PROBLEM_CODE.invalid_payload, "Contexto documental excede o orçamento disponível após a reserva proativa.");
+    return problem(503, PROBLEM_CODE.service_unavailable, "Leitura documental temporariamente indisponível.");
   }
 });
 

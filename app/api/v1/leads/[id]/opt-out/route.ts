@@ -1,3 +1,4 @@
+import { PROBLEM_CODE } from "../../../../../../src/lib/vocabulary";
 import { getLead, serviceScope } from "../../../../../../src/server/data";
 import { serializeLead } from "../../../../../../src/server/integration/leads";
 import { optOutLead } from "../../../../../../src/server/integration/lgpd";
@@ -20,7 +21,7 @@ export const POST = withIntegrationRoute<{ params: Promise<{ id: string }> }>(
 
     const result = await optOutLead(auth.tenantId, id);
     if (!result) {
-      return problem(404, "recurso-nao-encontrado", "Lead não encontrado.");
+      return problem(404, PROBLEM_CODE.not_found, "Lead não encontrado.");
     }
 
     // `optOutLead` já confirmou que a linha existe no tenant — a busca

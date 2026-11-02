@@ -1,5 +1,6 @@
 "use server";
 
+import { ROLE } from "../../lib/vocabulary";
 import { revalidatePath } from "next/cache";
 import { verifySession } from "../auth/session";
 import { denyIfForbidden } from "./permission";
@@ -102,7 +103,7 @@ export async function deactivateMemberAction(
   // AC8 da task / Edge Case do último administrador: vale inclusive quando o
   // administrador tenta desativar a si mesmo, porque a regra olha o vínculo,
   // não quem está pedindo.
-  if (member.roles.includes("administrador")) {
+  if (member.roles.includes(ROLE.admin)) {
     const remaining = await countActiveAdministrators(
       session.tenantId,
       member.memberId

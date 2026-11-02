@@ -1,3 +1,4 @@
+import { PROBLEM_CODE } from "../../../../src/lib/vocabulary";
 import { getTenantSettings } from "../../../../src/server/integration/settings";
 import { methodNotAllowed, problem } from "../../../../src/server/integration/problem";
 import { withIntegrationRoute } from "../../../../src/server/integration/route";
@@ -13,7 +14,7 @@ import { withIntegrationRoute } from "../../../../src/server/integration/route";
 export const GET = withIntegrationRoute(async (_request, auth) => {
   const settings = await getTenantSettings(auth.tenantId);
   if (!settings) {
-    return problem(404, "recurso-nao-encontrado", "Tenant não encontrado.");
+    return problem(404, PROBLEM_CODE.not_found, "Tenant não encontrado.");
   }
 
   return Response.json(settings);
