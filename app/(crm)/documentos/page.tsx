@@ -8,7 +8,7 @@ import { DocumentProcessingRefresh } from "@/src/components/documents/document-p
 import { DocumentsBrowser } from "@/src/components/documents/documents-browser";
 import { DocumentsToolbar } from "@/src/components/documents/documents-toolbar";
 import { clearFiltersHref, folderFilterFor, resolveDocumentsPageMode } from "@/src/components/documents/documents-page-state";
-import { FolderHeader } from "@/src/components/documents/folder-header";
+import { FolderHeading, FolderPath } from "@/src/components/documents/folder-header";
 import { CreateFolderDialog } from "@/src/components/documents/folder-name-dialog";
 import { FoldersGrid } from "@/src/components/documents/folders-grid";
 import { toFolderCardItems } from "@/src/components/documents/folder-presentation";
@@ -147,10 +147,7 @@ export default async function DocumentosPage({
       {mode.kind === "raiz" ? (
         <FoldersGrid folders={folderItems} canWrite={canWrite} createAction={<CreateFolderDialog />} />
       ) : (
-        <FolderHeader
-          folder={{ ...mode.folder, fileCount: summaries.find((item) => item.id === mode.folder.id)?.fileCount ?? 0 }}
-          canWrite={canWrite}
-        />
+        <FolderPath name={mode.folder.name} />
       )}
 
       {(hasAnyDocuments || mode.kind === "pasta") && (
@@ -162,7 +159,12 @@ export default async function DocumentosPage({
         categories={categories}
         canWrite={canWrite}
         folders={folderOptions}
-        heading={mode.kind === "pasta" ? <Heading level={2}>{mode.folder.name}</Heading> : undefined}
+        heading={mode.kind === "pasta" ? (
+          <FolderHeading
+            folder={{ ...mode.folder, fileCount: summaries.find((item) => item.id === mode.folder.id)?.fileCount ?? 0 }}
+            canWrite={canWrite}
+          />
+        ) : undefined}
         emptyState={
           mode.kind === "pasta" && !hasActiveFilters ? (
             <EmptyState

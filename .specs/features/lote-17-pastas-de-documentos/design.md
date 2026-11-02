@@ -463,7 +463,7 @@ timeZone: "America/Sao_Paulo" })`, com `year` só no último caso). Teste nas fr
 | `folder-name-dialog.tsx` (`"use client"`) | `CreateFolderDialog` (gatilho próprio, botão secundário "Nova pasta" com `FolderPlusIcon`) e `RenameFolderDialog` (controlado) | `Dialog`, `DialogHeader`, `Layout`/`LayoutContent`/`LayoutFooter`, `TextInput` (`label="Nome da pasta"`, `status` de erro, `maxLength` 120), `Button` | `CreateFolderDialog: {}`; `RenameFolderDialog: { folder: { id: string; name: string } \| null; onClose: () => void }` |
 | `delete-folder-dialog.tsx` (`"use client"`) | `DeleteFolderDialog` | `AlertDialog` (`actionVariant="destructive"`, `actionLabel="Excluir pasta"`, `isActionLoading`) | `{ folder: { id: string; name: string; fileCount: number } \| null; onClose: () => void; afterDeleteHref?: string }` |
 | `move-document-dialog.tsx` (`"use client"`) | `MoveDocumentDialog` | `Dialog`, `DialogHeader`, `Layout`, `Selector` (`label="Pasta"`, opções de `folderSelectorOptions`), `Banner` (erro), `Button` ("Mover") | `{ document: { id: string; name: string; folderId: string \| null } \| null; folders: DocumentFolderOption[]; onClose: () => void }` |
-| `folder-header.tsx` (`"use client"`) | `FolderHeader` | `Breadcrumbs` (`label="Caminho"`, `variant="supporting"`) + `BreadcrumbItem` (`href="/documentos"` com `as={NextLink}`; pasta com `isCurrent`), `HStack`, `Heading` (h2, nome), `FolderActionsMenu` | `{ folder: { id: string; name: string; fileCount: number }; canWrite: boolean }` |
+| `folder-header.tsx` (`"use client"`) | `FolderPath` e `FolderHeading` (emenda da T34: um `FolderHeader` único repetia o nome em dois títulos) | `FolderPath`: `Breadcrumbs` (`label="Caminho"`, `variant="supporting"`) + `BreadcrumbItem` (`href="/documentos"` com `as={NextLink}`; pasta com `isCurrent`). `FolderHeading`: `HStack`, `Heading` (h2, nome), `FolderActionsMenu` | `FolderPath`: `{ name: string }`. `FolderHeading`: `{ folder: { id: string; name: string; fileCount: number }; canWrite: boolean }` |
 | `documents-browser.tsx` (modificar) | `DocumentsBrowser` | já usa `DropdownMenu`; ganha item "Mover para pasta" (`FolderInputIcon`) quando `canWrite` e o documento não está excluído, e monta `MoveDocumentDialog` | props novas, opcionais: `folders?: DocumentFolderOption[]` (padrão `[]`), `heading?: ReactNode` (padrão `<Heading level={2}>Todos os arquivos</Heading>`) |
 | `documents-table.tsx` (modificar) | `DocumentsTable` | coluna nova "Pasta" (`Text` com o nome ou `NO_FOLDER_LABEL`) depois de "Categoria" | prop nova opcional `folderById?: Map<string, DocumentFolderOption>`; sem ela a coluna não aparece |
 | `edit-document-dialog.tsx` (modificar) | `EditDocumentDialog` | `Selector` "Pasta" (`hasClear`, `placeholder="Sem pasta"`, `isOptional`) depois de "Categoria" | prop nova opcional `folders?: DocumentFolderOption[]`; com `folders` ausente o campo não aparece e `folderId` não é enviado (L-005); com o campo, envia `folderId: string \| null` sempre |
@@ -524,8 +524,8 @@ Teste unitário cobrindo os quatro `FolderParam` e as três saídas.
      showFolderFilter`; `DocumentsBrowser folders={opções}`; `DocumentsTable` recebe `folderById`
      pelo browser.
    - **pasta**: mesmo cabeçalho, mas `UploadDialog folder={folder}` e sem `CreateFolderDialog`;
-     `FolderHeader` no lugar de `FoldersGrid`; `DocumentsToolbar` sem filtro de pasta;
-     `DocumentsBrowser heading={nome}` com `EmptyState` "Esta pasta está vazia" (sem filtro) ou
+     `FolderPath` no lugar de `FoldersGrid`; `DocumentsToolbar` sem filtro de pasta;
+     `DocumentsBrowser heading={<FolderHeading />}` com `EmptyState` "Esta pasta está vazia" (sem filtro) ou
      "Nenhum resultado encontrado" com `NavLink href={clearFiltersHref(mode)}`.
    - **pasta-inexistente**: cabeçalho sem ações e um `EmptyState` "Pasta não encontrada" com
      `NavLink href="/documentos"` "Voltar para Documentos"; nada mais. HTTP 200, sem `notFound()`
