@@ -273,10 +273,26 @@ T41 → T42 → T43 → T44 → T45
 
 **Done when**:
 
-- [ ] Cada direção proibida da BOUND-02 reprova em fixture própria, citando os dois caminhos: núcleo para vertical, núcleo para app, vertical para app e `@core/client` para `server-only` ou `@core/server`.
-- [ ] Import dinâmico e `export from` são checados.
-- [ ] Violações atuais entram em `transitional.json` com `path`, `term`, `reason` e `removedIn`.
-- [ ] Entrada sem ocorrência reprova (BOUND-04 AC3).
+- [x] Cada direção proibida da BOUND-02 reprova em fixture própria, citando os dois caminhos: núcleo para vertical, núcleo para app, vertical para app e `@core/client` para `server-only` ou `@core/server`.
+- [x] Import dinâmico e `export from` são checados.
+- [x] Violações atuais entram em `transitional.json` com `path`, `term`, `reason` e `removedIn`.
+- [x] Entrada sem ocorrência reprova (BOUND-04 AC3).
+
+**Execução**: Quick/Boundary: 1 arquivo, 14 testes, 0 falhas. TypeScript: 0 erros. ESLint: 0 erros, 9 avisos. Quatro dependências preexistentes registradas, para remoção nas costuras do L18a. Checagem aplica-se aos módulos não teste, conforme o escopo de classificação de BOUND-01.
+
+| Critério | Evidência em `scripts/__tests__/boundary.test.ts` | Resultado esperado |
+| --- | --- | --- |
+| Cinco direções proibidas | `:78`, `expect(checkImports(...)).toEqual([{ file, line: 2, message: ... }])` | Os dois caminhos e a linha 2, em cada fixture |
+| Import dinâmico e reexportação | `:84`, `expect(checkImports(...)).toEqual([{ file: "src/core/sample.ts", line: 1, message: ... }])` | Recusa com os dois caminhos |
+| Exceções atuais | `:68`, `expect(checkImports(repositorySources(), rules, transitional)).toEqual([])` | Sem violação |
+| Exceção usada e órfã | `:91`, igualdade com `[]`; `:92`, igualdade com a violação `Exceção sem ocorrência` | Só a ocorrência registrada é permitida |
+
+| Asserções | Origem | Necessárias |
+| --- | --- | --- |
+| `boundary.test.ts:68`, `:78`, `:84` | BOUND-02 AC2–4 e T5 | Sim |
+| `boundary.test.ts:91`, `:92` | BOUND-04 AC1/AC3 | Sim |
+
+**Adequação**: critérios cobertos com fixtures por direção e forma de import; testes anteriores preservados, conforme AGENTS.md.
 
 **Tests**: unit
 **Gate**: quick

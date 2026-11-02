@@ -1,3 +1,6 @@
+import { posix } from "node:path";
+import ts from "typescript";
+
 export type Layer = "core" | "vertical" | "app";
 export type CorePackage = "@core/db" | "@core/server" | "@core/agent" | "@core/client" | "@core/vertical-kit";
 export interface BoundaryRule {
@@ -9,6 +12,68 @@ export interface Violation {
   file: string;
   line: number;
   message: string;
+}
+
+export interface TransitionalEntry {
+  path: string;
+  term: string;
+  reason: string;
+  removedIn: string;
+  category: string;
+}
+
+export type Sources = Readonly<Record<string, string>>;
+
+function importsOf(file: string, source: string): { target: string; line: number }[] {
+  const ast = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true);
+  const imports: { target: string; line: number }[] = [];
+  function visit(node: ts.Node) {
+    const literal = ts.isImportDeclaration(node) || ts.isExportDeclaration(node)
+      ? node.moduleSpecifier
+      : ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword
+        ? node.arguments[0] : undefined;
+    if (literal && ts.isStringLiteral(literal)) {
+      imports.push({ target: literal.text, line: ast.getLineAndCharacterOfPosition(literal.getStart(ast)).line + 1 });
+    }
+    ts.forEachChild(node, visit);
+  }
+  visit(ast);
+  return imports;
+}
+
+function resolveImport(file: string, target: string, sources: Sources): string | undefined {
+  const base = target.startsWith("@/") ? target.slice(2)
+    : target.startsWith(".") ? posix.normalize(posix.join(posix.dirname(file), target)) : undefined;
+  if (!base) return undefined;
+  return [base, ...[".ts", ".tsx", ".mts", ".mjs", ".js", ".jsx", ".json"].map((extension) => base + extension),
+    ...[".ts", ".tsx", ".mjs", ".js"].map((extension) => `${base}/index${extension}`)]
+    .find((candidate) => candidate in sources);
+}
+
+export function checkImports(sources: Sources, rules: readonly BoundaryRule[], transitional: readonly TransitionalEntry[] = []): Violation[] {
+  const violations: Violation[] = [];
+  const used = new Set<TransitionalEntry>();
+  for (const [file, source] of Object.entries(sources)) {
+    if (isTest(file) || !/\.[cm]?[jt]sx?$/.test(file)) continue;
+    const origin = classifyFile(file, rules);
+    if (!origin) continue;
+    for (const item of importsOf(file, source)) {
+      const target = item.target === "server-only" ? item.target : resolveImport(file, item.target, sources);
+      if (!target) continue;
+      const destination = classifyFile(target, rules);
+      const prohibited = origin.layer === "core" && (destination?.layer === "vertical" || destination?.layer === "app")
+        || origin.layer === "vertical" && destination?.layer === "app"
+        || origin.package === "@core/client" && (target === "server-only" || destination?.package === "@core/server");
+      if (!prohibited) continue;
+      const entry = transitional.find((entry) => entry.path === file && entry.term === `import:${target}`);
+      if (entry) used.add(entry);
+      else violations.push({ file, line: item.line, message: `Import proibido: ${file} -> ${target}` });
+    }
+  }
+  for (const entry of transitional.filter((entry) => entry.term.startsWith("import:"))) {
+    if (!used.has(entry)) violations.push({ file: entry.path, line: 1, message: `Exceção sem ocorrência: ${entry.path} -> ${entry.term}` });
+  }
+  return violations;
 }
 
 export function matchesGlob(file: string, glob: string): boolean {
@@ -47,3 +112,4 @@ export function checkClassification(files: readonly string[], rules: readonly Bo
   }
   return violations;
 }
+

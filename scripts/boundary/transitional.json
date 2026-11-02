@@ -1,0 +1,30 @@
+[
+  {
+    "path": "scripts/preview-message-pricing.tsx",
+    "term": "import:src/components/chats/message-pricing.tsx",
+    "reason": "Dependência anterior ao lote; removida nas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "import"
+  },
+  {
+    "path": "scripts/reengagement-proof.ts",
+    "term": "import:src/components/chats/message-thread.tsx",
+    "reason": "Dependência anterior ao lote; removida nas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "import"
+  },
+  {
+    "path": "scripts/test-db-push.ts",
+    "term": "import:scripts/document-folders/apply.ts",
+    "reason": "Dependência anterior ao lote; removida nas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "import"
+  },
+  {
+    "path": "scripts/test-db-push.ts",
+    "term": "import:scripts/vitrine/apply.ts",
+    "reason": "Dependência anterior ao lote; removida nas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "import"
+  }
+]
