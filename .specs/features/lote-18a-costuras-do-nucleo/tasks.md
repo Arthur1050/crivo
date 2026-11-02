@@ -468,10 +468,24 @@ T41 → T42 → T43 → T44 → T45
 
 **Done when**:
 
-- [ ] Teste afirma com valor literal cada par chave e valor de cada constante.
-- [ ] Teste compara cada conjunto com `pgEnum.enumValues` do schema e `PROBLEM_CODE` com `ProblemCode`.
-- [ ] Chaves de `PROBLEM_CODE` em inglês para todos os códigos existentes.
-- [ ] Tipos `LeadStatus`, `Role` e `AgentPhase` derivados das constantes.
+- [x] Teste afirma com valor literal cada par chave e valor de cada constante.
+- [x] Teste compara cada conjunto com `pgEnum.enumValues` do schema e `PROBLEM_CODE` com `ProblemCode`.
+- [x] Chaves de `PROBLEM_CODE` em inglês para todos os códigos existentes.
+- [x] Tipos `LeadStatus`, `Role` e `AgentPhase` derivados das constantes.
+
+**Execução**: Quick + Boundary: 2 arquivos, 77 testes, 0 falhas (18 de vocabulário). TypeScript: 0 erros. ESLint: 0 erros, 9 avisos. Papel não tem enum PostgreSQL: comparação com `ROLES` existente; saúde usa `enumValues` da coluna textual. Primeira rodada: o import de `TITLES` carregou a instrumentação e foi barrado pela proteção `TEST_DATABASE_URL não definida`; isolada a instrumentação da rota com mock, sem carregar ambiente nem conexão. Segunda rodada verde. Única entrada nova: `src/lib/vocabulary.ts`, `market:corretor`, valor persistido obrigatório até o L18c; justificativa no commit.
+
+| Critério | Evidência em `src/lib/__tests__/vocabulary.test.ts` | Resultado esperado |
+| --- | --- | --- |
+| Cada chave e valor, inclusive códigos | `:39`, `expect(actual).toEqual(expected)` | Nove objetos literais do vocabulário atual |
+| Conjuntos e ordem | `:48`, `expect(Object.values(actual)).toEqual(values)` | Igualdade com enums/coluna e papéis atuais |
+| Códigos e tipos | `:52`, `expect(Object.values(PROBLEM_CODE)).toEqual(Object.keys(TITLES))`; `:53–56`, `expectTypeOf(...).toEqualTypeOf(...)` | Catálogo completo e tipos derivados |
+
+| Asserções | Origem | Necessárias |
+| --- | --- | --- |
+| `vocabulary.test.ts:39`, `:48`, `:52–56` | VOCAB-01 AC1/AC3/AC5 e T10 | Sim |
+
+**Adequação**: pares esperados literais, comparação com fontes atuais e verificação de tipos pelo TypeScript; testes da base intactos, conforme AGENTS.md.
 
 **Tests**: unit
 **Gate**: quick

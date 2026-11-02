@@ -5395,5 +5395,12 @@
     "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
     "removedIn": "L18a",
     "category": "identifier"
+  },
+  {
+    "path": "src/lib/vocabulary.ts",
+    "term": "market:corretor",
+    "reason": "Valor persistido do papel e código de problema; o vocabulário preserva os valores até a ativação do L18c (T10, VOCAB-01 AC3).",
+    "removedIn": "L18c",
+    "category": "stored-values"
   }
 ]
