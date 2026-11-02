@@ -510,6 +510,36 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: PABRIR-01 AC4; src/components/documents/documents-toolbar.tsx:173 (ui/filtros)
 - last seen: 2026-10-30T01:31:37Z
 
+### L-094 - Ao simular hooks de estado num teste de componente, semeie estados que entrem em cada ramo condicional; o valor inicial fixo deixa o ramo sem execução.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `components/testes` · harmful: 0
+- features: lote-17-pastas-de-documentos
+- evidence: N3 / src/components/documents/documents-toolbar.tsx:61 (components/testes)
+- last seen: 2026-11-02T04:40:07Z
+
+### L-095 - Cubra pelo handler real cada controle novo que grava parâmetro na URL, não só os que motivaram a correção.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `components/testes` · harmful: 0
+- features: lote-17-pastas-de-documentos
+- evidence: N10 / src/components/documents/documents-toolbar.tsx:159 (components/testes)
+- last seen: 2026-11-02T04:40:07Z
+
+### L-096 - Teste de fuso precisa fixar um TZ de processo diferente do fuso exigido para discriminar na máquina local.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `testes` · harmful: 0
+- features: lote-17-pastas-de-documentos
+- evidence: M10L / src/components/documents/__tests__/folder-presentation.test.ts:83 (testes)
+- last seen: 2026-11-02T04:40:07Z
+
+### L-097 - Quando um requisito diz que algo não muda numa operação, nomeie todos os caminhos de escrita que a realizam e teste cada um.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `spec` · harmful: 0
+- features: lote-17-pastas-de-documentos
+- evidence: PAGENTE-01 AC2 / src/server/actions/documents.ts:139 (spec)
+- last seen: 2026-11-02T04:40:08Z
+
+### L-098 - Capture cada ramo visual de um critério, inclusive o estado com valor preenchido, não só o vazio.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `capturas` · harmful: 0
+- features: lote-17-pastas-de-documentos
+- evidence: PEDIT-01 AC1 / captura 24 (capturas)
+- last seen: 2026-11-02T04:40:08Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

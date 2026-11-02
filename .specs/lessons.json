@@ -4,7 +4,7 @@
   "window_days": 45,
   "quarantine_threshold": 2,
   "prune_requires_confirmation": true,
-  "next_id": 94,
+  "next_id": 99,
   "lessons": [
     {
       "id": "L-001",
@@ -1525,6 +1525,96 @@
       ],
       "created": "2026-10-30T01:31:37Z",
       "last_seen": "2026-10-30T01:31:37Z"
+    },
+    {
+      "id": "L-094",
+      "key": "surviving_mutant::ao simular hooks de estado num teste de componente semeie estados que entrem em cada ramo condicional o valor inicial fixo deixa o ramo sem execucao",
+      "text": "Ao simular hooks de estado num teste de componente, semeie estados que entrem em cada ramo condicional; o valor inicial fixo deixa o ramo sem execução.",
+      "signal": "surviving_mutant",
+      "scope": "components/testes",
+      "status": "candidate",
+      "features": [
+        "lote-17-pastas-de-documentos"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "N3 / src/components/documents/documents-toolbar.tsx:61 (components/testes)"
+      ],
+      "created": "2026-11-02T04:40:07Z",
+      "last_seen": "2026-11-02T04:40:07Z"
+    },
+    {
+      "id": "L-095",
+      "key": "surviving_mutant::cubra pelo handler real cada controle novo que grava parametro na url nao so os que motivaram a correcao",
+      "text": "Cubra pelo handler real cada controle novo que grava parâmetro na URL, não só os que motivaram a correção.",
+      "signal": "surviving_mutant",
+      "scope": "components/testes",
+      "status": "candidate",
+      "features": [
+        "lote-17-pastas-de-documentos"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "N10 / src/components/documents/documents-toolbar.tsx:159 (components/testes)"
+      ],
+      "created": "2026-11-02T04:40:07Z",
+      "last_seen": "2026-11-02T04:40:07Z"
+    },
+    {
+      "id": "L-096",
+      "key": "surviving_mutant::teste de fuso precisa fixar um tz de processo diferente do fuso exigido para discriminar na maquina local",
+      "text": "Teste de fuso precisa fixar um TZ de processo diferente do fuso exigido para discriminar na máquina local.",
+      "signal": "surviving_mutant",
+      "scope": "testes",
+      "status": "candidate",
+      "features": [
+        "lote-17-pastas-de-documentos"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "M10L / src/components/documents/__tests__/folder-presentation.test.ts:83 (testes)"
+      ],
+      "created": "2026-11-02T04:40:07Z",
+      "last_seen": "2026-11-02T04:40:07Z"
+    },
+    {
+      "id": "L-097",
+      "key": "spec_precision_gap::quando um requisito diz que algo nao muda numa operacao nomeie todos os caminhos de escrita que a realizam e teste cada um",
+      "text": "Quando um requisito diz que algo não muda numa operação, nomeie todos os caminhos de escrita que a realizam e teste cada um.",
+      "signal": "spec_precision_gap",
+      "scope": "spec",
+      "status": "candidate",
+      "features": [
+        "lote-17-pastas-de-documentos"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "PAGENTE-01 AC2 / src/server/actions/documents.ts:139 (spec)"
+      ],
+      "created": "2026-11-02T04:40:08Z",
+      "last_seen": "2026-11-02T04:40:08Z"
+    },
+    {
+      "id": "L-098",
+      "key": "ac_gap::capture cada ramo visual de um criterio inclusive o estado com valor preenchido nao so o vazio",
+      "text": "Capture cada ramo visual de um critério, inclusive o estado com valor preenchido, não só o vazio.",
+      "signal": "ac_gap",
+      "scope": "capturas",
+      "status": "candidate",
+      "features": [
+        "lote-17-pastas-de-documentos"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "PEDIT-01 AC1 / captura 24 (capturas)"
+      ],
+      "created": "2026-11-02T04:40:08Z",
+      "last_seen": "2026-11-02T04:40:08Z"
     }
   ]
 }
