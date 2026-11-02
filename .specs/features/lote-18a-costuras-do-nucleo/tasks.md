@@ -348,9 +348,26 @@ T41 → T42 → T43 → T44 → T45
 
 **Done when**:
 
-- [ ] Cada termo da BOUND-03 reprova em qualquer caixa, com arquivo e linha, inclusive em template `sql`.
-- [ ] Termo em comentário passa, com caso de fixture.
-- [ ] Ocorrências atuais em arquivos `core` entram em `transitional.json` e o teste passa na árvore real.
+- [x] Cada termo da BOUND-03 reprova em qualquer caixa, com arquivo e linha, inclusive em template `sql`.
+- [x] Termo em comentário passa, com caso de fixture.
+- [x] Ocorrências atuais em arquivos `core` entram em `transitional.json` e o teste passa na árvore real.
+
+**Execução**: Quick/Boundary: 1 arquivo, 31 testes, 0 falhas. TypeScript: 0 erros. ESLint: 0 erros, 9 avisos. Lista com 154 entradas (4 imports e 150 pares arquivo/termo). Dicionário em JSON separado do código verificado. Arquivos de dados não são analisados como TypeScript; identificadores e literais de código são lidos pelo AST.
+
+| Critério | Evidência em `scripts/__tests__/boundary.test.ts` | Resultado esperado |
+| --- | --- | --- |
+| Treze termos, identificador/literal | `:107`, `expect(checkMarketTerms(...)).toEqual([{ file: "src/core/sample.ts", line: 2, message: ... }])` | Recusa com arquivo, linha e termo canônico |
+| Template SQL interpolado | `:114`, igualdade com a violação de `property` na linha 2 | Localização do termo |
+| Comentários | `:120`, `expect(checkMarketTerms(...)).toEqual([])` | Sem violação |
+| Árvore real | `:102`, `expect(checkMarketTerms(repositorySources(), rules, transitional)).toEqual([])` | Exceções correspondem às ocorrências reais |
+| Catraca | `:125`, igualdade com `[]`; `:126`, igualdade com `Exceção sem ocorrência` | Exceção deixa de valer quando o termo some |
+
+| Asserções | Origem | Necessárias |
+| --- | --- | --- |
+| `boundary.test.ts:102`, `:107`, `:114`, `:120` | BOUND-03 AC1/AC2 e T7 | Sim |
+| `boundary.test.ts:125`, `:126` | BOUND-04 AC3 | Sim |
+
+**Adequação**: um caso por termo, com identificador/literal, SQL e comentários; testes da base intactos, conforme AGENTS.md.
 
 **Tests**: unit
 **Gate**: quick

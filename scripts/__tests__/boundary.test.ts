@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import map from "../boundary/map.json";
 import transitional from "../boundary/transitional.json";
-import { checkClassification, checkImports, classifyFile, isTest, type BoundaryRule } from "../boundary/check";
+import { checkClassification, checkImports, checkMarketTerms, classifyFile, isTest, type BoundaryRule } from "../boundary/check";
 
 export function repositoryFiles(): string[] {
   function walk(directory: string): string[] {
@@ -90,6 +90,40 @@ describe("direção dos imports (BOUND-02/04)", () => {
     const entry = { path: "src/core/sample.ts", term: "import:src/vertical/index.ts", reason: "Costura pendente", removedIn: "L18a", category: "import" };
     expect(checkImports({ "src/core/sample.ts": "import '@/src/vertical';", "src/vertical/index.ts": "" }, fixture, [entry])).toEqual([]);
     expect(checkImports({ "src/core/sample.ts": "", "src/vertical/index.ts": "" }, fixture, [entry])).toEqual([
+      { file: entry.path, line: 1, message: `Exceção sem ocorrência: ${entry.path} -> ${entry.term}` },
+    ]);
+  });
+});
+
+describe("termos de mercado (BOUND-03/04)", () => {
+  const fixture: BoundaryRule[] = [{ glob: "src/core/**", layer: "core", package: "@core/server" }];
+
+  it("aceita a árvore real com as ocorrências transitórias atuais", () => {
+    expect(checkMarketTerms(repositorySources(), rules, transitional)).toEqual([]);
+  });
+
+  it.each(["imovel", "imóve", "imobili", "corretor", "broker", "property", "reuni", "meeting", "creci", "storefront", "vitrine", "financiamento", "krivo"])("recusa %s em identificador e literal, em qualquer caixa", (term) => {
+    for (const source of [`\nconst ${term.toUpperCase()}Value = 1;`, `\nconst value = '${term.toUpperCase()}';`]) {
+      expect(checkMarketTerms({ "src/core/sample.ts": source }, fixture)).toEqual([
+        { file: "src/core/sample.ts", line: 2, message: `Termo de mercado "${term}" em src/core/sample.ts` },
+      ]);
+    }
+  });
+
+  it("localiza o termo na linha correta de um template SQL interpolado", () => {
+    expect(checkMarketTerms({ "src/core/sample.ts": 'const query = sql`select ${column}\nfrom PROPERTY`;'}, fixture)).toEqual([
+      { file: "src/core/sample.ts", line: 2, message: 'Termo de mercado "property" em src/core/sample.ts' },
+    ]);
+  });
+
+  it("ignora comentários", () => {
+    expect(checkMarketTerms({ "src/core/sample.ts": '// corretor\n/* PROPERTY */\nconst value = 1;' }, fixture)).toEqual([]);
+  });
+
+  it("reprova a exceção quando o termo desaparece", () => {
+    const entry = { path: "src/core/sample.ts", term: "market:broker", reason: "Renomeação pendente", removedIn: "L18a", category: "market" };
+    expect(checkMarketTerms({ [entry.path]: "const broker = 1;" }, fixture, [entry])).toEqual([]);
+    expect(checkMarketTerms({ [entry.path]: "const assignee = 1;" }, fixture, [entry])).toEqual([
       { file: entry.path, line: 1, message: `Exceção sem ocorrência: ${entry.path} -> ${entry.term}` },
     ]);
   });

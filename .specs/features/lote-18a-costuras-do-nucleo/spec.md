@@ -375,7 +375,7 @@ mercado, porque uma loja não tem `novo` e `usado`.
 | --- | --- | --- | --- |
 | BOUND-01 | P1: Fronteira verificável | Execute | Implementing |
 | BOUND-02 | P1: Fronteira verificável | Execute | Implementing |
-| BOUND-03 | P1: Fronteira verificável | Tasks | In Tasks |
+| BOUND-03 | P1: Fronteira verificável | Execute | Implementing |
 | BOUND-04 | P1: Fronteira verificável | Execute | Implementing |
 | KEEP-01 | P1: Comportamento preservado | Tasks | In Tasks |
 | KEEP-02 | P1: Comportamento preservado | Execute | Implementing |

@@ -26,5 +26,1055 @@
     "reason": "Dependência anterior ao lote; removida nas tasks de costura do L18a.",
     "removedIn": "L18a",
     "category": "import"
+  },
+  {
+    "path": "src/db/create-admin.ts",
+    "term": "market:imobili",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/db/mint-service-key.ts",
+    "term": "market:krivo",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "market:property",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "market:storefront",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "market:meeting",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "market:creci",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/db/test-connection.ts",
+    "term": "market:vitrine",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/db/test-connection.ts",
+    "term": "market:krivo",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/lib/broker-assignment.ts",
+    "term": "market:broker",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/lib/broker-availability.ts",
+    "term": "market:broker",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/lib/broker-availability.ts",
+    "term": "market:meeting",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/lib/duplicate-document.ts",
+    "term": "market:imobili",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/lib/integration-alert.ts",
+    "term": "market:krivo",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/lib/integration-alert.ts",
+    "term": "market:imobili",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/lib/meeting-attendance.ts",
+    "term": "market:meeting",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/lib/permissions.ts",
+    "term": "market:corretor",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/lib/pilot-metrics.ts",
+    "term": "market:meeting",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/server/auth/email.ts",
+    "term": "market:krivo",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/server/auth/email.ts",
+    "term": "market:imobili",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/server/auth/session.ts",
+    "term": "market:broker",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/server/auth/session.ts",
+    "term": "market:corretor",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/server/data/index.ts",
+    "term": "market:broker",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/server/data/index.ts",
+    "term": "market:meeting",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/server/data/index.ts",
+    "term": "market:property",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/server/data/index.ts",
+    "term": "market:corretor",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/server/data/index.ts",
+    "term": "market:imóve",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/server/data/whatsapp.ts",
+    "term": "market:corretor",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/server/documents/benchmark-identity.ts",
+    "term": "market:reuni",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/server/integration/auth.ts",
+    "term": "market:krivo",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/server/integration/leads.ts",
+    "term": "market:broker",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/server/integration/leads.ts",
+    "term": "market:meeting",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/server/integration/leads.ts",
+    "term": "market:property",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/server/integration/leads.ts",
+    "term": "market:corretor",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/server/integration/parsers.ts",
+    "term": "market:property",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/server/integration/parsers.ts",
+    "term": "market:meeting",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/server/integration/problem.ts",
+    "term": "market:corretor",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/server/integration/problem.ts",
+    "term": "market:krivo",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/server/integration/settings.ts",
+    "term": "market:meeting",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/server/reengagement/context.ts",
+    "term": "market:property",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/server/reengagement/context.ts",
+    "term": "market:meeting",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/server/reengagement/repository.ts",
+    "term": "market:broker",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/server/reengagement/repository.ts",
+    "term": "market:meeting",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/server/tenant.ts",
+    "term": "market:imobili",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/server/validation.ts",
+    "term": "market:imóve",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/server/validation.ts",
+    "term": "market:property",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "src/server/validation.ts",
+    "term": "market:meeting",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "n8n/generated/benchmark-contexto.ts",
+    "term": "market:property",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/benchmark-contexto.ts",
+    "term": "market:imobili",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/benchmark-contexto.ts",
+    "term": "market:imóve",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/benchmark-contexto.ts",
+    "term": "market:reuni",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/benchmark-contexto.ts",
+    "term": "market:corretor",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/benchmark-contexto.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/benchmark-contexto.ts",
+    "term": "market:meeting",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/benchmark-contexto.ts",
+    "term": "market:financiamento",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/erros.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/principal.ts",
+    "term": "market:reuni",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/principal.ts",
+    "term": "market:imobili",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/principal.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/principal.ts",
+    "term": "market:property",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/principal.ts",
+    "term": "market:imóve",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/principal.ts",
+    "term": "market:meeting",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/principal.ts",
+    "term": "market:corretor",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/principal.ts",
+    "term": "market:financiamento",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/reengagement-contextual.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/reengagement-contextual.ts",
+    "term": "market:imóve",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/reengagement-contextual.ts",
+    "term": "market:property",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/reengagement-contextual.ts",
+    "term": "market:imobili",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/reengagement-contextual.ts",
+    "term": "market:corretor",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/reengagement-contextual.ts",
+    "term": "market:reuni",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/reengagement-contextual.ts",
+    "term": "market:meeting",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/reengagement-contextual.ts",
+    "term": "market:financiamento",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/scheduler.ts",
+    "term": "market:meeting",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/scheduler.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/scheduler.ts",
+    "term": "market:reuni",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/scheduler.ts",
+    "term": "market:broker",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/smoke-memoria.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/smoke-reset.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/tool-agendar-reuniao.ts",
+    "term": "market:meeting",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/tool-agendar-reuniao.ts",
+    "term": "market:imobili",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/tool-agendar-reuniao.ts",
+    "term": "market:reuni",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/tool-agendar-reuniao.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/tool-agendar-reuniao.ts",
+    "term": "market:broker",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/tool-agendar-reuniao.ts",
+    "term": "market:corretor",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/tool-agendar-reuniao.ts",
+    "term": "market:property",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/tool-responder-lead.ts",
+    "term": "market:imobili",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/tool-responder-lead.ts",
+    "term": "market:imovel",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/tool-responder-lead.ts",
+    "term": "market:imóve",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/tool-responder-lead.ts",
+    "term": "market:corretor",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/tool-responder-lead.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/src/agendamento.mjs",
+    "term": "market:corretor",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/src/agendamento.mjs",
+    "term": "market:imobili",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/src/agendamento.mjs",
+    "term": "market:reuni",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/src/agendamento.mjs",
+    "term": "market:broker",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/src/agendamento.mjs",
+    "term": "market:property",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/src/agendamento.mjs",
+    "term": "market:meeting",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/src/benchmark-corpus.mjs",
+    "term": "market:imobili",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/src/benchmark-corpus.mjs",
+    "term": "market:financiamento",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/src/benchmark-corpus.mjs",
+    "term": "market:imóve",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/src/benchmark-corpus.mjs",
+    "term": "market:corretor",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/src/business-hours.mjs",
+    "term": "market:meeting",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/src/phase.mjs",
+    "term": "market:property",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/src/phase.mjs",
+    "term": "market:imóve",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/src/reengagement-prompt.mjs",
+    "term": "market:reuni",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/src/scheduler-reengagement.mjs",
+    "term": "market:broker",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/src/session.mjs",
+    "term": "market:imobili",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/src/system-message.mjs",
+    "term": "market:imobili",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/src/system-message.mjs",
+    "term": "market:imóve",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/src/system-message.mjs",
+    "term": "market:corretor",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/src/system-message.mjs",
+    "term": "market:reuni",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/src/system-message.mjs",
+    "term": "market:meeting",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/src/voice.mjs",
+    "term": "market:imovel",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/benchmark-contexto.ts",
+    "term": "market:property",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/benchmark-contexto.ts",
+    "term": "market:imobili",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/benchmark-contexto.ts",
+    "term": "market:imóve",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/benchmark-contexto.ts",
+    "term": "market:reuni",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/benchmark-contexto.ts",
+    "term": "market:corretor",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/benchmark-contexto.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/benchmark-contexto.ts",
+    "term": "market:meeting",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/erros.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/principal.ts",
+    "term": "market:reuni",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/principal.ts",
+    "term": "market:imobili",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/principal.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/principal.ts",
+    "term": "market:property",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/principal.ts",
+    "term": "market:meeting",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/principal.ts",
+    "term": "market:imóve",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/principal.ts",
+    "term": "market:corretor",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/reengagement-contextual.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/reengagement-contextual.ts",
+    "term": "market:imóve",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/reengagement-contextual.ts",
+    "term": "market:property",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/scheduler.ts",
+    "term": "market:meeting",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/scheduler.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/scheduler.ts",
+    "term": "market:reuni",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/smoke-memoria.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/smoke-reset.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/tool-agendar-reuniao.ts",
+    "term": "market:meeting",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/tool-agendar-reuniao.ts",
+    "term": "market:imobili",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/tool-agendar-reuniao.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/tool-agendar-reuniao.ts",
+    "term": "market:reuni",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/tool-agendar-reuniao.ts",
+    "term": "market:broker",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/tool-agendar-reuniao.ts",
+    "term": "market:corretor",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/tool-responder-lead.ts",
+    "term": "market:imobili",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/tool-responder-lead.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "scripts/preview-message-thread.mts",
+    "term": "market:imobili",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "scripts/preview-test-users.ts",
+    "term": "market:krivo",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "scripts/preview-test-users.ts",
+    "term": "market:corretor",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "scripts/preview-test-users.ts",
+    "term": "market:imobili",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "scripts/send-test-integration-alert.ts",
+    "term": "market:imobili",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "scripts/send-test-integration-alert.ts",
+    "term": "market:krivo",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "scripts/test-db-push.ts",
+    "term": "market:vitrine",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
+  },
+  {
+    "path": "scripts/test-db-push.ts",
+    "term": "market:krivo",
+    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
+    "removedIn": "L18a",
+    "category": "market"
   }
 ]

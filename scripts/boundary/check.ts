@@ -1,5 +1,6 @@
 import { posix } from "node:path";
 import ts from "typescript";
+import marketTerms from "./market-terms.json";
 
 export type Layer = "core" | "vertical" | "app";
 export type CorePackage = "@core/db" | "@core/server" | "@core/agent" | "@core/client" | "@core/vertical-kit";
@@ -23,6 +24,56 @@ export interface TransitionalEntry {
 }
 
 export type Sources = Readonly<Record<string, string>>;
+
+interface CodeToken {
+  text: string;
+  node: ts.Node;
+  ast: ts.SourceFile;
+}
+
+function codeTokens(file: string, source: string): CodeToken[] {
+  const ast = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true);
+  const tokens: CodeToken[] = [];
+  function visit(node: ts.Node) {
+    if (ts.isIdentifier(node) || ts.isPrivateIdentifier(node) || ts.isStringLiteralLike(node)
+      || ts.isTemplateHead(node) || ts.isTemplateMiddle(node) || ts.isTemplateTail(node)) {
+      tokens.push({ text: node.text, node, ast });
+    }
+    ts.forEachChild(node, visit);
+  }
+  visit(ast);
+  return tokens;
+}
+
+function applyExceptions(candidates: (Violation & { term: string })[], transitional: readonly TransitionalEntry[], prefix: string): Violation[] {
+  const used = new Set<TransitionalEntry>();
+  const violations: Violation[] = [];
+  for (const candidate of candidates) {
+    const entry = transitional.find((entry) => entry.path === candidate.file && entry.term === candidate.term);
+    if (entry) used.add(entry);
+    else violations.push({ file: candidate.file, line: candidate.line, message: candidate.message });
+  }
+  for (const entry of transitional.filter((entry) => entry.term.startsWith(prefix))) {
+    if (!used.has(entry)) violations.push({ file: entry.path, line: 1, message: `Exceção sem ocorrência: ${entry.path} -> ${entry.term}` });
+  }
+  return violations;
+}
+
+export function checkMarketTerms(sources: Sources, rules: readonly BoundaryRule[], transitional: readonly TransitionalEntry[] = []): Violation[] {
+  const candidates: (Violation & { term: string })[] = [];
+  for (const [file, source] of Object.entries(sources)) {
+    if (isTest(file) || !/\.[cm]?[jt]sx?$/.test(file) || classifyFile(file, rules)?.layer !== "core") continue;
+    for (const token of codeTokens(file, source)) {
+      for (const term of marketTerms) {
+        if (!token.text.toLowerCase().includes(term)) continue;
+        const position = token.node.getStart(token.ast) + Math.max(0, token.node.getText(token.ast).toLowerCase().indexOf(term));
+        candidates.push({ file, line: token.ast.getLineAndCharacterOfPosition(position).line + 1,
+          term: `market:${term}`, message: `Termo de mercado "${term}" em ${file}` });
+      }
+    }
+  }
+  return applyExceptions(candidates, transitional, "market:");
+}
 
 function importsOf(file: string, source: string): { target: string; line: number }[] {
   const ast = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true);
