@@ -234,10 +234,26 @@ T41 → T42 → T43 → T44 → T45
 
 **Done when**:
 
-- [ ] `scripts/boundary/map.json` classifica todos os arquivos não teste de `src/`, `app/`, `n8n/`, `scripts/`, `workflows/` e `proxy.ts`.
-- [ ] Todo arquivo `core` tem `package`.
-- [ ] Arquivo não classificado e regra órfã reprovam, citando o caminho, com um caso de fixture cada.
-- [ ] Arquivos de teste seguem o arquivo testado, com um caso provando isso.
+- [x] `scripts/boundary/map.json` classifica todos os arquivos não teste de `src/`, `app/`, `n8n/`, `scripts/`, `workflows/` e `proxy.ts`.
+- [x] Todo arquivo `core` tem `package`.
+- [x] Arquivo não classificado e regra órfã reprovam, citando o caminho, com um caso de fixture cada.
+- [x] Arquivos de teste seguem o arquivo testado, com um caso provando isso.
+
+**Execução**: Quick/Boundary: 1 arquivo, 5 testes, 0 falhas. TypeScript: 0 erros. ESLint: 0 erros, 9 avisos. T3 dispensada como dependência pelo prompt. Regras de pastas futuras entram quando existirem, para não criar regra órfã.
+
+| Critério | Evidência em `scripts/__tests__/boundary.test.ts` | Resultado esperado |
+| --- | --- | --- |
+| Árvore e pacotes | `:22`, `expect(checkClassification(repositoryFiles(), rules)).toEqual([])` | Sem violação |
+| Arquivo desconhecido | `:26`, `expect(checkClassification(["src/new.ts"], [])).toEqual(...)` | Caminho e mensagem de falta de classificação |
+| Regra órfã | `:32`, `expect(checkClassification([], [{ glob: "src/missing.ts", layer: "app" }])).toEqual(...)` | Caminho e mensagem de regra órfã |
+| Pacote obrigatório | `:38`, `expect(checkClassification(["src/core.ts"], [{ glob: "src/core.ts", layer: "core" }])).toEqual(...)` | Caminho e mensagem de falta de pacote |
+| Herança do teste | `:48`, `expect(classifyFile("src/lib/__tests__/sample.test.ts", fixture)).toEqual(fixture[0])`; `:49`, igualdade com `[]` | Camada do módulo testado |
+
+| Asserções | Origem | Necessárias |
+| --- | --- | --- |
+| `boundary.test.ts:22`, `:26`, `:32`, `:38`, `:48`, `:49` | BOUND-01 AC1–4 e T4 | Sim |
+
+**Adequação**: critérios cobertos com fixtures independentes; testes existentes intactos, conforme AGENTS.md.
 
 **Tests**: unit
 **Gate**: quick

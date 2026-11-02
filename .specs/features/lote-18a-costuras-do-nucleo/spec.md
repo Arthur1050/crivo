@@ -373,7 +373,7 @@ mercado, porque uma loja não tem `novo` e `usado`.
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| BOUND-01 | P1: Fronteira verificável | Tasks | In Tasks |
+| BOUND-01 | P1: Fronteira verificável | Execute | Implementing |
 | BOUND-02 | P1: Fronteira verificável | Tasks | In Tasks |
 | BOUND-03 | P1: Fronteira verificável | Tasks | In Tasks |
 | BOUND-04 | P1: Fronteira verificável | Tasks | In Tasks |
