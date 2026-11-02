@@ -118,6 +118,8 @@ T28 → T29
 
 **Execução T35, nova rodada (2026-11-02)**: em `c43167c`, `npm test` saiu 0: 250 arquivos, 4029 testes, 1200,91 s, sem falha. As sete falhas de `reengagement-proof.test.ts` da rodada anterior vinham de `PROOF_LINKS` citar o gatilho antigo "A cada 15min", renomeado em `99c4f43`; `b74e255` troca só esse nome, sem mudar asserção. As duas falhas da vitrine da rodada anterior eram de ambiente (dependências de `vitrine/` incompletas) e não voltaram. `npx tsc --noEmit -p .` e o ESLint dos arquivos alterados sem erro.
 
+**Execução T35, depois das correções do ciclo 2 (2026-11-02)**: três rodadas em `f5b0b5d`. A 1ª saiu 1 por rede até o Neon (`ETIMEDOUT`, `ECONNRESET`, "Connection terminated") em 4 arquivos fora de pastas. A 2ª saiu 1 em um teste do L14b (`agent-state.test.ts`), que comparava linhas de `select` sem `ORDER BY`; isolado, passou 3 vezes. A 3ª saiu 0: 250 arquivos, 4038 testes, 1196,41 s. Depois dela, só o teste instável mudou, com `orderBy(messages.id)` nas duas consultas de cada comparação, sem trocar a asserção; a suíte completa não foi repetida depois disso, só esse arquivo. `tsc` 0 erros; `eslint .` 0 erros e 9 avisos.
+
 ### Phase 7: Fechamento (Fase 2 do lote, PR de fechamento)
 
 ```
