@@ -2575,6 +2575,27 @@ export class DocumentFolderNotFoundError extends Error {
   constructor() { super("Pasta não encontrada."); this.name = "DocumentFolderNotFoundError"; }
 }
 
+type DocumentContextFields = Pick<Document, "name" | "modality" | "categoryId" | "expiresAt">;
+
+/** Campos que entram no contexto do agente; a pasta não é um deles (PAGENTE-01). */
+export async function getDocumentContextFields(
+  tenantId: string,
+  documentId: string
+): Promise<DocumentContextFields | null> {
+  const [row] = await db
+    .select({ name: documents.name, modality: documents.modality, categoryId: documents.categoryId, expiresAt: documents.expiresAt })
+    .from(documents)
+    .where(and(eq(documents.tenantId, tenantId), eq(documents.id, documentId), isNull(documents.deletedAt)));
+  return row ?? null;
+}
+
+export function documentContextFieldsChanged(before: DocumentContextFields, after: DocumentContextFields): boolean {
+  return before.name !== after.name
+    || before.modality !== after.modality
+    || before.categoryId !== after.categoryId
+    || before.expiresAt?.getTime() !== after.expiresAt?.getTime();
+}
+
 export async function updateDocument(
   tenantId: string,
   documentId: string,

@@ -1396,6 +1396,24 @@ describe("server actions", () => {
       });
     });
 
+    it("mudar só a pasta na edição não reconcilia; mudar o nome reconcilia (PAGENTE-01 AC3)", async () => {
+      await withGenerousCeiling(async () => {
+        const deFora = await waitingOutsider();
+        const [pasta] = await db.insert(documentFolders).values({ tenantId: activeTenantId, name: `Só a pasta ${randomUUID()}` }).returning();
+        const campos = { documentId: deFora.id, name: deFora.name, modality: deFora.modality, categoryId: deFora.categoryId };
+        try {
+          await expect(updateDocumentAction({ ...campos, folderId: pasta.id })).resolves.toEqual({ ok: true });
+          await expect(lifecycleRow(deFora.id)).resolves.toMatchObject({ folderId: pasta.id, status: "fora_do_agente" });
+
+          await expect(updateDocumentAction({ ...campos, name: "Renomeado.txt" })).resolves.toEqual({ ok: true });
+          await expect(lifecycleRow(deFora.id)).resolves.toMatchObject({ name: "Renomeado.txt", folderId: pasta.id, status: "pronto" });
+        } finally {
+          await deleteDocumentAction({ documentId: deFora.id });
+          await db.delete(documentFolders).where(eq(documentFolders.id, pasta.id));
+        }
+      });
+    });
+
     it("retry de falha cria tentativa processando e conserva o original", async () => {
       const document = await createLifecycleDocument("Retry falha");
       await db.update(documents).set({ status: "falha", failureCode: "nenhum_texto_extraivel", storageKey: `tenant/${activeTenantId}/retry-${randomUUID()}` }).where(eq(documents.id, document.id));

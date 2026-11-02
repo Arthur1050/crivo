@@ -217,6 +217,7 @@ que nenhuma imobiliária enxergue ou altere pasta de outra.
 
 1. The system SHALL manter sem mudança neste lote `src/server/integration/context.ts`, as rotas de `app/api/v1/`, `openapi.yaml` e tudo em `n8n/`.
 2. WHEN um documento elegível é movido para uma pasta, entre pastas ou para a raiz THEN o sistema SHALL devolver em `getDirectDocumentContext` para o tenant o mesmo resultado de antes da movimentação.
+3. WHEN `updateDocumentAction` muda só a pasta do documento THEN o sistema SHALL manter o `status` de todos os documentos do tenant, sem reconciliar a admissão. (Acrescentado em 2026-11-02, pelo gap G4 do ciclo 2 da verificação: editar reconciliava o tenant inteiro mesmo sem mudar o corpus.)
 
 ---
 

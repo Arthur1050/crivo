@@ -8,6 +8,8 @@ import {
   DocumentFolderNotFoundError,
   createDocumentCategory,
   deleteDocumentCategory,
+  documentContextFieldsChanged,
+  getDocumentContextFields,
   updateDocument,
   updateDocumentCategory,
   type CategoryColor,
@@ -118,6 +120,7 @@ export async function updateDocumentAction(
   }
 
   const tenantId = await getActiveTenantId();
+  const before = await getDocumentContextFields(tenantId, input.documentId);
   let updated: Awaited<ReturnType<typeof updateDocument>>;
   try {
     updated = await updateDocument(tenantId, input.documentId, {
@@ -136,7 +139,10 @@ export async function updateDocumentAction(
     return { ok: false, error: "Documento não encontrado." };
   }
 
-  await reconcileTenantDocumentAdmission(tenantId);
+  // Mudar só a pasta não muda o corpus do agente (PAGENTE-01 AC3).
+  if (!before || documentContextFieldsChanged(before, updated)) {
+    await reconcileTenantDocumentAdmission(tenantId);
+  }
   revalidatePath("/documentos");
   return { ok: true };
 }
