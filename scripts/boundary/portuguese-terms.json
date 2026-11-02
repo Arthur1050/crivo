@@ -1,0 +1,11 @@
+[
+  "normalizar", "interpretar", "agendamento", "agendamentos", "configuracoes", "documentos", "imoveis", "imovel",
+  "imobiliaria", "usuarios", "usuario", "novo", "usado", "ambos", "modalidade", "preco", "minimo", "maximo",
+  "bairro", "cidade", "estado", "tipo", "fonte", "tema", "loja", "lojas", "vitrine", "pagina", "limite",
+  "criar", "salvar", "excluir", "apagar", "ler", "escrever", "buscar", "filtrar", "responder", "contato",
+  "apresentacao", "conexao", "cor", "mensagens", "mensagem", "dados", "corretor", "corretores", "administrador",
+  "gestor", "agente", "humano", "nao", "sim", "principal", "erro", "erros", "chave", "senha", "valor", "nome",
+  "titulo", "descricao", "pasta", "pastas", "arquivo", "arquivos", "conteudo", "prazo", "dias", "horas", "inicio",
+  "fim", "texto", "entrada", "saida", "resultado", "sucesso", "falha", "processando", "pronto", "saudavel", "problema",
+  "plataforma", "reuniao", "reunioes", "qualificacao", "financiamento", "publico", "publica", "revalidar"
+]

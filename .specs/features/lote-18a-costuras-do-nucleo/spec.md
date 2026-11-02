@@ -386,7 +386,7 @@ mercado, porque uma loja não tem `novo` e `usado`.
 | VOCAB-01 | P1: Vocabulário em inglês | Execute | Implementing |
 | VOCAB-02 | P1: Vocabulário em inglês | Tasks | In Tasks |
 | VOCAB-03 | P1: Vocabulário em inglês | Tasks | In Tasks |
-| ENG-01 | P1: Vocabulário em inglês | Tasks | In Tasks |
+| ENG-01 | P1: Vocabulário em inglês | Execute | Implementing |
 | VERT-01 | P1: Contrato do vertical | Tasks | In Tasks |
 | VERT-02 | P1: Contrato do vertical | Tasks | In Tasks |
 | VERT-03 | P1: Contrato do vertical | Tasks | In Tasks |

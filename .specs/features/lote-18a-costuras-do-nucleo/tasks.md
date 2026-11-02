@@ -426,11 +426,29 @@ T41 → T42 → T43 → T44 → T45
 
 **Done when**:
 
-- [ ] camelCase, PascalCase e snake_case são quebrados em palavras, com caso de fixture para cada um.
-- [ ] Palavras que também são inglês (`normal`, `conversation`) não reprovam, com caso de fixture.
-- [ ] Comentário, texto JSX e texto literal passam.
-- [ ] Nome de arquivo e de pasta em português fora de `app/` reprova.
-- [ ] Ocorrências atuais entram em `transitional.json`.
+- [x] camelCase, PascalCase e snake_case são quebrados em palavras, com caso de fixture para cada um.
+- [x] Palavras que também são inglês (`normal`, `conversation`) não reprovam, com caso de fixture.
+- [x] Comentário, texto JSX e texto literal passam.
+- [x] Nome de arquivo e de pasta em português fora de `app/` reprova.
+- [x] Ocorrências atuais entram em `transitional.json`.
+
+**Execução**: Quick/Boundary: 1 arquivo, 59 testes, 0 falhas. TypeScript: 0 erros. ESLint: 0 erros, 9 avisos. Lista inicial fechada em 771 entradas: 4 imports, 150 termos de mercado, 451 valores literais e 166 identificadores/caminhos. Daqui em diante, qualquer entrada nova exige justificativa no commit. Não houve execução de suíte completa nesta fase; a próxima está na T15.
+
+| Critério | Evidência em `scripts/__tests__/boundary.test.ts` | Resultado esperado |
+| --- | --- | --- |
+| Três convenções de nome | `:180`, `expect(checkIdentifiers(...)).toEqual([{ file: "src/sample.ts", line: 2, message: ... }])` | Detecta `buscar` nas três formas |
+| Palavras também inglesas | `:186`, igualdade com `[]` | `normal` e `conversation` permitidos |
+| Comentário, JSX e literal | `:190`, igualdade com `[]` | Texto ignorado |
+| Arquivo e pasta | `:194`, igualdade com a violação de `usuarios` na linha 1 | Caminho reprovado |
+| Rotas e n8n | `:200`, igualdade com `[]`; `:201`, violação do símbolo `buscar` na página | Só os símbolos da página são checados |
+| Árvore e catraca | `:176`, árvore igual a `[]`; `:208`, ocorrência igual a `[]`; `:209`, exceção órfã | Lista corresponde às ocorrências |
+
+| Asserções | Origem | Necessárias |
+| --- | --- | --- |
+| `boundary.test.ts:176`, `:180`, `:186`, `:190`, `:194`, `:200`, `:201` | ENG-01 AC1–4 e T9 | Sim |
+| `boundary.test.ts:208`, `:209` | BOUND-04 AC3 | Sim |
+
+**Adequação**: critérios cobertos por convenção, caminhos e escopos; testes da base intactos, conforme AGENTS.md.
 
 **Tests**: unit
 **Gate**: quick

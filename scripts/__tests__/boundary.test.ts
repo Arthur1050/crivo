@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import map from "../boundary/map.json";
 import transitional from "../boundary/transitional.json";
-import { checkClassification, checkImports, checkMarketTerms, checkStoredValues, classifyFile, isTest, type BoundaryRule } from "../boundary/check";
+import { checkClassification, checkImports, checkMarketTerms, checkStoredValues, checkIdentifiers, classifyFile, isTest, type BoundaryRule } from "../boundary/check";
 
 export function repositoryFiles(): string[] {
   function walk(directory: string): string[] {
@@ -166,6 +166,47 @@ describe("valores gravados literais (VOCAB-01)", () => {
     const entry = { path: "src/sample.ts", term: "stored:corretor", reason: "Constante pendente", removedIn: "L18a", category: "stored" };
     expect(checkStoredValues({ [entry.path]: 'const role = "corretor";' }, [], [entry])).toEqual([]);
     expect(checkStoredValues({ [entry.path]: 'const role = ROLE.attendant;' }, [], [entry])).toEqual([
+      { file: entry.path, line: 1, message: `Exceção sem ocorrência: ${entry.path} -> ${entry.term}` },
+    ]);
+  });
+});
+
+describe("identificadores em inglês (ENG-01)", () => {
+  it("confere os identificadores e caminhos da árvore real", () => {
+    expect(checkIdentifiers(repositorySources(), rules, transitional)).toEqual([]);
+  });
+
+  it.each(["buscarLead", "BuscarLead", "buscar_lead"])("recusa a palavra em %s", (identifier) => {
+    expect(checkIdentifiers({ "src/sample.ts": `\nconst ${identifier} = 1;` }, [])).toEqual([
+      { file: "src/sample.ts", line: 2, message: `Identificador em português "buscar": ${identifier} em src/sample.ts` },
+    ]);
+  });
+
+  it.each(["normal", "conversation"])("aceita palavra também usada em inglês: %s", (identifier) => {
+    expect(checkIdentifiers({ "src/sample.ts": `const ${identifier} = 1;` }, [])).toEqual([]);
+  });
+
+  it("ignora comentário, texto JSX e literal", () => {
+    expect(checkIdentifiers({ "app/sample.tsx": '// buscar\nconst value = "buscar"; const view = <p>buscar</p>;' }, [])).toEqual([]);
+  });
+
+  it.each(["src/usuarios/list.ts", "src/lib/usuarios.ts"])("recusa nome de pasta ou arquivo: %s", (file) => {
+    expect(checkIdentifiers({ [file]: "" }, [])).toEqual([
+      { file, line: 1, message: `Identificador em português "usuarios": ${file} em ${file}` },
+    ]);
+  });
+
+  it("preserva o caminho de rota e n8n, mas checa símbolos da página", () => {
+    expect(checkIdentifiers({ "app/usuarios/page.tsx": "const value = 1;", "n8n/src/buscar.mjs": "const buscar = 1;" }, [])).toEqual([]);
+    expect(checkIdentifiers({ "app/usuarios/page.tsx": "const buscar = 1;" }, [])).toEqual([
+      { file: "app/usuarios/page.tsx", line: 1, message: 'Identificador em português "buscar": buscar em app/usuarios/page.tsx' },
+    ]);
+  });
+
+  it("reprova a exceção depois da renomeação", () => {
+    const entry = { path: "src/sample.ts", term: "identifier:buscar", reason: "Renomeação pendente", removedIn: "L18a", category: "identifier" };
+    expect(checkIdentifiers({ [entry.path]: "const buscar = 1;" }, [], [entry])).toEqual([]);
+    expect(checkIdentifiers({ [entry.path]: "const search = 1;" }, [], [entry])).toEqual([
       { file: entry.path, line: 1, message: `Exceção sem ocorrência: ${entry.path} -> ${entry.term}` },
     ]);
   });

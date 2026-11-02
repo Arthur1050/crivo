@@ -2,6 +2,7 @@ import { posix } from "node:path";
 import ts from "typescript";
 import marketTerms from "./market-terms.json";
 import storedValues from "./stored-values.json";
+import portugueseTerms from "./portuguese-terms.json";
 
 export type Layer = "core" | "vertical" | "app";
 export type CorePackage = "@core/db" | "@core/server" | "@core/agent" | "@core/client" | "@core/vertical-kit";
@@ -114,6 +115,31 @@ export function checkStoredValues(sources: Sources, _rules: readonly BoundaryRul
     }
   }
   return applyExceptions(candidates, transitional, "stored:");
+}
+
+function identifierWords(identifier: string): string[] {
+  return identifier.replace(/([\p{Ll}\d])(\p{Lu})/gu, "$1 $2")
+    .replace(/(\p{Lu}+)(\p{Lu}\p{Ll})/gu, "$1 $2")
+    .normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().split(/[^a-z0-9]+/);
+}
+
+export function checkIdentifiers(sources: Sources, _rules: readonly BoundaryRule[], transitional: readonly TransitionalEntry[] = []): Violation[] {
+  const candidates: (Violation & { term: string })[] = [];
+  function inspect(file: string, identifier: string, line: number) {
+    for (const term of new Set(identifierWords(identifier).filter((word) => portugueseTerms.includes(word)))) {
+      candidates.push({ file, line, term: `identifier:${term}`, message: `Identificador em português "${term}": ${identifier} em ${file}` });
+    }
+  }
+  for (const [file, source] of Object.entries(sources)) {
+    if (isTest(file) || file.startsWith("n8n/")) continue;
+    if (!file.startsWith("app/")) inspect(file, file, 1);
+    if (!/\.[cm]?[jt]sx?$/.test(file)) continue;
+    for (const token of codeTokens(file, source)) {
+      if (!ts.isIdentifier(token.node) && !ts.isPrivateIdentifier(token.node)) continue;
+      inspect(file, token.text, token.ast.getLineAndCharacterOfPosition(token.node.getStart(token.ast)).line + 1);
+    }
+  }
+  return applyExceptions(candidates, transitional, "identifier:");
 }
 
 function importsOf(file: string, source: string): { target: string; line: number }[] {

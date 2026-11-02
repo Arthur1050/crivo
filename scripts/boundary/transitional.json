@@ -4233,5 +4233,1167 @@
     "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
     "removedIn": "L18a",
     "category": "stored"
+  },
+  {
+    "path": "src/components/auth/reset-password-form.tsx",
+    "term": "identifier:senha",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/chats/conversation-header.tsx",
+    "term": "identifier:agente",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/chats/conversation-header.tsx",
+    "term": "identifier:humano",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/dashboard/recent-leads-table.tsx",
+    "term": "identifier:novo",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/dashboard/recent-leads-table.tsx",
+    "term": "identifier:usado",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/dashboard/recent-leads-table.tsx",
+    "term": "identifier:ambos",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/dashboard/recent-leads-table.tsx",
+    "term": "identifier:qualificacao",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/dashboard/recent-leads-table.tsx",
+    "term": "identifier:humano",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/documents/document-presentation.ts",
+    "term": "identifier:novo",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/documents/document-presentation.ts",
+    "term": "identifier:usado",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/documents/document-presentation.ts",
+    "term": "identifier:ambos",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/documents/document-row-state.ts",
+    "term": "identifier:processando",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/documents/document-row-state.ts",
+    "term": "identifier:pronto",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/documents/document-row-state.ts",
+    "term": "identifier:falha",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/documents/document-row-state.ts",
+    "term": "identifier:agente",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/documents/document-row-state.ts",
+    "term": "identifier:texto",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/documents/document-row-state.ts",
+    "term": "identifier:limite",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/documents/documents-toolbar.tsx",
+    "term": "identifier:modalidade",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/documents/documents-toolbar.tsx",
+    "term": "identifier:pasta",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/documents/file-type-icon.tsx",
+    "term": "identifier:apresentacao",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/pipeline/lead-controls.tsx",
+    "term": "identifier:nao",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/pipeline/lead-detail-panel.tsx",
+    "term": "identifier:novo",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/pipeline/lead-detail-panel.tsx",
+    "term": "identifier:usado",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/pipeline/lead-detail-panel.tsx",
+    "term": "identifier:ambos",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/pipeline/lead-detail-panel.tsx",
+    "term": "identifier:qualificacao",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/pipeline/lead-detail-panel.tsx",
+    "term": "identifier:humano",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/pipeline/pipeline-board.tsx",
+    "term": "identifier:novo",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/pipeline/pipeline-board.tsx",
+    "term": "identifier:usado",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/pipeline/pipeline-board.tsx",
+    "term": "identifier:ambos",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/usuarios/deactivate-member-dialog.tsx",
+    "term": "identifier:usuarios",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/usuarios/deactivate-member-dialog.tsx",
+    "term": "identifier:reunioes",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/usuarios/deactivate-member-dialog.tsx",
+    "term": "identifier:corretor",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/usuarios/deactivate-member-dialog.tsx",
+    "term": "identifier:tipo",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/usuarios/invite-user-dialog.tsx",
+    "term": "identifier:usuarios",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/usuarios/member-roles-dialog.tsx",
+    "term": "identifier:usuarios",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/usuarios/resend-invite-dialog.tsx",
+    "term": "identifier:usuarios",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/usuarios/role-options.ts",
+    "term": "identifier:usuarios",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/usuarios/users-table.tsx",
+    "term": "identifier:usuarios",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/usuarios/users-table.tsx",
+    "term": "identifier:administrador",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/usuarios/users-table.tsx",
+    "term": "identifier:gestor",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/components/usuarios/users-table.tsx",
+    "term": "identifier:corretor",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/db/seed.ts",
+    "term": "identifier:novo",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/db/seed.ts",
+    "term": "identifier:usado",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/db/test-connection.ts",
+    "term": "identifier:vitrine",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/lib/distribution.ts",
+    "term": "identifier:novo",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/lib/distribution.ts",
+    "term": "identifier:usado",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/lib/distribution.ts",
+    "term": "identifier:ambos",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/lib/distribution.ts",
+    "term": "identifier:nao",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/lib/permissions.ts",
+    "term": "identifier:administrador",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/lib/permissions.ts",
+    "term": "identifier:documentos",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/lib/permissions.ts",
+    "term": "identifier:configuracoes",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/lib/permissions.ts",
+    "term": "identifier:usuarios",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/lib/permissions.ts",
+    "term": "identifier:imoveis",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/lib/permissions.ts",
+    "term": "identifier:gestor",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/lib/permissions.ts",
+    "term": "identifier:corretor",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/lib/storefront-contract.ts",
+    "term": "identifier:lojas",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/lib/storefront-contract.ts",
+    "term": "identifier:imoveis",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/lib/storefront.ts",
+    "term": "identifier:titulo",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/lib/storefront.ts",
+    "term": "identifier:agente",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/server/actions/deactivate.ts",
+    "term": "identifier:tipo",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/server/actions/deactivate.ts",
+    "term": "identifier:corretor",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/server/actions/deactivate.ts",
+    "term": "identifier:reunioes",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/server/documents/benchmark-identity.ts",
+    "term": "identifier:principal",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/server/documents/context-budget.ts",
+    "term": "identifier:novo",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/server/documents/context-budget.ts",
+    "term": "identifier:usado",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/server/documents/context-budget.ts",
+    "term": "identifier:ambos",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/server/documents/repository.ts",
+    "term": "identifier:novo",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/server/documents/repository.ts",
+    "term": "identifier:usado",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/server/documents/repository.ts",
+    "term": "identifier:ambos",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/server/integration/leads.ts",
+    "term": "identifier:qualificacao",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/server/integration/leads.ts",
+    "term": "identifier:humano",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/server/integration/properties.ts",
+    "term": "identifier:tipo",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/server/integration/properties.ts",
+    "term": "identifier:modalidade",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/server/integration/properties.ts",
+    "term": "identifier:bairro",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/server/integration/properties.ts",
+    "term": "identifier:cidade",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/server/integration/properties.ts",
+    "term": "identifier:preco",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/server/integration/properties.ts",
+    "term": "identifier:imoveis",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/server/integration/property-filters.ts",
+    "term": "identifier:modalidade",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/server/integration/property-filters.ts",
+    "term": "identifier:tipo",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/server/integration/property-filters.ts",
+    "term": "identifier:bairro",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/server/integration/property-filters.ts",
+    "term": "identifier:cidade",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/server/integration/property-filters.ts",
+    "term": "identifier:preco",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/server/storefront/revalidation.ts",
+    "term": "identifier:normalizar",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/server/storefront/revalidation.ts",
+    "term": "identifier:vitrine",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "src/server/storefront/revalidation.ts",
+    "term": "identifier:valor",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "app/(crm)/configuracoes/page.tsx",
+    "term": "identifier:novo",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "app/(crm)/configuracoes/page.tsx",
+    "term": "identifier:usado",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "app/(crm)/configuracoes/page.tsx",
+    "term": "identifier:ambos",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "app/(crm)/configuracoes/page.tsx",
+    "term": "identifier:configuracoes",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "app/(crm)/dashboard/page.tsx",
+    "term": "identifier:novo",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "app/(crm)/dashboard/page.tsx",
+    "term": "identifier:usado",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "app/(crm)/dashboard/page.tsx",
+    "term": "identifier:ambos",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "app/(crm)/dashboard/page.tsx",
+    "term": "identifier:nao",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "app/(crm)/documentos/page.tsx",
+    "term": "identifier:documentos",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "app/(crm)/documentos/page.tsx",
+    "term": "identifier:modalidade",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "app/(crm)/documentos/page.tsx",
+    "term": "identifier:pasta",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "app/(crm)/imoveis/page.tsx",
+    "term": "identifier:imoveis",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "app/(crm)/imoveis/page.tsx",
+    "term": "identifier:tipo",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "app/(crm)/imoveis/page.tsx",
+    "term": "identifier:modalidade",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "app/(crm)/usuarios/page.tsx",
+    "term": "identifier:usuarios",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "app/recuperar-senha/page.tsx",
+    "term": "identifier:senha",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/document-context-benchmark.ts",
+    "term": "identifier:principal",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/n8n-status-publication.ts",
+    "term": "identifier:principal",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/reengagement-publication-check.ts",
+    "term": "identifier:principal",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/test-db-push.ts",
+    "term": "identifier:vitrine",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine/apply.ts",
+    "term": "identifier:vitrine",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine/README.md",
+    "term": "identifier:vitrine",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine/vitrine.sql",
+    "term": "identifier:vitrine",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-dev.ts",
+    "term": "identifier:vitrine",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-dev.ts",
+    "term": "identifier:nome",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-dev.ts",
+    "term": "identifier:valor",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-dev.ts",
+    "term": "identifier:erro",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e-plataforma.cjs",
+    "term": "identifier:vitrine",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e-plataforma.cjs",
+    "term": "identifier:plataforma",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e-plataforma.cjs",
+    "term": "identifier:mensagem",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e-plataforma.cjs",
+    "term": "identifier:valor",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e-plataforma.cjs",
+    "term": "identifier:chave",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e-plataforma.cjs",
+    "term": "identifier:entrada",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e.ts",
+    "term": "identifier:vitrine",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e.ts",
+    "term": "identifier:criar",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e.ts",
+    "term": "identifier:texto",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e.ts",
+    "term": "identifier:saida",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e.ts",
+    "term": "identifier:nome",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e.ts",
+    "term": "identifier:loja",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e.ts",
+    "term": "identifier:lojas",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e.ts",
+    "term": "identifier:valor",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e.ts",
+    "term": "identifier:cor",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e.ts",
+    "term": "identifier:pagina",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e.ts",
+    "term": "identifier:fonte",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e.ts",
+    "term": "identifier:senha",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e.ts",
+    "term": "identifier:inicio",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e.ts",
+    "term": "identifier:fim",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e.ts",
+    "term": "identifier:imoveis",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e.ts",
+    "term": "identifier:imovel",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e.ts",
+    "term": "identifier:chave",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e.ts",
+    "term": "identifier:preco",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e.ts",
+    "term": "identifier:titulo",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e.ts",
+    "term": "identifier:descricao",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e.ts",
+    "term": "identifier:ler",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e.ts",
+    "term": "identifier:dados",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e.ts",
+    "term": "identifier:tipo",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e.ts",
+    "term": "identifier:pasta",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e.ts",
+    "term": "identifier:bairro",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e.ts",
+    "term": "identifier:cidade",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e.ts",
+    "term": "identifier:erros",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e.ts",
+    "term": "identifier:limite",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e.ts",
+    "term": "identifier:resultado",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-e2e.ts",
+    "term": "identifier:erro",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-fixture.ts",
+    "term": "identifier:vitrine",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-fixture.ts",
+    "term": "identifier:nome",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-fixture.ts",
+    "term": "identifier:imovel",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-fixture.ts",
+    "term": "identifier:tipo",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-fixture.ts",
+    "term": "identifier:bairro",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-fixture.ts",
+    "term": "identifier:cidade",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-fixture.ts",
+    "term": "identifier:preco",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-fixture.ts",
+    "term": "identifier:descricao",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-fixture.ts",
+    "term": "identifier:loja",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-fixture.ts",
+    "term": "identifier:cor",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-fixture.ts",
+    "term": "identifier:fonte",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-fixture.ts",
+    "term": "identifier:titulo",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-fixture.ts",
+    "term": "identifier:imoveis",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-fixture.ts",
+    "term": "identifier:lojas",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-fixture.ts",
+    "term": "identifier:dias",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-fixture.ts",
+    "term": "identifier:chave",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-fixture.ts",
+    "term": "identifier:dados",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
+  },
+  {
+    "path": "scripts/vitrine-fixture.ts",
+    "term": "identifier:criar",
+    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
+    "removedIn": "L18a",
+    "category": "identifier"
   }
 ]
