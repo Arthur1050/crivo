@@ -1,6 +1,7 @@
 import { posix } from "node:path";
 import ts from "typescript";
 import marketTerms from "./market-terms.json";
+import storedValues from "./stored-values.json";
 
 export type Layer = "core" | "vertical" | "app";
 export type CorePackage = "@core/db" | "@core/server" | "@core/agent" | "@core/client" | "@core/vertical-kit";
@@ -73,6 +74,46 @@ export function checkMarketTerms(sources: Sources, rules: readonly BoundaryRule[
     }
   }
   return applyExceptions(candidates, transitional, "market:");
+}
+
+function isVisibleText(node: ts.Node): boolean {
+  if (ts.isJsxAttribute(node.parent)) {
+    return ["label", "title", "placeholder", "description", "helperText", "aria-label", "alt", "tooltip", "children"].includes(node.parent.name.getText());
+  }
+  return ts.isJsxExpression(node.parent)
+    && (ts.isJsxElement(node.parent.parent) || ts.isJsxFragment(node.parent.parent));
+}
+
+function isSqlToken(node: ts.Node): boolean {
+  let parent = node.parent;
+  while (parent && !ts.isSourceFile(parent)) {
+    if (ts.isTaggedTemplateExpression(parent)) return parent.tag.getText() === "sql";
+    parent = parent.parent;
+  }
+  return false;
+}
+
+export function checkStoredValues(sources: Sources, _rules: readonly BoundaryRule[], transitional: readonly TransitionalEntry[] = []): Violation[] {
+  const candidates: (Violation & { term: string })[] = [];
+  for (const [file, source] of Object.entries(sources)) {
+    if (isTest(file) || file.startsWith("n8n/") || !/\.[cm]?[jt]sx?$/.test(file)
+      || file === "src/lib/vocabulary.ts" || file.startsWith("src/verticals/") && file.endsWith("/vocabulary.ts")) continue;
+    for (const token of codeTokens(file, source)) {
+      if (isVisibleText(token.node)) continue;
+      const objectKey = ts.isIdentifier(token.node) && ts.isObjectLiteralExpression(token.node.parent.parent)
+        && (token.node.parent as ts.NamedDeclaration).name === token.node;
+      const values = ts.isStringLiteralLike(token.node) || objectKey ? [token.text] : [];
+      if (isSqlToken(token.node)) {
+        values.push(...[...token.text.matchAll(/'((?:''|[^'])*)'/g)].map((match) => match[1].replace(/''/g, "'")));
+      }
+      for (const value of new Set(values.filter((value) => storedValues.includes(value)))) {
+        const position = token.node.getStart(token.ast) + Math.max(0, token.node.getText(token.ast).indexOf(value));
+        candidates.push({ file, line: token.ast.getLineAndCharacterOfPosition(position).line + 1,
+          term: `stored:${value}`, message: `Valor gravado literal "${value}" em ${file}` });
+      }
+    }
+  }
+  return applyExceptions(candidates, transitional, "stored:");
 }
 
 function importsOf(file: string, source: string): { target: string; line: number }[] {

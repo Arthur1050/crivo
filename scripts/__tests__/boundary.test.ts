@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import map from "../boundary/map.json";
 import transitional from "../boundary/transitional.json";
-import { checkClassification, checkImports, checkMarketTerms, classifyFile, isTest, type BoundaryRule } from "../boundary/check";
+import { checkClassification, checkImports, checkMarketTerms, checkStoredValues, classifyFile, isTest, type BoundaryRule } from "../boundary/check";
 
 export function repositoryFiles(): string[] {
   function walk(directory: string): string[] {
@@ -124,6 +124,48 @@ describe("termos de mercado (BOUND-03/04)", () => {
     const entry = { path: "src/core/sample.ts", term: "market:broker", reason: "Renomeação pendente", removedIn: "L18a", category: "market" };
     expect(checkMarketTerms({ [entry.path]: "const broker = 1;" }, fixture, [entry])).toEqual([]);
     expect(checkMarketTerms({ [entry.path]: "const assignee = 1;" }, fixture, [entry])).toEqual([
+      { file: entry.path, line: 1, message: `Exceção sem ocorrência: ${entry.path} -> ${entry.term}` },
+    ]);
+  });
+});
+
+describe("valores gravados literais (VOCAB-01)", () => {
+  it("confere a árvore real com as exceções atuais", () => {
+    expect(checkStoredValues(repositorySources(), rules, transitional)).toEqual([]);
+  });
+
+  it.each([
+    ["src/sample.ts", 'const role = "corretor";'],
+    ["app/sample.tsx", 'const role = "corretor";'],
+    ["src/sample.ts", 'const matrix = { "corretor": [] };'],
+    ["src/sample.ts", 'const matrix = { corretor: [] };'],
+    ["src/sample.ts", 'const query = sql`select ${column}\nwhere role = \'corretor\'`;'],
+  ])("reprova o literal em %s: %s", (file, source) => {
+    expect(checkStoredValues({ [file]: source }, [])).toEqual([
+      { file, line: source.includes("\n") ? 2 : 1, message: `Valor gravado literal "corretor" em ${file}` },
+    ]);
+  });
+
+  it.each([
+    'const label = "Corretor responsável";',
+    'const view = <p>corretor</p>;',
+    'const view = <p>{"corretor"}</p>;',
+    'const view = <Input label="corretor" />;',
+    'const value = "lead";',
+    'const value = "fgts";',
+    'const value = "editorial";',
+  ])("preserva texto de tela e valores sem troca: %s", (source) => {
+    expect(checkStoredValues({ "app/sample.tsx": source }, [])).toEqual([]);
+  });
+
+  it.each(["n8n/src/sample.mjs", "src/lib/vocabulary.ts", "src/verticals/sample/vocabulary.ts"])("permite o literal no módulo autorizado: %s", (file) => {
+    expect(checkStoredValues({ [file]: 'const role = "corretor";' }, [])).toEqual([]);
+  });
+
+  it("mantém a catraca dos valores", () => {
+    const entry = { path: "src/sample.ts", term: "stored:corretor", reason: "Constante pendente", removedIn: "L18a", category: "stored" };
+    expect(checkStoredValues({ [entry.path]: 'const role = "corretor";' }, [], [entry])).toEqual([]);
+    expect(checkStoredValues({ [entry.path]: 'const role = ROLE.attendant;' }, [], [entry])).toEqual([
       { file: entry.path, line: 1, message: `Exceção sem ocorrência: ${entry.path} -> ${entry.term}` },
     ]);
   });

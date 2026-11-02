@@ -387,10 +387,26 @@ T41 → T42 → T43 → T44 → T45
 
 **Done when**:
 
-- [ ] Literal igual a um valor reprova em `.ts` e `.tsx`, inclusive como chave de objeto e dentro de `sql`.
-- [ ] Texto JSX e texto maior que contém a palavra (`"Corretor responsável"`) passam, com caso de fixture.
-- [ ] O literal `"lead"`, igual nos dois vocabulários, fica fora.
-- [ ] Ocorrências atuais entram em `transitional.json`.
+- [x] Literal igual a um valor reprova em `.ts` e `.tsx`, inclusive como chave de objeto e dentro de `sql`.
+- [x] Texto JSX e texto maior que contém a palavra (`"Corretor responsável"`) passam, com caso de fixture.
+- [x] O literal `"lead"`, igual nos dois vocabulários, fica fora.
+- [x] Ocorrências atuais entram em `transitional.json`.
+
+**Execução**: Quick/Boundary: 1 arquivo, 48 testes, 0 falhas. TypeScript: 0 erros. ESLint: 0 erros, 9 avisos. Lista com 605 entradas, das quais 451 de literal. Primeira rodada: 1 falha por `property` no nome de uma API do TypeScript usada no próprio verificador; substituída pelo reconhecimento genérico do nó nomeado dentro do objeto, sem exceção nova. Segunda rodada verde.
+
+| Critério | Evidência em `scripts/__tests__/boundary.test.ts` | Resultado esperado |
+| --- | --- | --- |
+| Literais TS/TSX, chaves e SQL | `:144`, `expect(checkStoredValues(...)).toEqual([{ file, line: ..., message: ... }])` | Recusa do valor exato, com arquivo e linha |
+| Texto de tela e valores sem troca | `:158`, `expect(checkStoredValues(...)).toEqual([])` | JSX, rótulo maior, `lead`, `fgts` e `editorial` preservados |
+| Módulos de vocabulário e n8n | `:162`, igualdade com `[]` | Exceções de escopo da VOCAB-01 |
+| Ocorrências atuais e catraca | `:134`, árvore real igual a `[]`; `:167`, ocorrência igual a `[]`; `:168`, violação de exceção órfã | Lista corresponde ao código |
+
+| Asserções | Origem | Necessárias |
+| --- | --- | --- |
+| `boundary.test.ts:134`, `:144`, `:158`, `:162` | VOCAB-01 AC4 e T8 | Sim |
+| `boundary.test.ts:167`, `:168` | BOUND-04 AC3 | Sim |
+
+**Adequação**: critérios cobertos, inclusive chaves sem aspas e SQL interpolado; asserções de valor da base intactas, conforme AGENTS.md.
 
 **Tests**: unit
 **Gate**: quick

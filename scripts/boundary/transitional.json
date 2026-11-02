@@ -1076,5 +1076,3162 @@
     "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
     "removedIn": "L18a",
     "category": "market"
+  },
+  {
+    "path": "src/components/chats/conversation-header.tsx",
+    "term": "stored:agente",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/chats/conversation-header.tsx",
+    "term": "stored:humano",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/chats/message-thread.tsx",
+    "term": "stored:humano",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/dashboard/integration-health.tsx",
+    "term": "stored:problema",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/dashboard/recent-leads-table.tsx",
+    "term": "stored:novo",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/dashboard/recent-leads-table.tsx",
+    "term": "stored:usado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/dashboard/recent-leads-table.tsx",
+    "term": "stored:ambos",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/dashboard/recent-leads-table.tsx",
+    "term": "stored:em_qualificacao",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/dashboard/recent-leads-table.tsx",
+    "term": "stored:qualificado_agendado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/dashboard/recent-leads-table.tsx",
+    "term": "stored:escalado_humano",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/documents/document-presentation.ts",
+    "term": "stored:novo",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/documents/document-presentation.ts",
+    "term": "stored:usado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/documents/document-presentation.ts",
+    "term": "stored:ambos",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/documents/document-row-state.ts",
+    "term": "stored:processando",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/documents/document-row-state.ts",
+    "term": "stored:pronto",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/documents/document-row-state.ts",
+    "term": "stored:falha",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/documents/document-row-state.ts",
+    "term": "stored:fora_do_agente",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/documents/documents-browser.tsx",
+    "term": "stored:grade",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/documents/documents-grid.tsx",
+    "term": "stored:falha",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/documents/documents-grid.tsx",
+    "term": "stored:processando",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/documents/documents-table.tsx",
+    "term": "stored:falha",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/documents/documents-table.tsx",
+    "term": "stored:processando",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/documents/documents-toolbar.tsx",
+    "term": "stored:novo",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/documents/documents-toolbar.tsx",
+    "term": "stored:usado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/documents/documents-toolbar.tsx",
+    "term": "stored:ambos",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/documents/edit-document-dialog.tsx",
+    "term": "stored:novo",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/documents/edit-document-dialog.tsx",
+    "term": "stored:usado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/documents/edit-document-dialog.tsx",
+    "term": "stored:ambos",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/documents/preview-client.ts",
+    "term": "stored:pronto",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/documents/preview-client.ts",
+    "term": "stored:fora_do_agente",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/documents/upload-client.ts",
+    "term": "stored:novo",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/documents/upload-client.ts",
+    "term": "stored:usado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/documents/upload-client.ts",
+    "term": "stored:ambos",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/documents/upload-dialog.tsx",
+    "term": "stored:novo",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/documents/upload-dialog.tsx",
+    "term": "stored:usado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/documents/upload-dialog.tsx",
+    "term": "stored:ambos",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/pipeline/lead-detail-panel.tsx",
+    "term": "stored:novo",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/pipeline/lead-detail-panel.tsx",
+    "term": "stored:usado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/pipeline/lead-detail-panel.tsx",
+    "term": "stored:ambos",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/pipeline/lead-detail-panel.tsx",
+    "term": "stored:casa",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/pipeline/lead-detail-panel.tsx",
+    "term": "stored:apartamento",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/pipeline/lead-detail-panel.tsx",
+    "term": "stored:investidor",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/pipeline/lead-detail-panel.tsx",
+    "term": "stored:morador",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/pipeline/lead-detail-panel.tsx",
+    "term": "stored:pre_aprovado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/pipeline/lead-detail-panel.tsx",
+    "term": "stored:recurso_proprio",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/pipeline/lead-detail-panel.tsx",
+    "term": "stored:em_qualificacao",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/pipeline/lead-detail-panel.tsx",
+    "term": "stored:qualificado_agendado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/pipeline/lead-detail-panel.tsx",
+    "term": "stored:escalado_humano",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/pipeline/pipeline-board.tsx",
+    "term": "stored:novo",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/pipeline/pipeline-board.tsx",
+    "term": "stored:usado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/pipeline/pipeline-board.tsx",
+    "term": "stored:ambos",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/pipeline/pipeline-board.tsx",
+    "term": "stored:casa",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/pipeline/pipeline-board.tsx",
+    "term": "stored:apartamento",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/pipeline/pipeline-board.tsx",
+    "term": "stored:em_qualificacao",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/pipeline/pipeline-board.tsx",
+    "term": "stored:qualificado_agendado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/pipeline/pipeline-board.tsx",
+    "term": "stored:escalado_humano",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/properties-table.tsx",
+    "term": "stored:casa",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/properties-table.tsx",
+    "term": "stored:apartamento",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/properties-table.tsx",
+    "term": "stored:sobrado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/properties-table.tsx",
+    "term": "stored:cobertura",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/properties-table.tsx",
+    "term": "stored:terreno",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/properties-table.tsx",
+    "term": "stored:sala_comercial",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/properties-table.tsx",
+    "term": "stored:chacara",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/properties-table.tsx",
+    "term": "stored:disponivel",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/properties-table.tsx",
+    "term": "stored:reservado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/properties-table.tsx",
+    "term": "stored:vendido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/properties-toolbar.tsx",
+    "term": "stored:disponivel",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/properties-toolbar.tsx",
+    "term": "stored:reservado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/properties-toolbar.tsx",
+    "term": "stored:vendido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/properties-toolbar.tsx",
+    "term": "stored:casa",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/properties-toolbar.tsx",
+    "term": "stored:apartamento",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/properties-toolbar.tsx",
+    "term": "stored:sobrado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/properties-toolbar.tsx",
+    "term": "stored:cobertura",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/properties-toolbar.tsx",
+    "term": "stored:terreno",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/properties-toolbar.tsx",
+    "term": "stored:sala_comercial",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/properties-toolbar.tsx",
+    "term": "stored:chacara",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/properties-toolbar.tsx",
+    "term": "stored:novo",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/properties-toolbar.tsx",
+    "term": "stored:usado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/properties-toolbar.tsx",
+    "term": "stored:ambos",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/property-form-dialog.tsx",
+    "term": "stored:casa",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/property-form-dialog.tsx",
+    "term": "stored:apartamento",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/property-form-dialog.tsx",
+    "term": "stored:sobrado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/property-form-dialog.tsx",
+    "term": "stored:cobertura",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/property-form-dialog.tsx",
+    "term": "stored:terreno",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/property-form-dialog.tsx",
+    "term": "stored:sala_comercial",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/property-form-dialog.tsx",
+    "term": "stored:chacara",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/property-form-dialog.tsx",
+    "term": "stored:novo",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/property-form-dialog.tsx",
+    "term": "stored:usado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/property-form-dialog.tsx",
+    "term": "stored:ambos",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/property-form-dialog.tsx",
+    "term": "stored:disponivel",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/property-form-dialog.tsx",
+    "term": "stored:reservado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/properties/property-form-dialog.tsx",
+    "term": "stored:vendido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/settings/settings-form.tsx",
+    "term": "stored:novo",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/settings/settings-form.tsx",
+    "term": "stored:usado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/settings/settings-form.tsx",
+    "term": "stored:ambos",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/settings/storefront-form.tsx",
+    "term": "stored:grade",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/usuarios/invite-user-dialog.tsx",
+    "term": "stored:corretor",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/usuarios/role-options.ts",
+    "term": "stored:administrador",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/usuarios/role-options.ts",
+    "term": "stored:gestor",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/usuarios/role-options.ts",
+    "term": "stored:corretor",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/usuarios/users-table.tsx",
+    "term": "stored:administrador",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/usuarios/users-table.tsx",
+    "term": "stored:gestor",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/components/usuarios/users-table.tsx",
+    "term": "stored:corretor",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/create-admin.ts",
+    "term": "stored:administrador",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:em_qualificacao",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:qualificado_agendado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:escalado_humano",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:novo",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:usado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:ambos",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:casa",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:apartamento",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:sobrado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:cobertura",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:terreno",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:sala_comercial",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:chacara",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:disponivel",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:reservado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:vendido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:grade",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:investidor",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:morador",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:pre_aprovado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:recurso_proprio",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:agente",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:humano",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:enviando",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:enviada",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:falhou",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:qualificando",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:agendando",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:encerrada",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:processando",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:pronto",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:falha",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:fora_do_agente",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:saudavel",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:problema",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/seed.ts",
+    "term": "stored:novo",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/seed.ts",
+    "term": "stored:usado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/seed.ts",
+    "term": "stored:ambos",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/seed.ts",
+    "term": "stored:em_qualificacao",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/seed.ts",
+    "term": "stored:qualificado_agendado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/seed.ts",
+    "term": "stored:escalado_humano",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/seed.ts",
+    "term": "stored:casa",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/seed.ts",
+    "term": "stored:apartamento",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/seed.ts",
+    "term": "stored:sobrado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/seed.ts",
+    "term": "stored:cobertura",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/seed.ts",
+    "term": "stored:terreno",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/seed.ts",
+    "term": "stored:sala_comercial",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/seed.ts",
+    "term": "stored:chacara",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/seed.ts",
+    "term": "stored:disponivel",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/seed.ts",
+    "term": "stored:reservado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/seed.ts",
+    "term": "stored:vendido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/seed.ts",
+    "term": "stored:investidor",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/seed.ts",
+    "term": "stored:morador",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/seed.ts",
+    "term": "stored:pre_aprovado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/seed.ts",
+    "term": "stored:recurso_proprio",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/seed.ts",
+    "term": "stored:grade",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/seed.ts",
+    "term": "stored:administrador",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/seed.ts",
+    "term": "stored:gestor",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/seed.ts",
+    "term": "stored:corretor",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/seed.ts",
+    "term": "stored:agente",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/lib/chat-thread.ts",
+    "term": "stored:agente",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/lib/chat-thread.ts",
+    "term": "stored:humano",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/lib/conversation-control.ts",
+    "term": "stored:agente",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/lib/conversation-control.ts",
+    "term": "stored:humano",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/lib/distribution.ts",
+    "term": "stored:novo",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/lib/distribution.ts",
+    "term": "stored:usado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/lib/distribution.ts",
+    "term": "stored:ambos",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/lib/distribution.ts",
+    "term": "stored:investidor",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/lib/distribution.ts",
+    "term": "stored:morador",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/lib/integration-alert.ts",
+    "term": "stored:saudavel",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/lib/integration-alert.ts",
+    "term": "stored:problema",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/lib/permissions.ts",
+    "term": "stored:administrador",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/lib/permissions.ts",
+    "term": "stored:gestor",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/lib/permissions.ts",
+    "term": "stored:corretor",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/lib/pilot-metrics.ts",
+    "term": "stored:saudavel",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/lib/pilot-metrics.ts",
+    "term": "stored:problema",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/lib/storefront-contract.ts",
+    "term": "stored:grade",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/actions/deactivate.ts",
+    "term": "stored:administrador",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/actions/pipeline.ts",
+    "term": "stored:humano",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/actions/users.ts",
+    "term": "stored:administrador",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/actions/work-window.ts",
+    "term": "stored:administrador",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/actions/work-window.ts",
+    "term": "stored:gestor",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/auth/session.ts",
+    "term": "stored:corretor",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/data/index.ts",
+    "term": "stored:novo",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/data/index.ts",
+    "term": "stored:usado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/data/index.ts",
+    "term": "stored:ambos",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/data/index.ts",
+    "term": "stored:corretor",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/data/index.ts",
+    "term": "stored:disponivel",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/data/index.ts",
+    "term": "stored:qualificado_agendado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/data/index.ts",
+    "term": "stored:escalado_humano",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/data/index.ts",
+    "term": "stored:investidor",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/data/index.ts",
+    "term": "stored:morador",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/data/index.ts",
+    "term": "stored:humano",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/data/index.ts",
+    "term": "stored:agente",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/data/index.ts",
+    "term": "stored:em_qualificacao",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/data/index.ts",
+    "term": "stored:reservado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/data/index.ts",
+    "term": "stored:enviando",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/data/index.ts",
+    "term": "stored:enviada",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/data/index.ts",
+    "term": "stored:falhou",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/data/index.ts",
+    "term": "stored:sem-corretor-disponivel",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/data/index.ts",
+    "term": "stored:conflito-de-agenda",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/data/index.ts",
+    "term": "stored:encerrada",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/data/index.ts",
+    "term": "stored:falha",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/data/index.ts",
+    "term": "stored:administrador",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/data/integration-health.ts",
+    "term": "stored:agente",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/data/integration-health.ts",
+    "term": "stored:saudavel",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/data/integration-health.ts",
+    "term": "stored:problema",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/data/storefront.ts",
+    "term": "stored:grade",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/data/whatsapp.ts",
+    "term": "stored:corretor",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/data/whatsapp.ts",
+    "term": "stored:agente",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/data/whatsapp.ts",
+    "term": "stored:humano",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/documents/context-budget.ts",
+    "term": "stored:novo",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/documents/context-budget.ts",
+    "term": "stored:usado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/documents/context-budget.ts",
+    "term": "stored:ambos",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/documents/context-budget.ts",
+    "term": "stored:pronto",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/documents/context-budget.ts",
+    "term": "stored:fora_do_agente",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/documents/context-budget.ts",
+    "term": "stored:processando",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/documents/processing.ts",
+    "term": "stored:processando",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/documents/processing.ts",
+    "term": "stored:pronto",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/documents/processing.ts",
+    "term": "stored:falha",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/documents/repository.ts",
+    "term": "stored:pronto",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/documents/repository.ts",
+    "term": "stored:fora_do_agente",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/documents/repository.ts",
+    "term": "stored:novo",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/documents/repository.ts",
+    "term": "stored:usado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/documents/repository.ts",
+    "term": "stored:ambos",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/documents/repository.ts",
+    "term": "stored:falha",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/documents/repository.ts",
+    "term": "stored:processando",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/documents/uploads.ts",
+    "term": "stored:novo",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/documents/uploads.ts",
+    "term": "stored:usado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/documents/uploads.ts",
+    "term": "stored:ambos",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/auth.ts",
+    "term": "stored:nao-autenticado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/auth.ts",
+    "term": "stored:tenant-nao-identificado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/context.ts",
+    "term": "stored:pronto",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/integration-alert.ts",
+    "term": "stored:saudavel",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/leads.ts",
+    "term": "stored:em_qualificacao",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/leads.ts",
+    "term": "stored:qualificado_agendado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/leads.ts",
+    "term": "stored:escalado_humano",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/leads.ts",
+    "term": "stored:recurso-nao-encontrado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/leads.ts",
+    "term": "stored:transicao-invalida",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/leads.ts",
+    "term": "stored:lead-conduzido-por-humano",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/leads.ts",
+    "term": "stored:humano",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/leads.ts",
+    "term": "stored:lead-travado-por-humano",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/leads.ts",
+    "term": "stored:motivo-escalonamento-obrigatorio",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/leads.ts",
+    "term": "stored:sem-corretor-disponivel",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/leads.ts",
+    "term": "stored:conflito-de-agenda",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/messages.ts",
+    "term": "stored:recurso-nao-encontrado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/messages.ts",
+    "term": "stored:canal-nao-vinculado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/parsers.ts",
+    "term": "stored:qualificando",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/parsers.ts",
+    "term": "stored:agendando",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/parsers.ts",
+    "term": "stored:encerrada",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/parsers.ts",
+    "term": "stored:agente",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/problem.ts",
+    "term": "stored:nao-autenticado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/problem.ts",
+    "term": "stored:recurso-nao-encontrado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/problem.ts",
+    "term": "stored:payload-invalido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/problem.ts",
+    "term": "stored:transicao-invalida",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/problem.ts",
+    "term": "stored:lead-travado-por-humano",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/problem.ts",
+    "term": "stored:motivo-escalonamento-obrigatorio",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/problem.ts",
+    "term": "stored:corpo-grande-demais",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/problem.ts",
+    "term": "stored:rota-inexistente",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/problem.ts",
+    "term": "stored:metodo-nao-suportado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/problem.ts",
+    "term": "stored:tenant-nao-identificado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/problem.ts",
+    "term": "stored:sem-corretor-disponivel",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/problem.ts",
+    "term": "stored:conflito-de-agenda",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/problem.ts",
+    "term": "stored:lead-conduzido-por-humano",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/problem.ts",
+    "term": "stored:canal-nao-vinculado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/problem.ts",
+    "term": "stored:contexto-alterado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/problem.ts",
+    "term": "stored:episodio-em-preparacao",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/problem.ts",
+    "term": "stored:claim-expirada",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/problem.ts",
+    "term": "stored:episodio-consumido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/problem.ts",
+    "term": "stored:estado-agente-desconhecido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/problem.ts",
+    "term": "stored:servico-indisponivel",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/integration/properties.ts",
+    "term": "stored:disponivel",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/reengagement/agent-state.ts",
+    "term": "stored:qualificando",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/reengagement/agent-state.ts",
+    "term": "stored:agendando",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/reengagement/agent-state.ts",
+    "term": "stored:encerrada",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/reengagement/context.ts",
+    "term": "stored:qualificando",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/reengagement/context.ts",
+    "term": "stored:agendando",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/reengagement/context.ts",
+    "term": "stored:em_qualificacao",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/reengagement/context.ts",
+    "term": "stored:encerrada",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/reengagement/context.ts",
+    "term": "stored:agente",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/reengagement/repository.ts",
+    "term": "stored:humano",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/reengagement/repository.ts",
+    "term": "stored:agente",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/reengagement/repository.ts",
+    "term": "stored:qualificando",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/reengagement/repository.ts",
+    "term": "stored:agendando",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/reengagement/repository.ts",
+    "term": "stored:em_qualificacao",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/reengagement/repository.ts",
+    "term": "stored:escalado_humano",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/reengagement/retention.ts",
+    "term": "stored:em_qualificacao",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/reengagement/retention.ts",
+    "term": "stored:encerrada",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/reengagement/retention.ts",
+    "term": "stored:agente",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/storefront/revalidation.ts",
+    "term": "stored:falhou",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/validation.ts",
+    "term": "stored:em_qualificacao",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/validation.ts",
+    "term": "stored:qualificado_agendado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/validation.ts",
+    "term": "stored:escalado_humano",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/validation.ts",
+    "term": "stored:casa",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/validation.ts",
+    "term": "stored:apartamento",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/validation.ts",
+    "term": "stored:sobrado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/validation.ts",
+    "term": "stored:cobertura",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/validation.ts",
+    "term": "stored:terreno",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/validation.ts",
+    "term": "stored:sala_comercial",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/validation.ts",
+    "term": "stored:chacara",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/validation.ts",
+    "term": "stored:disponivel",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/validation.ts",
+    "term": "stored:reservado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/validation.ts",
+    "term": "stored:vendido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/whatsapp/statuses.ts",
+    "term": "stored:agente",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/whatsapp/statuses.ts",
+    "term": "stored:humano",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/(crm)/chats/page.tsx",
+    "term": "stored:agente",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/(crm)/chats/page.tsx",
+    "term": "stored:humano",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/(crm)/configuracoes/page.tsx",
+    "term": "stored:novo",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/(crm)/configuracoes/page.tsx",
+    "term": "stored:usado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/(crm)/configuracoes/page.tsx",
+    "term": "stored:ambos",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/(crm)/dashboard/page.tsx",
+    "term": "stored:novo",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/(crm)/dashboard/page.tsx",
+    "term": "stored:usado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/(crm)/dashboard/page.tsx",
+    "term": "stored:ambos",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/(crm)/dashboard/page.tsx",
+    "term": "stored:investidor",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/(crm)/dashboard/page.tsx",
+    "term": "stored:morador",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/(crm)/documentos/page.tsx",
+    "term": "stored:novo",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/(crm)/documentos/page.tsx",
+    "term": "stored:usado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/(crm)/documentos/page.tsx",
+    "term": "stored:ambos",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/(crm)/documentos/page.tsx",
+    "term": "stored:processando",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/(crm)/imoveis/page.tsx",
+    "term": "stored:disponivel",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/(crm)/imoveis/page.tsx",
+    "term": "stored:reservado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/(crm)/imoveis/page.tsx",
+    "term": "stored:vendido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/(crm)/imoveis/page.tsx",
+    "term": "stored:casa",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/(crm)/imoveis/page.tsx",
+    "term": "stored:apartamento",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/(crm)/imoveis/page.tsx",
+    "term": "stored:sobrado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/(crm)/imoveis/page.tsx",
+    "term": "stored:cobertura",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/(crm)/imoveis/page.tsx",
+    "term": "stored:terreno",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/(crm)/imoveis/page.tsx",
+    "term": "stored:sala_comercial",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/(crm)/imoveis/page.tsx",
+    "term": "stored:chacara",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/(crm)/imoveis/page.tsx",
+    "term": "stored:novo",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/(crm)/imoveis/page.tsx",
+    "term": "stored:usado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/(crm)/imoveis/page.tsx",
+    "term": "stored:ambos",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/cron/expire-documents/route.ts",
+    "term": "stored:nao-autenticado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/documents/upload/route.ts",
+    "term": "stored:novo",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/documents/upload/route.ts",
+    "term": "stored:usado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/documents/upload/route.ts",
+    "term": "stored:ambos",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/documents/[id]/preview/route.ts",
+    "term": "stored:fora_do_agente",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/context/route.ts",
+    "term": "stored:corpo-grande-demais",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/context/route.ts",
+    "term": "stored:payload-invalido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/context/route.ts",
+    "term": "stored:servico-indisponivel",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/route.ts",
+    "term": "stored:corpo-grande-demais",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/route.ts",
+    "term": "stored:payload-invalido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/agent-state/route.ts",
+    "term": "stored:recurso-nao-encontrado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/agent-state/route.ts",
+    "term": "stored:corpo-grande-demais",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/agent-state/route.ts",
+    "term": "stored:payload-invalido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/agent-state/route.ts",
+    "term": "stored:contexto-alterado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/agent-state/route.ts",
+    "term": "stored:transicao-invalida",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/messages/route.ts",
+    "term": "stored:payload-invalido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/messages/route.ts",
+    "term": "stored:corpo-grande-demais",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/messages/route.ts",
+    "term": "stored:canal-nao-vinculado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/opt-out/route.ts",
+    "term": "stored:recurso-nao-encontrado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/expire/route.ts",
+    "term": "stored:recurso-nao-encontrado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/expire/route.ts",
+    "term": "stored:corpo-grande-demais",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/expire/route.ts",
+    "term": "stored:payload-invalido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/expire/route.ts",
+    "term": "stored:lead-travado-por-humano",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/expire/route.ts",
+    "term": "stored:contexto-alterado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/expire/route.ts",
+    "term": "stored:estado-agente-desconhecido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/expire/route.ts",
+    "term": "stored:transicao-invalida",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/prepare/route.ts",
+    "term": "stored:recurso-nao-encontrado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/prepare/route.ts",
+    "term": "stored:corpo-grande-demais",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/prepare/route.ts",
+    "term": "stored:payload-invalido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/prepare/route.ts",
+    "term": "stored:episodio-em-preparacao",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/prepare/route.ts",
+    "term": "stored:contexto-alterado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/prepare/route.ts",
+    "term": "stored:estado-agente-desconhecido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/prepare/route.ts",
+    "term": "stored:transicao-invalida",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/prepare/route.ts",
+    "term": "stored:claim-expirada",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/prepare/route.ts",
+    "term": "stored:episodio-consumido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/[episodeId]/acknowledgement/route.ts",
+    "term": "stored:recurso-nao-encontrado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/[episodeId]/acknowledgement/route.ts",
+    "term": "stored:corpo-grande-demais",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/[episodeId]/acknowledgement/route.ts",
+    "term": "stored:payload-invalido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/[episodeId]/acknowledgement/route.ts",
+    "term": "stored:episodio-consumido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/[episodeId]/acknowledgement/route.ts",
+    "term": "stored:contexto-alterado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/[episodeId]/preparation-failure/route.ts",
+    "term": "stored:recurso-nao-encontrado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/[episodeId]/preparation-failure/route.ts",
+    "term": "stored:corpo-grande-demais",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/[episodeId]/preparation-failure/route.ts",
+    "term": "stored:payload-invalido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/[episodeId]/preparation-failure/route.ts",
+    "term": "stored:episodio-consumido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/[episodeId]/preparation-failure/route.ts",
+    "term": "stored:claim-expirada",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/[episodeId]/preparation-failure/route.ts",
+    "term": "stored:contexto-alterado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/[episodeId]/send/route.ts",
+    "term": "stored:recurso-nao-encontrado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/[episodeId]/send/route.ts",
+    "term": "stored:corpo-grande-demais",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/[episodeId]/send/route.ts",
+    "term": "stored:payload-invalido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/[episodeId]/send/route.ts",
+    "term": "stored:estado-agente-desconhecido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/[episodeId]/send/route.ts",
+    "term": "stored:claim-expirada",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/[episodeId]/send/route.ts",
+    "term": "stored:episodio-consumido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/[episodeId]/send/route.ts",
+    "term": "stored:canal-nao-vinculado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/[episodeId]/send/route.ts",
+    "term": "stored:transicao-invalida",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/reengagement/[episodeId]/send/route.ts",
+    "term": "stored:contexto-alterado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/route.ts",
+    "term": "stored:recurso-nao-encontrado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/route.ts",
+    "term": "stored:transicao-invalida",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/route.ts",
+    "term": "stored:lead-travado-por-humano",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/route.ts",
+    "term": "stored:motivo-escalonamento-obrigatorio",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/route.ts",
+    "term": "stored:sem-corretor-disponivel",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/route.ts",
+    "term": "stored:conflito-de-agenda",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/route.ts",
+    "term": "stored:lead-conduzido-por-humano",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/route.ts",
+    "term": "stored:corpo-grande-demais",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/route.ts",
+    "term": "stored:payload-invalido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/session-context/route.ts",
+    "term": "stored:recurso-nao-encontrado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/session-context/route.ts",
+    "term": "stored:corpo-grande-demais",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/session-context/route.ts",
+    "term": "stored:payload-invalido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/leads/[id]/session-context/route.ts",
+    "term": "stored:estado-agente-desconhecido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/memory-resets/route.ts",
+    "term": "stored:payload-invalido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/properties/route.ts",
+    "term": "stored:payload-invalido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/settings/route.ts",
+    "term": "stored:recurso-nao-encontrado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/whatsapp/automation/candidates/route.ts",
+    "term": "stored:payload-invalido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/whatsapp/automation/candidates/route.ts",
+    "term": "stored:recurso-nao-encontrado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/whatsapp/automation/channels/route.ts",
+    "term": "stored:servico-indisponivel",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/whatsapp/automation/reconcile/route.ts",
+    "term": "stored:corpo-grande-demais",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/whatsapp/automation/reconcile/route.ts",
+    "term": "stored:payload-invalido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/whatsapp/automation/reconcile/route.ts",
+    "term": "stored:servico-indisponivel",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/whatsapp/statuses/route.ts",
+    "term": "stored:nao-autenticado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/whatsapp/statuses/route.ts",
+    "term": "stored:corpo-grande-demais",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/whatsapp/statuses/route.ts",
+    "term": "stored:payload-invalido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/whatsapp/statuses/route.ts",
+    "term": "stored:canal-nao-vinculado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/whatsapp/statuses/route.ts",
+    "term": "stored:servico-indisponivel",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/whatsapp/usage/sync/route.ts",
+    "term": "stored:corpo-grande-demais",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/whatsapp/usage/sync/route.ts",
+    "term": "stored:payload-invalido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/whatsapp/usage/sync/route.ts",
+    "term": "stored:servico-indisponivel",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "app/api/v1/[...unmatched]/route.ts",
+    "term": "stored:rota-inexistente",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "scripts/document-context-benchmark.ts",
+    "term": "stored:novo",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "scripts/document-context-benchmark.ts",
+    "term": "stored:usado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "scripts/document-context-benchmark.ts",
+    "term": "stored:ambos",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "scripts/preview-message-pricing.tsx",
+    "term": "stored:agente",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "scripts/preview-message-thread.mts",
+    "term": "stored:ambos",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "scripts/preview-message-thread.mts",
+    "term": "stored:gestor",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "scripts/preview-message-thread.mts",
+    "term": "stored:em_qualificacao",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "scripts/preview-message-thread.mts",
+    "term": "stored:agente",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "scripts/preview-message-thread.mts",
+    "term": "stored:humano",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "scripts/preview-test-users.ts",
+    "term": "stored:administrador",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "scripts/preview-test-users.ts",
+    "term": "stored:corretor",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "scripts/reengagement-bootstrap.ts",
+    "term": "stored:qualificando",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "scripts/reengagement-bootstrap.ts",
+    "term": "stored:agendando",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "scripts/reengagement-bootstrap.ts",
+    "term": "stored:encerrada",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "scripts/reengagement-proof.ts",
+    "term": "stored:agente",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "scripts/send-test-integration-alert.ts",
+    "term": "stored:saudavel",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "scripts/vitrine-e2e.ts",
+    "term": "stored:disponivel",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "scripts/vitrine-e2e.ts",
+    "term": "stored:grade",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "scripts/vitrine-e2e.ts",
+    "term": "stored:apartamento",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "scripts/vitrine-fixture.ts",
+    "term": "stored:apartamento",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "scripts/vitrine-fixture.ts",
+    "term": "stored:casa",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "scripts/vitrine-fixture.ts",
+    "term": "stored:grade",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "scripts/vitrine-fixture.ts",
+    "term": "stored:disponivel",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "scripts/vitrine-fixture.ts",
+    "term": "stored:reservado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "scripts/vitrine-fixture.ts",
+    "term": "stored:vendido",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "scripts/vitrine-fixture.ts",
+    "term": "stored:ambos",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "scripts/vitrine-fixture.ts",
+    "term": "stored:usado",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "scripts/vitrine-fixture.ts",
+    "term": "stored:em_qualificacao",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
+  },
+  {
+    "path": "workflows/process-document.ts",
+    "term": "stored:pronto",
+    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
+    "removedIn": "L18a",
+    "category": "stored"
   }
 ]
