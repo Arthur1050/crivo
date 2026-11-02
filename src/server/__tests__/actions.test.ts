@@ -1414,18 +1414,25 @@ describe("server actions", () => {
       });
     });
 
-    it("mudar só a validade ou só a categoria reconcilia a admissão (PAGENTE-01 AC3)", async () => {
+    it("mudar só a validade reconcilia a admissão (PAGENTE-01 AC3)", async () => {
+      await withGenerousCeiling(async () => {
+        const deFora = await waitingOutsider();
+        const validade = new Date(Date.now() + 86_400_000).toISOString();
+        try {
+          await expect(updateDocumentAction({ documentId: deFora.id, name: deFora.name, modality: deFora.modality, categoryId: deFora.categoryId, expiresAt: validade })).resolves.toEqual({ ok: true });
+          await expect(lifecycleRow(deFora.id)).resolves.toMatchObject({ expiresAt: new Date(validade), status: "pronto" });
+        } finally {
+          await deleteDocumentAction({ documentId: deFora.id });
+        }
+      });
+    });
+
+    it("mudar só a categoria reconcilia a admissão (PAGENTE-01 AC3)", async () => {
       await withGenerousCeiling(async () => {
         const deFora = await waitingOutsider();
         const [categoria] = await db.insert(documentCategories).values({ tenantId: activeTenantId, name: `Só a categoria ${randomUUID()}` }).returning();
-        const campos = { documentId: deFora.id, name: deFora.name, modality: deFora.modality, categoryId: deFora.categoryId };
-        const validade = new Date(Date.now() + 86_400_000).toISOString();
         try {
-          await expect(updateDocumentAction({ ...campos, expiresAt: validade })).resolves.toEqual({ ok: true });
-          await expect(lifecycleRow(deFora.id)).resolves.toMatchObject({ expiresAt: new Date(validade), status: "pronto" });
-
-          await db.update(documents).set({ status: "fora_do_agente" }).where(eq(documents.id, deFora.id));
-          await expect(updateDocumentAction({ ...campos, categoryId: categoria.id })).resolves.toEqual({ ok: true });
+          await expect(updateDocumentAction({ documentId: deFora.id, name: deFora.name, modality: deFora.modality, categoryId: categoria.id })).resolves.toEqual({ ok: true });
           await expect(lifecycleRow(deFora.id)).resolves.toMatchObject({ categoryId: categoria.id, status: "pronto" });
         } finally {
           await deleteDocumentAction({ documentId: deFora.id });
