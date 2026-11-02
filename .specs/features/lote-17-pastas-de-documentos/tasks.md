@@ -852,7 +852,7 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 **Done when**:
 
 - [x] `searchParams.pasta` lido; `getDocuments` recebe `folderFilterFor(mode)`; `now` único e `toFolderCardItems` no servidor
-- [ ] Build passa; CRM local abre a raiz sem erro no console do servidor
+- [x] Build passa; CRM local abre a raiz sem erro no console do servidor
 
 **Tests**: none (página; captura na T34)
 **Gate**: build
@@ -874,7 +874,7 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] `pasta` inexistente, de outro tenant e `abc` → 200 com o mesmo estado e o mesmo texto, sem lista, busca nem botões (PVAZIO-01 AC4, AC5), conferido com `curl -s -o /dev/null -w "%{http_code}"` no CRM local autenticado ou pela captura
+- [x] `pasta` inexistente, de outro tenant e `abc` → 200 com o mesmo estado e o mesmo texto, sem lista, busca nem botões (PVAZIO-01 AC4, AC5), conferido com `curl -s -o /dev/null -w "%{http_code}"` no CRM local autenticado ou pela captura
 - [x] Build passa
 
 **Tests**: none (página; captura na T34)
@@ -897,9 +897,9 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 **Done when**:
 
-- [ ] As 16 capturas versionadas; clique no menu do cartão não navega (design § 6.2); textos da lib em português (L-010)
-- [ ] Defeito visual achado → correção num commit próprio `fix(documentos): ...` antes deste, no arquivo de quem for (B já está em `lote-17`, sem paralelismo), e captura refeita
-- [ ] Se a janela não redimensionar para 375 px (já aconteceu em 2026-10-25), registrar e tentar pelo modo de dispositivo das ferramentas do desenvolvedor antes de desistir
+- [x] As 16 capturas versionadas; clique no menu do cartão não navega (design § 6.2); textos da lib em português (L-010), com a ressalva de "Required"/"Optional" abaixo
+- [x] Defeito visual achado → correção num commit próprio `fix(documentos): ...` antes deste, no arquivo de quem for (B já está em `lote-17`, sem paralelismo), e captura refeita
+- [x] Se a janela não redimensionar para 375 px (já aconteceu em 2026-10-25), registrar e tentar pelo modo de dispositivo das ferramentas do desenvolvedor antes de desistir
 
 **Tests**: none (registro)
 **Gate**: registro
@@ -908,6 +908,11 @@ Cada PR: descrição em português, lista das tasks com hash, saída de `tsc` e 
 
 ---
 
+**Execução T34 (2026-11-02)**: feita pela extensão do Chrome, com `npm run preview:test` no banco de teste, administrador e corretor de verificação. 37 capturas em `capturas/`, cobrindo os 16 cenários e as variações. T33 conferida autenticada: `abc`, UUID inexistente e pasta de outro tenant responderam 200 com o mesmo texto, sem lista, busca nem botões. Log do servidor sem resposta 500; o único erro de console na raiz é a hidratação do `Timestamp`, antiga (ideias adiadas do L12, `documents-grid.tsx:88`).
+
+Defeitos achados pela captura, cada um corrigido em commit próprio e capturado de novo: (1) com a pasta aberta o nome aparecia em dois títulos: o `FolderHeader` virou `FolderPath` e `FolderHeading`, com um único título e o menu ao lado (PABRIR-01 AC5, emenda no design); (2) "Limpar filtros" do estado vazio tirava `q` da URL, mas o campo continuava com o termo: o campo agora acompanha a URL, sem apagar o que foi digitado depois (`searchAfterUrlChange`, com teste); (3) o aviso "Link copiado" saía ilegível, texto claro sobre fundo branco: o CRM não usa `<Theme>`, então as regras de `[data-astryx-media]` do tema neutro não valiam, e o `globals.css` passou a defini-las (conferido só com o sistema em modo escuro); (4) "Required" em inglês no diálogo de nome de pasta: `isRequired` retirado, que o design não pedia.
+
+Ressalvas: a janela não redimensionou para 375 px; usei um quadro de 375 px na mesma origem, com largura de rolagem 375 na raiz e na pasta aberta. O texto copiado foi conferido por um stub de `navigator.clipboard.writeText`, e o erro de cópia foi provocado por stub que rejeita, porque ler a área de transferência real abre pedido de permissão. A pasta apagada com o diálogo aberto foi provocada apagando a linha no banco de teste. Os documentos da fixture aparecem "Fora do agente" nas capturas a partir da edição porque o tenant de teste não tem teto medido, e a reconciliação os rebaixou. O foco do diálogo de pasta fica no título, não no campo, e Enter não envia: comportamento da lib, fora dos ACs. "Required" e "Optional" em inglês seguem em toda a casa, inclusive no campo Pasta de "Editar documento" e no envio: é a dívida de i18n da Astryx (ideias adiadas do L12), não regressão deste lote.
 **Execução C1 — T34 bloqueada**: a consulta às superfícies de navegador retornou nenhuma conexão e o erro `browser access host is unavailable`. Nenhuma captura foi feita, inventada ou reaproveitada. Permanecem pendentes os 16 cenários acima, incluindo as variações de exclusão (1/N), raiz vazia (escrita/leitura) e raiz/pasta em 375 px, além de conferir o clique no menu sem navegar e os textos em português. CRM de teste iniciou na porta 3013; não houve seed nem uso de outro navegador. T35 seguirá uma vez, conforme a orientação do usuário para reportar T34 aberta quando a extensão estiver inacessível.
 
 #### T35: Gate final da Fase 1
