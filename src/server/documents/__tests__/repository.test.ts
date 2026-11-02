@@ -5,6 +5,7 @@ import { and, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "../../../db";
 import {
   documentUploadIntents,
+  documentFolders,
   documents,
   tenantDocumentContextLimits,
   tenants,
@@ -105,6 +106,54 @@ describe("documents repository (lote-12 T4)", () => {
       expect(result.intent.state).toBe("pending");
       expect(result.intent.expiresAtIntent).toEqual(new Date(NOW.getTime() + HOUR));
     }
+  });
+
+  it("T10: reserva e confirmação preservam a pasta escolhida do tenant", async () => {
+    const [folder] = await db.insert(documentFolders).values({ tenantId: TENANT_A, name: "Reserva com pasta" }).returning();
+    const created = await createUploadIntent(TENANT_A, intentInput("folder-commit", { folderId: folder.id }), NOW);
+    expect(created.kind).toBe("created");
+    if (created.kind !== "created") throw new Error("Intenção não criada");
+    expect(created.intent.folderId).toBe(folder.id);
+    await claimUploadIntentForFinalization(TENANT_A, created.intent.id, NOW);
+    const committed = await commitUploadIntent(TENANT_A, created.intent.id, { storageProvider: "teste", storageEtag: "etag-folder", contentSha256: hash("folder-commit"), now: NOW });
+    expect(committed.kind).toBe("committed");
+    if (committed.kind !== "committed") throw new Error("Documento não confirmado");
+    expect(committed.document.folderId).toBe(folder.id);
+    expect((await db.select().from(documents).where(eq(documents.id, committed.document.id)))[0].folderId).toBe(folder.id);
+  });
+
+  it.each([null, undefined])("T10: reserva com pasta %s confirma documento na raiz", async (folderId) => {
+    const seed = `root-${String(folderId)}`;
+    const created = await createUploadIntent(TENANT_A, intentInput(seed, { folderId }), NOW);
+    if (created.kind !== "created") throw new Error("Intenção não criada");
+    expect(created.intent.folderId).toBeNull();
+    await claimUploadIntentForFinalization(TENANT_A, created.intent.id, NOW);
+    const result = await commitUploadIntent(TENANT_A, created.intent.id, { storageProvider: "teste", storageEtag: "etag-root", contentSha256: hash(seed), now: NOW });
+    expect(result.kind).toBe("committed");
+    if (result.kind !== "committed") throw new Error("Documento não confirmado");
+    expect(result.document.folderId).toBeNull();
+  });
+
+  it("T10: pasta estrangeira ou inexistente não cria intenção nem muda a pasta", async () => {
+    const [foreign] = await db.insert(documentFolders).values({ tenantId: TENANT_B, name: "Pasta protegida" }).returning();
+    const before = await db.select().from(documentUploadIntents).where(eq(documentUploadIntents.tenantId, TENANT_A));
+    for (const folderId of [foreign.id, randomUUID(), "abc"]) {
+      expect(await createUploadIntent(TENANT_A, intentInput("foreign-folder", { folderId }), NOW)).toEqual({ kind: "folder_not_found" });
+    }
+    expect(await db.select().from(documentUploadIntents).where(eq(documentUploadIntents.tenantId, TENANT_A))).toEqual(before);
+    expect((await db.select().from(documentFolders).where(eq(documentFolders.id, foreign.id)))[0]).toEqual(foreign);
+  });
+
+  it("T10: pasta excluída depois da reserva deixa o documento confirmado sem pasta", async () => {
+    const [folder] = await db.insert(documentFolders).values({ tenantId: TENANT_A, name: "Pasta excluída no envio" }).returning();
+    const created = await createUploadIntent(TENANT_A, intentInput("folder-deleted", { folderId: folder.id }), NOW);
+    if (created.kind !== "created") throw new Error("Intenção não criada");
+    await db.delete(documentFolders).where(eq(documentFolders.id, folder.id));
+    await claimUploadIntentForFinalization(TENANT_A, created.intent.id, NOW);
+    const committed = await commitUploadIntent(TENANT_A, created.intent.id, { storageProvider: "teste", storageEtag: "etag-deleted", contentSha256: hash("folder-deleted"), now: NOW });
+    expect(committed.kind).toBe("committed");
+    if (committed.kind !== "committed") throw new Error("Documento não confirmado");
+    expect(committed.document.folderId).toBeNull();
   });
 
   it("rejeita reserva ativa do mesmo hash no mesmo tenant com resultado estável", async () => {

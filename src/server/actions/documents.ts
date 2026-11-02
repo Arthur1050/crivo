@@ -5,8 +5,11 @@ import { getActiveTenantId } from "../tenant";
 import { denyIfForbidden } from "./permission";
 import {
   createDocument,
+  DocumentFolderNotFoundError,
   createDocumentCategory,
   deleteDocumentCategory,
+  documentContextFieldsChanged,
+  getDocumentContextFields,
   updateDocument,
   updateDocumentCategory,
   type CategoryColor,
@@ -25,6 +28,7 @@ import { VercelBlobDocumentStorage } from "../documents/vercel-blob-storage";
 import { startDocumentProcessingRun } from "../documents/workflow-start";
 import { createDocumentUploadIntake } from "../documents/uploads";
 import { duplicateDocumentMessage } from "../../lib/duplicate-document";
+import { FOLDER_ERROR_MESSAGES, isUuid } from "../../lib/document-folders";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -77,6 +81,7 @@ export interface UpdateDocumentInput {
   name: string;
   modality: Modality;
   categoryId?: string | null;
+  folderId?: string | null;
   /** Omit preserves the existing date; an empty form field explicitly clears it. */
   expiresAt?: string;
 }
@@ -110,20 +115,34 @@ export async function updateDocumentAction(
 
   const expiry = resolveExpiresAt(input.expiresAt);
   if (!expiry.ok) return expiry;
+  if (input.folderId != null && !isUuid(input.folderId)) {
+    return { ok: false, error: FOLDER_ERROR_MESSAGES["pasta-nao-encontrada"] };
+  }
 
   const tenantId = await getActiveTenantId();
-  const updated = await updateDocument(tenantId, input.documentId, {
-    name: input.name.trim(),
-    modality: input.modality,
-    categoryId: input.categoryId,
-    ...(expiry.value === undefined ? {} : { expiresAt: expiry.value }),
-  });
+  const before = await getDocumentContextFields(tenantId, input.documentId);
+  let updated: Awaited<ReturnType<typeof updateDocument>>;
+  try {
+    updated = await updateDocument(tenantId, input.documentId, {
+      name: input.name.trim(),
+      modality: input.modality,
+      categoryId: input.categoryId,
+      ...(expiry.value === undefined ? {} : { expiresAt: expiry.value }),
+      ...("folderId" in input ? { folderId: input.folderId } : {}),
+    });
+  } catch (error) {
+    if (error instanceof DocumentFolderNotFoundError) return { ok: false, error: FOLDER_ERROR_MESSAGES["pasta-nao-encontrada"] };
+    throw error;
+  }
 
   if (!updated) {
     return { ok: false, error: "Documento não encontrado." };
   }
 
-  await reconcileTenantDocumentAdmission(tenantId);
+  // Mudar só a pasta não muda o corpus do agente (PAGENTE-01 AC3).
+  if (!before || documentContextFieldsChanged(before, updated)) {
+    await reconcileTenantDocumentAdmission(tenantId);
+  }
   revalidatePath("/documentos");
   return { ok: true };
 }

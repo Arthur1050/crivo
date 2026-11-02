@@ -18,7 +18,9 @@ import {
   DEFAULT_DOCUMENT_SORT,
   DOCUMENT_SORT_OPTIONS,
 } from "@/src/components/documents/document-sort";
+import { NO_FOLDER_LABEL, NO_FOLDER_PARAM } from "@/src/lib/document-folders";
 import type { DocumentCategory, Modality } from "@/src/server/data";
+import { searchAfterUrlChange } from "./documents-page-state";
 
 const MODALITY_OPTIONS: { value: Modality; label: string }[] = [
   { value: "novo", label: "Novo" },
@@ -33,6 +35,7 @@ const SEARCH_DEBOUNCE_MS = 300;
 
 interface DocumentsToolbarProps {
   categories: DocumentCategory[];
+  showFolderFilter?: boolean;
 }
 
 /**
@@ -43,12 +46,20 @@ interface DocumentsToolbarProps {
  * releia `searchParams` e refaça a consulta filtrada no servidor. A busca por
  * nome é debounced (~300ms); os itens do menu aplicam imediatamente.
  */
-export function DocumentsToolbar({ categories }: DocumentsToolbarProps) {
+export function DocumentsToolbar({ categories, showFolderFilter = false }: DocumentsToolbarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const [search, setSearch] = useState(searchParams.get("q") ?? "");
+  const urlSearch = searchParams.get("q") ?? "";
+  const [search, setSearch] = useState(urlSearch);
+  const [previousUrlSearch, setPreviousUrlSearch] = useState(urlSearch);
+  const [writtenSearch, setWrittenSearch] = useState(urlSearch);
+  if (urlSearch !== previousUrlSearch) {
+    setPreviousUrlSearch(urlSearch);
+    setWrittenSearch(urlSearch);
+    setSearch(searchAfterUrlChange(urlSearch, writtenSearch, search));
+  }
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -60,7 +71,9 @@ export function DocumentsToolbar({ categories }: DocumentsToolbarProps) {
   const modality = searchParams.get("modalidade");
   const categoryId = searchParams.get("categoria");
   const sort = searchParams.get("ordem") ?? DEFAULT_DOCUMENT_SORT;
-  const activeFilterCount = Number(Boolean(modality)) + Number(Boolean(categoryId));
+  const folder = searchParams.get("pasta");
+  const activeFilterCount = Number(Boolean(modality)) + Number(Boolean(categoryId))
+    + Number(showFolderFilter && folder === NO_FOLDER_PARAM);
 
   function updateParams(changes: Record<string, string | null>) {
     const params = new URLSearchParams(searchParams.toString());
@@ -79,7 +92,9 @@ export function DocumentsToolbar({ categories }: DocumentsToolbarProps) {
     setSearch(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      updateParams({ q: value.trim() ? value : null });
+      const nextSearch = value.trim() ? value : "";
+      setWrittenSearch(nextSearch);
+      updateParams({ q: nextSearch || null });
     }, SEARCH_DEBOUNCE_MS);
   }
 
@@ -136,6 +151,18 @@ export function DocumentsToolbar({ categories }: DocumentsToolbarProps) {
             ))}
           </DropdownMenuRadioGroup>
         </DropdownMenuSubMenu>
+        {showFolderFilter && (
+          <DropdownMenuSubMenu label="Pasta">
+            <DropdownMenuRadioGroup
+              aria-label="Pasta"
+              value={folder === NO_FOLDER_PARAM ? NO_FOLDER_PARAM : ALL}
+              onChange={(value) => updateParams({ pasta: value === ALL ? null : value })}
+            >
+              <DropdownMenuRadioItem value={ALL} label="Todas" />
+              <DropdownMenuRadioItem value={NO_FOLDER_PARAM} label={NO_FOLDER_LABEL} />
+            </DropdownMenuRadioGroup>
+          </DropdownMenuSubMenu>
+        )}
         <DropdownMenuSubMenu label="Ordenar por" menuWidth={200}>
           <DropdownMenuRadioGroup
             aria-label="Ordenar por"
@@ -154,7 +181,11 @@ export function DocumentsToolbar({ categories }: DocumentsToolbarProps) {
             <Divider />
             <DropdownMenuItem
               label="Limpar filtros"
-              onClick={() => updateParams({ modalidade: null, categoria: null })}
+              onClick={() => updateParams({
+                modalidade: null,
+                categoria: null,
+                ...(showFolderFilter ? { pasta: null } : {}),
+              })}
             />
           </>
         )}

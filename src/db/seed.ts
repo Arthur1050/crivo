@@ -5,6 +5,7 @@ import { db } from "./index";
 import {
   conversations,
   documentCategories,
+  documentFolders,
   documentUploadIntents,
   documents,
   leads,
@@ -737,6 +738,15 @@ const CATEGORY_DEFS: CategoryDef[] = [
   { key: "guias", name: "Guias e Manuais", color: "gray" },
 ];
 
+const FOLDER_DEFS = [
+  { key: "contratos", name: "Contratos" },
+  { key: "lancamentos", name: "Lançamentos" },
+  { key: "documentacao-legal", name: "Documentação legal" },
+  { key: "financiamento", name: "Financiamento" },
+  { key: "tabelas-de-preco", name: "Tabelas de preço" },
+  { key: "treinamento", name: "Treinamento da equipe" },
+] as const;
+
 /**
  * Gera uma chave de API opaca (64 chars hex, alta entropia) e seu hash
  * sha256 — mesmo algoritmo que `src/server/integration/auth.ts` (T2) usa
@@ -783,6 +793,7 @@ export async function runSeed(): Promise<SeedResult> {
   const userRows: (typeof users.$inferInsert)[] = [];
   const memberRows: (typeof tenant_members.$inferInsert)[] = [];
   const categoryRows: (typeof documentCategories.$inferInsert)[] = [];
+  const folderRows: (typeof documentFolders.$inferInsert)[] = [];
   const leadRows: (typeof leads.$inferInsert)[] = [];
   const conversationRows: (typeof conversations.$inferInsert)[] = [];
   const messageRows: (typeof messages.$inferInsert)[] = [];
@@ -833,6 +844,9 @@ export async function runSeed(): Promise<SeedResult> {
     seededApiKeys.push({ tenantId, tenantName: tenantDef.name, key: apiKey });
 
     const categoryIds = new Map<string, string>();
+    for (const folder of FOLDER_DEFS) {
+      folderRows.push({ id: id(`folder:${tenantDef.key}:${folder.key}`), tenantId, name: folder.name });
+    }
     for (const c of CATEGORY_DEFS) {
       const categoryId = id(`category:${tenantDef.key}:${c.key}`);
       categoryIds.set(c.key, categoryId);
@@ -1036,6 +1050,7 @@ export async function runSeed(): Promise<SeedResult> {
     await tx.delete(conversations);
     await tx.delete(documentUploadIntents);
     await tx.delete(documents);
+    await tx.delete(documentFolders);
     await tx.delete(leads);
     // `properties.captured_by_user_id`/`tenant_id` também não têm cascata
     // (lote-11 — restrict implícito, T3), mesma razão de `leads` acima: vem
@@ -1065,6 +1080,7 @@ export async function runSeed(): Promise<SeedResult> {
     // `properties` referencia `tenants`/`users`, ambos já inseridos acima.
     await tx.insert(properties).values(propertyRows);
     await tx.insert(documentCategories).values(categoryRows);
+    await tx.insert(documentFolders).values(folderRows);
     await tx.insert(leads).values(leadRows);
     await tx.insert(conversations).values(conversationRows);
     await tx.insert(messages).values(messageRows);

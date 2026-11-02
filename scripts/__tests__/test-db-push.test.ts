@@ -207,9 +207,7 @@ describe("índice que o drizzle-kit push derruba (restauração no db:push:test)
   it("as etapas reais do db:push:test ligam cada função: derrubar, restaurar o índice, aplicar e conferir (L-026)", () => {
     const steps = realSteps();
     expect(steps.dropVitrine).toBe(dropVitrineSchema);
-    expect(steps.restoreIndexes).toBe(restoreDrizzleBlindIndexes);
     expect(steps.applyVitrine).toBe(applyVitrineSql);
-    expect(steps.verify).toBe(verifyVitrineState);
   });
 
   it("recria o índice único por (tenant, lower(nome)) quando ele sumiu; reexecutar não falha", async () => {

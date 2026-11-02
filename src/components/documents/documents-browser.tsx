@@ -6,6 +6,7 @@ import {
   DownloadIcon,
   EllipsisVerticalIcon,
   EyeIcon,
+  FolderInputIcon,
   LayoutGridIcon,
   ListIcon,
   RefreshCwIcon,
@@ -15,6 +16,7 @@ import {
 import { AlertDialog } from "@astryxdesign/core/AlertDialog";
 import { Banner } from "@astryxdesign/core/Banner";
 import { DropdownMenu, type DropdownMenuOption } from "@astryxdesign/core/DropdownMenu";
+import { Icon } from "@astryxdesign/core/Icon";
 import { SegmentedControl, SegmentedControlItem } from "@astryxdesign/core/SegmentedControl";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Heading, Text } from "@astryxdesign/core/Text";
@@ -29,6 +31,8 @@ import { asDocumentSort, sortDocuments } from "@/src/components/documents/docume
 import { DocumentsGrid } from "@/src/components/documents/documents-grid";
 import { DocumentsTable } from "@/src/components/documents/documents-table";
 import { EditDocumentDialog } from "@/src/components/documents/edit-document-dialog";
+import { MoveDocumentDialog } from "@/src/components/documents/move-document-dialog";
+import type { DocumentFolderOption } from "@/src/lib/document-folders";
 import { deleteDocumentAction, retryDocumentAction } from "@/src/server/actions/documents";
 import type { DocumentCategory } from "@/src/server/data";
 
@@ -45,6 +49,8 @@ interface DocumentsBrowserProps {
   canWrite: boolean;
   /** Mostrado no lugar dos arquivos quando a listagem filtrada vem vazia. */
   emptyState?: ReactNode;
+  folders?: DocumentFolderOption[];
+  heading?: ReactNode;
 }
 
 /**
@@ -58,6 +64,8 @@ export function DocumentsBrowser({
   categories,
   canWrite,
   emptyState,
+  folders,
+  heading = <Heading level={2}>Todos os arquivos</Heading>,
 }: DocumentsBrowserProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -68,10 +76,12 @@ export function DocumentsBrowser({
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [previewDocument, setPreviewDocument] = useState<DocumentTableItem | null>(null);
   const [retryError, setRetryError] = useState<string | null>(null);
+  const [movingDocument, setMovingDocument] = useState<DocumentTableItem | null>(null);
 
   const view: DocumentsView = searchParams.get("visao") === "lista" ? "lista" : "grade";
   const sortedDocuments = sortDocuments(documents, asDocumentSort(searchParams.get("ordem")));
   const categoryById = new Map(categories.map((category) => [category.id, category]));
+  const folderById = folders === undefined ? undefined : new Map(folders.map((folder) => [folder.id, folder]));
 
   function handleViewChange(value: string) {
     const params = new URLSearchParams(searchParams.toString());
@@ -149,6 +159,13 @@ export function DocumentsBrowser({
         onClick: () => setEditingDocument(document),
       });
     }
+    if (folders !== undefined && canWrite && !document.deletedAt) {
+      items.push({
+        label: "Mover para pasta",
+        icon: <Icon icon={FolderInputIcon} size="sm" />,
+        onClick: () => setMovingDocument(document),
+      });
+    }
     if (actions.canDelete) {
       if (items.length > 0) items.push({ type: "divider" });
       items.push({
@@ -189,7 +206,7 @@ export function DocumentsBrowser({
       <VStack gap={3}>
         <HStack gap={3} vAlign="center">
           <StackItem size="fill">
-            <Heading level={2}>Todos os arquivos</Heading>
+            {heading}
           </StackItem>
           <SegmentedControl
             value={view}
@@ -214,6 +231,7 @@ export function DocumentsBrowser({
           <DocumentsTable
             documents={sortedDocuments}
             categoryById={categoryById}
+            folderById={folderById}
             renderActions={renderActions}
           />
         ) : (
@@ -237,7 +255,14 @@ export function DocumentsBrowser({
       <EditDocumentDialog
         document={editingDocument}
         categories={categories}
+        folders={folders}
         onClose={() => setEditingDocument(null)}
+      />
+
+      <MoveDocumentDialog
+        document={movingDocument}
+        folders={folders ?? []}
+        onClose={() => setMovingDocument(null)}
       />
 
       <AlertDialog

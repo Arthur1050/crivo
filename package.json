@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "dev:test": "node scripts/dev-test-db.mjs",
+    "preview:test": "node scripts/preview-test.mjs",
     "db:push:test": "tsx scripts/test-db-push.ts",
     "build": "next build",
     "start": "next start",

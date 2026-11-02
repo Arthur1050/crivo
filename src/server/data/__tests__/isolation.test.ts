@@ -5,6 +5,8 @@ import { eq, inArray } from "drizzle-orm";
 import { db } from "../../../db";
 import {
   conversations,
+  documentFolders,
+  documents,
   leads,
   messages,
   tenant_members,
@@ -276,6 +278,19 @@ describe("server/data isolation", () => {
   // nova, e é a falha mais grave que este lote pode produzir (design.md —
   // Risks). Fixture própria: uma imobiliária, dois corretores, quatro leads
   // (um de cada corretor, um sem responsável, um de outra imobiliária).
+  it("T9: filtro de pasta estrangeira retorna vazio sem expor seus documentos (PFILT-01 AC5)", async () => {
+    const [folder] = await db.insert(documentFolders).values({ tenantId: tenantBId, name: `Isolamento ${randomUUID()}` }).returning();
+    const doc = await createDocument(tenantBId, { name: "Documento da pasta estrangeira", mimeType: "application/pdf", sizeBytes: 10, modality: "novo" });
+    try {
+      await db.update(documents).set({ folderId: folder.id }).where(eq(documents.id, doc.id));
+      expect(await getDocuments(tenantAId, { folder: { kind: "pasta", folderId: folder.id } })).toEqual([]);
+      expect((await getDocuments(tenantBId, { folder: { kind: "pasta", folderId: folder.id } })).map((d) => d.id)).toEqual([doc.id]);
+    } finally {
+      await db.delete(documents).where(eq(documents.id, doc.id));
+      await db.delete(documentFolders).where(eq(documentFolders.id, folder.id));
+    }
+  });
+
   describe("escopo de carteira entre dois corretores da mesma imobiliária", () => {
     let tenantId: string;
     let corretorAId: string;

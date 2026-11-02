@@ -6,6 +6,7 @@ import { db } from "../index";
 import {
   conversations,
   documentCategories,
+  documentFolders,
   documents,
   leads,
   messages,
@@ -95,6 +96,27 @@ async function tenantBySlug(slug: string) {
 }
 
 describe("db/seed", () => {
+  it("T17: seis pastas vazias com ids determinísticos por tenant, sem sobras após dois reseeds (PSEED-01)", async () => {
+    const names = ["Contratos", "Lançamentos", "Documentação legal", "Financiamento", "Tabelas de preço", "Treinamento da equipe"];
+    // Valores de id("folder:<tenant>:<chave>") para as seis chaves do contrato.
+    const idsByTenant = {
+      triangulo: ["20da909b-fbf1-49be-8b20-9e30c84cc985", "b86d2198-4074-40b0-82a9-d0f96c5b1696", "4bc04b01-5c16-4914-99e0-136d42393e57", "d5eb4976-fcbc-4b3e-bd12-2aaa3af7c7fc", "f0e781f1-20c5-4688-bd55-dc0af66153f8", "b6989e38-f3c3-47c7-9c1b-44972921999f"],
+      "vale-uberaba": ["7dd22e47-9296-429a-9212-48495abee855", "181c0823-67a1-4c3f-ab1d-1990e260ed77", "44e80750-92b9-426a-8bf5-0ca82b569b9d", "0f8eada2-e095-4a94-9294-0e52219a9e9c", "13783db9-de84-4662-89db-91235b664360", "2be8c3ab-252e-41d3-8a73-a4b0a878d1a1"],
+      "krivo-demo": ["fdf00fca-b665-4d7b-9d6d-2b4b6cc7d8ba", "29f38cba-a3d6-4501-86d7-136c848c3970", "b5b6cfe4-d020-41ff-9064-6b459344e720", "ec74c6cc-c6a7-4dd6-8a36-2762d5bed8a7", "0d462dcf-7df7-489c-b180-258c5b6f4b16", "12013145-719e-43b7-9c74-7ca029d916e2"],
+    };
+    const expected = Object.entries(idsByTenant).flatMap(([tenant, ids]) => ids.map((id, index) => ({ id, name: names[index], tenant })))
+      .sort((a, b) => a.id.localeCompare(b.id));
+    const read = () => db.select({ id: documentFolders.id, name: documentFolders.name, tenant: tenants.slug })
+      .from(documentFolders).innerJoin(tenants, eq(tenants.id, documentFolders.tenantId)).orderBy(documentFolders.id);
+    expect(await read()).toEqual(expected);
+    const demo = await tenantBySlug(DEMO_SLUG);
+    await db.insert(documentFolders).values({ tenantId: demo.id, name: "Não deve sobreviver ao reseed" });
+    await runSeed();
+    expect(await read()).toEqual(expected);
+    await runSeed();
+    expect(await read()).toEqual(expected);
+    expect(await db.select().from(documents)).toEqual([]);
+  });
   beforeAll(async () => {
     await runSeed();
   });

@@ -16,6 +16,8 @@ import { Selector, SelectorOption } from "@astryxdesign/core/Selector";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { Token } from "@astryxdesign/core/Token";
+import { Text } from "@astryxdesign/core/Text";
+import type { DocumentFolderOption } from "@/src/lib/document-folders";
 import {
   createDocumentCategoryAction,
   finalizeDocumentUploadAction,
@@ -76,6 +78,7 @@ interface UploadProgress {
 
 interface UploadDialogProps {
   categories: DocumentCategory[];
+  folder?: DocumentFolderOption;
 }
 
 /**
@@ -84,7 +87,7 @@ interface UploadDialogProps {
  * enviado para a action, apenas os metadados. Também permite criar uma
  * categoria nova sem sair do fluxo de upload.
  */
-export function UploadDialog({ categories }: UploadDialogProps) {
+export function UploadDialog({ categories, folder }: UploadDialogProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -210,6 +213,7 @@ export function UploadDialog({ categories }: UploadDialogProps) {
         sizeBytes: file.size,
         modality: modality as Modality,
         categoryId: resolvedCategoryId,
+        folderId: folder?.id ?? null,
         expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
       });
 
@@ -303,6 +307,9 @@ export function UploadDialog({ categories }: UploadDialogProps) {
           content={
             <LayoutContent>
               <VStack gap={4}>
+                {folder && (
+                  <Text type="supporting">{`Será salvo na pasta "${folder.name}".`}</Text>
+                )}
                 {banner && <Banner status="error" title={banner} />}
 
                 {progress.phase !== "idle" && (

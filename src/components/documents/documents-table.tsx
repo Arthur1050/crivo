@@ -19,6 +19,7 @@ import {
 import { deriveDocumentState, describeFailure } from "@/src/components/documents/document-row-state";
 import { FileKindGlyph } from "@/src/components/documents/file-type-icon";
 import { formatFileSize } from "@/src/lib/format";
+import { NO_FOLDER_LABEL, type DocumentFolderOption } from "@/src/lib/document-folders";
 import type { DocumentCategory } from "@/src/server/data";
 
 interface DocumentRow extends Record<string, unknown> {
@@ -31,6 +32,7 @@ interface DocumentsTableProps {
   documents: DocumentTableItem[];
   categoryById: Map<string, DocumentCategory>;
   renderActions: (document: DocumentTableItem) => ReactNode;
+  folderById?: Map<string, DocumentFolderOption>;
 }
 
 /**
@@ -40,7 +42,7 @@ interface DocumentsTableProps {
  * última coluna. O filtro/busca acontece no servidor; a ordenação e as ações
  * chegam prontas de `DocumentsBrowser`.
  */
-export function DocumentsTable({ documents, categoryById, renderActions }: DocumentsTableProps) {
+export function DocumentsTable({ documents, categoryById, renderActions, folderById }: DocumentsTableProps) {
   const rows: DocumentRow[] = documents.map((document) => ({
     id: document.id,
     document,
@@ -80,6 +82,16 @@ export function DocumentsTable({ documents, categoryById, renderActions }: Docum
           </Text>
         ),
     },
+    ...(folderById ? [{
+      key: "folder",
+      header: "Pasta",
+      width: proportional(1),
+      renderCell: ({ document }: DocumentRow) => (
+        <Text type="body" maxLines={1}>
+          {document.folderId ? folderById.get(document.folderId)?.name ?? NO_FOLDER_LABEL : NO_FOLDER_LABEL}
+        </Text>
+      ),
+    }] : []),
     {
       key: "status",
       header: "Estado",

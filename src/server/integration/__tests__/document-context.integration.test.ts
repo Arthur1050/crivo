@@ -4,7 +4,8 @@ import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { eq, inArray } from "drizzle-orm";
 import { db } from "../../../db";
-import { documentCategories, documents, tenants } from "../../../db/schema";
+import { documentCategories, documentFolders, documents, tenants } from "../../../db/schema";
+import { moveDocumentsToFolder } from "../../data/document-folders";
 import { buildCanonicalContext, measureCanonicalContext } from "../../documents/context-budget";
 import { getDirectDocumentContext } from "../context";
 
@@ -62,6 +63,24 @@ describe("fonte direta de contexto documental (lote-12 T20)", () => {
   async function clear() {
     await db.delete(documents).where(inArray(documents.tenantId, [TENANT_A, TENANT_B]));
   }
+
+  it("T16: contexto do agente é idêntico na raiz, na pasta e entre pastas (PAGENTE-01)", async () => {
+    await clear();
+    const doc = await createDocument({ categoryId: CATEGORY_A, extractedText: "Política comercial preservada pela pasta" });
+    const folders = await db.insert(documentFolders).values([
+      { tenantId: TENANT_A, name: "Contexto pasta A" }, { tenantId: TENANT_A, name: "Contexto pasta B" },
+    ]).returning();
+    const baseline = await getDirectDocumentContext(TENANT_A, query("novo"), NOW);
+    expect(baseline.documents.map((d) => d.id)).toEqual([doc.id]);
+    try {
+      for (const folderId of [folders[0].id, folders[1].id, null]) {
+        expect(await moveDocumentsToFolder(TENANT_A, [doc.id], folderId, NOW)).toEqual({ kind: "moved", movedCount: 1 });
+        expect(await getDirectDocumentContext(TENANT_A, query("novo"), NOW)).toEqual(baseline);
+      }
+    } finally {
+      await db.delete(documentFolders).where(inArray(documentFolders.id, folders.map((f) => f.id)));
+    }
+  });
 
   describe("compatibilidade de modalidade (AC2, AC3, AC4)", () => {
     it("modalidade novo inclui novo e ambos e exclui exclusivamente usado", async () => {

@@ -641,6 +641,26 @@ export const documentCategories = pgTable(
   ]
 );
 
+export const documentFolders = pgTable(
+  "document_folders",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    // Cascata: o seed do `main` apaga `tenants` sem conhecer esta tabela.
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    // Criar, renomear e documento entrando ou saindo da pasta (PLER-01 AC3).
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    // Nome único por tenant, ignorando maiúsculas (PMOD-01 AC2). O `drizzle-kit push`
+    // derruba este índice a cada execução (L-070); `scripts/document-folders/schema.sql` o recria.
+    uniqueIndex("document_folders_tenant_id_lower_name_idx").on(table.tenantId, sql`lower(${table.name})`),
+  ]
+);
+
 export const documents = pgTable(
   "documents",
   {
@@ -655,6 +675,7 @@ export const documents = pgTable(
     categoryId: uuid("category_id").references(() => documentCategories.id, {
       onDelete: "set null",
     }),
+    folderId: uuid("folder_id").references(() => documentFolders.id, { onDelete: "set null" }),
     uploadedAt: timestamp("uploaded_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -697,6 +718,7 @@ export const documents = pgTable(
       table.expiresAt,
       table.uploadedAt
     ),
+    index("documents_tenant_folder_idx").on(table.tenantId, table.folderId),
     index("documents_maintenance_idx").on(table.expiresAt, table.deletedAt),
   ]
 );
@@ -719,6 +741,7 @@ export const documentUploadIntents = pgTable(
     categoryId: uuid("category_id").references(() => documentCategories.id, {
       onDelete: "set null",
     }),
+    folderId: uuid("folder_id").references(() => documentFolders.id, { onDelete: "set null" }),
     expiresAt: timestamp("expires_at", { withTimezone: true }),
     storageKey: text("storage_key").notNull(),
     storageEtag: text("storage_etag"),

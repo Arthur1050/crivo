@@ -17,32 +17,10 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { resolveTestDatabaseUrl } from "../src/db/test-connection";
-import { Client } from "pg";
+import { restoreDrizzleBlindIndexes } from "./drizzle-blind-indexes";
+export { restoreDrizzleBlindIndexes } from "./drizzle-blind-indexes";
+import { applyDocumentFoldersSql, verifyDocumentFoldersState } from "./document-folders/apply";
 import { applyVitrineSql, dropVitrineSchema, verifyVitrineState } from "./vitrine/apply";
-
-/**
- * Índices únicos que o `drizzle-kit push` derruba a cada execução e não
- * recria: ele não reconhece o índice de expressão (`lower(name)`) como igual
- * ao do schema, derruba-o e aborta no primeiro `CREATE UNIQUE INDEX` seguinte
- * (o de `leads_tenant_id_id_idx`, que já existe), com saída 0. Sem este
- * passo, a categoria de documento duplicada deixa de ser recusada pelo banco
- * e a suíte falha. Idempotente.
- */
-const DRIZZLE_BLIND_INDEXES = [
-  `create unique index if not exists "document_categories_tenant_id_lower_name_idx"
-   on "document_categories" using btree ("tenant_id", lower("name"))`,
-];
-
-/** Recria no banco de `url` os índices que o `drizzle-kit push` derrubou. */
-export async function restoreDrizzleBlindIndexes(url: string): Promise<void> {
-  const client = new Client({ connectionString: url });
-  await client.connect();
-  try {
-    for (const statement of DRIZZLE_BLIND_INDEXES) await client.query(statement);
-  } finally {
-    await client.end();
-  }
-}
 
 /** As etapas de cada alvo; trocadas por simuladores nos testes. */
 export interface PushSteps {
@@ -115,7 +93,7 @@ export async function pushToTargets(
 export function realSteps(): PushSteps {
   return {
     dropVitrine: dropVitrineSchema,
-    restoreIndexes: restoreDrizzleBlindIndexes,
+    restoreIndexes: (url) => restoreDrizzleBlindIndexes(url).then(() => applyDocumentFoldersSql(url)),
     push: (url) =>
       spawnSync("npx drizzle-kit push --config drizzle-test.config.ts", {
         stdio: "inherit",
@@ -123,7 +101,7 @@ export function realSteps(): PushSteps {
         env: { ...process.env, TEST_DATABASE_URL: url },
       }).status,
     applyVitrine: applyVitrineSql,
-    verify: verifyVitrineState,
+    verify: async (url) => [...await verifyVitrineState(url), ...await verifyDocumentFoldersState(url)],
   };
 }
 

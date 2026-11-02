@@ -16,12 +16,14 @@ export interface UploadTicketInput {
   sizeBytes: number;
   modality: UploadModality;
   categoryId?: string | null;
+  folderId?: string | null;
   expiresAt?: string | null;
 }
 
 export type UploadFailureCode =
   | "duplicate_upload"
   | "upload_forbidden"
+  | "upload_folder_not_found"
   | "upload_input_invalid"
   | "upload_payload_invalid"
   | "upload_unavailable"
@@ -34,6 +36,8 @@ export type UploadFailureCode =
 export const UPLOAD_FAILURE_MESSAGES: Record<UploadFailureCode, string> = {
   duplicate_upload: duplicateDocumentMessage(),
   upload_forbidden: "Você não tem permissão para enviar documentos.",
+  upload_folder_not_found:
+    "A pasta escolhida não existe mais. Recarregue a página e envie de novo.",
   upload_input_invalid:
     "O arquivo não passou na validação do servidor. Confira tipo, tamanho e validade.",
   upload_payload_invalid:

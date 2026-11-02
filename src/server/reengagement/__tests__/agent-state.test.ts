@@ -46,12 +46,12 @@ afterAll(async () => {
 describe("T16 — publicação do estado revisado sobre fatos correntes", () => {
   it("publica todos os campos da primeira revisão e conserva lead/mensagens", async () => {
     const row = await fixture(); const beforeLead = row.lead;
-    const beforeMessages = await db.select().from(messages).where(eq(messages.conversationId, row.conversation.id));
+    const beforeMessages = await db.select().from(messages).where(eq(messages.conversationId, row.conversation.id)).orderBy(messages.id);
     const result = await publish(row);
     expect(result).toEqual({ ok: true, replay: false, state: { tenantId: tenantA, leadId: row.lead.id, anchorMessageId: row.anchor.id, phase: "qualificando", askedFields: ["modality"], openingHistory: ["hmm"], resetObservedAt: null, revision: 1, updatedAt: now } });
     expect(await state(row)).toEqual(result.ok ? [result.state] : []);
     expect((await db.select().from(leads).where(eq(leads.id, row.lead.id)))[0]).toEqual(beforeLead);
-    expect(await db.select().from(messages).where(eq(messages.conversationId, row.conversation.id))).toEqual(beforeMessages);
+    expect(await db.select().from(messages).where(eq(messages.conversationId, row.conversation.id)).orderBy(messages.id)).toEqual(beforeMessages);
   });
 
   it("fase unknown persistida continua impedindo contato", async () => {
@@ -106,14 +106,14 @@ describe("T16 — publicação do estado revisado sobre fatos correntes", () => 
     const [late] = await db.insert(messages).values({ tenantId: tenantA, conversationId: row.conversation.id, sender: "lead", content: "Atrasado", sentAt: new Date(anchorAt.getTime() - 1) }).returning();
     const [outgoing] = await db.insert(messages).values({ tenantId: tenantA, conversationId: row.conversation.id, sender: "agente", content: "Saída", sentAt: now }).returning();
     const [humanOutgoing] = await db.insert(messages).values({ tenantId: tenantA, conversationId: row.conversation.id, sender: "humano", content: "Saída da equipe", authorName: "Equipe fixture", authorUserId: human, sentAt: new Date(now.getTime() + 1) }).returning();
-    const beforeMessages = await db.select().from(messages).where(eq(messages.conversationId, row.conversation.id));
+    const beforeMessages = await db.select().from(messages).where(eq(messages.conversationId, row.conversation.id)).orderBy(messages.id);
     for (const anchorMessageId of [late.id, outgoing.id, humanOutgoing.id]) {
       expect(await publish(row, { anchorMessageId })).toEqual({ ok: false, reason: "context-changed" });
       expect(await state(row)).toEqual([]);
     }
     expect(await publish(row)).toMatchObject({ ok: true, state: { anchorMessageId: row.anchor.id } });
     expect((await db.select().from(leads).where(eq(leads.id, row.lead.id)))[0]).toEqual(row.lead);
-    expect(await db.select().from(messages).where(eq(messages.conversationId, row.conversation.id))).toEqual(beforeMessages);
+    expect(await db.select().from(messages).where(eq(messages.conversationId, row.conversation.id)).orderBy(messages.id)).toEqual(beforeMessages);
   });
 
   it("empate sentAt usa ID decrescente determinístico", async () => {
