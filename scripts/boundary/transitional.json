@@ -5402,5 +5402,12 @@
     "reason": "Valor persistido do papel e código de problema; o vocabulário preserva os valores até a ativação do L18c (T10, VOCAB-01 AC3).",
     "removedIn": "L18c",
     "category": "stored-values"
+  },
+  {
+    "path": "src/verticals/imobiliaria/vocabulary.ts",
+    "term": "identifier:imobiliaria",
+    "reason": "Pasta prescrita pela T11/design; renomeação de pastas de código concentrada na T34, sem trocar o id vigente do vertical.",
+    "removedIn": "L18a",
+    "category": "identifier"
   }
 ]

@@ -1,4 +1,5 @@
 [
+  { "glob": "src/verticals/**", "layer": "vertical" },
   { "glob": "src/db/seed.ts", "layer": "vertical" },
   { "glob": "src/db/smoke-reset.ts", "layer": "vertical" },
   { "glob": "src/db/**", "layer": "core", "package": "@core/db" },

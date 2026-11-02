@@ -505,8 +505,21 @@ T41 → T42 → T43 → T44 → T45
 
 **Done when**:
 
-- [ ] Teste afirma com valor literal cada par chave e valor.
-- [ ] Teste compara cada conjunto com o `enumValues` do schema.
+- [x] Teste afirma com valor literal cada par chave e valor.
+- [x] Teste compara cada conjunto com o `enumValues` do schema.
+
+**Execução**: Quick + Boundary: 2 arquivos, 73 testes, 0 falhas (14 do domínio). TypeScript: 0 erros. ESLint: 0 erros, 9 avisos. Nova regra `src/verticals/**` acompanha os primeiros arquivos reais. Entrada nova de identificador para a pasta `imobiliaria` prescrita pela T11; temporária até a T34, com justificativa no commit, sem trocar o id do vertical.
+
+| Critério | Evidência em `src/verticals/imobiliaria/__tests__/vocabulary.test.ts` | Resultado esperado |
+| --- | --- | --- |
+| Cada chave e valor | `:17`, `expect(actual).toEqual(expected)` | Sete objetos literais com os valores atuais |
+| Conjuntos do schema | `:26`, `expect(Object.values(actual)).toEqual(values)` | Valores e ordem dos sete enums preservados |
+
+| Asserções | Origem | Necessárias |
+| --- | --- | --- |
+| `vocabulary.test.ts:17`, `:26` | VOCAB-01 AC2/AC3 e T11 | Sim |
+
+**Adequação**: pares literais e paridade com o schema; testes da base intactos, conforme AGENTS.md.
 
 **Tests**: unit
 **Gate**: quick
