@@ -4,7 +4,7 @@
   "window_days": 45,
   "quarantine_threshold": 2,
   "prune_requires_confirmation": true,
-  "next_id": 99,
+  "next_id": 101,
   "lessons": [
     {
       "id": "L-001",
@@ -1615,6 +1615,42 @@
       ],
       "created": "2026-11-02T04:40:08Z",
       "last_seen": "2026-11-02T04:40:08Z"
+    },
+    {
+      "id": "L-099",
+      "key": "surviving_mutant::ao condicionar um efeito a mudanca de varios campos teste cada campo sozinho disparando o efeito nao so o campo que motivou a condicao",
+      "text": "Ao condicionar um efeito à mudança de vários campos, teste cada campo sozinho disparando o efeito, não só o campo que motivou a condição.",
+      "signal": "surviving_mutant",
+      "scope": "actions",
+      "status": "candidate",
+      "features": [
+        "lote-17-pastas-de-documentos"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "D4 (actions)"
+      ],
+      "created": "2026-11-02T08:30:12Z",
+      "last_seen": "2026-11-02T08:30:12Z"
+    },
+    {
+      "id": "L-100",
+      "key": "surviving_mutant::com mais de um formatador de data no mesmo fluxo cubra cada um com um instante em que os fusos caem em dias diferentes",
+      "text": "Com mais de um formatador de data no mesmo fluxo, cubra cada um com um instante em que os fusos caem em dias diferentes.",
+      "signal": "surviving_mutant",
+      "scope": "apresentação",
+      "status": "candidate",
+      "features": [
+        "lote-17-pastas-de-documentos"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "T2 (apresentação)"
+      ],
+      "created": "2026-11-02T08:30:12Z",
+      "last_seen": "2026-11-02T08:30:12Z"
     }
   ]
 }

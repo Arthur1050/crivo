@@ -540,6 +540,18 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: PEDIT-01 AC1 / captura 24 (capturas)
 - last seen: 2026-11-02T04:40:08Z
 
+### L-099 - Ao condicionar um efeito à mudança de vários campos, teste cada campo sozinho disparando o efeito, não só o campo que motivou a condição.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `actions` · harmful: 0
+- features: lote-17-pastas-de-documentos
+- evidence: D4 (actions)
+- last seen: 2026-11-02T08:30:12Z
+
+### L-100 - Com mais de um formatador de data no mesmo fluxo, cubra cada um com um instante em que os fusos caem em dias diferentes.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `apresentação` · harmful: 0
+- features: lote-17-pastas-de-documentos
+- evidence: T2 (apresentação)
+- last seen: 2026-11-02T08:30:12Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
