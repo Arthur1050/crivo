@@ -19,7 +19,7 @@ const digest = (value: string | Uint8Array) => createHash("sha256").update(value
 export type ProofGraph = { nodes: { name: string; retryOnFail?: boolean; type: string; parameters: Record<string, unknown> }[];
   connections: Record<string, { main?: ({ node: string; type: string; index: number }[] | null)[] }> };
 export const PROOF_LINKS: readonly [string, number, string][] = [
-  ["A cada 15min", 0, "Data Table: tenants B"], ["Data Table: tenants B", 0, "Code: tenants únicos B"],
+  ["A cada 1h", 0, "Data Table: tenants B"], ["Data Table: tenants B", 0, "Code: tenants únicos B"],
   ["Code: tenants únicos B", 0, "Loop: tenants B"], ["Loop: tenants B", 1, "Code: cursor B"],
   ["Code: cursor B", 0, "HTTP: candidatos B"], ["HTTP: candidatos B", 0, "Code: página B pronta"],
   ["Code: página B pronta", 0, "Loop: candidatos B"], ["Loop: candidatos B", 1, "Code: candidato B"],
