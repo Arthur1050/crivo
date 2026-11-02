@@ -89,6 +89,7 @@ describe("apresentação das pastas (T18)", () => {
     ["2026-07-30T03:00:00Z", "2026-07-30T01:00:00Z", "Atualizada ontem"],
     ["2027-01-01T03:00:00Z", "2026-12-31T15:00:00Z", "Atualizada ontem"],
     ["2027-01-02T03:00:00Z", "2026-12-31T15:00:00Z", "Atualizada em 31 de dez. de 2026"],
+    ["2026-07-30T15:00:00Z", "2026-07-28T01:00:00Z", "Atualizada em 27 de jul."],
   ])("respeita o dia civil de São Paulo em %s", (now, date, label) => {
     expect(formatFolderUpdatedLabel(new Date(date), new Date(now))).toBe(label);
   });

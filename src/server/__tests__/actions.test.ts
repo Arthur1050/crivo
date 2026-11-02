@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "../../db";
-import { documentFolders, documents, leads, tenantDocumentContextLimits, tenant_members, users } from "../../db/schema";
+import { documentCategories, documentFolders, documents, leads, tenantDocumentContextLimits, tenant_members, users } from "../../db/schema";
 import type { Action, Resource, Role } from "../../lib/permissions";
 import type { AuthContext } from "../auth/session";
 import {
@@ -1410,6 +1410,26 @@ describe("server actions", () => {
         } finally {
           await deleteDocumentAction({ documentId: deFora.id });
           await db.delete(documentFolders).where(eq(documentFolders.id, pasta.id));
+        }
+      });
+    });
+
+    it("mudar só a validade ou só a categoria reconcilia a admissão (PAGENTE-01 AC3)", async () => {
+      await withGenerousCeiling(async () => {
+        const deFora = await waitingOutsider();
+        const [categoria] = await db.insert(documentCategories).values({ tenantId: activeTenantId, name: `Só a categoria ${randomUUID()}` }).returning();
+        const campos = { documentId: deFora.id, name: deFora.name, modality: deFora.modality, categoryId: deFora.categoryId };
+        const validade = new Date(Date.now() + 86_400_000).toISOString();
+        try {
+          await expect(updateDocumentAction({ ...campos, expiresAt: validade })).resolves.toEqual({ ok: true });
+          await expect(lifecycleRow(deFora.id)).resolves.toMatchObject({ expiresAt: new Date(validade), status: "pronto" });
+
+          await db.update(documents).set({ status: "fora_do_agente" }).where(eq(documents.id, deFora.id));
+          await expect(updateDocumentAction({ ...campos, categoryId: categoria.id })).resolves.toEqual({ ok: true });
+          await expect(lifecycleRow(deFora.id)).resolves.toMatchObject({ categoryId: categoria.id, status: "pronto" });
+        } finally {
+          await deleteDocumentAction({ documentId: deFora.id });
+          await db.delete(documentCategories).where(eq(documentCategories.id, categoria.id));
         }
       });
     });
