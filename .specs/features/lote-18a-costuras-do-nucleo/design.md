@@ -21,8 +21,8 @@ graph TD
         Kit["src/kit/ (núcleo ligado ao vertical)"]
     end
     subgraph vertical["vertical: imobiliária"]
-        Def["src/verticals/imobiliaria/ (defineVertical, vocabulário, schema, catálogo, vitrine)"]
-        Agent["n8n/verticals/imobiliaria/ (manifesto, blocos, prompts)"]
+        Def["src/verticals/real-estate/ (defineVertical, vocabulário, schema, catálogo, vitrine)"]
+        Agent["n8n/verticals/real-estate/ (manifesto, blocos, prompts)"]
     end
     subgraph core["core: peças sem mercado"]
         VKit["src/vertical-kit/ (contrato)"]
@@ -115,7 +115,7 @@ graph TD
 | `src/lib/storefront*.ts` | vertical | |
 | `src/server/auth`, `chats`, `data`, `documents`, `integration`, `reengagement`, `whatsapp`, `tenant.ts`, `validation.ts`, `workflows/**` | core | `@core/server` |
 | `src/server/integration/properties.ts`, `property-filters.ts`, `src/server/storefront/**`, `src/server/data/storefront.ts` | vertical | |
-| `src/verticals/imobiliaria/**`, `n8n/verticals/imobiliaria/**` | vertical | |
+| `src/verticals/real-estate/**`, `n8n/verticals/real-estate/**` | vertical | |
 | `n8n/src/**`, `n8n/workflows/**`, `n8n/generated/**`, `scripts/n8n-inline.mjs` | core | `@core/agent` |
 | `app/**`, `src/components/**`, `src/kit/**`, `src/server/actions/**`, `proxy.ts` | app | |
 | `scripts/vitrine*`, `scripts/document-context-benchmark.ts`, `scripts/document-folders/**` | vertical | |
@@ -126,7 +126,7 @@ O Tasks fecha a classificação arquivo a arquivo; o teste reprova o que sobrar.
 ### 2. Vocabulário
 
 - **Purpose**: Dar nome em inglês a cada valor gravado, com a troca do L18c concentrada em poucos arquivos.
-- **Location**: `src/lib/vocabulary.ts` (núcleo) e `src/verticals/imobiliaria/vocabulary.ts` (domínio).
+- **Location**: `src/lib/vocabulary.ts` (núcleo) e `src/verticals/real-estate/vocabulary.ts` (domínio).
 - **Interfaces**:
 
 ```ts
@@ -228,7 +228,7 @@ export const {
 ### 6. Costura da qualificação e kit de integração
 
 - **Purpose**: Tirar do núcleo os 8 campos da imobiliária, sem mudar o fio.
-- **Location**: `src/server/integration/kit.ts` (núcleo) e `src/verticals/imobiliaria/qualification.ts`.
+- **Location**: `src/server/integration/kit.ts` (núcleo) e `src/verticals/real-estate/qualification.ts`.
 - **Fluxo do `PATCH /leads/{id}`**:
 
 ```mermaid
@@ -252,7 +252,7 @@ sequenceDiagram
 - **Ordem do fio**: `serializeLead` espalha o resultado de `serialize` entre `status` e `executiveSummary`, na ordem de `src/server/integration/leads.ts:97`.
 - **Ordem das validações**: `parseLeadPatch` valida hoje `status`, os campos de texto e os demais em sequência, e a primeira falha define o `detail`. Testes de contrato cobrem essa ordem; onde não cobrirem, a T de costura acrescenta um caso antes de mover o código (L-042).
 - **Telas**: `getLeads` e `getRecentLeads` (`src/server/data/index.ts:250`, `:302`) selecionam os campos de qualificação. Elas recebem a seleção por parâmetro, passada pelo app, com o mesmo SQL.
-- **Dashboard**: `getLeadDistributions` (`:1115`) conta por `modality`. Vai para `src/verticals/imobiliaria/data/distributions.ts`, porque só a tela da imobiliária a usa.
+- **Dashboard**: `getLeadDistributions` (`:1115`) conta por `modality`. Vai para `src/verticals/real-estate/data/distributions.ts`, porque só a tela da imobiliária a usa.
 
 ### 7. Agendamento opcional
 
@@ -267,10 +267,10 @@ sequenceDiagram
 
 ### 8. Schema, catálogo e vitrine
 
-- **Location**: `src/db/schema.ts` continua no lugar e fica só com o núcleo, o que preserva os 157 imports relativos existentes. `src/verticals/imobiliaria/schema.ts` recebe `properties`, `tenantStorefronts`, `propertyKindEnum`, `propertyStatusEnum`, `storefrontLayoutEnum` e `storefrontFontEnum`.
+- **Location**: `src/db/schema.ts` continua no lugar e fica só com o núcleo, o que preserva os 157 imports relativos existentes. `src/verticals/real-estate/schema.ts` recebe `properties`, `tenantStorefronts`, `propertyKindEnum`, `propertyStatusEnum`, `storefrontLayoutEnum` e `storefrontFontEnum`.
 - **Transitório em `src/db/schema.ts`**: as colunas de qualificação de `leads` e os enums `modality`, `property_type`, `motivation` e `credit_status`, listados em `transitional.json` com remoção no L18c.
 - **Drizzle**: `drizzle.config.ts` e `drizzle-test.config.ts` passam a `schema: [núcleo, vertical]`. `src/db/index.ts` não precisa do `schema` no `drizzle(...)`, porque não há uso de `db.query.`.
-- **DAL**: `getProperties`, `createProperty`, `updateProperty`, `deleteProperty` e `setPropertyFeatured` (`src/server/data/index.ts:702-914`) vão para `src/verticals/imobiliaria/data/properties.ts`.
+- **DAL**: `getProperties`, `createProperty`, `updateProperty`, `deleteProperty` e `setPropertyFeatured` (`src/server/data/index.ts:702-914`) vão para `src/verticals/real-estate/data/properties.ts`.
 - **Foto do schema**: `scripts/boundary/schema-snapshot.ts` usa `generateDrizzleJson`, ordena as chaves e zera `id`/`prevId`. A foto de `bf5e646` fica em `scripts/boundary/schema-baseline.json`, gerada antes de qualquer mudança. O teste compara com o estado atual.
 
 ### 9. Segmentos de documento
@@ -286,10 +286,10 @@ sequenceDiagram
 - **Location**:
   - `n8n/workflows/*.ts`: fontes genéricas;
   - `n8n/src/*.mjs`: módulos genéricos, inclusive `agendamento.mjs`, que só entra com agendamento ligado;
-  - `n8n/verticals/imobiliaria/agent.mjs`: manifesto;
-  - `n8n/verticals/imobiliaria/blocks/*.ts`: trechos de código SDK com texto de mercado;
-  - `n8n/verticals/imobiliaria/src/*.mjs`: `system-message.mjs`, `phase.mjs`, `reengagement-prompt.mjs`, `benchmark-corpus.mjs`.
-  - `n8n/verticals/imobiliaria/workflows/benchmark-contexto.ts`: workflow que só existe para a imobiliária.
+  - `n8n/verticals/real-estate/agent.mjs`: manifesto;
+  - `n8n/verticals/real-estate/blocks/*.ts`: trechos de código SDK com texto de mercado;
+  - `n8n/verticals/real-estate/src/*.mjs`: `system-message.mjs`, `phase.mjs`, `reengagement-prompt.mjs`, `benchmark-corpus.mjs`.
+  - `n8n/verticals/real-estate/workflows/benchmark-contexto.ts`: workflow que só existe para a imobiliária.
 - **Marcas novas no inliner**, todas apagadas na geração:
 
 ```ts
@@ -329,7 +329,7 @@ export const agent = {
 
 - **Location**: `src/vertical-kit/__tests__/fixture-vertical.ts`.
 - **Conteúdo**: marca `Acme`, sem recursos extras, `appointments: false`, `qualification: null`, `documentSegments: null`.
-- **Prova (VERT-03)**: um arquivo de teste por grupo de peças (lead, conversa, mensagem, documento, permissão, LGPD), no banco de teste. Um caso confere pelo mapa de fronteira que o grafo de imports desses testes não alcança `src/verticals/imobiliaria/`.
+- **Prova (VERT-03)**: um arquivo de teste por grupo de peças (lead, conversa, mensagem, documento, permissão, LGPD), no banco de teste. Um caso confere pelo mapa de fronteira que o grafo de imports desses testes não alcança `src/verticals/real-estate/`.
 
 ### 12. Identificadores em inglês
 

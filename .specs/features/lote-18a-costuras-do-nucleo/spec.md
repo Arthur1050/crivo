@@ -54,7 +54,7 @@ duplicaria toda correção futura. Este lote separa o núcleo do vertical da imo
 | Igualdade do agente | `n8n/generated/` sem diferença de texto em relação à base | As marcações novas somem na geração, e o texto idêntico implica o JSON idêntico | y |
 | Escopo do L18a em produção | O merge publica na Vercel sem mudança de comportamento; banco e n8n ficam intocados | Decisão do usuário: alterar produção só no L18c | y |
 | Specs do L18b e do L18c | Escritos depois do fechamento do lote anterior | Dependem do que este lote revelar | y |
-| Local do vertical durante o L18a | `src/verticals/imobiliaria/` e `n8n/verticals/imobiliaria/`; o núcleo fica onde está | Move só o necessário, e o L18b move o resto usando o mapa de fronteira | y |
+| Local do vertical durante o L18a | `src/verticals/real-estate/` e `n8n/verticals/real-estate/`; o núcleo fica onde está | Move só o necessário, e o L18b move o resto usando o mapa de fronteira | y |
 
 **Open questions:** none - tudo resolvido ou registrado acima.
 
@@ -97,7 +97,7 @@ máquina, para que ela não se degrade sem ninguém perceber.
 2. The system SHALL restringir essa lista a colunas e valores gravados, campos do `/api/v1` e módulos de `n8n/` que dependem do L18c.
 3. IF uma entrada da lista não corresponder a nenhuma ocorrência no arquivo citado THEN the system SHALL falhar o teste de fronteira.
 
-**Independent Test**: Acrescentar a um arquivo `core` um import de `src/verticals/imobiliaria/` e, em outra rodada, a palavra `corretor` num literal: as duas rodadas falham citando o arquivo.
+**Independent Test**: Acrescentar a um arquivo `core` um import de `src/verticals/real-estate/` e, em outra rodada, a palavra `corretor` num literal: as duas rodadas falham citando o arquivo.
 
 ---
 
@@ -210,7 +210,7 @@ informar, para saber o que preencher sem ler o núcleo inteiro.
 
 **VERT-02 — Vertical da imobiliária**
 
-1. The system SHALL definir o vertical do Krivo em `src/verticals/imobiliaria/` com `id` igual a `"imobiliaria"`, `appointments` ligado, o recurso `catalog` e os segmentos `novo`, `usado` e `ambos`.
+1. The system SHALL definir o vertical do Krivo em `src/verticals/real-estate/` com `id` igual a `"real-estate"`, `appointments` ligado, o recurso `catalog` e os segmentos `novo`, `usado` e `ambos`.
 2. The system SHALL levar para esse vertical a marca que hoje está fixa no núcleo (`Krivo`, `urn:krivo:problem:`, `X-Krivo-Tenant`), mantendo os valores atuais.
 3. The system SHALL fazer o app do Krivo passar esse vertical a toda peça do núcleo que o exige.
 
@@ -325,7 +325,7 @@ fases, para não copiar as 2.253 linhas de `principal.ts`.
 **AGENT-01 — Gerador por parâmetro**
 
 1. The system SHALL gerar os workflows a partir de fontes genéricas e dos blocos e módulos do manifesto do agente do vertical.
-2. The system SHALL levar para `n8n/verticals/imobiliaria/` o `system-message.mjs`, o `phase.mjs`, o `reengagement-prompt.mjs`, as definições de tool com texto de mercado e o corpus de benchmark, sem mudar o texto gerado.
+2. The system SHALL levar para `n8n/verticals/real-estate/` o `system-message.mjs`, o `phase.mjs`, o `reengagement-prompt.mjs`, as definições de tool com texto de mercado e o corpus de benchmark, sem mudar o texto gerado.
 3. WHERE `appointments` está desligado the system SHALL gerar os workflows sem a tool de agendamento e sem o ramo de lembrete do `scheduler`.
 4. WHEN os workflows forem gerados para o vertical de teste THEN the system SHALL produzir um JSON em que nenhum nó cite `imóve`, `imobili`, `corretor` ou `buscar_imoveis`.
 

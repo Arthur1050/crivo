@@ -36,7 +36,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 | Code Layer | Required Test Type | Coverage Expectation | Location Pattern | Run Command |
 | --- | --- | --- | --- | --- |
 | Verificador de fronteira (`scripts/boundary/`) | unit | Cada reprovação com fixture própria e a árvore real sem violação; 1:1 com BOUND e ENG | `scripts/__tests__/boundary*.test.ts` | `npx vitest run scripts/__tests__/boundary.test.ts` |
-| Vocabulário | unit | Par chave e valor de cada constante, com valor literal no teste | `src/lib/__tests__/vocabulary.test.ts`, `src/verticals/imobiliaria/__tests__/` | `npx vitest run <arquivo>` |
+| Vocabulário | unit | Par chave e valor de cada constante, com valor literal no teste | `src/lib/__tests__/vocabulary.test.ts`, `src/verticals/real-estate/__tests__/` | `npx vitest run <arquivo>` |
 | Contrato e fábricas (`src/vertical-kit`, `createAccess`, `createIntegrationKit`) | unit | Todos os ramos; os dois verticais; 1:1 com VERT, ACCESS, QUAL, APPT e SEG | `src/**/__tests__/*.test.ts` | `npx vitest run <arquivo>` |
 | Schema | integration | Foto igual à base; `db:push:test` sem pendência | `scripts/__tests__/boundary-schema.test.ts` | `npm run db:push:test` |
 | DAL e `/api/v1` | integration | Testes existentes intactos; casos novos para vertical sem recurso e para ordem de validação | `src/server/**/__tests__/*.test.ts` | `npx vitest run <arquivo>` |
@@ -496,7 +496,7 @@ T41 → T42 → T43 → T44 → T45
 ### T11: Vocabulário da imobiliária
 
 **What**: Criar as constantes de `modality`, `property_type`, `property_kind`, `property_status`, `motivation`, `credit_status` e `storefront_layout`.
-**Where**: `src/verticals/imobiliaria/vocabulary.ts`
+**Where**: `src/verticals/real-estate/vocabulary.ts`
 **Depends on**: T10
 **Reuses**: `context.md` § Termos em inglês
 **Requirement**: VOCAB-01
@@ -510,7 +510,7 @@ T41 → T42 → T43 → T44 → T45
 
 **Execução**: Quick + Boundary: 2 arquivos, 73 testes, 0 falhas (14 do domínio). TypeScript: 0 erros. ESLint: 0 erros, 9 avisos. Nova regra `src/verticals/**` acompanha os primeiros arquivos reais. Entrada nova de identificador para a pasta `imobiliaria` prescrita pela T11; temporária até a T34, com justificativa no commit, sem trocar o id do vertical.
 
-| Critério | Evidência em `src/verticals/imobiliaria/__tests__/vocabulary.test.ts` | Resultado esperado |
+| Critério | Evidência em `src/verticals/real-estate/__tests__/vocabulary.test.ts` | Resultado esperado |
 | --- | --- | --- |
 | Cada chave e valor | `:17`, `expect(actual).toEqual(expected)` | Sete objetos literais com os valores atuais |
 | Conjuntos do schema | `:26`, `expect(Object.values(actual)).toEqual(values)` | Valores e ordem dos sete enums preservados |
@@ -576,7 +576,7 @@ T41 → T42 → T43 → T44 → T45
 **What**: Trocar literais por constantes em `src/components/`, `app/` e `src/server/actions/`, com chave computada nos `Record`.
 **Where**: `src/components/`
 **Depends on**: T13
-**Reuses**: `src/lib/vocabulary.ts`, `src/verticals/imobiliaria/vocabulary.ts`
+**Reuses**: `src/lib/vocabulary.ts`, `src/verticals/real-estate/vocabulary.ts`
 **Requirement**: VOCAB-01
 
 **Tools**: MCP: NONE. Skill: NONE.
@@ -641,9 +641,9 @@ T41 → T42 → T43 → T44 → T45
 ### T17: Vertical da imobiliária
 
 **What**: Definir o vertical do Krivo com marca, recurso `catalog`, agendamento ligado e os três segmentos. A qualificação entra na T27.
-**Where**: `src/verticals/imobiliaria/index.ts`
+**Where**: `src/verticals/real-estate/index.ts`
 **Depends on**: T16
-**Reuses**: `src/verticals/imobiliaria/vocabulary.ts`
+**Reuses**: `src/verticals/real-estate/vocabulary.ts`
 **Requirement**: VERT-02
 
 **Tools**: MCP: NONE. Skill: NONE.
@@ -672,7 +672,7 @@ T41 → T42 → T43 → T44 → T45
 **Done when**:
 
 - [ ] O teste afirma que `defineVertical` aceita o fixture.
-- [ ] O grafo de imports do fixture não alcança `src/verticals/imobiliaria/`, por caso próprio que usa `checkImports`.
+- [ ] O grafo de imports do fixture não alcança `src/verticals/real-estate/`, por caso próprio que usa `checkImports`.
 
 **Tests**: unit
 **Gate**: quick
@@ -793,7 +793,7 @@ T41 → T42 → T43 → T44 → T45
 ### T24: Schema do vertical
 
 **What**: Mover `properties`, `tenantStorefronts` e os enums deles para o schema do vertical, e passar os dois schemas ao Drizzle.
-**Where**: `src/verticals/imobiliaria/schema.ts`
+**Where**: `src/verticals/real-estate/schema.ts`
 **Depends on**: T23
 **Reuses**: `design.md` § 8
 **Requirement**: CAT-01, KEEP-03
@@ -816,7 +816,7 @@ T41 → T42 → T43 → T44 → T45
 ### T25: Catálogo
 
 **What**: Mover DAL, integração, filtros, action e validação de imóveis para o vertical e reclassificar no mapa.
-**Where**: `src/verticals/imobiliaria/data/properties.ts`
+**Where**: `src/verticals/real-estate/data/properties.ts`
 **Depends on**: T24
 **Reuses**: `src/server/data/index.ts:702-914`
 **Requirement**: CAT-01
@@ -839,7 +839,7 @@ T41 → T42 → T43 → T44 → T45
 ### T26: Vitrine
 
 **What**: Mover `src/lib/storefront*.ts`, `src/server/storefront/`, `src/server/data/storefront.ts` e a action para o vertical.
-**Where**: `src/verticals/imobiliaria/storefront/`
+**Where**: `src/verticals/real-estate/storefront/`
 **Depends on**: T25
 **Reuses**: AD-049, AD-050
 **Requirement**: CAT-02
@@ -862,7 +862,7 @@ T41 → T42 → T43 → T44 → T45
 ### T27: Faceta de qualificação
 
 **What**: Criar `parsePatch`, `serialize`, `toLeadColumns` e `promptFacts`, e ligar ao vertical.
-**Where**: `src/verticals/imobiliaria/qualification.ts`
+**Where**: `src/verticals/real-estate/qualification.ts`
 **Depends on**: T26
 **Reuses**: `src/server/integration/parsers.ts:307`, `leads.ts:97`
 **Requirement**: QUAL-01
@@ -1110,8 +1110,8 @@ T41 → T42 → T43 → T44 → T45
 
 ### T38: Módulos do vertical
 
-**What**: Mover `system-message.mjs`, `phase.mjs`, `reengagement-prompt.mjs`, `benchmark-corpus.mjs`, `benchmark-score.mjs` e `benchmark-contexto.ts` para `n8n/verticals/imobiliaria/`, e criar o manifesto.
-**Where**: `n8n/verticals/imobiliaria/agent.mjs`
+**What**: Mover `system-message.mjs`, `phase.mjs`, `reengagement-prompt.mjs`, `benchmark-corpus.mjs`, `benchmark-score.mjs` e `benchmark-contexto.ts` para `n8n/verticals/real-estate/`, e criar o manifesto.
+**Where**: `n8n/verticals/real-estate/agent.mjs`
 **Depends on**: T37
 **Reuses**: `scripts/document-context-benchmark.ts:30`
 **Requirement**: AGENT-01
@@ -1135,7 +1135,7 @@ T41 → T42 → T43 → T44 → T45
 **What**: Trocar por `__VALUE` a URL do CRM, os ids e os exemplos `imobiliaria-a` e `Imobiliária A` nas fontes genéricas.
 **Where**: `n8n/workflows/principal.ts` (modify)
 **Depends on**: T38
-**Reuses**: `n8n/verticals/imobiliaria/agent.mjs`
+**Reuses**: `n8n/verticals/real-estate/agent.mjs`
 **Requirement**: AGENT-01
 
 **Tools**: MCP: NONE. Skill: NONE.
@@ -1155,7 +1155,7 @@ T41 → T42 → T43 → T44 → T45
 ### T40: Blocos do vertical
 
 **What**: Mover para blocos as definições de tool com texto de mercado e a lista de tools do agente, em `principal.ts`, `reengagement-contextual.ts`, `scheduler.ts` e `tool-agendar-reuniao.ts`.
-**Where**: `n8n/verticals/imobiliaria/blocks/`
+**Where**: `n8n/verticals/real-estate/blocks/`
 **Depends on**: T39
 **Reuses**: `n8n/workflows/principal.ts:1256-1596`
 **Requirement**: AGENT-01
@@ -1210,7 +1210,7 @@ T41 → T42 → T43 → T44 → T45
 **Done when**:
 
 - [ ] Uma operação real de cada grupo conclui e confere a linha gravada (L-027).
-- [ ] Caso confere que o grafo de imports do teste não alcança `src/verticals/imobiliaria/`.
+- [ ] Caso confere que o grafo de imports do teste não alcança `src/verticals/real-estate/`.
 - [ ] Peça que falhar vira correção nesta task, nunca exceção na lista.
 
 **Tests**: integration

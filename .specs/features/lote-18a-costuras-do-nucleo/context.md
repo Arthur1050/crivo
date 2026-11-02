@@ -32,10 +32,10 @@ pacote único, com o comportamento do Krivo idêntico e nada novo em produção.
 
 - Monorepo interno com npm workspaces. Nada é publicado em registro. Sem pacote aberto por enquanto.
 - Pacotes: `@core/db`, `@core/server`, `@core/agent`, `@core/client` e `@core/vertical-kit`.
-- Apps: `apps/imobiliaria` e `apps/materiais`.
+- Apps: `apps/real-estate` e `apps/building-materials`.
 - Não existe `core-ui`. Cada app monta as próprias telas: a imobiliária em Astryx e materiais em shadcn.
   `@core/client` só tem lógica sem visual (formatação, thread do chat, stores, hooks).
-- A vitrine fica em `apps/imobiliaria` por enquanto.
+- A vitrine fica em `apps/real-estate` por enquanto.
 
 ### Divisão em lotes
 
@@ -122,7 +122,7 @@ As peças do agente ficam em manifesto separado, para o bundle do navegador não
 
 ### Agent's Discretion
 
-- O formato do mapa de fronteira, os nomes dos módulos dentro de `src/verticals/imobiliaria/` e a forma
+- O formato do mapa de fronteira, os nomes dos módulos dentro de `src/verticals/real-estate/` e a forma
   como o app entrega o vertical ao núcleo ficam para o Design.
 
 ### Declined / Undiscussed Gray Areas → Assumptions
