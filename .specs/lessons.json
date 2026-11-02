@@ -4,7 +4,7 @@
   "window_days": 45,
   "quarantine_threshold": 2,
   "prune_requires_confirmation": true,
-  "next_id": 101,
+  "next_id": 103,
   "lessons": [
     {
       "id": "L-001",
@@ -1651,6 +1651,42 @@
       ],
       "created": "2026-11-02T08:30:12Z",
       "last_seen": "2026-11-02T08:30:12Z"
+    },
+    {
+      "id": "L-101",
+      "key": "gate_fail::em teste sobre banco compartilhado nao deixe o tempo crescer com as linhas de rodadas anteriores limpe o que criou e restaure em lote nao linha a linha",
+      "text": "Em teste sobre banco compartilhado, não deixe o tempo crescer com as linhas de rodadas anteriores: limpe o que criou e restaure em lote, não linha a linha.",
+      "signal": "gate_fail",
+      "scope": "testes de integração",
+      "status": "candidate",
+      "features": [
+        "lote-17-pastas-de-documentos"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "src/server/__tests__/actions.test.ts:1364 (testes de integração)"
+      ],
+      "created": "2026-11-02T12:10:38Z",
+      "last_seen": "2026-11-02T12:10:38Z"
+    },
+    {
+      "id": "L-102",
+      "key": "spec_precision_gap::quando um ac proibe um efeito para um caso diga tambem quais casos continuam disparando o efeito para o teste positivo ter desfecho definido pela spec",
+      "text": "Quando um AC proíbe um efeito para um caso, diga também quais casos continuam disparando o efeito, para o teste positivo ter desfecho definido pela spec.",
+      "signal": "spec_precision_gap",
+      "scope": "spec",
+      "status": "candidate",
+      "features": [
+        "lote-17-pastas-de-documentos"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "src/server/__tests__/actions.test.ts:1436 (spec)"
+      ],
+      "created": "2026-11-02T12:10:38Z",
+      "last_seen": "2026-11-02T12:10:38Z"
     }
   ]
 }

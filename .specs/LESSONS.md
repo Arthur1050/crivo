@@ -552,6 +552,18 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: T2 (apresentação)
 - last seen: 2026-11-02T08:30:12Z
 
+### L-101 - Em teste sobre banco compartilhado, não deixe o tempo crescer com as linhas de rodadas anteriores: limpe o que criou e restaure em lote, não linha a linha.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `testes de integração` · harmful: 0
+- features: lote-17-pastas-de-documentos
+- evidence: src/server/__tests__/actions.test.ts:1364 (testes de integração)
+- last seen: 2026-11-02T12:10:38Z
+
+### L-102 - Quando um AC proíbe um efeito para um caso, diga também quais casos continuam disparando o efeito, para o teste positivo ter desfecho definido pela spec.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `spec` · harmful: 0
+- features: lote-17-pastas-de-documentos
+- evidence: src/server/__tests__/actions.test.ts:1436 (spec)
+- last seen: 2026-11-02T12:10:38Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
