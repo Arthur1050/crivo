@@ -116,6 +116,8 @@ T17 → T29 → T30 → T31 → T32 → T33 → T34 → T35
 T28 → T29
 ```
 
+**Execução T35, nova rodada (2026-11-02)**: em `c43167c`, `npm test` saiu 0: 250 arquivos, 4029 testes, 1200,91 s, sem falha. As sete falhas de `reengagement-proof.test.ts` da rodada anterior vinham de `PROOF_LINKS` citar o gatilho antigo "A cada 15min", renomeado em `99c4f43`; `b74e255` troca só esse nome, sem mudar asserção. As duas falhas da vitrine da rodada anterior eram de ambiente (dependências de `vitrine/` incompletas) e não voltaram. `npx tsc --noEmit -p .` e o ESLint dos arquivos alterados sem erro.
+
 ### Phase 7: Fechamento (Fase 2 do lote, PR de fechamento)
 
 ```
@@ -927,7 +929,7 @@ Ressalvas: a janela não redimensionou para 375 px; usei um quadro de 375 px na 
 **Done when**:
 
 - [x] Orquestrador confirmou que nenhuma outra sessão está rodando suíte (L-033)
-- [ ] `npm test` passa, com a contagem de arquivos e testes registrada; nenhuma asserção alterada fora das tasks (L-055)
+- [x] `npm test` passa, com a contagem de arquivos e testes registrada; nenhuma asserção alterada fora das tasks (L-055)
 - [x] `tsc` 0 erros; `eslint` 0 erros e ≤ 9 avisos; PR C1 aberto para `lote-17` com T29–T35
 
 **Tests**: full
