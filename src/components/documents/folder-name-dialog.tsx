@@ -80,7 +80,6 @@ function FolderNameForm({ folder, onClose }: { folder?: DocumentFolderOption; on
             value={name}
             onChange={(value) => { setName(value); setError(null); }}
             hasAutoFocus
-            isRequired
             isDisabled={isSubmitting}
             status={error ? { type: "error", message: error } : undefined}
           />
