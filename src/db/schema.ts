@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import { AGENT_PHASE, DOCUMENT_STATUS, HUMAN_SEND_STATE, INTEGRATION_HEALTH, LEAD_STATUS, SENDER, STATUS_ACTOR } from "../lib/vocabulary";
 import { FIELD_LABELS } from "../../n8n/src/phase.mjs";
 import {
   bigint,
@@ -20,9 +21,9 @@ import {
 
 // Enums (design.md — Data Models)
 export const leadStatusEnum = pgEnum("lead_status", [
-  "em_qualificacao",
-  "qualificado_agendado",
-  "escalado_humano",
+  LEAD_STATUS.engaged,
+  LEAD_STATUS.goal_reached,
+  LEAD_STATUS.escalated,
 ]);
 
 export const modalityEnum = pgEnum("modality", ["novo", "usado", "ambos"]);
@@ -86,18 +87,18 @@ export const creditStatusEnum = pgEnum("credit_status", [
 // `humano` (lote-14 — ENVIO-01, THREAD-01): mensagem escrita por um usuário
 // do CRM pela tela de Chats. Só nasce pela tela, com autor autenticado; o
 // contrato `/api/v1` não aceita esse remetente na escrita (CONTRATO-01 AC5).
-export const senderEnum = pgEnum("sender", ["agente", "lead", "humano"]);
+export const senderEnum = pgEnum("sender", [SENDER.agent, SENDER.lead, SENDER.human]);
 
 // Estado da reserva idempotente do envio humano (lote-14 — ENVIO-01 AC11).
 export const humanSendStateEnum = pgEnum("human_send_state", [
-  "enviando",
-  "enviada",
-  "falhou",
+  HUMAN_SEND_STATE.sending,
+  HUMAN_SEND_STATE.sent,
+  HUMAN_SEND_STATE.failed,
 ]);
 
 // Origem da última mudança de status de um lead (lote-5 — INT-04: trava
 // humana). `null` = nunca alterado por nenhum ator (estado do seed).
-export const statusActorEnum = pgEnum("status_actor", ["humano", "agente"]);
+export const statusActorEnum = pgEnum("status_actor", [STATUS_ACTOR.human, STATUS_ACTOR.agent]);
 
 // 1:1 com as 10 cores do componente `Token` da Astryx (design.md — Cor de
 // categoria). Paleta fixa: nenhum hex cru é aceito em nenhuma camada.
@@ -120,14 +121,14 @@ export const whatsappAccountKindEnum = pgEnum("whatsapp_account_kind", [
 ]);
 
 export const agentPhaseEnum = pgEnum("agent_phase", [
-  "qualificando", "agendando", "encerrada",
+  AGENT_PHASE.qualifying, AGENT_PHASE.closing, AGENT_PHASE.ended,
 ]);
 
 export const documentStatusEnum = pgEnum("document_status", [
-  "processando",
-  "pronto",
-  "falha",
-  "fora_do_agente",
+  DOCUMENT_STATUS.processing,
+  DOCUMENT_STATUS.ready,
+  DOCUMENT_STATUS.failed,
+  DOCUMENT_STATUS.outside_agent,
 ]);
 
 export const documentUploadIntentStateEnum = pgEnum(
@@ -201,7 +202,7 @@ export const tenants = pgTable(
     // (lote-15, AD-039). Nullable e aditivas (AD-004): nulo = tenant ainda não
     // avaliado, e a primeira avaliação só grava o estado, sem e-mail.
     integrationHealthState: text("integration_health_state", {
-      enum: ["saudavel", "problema"],
+      enum: [INTEGRATION_HEALTH.healthy, INTEGRATION_HEALTH.problem],
     }),
     integrationHealthChangedAt: timestamp("integration_health_changed_at", {
       withTimezone: true,
@@ -214,7 +215,7 @@ export const tenants = pgTable(
     uniqueIndex("tenants_slug_idx").on(table.slug),
     check(
       "tenants_integration_health_state_check",
-      sql`${table.integrationHealthState} in ('saudavel', 'problema')`
+      sql`${table.integrationHealthState} in (${INTEGRATION_HEALTH.healthy}, ${INTEGRATION_HEALTH.problem})`.inlineParams()
     ),
   ]
 );
