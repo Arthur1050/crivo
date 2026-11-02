@@ -1,3 +1,4 @@
+import { ROLE } from "../lib/vocabulary";
 import "dotenv/config";
 import { pathToFileURL } from "node:url";
 import { and, eq } from "drizzle-orm";
@@ -33,7 +34,7 @@ export interface CreateAdminResult {
     | "ja-era-administrador";
 }
 
-const ADMIN_ROLE: Role = "administrador";
+const ADMIN_ROLE: Role = ROLE.admin;
 
 export async function createAdmin(options: {
   tenantSlug: string;

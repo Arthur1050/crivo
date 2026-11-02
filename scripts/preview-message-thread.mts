@@ -1,3 +1,5 @@
+import { LEAD_STATUS, ROLE, SENDER } from "../src/lib/vocabulary";
+import { MODALITY } from "../src/verticals/real-estate/vocabulary";
 /** T59 real-app fixture helper, no production route or credentials on stdout.
  * Run with: npx tsx --conditions=react-server scripts/preview-message-thread.mts
  * Start app with BETTER_AUTH_URL=http://localhost:3000 npm run dev:test.
@@ -59,20 +61,20 @@ async function cleanup() {
 
 try {
   await db.insert(tenants).values({ id: tenantId, name: "Imobiliária Fixture T59", agentName: "Agente Fixture",
-    supportedModality: "ambos", slug: `fixture-t59-${tenantId}` });
-  await db.insert(tenant_members).values({ userId: signup.response.user.id, organizationId: tenantId, role: "gestor" });
+    supportedModality: MODALITY.both, slug: `fixture-t59-${tenantId}` });
+  await db.insert(tenant_members).values({ userId: signup.response.user.id, organizationId: tenantId, role: ROLE.manager });
   await db.insert(whatsappChannels).values({ tenantId, phoneNumberId, accountKind: "test", usageEnabled: false });
   const now = Date.now();
   await db.insert(leads).values({ id: leadId, tenantId, assignedUserId: signup.response.user.id, name: "Lead Fixture T59",
-    phone: "Fixture sem telefone", status: "em_qualificacao", firstContactAt: new Date(now - 60000),
+    phone: "Fixture sem telefone", status: LEAD_STATUS.engaged, firstContactAt: new Date(now - 60000),
     humanTakeoverAt: new Date(now - 30000), humanTakeoverBy: signup.response.user.id, whatsappPhoneNumberId: phoneNumberId });
   await db.insert(conversations).values({ id: conversationId, tenantId, leadId });
   const fixtures = [
     { sender: "lead" as const, content: "Inbound Fixture T59, sem classificação de saída.", classification: null },
-    { sender: "agente" as const, content: "Primeira saída Fixture T59.", classification: "paid_service" as const },
-    { sender: "agente" as const, content: "Retomada Fixture T59.", classification: "free_service" as const },
-    { sender: "humano" as const, content: "Saída humana Fixture T59 aguardando recibo.", classification: "pending" as const },
-    { sender: "humano" as const, content: "Saída legada Fixture T59 sem canal confirmado.", classification: null },
+    { sender: SENDER.agent, content: "Primeira saída Fixture T59.", classification: "paid_service" as const },
+    { sender: SENDER.agent, content: "Retomada Fixture T59.", classification: "free_service" as const },
+    { sender: SENDER.human, content: "Saída humana Fixture T59 aguardando recibo.", classification: "pending" as const },
+    { sender: SENDER.human, content: "Saída legada Fixture T59 sem canal confirmado.", classification: null },
   ];
   for (const [index, fixture] of fixtures.entries()) {
     const isRefresh = index === 3;
@@ -80,8 +82,8 @@ try {
     const wamid = isRefresh ? refreshWamid : `fixture-wamid-${randomUUID()}`;
     await db.insert(messages).values({ id, tenantId, conversationId, sender: fixture.sender, content: fixture.content,
       sentAt: new Date(now - 60000 + index * 1000),
-      authorUserId: fixture.sender === "humano" ? signup.response.user.id : null,
-      authorName: fixture.sender === "humano" ? "Autora Fixture T59" : null,
+      authorUserId: fixture.sender === SENDER.human ? signup.response.user.id : null,
+      authorName: fixture.sender === SENDER.human ? "Autora Fixture T59" : null,
       externalId: fixture.classification ? wamid : null, whatsappPhoneNumberId: fixture.classification ? phoneNumberId : null });
     if (fixture.classification) await db.insert(whatsappMessageReceipts).values({ tenantId, phoneNumberId, wamid,
       messageId: id, classification: fixture.classification, orphanExpiresAt: null });

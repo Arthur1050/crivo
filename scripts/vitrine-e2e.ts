@@ -1,3 +1,4 @@
+import { PROPERTY_KIND, PROPERTY_STATUS, STOREFRONT_LAYOUT } from "../src/verticals/real-estate/vocabulary";
 /**
  * `npm run vitrine:e2e` — prova da vitrine por HTTP, contra a app rodando
  * (lote-16b — T14; VSEG-02, VCACHE-02, VSEO-01, VCAT-03).
@@ -1168,7 +1169,7 @@ registrar("V4 sem destaque o grade omite a faixa e o editorial omite a foto do c
     await avisarVitrine(ctx, a.slug);
     const doBanco = await fotografar(a.id);
     const esperados = doBanco
-      .filter((x) => x.featured && x.published && x.status === "disponivel")
+      .filter((x) => x.featured && x.published && x.status === PROPERTY_STATUS.available)
       .sort((x, y) => y.updatedAt.getTime() - x.updatedAt.getTime() || x.reference.localeCompare(y.reference))
       .slice(0, 6)
       .map((x) => x.reference.toLowerCase());
@@ -1361,7 +1362,7 @@ registrar("V12 a fonte da loja chega ao HTML: o <html> traz a classe de cada fon
 
 registrar("V13 editorial com mais de 24 imóveis: paginação em português, 24 linhas na página 1 e 1 na 2 (VTEMA AC5)", async (ctx) => {
   const { a } = ctx.fixture.lojas;
-  const definir = (layout: "grade" | "editorial") =>
+  const definir = (layout: typeof STOREFRONT_LAYOUT.grid | "editorial") =>
     ctx.db.update(tenantStorefronts).set({ layout }).where(eq(tenantStorefronts.tenantId, a.id));
   try {
     await definir("editorial");
@@ -1426,7 +1427,7 @@ registrar("V15 a UF do imóvel vem do imóvel: mudar a UF no banco muda a págin
 
 registrar("V16 o tipo do imóvel aparece no texto visível de cada card (grade) e de cada linha (editorial) (VCAT AC6)", async (ctx) => {
   const { a, b } = ctx.fixture.lojas;
-  const rotulo = (tipo: string) => (tipo === "apartamento" ? "Apartamento" : "Casa");
+  const rotulo = (tipo: string) => (tipo === PROPERTY_KIND.apartment ? "Apartamento" : "Casa");
   const naPagina1 = ordemDoCatalogo(a.imoveis).slice(0, 24);
   const htmlA = textoLimpo((await ctx.pedir(`/c/${a.slug}`)).texto);
   for (const imovel of a.imoveis.filter((x) => x.visivel && naPagina1.includes(x.referencia.toLowerCase()))) {

@@ -1,3 +1,4 @@
+import { MODALITY } from "../src/verticals/real-estate/vocabulary";
 /**
  * Benchmark do teto de contexto documental (lote-12 — T34, DOCLIM-01).
  *
@@ -39,7 +40,7 @@ import {
   type BenchmarkIdentity,
 } from "../src/server/documents/context-ceiling";
 
-const MODALITIES = ["novo", "usado", "ambos"] as const;
+const MODALITIES = [MODALITY.new, MODALITY.used, MODALITY.both] as const;
 
 export interface BenchmarkResultsFile {
   benchmarkedAt: string;
@@ -194,8 +195,8 @@ async function persist(file: string, measuredSourceRevision?: string) {
 
 export async function checkBenchmarkIdentity(workflowVersion: string, dependencies?: {
   identity: BenchmarkIdentity;
-  list: () => Promise<Array<BenchmarkIdentity & { tenantId: string; queryModality: "novo" | "usado" | "ambos"; staleAt: Date | null }>>;
-  markStale: (tenantId: string, modality: "novo" | "usado" | "ambos", reason: string) => Promise<boolean>;
+  list: () => Promise<Array<BenchmarkIdentity & { tenantId: string; queryModality: typeof MODALITY.new | typeof MODALITY.used | typeof MODALITY.both; staleAt: Date | null }>>;
+  markStale: (tenantId: string, modality: typeof MODALITY.new | typeof MODALITY.used | typeof MODALITY.both, reason: string) => Promise<boolean>;
 }) {
   const identity = dependencies?.identity ?? currentIdentity(workflowVersion);
   const repository = dependencies ? null : await import("../src/server/documents/repository");
@@ -224,7 +225,7 @@ async function main() {
       const resultsFile = value("--results"), sourceRevision = value("--measured-source-ref");
       const results = resultsFile ? JSON.parse(readFileSync(resultsFile, "utf8")) as BenchmarkResultsFile : null;
       if (results && !sourceRevision) throw new Error("Audit de resultados requer --measured-source-ref.");
-      const modality = value("--modality") ?? "ambos";
+      const modality = value("--modality") ?? MODALITY.both;
       if (!MODALITIES.includes(modality as typeof MODALITIES[number])) throw new Error("Modalidade inválida.");
       const report = auditProactiveBenchmark({ current: currentIdentity(workflowVersion),
         measured: results ? { identity: currentIdentity(results.agentWorkflowVersion, sourceRevision), benchmarkedAt: results.benchmarkedAt,

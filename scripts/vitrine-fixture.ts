@@ -1,3 +1,5 @@
+import { LEAD_STATUS } from "../src/lib/vocabulary";
+import { MODALITY, PROPERTY_KIND, PROPERTY_STATUS, STOREFRONT_LAYOUT } from "../src/verticals/real-estate/vocabulary";
 /**
  * Fixture de sentinelas da vitrine (lote-16b — T13; VSEG-01, VSEG-02).
  *
@@ -50,7 +52,7 @@ export const SENTINELAS = {
 
 export interface ImovelDaFixture {
   referencia: string;
-  tipo: "apartamento" | "casa";
+  tipo: typeof PROPERTY_KIND.apartment | typeof PROPERTY_KIND.house;
   bairro: string;
   cidade: string;
   uf: string;
@@ -76,7 +78,7 @@ export interface LojaDaFixture {
   /** Cor digitada pelo gestor (`#rrggbb`), ou `null` (cor padrão). */
   cor: string | null;
   fonte: "inter" | "montserrat" | "lora" | "playfair";
-  layout: "grade" | "editorial";
+  layout: typeof STOREFRONT_LAYOUT.grid | "editorial";
   ativa: boolean;
   /** Como está gravado no CRM (pode ter máscara). */
   whatsapp: string;
@@ -103,8 +105,8 @@ export interface FixtureVitrine {
 const BASE_TEMPO = Date.UTC(2026, 0, 1, 12, 0, 0);
 const DIA = 24 * 60 * 60 * 1000;
 
-function referenciaDe(tipo: "apartamento" | "casa", sequencia: number): string {
-  return `${tipo === "apartamento" ? "AP" : "CA"}-${String(sequencia).padStart(4, "0")}`;
+function referenciaDe(tipo: typeof PROPERTY_KIND.apartment | typeof PROPERTY_KIND.house, sequencia: number): string {
+  return `${tipo === PROPERTY_KIND.apartment ? "AP" : "CA"}-${String(sequencia).padStart(4, "0")}`;
 }
 
 function fotosDe(prefixo: string, referencia: string): string[] {
@@ -117,7 +119,7 @@ function fotosDe(prefixo: string, referencia: string): string[] {
 
 interface Especificacao extends ImovelDaFixture {
   sequencia: number;
-  status: "disponivel" | "reservado" | "vendido";
+  status: typeof PROPERTY_STATUS.available | typeof PROPERTY_STATUS.reserved | typeof PROPERTY_STATUS.sold;
   publicado: boolean;
 }
 
@@ -125,13 +127,13 @@ function especificacoesDaA(): Especificacao[] {
   const itens: Especificacao[] = [];
   const destaques = new Set([3, 7, 11]);
   for (let sequencia = 1; sequencia <= 25; sequencia += 1) {
-    const tipo = sequencia % 2 === 1 ? "apartamento" : "casa";
+    const tipo = sequencia % 2 === 1 ? PROPERTY_KIND.apartment : PROPERTY_KIND.house;
     const referencia = referenciaDe(tipo, sequencia);
     // O 20 empata com o 19 em `atualizado_em`: a referência decide (VCAT AC2).
     const dias = sequencia === 20 ? 19 : sequencia;
     itens.push({
       sequencia,
-      status: "disponivel",
+      status: PROPERTY_STATUS.available,
       publicado: true,
       referencia,
       tipo,
@@ -156,18 +158,18 @@ function especificacoesDaA(): Especificacao[] {
     });
   }
   const invisiveis: Array<[number, Especificacao["status"], boolean, string]> = [
-    [26, "vendido", true, SENTINELAS.vendidoA],
-    [27, "reservado", true, SENTINELAS.reservadoA],
-    [28, "disponivel", false, SENTINELAS.despublicadoA],
+    [26, PROPERTY_STATUS.sold, true, SENTINELAS.vendidoA],
+    [27, PROPERTY_STATUS.reserved, true, SENTINELAS.reservadoA],
+    [28, PROPERTY_STATUS.available, false, SENTINELAS.despublicadoA],
   ];
   for (const [sequencia, status, publicado, descricao] of invisiveis) {
-    const referencia = referenciaDe("apartamento", sequencia);
+    const referencia = referenciaDe(PROPERTY_KIND.apartment, sequencia);
     itens.push({
       sequencia,
       status,
       publicado,
       referencia,
-      tipo: "apartamento",
+      tipo: PROPERTY_KIND.apartment,
       bairro: "Bairro Oculto",
       cidade: "Uberaba",
       uf: "MG",
@@ -190,7 +192,7 @@ function especificacoesDaB(): Especificacao[] {
   const base = {
     cidade: "Uberlândia",
     uf: "MG",
-    status: "disponivel" as const,
+    status: PROPERTY_STATUS.available,
     publicado: true,
     visivel: true,
     bairro: "Bairro Beta Exclusivo",
@@ -201,40 +203,40 @@ function especificacoesDaB(): Especificacao[] {
   };
   return [
     {
-      ...base, sequencia: 1, referencia: "AP-0001", tipo: "apartamento", precoReais: 987_000,
+      ...base, sequencia: 1, referencia: "AP-0001", tipo: PROPERTY_KIND.apartment, precoReais: 987_000,
       destaque: false, atualizadoEm: new Date(BASE_TEMPO + 3 * DIA), fotos: fotosDe("b", "AP-0001"),
       descricao: "Descrição do imóvel AP-0001 da loja B (BETA-EXCLUSIVO).",
     },
     {
-      ...base, sequencia: 2, referencia: "CA-0002", tipo: "casa", precoReais: 612_000,
+      ...base, sequencia: 2, referencia: "CA-0002", tipo: PROPERTY_KIND.house, precoReais: 612_000,
       destaque: false, atualizadoEm: new Date(BASE_TEMPO + 2 * DIA), fotos: fotosDe("b", "CA-0002"),
       descricao: "Descrição do imóvel CA-0002 da loja B (BETA-EXCLUSIVO).",
     },
     {
-      ...base, sequencia: 3, referencia: "AP-0003", tipo: "apartamento", precoReais: 745_000,
+      ...base, sequencia: 3, referencia: "AP-0003", tipo: PROPERTY_KIND.apartment, precoReais: 745_000,
       destaque: true, atualizadoEm: new Date(BASE_TEMPO + 1 * DIA), fotos: fotosDe("b", "AP-0003"),
       descricao: "Descrição do imóvel AP-0003 da loja B (BETA-EXCLUSIVO).",
     },
     {
-      ...base, sequencia: 4, referencia: "CA-0004", tipo: "casa", precoReais: 530_000,
+      ...base, sequencia: 4, referencia: "CA-0004", tipo: PROPERTY_KIND.house, precoReais: 530_000,
       destaque: false, atualizadoEm: new Date(BASE_TEMPO + 4 * DIA), fotos: fotosDe("b", "CA-0004"),
       descricao: "Descrição do imóvel CA-0004 da loja B (BETA-EXCLUSIVO).",
     },
     {
-      ...base, sequencia: 5, referencia: "AP-0005", tipo: "apartamento", precoReais: 999_000,
+      ...base, sequencia: 5, referencia: "AP-0005", tipo: PROPERTY_KIND.apartment, precoReais: 999_000,
       destaque: false, atualizadoEm: new Date(BASE_TEMPO + 5 * DIA), fotos: fotosDe("b", "AP-0005"),
       descricao: "Descrição do imóvel vendido da loja B (BETA-EXCLUSIVO).",
-      status: "vendido", visivel: false,
+      status: PROPERTY_STATUS.sold, visivel: false,
     },
   ];
 }
 
 function especificacoesDaC(): Especificacao[] {
   return [1, 2].map((sequencia) => {
-    const referencia = referenciaDe("apartamento", sequencia);
+    const referencia = referenciaDe(PROPERTY_KIND.apartment, sequencia);
     return {
-      sequencia, status: "disponivel", publicado: true, visivel: false,
-      referencia, tipo: "apartamento", bairro: "Bairro Gama", cidade: "Araxá", uf: "MG",
+      sequencia, status: PROPERTY_STATUS.available, publicado: true, visivel: false,
+      referencia, tipo: PROPERTY_KIND.apartment, bairro: "Bairro Gama", cidade: "Araxá", uf: "MG",
       precoReais: 300_000 + sequencia, destaque: sequencia === 1,
       atualizadoEm: new Date(BASE_TEMPO + sequencia * DIA), fotos: fotosDe("c", referencia),
       descricao: SENTINELAS.imovelDaInativaC, quartos: 2, banheiros: 1, vagas: 1, areaM2: 60,
@@ -244,15 +246,15 @@ function especificacoesDaC(): Especificacao[] {
 
 function especificacoesDaD(): Especificacao[] {
   const estados: Array<[number, Especificacao["status"], boolean]> = [
-    [1, "vendido", true],
-    [2, "reservado", true],
-    [3, "disponivel", false],
+    [1, PROPERTY_STATUS.sold, true],
+    [2, PROPERTY_STATUS.reserved, true],
+    [3, PROPERTY_STATUS.available, false],
   ];
   return estados.map(([sequencia, status, publicado]) => {
-    const referencia = referenciaDe("casa", sequencia);
+    const referencia = referenciaDe(PROPERTY_KIND.house, sequencia);
     return {
       sequencia, status, publicado, visivel: false,
-      referencia, tipo: "casa", bairro: "Bairro Delta", cidade: "Franca", uf: "SP",
+      referencia, tipo: PROPERTY_KIND.house, bairro: "Bairro Delta", cidade: "Franca", uf: "SP",
       precoReais: 410_000 + sequencia, destaque: false,
       atualizadoEm: new Date(BASE_TEMPO + sequencia * DIA), fotos: fotosDe("d", referencia),
       descricao: `Descrição do imóvel ${referencia} da loja D (fora do ar).`,
@@ -273,7 +275,7 @@ function definicoes(): DefinicaoDaLoja[] {
       chave: "a",
       dados: {
         slug: SLUGS_DA_FIXTURE.a, nome: "Imobiliária Alfa", razaoSocial: "Alfa Negócios Imobiliários Ltda",
-        creci: "CRECI-MG 11111-J", cor: "#d4145a", fonte: "lora", layout: "grade", ativa: true,
+        creci: "CRECI-MG 11111-J", cor: "#d4145a", fonte: "lora", layout: STOREFRONT_LAYOUT.grid, ativa: true,
         whatsapp: "(34) 99999-0001", whatsappComPrefixo: "5534999990001",
         titulo: "Imóveis selecionados em Uberaba", sobre: "A Alfa atende famílias de Uberaba desde 2010.",
         instagram: "alfa.imoveis", telefone: "3433330001", endereco: "Rua Alfa, 100, Centro, Uberaba/MG",
@@ -297,7 +299,7 @@ function definicoes(): DefinicaoDaLoja[] {
       chave: "c",
       dados: {
         slug: SLUGS_DA_FIXTURE.c, nome: "Imobiliária Gama Inativa", razaoSocial: "Gama Imóveis Ltda",
-        creci: "CRECI-MG 33333-J", cor: "#8e24aa", fonte: "montserrat", layout: "grade", ativa: false,
+        creci: "CRECI-MG 33333-J", cor: "#8e24aa", fonte: "montserrat", layout: STOREFRONT_LAYOUT.grid, ativa: false,
         whatsapp: "34977770003", whatsappComPrefixo: "5534977770003",
         titulo: "Loja inativa", sobre: "Esta vitrine está desativada.",
         instagram: "gama.inativa", telefone: null, endereco: null,
@@ -309,7 +311,7 @@ function definicoes(): DefinicaoDaLoja[] {
       chave: "d",
       dados: {
         slug: SLUGS_DA_FIXTURE.d, nome: "Imobiliária Delta", razaoSocial: "Delta Participações Ltda",
-        creci: "CRECI-SP 44444-J", cor: null, fonte: "inter", layout: "grade", ativa: true,
+        creci: "CRECI-SP 44444-J", cor: null, fonte: "inter", layout: STOREFRONT_LAYOUT.grid, ativa: true,
         whatsapp: "3433330004", whatsappComPrefixo: "553433330004",
         titulo: null, sobre: null, instagram: null, telefone: null, endereco: null,
         cidade: "Franca", uf: "SP",
@@ -364,7 +366,7 @@ export async function criarFixtureVitrine(db: BancoDoDono): Promise<FixtureVitri
         slug: dados.slug,
         name: dados.nome,
         agentName: "Agente Fixture",
-        supportedModality: "ambos",
+        supportedModality: MODALITY.both,
         city: dados.cidade,
         state: dados.uf,
         agentWhatsapp: dados.whatsapp,
@@ -394,7 +396,7 @@ export async function criarFixtureVitrine(db: BancoDoDono): Promise<FixtureVitri
         sequence: imovel.sequencia,
         reference: imovel.referencia,
         kind: imovel.tipo,
-        modality: "usado" as const,
+        modality: MODALITY.used,
         status: imovel.status,
         published: imovel.publicado,
         featured: imovel.destaque,
@@ -422,7 +424,7 @@ export async function criarFixtureVitrine(db: BancoDoDono): Promise<FixtureVitri
       tenantId: tenant.id,
       name: SENTINELAS.leadNome,
       phone: SENTINELAS.leadTelefone,
-      status: "em_qualificacao",
+      status: LEAD_STATUS.engaged,
       firstContactAt: new Date(BASE_TEMPO),
     });
 

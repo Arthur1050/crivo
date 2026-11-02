@@ -1,3 +1,4 @@
+import { SENDER } from "../src/lib/vocabulary";
 /** T68: fixture integrada e fronteira de prova real. Nenhum executor externo é
  * embutido. CLI --check-real <metadata.json> diagnostica somente os gates.
  * Full: npx vitest run scripts/__tests__/reengagement-proof.test.ts.
@@ -111,7 +112,7 @@ export async function runFixtureEpisode(options: FixtureEpisodeOptions) {
   await options.recordReceipt?.(sent);
   const thread = await readProofThread(options.auth, options.conversationId);
   if (["accepted", "accepted_pending_record"].includes(sent.state)
-    && !thread.rows.some((message) => message.sender === "agente" && message.externalId === sent.wamid && message.content === generated.text)) throw new Error("proof-crm-output-link-broken");
+    && !thread.rows.some((message) => message.sender === SENDER.agent && message.externalId === sent.wamid && message.content === generated.text)) throw new Error("proof-crm-output-link-broken");
   return { mode: "fixture" as const, executed: true as const, externalProof: false as const, episodeId: claimed.episodeId,
     claimToken: claim.claimToken, frame: framed.frame, sent, textHash: digest(generated.text), thread,
     deferredUsageUI: DEFERRED_USAGE_UI };
