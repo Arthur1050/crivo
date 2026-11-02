@@ -400,7 +400,29 @@ Specify estão respondidas.
 três frentes (dados, interface e integração) sobre o branch de integração `lote-17`. O schema de produção é
 aplicado com `scripts/document-folders/schema.sql` antes do merge final em `main`, com autorização do usuário.
 
-**Estado (2026-11-02)**: PASS no 4º ciclo de verificação (`validation.md`). O schema de produção e o merge em `main` ainda não foram feitos.
+**Estado (2026-11-02)**: PASS no 4º ciclo de verificação (`validation.md`). Schema aplicado em produção e [PR #17](https://github.com/Arthur1050/crivo/pull/17) em `main`.
+
+---
+
+## L18 — Extração do núcleo
+
+**Origem**: usuário, 2026-11-02. Um segundo app, para lojas de materiais de construção, com as mesmas
+funcionalidades. Decisão de arquitetura na AD-052; decisões de lote em
+`features/lote-18a-costuras-do-nucleo/context.md`.
+
+- **L18a — Costuras do núcleo**: fronteira verificável, contrato do vertical e símbolos em inglês, no pacote
+  único. O Krivo não muda. Spec em `features/lote-18a-costuras-do-nucleo/spec.md`.
+- **L18b — Workspaces**: mover para `packages/*` e `apps/imobiliaria` seguindo o mapa de fronteira, com o build
+  provado num preview (L-088). A mudança do Root Directory na Vercel pede autorização. Spec depois do L18a.
+- **L18c — Ativação em produção**: DDL, valores gravados em inglês, qualificação em tabela 1:1, `/api/v1` nos
+  dois vocabulários até o agente republicado ser conferido (L-061). Uma ação por task, com autorização e
+  rollback. Spec depois do L18b.
+
+## L19 — App de lojas de materiais
+
+**Depende do L18c.** Produtos no lugar de imóveis e um agente que encontra o produto pedido ou sugere uma
+alternativa. Telas em shadcn, banco e projeto na Vercel próprios. É candidato a resolver as pendências que
+dependem de tenant real, se o primeiro cliente vier deste app. Sem spec.
 
 ---
 
@@ -435,6 +457,8 @@ imobiliária". Catálogo estruturado + documentos legíveis já entregam essa fr
 ## Ordem
 
 L10 → L11 → L12 → L13 → L14 → L14b → L14c (condicionado à conta de produção) → L15 → **L16 por último**.
+
+Acrescentados depois: L17 (publicado) e L18a → L18b → L18c → L19 (AD-052).
 
 Ressalva única: **L11 pode subir na frente do L10** se a janela comercial pedir — o catálogo tem o
 único sinal de cliente real do backlog, e o custo de trocar é adiar a AD-015, aberta desde
