@@ -1,4 +1,3 @@
-import { access } from "@/src/kit/access";
 import type { ReactNode } from "react";
 import { VStack } from "@astryxdesign/core/Stack";
 
