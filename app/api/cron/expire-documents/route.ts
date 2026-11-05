@@ -5,7 +5,7 @@ import { VercelBlobDocumentStorage } from "../../../../src/server/documents/verc
 import { sendIntegrationAlertEmail } from "../../../../src/server/auth/email";
 import type { IntegrationAlertDependencies } from "../../../../src/server/integration/integration-alert";
 import { runDailyMaintenance } from "../../../../src/server/integration/lgpd";
-import { problem } from "../../../../src/server/integration/problem";
+import { problem } from "../../../../src/kit/integration";
 
 /**
  * `/api/cron/expire-documents` — job de TTL de documentos (design.md —

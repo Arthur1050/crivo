@@ -6,7 +6,7 @@ import {
   resolveTenantIdByApiKeyHash,
   resolveTenantIdBySlug,
 } from "../data";
-import { problem } from "./problem";
+import type { createProblemResponses } from "./problem";
 
 export interface AuthResult {
   tenantId: string;
@@ -32,7 +32,8 @@ const BEARER_PATTERN = /^Bearer\s+(.+)$/i;
  *    mesmo se presente e divergente.
  */
 export async function authenticate(
-  request: Request
+  request: Request,
+  problem: ReturnType<typeof createProblemResponses>["problem"]
 ): Promise<AuthResult | Response> {
   const header = request.headers.get("authorization");
   if (!header) {

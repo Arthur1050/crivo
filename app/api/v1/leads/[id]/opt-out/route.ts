@@ -5,8 +5,8 @@ import { optOutLead } from "../../../../../../src/server/integration/lgpd";
 import {
   methodNotAllowed,
   problem,
-} from "../../../../../../src/server/integration/problem";
-import { withIntegrationRoute } from "../../../../../../src/server/integration/route";
+} from "../../../../../../src/kit/integration";
+import { withIntegrationRoute } from "../../../../../../src/kit/integration";
 
 /**
  * `POST /api/v1/leads/{id}/opt-out` — registro de opt-out (design.md —

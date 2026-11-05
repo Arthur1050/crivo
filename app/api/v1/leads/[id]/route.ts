@@ -8,8 +8,8 @@ import {
   methodNotAllowed,
   problem,
   type ProblemCode,
-} from "../../../../../src/server/integration/problem";
-import { withIntegrationRoute } from "../../../../../src/server/integration/route";
+} from "../../../../../src/kit/integration";
+import { withIntegrationRoute } from "../../../../../src/kit/integration";
 
 /** Mapeia os códigos que `patchLead` pode devolver para o status HTTP do
  * contrato (design.md — Error Handling Strategy). */

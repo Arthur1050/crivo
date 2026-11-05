@@ -4,8 +4,8 @@ import {
   MAX_BODY_BYTES,
   parseLeadCreate,
 } from "../../../../src/server/integration/parsers";
-import { methodNotAllowed, problem } from "../../../../src/server/integration/problem";
-import { withIntegrationRoute } from "../../../../src/server/integration/route";
+import { methodNotAllowed, problem } from "../../../../src/kit/integration";
+import { withIntegrationRoute } from "../../../../src/kit/integration";
 
 /**
  * `POST /api/v1/leads` — entrega idempotente de leads (design.md — Route

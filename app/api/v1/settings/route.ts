@@ -1,7 +1,7 @@
 import { PROBLEM_CODE } from "../../../../src/lib/vocabulary";
 import { getTenantSettings } from "../../../../src/server/integration/settings";
-import { methodNotAllowed, problem } from "../../../../src/server/integration/problem";
-import { withIntegrationRoute } from "../../../../src/server/integration/route";
+import { methodNotAllowed, problem } from "../../../../src/kit/integration";
+import { withIntegrationRoute } from "../../../../src/kit/integration";
 
 /**
  * `GET /api/v1/settings` — leitura de persona, modalidade e horário

@@ -12,8 +12,8 @@ import {
 import {
   methodNotAllowed,
   problem,
-} from "../../../../../../src/server/integration/problem";
-import { withIntegrationRoute } from "../../../../../../src/server/integration/route";
+} from "../../../../../../src/kit/integration";
+import { withIntegrationRoute } from "../../../../../../src/kit/integration";
 
 type MessagesRouteContext = { params: Promise<{ id: string }> };
 

@@ -5,7 +5,7 @@ import { eq, like } from "drizzle-orm";
 import { db } from "../../../db";
 import { integrationRefusals, tenants } from "../../../db/schema";
 import { getTenants } from "../../data";
-import { problem } from "../problem";
+import { problem } from "../../../kit/integration";
 import type { AuthResult } from "../auth";
 
 // Mocka `authenticate()` para controlar precisamente o resultado da
@@ -18,7 +18,7 @@ vi.mock("../auth", async (importOriginal) => {
 });
 
 import { authenticate } from "../auth";
-import { INSTRUMENTED, withIntegrationRoute } from "../route";
+import { INSTRUMENTED, withIntegrationRoute } from "../../../kit/integration";
 
 const mockedAuthenticate = vi.mocked(authenticate);
 

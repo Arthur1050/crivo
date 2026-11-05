@@ -1,7 +1,7 @@
 import "server-only";
 import { after } from "next/server";
 import { recordIntegrationRefusal } from "../data";
-import { authenticate, type AuthResult } from "./auth";
+import type { AuthResult } from "./auth";
 import { PROBLEM_CONTENT_TYPE } from "./problem";
 
 /**
@@ -106,7 +106,8 @@ export async function recordRefusalFor(
  * ex.: `{ params }` nas rotas dinâmicas) é sempre repassado intacto.
  */
 export function withIntegrationRoute<Ctx = unknown>(
-  handler: (request: Request, auth: AuthResult, ctx: Ctx) => Promise<Response>
+  handler: (request: Request, auth: AuthResult, ctx: Ctx) => Promise<Response>,
+  authenticate: (request: Request) => Promise<AuthResult | Response>
 ): RouteHandler<Ctx> & { [INSTRUMENTED]: true } {
   const wrapped = async (request: Request, ctx: Ctx): Promise<Response> => {
     const auth = await authenticate(request);

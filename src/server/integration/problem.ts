@@ -1,3 +1,4 @@
+import type { VerticalBrand } from "../../vertical-kit";
 import { PROBLEM_CODE } from "../../lib/vocabulary";
 /**
  * Fábrica de respostas `application/problem+json` (RFC 9457) para toda a API
@@ -22,7 +23,7 @@ export type ProblemCode =
   | typeof PROBLEM_CODE.body_too_large
   | typeof PROBLEM_CODE.route_not_found
   | typeof PROBLEM_CODE.method_not_allowed
-  // lote-7 — SEC-01: chave de serviço válida sem `X-Krivo-Tenant`, ou com
+  // lote-7 — SEC-01: chave de serviço válida sem o header de tenant, ou com
   // slug desconhecido — nunca cai em nenhum tenant default (auth.ts).
   | typeof PROBLEM_CODE.tenant_not_identified
   // lote-8 — ATRIB-02: nenhum corretor ativo tem janela de trabalho cobrindo
@@ -73,13 +74,14 @@ export const PROBLEM_CONTENT_TYPE = "application/problem+json";
  * Monta uma `Response` `application/problem+json` com `type`, `title`,
  * `status`, `detail` (opcional) e a extensão `code` (design.md — Components).
  */
-export function problem(
+export function createProblemResponses(brand: VerticalBrand) {
+function problem(
   status: number,
   code: ProblemCode,
   detail?: string
 ): Response {
   const body = {
-    type: `urn:krivo:problem:${code}`,
+    type: `urn:${brand.problemUrn}:problem:${code}`,
     title: TITLES[code],
     status,
     ...(detail !== undefined ? { detail } : {}),
@@ -110,7 +112,7 @@ export function problem(
  * `withIntegrationRoute`" de "instrumentado via `recordRefusalFor` direto" —
  * os dois são igualmente cobertos, só o caminho até lá muda.
  */
-export function methodNotAllowed(
+function methodNotAllowed(
   allowed: string[]
 ): ((request?: Request) => Response) & { [INSTRUMENTED]: true } {
   const handler = (request?: Request): Response => {
@@ -125,4 +127,7 @@ export function methodNotAllowed(
   };
 
   return Object.assign(handler, { [INSTRUMENTED]: true as const });
+}
+
+  return { problem, methodNotAllowed };
 }

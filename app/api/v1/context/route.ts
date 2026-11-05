@@ -5,8 +5,8 @@ import {
   MAX_BODY_BYTES,
   parseContextQuery,
 } from "../../../../src/server/integration/parsers";
-import { methodNotAllowed, problem } from "../../../../src/server/integration/problem";
-import { withIntegrationRoute } from "../../../../src/server/integration/route";
+import { methodNotAllowed, problem } from "../../../../src/kit/integration";
+import { withIntegrationRoute } from "../../../../src/kit/integration";
 
 /** O corpus é sempre fresco e nunca pode ficar em cache intermediário. */
 const NO_STORE = { "Cache-Control": "no-store" };

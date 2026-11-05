@@ -4,7 +4,7 @@ import { eq, inArray } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "../../../db";
 import { leads, tenantApiKeys, tenants, whatsappChannels } from "../../../db/schema";
-import { authenticate } from "../../integration/auth";
+import { authenticate } from "../../../kit/integration";
 import { resolveChannel } from "../channels";
 
 const SYNTHETIC_TOKEN = "fixture-server-credential-not-for-dto";

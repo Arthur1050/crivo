@@ -1,8 +1,8 @@
 import { PROBLEM_CODE } from "../../../../src/lib/vocabulary";
 import { findMemoryResets } from "../../../../src/server/integration/memory-resets";
 import { parseMemoryResetsQuery } from "../../../../src/server/integration/parsers";
-import { methodNotAllowed, problem } from "../../../../src/server/integration/problem";
-import { withIntegrationRoute } from "../../../../src/server/integration/route";
+import { methodNotAllowed, problem } from "../../../../src/kit/integration";
+import { withIntegrationRoute } from "../../../../src/kit/integration";
 
 /**
  * `GET /api/v1/memory-resets?since=<ISO>` (lote-14 — DEVOLVER-01, OPTHUM-01,

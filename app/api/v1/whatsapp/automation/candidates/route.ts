@@ -1,7 +1,7 @@
 import { PROBLEM_CODE } from "../../../../../../src/lib/vocabulary";
 import { parseAutomationCandidatesQuery } from "../../../../../../src/server/integration/parsers";
-import { methodNotAllowed, problem } from "../../../../../../src/server/integration/problem";
-import { withIntegrationRoute } from "../../../../../../src/server/integration/route";
+import { methodNotAllowed, problem } from "../../../../../../src/kit/integration";
+import { withIntegrationRoute } from "../../../../../../src/kit/integration";
 import { listCandidates } from "../../../../../../src/server/reengagement/repository";
 
 export const GET = withIntegrationRoute(async (request, auth) => {

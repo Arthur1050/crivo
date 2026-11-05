@@ -1,8 +1,8 @@
 import { PROBLEM_CODE } from "../../../../../../src/lib/vocabulary";
 import { reconcileAutomationTick } from "../../../../../../src/server/reengagement/tick";
-import { withIntegrationRoute } from "../../../../../../src/server/integration/route";
+import { withIntegrationRoute } from "../../../../../../src/kit/integration";
 import { MAX_BODY_BYTES } from "../../../../../../src/server/integration/parsers";
-import { methodNotAllowed, problem } from "../../../../../../src/server/integration/problem";
+import { methodNotAllowed, problem } from "../../../../../../src/kit/integration";
 export const POST = withIntegrationRoute(async (request, auth) => {
   const body = await request.text();
   if (Buffer.byteLength(body, "utf8") > MAX_BODY_BYTES) return problem(413, PROBLEM_CODE.body_too_large, "Corpo excede o limite.");

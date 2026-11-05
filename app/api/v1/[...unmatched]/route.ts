@@ -1,5 +1,5 @@
 import { PROBLEM_CODE } from "../../../../src/lib/vocabulary";
-import { problem } from "../../../../src/server/integration/problem";
+import { problem } from "../../../../src/kit/integration";
 import { INSTRUMENTED, recordRefusalFor } from "../../../../src/server/integration/route";
 
 /**

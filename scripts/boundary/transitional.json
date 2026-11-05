@@ -245,13 +245,6 @@
     "category": "market"
   },
   {
-    "path": "src/server/integration/problem.ts",
-    "term": "market:krivo",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
-  },
-  {
     "path": "src/server/integration/settings.ts",
     "term": "market:meeting",
     "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",

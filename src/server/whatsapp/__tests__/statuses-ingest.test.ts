@@ -5,7 +5,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { db } from "../../../db";
 import * as schema from "../../../db/schema";
-import { authenticate } from "../../integration/auth";
+import { authenticate } from "../../../kit/integration";
 import { createStatusForwardingContext, ingestStatusBatch, type StatusForwarderProof } from "../statuses";
 
 const { tenants, tenantApiKeys, whatsappChannels, whatsappMessageReceipts, messages, conversations, leads, whatsappUsage, reengagementEpisodes, leadAgentState } = schema;

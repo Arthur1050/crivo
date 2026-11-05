@@ -1,8 +1,8 @@
 import { PROBLEM_CODE } from "../../../../src/lib/vocabulary";
 import { parsePropertyFilters } from "../../../../src/server/integration/property-filters";
 import { searchVisibleProperties } from "../../../../src/server/integration/properties";
-import { methodNotAllowed, problem } from "../../../../src/server/integration/problem";
-import { withIntegrationRoute } from "../../../../src/server/integration/route";
+import { methodNotAllowed, problem } from "../../../../src/kit/integration";
+import { withIntegrationRoute } from "../../../../src/kit/integration";
 
 /**
  * `GET /api/v1/properties?modalidade=&tipo=&bairro=&cidade=&precoMin=&

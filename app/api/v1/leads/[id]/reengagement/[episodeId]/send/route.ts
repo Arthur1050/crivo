@@ -1,7 +1,7 @@
 import { PROBLEM_CODE } from "../../../../../../../../src/lib/vocabulary";
 import { MAX_BODY_BYTES, parseReengagementSend } from "../../../../../../../../src/server/integration/parsers";
-import { methodNotAllowed, problem } from "../../../../../../../../src/server/integration/problem";
-import { withIntegrationRoute } from "../../../../../../../../src/server/integration/route";
+import { methodNotAllowed, problem } from "../../../../../../../../src/kit/integration";
+import { withIntegrationRoute } from "../../../../../../../../src/kit/integration";
 import { sendPreparedEpisode } from "../../../../../../../../src/server/reengagement/send";
 
 type Context = { params: Promise<{ id: string; episodeId: string }> };
