@@ -6,7 +6,7 @@ import { withIntegrationRoute } from "./route";
 
 export function createIntegrationKit(vertical: Vertical) {
   const responses = createProblemResponses(vertical.brand);
-  const authenticateIntegration = (request: Request) => authenticate(request, responses.problem);
+  const authenticateIntegration = (request: Request) => authenticate(request, responses.problem, vertical.brand);
   return {
     ...responses,
     authenticateIntegration,
