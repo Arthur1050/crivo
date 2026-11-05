@@ -1,7 +1,7 @@
 /**
  * Validação da configuração da vitrine (lote-16a — VCFG-02).
  *
- * Função pura, sem I/O — mesmo padrão de `src/lib/permissions.ts`: a regra
+ * Função pura, sem I/O — mesmo padrão de `src/kit/access.ts`: a regra
  * vive aqui e é testada em vitest; quem faz I/O (DAL e server action) a
  * consome. A recusa aponta o campo pelo nome que a spec e a tela usam
  * (`cor`, `razaoSocial`, `telefone`...), não pelo nome da coluna.

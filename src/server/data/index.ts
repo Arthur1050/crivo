@@ -54,7 +54,7 @@ import {
 } from "../../lib/broker-availability";
 import type { LeadScope } from "../../lib/lead-scope";
 import { normalizeForSearch } from "../../lib/normalize-text";
-import { parseRoles, type Role } from "../../lib/permissions";
+import { parseRoles, type Role } from "../../lib/access";
 import { isPendingAttendance } from "../../lib/pilot-metrics";
 import { isHumanConducted } from "../../../n8n/src/conduction.mjs";
 

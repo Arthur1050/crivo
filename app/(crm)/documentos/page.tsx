@@ -1,3 +1,4 @@
+import { access } from "@/src/kit/access";
 import { DOCUMENT_STATUS } from "../../../src/lib/vocabulary";
 import { MODALITY } from "../../../src/verticals/real-estate/vocabulary";
 import { Banner } from "@astryxdesign/core/Banner";
@@ -16,7 +17,7 @@ import { FoldersGrid } from "@/src/components/documents/folders-grid";
 import { toFolderCardItems } from "@/src/components/documents/folder-presentation";
 import { UploadDialog } from "@/src/components/documents/upload-dialog";
 import { NavLink } from "@/src/components/shared/nav-link";
-import { can } from "@/src/lib/permissions";
+import { can } from "@/src/kit/access";
 import { parseFolderParam } from "@/src/lib/document-folders";
 import { requirePermission } from "@/src/server/auth/session";
 import {
@@ -61,8 +62,8 @@ export default async function DocumentosPage({
   // A leitura da página é exigida de fato; a visibilidade de escrita é só
   // conveniência de interface — cada action e rota revalida permissão e tenant
   // por conta própria, e segue sendo a autoridade.
-  const { roles } = await requirePermission("documentos", "ler");
-  const canWrite = can(roles, "documentos", "escrever");
+  const { roles } = await requirePermission("documents", "read", access);
+  const canWrite = can(roles, "documents", "write");
 
   const modality = asModality(params.modalidade);
   const categoryId = params.categoria || undefined;

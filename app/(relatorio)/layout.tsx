@@ -1,3 +1,4 @@
+import { access } from "@/src/kit/access";
 import type { ReactNode } from "react";
 import { VStack } from "@astryxdesign/core/Stack";
 
@@ -6,7 +7,7 @@ import { VStack } from "@astryxdesign/core/Stack";
  * `Sidebar`, em vez de esconder o shell do CRM com CSS de impressão
  * (design.md — Rota de relatório, "Detalhe"). A proteção continua de pé —
  * `proxy.ts` exige cookie de sessão em toda rota fora de `/api` (esta
- * incluída) e a guarda real (`requirePermission("configuracoes", "ler")`)
+ * incluída) e a guarda real (`requirePermission("settings", "read", access)`)
  * mora na própria página.
  *
  * `padding` aqui substitui o `contentPadding` que o `AppShell` daria — sem

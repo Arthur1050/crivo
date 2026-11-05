@@ -204,7 +204,7 @@ describe("document upload route (lote-12 T9)", () => {
     const { handler, handle } = fixture({
       intake: {
         reserve: async () => {
-          throw new PermissionDeniedError("documentos", "escrever");
+          throw new PermissionDeniedError("documents", "write");
         },
         finalize: async () => ({ kind: "not_found" }),
       },

@@ -22,7 +22,7 @@ export interface ChatLeadInput {
 
 /** Assumir a conversa (ASSUMIR-01). Lead já humano mantém a marca original. */
 export async function assumeConversationAction(input: ChatLeadInput): Promise<ChatActionResult> {
-  const denied = await denyIfForbidden("chats", "escrever");
+  const denied = await denyIfForbidden("chats", "write");
   if (denied) return denied;
 
   const session = await verifySession();
@@ -43,7 +43,7 @@ export async function assumeConversationAction(input: ChatLeadInput): Promise<Ch
 export async function returnConversationToAgentAction(
   input: ChatLeadInput
 ): Promise<ChatActionResult> {
-  const denied = await denyIfForbidden("chats", "escrever");
+  const denied = await denyIfForbidden("chats", "write");
   if (denied) return denied;
 
   const session = await verifySession();
@@ -70,7 +70,7 @@ export type SendHumanMessageActionResult =
 export async function sendHumanMessageAction(
   input: SendHumanMessageActionInput
 ): Promise<SendHumanMessageActionResult> {
-  const denied = await denyIfForbidden("chats", "escrever");
+  const denied = await denyIfForbidden("chats", "write");
   if (denied) return denied;
 
   const session = await verifySession();
@@ -103,7 +103,7 @@ export type RegisterOptOutActionResult =
 export async function registerOptOutAction(
   input: RegisterOptOutActionInput
 ): Promise<RegisterOptOutActionResult> {
-  const denied = await denyIfForbidden("chats", "escrever");
+  const denied = await denyIfForbidden("chats", "write");
   if (denied) return denied;
 
   const session = await verifySession();

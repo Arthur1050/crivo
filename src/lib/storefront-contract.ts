@@ -6,7 +6,7 @@
  * duas views. A vitrine nunca importa daqui; ela declara a própria cópia em
  * `vitrine/src/contrato.ts` e um teste de paridade da suíte raiz falha se as
  * duas divergirem (L16b). Função pura, sem I/O — mesmo padrão de
- * `src/lib/permissions.ts`.
+ * `src/kit/access.ts`.
  */
 
 export const STOREFRONT_LAYOUTS = ["grade", "editorial"] as const;

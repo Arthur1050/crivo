@@ -4,14 +4,14 @@ import { eq, inArray } from "drizzle-orm";
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { db } from "../../db";
 import { tenants, tenantStorefronts } from "../../db/schema";
-import type { Action, Resource, Role } from "../../lib/permissions";
+import type { Action, Resource, Role } from "../../kit/access";
 import type { StorefrontInput } from "../../lib/storefront";
 import type { AuthContext } from "../auth/session";
 
 /**
  * Server action da vitrine (tasks.md — L16a T15; VCFG-02, VATIV-01, VREV-02).
  * Mesmo harness de `properties-actions.test.ts`: identidade fabricada, decisão
- * de permissão real (matriz de `src/lib/permissions.ts`), imobiliária-fixture
+ * de permissão real (matriz de `src/kit/access.ts`), imobiliária-fixture
  * própria por teste.
  */
 
@@ -31,7 +31,7 @@ vi.mock("../auth/session", async (importActual) => {
     ...actual,
     verifySession: fakeSession,
     requirePermission: async (resource: Resource, action: Action) =>
-      actual.authorizeOrThrow(await fakeSession(), resource, action),
+      actual.authorizeOrThrow(await fakeSession(), resource, action, (await import("../../kit/access")).access),
   };
 });
 

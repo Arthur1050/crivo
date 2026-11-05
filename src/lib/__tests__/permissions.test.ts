@@ -7,7 +7,7 @@ import {
   type Action,
   type Resource,
   type Role,
-} from "../permissions";
+} from "../../kit/access";
 
 // lote-8 — PERM-01. A matriz vive em `context.md` (§ Papéis e permissões) e é
 // transcrita aqui como tabela esperada: cada célula é o conjunto de ações que
@@ -16,31 +16,31 @@ import {
 // verificação — nem as concedidas, nem as negadas.
 const EXPECTED: Record<Role, Record<Resource, Action[]>> = {
   administrador: {
-    dashboard: ["ler"],
-    pipeline: ["ler", "escrever"],
-    chats: ["ler", "escrever"],
-    documentos: ["ler", "escrever"],
-    configuracoes: ["ler", "escrever"],
-    usuarios: ["ler", "escrever"],
-    imoveis: ["ler", "escrever"],
+    dashboard: ["read"],
+    pipeline: ["read", "write"],
+    chats: ["read", "write"],
+    documents: ["read", "write"],
+    settings: ["read", "write"],
+    users: ["read", "write"],
+    catalog: ["read", "write"],
   },
   gestor: {
-    dashboard: ["ler"],
-    pipeline: ["ler", "escrever"],
-    chats: ["ler", "escrever"],
-    documentos: ["ler", "escrever"],
-    configuracoes: ["ler", "escrever"],
-    usuarios: [],
-    imoveis: ["ler", "escrever"],
+    dashboard: ["read"],
+    pipeline: ["read", "write"],
+    chats: ["read", "write"],
+    documents: ["read", "write"],
+    settings: ["read", "write"],
+    users: [],
+    catalog: ["read", "write"],
   },
   corretor: {
-    dashboard: ["ler"],
-    pipeline: ["ler", "escrever"],
-    chats: ["ler", "escrever"],
-    documentos: ["ler"],
-    configuracoes: [],
-    usuarios: [],
-    imoveis: ["ler"],
+    dashboard: ["read"],
+    pipeline: ["read", "write"],
+    chats: ["read", "write"],
+    documents: ["read"],
+    settings: [],
+    users: [],
+    catalog: ["read"],
   },
 };
 
@@ -62,7 +62,7 @@ describe("lib/permissions — can (lote-8, PERM-01)", () => {
   // imobiliária inteira e escrevem em Documentos e Configurações.
   it("administrador e gestor têm exatamente o mesmo alcance fora de Usuários (AC1)", () => {
     for (const resource of RESOURCES) {
-      if (resource === "usuarios") continue;
+      if (resource === "users") continue;
       for (const action of ACTIONS) {
         expect(can(["administrador"], resource, action)).toBe(
           can(["gestor"], resource, action)
@@ -73,53 +73,53 @@ describe("lib/permissions — can (lote-8, PERM-01)", () => {
 
   // PERM-01 AC2: gestão de usuários é exclusiva do administrador.
   it("só administrador alcança Usuários (AC2)", () => {
-    expect(can(["administrador"], "usuarios", "escrever")).toBe(true);
-    expect(can(["gestor"], "usuarios", "escrever")).toBe(false);
-    expect(can(["corretor"], "usuarios", "escrever")).toBe(false);
-    expect(can(["gestor"], "usuarios", "ler")).toBe(false);
-    expect(can(["corretor"], "usuarios", "ler")).toBe(false);
+    expect(can(["administrador"], "users", "write")).toBe(true);
+    expect(can(["gestor"], "users", "write")).toBe(false);
+    expect(can(["corretor"], "users", "write")).toBe(false);
+    expect(can(["gestor"], "users", "read")).toBe(false);
+    expect(can(["corretor"], "users", "read")).toBe(false);
   });
 
   // PERM-01 AC3: corretor lê documentos, não escreve neles e não acessa
   // Configurações — nem para ler.
   it("corretor lê Documentos, não escreve, e não alcança Configurações (AC3)", () => {
-    expect(can(["corretor"], "documentos", "ler")).toBe(true);
-    expect(can(["corretor"], "documentos", "escrever")).toBe(false);
-    expect(can(["corretor"], "configuracoes", "ler")).toBe(false);
-    expect(can(["corretor"], "configuracoes", "escrever")).toBe(false);
+    expect(can(["corretor"], "documents", "read")).toBe(true);
+    expect(can(["corretor"], "documents", "write")).toBe(false);
+    expect(can(["corretor"], "settings", "read")).toBe(false);
+    expect(can(["corretor"], "settings", "write")).toBe(false);
   });
 
   // PERM-01 AC4: papéis acumulados concedem a UNIÃO das permissões — o papel
   // mais permissivo vence, nunca o mais restritivo.
   describe("papéis acumulados (AC4)", () => {
     it("corretor + gestor ganha o que o gestor tem, sem perder nada do corretor", () => {
-      expect(can(["corretor", "gestor"], "documentos", "escrever")).toBe(true);
-      expect(can(["corretor", "gestor"], "configuracoes", "escrever")).toBe(true);
-      expect(can(["corretor", "gestor"], "pipeline", "ler")).toBe(true);
+      expect(can(["corretor", "gestor"], "documents", "write")).toBe(true);
+      expect(can(["corretor", "gestor"], "settings", "write")).toBe(true);
+      expect(can(["corretor", "gestor"], "pipeline", "read")).toBe(true);
     });
 
     it("corretor + administrador alcança Usuários, que nenhum dos dois papéis isolados do corretor alcança", () => {
-      expect(can(["corretor"], "usuarios", "escrever")).toBe(false);
-      expect(can(["corretor", "administrador"], "usuarios", "escrever")).toBe(true);
+      expect(can(["corretor"], "users", "write")).toBe(false);
+      expect(can(["corretor", "administrador"], "users", "write")).toBe(true);
     });
 
     it("a ordem dos papéis acumulados não muda o resultado", () => {
-      expect(can(["gestor", "corretor"], "configuracoes", "escrever")).toBe(
-        can(["corretor", "gestor"], "configuracoes", "escrever")
+      expect(can(["gestor", "corretor"], "settings", "write")).toBe(
+        can(["corretor", "gestor"], "settings", "write")
       );
     });
 
     it("acumular não concede o que nenhum dos papéis concede", () => {
-      expect(can(["corretor", "gestor"], "usuarios", "ler")).toBe(false);
-      expect(can(["corretor", "gestor"], "dashboard", "escrever")).toBe(false);
+      expect(can(["corretor", "gestor"], "users", "read")).toBe(false);
+      expect(can(["corretor", "gestor"], "dashboard", "write")).toBe(false);
     });
 
     // lote-11 — IMOV-04 AC1: corretor sozinho só lê o catálogo; acumulado com
     // gestor, ganha a união (escrever), nunca a interseção (só ler).
     it("corretor + gestor recebe escrever em imoveis (união, PERM-01 AC4)", () => {
-      expect(can(["corretor"], "imoveis", "escrever")).toBe(false);
-      expect(can(["corretor", "gestor"], "imoveis", "escrever")).toBe(true);
-      expect(can(["corretor", "gestor"], "imoveis", "ler")).toBe(true);
+      expect(can(["corretor"], "catalog", "write")).toBe(false);
+      expect(can(["corretor", "gestor"], "catalog", "write")).toBe(true);
+      expect(can(["corretor", "gestor"], "catalog", "read")).toBe(true);
     });
   });
 

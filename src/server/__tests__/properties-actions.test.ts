@@ -4,14 +4,14 @@ import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { inArray } from "drizzle-orm";
 import { db } from "../../db";
 import { properties, tenant_members, tenants, users } from "../../db/schema";
-import type { Action, Resource, Role } from "../../lib/permissions";
+import type { Action, Resource, Role } from "../../kit/access";
 import type { AuthContext } from "../auth/session";
 
 /**
  * Server actions de escrita do catálogo (tasks.md — T8; spec.md IMOV-01/02/
  * 04/05/07). Mesmo harness de `deactivate-actions.test.ts`/
  * `users-actions.test.ts`: identidade fabricada, decisão de permissão real
- * (`authorizeOrThrow`, matriz de `src/lib/permissions.ts`). Cada teste monta a
+ * (`authorizeOrThrow`, matriz de `src/kit/access.ts`). Cada teste monta a
  * própria imobiliária-fixture (molde de `properties.test.ts` — T6 escrita),
  * porque `createProperty` calcula `sequence` a partir do `max` já existente
  * no tenant — um tenant novo é o único jeito de manter as fixtures previsíveis
@@ -34,7 +34,7 @@ vi.mock("../auth/session", async (importActual) => {
     ...actual,
     verifySession: fakeSession,
     requirePermission: async (resource: Resource, action: Action) =>
-      actual.authorizeOrThrow(await fakeSession(), resource, action),
+      actual.authorizeOrThrow(await fakeSession(), resource, action, (await import("../../kit/access")).access),
   };
 });
 

@@ -1,3 +1,4 @@
+import { access } from "@/src/kit/access";
 import { notFound } from "next/navigation";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
@@ -35,7 +36,7 @@ interface RelatorioPageProps {
 export default async function RelatorioPage({ searchParams }: RelatorioPageProps) {
   let context;
   try {
-    context = await requirePermission("configuracoes", "ler");
+    context = await requirePermission("settings", "read", access);
   } catch (error) {
     if (error instanceof PermissionDeniedError) notFound();
     throw error;

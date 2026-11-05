@@ -1,3 +1,4 @@
+import { access } from "@/src/kit/access";
 import { MODALITY } from "../../../src/verticals/real-estate/vocabulary";
 import { notFound } from "next/navigation";
 import { FileTextIcon } from "lucide-react";
@@ -60,7 +61,7 @@ export default async function ConfiguracoesPage() {
   // é "recurso inexistente", mesmo tratamento de um recurso de outra
   // imobiliária (spec.md — Edge Cases), em vez de confirmar que a tela existe.
   try {
-    await requirePermission("configuracoes", "ler");
+    await requirePermission("settings", "read", access);
   } catch (error) {
     if (error instanceof PermissionDeniedError) notFound();
     throw error;

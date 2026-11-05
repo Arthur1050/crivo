@@ -1,9 +1,10 @@
 import "server-only";
+import { access } from "../../kit/access";
 import {
   PermissionDeniedError,
   requirePermission,
 } from "../auth/session";
-import type { Action, Resource } from "../../lib/permissions";
+import type { Action, Resource } from "../../kit/access";
 
 /**
  * Ponte entre a guarda de permissão (que lança — `requirePermission`) e as
@@ -14,7 +15,7 @@ import type { Action, Resource } from "../../lib/permissions";
  * mesmo formato de curto-circuito das validações que ela já faz:
  *
  * ```ts
- * const denied = await denyIfForbidden("configuracoes", "escrever");
+ * const denied = await denyIfForbidden("settings", "write");
  * if (denied) return denied;
  * ```
  *
@@ -27,7 +28,7 @@ export async function denyIfForbidden(
   action: Action
 ): Promise<{ ok: false; error: string } | null> {
   try {
-    await requirePermission(resource, action);
+    await requirePermission(resource, action, access);
     return null;
   } catch (error) {
     if (error instanceof PermissionDeniedError) {

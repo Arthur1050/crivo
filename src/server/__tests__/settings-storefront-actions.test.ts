@@ -4,7 +4,7 @@ import { eq, inArray } from "drizzle-orm";
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { db } from "../../db";
 import { tenants } from "../../db/schema";
-import type { Action, Resource, Role } from "../../lib/permissions";
+import type { Action, Resource, Role } from "../../kit/access";
 import type { AuthContext } from "../auth/session";
 
 /**
@@ -30,7 +30,7 @@ vi.mock("../auth/session", async (importActual) => {
     ...actual,
     verifySession: fakeSession,
     requirePermission: async (resource: Resource, action: Action) =>
-      actual.authorizeOrThrow(await fakeSession(), resource, action),
+      actual.authorizeOrThrow(await fakeSession(), resource, action, (await import("../../kit/access")).access),
   };
 });
 

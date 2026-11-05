@@ -21,7 +21,7 @@ import {
   tenants,
   users,
 } from "../../db/schema";
-import type { Action, Resource, Role } from "../../lib/permissions";
+import type { Action, Resource, Role } from "../../kit/access";
 import type { AuthContext } from "../auth/session";
 
 /**
@@ -30,7 +30,7 @@ import type { AuthContext } from "../auth/session";
  * Harness igual ao de `actions.test.ts`: a guarda de sessão é mockada de forma
  * PARCIAL — só a identidade é fabricada (`verifySession`); a decisão de
  * permissão que roda é a real (`authorizeOrThrow`, matriz de
- * `src/lib/permissions.ts` e log estruturado). `resolveAuthContext` vem do
+ * `src/kit/access.ts` e log estruturado). `resolveAuthContext` vem do
  * módulo de verdade, e é com ela que a AC8 é provada sobre uma sessão real.
  *
  * O adaptador de e-mail é mockado: nenhum e-mail sai da suíte, e o caminho de
@@ -64,7 +64,7 @@ vi.mock("../auth/session", async (importActual) => {
     ...actual,
     verifySession: fakeSession,
     requirePermission: async (resource: Resource, action: Action) =>
-      actual.authorizeOrThrow(await fakeSession(), resource, action),
+      actual.authorizeOrThrow(await fakeSession(), resource, action, (await import("../../kit/access")).access),
   };
 });
 

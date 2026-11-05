@@ -229,7 +229,7 @@ export function createDocumentUploadIntake(
       suppliedActor?: AuthContext
     ): Promise<ReserveDocumentUploadResult> {
       const actor = suppliedActor ?? (await verifySession());
-      authorizeOrThrow(actor, "documentos", "escrever");
+      authorizeOrThrow(actor, "documents", "write");
       const startedAt = now();
       if (!validInput(input, startedAt)) {
         return { kind: "invalid", code: "upload_input_invalid" };
@@ -300,7 +300,7 @@ export function createDocumentUploadIntake(
       suppliedActor?: AuthContext
     ): Promise<FinalizeDocumentUploadResult> {
       const actor = suppliedActor ?? (await verifySession());
-      authorizeOrThrow(actor, "documentos", "escrever");
+      authorizeOrThrow(actor, "documents", "write");
       const intent = await repository.findUploadIntentById(intentId);
       // Intenção de outro tenant responde igual à inexistente: não confirma
       // que o identificador existe.

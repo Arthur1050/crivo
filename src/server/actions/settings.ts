@@ -69,7 +69,7 @@ export interface UpdateTenantSettingsInput {
 export async function updateTenantSettingsAction(
   input: UpdateTenantSettingsInput
 ): Promise<ActionResult> {
-  const denied = await denyIfForbidden("configuracoes", "escrever");
+  const denied = await denyIfForbidden("settings", "write");
   if (denied) return denied;
 
   const nameCheck = validateName(input.name, "Nome do tenant");

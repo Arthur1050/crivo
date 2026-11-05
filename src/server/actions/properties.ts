@@ -81,7 +81,7 @@ export interface CreatePropertyInput {
 export async function createPropertyAction(
   input: CreatePropertyInput
 ): Promise<ActionResult> {
-  const denied = await denyIfForbidden("imoveis", "escrever");
+  const denied = await denyIfForbidden("catalog", "write");
   if (denied) return denied;
 
   const kindCheck = validatePropertyKind(input.kind ?? "");
@@ -204,7 +204,7 @@ export interface UpdatePropertyInput {
 export async function updatePropertyAction(
   input: UpdatePropertyInput
 ): Promise<ActionResult> {
-  const denied = await denyIfForbidden("imoveis", "escrever");
+  const denied = await denyIfForbidden("catalog", "write");
   if (denied) return denied;
 
   const patch: UpdatePropertyPatch = {};
@@ -324,7 +324,7 @@ export interface DeletePropertyInput {
 export async function deletePropertyAction(
   input: DeletePropertyInput
 ): Promise<ActionResult> {
-  const denied = await denyIfForbidden("imoveis", "escrever");
+  const denied = await denyIfForbidden("catalog", "write");
   if (denied) return denied;
 
   const tenantId = await getActiveTenantId();
@@ -350,7 +350,7 @@ export interface SetPropertyPublishedInput {
 export async function setPropertyPublishedAction(
   input: SetPropertyPublishedInput
 ): Promise<ActionResult> {
-  const denied = await denyIfForbidden("imoveis", "escrever");
+  const denied = await denyIfForbidden("catalog", "write");
   if (denied) return denied;
 
   const tenantId = await getActiveTenantId();
@@ -379,7 +379,7 @@ export interface SetPropertyStatusInput {
 export async function setPropertyStatusAction(
   input: SetPropertyStatusInput
 ): Promise<ActionResult> {
-  const denied = await denyIfForbidden("imoveis", "escrever");
+  const denied = await denyIfForbidden("catalog", "write");
   if (denied) return denied;
 
   const statusCheck = validatePropertyStatus(input.status);
@@ -413,7 +413,7 @@ export interface SetPropertyFeaturedInput {
 export async function setPropertyFeaturedAction(
   input: SetPropertyFeaturedInput
 ): Promise<ActionResult> {
-  const denied = await denyIfForbidden("imoveis", "escrever");
+  const denied = await denyIfForbidden("catalog", "write");
   if (denied) return denied;
 
   if (typeof input.featured !== "boolean") {

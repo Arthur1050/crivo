@@ -1,3 +1,4 @@
+import { access } from "@/src/kit/access";
 import { notFound } from "next/navigation";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
@@ -21,7 +22,7 @@ import { getTenantMembers } from "@/src/server/data";
 export default async function UsuariosPage() {
   let context;
   try {
-    context = await requirePermission("usuarios", "ler");
+    context = await requirePermission("users", "read", access);
   } catch (error) {
     if (error instanceof PermissionDeniedError) notFound();
     throw error;

@@ -13,7 +13,7 @@ import { RecentLeadsTable } from "@/src/components/dashboard/recent-leads-table"
 import { VolumeChart } from "@/src/components/dashboard/volume-chart";
 import { resolveDashboardPeriod } from "@/src/lib/dashboard-period";
 import { formatCurrencyBRL } from "@/src/lib/format";
-import { can } from "@/src/lib/permissions";
+import { can } from "@/src/kit/access";
 import { periodDays } from "@/src/lib/pilot-metrics";
 import {
   getDashboardKpis,
@@ -71,11 +71,11 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   // `getLeadScope()` sozinho não expõe (lote-9 — BASE-02 AC4/AC5).
   const authContext = await verifySession();
   const scope = authContext.leadScope;
-  const canEditSettings = can(authContext.roles, "configuracoes", "escrever");
+  const canEditSettings = can(authContext.roles, "settings", "write");
   // SAUDE-02 AC2: sem `configuracoes:ler` o bloco de saúde nem é consultado —
   // não só ocultado depois. É esse booleano que decide se as duas queries de
   // saúde abaixo rodam.
-  const canReadSettings = can(authContext.roles, "configuracoes", "ler");
+  const canReadSettings = can(authContext.roles, "settings", "read");
   const period = resolveDashboardPeriod(params);
 
   // Mesmo instante para toda a página (evita que a janela de 14 dias mude

@@ -8,12 +8,14 @@ import { db } from "../../db";
 import { tenant_members } from "../../db/schema";
 import type { LeadScope } from "../../lib/lead-scope";
 import {
-  can,
+  coreAccess,
+  permissionDeniedMessage,
+  type AccessPolicy,
   parseRoles,
   type Action,
   type Resource,
   type Role,
-} from "../../lib/permissions";
+} from "../../lib/access";
 import { auth } from "./config";
 
 /**
@@ -26,11 +28,11 @@ import { auth } from "./config";
  * banco.
  */
 
-// Papéis e leitura do formato do plugin moram em `src/lib/permissions.ts`
+// Papéis e leitura do formato do plugin moram em `src/lib/access.ts`
 // (função pura, testada em vitest, também consumida pela navegação). Este
 // módulo os reexporta porque é a superfície de auth que os consumidores já
 // importam — uma implementação só, nunca duas cópias.
-export { parseRoles, type Role } from "../../lib/permissions";
+export { parseRoles, type Role } from "../../lib/access";
 
 // O escopo de leitura de lead mora em `src/lib/lead-scope.ts`, sem
 // dependências, porque a camada de acesso a dados também precisa dele e não
@@ -159,9 +161,10 @@ export const getLeadScope = cache(async (): Promise<LeadScope> => {
 export class PermissionDeniedError extends Error {
   constructor(
     readonly resource: Resource,
-    readonly action: Action
+    readonly action: Action,
+    message = permissionDeniedMessage(resource, action)
   ) {
-    super(`Sem permissão para ${action} ${resource}.`);
+    super(message);
     this.name = "PermissionDeniedError";
   }
 }
@@ -178,9 +181,10 @@ export class PermissionDeniedError extends Error {
 export function authorizeOrThrow(
   context: AuthContext,
   resource: Resource,
-  action: Action
+  action: Action,
+  access: AccessPolicy = coreAccess
 ): AuthContext {
-  if (can(context.roles, resource, action)) return context;
+  if (access.can(context.roles, resource, action)) return context;
 
   // Única observabilidade nova do lote (context.md — Papéis e permissões).
   // Linha única em JSON para ser consultável no log da Vercel: usuário,
@@ -197,7 +201,7 @@ export function authorizeOrThrow(
     })
   );
 
-  throw new PermissionDeniedError(resource, action);
+  throw new PermissionDeniedError(resource, action, access.denialMessage?.(resource, action));
 }
 
 /**
@@ -207,7 +211,8 @@ export function authorizeOrThrow(
  */
 export async function requirePermission(
   resource: Resource,
-  action: Action
+  action: Action,
+  access: AccessPolicy = coreAccess
 ): Promise<AuthContext> {
-  return authorizeOrThrow(await verifySession(), resource, action);
+  return authorizeOrThrow(await verifySession(), resource, action, access);
 }

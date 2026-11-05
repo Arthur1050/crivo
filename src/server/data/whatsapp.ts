@@ -3,7 +3,7 @@ import "server-only";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { db } from "../../db";
 import { conversations, leads, messages, whatsappChannels, whatsappMessageReceipts, whatsappUsage } from "../../db/schema";
-import { can } from "../../lib/permissions";
+import { coreAccess } from "../../lib/access";
 import type { AuthContext } from "../auth/session";
 import type { AuthResult } from "../integration/auth";
 import { createAnalyticsQuery } from "../whatsapp/analytics-contract";
@@ -21,8 +21,8 @@ type Period = typeof whatsappUsage.$inferSelect;
 type ReadOptions = { now?: () => Date };
 const unavailable = (): UsageView => ({ state: "unavailable", label: "Consumo indisponível" });
 
-function authorized(context: AuthContext, resource: "chats" | "configuracoes") {
-  return context.tenantId === context.leadScope.tenantId && can(context.roles, resource, "ler")
+function authorized(context: AuthContext, resource: "chats" | "settings") {
+  return context.tenantId === context.leadScope.tenantId && coreAccess.can(context.roles, resource, "read")
     && (context.roles.some((role) => role !== ROLE.attendant) || context.leadScope.assignedUserId === context.user.id);
 }
 function assignedTo(context: AuthContext) {
@@ -62,7 +62,7 @@ async function readUsage(tenantId: string, now: Date, phoneNumberId?: string): P
 }
 
 export async function getSettingsUsage(context: AuthContext, options: ReadOptions = {}): Promise<UsageView[]> {
-  if (!authorized(context, "configuracoes")) return [];
+  if (!authorized(context, "settings")) return [];
   return readUsage(context.tenantId, (options.now ?? (() => new Date()))());
 }
 /** Contexto já autenticado pelo wrapper de integração; leitura restrita ao número e tenant. */

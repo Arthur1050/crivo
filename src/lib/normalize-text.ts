@@ -1,7 +1,7 @@
 /**
  * Normalização de texto para busca (lote-11 — IMOV-01; design.md — Data
  * Models, "Colunas `*Normalized`"). Função pura, sem I/O — mesmo padrão de
- * `src/lib/permissions.ts` e `src/lib/broker-assignment.ts`. Sem `server-only`
+ * `src/kit/access.ts` e `src/lib/broker-assignment.ts`. Sem `server-only`
  * de propósito: o mesmo código roda na escrita (DAL) e no filtro (contrato de
  * integração), o que é o que garante que os dois lados casem sem depender da
  * extensão `unaccent` do Postgres (design.md — Risks & Concerns).

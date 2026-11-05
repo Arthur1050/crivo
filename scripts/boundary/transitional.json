@@ -1568,34 +1568,6 @@
     "category": "identifier"
   },
   {
-    "path": "src/lib/permissions.ts",
-    "term": "identifier:documentos",
-    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
-    "removedIn": "L18a",
-    "category": "identifier"
-  },
-  {
-    "path": "src/lib/permissions.ts",
-    "term": "identifier:configuracoes",
-    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
-    "removedIn": "L18a",
-    "category": "identifier"
-  },
-  {
-    "path": "src/lib/permissions.ts",
-    "term": "identifier:usuarios",
-    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
-    "removedIn": "L18a",
-    "category": "identifier"
-  },
-  {
-    "path": "src/lib/permissions.ts",
-    "term": "identifier:imoveis",
-    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
-    "removedIn": "L18a",
-    "category": "identifier"
-  },
-  {
     "path": "src/lib/storefront-contract.ts",
     "term": "identifier:lojas",
     "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",

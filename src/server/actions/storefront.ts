@@ -44,7 +44,7 @@ function refuse(errors: StorefrontFieldError[]): SaveStorefrontActionResult {
 export async function saveStorefrontAction(
   input: StorefrontInput
 ): Promise<SaveStorefrontActionResult> {
-  const denied = await denyIfForbidden("configuracoes", "escrever");
+  const denied = await denyIfForbidden("settings", "write");
   if (denied) return { ok: false, error: denied.error, errors: [] };
 
   const validation = validateStorefrontInput(input);

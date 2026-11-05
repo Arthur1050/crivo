@@ -1,5 +1,5 @@
 import { ROLE } from "../../lib/vocabulary";
-import type { Role } from "@/src/lib/permissions";
+import type { Role } from "@/src/kit/access";
 
 /**
  * Papéis oferecidos nos formulários de usuário, com a descrição vinda da

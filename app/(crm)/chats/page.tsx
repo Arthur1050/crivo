@@ -23,7 +23,7 @@ import {
   windowClosedNotice,
   windowOpenLabel,
 } from "@/src/lib/conversation-control";
-import { can } from "@/src/lib/permissions";
+import { can } from "@/src/kit/access";
 import {
   getConversationSummaries,
   getLastLeadMessageAt,
@@ -90,7 +90,7 @@ export default async function ChatsPage({ searchParams }: ChatsPageProps) {
         status: selectedLead.status,
         humanTakeoverAt: selectedLead.humanTakeoverAt,
         optedOutAt: selectedLead.optedOutAt,
-        canWrite: can(session.roles, "chats", "escrever"),
+        canWrite: can(session.roles, "chats", "write"),
         window: chatWindow,
       })
     : null;

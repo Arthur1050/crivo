@@ -5,7 +5,7 @@ export { INTEGRATION_HEALTH } from "./vocabulary";
  * PRES-01, PRES-02, SAUDE-02).
  *
  * Função pura, sem I/O — mesmo padrão de `src/lib/broker-assignment.ts` e
- * `src/lib/permissions.ts`: a regra vive aqui e é testada em vitest; quem faz
+ * `src/kit/access.ts`: a regra vive aqui e é testada em vitest; quem faz
  * I/O (a DAL, os componentes de Dashboard) apenas a consome. Nenhum
  * `server-only` aqui de propósito, pela mesma razão das duas libs acima.
  */

@@ -48,7 +48,7 @@ export interface CreateDocumentInput {
 export async function createDocumentAction(
   input: CreateDocumentInput
 ): Promise<ActionResult> {
-  const denied = await denyIfForbidden("documentos", "escrever");
+  const denied = await denyIfForbidden("documents", "write");
   if (denied) return denied;
 
   const nameCheck = validateName(input.name, "Nome do documento");
@@ -104,7 +104,7 @@ function resolveExpiresAt(value: string | undefined, now = new Date()):
 export async function updateDocumentAction(
   input: UpdateDocumentInput
 ): Promise<ActionResult> {
-  const denied = await denyIfForbidden("documentos", "escrever");
+  const denied = await denyIfForbidden("documents", "write");
   if (denied) return denied;
 
   const nameCheck = validateName(input.name, "Nome do documento");
@@ -154,7 +154,7 @@ export interface DeleteDocumentInput {
 export async function deleteDocumentAction(
   input: DeleteDocumentInput
 ): Promise<ActionResult> {
-  const denied = await denyIfForbidden("documentos", "escrever");
+  const denied = await denyIfForbidden("documents", "write");
   if (denied) return denied;
 
   const tenantId = await getActiveTenantId();
@@ -184,7 +184,7 @@ export interface FinalizeDocumentUploadInput {
 export async function finalizeDocumentUploadAction(
   input: FinalizeDocumentUploadInput
 ): Promise<ActionResult> {
-  const denied = await denyIfForbidden("documentos", "escrever");
+  const denied = await denyIfForbidden("documents", "write");
   if (denied) return denied;
 
   const intake = createDocumentUploadIntake();
@@ -224,7 +224,7 @@ export interface RetryDocumentInput {
 export async function retryDocumentAction(
   input: RetryDocumentInput
 ): Promise<ActionResult> {
-  const denied = await denyIfForbidden("documentos", "escrever");
+  const denied = await denyIfForbidden("documents", "write");
   if (denied) return denied;
 
   const tenantId = await getActiveTenantId();
@@ -250,7 +250,7 @@ export interface CreateDocumentCategoryInput {
 export async function createDocumentCategoryAction(
   input: CreateDocumentCategoryInput
 ): Promise<ActionResult> {
-  const denied = await denyIfForbidden("documentos", "escrever");
+  const denied = await denyIfForbidden("documents", "write");
   if (denied) return denied;
 
   const nameCheck = validateName(input.name, "Nome da categoria");
@@ -289,7 +289,7 @@ export interface UpdateDocumentCategoryInput {
 export async function updateDocumentCategoryAction(
   input: UpdateDocumentCategoryInput
 ): Promise<ActionResult> {
-  const denied = await denyIfForbidden("documentos", "escrever");
+  const denied = await denyIfForbidden("documents", "write");
   if (denied) return denied;
 
   const colorCheck = validateCategoryColor(input.color);
@@ -315,7 +315,7 @@ export interface DeleteDocumentCategoryInput {
 export async function deleteDocumentCategoryAction(
   input: DeleteDocumentCategoryInput
 ): Promise<ActionResult> {
-  const denied = await denyIfForbidden("documentos", "escrever");
+  const denied = await denyIfForbidden("documents", "write");
   if (denied) return denied;
 
   const tenantId = await getActiveTenantId();

@@ -1,4 +1,5 @@
 [
+  {"glob": "src/kit/**", "layer": "app"},
   {"glob": "src/vertical-kit/**", "layer": "core", "package": "@core/vertical-kit"},
   {"glob": "scripts/preview-message-thread.mts", "layer": "app"},
   {"glob": "src/verticals/real-estate/**", "layer": "vertical"},

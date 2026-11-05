@@ -3,7 +3,7 @@ import {
   agentPhaseEnum, documentStatusEnum, humanSendStateEnum, leadStatusEnum, senderEnum, statusActorEnum, tenants,
 } from "../../db/schema";
 import { TITLES, type ProblemCode } from "../../server/integration/problem";
-import { ROLES } from "../permissions";
+import { ROLES } from "../../kit/access";
 import {
   AGENT_PHASE, DOCUMENT_STATUS, HUMAN_SEND_STATE, INTEGRATION_HEALTH, LEAD_STATUS, PROBLEM_CODE, ROLE, SENDER, STATUS_ACTOR,
   type AgentPhase, type LeadStatus, type Role,

@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { verifySession } from "../auth/session";
 import { sendInvitationEmail } from "../auth/email";
 import { denyIfForbidden } from "./permission";
-import { ROLES, type Role } from "../../lib/permissions";
+import { ROLES, type Role } from "../../kit/access";
 import {
   countActiveAdministrators,
   createInvitation,
@@ -90,7 +90,7 @@ export interface InviteUserInput {
 export async function inviteUserAction(
   input: InviteUserInput
 ): Promise<InviteResult> {
-  const denied = await denyIfForbidden("usuarios", "escrever");
+  const denied = await denyIfForbidden("users", "write");
   if (denied) return denied;
 
   const nameCheck = validateName(input.name, "Nome");
@@ -176,7 +176,7 @@ export interface ResendInviteInput {
 export async function resendInviteAction(
   input: ResendInviteInput
 ): Promise<InviteResult> {
-  const denied = await denyIfForbidden("usuarios", "escrever");
+  const denied = await denyIfForbidden("users", "write");
   if (denied) return denied;
 
   const session = await verifySession();
@@ -231,7 +231,7 @@ export interface UpdateMemberRolesInput {
 export async function updateMemberRolesAction(
   input: UpdateMemberRolesInput
 ): Promise<UsersActionResult> {
-  const denied = await denyIfForbidden("usuarios", "escrever");
+  const denied = await denyIfForbidden("users", "write");
   if (denied) return denied;
 
   const rolesCheck = validateRoles(input.roles);
@@ -286,7 +286,7 @@ export interface DeleteUserInput {
 export async function deleteUserAction(
   input: DeleteUserInput
 ): Promise<UsersActionResult> {
-  const denied = await denyIfForbidden("usuarios", "escrever");
+  const denied = await denyIfForbidden("users", "write");
   if (denied) return denied;
 
   const session = await verifySession();

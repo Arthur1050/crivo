@@ -6,7 +6,7 @@ import {
   PropertiesView,
   type PropertiesEmptyState,
 } from "@/src/components/properties/properties-view";
-import { can } from "@/src/lib/permissions";
+import { can } from "@/src/kit/access";
 import {
   getProperties,
   getTenantMembers,
@@ -70,7 +70,7 @@ export default async function ImoveisPage({ searchParams }: ImoveisPageProps) {
   const params = await searchParams;
   const tenantId = await getActiveTenantId();
   const { roles } = await verifySession();
-  const canWrite = can(roles, "imoveis", "escrever");
+  const canWrite = can(roles, "catalog", "write");
 
   const status = asStatus(params.status);
   const published = asPublished(params.publicado);

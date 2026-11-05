@@ -79,7 +79,7 @@ describe("defineVertical — VERT-01", () => {
     const source = readFileSync(file, "utf8");
     const sources = { [file]: source, "src/lib/vocabulary.ts": readFileSync("src/lib/vocabulary.ts", "utf8") };
     expect(checkImports(sources, rules)).toEqual([]);
-    for (const target of ["src/lib/permissions.ts", "src/server/data/index.ts", "src/verticals/example/index.ts", "app/page.ts", "server-only", "node:fs"]) {
+    for (const target of ["src/kit/access.ts", "src/server/data/index.ts", "src/verticals/example/index.ts", "app/page.ts", "server-only", "node:fs"]) {
       expect(checkImports({ ...sources, [target]: "", [file]: `${source}\nimport "${target.startsWith("src/") || target.startsWith("app/") ? `@/${target}` : target}";` }, rules)).toEqual([
         expect.objectContaining({ file, message: `Import proibido: ${file} -> ${target}` }),
       ]);

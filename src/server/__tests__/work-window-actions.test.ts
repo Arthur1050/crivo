@@ -12,7 +12,7 @@ import {
 import { eq, inArray } from "drizzle-orm";
 import { db } from "../../db";
 import { tenant_members, tenants, users } from "../../db/schema";
-import type { Role } from "../../lib/permissions";
+import type { Role } from "../../kit/access";
 import type { AuthContext } from "../auth/session";
 
 /**

@@ -4,7 +4,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "../../db";
 import { documentCategories, documentFolders, documents, leads, tenantDocumentContextLimits, tenant_members, users } from "../../db/schema";
-import type { Action, Resource, Role } from "../../lib/permissions";
+import type { Action, Resource, Role } from "../../kit/access";
 import type { AuthContext } from "../auth/session";
 import {
   createDocument,
@@ -33,7 +33,7 @@ import {
 // lote-8 (T16): a mock deixou de substituir o módulo inteiro e passou a ser
 // PARCIAL. Só a identidade é fabricada (`verifySession`); a decisão de
 // permissão continua sendo a real (`authorizeOrThrow`, com a matriz de
-// `src/lib/permissions.ts` e o log estruturado da AC6). `requirePermission`
+// `src/kit/access.ts` e o log estruturado da AC6). `requirePermission`
 // precisa ser reescrita aqui porque a versão real chama a `verifySession` do
 // próprio módulo — chamada interna, que nenhuma mock de módulo intercepta.
 const SESSION_USER = {
@@ -79,7 +79,7 @@ vi.mock("../auth/session", async (importActual) => {
     // verdade do escopo fabricado, então só reexpõe o campo.
     getLeadScope: async () => (await fakeSession()).leadScope,
     requirePermission: async (resource: Resource, action: Action) =>
-      actual.authorizeOrThrow(await fakeSession(), resource, action),
+      actual.authorizeOrThrow(await fakeSession(), resource, action, (await import("../../kit/access")).access),
   };
 });
 
@@ -1726,8 +1726,8 @@ describe("server actions", () => {
       expect(log.userId).toBe(SESSION_USER.id);
       expect(log.userEmail).toBe(SESSION_USER.email);
       expect(log.tenantId).toBe(activeTenantId);
-      expect(log.resource).toBe("configuracoes");
-      expect(log.action).toBe("escrever");
+      expect(log.resource).toBe("settings");
+      expect(log.action).toBe("write");
       expect(log.roles).toEqual(["corretor"]);
     });
 

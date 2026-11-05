@@ -5,7 +5,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "./index";
 import { tenant_members, tenants, users } from "./schema";
 import { auth } from "../server/auth/config";
-import { parseRoles, type Role } from "../lib/permissions";
+import { parseRoles, type Role } from "../lib/access";
 
 /**
  * Bootstrap de administrador (spec.md — SEED-01 AC5; AD-001).

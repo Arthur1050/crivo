@@ -63,7 +63,7 @@ export async function getDeactivationPreviewAction(input: {
 }): Promise<
   { ok: true; preview: DeactivationPreview } | { ok: false; error: string }
 > {
-  const denied = await denyIfForbidden("usuarios", "escrever");
+  const denied = await denyIfForbidden("users", "write");
   if (denied) return denied;
 
   const session = await verifySession();
@@ -89,7 +89,7 @@ export async function getDeactivationPreviewAction(input: {
 export async function deactivateMemberAction(
   input: DeactivateMemberInput
 ): Promise<DeactivateResult> {
-  const denied = await denyIfForbidden("usuarios", "escrever");
+  const denied = await denyIfForbidden("users", "write");
   if (denied) return denied;
 
   const session = await verifySession();

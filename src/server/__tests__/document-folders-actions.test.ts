@@ -15,7 +15,7 @@ vi.mock("../auth/session", async (importActual) => {
     tenantId: session.tenantId, roles: session.roles, leadScope: { tenantId: session.tenantId, assignedUserId: null },
   });
   return { ...actual, verifySession: fake,
-    requirePermission: async (resource: Parameters<typeof actual.requirePermission>[0], action: Parameters<typeof actual.requirePermission>[1]) => actual.authorizeOrThrow(await fake(), resource, action),
+    requirePermission: async (resource: Parameters<typeof actual.requirePermission>[0], action: Parameters<typeof actual.requirePermission>[1]) => actual.authorizeOrThrow(await fake(), resource, action, (await import("../../kit/access")).access),
   };
 });
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));

@@ -11,7 +11,7 @@ import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { ROLE_OPTIONS } from "@/src/components/usuarios/role-options";
 import type { MemberRow } from "@/src/components/usuarios/users-table";
-import type { Role } from "@/src/lib/permissions";
+import type { Role } from "@/src/kit/access";
 import { updateMemberRolesAction } from "@/src/server/actions/users";
 
 /**

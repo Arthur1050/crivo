@@ -34,7 +34,7 @@ const CORE_MATRIX: Record<Role, Record<CoreResource, readonly Action[]>> = {
 };
 
 /** Compõe uma cópia fechada da matriz; papéis acumulados concedem por união. */
-export function createAccess(vertical: Vertical) {
+export function createAccess(vertical: Pick<Vertical, "resources">) {
   const matrix = new Map<string, Map<Role, readonly Action[]>>();
   for (const resource of CORE_RESOURCES) {
     matrix.set(resource, new Map(ROLES.map(role => [role, [...CORE_MATRIX[role][resource]]])));
@@ -61,4 +61,16 @@ export function parseRoles(raw: string | null | undefined): Role[] {
     .split(",")
     .map((role) => role.trim())
     .filter((role): role is Role => (ROLES as readonly string[]).includes(role));
+}
+
+export const coreAccess = createAccess({ resources: [] });
+export interface AccessPolicy {
+  can: ReturnType<typeof createAccess>["can"];
+  denialMessage?: (resource: Resource, action: Action) => string;
+}
+
+/** Texto apresentado ao usuário, preservado durante a renomeação interna. */
+export function permissionDeniedMessage(resource: Resource, action: Action, label?: string): string {
+  const labels: Record<string, string> = { documents: "documentos", settings: "configuracoes", users: "usuarios" };
+  return `Sem permissão para ${action === "read" ? "ler" : "escrever"} ${label ?? labels[resource] ?? resource}.`;
 }
