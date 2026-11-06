@@ -692,10 +692,10 @@ T41 → T42 → T43 → T44 → T45
 
 **Done when**:
 
-- [ ] Teste de paridade percorre a matriz de `bf5e646`, literal no teste, célula por célula, com o de-para do design.
-- [ ] Recurso desconhecido devolve `false`.
-- [ ] Com o vertical de teste, nenhum papel recebe `catalog`.
-- [ ] Mutante que troca uma célula morre.
+- [x] Teste de paridade percorre a matriz de `bf5e646`, literal no teste, célula por célula, com o de-para do design.
+- [x] Recurso desconhecido devolve `false`.
+- [x] Com o vertical de teste, nenhum papel recebe `catalog`.
+- [x] Mutante que troca uma célula morre.
 
 **Tests**: unit
 **Gate**: quick
@@ -715,9 +715,9 @@ T41 → T42 → T43 → T44 → T45
 
 **Done when**:
 
-- [ ] Testes de actions, sessão e permissão passam com só a mudança de nome de recurso, ação e import.
-- [ ] Nenhuma referência a `documentos`, `configuracoes`, `usuarios`, `imoveis`, `ler` ou `escrever` como recurso ou ação em código não teste.
-- [ ] As URLs continuam em português.
+- [x] Testes de actions, sessão e permissão passam com só a mudança de nome de recurso, ação e import.
+- [x] Nenhuma referência a `documentos`, `configuracoes`, `usuarios`, `imoveis`, `ler` ou `escrever` como recurso ou ação em código não teste.
+- [x] As URLs continuam em português.
 
 **Tests**: integration
 **Gate**: quick
@@ -737,9 +737,9 @@ T41 → T42 → T43 → T44 → T45
 
 **Done when**:
 
-- [ ] Com a imobiliária, `type` continua `urn:krivo:problem:<code>`, afirmado com literal.
-- [ ] Com o vertical de teste, `type` usa `acme`.
-- [ ] `openapi.test.ts` e os testes de rota passam com só a mudança de import.
+- [x] Com a imobiliária, `type` continua `urn:krivo:problem:<code>`, afirmado com literal.
+- [x] Com o vertical de teste, `type` usa `acme`.
+- [x] `openapi.test.ts` e os testes de rota passam com só a mudança de import.
 
 **Tests**: unit
 **Gate**: quick
@@ -759,8 +759,8 @@ T41 → T42 → T43 → T44 → T45
 
 **Done when**:
 
-- [ ] Com a imobiliária, `X-Krivo-Tenant` funciona e os textos de recusa não mudam.
-- [ ] Com o vertical de teste, só o header da marca dele é aceito.
+- [x] Com a imobiliária, `X-Krivo-Tenant` funciona e os textos de recusa não mudam.
+- [x] Com o vertical de teste, só o header da marca dele é aceito.
 
 **Tests**: unit
 **Gate**: quick
@@ -780,9 +780,18 @@ T41 → T42 → T43 → T44 → T45
 
 **Done when**:
 
-- [ ] Assunto do alerta segue `[krivo]` com a imobiliária, afirmado com literal, e usa a marca do vertical de teste.
-- [ ] Entradas de `krivo` em arquivos `core` saem de `transitional.json`, salvo o que depende do L18c, com motivo.
+- [x] Assunto do alerta segue `[krivo]` com a imobiliária, afirmado com literal, e usa a marca do vertical de teste.
+- [x] Entradas de `krivo` em arquivos `core` saem de `transitional.json`, salvo o que depende do L18c, com motivo.
 - [ ] Gate Full da fase verde.
+
+**Execução parcial e desvios (2026-11-05)**:
+
+- T19: paridade literal de `bf5e646` verificada; o mutante que concede escrita em Dashboard ao administrador foi detectado. T20: política composta entregue por parâmetro à guarda; o commit adicional `2ceb116` removeu um import sem uso e restaurou os 9 avisos de linha de base. T21: respostas, autenticação e wrapper das rotas ligados pelo kit; as rotas do catálogo são pontos de composição do app.
+- T23: as fábricas de autenticação, sessão e upload permitem entregar o envio de e-mail e a política do app sem import do núcleo para o kit. A resolução de tenant e os scripts que montam dependências específicas foram classificados como app; o papel físico da vitrine foi extraído para o vertical sem mudança de valor. A credencial publicada do n8n em `src/db/mint-service-key.ts` fica como exceção justificada do L18c.
+- Gates concluídos: T19, 2 arquivos/63 testes; T20, 5/160; T21, 6/130; T22, 3/84. Gate focado da T23: 7 arquivos/141 testes. TypeScript final: 0 erros. ESLint final: 0 erros/9 avisos. Comparação dos 40 arquivos de teste existentes alterados: somente imports, nomes de recurso/ação, símbolos e entrega do vertical; nenhuma alteração inesperada de literal.
+- `npm test`: 262 arquivos passaram e 3 falharam (265 no total); 4.190 testes passaram e 2 falharam (4.192 executados). Duas falhas de carregamento nas rotas de download/preview foram corrigidas com imports relativos e os dois arquivos passaram no reteste. Restaram as duas asserções de `src/server/reengagement/__tests__/expire.test.ts:114`: `updatedAt` gravado pela aplicação anterior ao valor inicial do banco. Persistiram na execução focada e também substituindo temporariamente `updateLeadFromAgent` pela função original de `bf5e646` (36 testes passaram/2 falharam); a função de trabalho foi restaurada byte a byte.
+- **Bloqueio**: a DAL e o repositório envolvidos foram tocados na T13, portanto a falha permanece pendência deste lote, conforme o pedido. Após três execuções reproduzindo a asserção, a T23 fica sem commit: fazer o timestamp monotônico exige alterar a lógica temporal, em conflito com a restrição de preservar comportamento. Nenhuma asserção foi enfraquecida. A suíte ampla não foi repetida com esse bloqueio aberto; as alterações da T23 permanecem na árvore para continuação.
+- `docs/integration/openapi.yaml` e `n8n/generated/` continuam sem diferença para `bf5e646`. Nenhuma alteração de schema ou ação de produção nesta sessão.
 
 **Tests**: integration
 **Gate**: full

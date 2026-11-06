@@ -459,6 +459,7 @@
 
 ## Handoff
 
+- **2026-11-05 — L18a até T22; T23 bloqueada**: T19–T22 commitadas (T22 `1721f5d`); T23 implementada parcialmente, sem commit de código. Suíte ampla: 262 arquivos verdes/3 falhos, 4.190 testes verdes/2 falhos; os erros de import de duas rotas foram corrigidos e retestados. Restam duas asserções de `updatedAt` em `reengagement/__tests__/expire.test.ts:114`, reproduzidas na suíte, no reteste focado e com a função original de `bf5e646`; corrigir exige mudar a lógica temporal, vedada neste bloco. T23 permanece na árvore; concluir esse bloqueio antes de T24–T31. tsc 0 erros, ESLint 0 erros/9 avisos; 40 testes existentes com somente imports/símbolos/recursos/ações/entrega do vertical, contratos OpenAPI e gerados preservados. Evidências e desvios na seção T23 de `tasks.md`.
 - **2026-11-02 — L18a até T18**: T12–T18 implementadas e commitadas (T18 `6905c18`), com emenda de nomes para `real-estate`, vocabulário nos consumidores e contrato/verticais; gates curtos verdes, tsc 0 erros, ESLint 0 erros/9 avisos. Próximo bloco: T19–T23. Suíte completa não executada neste bloco; execução ampla da T13 interrompida e substituída por gate focado. T12: `db:push:test` anterior com código 0, ocorrência `42P07` em `leads_tenant_id_id_idx` registrada sem investigação.
 
 - **Estado atual (2026-11-02): L17 publicado em produção**

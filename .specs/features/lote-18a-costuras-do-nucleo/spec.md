@@ -377,20 +377,20 @@ mercado, porque uma loja não tem `novo` e `usado`.
 | BOUND-02 | P1: Fronteira verificável | Execute | Implementing |
 | BOUND-03 | P1: Fronteira verificável | Execute | Implementing |
 | BOUND-04 | P1: Fronteira verificável | Execute | Implementing |
-| KEEP-01 | P1: Comportamento preservado | Tasks | In Tasks |
+| KEEP-01 | P1: Comportamento preservado | Execute | Implementing |
 | KEEP-02 | P1: Comportamento preservado | Execute | Implementing |
 | KEEP-03 | P1: Comportamento preservado | Execute | Implementing |
 | KEEP-04 | P1: Comportamento preservado | Tasks | In Tasks |
-| KEEP-05 | P1: Comportamento preservado | Tasks | In Tasks |
+| KEEP-05 | P1: Comportamento preservado | Execute | Implementing |
 | KEEP-06 | P1: Comportamento preservado | Tasks | In Tasks |
 | VOCAB-01 | P1: Vocabulário em inglês | Execute | Implementing |
 | VOCAB-02 | P1: Vocabulário em inglês | Tasks | In Tasks |
-| VOCAB-03 | P1: Vocabulário em inglês | Tasks | In Tasks |
+| VOCAB-03 | P1: Vocabulário em inglês | Execute | Implementing |
 | ENG-01 | P1: Vocabulário em inglês | Execute | Implementing |
 | VERT-01 | P1: Contrato do vertical | Execute | Implementing |
 | VERT-02 | P1: Contrato do vertical | Execute | Implementing |
 | VERT-03 | P1: Contrato do vertical | Execute | Implementing |
-| ACCESS-01 | P1: Permissões compostas | Tasks | In Tasks |
+| ACCESS-01 | P1: Permissões compostas | Execute | Implementing |
 | QUAL-01 | P1: Qualificação atrás de costura | Tasks | In Tasks |
 | QUAL-02 | P1: Qualificação atrás de costura | Tasks | In Tasks |
 | APPT-01 | P1: Agendamento opcional | Tasks | In Tasks |
