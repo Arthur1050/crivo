@@ -1,4 +1,4 @@
-import { LEAD_STATUS, PROBLEM_CODE, SENDER } from "../../lib/vocabulary";
+import { LEAD_STATUS, PROBLEM_CODE, STATUS_ACTOR } from "../../lib/vocabulary";
 import "server-only";
 import {
   assignBrokerForEscalation,
@@ -194,7 +194,7 @@ export async function patchLead(
     // tabela — uma transição já inválida por si (ex.: sair de
     // escalado_humano) reporta 'transicao-invalida', nunca
     // 'lead-travado-por-humano', mesmo que o lead também esteja travado.
-    if (lead.statusChangedBy === SENDER.human) {
+    if (lead.statusChangedBy === STATUS_ACTOR.human) {
       return { ok: false, code: PROBLEM_CODE.lead_locked_by_human };
     }
 

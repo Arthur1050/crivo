@@ -1,4 +1,4 @@
-import { AGENT_PHASE, DOCUMENT_STATUS, HUMAN_SEND_STATE, LEAD_STATUS, PROBLEM_CODE, ROLE, SENDER } from "../../lib/vocabulary";
+import { AGENT_PHASE, DOCUMENT_STATUS, HUMAN_SEND_STATE, LEAD_STATUS, PROBLEM_CODE, ROLE, SENDER, STATUS_ACTOR } from "../../lib/vocabulary";
 import "server-only";
 
 import { isUniqueViolation, isForeignKeyViolation } from "./pg-errors";
@@ -1275,7 +1275,7 @@ export async function updateTenantSettings(
   return rows[0] ?? null;
 }
 
-export type StatusActor = typeof SENDER.human | typeof SENDER.agent;
+export type StatusActor = typeof STATUS_ACTOR.human | typeof STATUS_ACTOR.agent;
 
 type ConductionTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type ConductionOptions = { now?: () => Date; database?: Pick<typeof db, "transaction"> };
@@ -1338,7 +1338,7 @@ export async function updateLeadStatus(
   scope: LeadScope,
   leadId: string,
   status: LeadStatus,
-  actor: StatusActor = SENDER.human,
+  actor: StatusActor = STATUS_ACTOR.human,
   options: ConductionOptions = {},
 ): Promise<Lead | null> {
   return (options.database ?? db).transaction(async (tx) => {
@@ -1908,7 +1908,7 @@ export async function updateLeadFromAgent(
 
   if (input.status !== undefined) {
     setValues.status = input.status;
-    setValues.statusChangedBy = SENDER.agent;
+    setValues.statusChangedBy = STATUS_ACTOR.agent;
   }
   if ("modality" in input) setValues.modality = input.modality;
   if ("region" in input) setValues.region = input.region;

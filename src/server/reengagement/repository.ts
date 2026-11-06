@@ -1,4 +1,4 @@
-import { AGENT_PHASE, LEAD_STATUS, SENDER } from "../../lib/vocabulary";
+import { AGENT_PHASE, LEAD_STATUS, SENDER, STATUS_ACTOR } from "../../lib/vocabulary";
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
@@ -123,7 +123,7 @@ export async function listCandidates(
     // Escalada dispensa fase publicada e canal verificado (turno do agente que
     // falhou), mas não a projeção do inbound atual: lead sem ela é anterior ao
     // L14b ou tem reset pendente, e fica com o bootstrap da ativação.
-    if (decision.action === "escalate" && (!stateCurrent || row.escalatedAt || row.statusChangedBy === SENDER.human)) continue;
+    if (decision.action === "escalate" && (!stateCurrent || row.escalatedAt || row.statusChangedBy === STATUS_ACTOR.human)) continue;
     const verifiedPhone = row.ownershipVerifiedAt && row.anchorPhoneNumberId === row.phoneNumberId ? row.phoneNumberId : null;
     if (decision.action && row.anchorMessageId && row.anchorSentAt && (verifiedPhone || decision.action === "escalate")) candidates.push({
       leadId: row.leadId, anchorMessageId: row.anchorMessageId, anchorSentAt: row.anchorSentAt.toISOString(), phoneNumberId: verifiedPhone, action: decision.action,
@@ -409,7 +409,7 @@ export async function expireEpisode(
     // Canal verificado só é exigido para gravar episódio novo (FK do canal) e
     // para omitir; a escalada é interna e não pode depender dele (M1).
     const verified = !!channel?.ownershipVerifiedAt && Number.isFinite(channel.ownershipVerifiedAt.getTime()) && lead.whatsappPhoneNumberId === channel.phoneNumberId;
-    if (lead.statusChangedBy === SENDER.human) return { ok: false, reason: "human-status-lock" };
+    if (lead.statusChangedBy === STATUS_ACTOR.human) return { ok: false, reason: "human-status-lock" };
     const decision = evaluateReengagement({ lead, anchor: { messageId: anchor.id, sentAt: anchor.sentAt }, phase: agent.phase,
       channel: verified ? channel : null, destination: toWhatsAppMsisdn(lead.externalId), now });
     if (decision.action !== "omit" && decision.action !== "escalate") {
