@@ -19,7 +19,7 @@ import { UploadDialog } from "@/src/components/documents/upload-dialog";
 import { NavLink } from "@/src/components/shared/nav-link";
 import { can } from "@/src/kit/access";
 import { parseFolderParam } from "@/src/lib/document-folders";
-import { requirePermission } from "@/src/server/auth/session";
+import { requirePermission } from "@/src/kit/session";
 import {
   getDocumentCategories,
   getDocuments,

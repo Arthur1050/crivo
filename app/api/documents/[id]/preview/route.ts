@@ -1,6 +1,6 @@
-import { access } from "@/src/kit/access";
+import { access } from "../../../../../src/kit/access";
 import { DOCUMENT_STATUS } from "../../../../../src/lib/vocabulary";
-import { PermissionDeniedError, requirePermission, type AuthContext } from "../../../../../src/server/auth/session";
+import { PermissionDeniedError, requirePermission, type AuthContext } from "../../../../../src/kit/session";
 import { findDocumentTextPreview, type DocumentTextPreview } from "../../../../../src/server/documents/repository";
 
 export const runtime = "nodejs";

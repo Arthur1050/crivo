@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { describe, expect, it, vi } from "vitest";
-import { PermissionDeniedError, type AuthContext } from "../../auth/session";
+import { PermissionDeniedError, type AuthContext } from "../../../kit/session";
 import { createDocumentPreviewGetHandler } from "../../../../app/api/documents/[id]/preview/route";
 
 const context: AuthContext = {

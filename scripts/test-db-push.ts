@@ -1,3 +1,4 @@
+import { STOREFRONT_ROLE } from "../src/verticals/real-estate/db/test-connection";
 /**
  * `npm run db:push:test` — aplica o schema (`drizzle-kit push`) e o SQL da
  * vitrine no banco de teste base e em cada branch de worker de
@@ -55,7 +56,7 @@ export async function pushToTargets(
 ): Promise<number> {
   if (!password) {
     logger.error(
-      "VITRINE_TEST_DB_PASSWORD não definida no ambiente local: sem ela o papel krivo_vitrine ficaria sem senha. Nenhum alvo foi tocado."
+      `VITRINE_TEST_DB_PASSWORD não definida no ambiente local: sem ela o papel ${STOREFRONT_ROLE} ficaria sem senha. Nenhum alvo foi tocado.`
     );
     return 1;
   }

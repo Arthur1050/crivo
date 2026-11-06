@@ -3,7 +3,7 @@ import { access } from "../../kit/access";
 import {
   PermissionDeniedError,
   requirePermission,
-} from "../auth/session";
+} from "../../kit/session";
 import type { Action, Resource } from "../../kit/access";
 
 /**

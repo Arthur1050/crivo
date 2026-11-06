@@ -10,7 +10,7 @@ import {
   tenants,
   users,
 } from "../schema";
-import { auth } from "../../server/auth/config";
+import { auth } from "../../kit/auth";
 import { createAdmin } from "../create-admin";
 
 // Cobre SEED-01 AC5: o comando de bootstrap cria OU promove um usuário a

@@ -1,5 +1,5 @@
 import { toNextJsHandler } from "better-auth/next-js";
-import { auth } from "@/src/server/auth/config";
+import { auth } from "@/src/kit/auth";
 
 /**
  * Handler catch-all do better-auth (spec.md — AUTH-01). Publica os endpoints

@@ -11,7 +11,7 @@ import { getDashboardKpis, getTenant } from "@/src/server/data";
 import {
   PermissionDeniedError,
   requirePermission,
-} from "@/src/server/auth/session";
+} from "@/src/kit/session";
 
 interface RelatorioPageProps {
   searchParams: Promise<{ periodo?: string; de?: string; ate?: string }>;

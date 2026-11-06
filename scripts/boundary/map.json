@@ -1,5 +1,25 @@
 [
   {
+    "glob": "src/server/tenant.ts",
+    "layer": "app"
+  },
+  {
+    "glob": "src/db/create-admin.ts",
+    "layer": "app"
+  },
+  {
+    "glob": "scripts/preview-test-users.ts",
+    "layer": "app"
+  },
+  {
+    "glob": "scripts/send-test-integration-alert.ts",
+    "layer": "app"
+  },
+  {
+    "glob": "scripts/test-db-push.ts",
+    "layer": "app"
+  },
+  {
     "glob": "src/kit/**",
     "layer": "app"
   },

@@ -6,7 +6,7 @@ import { db } from "../../db";
 import { tenants, tenantStorefronts } from "../../db/schema";
 import type { Action, Resource, Role } from "../../kit/access";
 import type { StorefrontInput } from "../../lib/storefront";
-import type { AuthContext } from "../auth/session";
+import type { AuthContext } from "../../kit/session";
 
 /**
  * Server action da vitrine (tasks.md — L16a T15; VCFG-02, VATIV-01, VREV-02).
@@ -19,8 +19,8 @@ let sessionRoles: Role[] = ["administrador"];
 let sessionTenantId = "";
 const sessionUser = { id: "", name: "", email: "" };
 
-vi.mock("../auth/session", async (importActual) => {
-  const actual = await importActual<typeof import("../auth/session")>();
+vi.mock("../../kit/session", async (importActual) => {
+  const actual = await importActual<typeof import("../../kit/session")>();
   const fakeSession = async (): Promise<AuthContext> => ({
     user: sessionUser,
     tenantId: sessionTenantId,

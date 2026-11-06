@@ -4,7 +4,7 @@ import { pathToFileURL } from "node:url";
 import { and, eq } from "drizzle-orm";
 import { db } from "./index";
 import { tenant_members, tenants, users } from "./schema";
-import { auth } from "../server/auth/config";
+import { auth } from "../kit/auth";
 import { parseRoles, type Role } from "../lib/access";
 
 /**

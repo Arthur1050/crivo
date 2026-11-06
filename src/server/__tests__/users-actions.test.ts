@@ -22,7 +22,7 @@ import {
   users,
 } from "../../db/schema";
 import type { Action, Resource, Role } from "../../kit/access";
-import type { AuthContext } from "../auth/session";
+import type { AuthContext } from "../../kit/session";
 
 /**
  * Ações de convite e papéis (tasks.md — T20; spec.md USER-01).
@@ -42,7 +42,7 @@ const mocks = vi.hoisted(() => ({
   sendResetPasswordEmail: vi.fn(),
 }));
 
-vi.mock("../auth/email", () => ({
+vi.mock("../../kit/email", () => ({
   sendInvitationEmail: mocks.sendInvitationEmail,
   sendResetPasswordEmail: mocks.sendResetPasswordEmail,
 }));
@@ -52,8 +52,8 @@ let sessionRoles: Role[] = ["administrador"];
 let sessionTenantId = "";
 let sessionUser = { id: "", name: "", email: "" };
 
-vi.mock("../auth/session", async (importActual) => {
-  const actual = await importActual<typeof import("../auth/session")>();
+vi.mock("../../kit/session", async (importActual) => {
+  const actual = await importActual<typeof import("../../kit/session")>();
   const fakeSession = async (): Promise<AuthContext> => ({
     user: sessionUser,
     tenantId: sessionTenantId,
@@ -71,8 +71,8 @@ vi.mock("../auth/session", async (importActual) => {
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { revalidatePath } from "next/cache";
-import { auth } from "../auth/config";
-import { resolveAuthContext } from "../auth/session";
+import { auth } from "../../kit/auth";
+import { resolveAuthContext } from "../../kit/session";
 import { getTenantMembers } from "../data";
 import { deactivateMemberAction } from "../actions/deactivate";
 import {

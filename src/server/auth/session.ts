@@ -16,7 +16,7 @@ import {
   type Resource,
   type Role,
 } from "../../lib/access";
-import { auth } from "./config";
+import type { AuthInstance } from "./config";
 
 /**
  * Guarda de sessão e escopo (design.md — Guarda de sessão e escopo; spec.md
@@ -68,92 +68,6 @@ function isBrokerOnly(roles: Role[]): boolean {
  * ativa, quais papéis ele tem NELA e qual o escopo de leitura — sem redirecionar.
  * `verifySession()` é a casca que aplica o redirecionamento.
  */
-export async function resolveAuthContext(
-  requestHeaders: Headers
-): Promise<AuthResolution> {
-  const session = await auth.api.getSession({ headers: requestHeaders });
-
-  // Cobre sessão ausente E sessão expirada: o better-auth devolve null nos
-  // dois casos, porque a expiração é checada na leitura.
-  if (!session) return { ok: false, reason: "sem-sessao" };
-
-  const user = {
-    id: session.user.id,
-    name: session.user.name,
-    email: session.user.email,
-  };
-
-  // Vínculos ATIVOS do usuário. Ordem determinística (`createdAt`, depois
-  // `id`) porque o fallback da AC4 de TENANT-01 é "o primeiro vínculo" — sem
-  // ordem estável, "o primeiro" mudaria entre requisições.
-  const memberships = await db
-    .select()
-    .from(tenant_members)
-    .where(
-      and(
-        eq(tenant_members.userId, user.id),
-        isNull(tenant_members.deactivatedAt)
-      )
-    )
-    .orderBy(asc(tenant_members.createdAt), asc(tenant_members.id));
-
-  if (memberships.length === 0) {
-    return { ok: false, reason: "sem-vinculo", user };
-  }
-
-  // TENANT-01 AC4: imobiliária ativa que não corresponde a nenhum vínculo do
-  // usuário é IGNORADA e cai no primeiro vínculo dele. Sem isso, o seletor de
-  // imobiliária voltaria a ser campo livre — a exposição que o login fecha na
-  // porta entraria pela janela.
-  const active =
-    memberships.find(
-      (membership) => membership.organizationId === session.session.activeOrganizationId
-    ) ?? memberships[0];
-
-  const roles = parseRoles(active.role);
-
-  return {
-    ok: true,
-    context: {
-      user,
-      tenantId: active.organizationId,
-      roles,
-      leadScope: {
-        tenantId: active.organizationId,
-        assignedUserId: isBrokerOnly(roles) ? user.id : null,
-      },
-    },
-  };
-}
-
-/**
- * Guarda usada pelos Server Components e server actions do CRM.
- *
- * Memoizada com `cache()` do React: dentro de um mesmo render pass, chamar
- * `verifySession()` em cinco lugares resolve a sessão UMA vez. O escopo de
- * memoização é fornecido pelo Next por requisição — fora de um render pass
- * (por exemplo, num teste em Node puro) `cache()` é um no-op, o que é
- * justamente por que o comportamento testado mora em `resolveAuthContext`.
- */
-export const verifySession = cache(async (): Promise<AuthContext> => {
-  const resolution = await resolveAuthContext(await headers());
-
-  if (!resolution.ok) {
-    // Sem vínculo o usuário está autenticado, mas não pertence a imobiliária
-    // nenhuma: vai para a tela dedicada (TENANT-01 AC6), nunca para uma tela
-    // do CRM sem imobiliária resolvida.
-    redirect(resolution.reason === "sem-vinculo" ? "/sem-acesso" : "/login");
-  }
-
-  return resolution.context;
-});
-
-/** Escopo de leitura de lead do vínculo ativo (SCOPE-01). */
-export const getLeadScope = cache(async (): Promise<LeadScope> => {
-  const context = await verifySession();
-  return context.leadScope;
-});
-
 /**
  * Recusa por permissão (PERM-01 AC5). Erro próprio, e não `Error` cru, para
  * que quem chama consiga distinguir "não pode" de "quebrou".
@@ -209,10 +123,100 @@ export function authorizeOrThrow(
  * mesmo quando o controle não estava visível na tela, porque não depende de
  * nada que venha do cliente — papéis e imobiliária saem da sessão.
  */
-export async function requirePermission(
-  resource: Resource,
-  action: Action,
-  access: AccessPolicy = coreAccess
-): Promise<AuthContext> {
-  return authorizeOrThrow(await verifySession(), resource, action, access);
+export function createSessionKit(auth: AuthInstance, policy: AccessPolicy) {
+  async function resolveAuthContext(
+    requestHeaders: Headers
+  ): Promise<AuthResolution> {
+    const session = await auth.api.getSession({ headers: requestHeaders });
+
+    // Cobre sessão ausente E sessão expirada: o better-auth devolve null nos
+    // dois casos, porque a expiração é checada na leitura.
+    if (!session) return { ok: false, reason: "sem-sessao" };
+
+    const user = {
+      id: session.user.id,
+      name: session.user.name,
+      email: session.user.email,
+    };
+
+    // Vínculos ATIVOS do usuário. Ordem determinística (`createdAt`, depois
+    // `id`) porque o fallback da AC4 de TENANT-01 é "o primeiro vínculo" — sem
+    // ordem estável, "o primeiro" mudaria entre requisições.
+    const memberships = await db
+      .select()
+      .from(tenant_members)
+      .where(
+        and(
+          eq(tenant_members.userId, user.id),
+          isNull(tenant_members.deactivatedAt)
+        )
+      )
+      .orderBy(asc(tenant_members.createdAt), asc(tenant_members.id));
+
+    if (memberships.length === 0) {
+      return { ok: false, reason: "sem-vinculo", user };
+    }
+
+    // TENANT-01 AC4: imobiliária ativa que não corresponde a nenhum vínculo do
+    // usuário é IGNORADA e cai no primeiro vínculo dele. Sem isso, o seletor de
+    // imobiliária voltaria a ser campo livre — a exposição que o login fecha na
+    // porta entraria pela janela.
+    const active =
+      memberships.find(
+        (membership) => membership.organizationId === session.session.activeOrganizationId
+      ) ?? memberships[0];
+
+    const roles = parseRoles(active.role);
+
+    return {
+      ok: true,
+      context: {
+        user,
+        tenantId: active.organizationId,
+        roles,
+        leadScope: {
+          tenantId: active.organizationId,
+          assignedUserId: isBrokerOnly(roles) ? user.id : null,
+        },
+      },
+    };
+  }
+
+  /**
+   * Guarda usada pelos Server Components e server actions do CRM.
+   *
+   * Memoizada com `cache()` do React: dentro de um mesmo render pass, chamar
+   * `verifySession()` em cinco lugares resolve a sessão UMA vez. O escopo de
+   * memoização é fornecido pelo Next por requisição — fora de um render pass
+   * (por exemplo, num teste em Node puro) `cache()` é um no-op, o que é
+   * justamente por que o comportamento testado mora em `resolveAuthContext`.
+   */
+  const verifySession = cache(async (): Promise<AuthContext> => {
+    const resolution = await resolveAuthContext(await headers());
+
+    if (!resolution.ok) {
+      // Sem vínculo o usuário está autenticado, mas não pertence a imobiliária
+      // nenhuma: vai para a tela dedicada (TENANT-01 AC6), nunca para uma tela
+      // do CRM sem imobiliária resolvida.
+      redirect(resolution.reason === "sem-vinculo" ? "/sem-acesso" : "/login");
+    }
+
+    return resolution.context;
+  });
+
+  /** Escopo de leitura de lead do vínculo ativo (SCOPE-01). */
+  const getLeadScope = cache(async (): Promise<LeadScope> => {
+    const context = await verifySession();
+    return context.leadScope;
+  });
+
+  async function requirePermission(
+    resource: Resource,
+    action: Action,
+    access: AccessPolicy = policy
+  ): Promise<AuthContext> {
+    return authorizeOrThrow(await verifySession(), resource, action, access);
+  }
+
+  return { resolveAuthContext, verifySession, getLeadScope, requirePermission };
 }

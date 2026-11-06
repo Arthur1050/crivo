@@ -8,8 +8,8 @@ import { INTEGRATION_HEALTH } from "../src/lib/vocabulary";
  */
 import "dotenv/config";
 import { pathToFileURL } from "node:url";
-import { formatIntegrationAlertEmail, type TenantHealthSnapshot } from "../src/lib/integration-alert";
-import { sendIntegrationAlertEmail, type EmailResult } from "../src/server/auth/email";
+import { formatIntegrationAlertEmail, type TenantHealthSnapshot } from "../src/kit/alerts";
+import { sendIntegrationAlertEmail, type EmailResult } from "../src/kit/email";
 
 const EXAMPLE: TenantHealthSnapshot = {
   tenantId: "00000000-0000-0000-0000-000000000000",

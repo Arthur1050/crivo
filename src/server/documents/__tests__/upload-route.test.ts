@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/src/server/auth/session", () => {
+vi.mock("@/src/kit/session", () => {
   class MockPermissionDeniedError extends Error {
     constructor() {
       super("forbidden");
@@ -18,7 +18,7 @@ vi.mock("@/src/server/documents/uploads", () => ({
   }),
 }));
 
-import { PermissionDeniedError } from "@/src/server/auth/session";
+import { PermissionDeniedError } from "@/src/kit/session";
 import {
   createDocumentUploadPostHandler,
   type DocumentUploadRouteDependencies,

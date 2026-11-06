@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { createHash } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
-import { PermissionDeniedError, type AuthContext } from "../../auth/session";
+import { PermissionDeniedError, type AuthContext } from "../../../kit/session";
 import { DocumentStorageError } from "../storage";
 import { createDocumentDownloadGetHandler } from "../../../../app/api/documents/[id]/download/route";
 const bytes = new TextEncoder().encode("original íntegro");

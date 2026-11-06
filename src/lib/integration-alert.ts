@@ -63,15 +63,18 @@ function describeTenant(snapshot: TenantHealthSnapshot): string {
   return lines.join("\n");
 }
 
-export function formatIntegrationAlertEmail(
-  alerts: TenantHealthSnapshot[],
-  options: { test?: boolean } = {}
-): { subject: string; text: string } {
-  const subject = `${options.test ? "[teste] " : ""}[krivo] Integração com problema em ${alerts.length} imobiliária(s)`;
-  const text = [
-    "A integração do agente com o CRM passou a ter problema nas imobiliárias abaixo.",
-    "",
-    alerts.map(describeTenant).join("\n\n"),
-  ].join("\n");
-  return { subject, text };
+export function createIntegrationAlertFormatter(brand: import("../vertical-kit").VerticalBrand) {
+  return function formatIntegrationAlertEmail(
+    alerts: TenantHealthSnapshot[],
+    options: { test?: boolean } = {}
+  ): { subject: string; text: string } {
+    const subject = `${options.test ? "[teste] " : ""}[${brand.alertTag}] Integração com problema em ${alerts.length} imobiliária(s)`;
+    const text = [
+      "A integração do agente com o CRM passou a ter problema nas imobiliárias abaixo.",
+      "",
+      alerts.map(describeTenant).join("\n\n"),
+    ].join("\n");
+    return { subject, text };
+  }
+
 }

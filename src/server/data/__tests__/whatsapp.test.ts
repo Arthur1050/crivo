@@ -4,7 +4,7 @@ import { eq, inArray } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { db } from "../../../db";
 import { conversations, leads, messages, tenants, users, whatsappChannels, whatsappMessageReceipts, whatsappUsage } from "../../../db/schema";
-import type { AuthContext } from "../../auth/session";
+import type { AuthContext } from "../../../kit/session";
 import { getConversationUsage, getMessageClassifications, getSettingsUsage } from "../whatsapp";
 
 const tenantA = randomUUID(); const tenantB = randomUUID(); const brokerA = randomUUID(); const brokerB = randomUUID();

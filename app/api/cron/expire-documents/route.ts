@@ -1,8 +1,9 @@
+import { realEstate } from "../../../../src/verticals/real-estate";
 import { PROBLEM_CODE } from "../../../../src/lib/vocabulary";
 import { timingSafeEqual, createHash } from "node:crypto";
 import type { DocumentStorage } from "../../../../src/server/documents/storage";
 import { VercelBlobDocumentStorage } from "../../../../src/server/documents/vercel-blob-storage";
-import { sendIntegrationAlertEmail } from "../../../../src/server/auth/email";
+import { sendIntegrationAlertEmail } from "../../../../src/kit/email";
 import type { IntegrationAlertDependencies } from "../../../../src/server/integration/integration-alert";
 import { runDailyMaintenance } from "../../../../src/server/integration/lgpd";
 import { problem } from "../../../../src/kit/integration";
@@ -52,6 +53,7 @@ export function createExpireDocumentsHandler(
     // O destinatário é lido a cada chamada, como o secret: ausente, o alerta
     // não envia e reporta `destinatario-ausente` (lote-15 — ALERTA-03).
     const integrationAlert = deps.integrationAlert ?? {
+      brand: realEstate.brand,
       operatorEmail: process.env.KRIVO_OPERATOR_ALERT_EMAIL,
       send: sendIntegrationAlertEmail,
     };

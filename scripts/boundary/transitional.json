@@ -14,31 +14,10 @@
     "category": "import"
   },
   {
-    "path": "scripts/test-db-push.ts",
-    "term": "import:scripts/document-folders/apply.ts",
-    "reason": "Dependência anterior ao lote; removida nas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "import"
-  },
-  {
-    "path": "scripts/test-db-push.ts",
-    "term": "import:scripts/vitrine/apply.ts",
-    "reason": "Dependência anterior ao lote; removida nas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "import"
-  },
-  {
-    "path": "src/db/create-admin.ts",
-    "term": "market:imobili",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
-  },
-  {
     "path": "src/db/mint-service-key.ts",
     "term": "market:krivo",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
+    "reason": "Nome da credencial publicada no n8n; contrato operacional preservado até a ativação do L18c.",
+    "removedIn": "L18c",
     "category": "market"
   },
   {
@@ -65,20 +44,6 @@
   {
     "path": "src/db/schema.ts",
     "term": "market:creci",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
-  },
-  {
-    "path": "src/db/test-connection.ts",
-    "term": "market:vitrine",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
-  },
-  {
-    "path": "src/db/test-connection.ts",
-    "term": "market:krivo",
     "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
     "removedIn": "L18a",
     "category": "market"
@@ -113,13 +78,6 @@
   },
   {
     "path": "src/lib/integration-alert.ts",
-    "term": "market:krivo",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
-  },
-  {
-    "path": "src/lib/integration-alert.ts",
     "term": "market:imobili",
     "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
     "removedIn": "L18a",
@@ -135,13 +93,6 @@
   {
     "path": "src/lib/pilot-metrics.ts",
     "term": "market:meeting",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
-  },
-  {
-    "path": "src/server/auth/email.ts",
-    "term": "market:krivo",
     "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
     "removedIn": "L18a",
     "category": "market"
@@ -268,13 +219,6 @@
   {
     "path": "src/server/reengagement/repository.ts",
     "term": "market:meeting",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
-  },
-  {
-    "path": "src/server/tenant.ts",
-    "term": "market:imobili",
     "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
     "removedIn": "L18a",
     "category": "market"
@@ -973,55 +917,6 @@
     "category": "n8n-modules"
   },
   {
-    "path": "scripts/preview-test-users.ts",
-    "term": "market:krivo",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
-  },
-  {
-    "path": "scripts/preview-test-users.ts",
-    "term": "market:corretor",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
-  },
-  {
-    "path": "scripts/preview-test-users.ts",
-    "term": "market:imobili",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
-  },
-  {
-    "path": "scripts/send-test-integration-alert.ts",
-    "term": "market:imobili",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
-  },
-  {
-    "path": "scripts/send-test-integration-alert.ts",
-    "term": "market:krivo",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
-  },
-  {
-    "path": "scripts/test-db-push.ts",
-    "term": "market:vitrine",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
-  },
-  {
-    "path": "scripts/test-db-push.ts",
-    "term": "market:krivo",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
-  },
-  {
     "path": "src/db/schema.ts",
     "term": "stored:novo",
     "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
@@ -1514,13 +1409,6 @@
   {
     "path": "src/db/seed.ts",
     "term": "identifier:usado",
-    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
-    "removedIn": "L18a",
-    "category": "identifier"
-  },
-  {
-    "path": "src/db/test-connection.ts",
-    "term": "identifier:vitrine",
     "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
     "removedIn": "L18a",
     "category": "identifier"

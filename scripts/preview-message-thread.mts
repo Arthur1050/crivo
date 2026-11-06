@@ -18,7 +18,7 @@ process.env.VITEST = "1";
 process.env.BETTER_AUTH_URL = "http://localhost:3000";
 
 const { db } = await import("../src/db/index");
-const { auth } = await import("../src/server/auth/config");
+const { auth } = await import("../src/kit/auth");
 const { tenants, tenant_members, leads, conversations, messages, users, whatsappChannels, whatsappMessageReceipts } = await import("../src/db/schema");
 async function cleanupOwned(ownedTenantId: string, ownedUserId: string) {
   await db.delete(messages).where(eq(messages.tenantId, ownedTenantId));

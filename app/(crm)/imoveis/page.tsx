@@ -14,7 +14,7 @@ import {
   type PropertyKind,
   type PropertyStatus,
 } from "@/src/server/data";
-import { verifySession } from "@/src/server/auth/session";
+import { verifySession } from "@/src/kit/session";
 import { getActiveTenantId } from "@/src/server/tenant";
 
 const VALID_STATUSES: readonly string[] = [PROPERTY_STATUS.available, PROPERTY_STATUS.reserved, PROPERTY_STATUS.sold];

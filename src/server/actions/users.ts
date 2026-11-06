@@ -2,8 +2,8 @@
 
 import { ROLE } from "../../lib/vocabulary";
 import { revalidatePath } from "next/cache";
-import { verifySession } from "../auth/session";
-import { sendInvitationEmail } from "../auth/email";
+import { verifySession } from "../../kit/session";
+import { sendInvitationEmail } from "../../kit/email";
 import { denyIfForbidden } from "./permission";
 import { ROLES, type Role } from "../../kit/access";
 import {

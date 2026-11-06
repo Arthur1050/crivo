@@ -5,7 +5,7 @@ import {
   formatIntegrationAlertEmail,
   planIntegrationAlerts,
   type TenantHealthSnapshot,
-} from "../integration-alert";
+} from "../../kit/alerts";
 
 const NOW = new Date("2026-10-07T03:00:00.000Z");
 const HOUR_MS = 3600000;

@@ -2,7 +2,7 @@
 
 import { ROLE } from "../../lib/vocabulary";
 import { revalidatePath } from "next/cache";
-import { verifySession } from "../auth/session";
+import { verifySession } from "../../kit/session";
 import { getTenantMemberById, setMemberWorkWindow } from "../data";
 import {
   validateWorkWindow,

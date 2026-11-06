@@ -37,7 +37,7 @@ async function main() {
 
   const { db } = await import("../src/db/index");
   const { tenant_members, tenants, users } = await import("../src/db/schema");
-  const { auth } = await import("../src/server/auth/config");
+  const { auth } = await import("../src/kit/auth");
 
   const [tenant] = await db.select().from(tenants).where(eq(tenants.slug, PREVIEW_TEST_TENANT));
   if (!tenant) {

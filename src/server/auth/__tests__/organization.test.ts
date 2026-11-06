@@ -10,7 +10,7 @@ import {
   tenants,
   users,
 } from "../../../db/schema";
-import { auth } from "../config";
+import { auth } from "../../../kit/auth";
 
 // Cobre TENANT-01 AC1 (vínculo usuário↔imobiliária como relação própria) pelo
 // ângulo que a T4 precisa provar: o plugin `organization` escreve na tabela

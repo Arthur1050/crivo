@@ -16,7 +16,7 @@ import "dotenv/config";
 import { spawn, type ChildProcess, type SpawnOptions } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import path from "node:path";
-import { resolveVitrineTestUrl, VITRINE_ROLE } from "../src/db/test-connection";
+import { resolveStorefrontTestUrl, STOREFRONT_ROLE } from "../src/verticals/real-estate/db/test-connection";
 
 export const PORTA_DEV = 3100;
 
@@ -40,7 +40,7 @@ export function ambienteDaVitrine(input: {
     throw new Error("TEST_DATABASE_URL não definida: o vitrine:dev só roda contra o banco de teste.");
   }
   return {
-    VITRINE_DATABASE_URL: resolveVitrineTestUrl({ baseUrl: input.baseUrl, password: input.password }),
+    VITRINE_DATABASE_URL: resolveStorefrontTestUrl({ baseUrl: input.baseUrl, password: input.password }),
     VITRINE_REVALIDATE_SECRET: input.segredo ?? randomBytes(24).toString("hex"),
     VITRINE_PUBLIC_URL: `http://localhost:${input.porta ?? PORTA_DEV}`,
   };
@@ -80,7 +80,7 @@ export function iniciarVitrineDev(deps: DependenciasDev): ChildProcess | null {
 
   const url = new URL(ambiente.VITRINE_DATABASE_URL);
   deps.log(
-    `vitrine:dev -> banco DE TESTE: ${url.hostname}${url.pathname}, papel ${VITRINE_ROLE}, ${ambiente.VITRINE_PUBLIC_URL}`
+    `vitrine:dev -> banco DE TESTE: ${url.hostname}${url.pathname}, papel ${STOREFRONT_ROLE}, ${ambiente.VITRINE_PUBLIC_URL}`
   );
 
   return deps.spawn("npx", ["next", "dev", "-p", String(PORTA_DEV)], {

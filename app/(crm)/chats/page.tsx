@@ -32,7 +32,7 @@ import {
   getTenant,
   getTenantMembers,
 } from "@/src/server/data";
-import { getLeadScope, verifySession } from "@/src/server/auth/session";
+import { getLeadScope, verifySession } from "@/src/kit/session";
 import { getActiveTenantId } from "@/src/server/tenant";
 import { getMessageClassifications } from "@/src/server/data/whatsapp";
 import { statusClassificationEnabled } from "@/src/server/whatsapp/statuses";

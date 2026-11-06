@@ -22,7 +22,7 @@ import {
 } from "../../db/schema";
 import type { Action, Resource, Role } from "../../kit/access";
 import type { LeadStatus } from "../data";
-import type { AuthContext } from "../auth/session";
+import type { AuthContext } from "../../kit/session";
 
 /**
  * Desativação com destino da carteira (tasks.md — T21; spec.md USER-02).
@@ -37,8 +37,8 @@ let sessionRoles: Role[] = ["administrador"];
 let sessionTenantId = "";
 let sessionUser = { id: "", name: "", email: "" };
 
-vi.mock("../auth/session", async (importActual) => {
-  const actual = await importActual<typeof import("../auth/session")>();
+vi.mock("../../kit/session", async (importActual) => {
+  const actual = await importActual<typeof import("../../kit/session")>();
   const fakeSession = async (): Promise<AuthContext> => ({
     user: sessionUser,
     tenantId: sessionTenantId,
@@ -55,8 +55,8 @@ vi.mock("../auth/session", async (importActual) => {
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
-import { resolveAuthContext } from "../auth/session";
-import { auth } from "../auth/config";
+import { resolveAuthContext } from "../../kit/session";
+import { auth } from "../../kit/auth";
 import {
   getBrokerLoads,
   getBrokers,

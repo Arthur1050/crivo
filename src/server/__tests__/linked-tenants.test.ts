@@ -10,7 +10,7 @@ import {
   tenants,
   users,
 } from "../../db/schema";
-import { auth } from "../auth/config";
+import { auth } from "../../kit/auth";
 import { getLinkedTenants } from "../tenant";
 
 // Cobre TENANT-01 AC2/AC3: o seletor lista EXCLUSIVAMENTE as imobiliárias

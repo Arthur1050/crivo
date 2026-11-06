@@ -2,7 +2,7 @@
 
 import { ROLE } from "../../lib/vocabulary";
 import { revalidatePath } from "next/cache";
-import { verifySession } from "../auth/session";
+import { verifySession } from "../../kit/session";
 import { denyIfForbidden } from "./permission";
 import { assignBroker, type BrokerLoad } from "../../lib/broker-assignment";
 import {

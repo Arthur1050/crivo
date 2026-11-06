@@ -9,7 +9,7 @@ import type { PoolClient } from "pg";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "../../src/db";
 import * as schema from "../../src/db/schema";
-import type { AuthContext } from "../../src/server/auth/session";
+import type { AuthContext } from "../../src/kit/session";
 import { ingestAgentMessage } from "../../src/server/data";
 import { getConversationUsage } from "../../src/server/data/whatsapp";
 import { getSessionFrame, prepareFrame } from "../../src/server/reengagement/context";

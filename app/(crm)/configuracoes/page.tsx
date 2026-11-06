@@ -24,7 +24,7 @@ import {
 import {
   PermissionDeniedError,
   requirePermission,
-} from "@/src/server/auth/session";
+} from "@/src/kit/session";
 import { getActiveTenantId } from "@/src/server/tenant";
 
 const MODALITY_LABELS: Record<Modality, string> = {

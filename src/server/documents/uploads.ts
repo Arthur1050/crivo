@@ -4,7 +4,6 @@ import { isUuid } from "../../lib/document-folders";
 import {
   authorizeOrThrow,
   type AuthContext,
-  verifySession,
 } from "../auth/session";
 import {
   validateFileSize,
@@ -98,6 +97,7 @@ export interface DocumentProcessingJob {
 }
 
 export interface DocumentUploadIntakeDependencies {
+  getActor?: () => Promise<AuthContext>;
   storage?: DocumentStorage;
   repository?: DocumentUploadRepository;
   now?: () => Date;
@@ -228,7 +228,8 @@ export function createDocumentUploadIntake(
       input: CreateDocumentUploadInput,
       suppliedActor?: AuthContext
     ): Promise<ReserveDocumentUploadResult> {
-      const actor = suppliedActor ?? (await verifySession());
+      const actor = suppliedActor ?? (await dependencies.getActor?.());
+      if (!actor) throw new Error("Sessão não fornecida para o upload.");
       authorizeOrThrow(actor, "documents", "write");
       const startedAt = now();
       if (!validInput(input, startedAt)) {
@@ -299,7 +300,8 @@ export function createDocumentUploadIntake(
       intentId: string,
       suppliedActor?: AuthContext
     ): Promise<FinalizeDocumentUploadResult> {
-      const actor = suppliedActor ?? (await verifySession());
+      const actor = suppliedActor ?? (await dependencies.getActor?.());
+      if (!actor) throw new Error("Sessão não fornecida para o upload.");
       authorizeOrThrow(actor, "documents", "write");
       const intent = await repository.findUploadIntentById(intentId);
       // Intenção de outro tenant responde igual à inexistente: não confirma

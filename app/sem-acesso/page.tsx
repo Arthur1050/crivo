@@ -7,7 +7,7 @@ import { Center } from "@astryxdesign/core/Center";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
-import { resolveAuthContext } from "@/src/server/auth/session";
+import { resolveAuthContext } from "@/src/kit/session";
 import { SignOutButton } from "@/src/components/auth/sign-out-button";
 
 export const metadata: Metadata = {

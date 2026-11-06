@@ -2,7 +2,7 @@
 
 import { SENDER } from "../../lib/vocabulary";
 import { revalidatePath } from "next/cache";
-import { getLeadScope } from "../auth/session";
+import { getLeadScope } from "../../kit/session";
 import {
   setMeetingAttendance,
   updateLeadBroker,

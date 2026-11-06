@@ -25,7 +25,7 @@ import {
   getRecentLeads,
   getTenant,
 } from "@/src/server/data";
-import { verifySession } from "@/src/server/auth/session";
+import { verifySession } from "@/src/kit/session";
 import { getActiveTenantId } from "@/src/server/tenant";
 
 /** Últimos N leads listados no card "Leads Recentes" (RD-04 AC4). */

@@ -1,5 +1,5 @@
-import { access } from "@/src/kit/access";
-import { PermissionDeniedError, requirePermission, type AuthContext } from "../../../../../src/server/auth/session";
+import { access } from "../../../../../src/kit/access";
+import { PermissionDeniedError, requirePermission, type AuthContext } from "../../../../../src/kit/session";
 import { findDocumentForDownload, type DocumentDownload } from "../../../../../src/server/documents/repository";
 import { DocumentStorageError, sanitizeDownloadFilename, type DocumentStorage } from "../../../../../src/server/documents/storage";
 import { VercelBlobDocumentStorage } from "../../../../../src/server/documents/vercel-blob-storage";

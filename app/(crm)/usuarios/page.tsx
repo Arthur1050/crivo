@@ -8,7 +8,7 @@ import { UsersTable } from "@/src/components/usuarios/users-table";
 import {
   PermissionDeniedError,
   requirePermission,
-} from "@/src/server/auth/session";
+} from "@/src/kit/session";
 import { getTenantMembers } from "@/src/server/data";
 
 /**

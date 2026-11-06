@@ -10,8 +10,8 @@ import {
   tenants,
   users,
 } from "../../../db/schema";
-import { auth } from "../config";
-import { parseRoles, resolveAuthContext } from "../session";
+import { auth } from "../../../kit/auth";
+import { parseRoles, resolveAuthContext } from "../../../kit/session";
 
 // Cobre AUTH-01 (sessão ausente/expirada) e TENANT-01 AC1/AC4/AC6 (vínculo
 // como relação própria, imobiliária ativa fora dos vínculos, usuário sem
@@ -140,7 +140,7 @@ describe("server/auth — verifySession / resolveAuthContext (lote-8, AUTH-01 + 
     const resolution = await resolveAuthContext(user.headers);
 
     expect(resolution.ok).toBe(true);
-    const context = (resolution as { context: import("../session").AuthContext }).context;
+    const context = (resolution as { context: import("../../../kit/session").AuthContext }).context;
     expect(context.user.id).toBe(user.userId);
     expect(context.user.email).toBe(user.email);
     expect(context.tenantId).toBe(tenantId);
@@ -176,7 +176,7 @@ describe("server/auth — verifySession / resolveAuthContext (lote-8, AUTH-01 + 
     const resolution = await resolveAuthContext(user.headers);
 
     expect(resolution.ok).toBe(true);
-    const context = (resolution as { context: import("../session").AuthContext }).context;
+    const context = (resolution as { context: import("../../../kit/session").AuthContext }).context;
     expect(context.tenantId).toBe(primeiro);
     expect(context.tenantId).not.toBe(alheio);
     // E os papéis são os DAQUELE vínculo, não os do outro.
@@ -200,11 +200,11 @@ describe("server/auth — verifySession / resolveAuthContext (lote-8, AUTH-01 + 
     const comGestor = await resolveAuthContext(acumulado.headers);
 
     expect(
-      (soCorretor as { context: import("../session").AuthContext }).context.leadScope
+      (soCorretor as { context: import("../../../kit/session").AuthContext }).context.leadScope
     ).toEqual({ tenantId, assignedUserId: corretor.userId });
 
     expect(
-      (comGestor as { context: import("../session").AuthContext }).context.leadScope
+      (comGestor as { context: import("../../../kit/session").AuthContext }).context.leadScope
     ).toEqual({ tenantId, assignedUserId: null });
   });
 });

@@ -5,7 +5,7 @@ import { and, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "../../db";
 import { documentCategories, documentFolders, documents, leads, tenantDocumentContextLimits, tenant_members, users } from "../../db/schema";
 import type { Action, Resource, Role } from "../../kit/access";
-import type { AuthContext } from "../auth/session";
+import type { AuthContext } from "../../kit/session";
 import {
   createDocument,
   getBrokers,
@@ -53,8 +53,8 @@ function isBrokerOnly(roles: Role[]): boolean {
   return roles.length > 0 && roles.every((role) => role === "corretor");
 }
 
-vi.mock("../auth/session", async (importActual) => {
-  const actual = await importActual<typeof import("../auth/session")>();
+vi.mock("../../kit/session", async (importActual) => {
+  const actual = await importActual<typeof import("../../kit/session")>();
   const fakeSession = async (): Promise<AuthContext> => {
     const { getTenants } = await import("../data");
     const [tenant] = await getTenants();

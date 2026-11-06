@@ -5,7 +5,7 @@ import { Client } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { db } from "../index";
 import { properties, tenants, tenantStorefronts, users } from "../schema";
-import { resolveVitrineTestUrl } from "../test-connection";
+import { resolveStorefrontTestUrl } from "../../verticals/real-estate/db/test-connection";
 import { currentTestDatabaseUrl } from "./vitrine-helpers";
 
 // Este teste CONECTA como `krivo_vitrine`, com a senha de VITRINE_TEST_DB_PASSWORD
@@ -49,7 +49,7 @@ describe("L16a T9 — papel krivo_vitrine e grants (VBANCO-02)", () => {
 
   beforeAll(async () => {
     // Lança com mensagem clara (sem a URL) quando a senha falta.
-    const url = resolveVitrineTestUrl({
+    const url = resolveStorefrontTestUrl({
       baseUrl: currentTestDatabaseUrl(),
       password: process.env.VITRINE_TEST_DB_PASSWORD,
     });

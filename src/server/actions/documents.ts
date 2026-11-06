@@ -26,7 +26,7 @@ import { createDocumentProcessingService } from "../documents/processing";
 import { reconcileTenantDocumentAdmission, tombstoneDocument } from "../documents/repository";
 import { VercelBlobDocumentStorage } from "../documents/vercel-blob-storage";
 import { startDocumentProcessingRun } from "../documents/workflow-start";
-import { createDocumentUploadIntake } from "../documents/uploads";
+import { createDocumentUploadIntake } from "../../kit/documents";
 import { duplicateDocumentMessage } from "../../lib/duplicate-document";
 import { FOLDER_ERROR_MESSAGES, isUuid } from "../../lib/document-folders";
 

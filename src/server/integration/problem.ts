@@ -75,59 +75,59 @@ export const PROBLEM_CONTENT_TYPE = "application/problem+json";
  * `status`, `detail` (opcional) e a extensão `code` (design.md — Components).
  */
 export function createProblemResponses(brand: VerticalBrand) {
-function problem(
-  status: number,
-  code: ProblemCode,
-  detail?: string
-): Response {
-  const body = {
-    type: `urn:${brand.problemUrn}:problem:${code}`,
-    title: TITLES[code],
-    status,
-    ...(detail !== undefined ? { detail } : {}),
-    code,
-  };
+  function problem(
+    status: number,
+    code: ProblemCode,
+    detail?: string
+  ): Response {
+    const body = {
+      type: `urn:${brand.problemUrn}:problem:${code}`,
+      title: TITLES[code],
+      status,
+      ...(detail !== undefined ? { detail } : {}),
+      code,
+    };
 
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": PROBLEM_CONTENT_TYPE },
-  });
-}
+    return new Response(JSON.stringify(body), {
+      status,
+      headers: { "Content-Type": PROBLEM_CONTENT_TYPE },
+    });
+  }
 
-/**
- * Handler de 405 para verbos não suportados num route file de `/api/v1`
- * (design.md — Route handlers: "Verbos não suportados... exportados via
- * methodNotAllowed([...])"). O header `Allow` lista os verbos aceitos nesse
- * arquivo de rota (boa prática HTTP para 405, além do corpo problem+json).
- *
- * Instrumentado (lote-9 — SAUDE-01/T9): toda recusa de 405 é registrada com
- * `tenantId = null` (o método é recusado antes de qualquer autenticação).
- * `problem()` continua pura, sem parâmetro novo — só `methodNotAllowed()`
- * conhece `recordRefusalFor`. `request` é opcional para não quebrar os
- * testes de rota existentes que chamam o handler devolvido sem argumento
- * (`handler()`); nesse caso não há `Request` real para registrar, e
- * `recordRefusalFor` já trata essa ausência como no-op. Marcado com
- * `INSTRUMENTED` (T17): a varredura que exige instrumentação em todo export
- * de verbo HTTP de `/api/v1` não distingue "instrumentado via
- * `withIntegrationRoute`" de "instrumentado via `recordRefusalFor` direto" —
- * os dois são igualmente cobertos, só o caminho até lá muda.
- */
-function methodNotAllowed(
-  allowed: string[]
-): ((request?: Request) => Response) & { [INSTRUMENTED]: true } {
-  const handler = (request?: Request): Response => {
-    const response = problem(
-      405,
-      PROBLEM_CODE.method_not_allowed,
-      `Método não suportado nesta rota. Métodos permitidos: ${allowed.join(", ")}.`
-    );
-    response.headers.set("Allow", allowed.join(", "));
-    void recordRefusalFor(request, response, null);
-    return response;
-  };
+  /**
+   * Handler de 405 para verbos não suportados num route file de `/api/v1`
+   * (design.md — Route handlers: "Verbos não suportados... exportados via
+   * methodNotAllowed([...])"). O header `Allow` lista os verbos aceitos nesse
+   * arquivo de rota (boa prática HTTP para 405, além do corpo problem+json).
+   *
+   * Instrumentado (lote-9 — SAUDE-01/T9): toda recusa de 405 é registrada com
+   * `tenantId = null` (o método é recusado antes de qualquer autenticação).
+   * `problem()` continua pura, sem parâmetro novo — só `methodNotAllowed()`
+   * conhece `recordRefusalFor`. `request` é opcional para não quebrar os
+   * testes de rota existentes que chamam o handler devolvido sem argumento
+   * (`handler()`); nesse caso não há `Request` real para registrar, e
+   * `recordRefusalFor` já trata essa ausência como no-op. Marcado com
+   * `INSTRUMENTED` (T17): a varredura que exige instrumentação em todo export
+   * de verbo HTTP de `/api/v1` não distingue "instrumentado via
+   * `withIntegrationRoute`" de "instrumentado via `recordRefusalFor` direto" —
+   * os dois são igualmente cobertos, só o caminho até lá muda.
+   */
+  function methodNotAllowed(
+    allowed: string[]
+  ): ((request?: Request) => Response) & { [INSTRUMENTED]: true } {
+    const handler = (request?: Request): Response => {
+      const response = problem(
+        405,
+        PROBLEM_CODE.method_not_allowed,
+        `Método não suportado nesta rota. Métodos permitidos: ${allowed.join(", ")}.`
+      );
+      response.headers.set("Allow", allowed.join(", "));
+      void recordRefusalFor(request, response, null);
+      return response;
+    };
 
-  return Object.assign(handler, { [INSTRUMENTED]: true as const });
-}
+    return Object.assign(handler, { [INSTRUMENTED]: true as const });
+  }
 
-  return { problem, methodNotAllowed };
+    return { problem, methodNotAllowed };
 }

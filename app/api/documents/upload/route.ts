@@ -1,7 +1,7 @@
 import { MODALITY } from "../../../../src/verticals/real-estate/vocabulary";
 import { handleUpload } from "@vercel/blob/client";
 import type { PutBlobResult } from "@vercel/blob";
-import { PermissionDeniedError } from "@/src/server/auth/session";
+import { PermissionDeniedError } from "@/src/kit/session";
 import {
   createDocumentUploadIntake,
   type CreateDocumentUploadInput,

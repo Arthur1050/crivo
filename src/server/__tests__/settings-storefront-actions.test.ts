@@ -5,7 +5,7 @@ import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { db } from "../../db";
 import { tenants } from "../../db/schema";
 import type { Action, Resource, Role } from "../../kit/access";
-import type { AuthContext } from "../auth/session";
+import type { AuthContext } from "../../kit/session";
 
 /**
  * Configurações da imobiliária e a vitrine (tasks.md — L16a T16; VATIV-01 AC6,
@@ -18,8 +18,8 @@ let sessionRoles: Role[] = ["administrador"];
 let sessionTenantId = "";
 const sessionUser = { id: "", name: "", email: "" };
 
-vi.mock("../auth/session", async (importActual) => {
-  const actual = await importActual<typeof import("../auth/session")>();
+vi.mock("../../kit/session", async (importActual) => {
+  const actual = await importActual<typeof import("../../kit/session")>();
   const fakeSession = async (): Promise<AuthContext> => ({
     user: sessionUser,
     tenantId: sessionTenantId,

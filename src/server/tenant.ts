@@ -2,8 +2,8 @@ import { headers } from "next/headers";
 import { asc, eq, isNull, and } from "drizzle-orm";
 import { db } from "../db";
 import { tenant_members, tenants } from "../db/schema";
-import { auth } from "./auth/config";
-import { verifySession } from "./auth/session";
+import { auth } from "../kit/auth";
+import { verifySession } from "../kit/session";
 import { type Tenant } from "./data";
 
 /**

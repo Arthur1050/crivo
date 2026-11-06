@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { createLocalAccountIssuer } from "@better-auth/core/db";
 import { db } from "../../db";
 import { tenant_invitations } from "../../db/schema";
-import { auth } from "../auth/config";
+import { auth } from "../../kit/auth";
 import { findUserByEmail, getInvitation } from "../data";
 
 /**

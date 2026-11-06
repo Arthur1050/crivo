@@ -9,13 +9,13 @@ import {
   tenants,
   users,
 } from "../../../db/schema";
-import type { AuthContext } from "../../auth/session";
+import type { AuthContext } from "../../../kit/session";
 import * as repository from "../repository";
 import type { DocumentStorage } from "../storage";
 import {
   createDocumentUploadIntake,
   type CreateDocumentUploadInput,
-} from "../uploads";
+} from "../../../kit/documents";
 
 const TENANT_A = randomUUID();
 const TENANT_B = randomUUID();

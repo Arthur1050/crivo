@@ -12,7 +12,7 @@ import {
   users,
 } from "../../db/schema";
 import type { Action, Resource, Role } from "../../kit/access";
-import type { AuthContext } from "../auth/session";
+import type { AuthContext } from "../../kit/session";
 
 /**
  * Server actions de Chats (lote-14, T18 — ASSUMIR-01, ENVIO-01, DEVOLVER-01,
@@ -25,8 +25,8 @@ let sessionRoles: Role[] = ["administrador"];
 let sessionTenantId = "";
 const sessionUser = { id: "", name: "", email: "" };
 
-vi.mock("../auth/session", async (importActual) => {
-  const actual = await importActual<typeof import("../auth/session")>();
+vi.mock("../../kit/session", async (importActual) => {
+  const actual = await importActual<typeof import("../../kit/session")>();
   const fakeSession = async (): Promise<AuthContext> => ({
     user: sessionUser,
     tenantId: sessionTenantId,

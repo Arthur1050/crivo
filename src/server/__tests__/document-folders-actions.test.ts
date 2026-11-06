@@ -4,12 +4,12 @@ import { eq, inArray } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "../../db";
 import { documentFolders, documents, tenants } from "../../db/schema";
-import type { AuthContext } from "../auth/session";
+import type { AuthContext } from "../../kit/session";
 import { createDocumentFolderAction, deleteDocumentFolderAction, moveDocumentsToFolderAction, renameDocumentFolderAction } from "../actions/document-folders";
 
 const session = vi.hoisted(() => ({ tenantId: "", roles: ["gestor"] as AuthContext["roles"] }));
-vi.mock("../auth/session", async (importActual) => {
-  const actual = await importActual<typeof import("../auth/session")>();
+vi.mock("../../kit/session", async (importActual) => {
+  const actual = await importActual<typeof import("../../kit/session")>();
   const fake = async (): Promise<AuthContext> => ({
     user: { id: "00000000-0000-4000-8000-0000000000aa", name: "Gestor", email: "gestor@example.test" },
     tenantId: session.tenantId, roles: session.roles, leadScope: { tenantId: session.tenantId, assignedUserId: null },

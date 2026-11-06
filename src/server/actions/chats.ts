@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { verifySession } from "../auth/session";
+import { verifySession } from "../../kit/session";
 import { registerHumanOptOut } from "../chats/human-opt-out";
 import { sendHumanMessage, type HumanSendFailure } from "../chats/human-send";
 import { returnConversationToAgent, takeOverConversation } from "../data";
