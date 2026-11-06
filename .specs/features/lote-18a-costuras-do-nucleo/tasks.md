@@ -782,7 +782,7 @@ T41 → T42 → T43 → T44 → T45
 
 - [x] Assunto do alerta segue `[krivo]` com a imobiliária, afirmado com literal, e usa a marca do vertical de teste.
 - [x] Entradas de `krivo` em arquivos `core` saem de `transitional.json`, salvo o que depende do L18c, com motivo.
-- [ ] Gate Full da fase verde.
+- [x] Gate Full da fase verde.
 
 **Execução parcial e desvios (2026-11-05)**:
 
@@ -796,6 +796,13 @@ T41 → T42 → T43 → T44 → T45
 **Tests**: integration
 **Gate**: full
 **Commit**: `refactor(nucleo): tirar a marca do código do núcleo`
+
+**Retomada concluída (2026-11-06)**:
+
+- Bloqueio anterior superado após a sincronização do relógio informada pelo usuário: reteste de `reengagement/__tests__/expire.test.ts` e `data/__tests__/mutations.test.ts`, 2 arquivos/63 testes verdes. As duas falhas históricas registradas estavam no mesmo arquivo de expiração; como segundo arquivo, foi escolhido o teste de mutações da DAL que também verifica `updatedAt`. Nenhuma alteração nesses testes nem na lógica temporal de `updateLeadFromAgent`.
+- Única execução de `npm test` nesta retomada: 265 arquivos/4.216 testes verdes, sem falhas. TypeScript: 0 erros. ESLint: 0 erros/9 avisos. Comparação dos 40 arquivos de teste existentes alterados no bloco sem mudança inesperada de literal; somente imports, símbolos, recursos/ações e entrega do vertical. T23 preservada e concluída no commit `bb37b0d`.
+- Ajuste autorizado em commit próprio `99a7e44`: `STATUS_ACTOR` no tipo `StatusActor`, no ator padrão e nas leituras/escritas de `statusChangedBy`, com os mesmos valores persistidos. Gate curto: 5 arquivos/163 testes verdes; TypeScript: 0 erros; ESLint: 0 erros/9 avisos.
+- OpenAPI e workflows gerados sem diferença para `bf5e646`. Nenhuma DDL, ação de produção ou publicação. Próximo bloco: T24–T31; T3, T44, T45 e Verifier não executados.
 
 ---
 
