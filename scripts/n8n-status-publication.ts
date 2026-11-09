@@ -2,7 +2,7 @@
  * Não constitui prova: o caller fornece a evidência observada da versão instalada.
  * T67 reutiliza esta fronteira; sem prova não há payload publicável.
  */
-type PrincipalGraph = { nodes: { name: string; type: string; typeVersion: number; parameters: Record<string, unknown> }[]; connections: unknown };
+type MainWorkflowGraph = { nodes: { name: string; type: string; typeVersion: number; parameters: Record<string, unknown> }[]; connections: unknown };
 export type StatusPublicationEvidence = {
   workflowId: string; activeVersionId: string; triggerVersion: number;
   signatureAlgorithm: "hmac-sha256"; signatureInput: "raw-body";
@@ -10,7 +10,7 @@ export type StatusPublicationEvidence = {
   credentialSha256: string; verifiedAt: string;
 };
 
-export function preparePrincipalStatusPublication(graph: PrincipalGraph, target: { workflowId: string; activeVersionId: string }, evidence?: StatusPublicationEvidence | null) {
+export function prepareMainWorkflowStatusPublication(graph: MainWorkflowGraph, target: { workflowId: string; activeVersionId: string }, evidence?: StatusPublicationEvidence | null) {
   const trigger = graph.nodes.find((node) => node.type === "n8n-nodes-base.whatsAppTrigger");
   const options = trigger?.parameters.options as { messageStatusUpdates?: unknown } | undefined;
   const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -21,3 +21,6 @@ export function preparePrincipalStatusPublication(graph: PrincipalGraph, target:
   if (JSON.stringify(options?.messageStatusUpdates) !== '["delivered","failed"]') throw new Error("status-trigger-config-unverified");
   return graph;
 }
+
+// O consumidor do workflow ainda importa o nome anterior.
+export { prepareMainWorkflowStatusPublication as "preparePrincipalStatusPublication" };

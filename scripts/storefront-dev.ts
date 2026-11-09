@@ -23,38 +23,38 @@ export const PORTA_DEV = 3100;
 // Sem `NodeJS.ProcessEnv`: o Next o amplia exigindo `NODE_ENV`, e aqui só passam variáveis soltas.
 type Ambiente = Record<string, string | undefined>;
 
-export interface AmbienteDaVitrine {
-  VITRINE_DATABASE_URL: string;
-  VITRINE_REVALIDATE_SECRET: string;
-  VITRINE_PUBLIC_URL: string;
+export interface StorefrontEnvironment {
+  "VITRINE_DATABASE_URL": string;
+  "VITRINE_REVALIDATE_SECRET": string;
+  "VITRINE_PUBLIC_URL": string;
 }
 
 /** As 3 variáveis que a vitrine lê. Lança, sem expor valor, se faltar entrada. */
-export function ambienteDaVitrine(input: {
+export function storefrontEnvironment(input: {
   baseUrl: string | undefined;
   password: string | undefined;
   porta?: number;
   segredo?: string;
-}): AmbienteDaVitrine {
+}): StorefrontEnvironment {
   if (!input.baseUrl) {
     throw new Error("TEST_DATABASE_URL não definida: o vitrine:dev só roda contra o banco de teste.");
   }
   return {
-    VITRINE_DATABASE_URL: resolveStorefrontTestUrl({ baseUrl: input.baseUrl, password: input.password }),
-    VITRINE_REVALIDATE_SECRET: input.segredo ?? randomBytes(24).toString("hex"),
-    VITRINE_PUBLIC_URL: `http://localhost:${input.porta ?? PORTA_DEV}`,
+    "VITRINE_DATABASE_URL": resolveStorefrontTestUrl({ baseUrl: input.baseUrl, password: input.password }),
+    "VITRINE_REVALIDATE_SECRET": input.segredo ?? randomBytes(24).toString("hex"),
+    "VITRINE_PUBLIC_URL": `http://localhost:${input.porta ?? PORTA_DEV}`,
   };
 }
 
 /** Variáveis do CRM que não podem atravessar para o processo da vitrine. */
 const SENSIVEL = /DATABASE|PASSWORD|SECRET|TOKEN|KEY|API|CREDENTIAL|AUTH/i;
 
-export function ambienteDoFilho(pai: Ambiente, vitrine: AmbienteDaVitrine): Ambiente {
+export function ambienteDoFilho(pai: Ambiente, storefront: StorefrontEnvironment): Ambiente {
   const filho: Ambiente = {};
-  for (const [nome, valor] of Object.entries(pai)) {
-    if (!SENSIVEL.test(nome)) filho[nome] = valor;
+  for (const [name, value] of Object.entries(pai)) {
+    if (!SENSIVEL.test(name)) filho[name] = value;
   }
-  return { ...filho, ...vitrine };
+  return { ...filho, ...storefront };
 }
 
 export interface DependenciasDev {
@@ -62,25 +62,25 @@ export interface DependenciasDev {
   cwd: string;
   spawn: (comando: string, args: string[], opcoes: SpawnOptions) => ChildProcess;
   log: (linha: string) => void;
-  erro: (linha: string) => void;
+  error: (linha: string) => void;
 }
 
 /** Sobe a vitrine. Devolve o processo, ou `null` (já avisado) se faltar configuração. */
-export function iniciarVitrineDev(deps: DependenciasDev): ChildProcess | null {
-  let ambiente: AmbienteDaVitrine;
+export function startStorefrontDev(deps: DependenciasDev): ChildProcess | null {
+  let ambiente: StorefrontEnvironment;
   try {
-    ambiente = ambienteDaVitrine({
+    ambiente = storefrontEnvironment({
       baseUrl: deps.env.TEST_DATABASE_URL,
-      password: deps.env.VITRINE_TEST_DB_PASSWORD,
+      password: deps.env["VITRINE_TEST_DB_PASSWORD"],
     });
   } catch (e) {
-    deps.erro((e as Error).message);
+    deps.error((e as Error).message);
     return null;
   }
 
-  const url = new URL(ambiente.VITRINE_DATABASE_URL);
+  const url = new URL(ambiente["VITRINE_DATABASE_URL"]);
   deps.log(
-    `vitrine:dev -> banco DE TESTE: ${url.hostname}${url.pathname}, papel ${STOREFRONT_ROLE}, ${ambiente.VITRINE_PUBLIC_URL}`
+    `vitrine:dev -> banco DE TESTE: ${url.hostname}${url.pathname}, papel ${STOREFRONT_ROLE}, ${ambiente["VITRINE_PUBLIC_URL"]}`
   );
 
   return deps.spawn("npx", ["next", "dev", "-p", String(PORTA_DEV)], {
@@ -91,13 +91,13 @@ export function iniciarVitrineDev(deps: DependenciasDev): ChildProcess | null {
   });
 }
 
-if (process.argv[1]?.replace(/\\/g, "/").endsWith("scripts/vitrine-dev.ts")) {
-  const filho = iniciarVitrineDev({
+if (process.argv[1]?.replace(/\\/g, "/").endsWith("scripts/storefront-dev.ts")) {
+  const filho = startStorefrontDev({
     env: process.env,
     cwd: process.cwd(),
     spawn,
     log: (linha) => console.log(linha),
-    erro: (linha) => console.error(linha),
+    error: (linha) => console.error(linha),
   });
   if (!filho) process.exit(1);
   filho.on("exit", (code) => process.exit(code ?? 0));

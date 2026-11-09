@@ -2,7 +2,7 @@ import "dotenv/config";
 import { sql } from "drizzle-orm";
 import { Client } from "pg";
 import { afterAll, describe, expect, it } from "vitest";
-import { applyVitrineSql, dropVitrineSchema, verifyVitrineState } from "../vitrine/apply";
+import { applyStorefrontSql, dropStorefrontSchema, verifyStorefrontState } from "../storefront/apply";
 import { db } from "../../src/db";
 import { currentTestDatabaseUrl } from "../../src/db/__tests__/vitrine-helpers";
 import { pushToTargets, realSteps, restoreDrizzleBlindIndexes, type PushSteps } from "../test-db-push";
@@ -17,9 +17,9 @@ const PASSWORD = "senha-do-papel-123";
 function simulated(overrides: Partial<PushSteps> = {}) {
   const calls: string[] = [];
   const steps: PushSteps = {
-    dropVitrine: async (url) => { calls.push(`drop ${new URL(url).hostname}`); },
+    dropStorefront: async (url) => { calls.push(`drop ${new URL(url).hostname}`); },
     push: async (url) => { calls.push(`push ${new URL(url).hostname}`); return 0; },
-    applyVitrine: async (url, options) => { calls.push(`apply ${new URL(url).hostname} ${options.password}`); },
+    applyStorefront: async (url, options) => { calls.push(`apply ${new URL(url).hostname} ${options.password}`); },
     verify: async (url) => { calls.push(`verify ${new URL(url).hostname}`); return []; },
     ...overrides,
   };
@@ -78,12 +78,12 @@ describe("L16a T10 — db:push:test com o SQL da vitrine (VBANCO-03)", () => {
   });
 
   it("erro ao derrubar o schema ou ao aplicar o SQL para no alvo e não toca os demais", async () => {
-    const dropFails = simulated({ dropVitrine: async () => { throw new Error("falha simulada"); } });
+    const dropFails = simulated({ dropStorefront: async () => { throw new Error("falha simulada"); } });
     expect(await pushToTargets(TARGETS, dropFails.steps, PASSWORD, capture().logger)).not.toBe(0);
     expect(dropFails.calls).toEqual([]);
 
     const applyFails = simulated({
-      applyVitrine: async (url) => { applyFails.calls.push(`apply ${new URL(url).hostname}`); throw new Error("falha simulada"); },
+      applyStorefront: async (url) => { applyFails.calls.push(`apply ${new URL(url).hostname}`); throw new Error("falha simulada"); },
     });
     expect(await pushToTargets(TARGETS, applyFails.steps, PASSWORD, capture().logger)).not.toBe(0);
     expect(applyFails.calls.some((call) => call.includes("host-w1"))).toBe(false);
@@ -104,7 +104,7 @@ describe("L16a T10 — db:push:test com o SQL da vitrine (VBANCO-03)", () => {
     const { lines, logger } = capture();
     await pushToTargets(TARGETS, simulated().steps, PASSWORD, logger);
     await pushToTargets(TARGETS, failing.steps, PASSWORD, logger);
-    const throwing = simulated({ applyVitrine: async () => { throw new Error(`postgresql://owner:senha-da-base@host-base.example.test/neondb ${PASSWORD}`); } });
+    const throwing = simulated({ applyStorefront: async () => { throw new Error(`postgresql://owner:senha-da-base@host-base.example.test/neondb ${PASSWORD}`); } });
     await pushToTargets(TARGETS, throwing.steps, PASSWORD, logger);
     const output = lines.join("\n");
     expect(output).not.toContain(PASSWORD);
@@ -122,40 +122,40 @@ describe("L16a T10 — conferência do estado final contra o banco real (VBANCO-
   });
 
   it("com o estado que o db:push:test deixou, não há problema algum", async () => {
-    expect(await verifyVitrineState(url)).toEqual([]);
+    expect(await verifyStorefrontState(url)).toEqual([]);
   });
 
   it("com um check removido à mão, aponta o check ausente; reaplicar o SQL resolve", async () => {
     await db.execute(sql`alter table public.tenant_storefronts drop constraint tenant_storefronts_active_requires_identity_check`);
     try {
-      expect(await verifyVitrineState(url)).toEqual([
+      expect(await verifyStorefrontState(url)).toEqual([
         "check tenant_storefronts_active_requires_identity_check ausente em tenant_storefronts",
       ]);
     } finally {
-      await applyVitrineSql(url);
+      await applyStorefrontSql(url);
     }
-    expect(await verifyVitrineState(url)).toEqual([]);
+    expect(await verifyStorefrontState(url)).toEqual([]);
   });
 
   it("um GRANT a mais em public.properties para o papel é apontado como inesperado", async () => {
     await db.execute(sql`grant select on public.properties to krivo_vitrine`);
     try {
-      const problems = await verifyVitrineState(url);
+      const problems = await verifyStorefrontState(url);
       expect(problems).toEqual(["grant inesperado public.properties:SELECT para krivo_vitrine"]);
     } finally {
       await db.execute(sql`revoke select on public.properties from krivo_vitrine`);
     }
-    expect(await verifyVitrineState(url)).toEqual([]);
+    expect(await verifyStorefrontState(url)).toEqual([]);
   });
 
   it("um grant que falta nas views é apontado como ausente", async () => {
     await db.execute(sql`revoke select on vitrine.lojas from krivo_vitrine`);
     try {
-      expect(await verifyVitrineState(url)).toEqual(["grant vitrine.lojas:SELECT ausente para krivo_vitrine"]);
+      expect(await verifyStorefrontState(url)).toEqual(["grant vitrine.lojas:SELECT ausente para krivo_vitrine"]);
     } finally {
-      await applyVitrineSql(url);
+      await applyStorefrontSql(url);
     }
-    expect(await verifyVitrineState(url)).toEqual([]);
+    expect(await verifyStorefrontState(url)).toEqual([]);
   });
 });
 
@@ -184,10 +184,10 @@ describe("índice que o drizzle-kit push derruba (restauração no db:push:test)
   it("em cada alvo a restauração roda depois do push e antes de aplicar o SQL da vitrine", async () => {
     const calls: string[] = [];
     const { steps } = simulated({
-      dropVitrine: async () => { calls.push("drop"); },
+      dropStorefront: async () => { calls.push("drop"); },
       push: async () => { calls.push("push"); return 0; },
       restoreIndexes: async () => { calls.push("restore"); },
-      applyVitrine: async () => { calls.push("apply"); },
+      applyStorefront: async () => { calls.push("apply"); },
       verify: async () => { calls.push("verify"); return []; },
     });
     expect(await pushToTargets(TARGETS.slice(0, 1), steps, PASSWORD, capture().logger)).toBe(0);
@@ -198,7 +198,7 @@ describe("índice que o drizzle-kit push derruba (restauração no db:push:test)
     const calls: string[] = [];
     const { steps } = simulated({
       restoreIndexes: async () => { calls.push("restore"); throw new Error("duplicado"); },
-      applyVitrine: async () => { calls.push("apply"); },
+      applyStorefront: async () => { calls.push("apply"); },
     });
     expect(await pushToTargets(TARGETS, steps, PASSWORD, capture().logger)).not.toBe(0);
     expect(calls).toEqual(["restore"]);
@@ -206,8 +206,8 @@ describe("índice que o drizzle-kit push derruba (restauração no db:push:test)
 
   it("as etapas reais do db:push:test ligam cada função: derrubar, restaurar o índice, aplicar e conferir (L-026)", () => {
     const steps = realSteps();
-    expect(steps.dropVitrine).toBe(dropVitrineSchema);
-    expect(steps.applyVitrine).toBe(applyVitrineSql);
+    expect(steps.dropStorefront).toBe(dropStorefrontSchema);
+    expect(steps.applyStorefront).toBe(applyStorefrontSql);
   });
 
   it("recria o índice único por (tenant, lower(nome)) quando ele sumiu; reexecutar não falha", async () => {

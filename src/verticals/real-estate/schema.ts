@@ -146,7 +146,7 @@ export const properties = pgTable(
 // Tabela 1:1 com `tenants`: ausência de linha equivale a vitrine inativa com
 // os valores padrão (AD-004: imobiliárias existentes não precisam de migração).
 // A fronteira pública não é esta tabela, e sim as views do schema `vitrine`
-// (`scripts/vitrine/vitrine.sql`), que o papel `krivo_vitrine` lê.
+// (`scripts/storefront/storefront.sql`), que o papel `krivo_vitrine` lê.
 //
 // Os dois checks são do BANCO. O `drizzle-kit push` já saiu com 0 deixando
 // check sem aplicar (L-068): o SQL da vitrine os reaplica de forma idempotente

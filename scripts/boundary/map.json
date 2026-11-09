@@ -107,11 +107,11 @@
     "package": "@core/agent"
   },
   {
-    "glob": "scripts/vitrine*",
+    "glob": "scripts/storefront*",
     "layer": "vertical"
   },
   {
-    "glob": "scripts/vitrine/**",
+    "glob": "scripts/storefront/**",
     "layer": "vertical"
   },
   {

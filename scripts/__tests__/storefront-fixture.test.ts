@@ -5,11 +5,11 @@ import { db } from "../../src/db";
 import { leads, tenants, users } from "../../src/db/schema";
 import { properties, tenantStorefronts } from "../../src/verticals/real-estate/schema";
 import {
-  criarFixtureVitrine,
-  removerFixtureVitrine,
+  createStorefrontFixture,
+  removeStorefrontFixture,
   SENTINELAS,
   SLUGS_DA_FIXTURE,
-} from "../vitrine-fixture";
+} from "../storefront-fixture";
 
 const SLUGS = Object.values(SLUGS_DA_FIXTURE);
 
@@ -34,7 +34,7 @@ async function fotografiaDoResto() {
       .from(tenantStorefronts)
       .where(fora(tenantStorefronts.tenantId))
       .orderBy(tenantStorefronts.tenantId),
-    imoveis: await db
+    properties: await db
       .select({ id: properties.id, atualizadoEm: properties.updatedAt, publicado: properties.published })
       .from(properties)
       .where(fora(properties.tenantId))
@@ -49,16 +49,16 @@ async function fotografiaDoResto() {
 
 async function contagemDaFixture() {
   const ids = await idsDaFixture();
-  const [vitrines, imoveis, leadsDaFixture, captadores] = await Promise.all([
+  const [vitrines, propertyRows, leadsDaFixture, captadores] = await Promise.all([
     ids.length ? db.select({ total: count() }).from(tenantStorefronts).where(inArray(tenantStorefronts.tenantId, ids)) : [{ total: 0 }],
     ids.length ? db.select({ total: count() }).from(properties).where(inArray(properties.tenantId, ids)) : [{ total: 0 }],
     ids.length ? db.select({ total: count() }).from(leads).where(inArray(leads.tenantId, ids)) : [{ total: 0 }],
     db.select({ total: count() }).from(users).where(eq(users.email, SENTINELAS.captadorEmail)),
   ]);
   return {
-    lojas: ids.length,
+    stores: ids.length,
     vitrines: vitrines[0].total,
-    imoveis: imoveis[0].total,
+    properties: propertyRows[0].total,
     leads: leadsDaFixture[0].total,
     captadores: captadores[0].total,
   };
@@ -66,39 +66,39 @@ async function contagemDaFixture() {
 
 describe("L16b T13 — fixture de sentinelas da vitrine (VSEG-01, VSEG-02)", () => {
   beforeAll(async () => {
-    await removerFixtureVitrine(db);
+    await removeStorefrontFixture(db);
   });
 
   afterAll(async () => {
-    await removerFixtureVitrine(db);
+    await removeStorefrontFixture(db);
     await db.$client.end();
   });
 
   it("criar duas vezes não duplica nenhuma linha", async () => {
-    await criarFixtureVitrine(db);
+    await createStorefrontFixture(db);
     const primeira = await contagemDaFixture();
-    await criarFixtureVitrine(db);
+    await createStorefrontFixture(db);
     const segunda = await contagemDaFixture();
 
     // 4 lojas; A tem 28 imóveis, B 5, C 2 e D 3; um lead por loja; 1 captador.
-    expect(primeira).toEqual({ lojas: 4, vitrines: 4, imoveis: 38, leads: 4, captadores: 1 });
+    expect(primeira).toEqual({ stores: 4, vitrines: 4, properties: 38, leads: 4, captadores: 1 });
     expect(segunda).toEqual(primeira);
   });
 
   it("remover deixa zero linhas das quatro lojas e não toca nenhuma linha fora da fixture", async () => {
-    await removerFixtureVitrine(db);
+    await removeStorefrontFixture(db);
     const antes = await fotografiaDoResto();
 
-    const fixture = await criarFixtureVitrine(db);
-    expect(fixture.lojas.a.id).toEqual(expect.any(String));
-    await removerFixtureVitrine(db);
+    const fixture = await createStorefrontFixture(db);
+    expect(fixture.stores.a.id).toEqual(expect.any(String));
+    await removeStorefrontFixture(db);
 
-    expect(await contagemDaFixture()).toEqual({ lojas: 0, vitrines: 0, imoveis: 0, leads: 0, captadores: 0 });
+    expect(await contagemDaFixture()).toEqual({ stores: 0, vitrines: 0, properties: 0, leads: 0, captadores: 0 });
     expect(await fotografiaDoResto()).toEqual(antes);
   });
 
   it("as views reais mostram exatamente o que a fixture promete: A 25 visíveis, B 4, C e D nenhum", async () => {
-    const fixture = await criarFixtureVitrine(db);
+    const fixture = await createStorefrontFixture(db);
     const lojasVisiveis = await db.execute(
       sql`select slug from vitrine.lojas where slug in (${sql.join(SLUGS.map((s) => sql`${s}`), sql`, `)}) order by slug`
     );
@@ -119,20 +119,20 @@ describe("L16b T13 — fixture de sentinelas da vitrine (VSEG-01, VSEG-02)", () 
   });
 
   it("a fixture cobre o desenho: cores, fontes e layouts diferentes, D sem cor com a fonte padrão, imóvel sem foto e com <script>", async () => {
-    const { lojas, ordemDaA } = await criarFixtureVitrine(db);
+    const { stores, ordemDaA } = await createStorefrontFixture(db);
 
-    expect(new Set([lojas.a.cor, lojas.b.cor, lojas.d.cor]).size).toBe(3);
-    expect(lojas.a.fonte).not.toBe(lojas.b.fonte);
-    expect(lojas.a.layout).toBe("grade");
-    expect(lojas.b.layout).toBe("editorial");
-    expect(lojas.c.ativa).toBe(false);
-    expect(lojas.d.cor).toBeNull();
-    expect(lojas.d.fonte).toBe("inter");
-    expect(lojas.d.imoveis.filter((imovel) => imovel.visivel)).toEqual([]);
+    expect(new Set([stores.a.color, stores.b.color, stores.d.color]).size).toBe(3);
+    expect(stores.a.font).not.toBe(stores.b.font);
+    expect(stores.a.layout).toBe("grade");
+    expect(stores.b.layout).toBe("editorial");
+    expect(stores.c.ativa).toBe(false);
+    expect(stores.d.color).toBeNull();
+    expect(stores.d.font).toBe("inter");
+    expect(stores.d.properties.filter((property) => property.visivel)).toEqual([]);
 
-    const visiveisA = lojas.a.imoveis.filter((imovel) => imovel.visivel);
-    expect(visiveisA.some((imovel) => imovel.fotos === null)).toBe(true);
-    expect(visiveisA.some((imovel) => imovel.descricao.includes("<script>"))).toBe(true);
+    const visiveisA = stores.a.properties.filter((property) => property.visivel);
+    expect(visiveisA.some((property) => property.fotos === null)).toBe(true);
+    expect(visiveisA.some((property) => property.description.includes("<script>"))).toBe(true);
 
     // Ordem do catálogo: os 3 destaques (mais recente primeiro), depois o resto;
     // 19 e 20 empatam em `atualizado_em` e a referência decide.

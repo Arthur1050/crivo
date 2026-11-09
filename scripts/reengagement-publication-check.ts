@@ -6,9 +6,9 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { inlineWorkflowSource } from "./n8n-inline.mjs";
-import { preparePrincipalStatusPublication, type StatusPublicationEvidence } from "./n8n-status-publication";
+import { prepareMainWorkflowStatusPublication, type StatusPublicationEvidence } from "./n8n-status-publication";
 
-type Graph = Parameters<typeof preparePrincipalStatusPublication>[0] & { settings?: unknown };
+type Graph = Parameters<typeof prepareMainWorkflowStatusPublication>[0] & { settings?: unknown };
 type Gate = { state: "confirmed" | "pending"; code: string };
 type Role = "principal" | "scheduler" | "reengagement-contextual";
 const roles: Role[] = ["principal", "scheduler", "reengagement-contextual"];
@@ -95,23 +95,23 @@ export function checkReengagementPublication(artifacts: LocalPublicationArtifact
       published: gate(!!artifact && versionBound && observation.active === true && observation.operationsHash === artifact.operationsHash,
         "installed-operations-equivalent", "installed-version-or-operations-unverified") };
   });
-  const principalTarget = evidence.targets.find((entry) => entry.role === "principal");
-  const principal = principalTarget && installed.find((entry) => entry.workflowId === principalTarget.workflowId && entry.source === "n8n-readonly" && time(entry.observedAt));
-  const localPrincipal = artifacts.find((entry) => entry.role === "principal");
-  const localTrigger = localPrincipal?.graph.nodes.find((node) => node.type === "n8n-nodes-base.whatsAppTrigger");
-  const serializerVerified = !!principal?.trigger && uuid(principal.activeVersionId) && !!localTrigger
-    && principal.serializerHash === publicationDigest(principal.trigger.parameters)
-    && principal.serializerHash === publicationDigest(localTrigger.parameters);
+  const mainWorkflowTarget = evidence.targets.find((entry) => entry.role === "principal");
+  const mainWorkflow = mainWorkflowTarget && installed.find((entry) => entry.workflowId === mainWorkflowTarget.workflowId && entry.source === "n8n-readonly" && time(entry.observedAt));
+  const localMainWorkflow = artifacts.find((entry) => entry.role === "principal");
+  const localTrigger = localMainWorkflow?.graph.nodes.find((node) => node.type === "n8n-nodes-base.whatsAppTrigger");
+  const serializerVerified = !!mainWorkflow?.trigger && uuid(mainWorkflow.activeVersionId) && !!localTrigger
+    && mainWorkflow.serializerHash === publicationDigest(mainWorkflow.trigger.parameters)
+    && mainWorkflow.serializerHash === publicationDigest(localTrigger.parameters);
   // Seleção observada é um fato distinto do probe de assinatura instalado.
-  const installedOptions = principal?.trigger?.parameters.options as { messageStatusUpdates?: unknown } | undefined;
+  const installedOptions = mainWorkflow?.trigger?.parameters.options as { messageStatusUpdates?: unknown } | undefined;
   const statusSelectionVerified = serializerVerified && JSON.stringify(installedOptions?.messageStatusUpdates) === '["delivered","failed"]';
   let originVerified = false;
-  if (principal?.trigger && uuid(principal.activeVersionId) && serializerVerified
-    && evidence.signature?.source === "installed-trigger-probe" && sha(principal.credentialSha256)
-    && principal.credentialSha256 === evidence.signature.evidence.credentialSha256) {
+  if (mainWorkflow?.trigger && uuid(mainWorkflow.activeVersionId) && serializerVerified
+    && evidence.signature?.source === "installed-trigger-probe" && sha(mainWorkflow.credentialSha256)
+    && mainWorkflow.credentialSha256 === evidence.signature.evidence.credentialSha256) {
     try {
-      preparePrincipalStatusPublication({ nodes: [principal.trigger], connections: {} },
-        { workflowId: principal.workflowId, activeVersionId: principal.activeVersionId }, evidence.signature.evidence);
+      prepareMainWorkflowStatusPublication({ nodes: [mainWorkflow.trigger], connections: {} },
+        { workflowId: mainWorkflow.workflowId, activeVersionId: mainWorkflow.activeVersionId }, evidence.signature.evidence);
       originVerified = true;
     } catch { /* A assinatura/configuração não é presumida pela fonte local. */ }
   }

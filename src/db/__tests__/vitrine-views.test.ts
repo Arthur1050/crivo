@@ -2,7 +2,7 @@ import "dotenv/config";
 import { randomUUID } from "node:crypto";
 import { eq, inArray, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { applyVitrineSql } from "../../../scripts/vitrine/apply";
+import { applyStorefrontSql } from "../../../scripts/storefront/apply";
 import { STOREFRONT_VIEW_COLUMNS } from "../../verticals/real-estate/storefront/contract";
 import { searchVisibleProperties } from "../../verticals/real-estate/integration/properties";
 import { db } from "../index";
@@ -78,7 +78,7 @@ describe("L16a T8 — views públicas da vitrine (VBANCO-01)", () => {
   beforeAll(async () => {
     userId = randomUUID();
     await db.insert(users).values({ id: userId, name: "Captador vitrine", email: `${userId}@fixture.test` });
-    await applyVitrineSql(url);
+    await applyStorefrontSql(url);
   });
 
   afterAll(async () => {
@@ -239,8 +239,8 @@ describe("L16a T8 — views públicas da vitrine (VBANCO-01)", () => {
 
     it("aplicar duas vezes não falha, não duplica check e não muda as views", async () => {
       const before = { checks: await constraintNames(), views: await viewDefinitions() };
-      await applyVitrineSql(url);
-      await applyVitrineSql(url);
+      await applyStorefrontSql(url);
+      await applyStorefrontSql(url);
       expect(await constraintNames()).toEqual(before.checks);
       expect(before.checks).toEqual([
         "tenant_storefronts_accent_color_check",
@@ -254,7 +254,7 @@ describe("L16a T8 — views públicas da vitrine (VBANCO-01)", () => {
       await db.execute(sql`alter table public.tenant_storefronts drop constraint tenant_storefronts_active_requires_identity_check`);
       expect(await constraintNames()).toEqual([]);
 
-      await applyVitrineSql(url);
+      await applyStorefrontSql(url);
 
       expect(await constraintNames()).toEqual([
         "tenant_storefronts_accent_color_check",

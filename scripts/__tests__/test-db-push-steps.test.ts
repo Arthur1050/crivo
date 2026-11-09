@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { restoreDrizzleBlindIndexes } from "../drizzle-blind-indexes";
 import { applyDocumentFoldersSql, verifyDocumentFoldersState } from "../document-folders/apply";
-import { verifyVitrineState } from "../vitrine/apply";
+import { verifyStorefrontState } from "../storefront/apply";
 import { realSteps } from "../test-db-push";
 
 vi.mock("../drizzle-blind-indexes", () => ({ restoreDrizzleBlindIndexes: vi.fn() }));
 vi.mock("../document-folders/apply", () => ({ applyDocumentFoldersSql: vi.fn(), verifyDocumentFoldersState: vi.fn() }));
-vi.mock("../vitrine/apply", () => ({ verifyVitrineState: vi.fn(), dropVitrineSchema: vi.fn(), applyVitrineSql: vi.fn() }));
+vi.mock("../storefront/apply", () => ({ verifyStorefrontState: vi.fn(), dropStorefrontSchema: vi.fn(), applyStorefrontSql: vi.fn() }));
 
 const url = "postgresql://teste.example.test/banco";
 beforeEach(() => { vi.resetAllMocks(); });
@@ -46,10 +46,10 @@ describe("L17 T2 — ligação real das etapas compostas (L-026)", () => {
     [[], ["problema pastas"], ["problema pastas"]],
     [[], [], []],
   ])("concatena as conferências da vitrine %j e das pastas %j", async (vitrine, folders, expected) => {
-    vi.mocked(verifyVitrineState).mockResolvedValue(vitrine);
+    vi.mocked(verifyStorefrontState).mockResolvedValue(vitrine);
     vi.mocked(verifyDocumentFoldersState).mockResolvedValue(folders);
     expect(await realSteps().verify(url)).toEqual(expected);
-    expect(verifyVitrineState).toHaveBeenCalledExactlyOnceWith(url);
+    expect(verifyStorefrontState).toHaveBeenCalledExactlyOnceWith(url);
     expect(verifyDocumentFoldersState).toHaveBeenCalledExactlyOnceWith(url);
   });
 });

@@ -104,19 +104,19 @@ export function auditProactiveBenchmark(input: {
     const value = input.frame.facts[field as keyof PreparationFrame["facts"]];
     return value !== null && value !== undefined && value !== "";
   });
-  const principal = buildSystemMessage({ settings: input.settings, businessHours: input.businessHours,
+  const mainWorkflow = buildSystemMessage({ settings: input.settings, businessHours: input.businessHours,
     now: input.frame.preparedAt, phase: input.frame.agent.phase, firstTurn: false,
     perguntados: [...new Set([...input.frame.agent.askedFields, ...informed])] });
   const previous = measured?.identity ?? null;
   const changed = previous ? diffBenchmarkIdentity(previous, input.current) : [];
-  const parity = principal === prepared.baseSystemMessage;
+  const parity = mainWorkflow === prepared.baseSystemMessage;
   const stale = !!measured?.staleAt || changed.length > 0;
   return {
     paidCalls: 0 as const,
     previousIdentity: previous, currentIdentity: input.current, changed,
     sharedIdentityEqual: !!previous && previous.systemMessageHash === input.current.systemMessageHash,
     promptParity: parity,
-    promptHashes: { principal: hash(principal), proactiveBase: hash(prepared.baseSystemMessage),
+    promptHashes: { "principal": hash(mainWorkflow), proactiveBase: hash(prepared.baseSystemMessage),
       proactiveEffective: hash(prepared.systemMessage + "\n" + prepared.prompt) },
     budget: { limitingCeilingBytes, overheadBytes: prepared.overheadBytes, maxDocumentBytes: prepared.maxDocumentBytes },
     measured: validMeasurement, stale,

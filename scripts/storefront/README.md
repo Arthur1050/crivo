@@ -4,14 +4,14 @@ Fronteira de banco da vitrine (AD-040): o papel `krivo_vitrine` lê só duas vie
 
 | Arquivo | O que faz |
 | --- | --- |
-| `vitrine.sql` | Idempotente. Reaplica os dois checks de `tenant_storefronts`, cria o schema `vitrine`, as views `vitrine.lojas` e `vitrine.imoveis` (`security_barrier`), o papel `krivo_vitrine` e os dois grants. Não define senha. |
+| `storefront.sql` | Idempotente. Reaplica os dois checks de `tenant_storefronts`, cria o schema `vitrine`, as views `vitrine.lojas` e `vitrine.imoveis` (`security_barrier`), o papel `krivo_vitrine` e os dois grants. Não define senha. |
 | `apply.ts` | `applyVitrineSql(url, { password? })`, `dropVitrineSchema(url)` e `verifyVitrineState(url)`. |
 
 ## Ordem obrigatória, em qualquer banco
 
 1. **Derrubar o schema `vitrine`** (`drop schema if exists vitrine cascade`). Alterar uma coluna usada por view faz o `drizzle-kit push` falhar (`0A000 cannot alter type of a column used by a view or rule`).
 2. **Aplicar o schema do Drizzle** (`drizzle-kit push`).
-3. **Aplicar `vitrine.sql`.** Pode rodar quantas vezes for preciso: só adiciona o que falta.
+3. **Aplicar `storefront.sql`.** Pode rodar quantas vezes for preciso: só adiciona o que falta.
 4. **Conferir o estado final** (`verifyVitrineState`): os dois checks em `pg_constraint`, as duas views com `security_barrier`, o papel com login, `default_transaction_read_only = on` e `statement_timeout = 5s`, e exatamente dois grants (`SELECT` em `vitrine.lojas` e em `vitrine.imoveis`).
 
 Não confie no código de saída do `drizzle-kit push`: ele já saiu com 0 sem aplicar um check (L-068) e sai com 0 depois de falhar num índice único que já existe.
@@ -20,13 +20,13 @@ Nos bancos de teste, `npm run db:push:test` faz os quatro passos em cada alvo (b
 
 ## O papel nasce só por SQL
 
-**Nunca crie `krivo_vitrine` pelo console do Neon.** O console coloca o papel em `neon_superuser`, o que anula o isolamento sem ninguém notar. Por SQL, o papel não é membro de papel algum e não tem privilégio nenhum em `public`; o `vitrine.sql` cria o papel só se ele não existir.
+**Nunca crie `krivo_vitrine` pelo console do Neon.** O console coloca o papel em `neon_superuser`, o que anula o isolamento sem ninguém notar. Por SQL, o papel não é membro de papel algum e não tem privilégio nenhum em `public`; o `storefront.sql` cria o papel só se ele não existir.
 
 Papéis são por branch do Neon: o papel criado numa branch não existe nas branches filhas já criadas. Aplique o SQL em cada alvo.
 
 ## A senha é definida à parte
 
-O `vitrine.sql` não contém senha.
+O `storefront.sql` não contém senha.
 
 - **Bancos de teste**: `npm run db:push:test` aplica a senha a partir de `VITRINE_TEST_DB_PASSWORD`, uma variável do ambiente local. Sem ela o comando falha antes de tocar qualquer alvo.
 - **Produção**: quem define a senha é o usuário, no editor SQL do Neon, com `alter role krivo_vitrine password '<senha definida pelo usuário>'`. A senha vai direto para a variável do projeto da vitrine na Vercel e nunca para o repositório, para um commit ou para o chat.

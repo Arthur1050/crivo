@@ -2,11 +2,11 @@ import type { ChildProcess, SpawnOptions } from "node:child_process";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import {
-  ambienteDaVitrine,
+  storefrontEnvironment,
   ambienteDoFilho,
-  iniciarVitrineDev,
+  startStorefrontDev,
   PORTA_DEV,
-} from "../vitrine-dev";
+} from "../storefront-dev";
 
 const BASE = "postgresql://dono:senha-do-dono@ep-teste-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require";
 const SENHA = "p@ss:w/rd%41#x";
@@ -15,7 +15,7 @@ function ambienteDoPai(): Record<string, string | undefined> {
   return {
     PATH: "/usr/bin",
     TEST_DATABASE_URL: BASE,
-    VITRINE_TEST_DB_PASSWORD: SENHA,
+    "VITRINE_TEST_DB_PASSWORD": SENHA,
     DATABASE_URL: "postgresql://dono:real@producao.example/neondb",
     WHATSAPP_ACCESS_TOKEN: "token-da-meta",
     BETTER_AUTH_SECRET: "segredo-do-crm",
@@ -27,7 +27,7 @@ function executar(env: Record<string, string | undefined>) {
   const linhas: string[] = [];
   const chamadas: { comando: string; args: string[]; opcoes: SpawnOptions }[] = [];
   const filho = { on: vi.fn() } as unknown as ChildProcess;
-  const resultado = iniciarVitrineDev({
+  const resultado = startStorefrontDev({
     env,
     cwd: path.resolve("/repo"),
     spawn: (comando, args, opcoes) => {
@@ -35,7 +35,7 @@ function executar(env: Record<string, string | undefined>) {
       return filho;
     },
     log: (l) => linhas.push(l),
-    erro: (l) => linhas.push(l),
+    error: (l) => linhas.push(l),
   });
   return { resultado, linhas, chamadas, filho };
 }
@@ -49,9 +49,9 @@ describe("L16b T6 — vitrine:dev contra o banco de teste (VPROJ-01)", () => {
     expect(PORTA_DEV).toBe(3100);
     expect(opcoes.cwd).toBe(path.resolve("/repo", "vitrine"));
     const env = opcoes.env as Record<string, string>;
-    expect(env.VITRINE_PUBLIC_URL).toBe("http://localhost:3100");
-    expect(env.VITRINE_REVALIDATE_SECRET).toMatch(/^[0-9a-f]{48}$/);
-    const url = new URL(env.VITRINE_DATABASE_URL);
+    expect(env["VITRINE_PUBLIC_URL"]).toBe("http://localhost:3100");
+    expect(env["VITRINE_REVALIDATE_SECRET"]).toMatch(/^[0-9a-f]{48}$/);
+    const url = new URL(env["VITRINE_DATABASE_URL"]);
     expect(url.username).toBe("krivo_vitrine");
     expect(decodeURIComponent(url.password)).toBe(SENHA);
     expect(url.hostname).toBe("ep-teste-pooler.us-east-1.aws.neon.tech");
@@ -62,7 +62,7 @@ describe("L16b T6 — vitrine:dev contra o banco de teste (VPROJ-01)", () => {
     const { linhas, chamadas } = executar(ambienteDoPai());
     const env = chamadas[0].opcoes.env as Record<string, string>;
     expect(linhas.length).toBeGreaterThan(0);
-    const proibidos = [SENHA, encodeURIComponent(SENHA), env.VITRINE_REVALIDATE_SECRET, env.VITRINE_DATABASE_URL, "senha-do-dono"];
+    const proibidos = [SENHA, encodeURIComponent(SENHA), env["VITRINE_REVALIDATE_SECRET"], env["VITRINE_DATABASE_URL"], "senha-do-dono"];
     for (const linha of linhas) {
       for (const proibido of proibidos) expect(linha).not.toContain(proibido);
       expect(linha).not.toMatch(/postgres(ql)?:\/\//);
@@ -73,15 +73,15 @@ describe("L16b T6 — vitrine:dev contra o banco de teste (VPROJ-01)", () => {
   it("variáveis do CRM (banco real, tokens, chaves) não atravessam para a vitrine", () => {
     const { chamadas } = executar(ambienteDoPai());
     const env = chamadas[0].opcoes.env as Record<string, string | undefined>;
-    for (const nome of ["DATABASE_URL", "TEST_DATABASE_URL", "VITRINE_TEST_DB_PASSWORD", "WHATSAPP_ACCESS_TOKEN", "BETTER_AUTH_SECRET", "RESEND_API_KEY"]) {
-      expect(env[nome], nome).toBeUndefined();
+    for (const name of ["DATABASE_URL", "TEST_DATABASE_URL", "VITRINE_TEST_DB_PASSWORD", "WHATSAPP_ACCESS_TOKEN", "BETTER_AUTH_SECRET", "RESEND_API_KEY"]) {
+      expect(env[name], name).toBeUndefined();
     }
     expect(env.PATH).toBe("/usr/bin");
   });
 
   it("sem a senha do papel não sobe nada e a mensagem não expõe a URL", () => {
     const env = ambienteDoPai();
-    delete env.VITRINE_TEST_DB_PASSWORD;
+    delete env["VITRINE_TEST_DB_PASSWORD"];
     const { resultado, chamadas, linhas } = executar(env);
     expect(resultado).toBeNull();
     expect(chamadas).toHaveLength(0);
@@ -99,15 +99,15 @@ describe("L16b T6 — vitrine:dev contra o banco de teste (VPROJ-01)", () => {
   });
 
   it("cada execução gera um segredo diferente", () => {
-    const a = ambienteDaVitrine({ baseUrl: BASE, password: SENHA });
-    const b = ambienteDaVitrine({ baseUrl: BASE, password: SENHA });
-    expect(a.VITRINE_REVALIDATE_SECRET).not.toBe(b.VITRINE_REVALIDATE_SECRET);
+    const a = storefrontEnvironment({ baseUrl: BASE, password: SENHA });
+    const b = storefrontEnvironment({ baseUrl: BASE, password: SENHA });
+    expect(a["VITRINE_REVALIDATE_SECRET"]).not.toBe(b["VITRINE_REVALIDATE_SECRET"]);
   });
 
   it("ambienteDoFilho não altera o ambiente do pai", () => {
     const pai = ambienteDoPai();
     const copia = { ...pai };
-    ambienteDoFilho(pai, ambienteDaVitrine({ baseUrl: BASE, password: SENHA }));
+    ambienteDoFilho(pai, storefrontEnvironment({ baseUrl: BASE, password: SENHA }));
     expect(pai).toEqual(copia);
   });
 });

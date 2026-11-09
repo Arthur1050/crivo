@@ -14,7 +14,7 @@
  */
 "use strict";
 
-const registrar = (mensagem) => process.stdout.write(`[plataforma] ${mensagem}\n`);
+const registrar = (message) => process.stdout.write(`[plataforma] ${message}\n`);
 const agora = () => Date.now();
 
 /** Expiração por tag, como o manifesto de tags do Next (`expired`, `stale`). */
@@ -37,8 +37,8 @@ function fluxo(pedacos) {
   });
 }
 
-async function consumir(valor) {
-  const leitor = valor.getReader();
+async function consumir(value) {
+  const leitor = value.getReader();
   const pedacos = [];
   for (let parte; !(parte = await leitor.read()).done; ) pedacos.push(parte.value);
   return pedacos;
@@ -49,9 +49,9 @@ const efemero = {
     registrar("default.get MISS");
     return undefined;
   },
-  async set(_chave, pendente) {
-    const entrada = await pendente;
-    await consumir(entrada.value);
+  async set(_key, pendente) {
+    const entry = await pendente;
+    await consumir(entry.value);
     registrar("default.set descartado");
   },
   async refreshTags() {},
@@ -62,26 +62,26 @@ const efemero = {
 };
 
 const remoto = {
-  async get(chave) {
-    const salva = entradas.get(chave);
-    const entrada = salva?.entrada;
-    if (!entrada || agora() > entrada.timestamp + entrada.expire * 1000 || tagExpirada(entrada.tags, entrada.timestamp)) {
+  async get(key) {
+    const salva = entradas.get(key);
+    const entry = salva?.entry;
+    if (!entry || agora() > entry.timestamp + entry.expire * 1000 || tagExpirada(entry.tags, entry.timestamp)) {
       registrar("remote.get MISS");
       return undefined;
     }
     registrar("remote.get HIT");
-    const revalidate = tagVelha(entrada.tags, entrada.timestamp) ? -1 : entrada.revalidate;
-    return { ...entrada, revalidate, value: fluxo(salva.pedacos) };
+    const revalidate = tagVelha(entry.tags, entry.timestamp) ? -1 : entry.revalidate;
+    return { ...entry, revalidate, value: fluxo(salva.pedacos) };
   },
-  async set(chave, pendente) {
-    const entrada = await pendente;
-    const [devolvido, copia] = entrada.value.tee();
-    entrada.value = devolvido;
+  async set(key, pendente) {
+    const entry = await pendente;
+    const [devolvido, copia] = entry.value.tee();
+    entry.value = devolvido;
     const pedacos = await consumir(copia);
-    const metadados = { ...entrada };
+    const metadados = { ...entry };
     delete metadados.value;
-    entradas.set(chave, { entrada: metadados, pedacos });
-    registrar(`remote.set tags=${entrada.tags.join(",")} revalidate=${entrada.revalidate} expire=${entrada.expire}`);
+    entradas.set(key, { entry: metadados, pedacos });
+    registrar(`remote.set tags=${entry.tags.join(",")} revalidate=${entry.revalidate} expire=${entry.expire}`);
   },
   async refreshTags() {},
   async getExpiration(lista) {

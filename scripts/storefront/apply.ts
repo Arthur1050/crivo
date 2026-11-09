@@ -1,7 +1,7 @@
 /**
  * Executor do SQL da vitrine (lote-16a — AD-040).
  *
- * `applyVitrineSql` roda `scripts/vitrine/vitrine.sql` (idempotente) num banco;
+ * `applyStorefrontSql` roda `scripts/storefront/storefront.sql` (idempotente) num banco;
  * `dropVitrineSchema` derruba o schema `vitrine` antes do `drizzle-kit push`,
  * porque alterar coluna usada por view faz o push falhar (F5 do gate). Nenhuma
  * URL é impressa nem entra em mensagem de erro.
@@ -10,7 +10,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { Client } from "pg";
 
-const SQL_FILE = path.resolve(process.cwd(), "scripts/vitrine/vitrine.sql");
+const SQL_FILE = path.resolve(process.cwd(), "scripts/storefront/storefront.sql");
 
 async function withClient<T>(url: string, run: (client: Client) => Promise<T>): Promise<T> {
   const client = new Client({ connectionString: url });
@@ -28,7 +28,7 @@ async function withClient<T>(url: string, run: (client: Client) => Promise<T>): 
  * bancos de teste, vinda do ambiente local); sem ela, a senha do papel fica como
  * está — em produção quem a define é o usuário, à parte.
  */
-export async function applyVitrineSql(
+export async function applyStorefrontSql(
   url: string,
   options: { password?: string } = {}
 ): Promise<void> {
@@ -45,7 +45,7 @@ export async function applyVitrineSql(
 }
 
 /** Derruba o schema `vitrine` e tudo que há nele (views, grants do schema). */
-export async function dropVitrineSchema(url: string): Promise<void> {
+export async function dropStorefrontSchema(url: string): Promise<void> {
   await withClient(url, async (client) => {
     await client.query("drop schema if exists vitrine cascade");
   });
@@ -65,7 +65,7 @@ const EXPECTED_GRANTS = ["vitrine.imoveis:SELECT", "vitrine.lojas:SELECT"];
  * e exatamente os dois grants. O `drizzle-kit push` já saiu com 0 sem aplicar
  * check (L-068): só a conferência do estado decide se o alvo está pronto.
  */
-export async function verifyVitrineState(url: string): Promise<string[]> {
+export async function verifyStorefrontState(url: string): Promise<string[]> {
   return withClient(url, async (client) => {
     const problems: string[] = [];
 
