@@ -10,8 +10,10 @@ import {
   setLeadChannel,
   updateLeadFromAgent,
   type Lead,
+  type UpdateLeadFromAgentInput,
 } from "../data";
-import type { LeadCreateDto, LeadPatchDto } from "./parsers";
+import type { QualificationFacet } from "../../vertical-kit";
+import type { LeadCreateDto } from "./parsers";
 import type { ProblemCode } from "./problem";
 
 export interface DeliverLeadResult {
@@ -60,50 +62,18 @@ export async function findLead(
   return getLead(serviceScope(tenantId), leadId);
 }
 
-/** Representação de um lead na API de integração (design.md — Route
- * handlers: "Serialização"). `budgetCents` vira string (bigint não é
- * JSON-safe); datas viram ISO-8601; `optedOutAt`/`externalId` sempre
- * presentes (LGPD-01 AC3). */
-export interface SerializedLead {
-  id: string;
-  externalId: string | null;
-  name: string;
-  phone: string;
-  status: Lead["status"];
-  modality: Lead["modality"];
-  region: string | null;
-  budgetCents: string | null;
-  propertyType: Lead["propertyType"];
-  purchaseHorizon: string | null;
-  motivation: Lead["motivation"];
-  creditStatus: Lead["creditStatus"];
-  chainedOperation: boolean | null;
-  executiveSummary: string | null;
-  escalationReason: string | null;
-  meetingAt: string | null;
-  firstContactAt: string;
-  optedOutAt: string | null;
-  /** Marca de condução humana (lote-14); `null` quando o agente conduz. */
-  humanTakeoverAt: string | null;
-  /** Pedido de reconstrução da memória do agente (lote-14). */
-  memoryResetRequestedAt: string | null;
-}
-
-export function serializeLead(lead: Lead): SerializedLead {
+/** Preserva a ordem do fio e inclui os campos do vertical entre o status e o resumo. */
+export function serializeLead<Wire extends object>(
+  lead: Lead,
+  qualification: Pick<QualificationFacet<unknown, Wire>, "serialize"> | null
+) {
   return {
     id: lead.id,
     externalId: lead.externalId,
     name: lead.name,
     phone: lead.phone,
     status: lead.status,
-    modality: lead.modality,
-    region: lead.region,
-    budgetCents: lead.budgetCents === null ? null : lead.budgetCents.toString(),
-    propertyType: lead.propertyType,
-    purchaseHorizon: lead.purchaseHorizon,
-    motivation: lead.motivation,
-    creditStatus: lead.creditStatus,
-    chainedOperation: lead.chainedOperation,
+    ...qualification?.serialize(lead),
     executiveSummary: lead.executiveSummary,
     escalationReason: lead.escalationReason,
     meetingAt: lead.meetingAt ? lead.meetingAt.toISOString() : null,
@@ -165,7 +135,7 @@ export type PatchLeadResult =
 export async function patchLead(
   tenantId: string,
   leadId: string,
-  dto: LeadPatchDto
+  dto: UpdateLeadFromAgentInput
 ): Promise<PatchLeadResult> {
   // Caminho do contrato (SEC-01): credencial de serviço, imobiliária
   // inteira — o agente não é usuário e não tem carteira.

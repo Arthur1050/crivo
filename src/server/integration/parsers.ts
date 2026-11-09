@@ -1,4 +1,5 @@
-import { enumValue, optionalNullableField, parseBudgetCents } from "../../lib/patch-fields";
+import { LEAD_QUALIFICATION_FIELDS, type QualificationFacet } from "../../vertical-kit";
+import { enumValue, optionalNullableField } from "../../lib/patch-fields";
 import { AGENT_PHASE, SENDER } from "../../lib/vocabulary";
 /**
  * Parsers puros payload→DTO da API de integração (design.md —
@@ -12,11 +13,8 @@ import { AGENT_PHASE, SENDER } from "../../lib/vocabulary";
  * ganhar um valor novo, o parser acompanha automaticamente.
  */
 import {
-  creditStatusEnum,
   leadStatusEnum,
   modalityEnum,
-  motivationEnum,
-  propertyTypeEnum,
   senderEnum,
 } from "../../db/schema";
 import { FIELD_LABELS } from "../../../n8n/src/phase.mjs";
@@ -42,10 +40,6 @@ export type ParseResult<T> =
   | { ok: false; detail: string };
 
 type LeadStatus = (typeof leadStatusEnum.enumValues)[number];
-type Modality = (typeof modalityEnum.enumValues)[number];
-type PropertyType = (typeof propertyTypeEnum.enumValues)[number];
-type MotivationValue = (typeof motivationEnum.enumValues)[number];
-type CreditStatus = (typeof creditStatusEnum.enumValues)[number];
 type Sender = (typeof senderEnum.enumValues)[number];
 
 // ISO-8601 completo (data + hora + timezone) — as 3 datas do contrato
@@ -244,115 +238,66 @@ export function parseLeadCreate(json: unknown): ParseResult<LeadCreateDto> {
 
 // ---- PATCH /api/v1/leads/{id} -------------------------------------------
 
-export interface LeadPatchDto {
-  // NOT NULL no schema — presente precisa ser um valor válido do enum,
-  // nunca `null` (diferente dos demais campos, todos nullable).
+export interface LeadPatchDto<Q> {
   status?: LeadStatus;
-  modality?: Modality | null;
-  region?: string | null;
-  budgetCents?: bigint | null;
-  propertyType?: PropertyType | null;
-  purchaseHorizon?: string | null;
-  motivation?: MotivationValue | null;
-  creditStatus?: CreditStatus | null;
-  chainedOperation?: boolean | null;
   executiveSummary?: string | null;
   escalationReason?: string | null;
   meetingAt?: Date | null;
+  qualification?: Partial<Q>;
 }
 
-export function parseLeadPatch(json: unknown): ParseResult<LeadPatchDto> {
-  if (!isPlainObject(json)) {
-    return { ok: false, detail: "Corpo da requisição deve ser um objeto JSON." };
-  }
-
-  const dto: LeadPatchDto = {};
-
-  // `status` não aceita `null` explícito — coluna NOT NULL no schema.
-  if ("status" in json) {
-    const status = enumValue(json.status, leadStatusEnum.enumValues);
-    if (!status) {
-      return {
-        ok: false,
-        detail: `Campo 'status' inválido. Valores aceitos: ${leadStatusEnum.enumValues.join(", ")}.`,
-      };
+export function createLeadPatchParser<Q>(qualification: Pick<QualificationFacet<Q, unknown>, "parsePatch"> | null) {
+  return function parseLeadPatch(json: unknown): ParseResult<LeadPatchDto<Q>> {
+    if (!isPlainObject(json)) {
+      return { ok: false, detail: "Corpo da requisição deve ser um objeto JSON." };
     }
-    dto.status = status;
-  }
 
-  const stringFields: (keyof LeadPatchDto)[] = [
-    "region",
-    "purchaseHorizon",
-    "executiveSummary",
-    "escalationReason",
-  ];
-  for (const field of stringFields) {
-    const outcome = optionalNullableField(json, field, (raw) =>
-      typeof raw === "string" ? raw.trim() : undefined
-    );
-    if (!outcome.present) continue;
-    if (!outcome.ok) {
-      return { ok: false, detail: `Campo '${field}' deve ser uma string.` };
+    const dto: LeadPatchDto<Q> = {};
+
+    if ("status" in json) {
+      const status = enumValue(json.status, leadStatusEnum.enumValues);
+      if (!status) {
+        return {
+          ok: false,
+          detail: `Campo 'status' inválido. Valores aceitos: ${leadStatusEnum.enumValues.join(", ")}.`,
+        };
+      }
+      dto.status = status;
     }
-    (dto[field] as string | null | undefined) = outcome.value;
-  }
 
-  const enumFields: {
-    field: keyof LeadPatchDto;
-    allowed: readonly string[];
-  }[] = [
-    { field: "modality", allowed: modalityEnum.enumValues },
-    { field: "propertyType", allowed: propertyTypeEnum.enumValues },
-    { field: "motivation", allowed: motivationEnum.enumValues },
-    { field: "creditStatus", allowed: creditStatusEnum.enumValues },
-  ];
-  for (const { field, allowed } of enumFields) {
-    const outcome = optionalNullableField(json, field, (raw) =>
-      enumValue(raw, allowed)
-    );
-    if (!outcome.present) continue;
-    if (!outcome.ok) {
-      return {
-        ok: false,
-        detail: `Campo '${field}' inválido. Valores aceitos: ${allowed.join(", ")}.`,
-      };
+    const parsed = qualification?.parsePatch(json);
+    // Os textos do vertical precedem os do núcleo. Os demais campos vêm depois.
+    if (parsed?.ok === false && parsed.beforeCoreText) return { ok: false, detail: parsed.detail };
+
+    for (const field of ["executiveSummary", "escalationReason"] as const) {
+      const outcome = optionalNullableField(json, field, (raw) =>
+        typeof raw === "string" ? raw.trim() : undefined
+      );
+      if (!outcome.present) continue;
+      if (!outcome.ok) return { ok: false, detail: `Campo '${field}' deve ser uma string.` };
+      dto[field] = outcome.value;
     }
-    (dto[field] as string | null | undefined) = outcome.value;
-  }
 
-  const budgetOutcome = optionalNullableField(json, "budgetCents", parseBudgetCents);
-  if (budgetOutcome.present) {
-    if (!budgetOutcome.ok) {
-      return {
-        ok: false,
-        detail: "Campo 'budgetCents' deve ser um inteiro maior ou igual a 0.",
-      };
+    if (!qualification) {
+      const field = LEAD_QUALIFICATION_FIELDS.find((field) => field in json);
+      if (field) return { ok: false, detail: `Campo '${field}' inválido.` };
     }
-    dto.budgetCents = budgetOutcome.value;
-  }
+    if (parsed?.ok === false) return { ok: false, detail: parsed.detail };
+    if (parsed && Object.keys(parsed.dto).length > 0) dto.qualification = parsed.dto;
 
-  const chainedOutcome = optionalNullableField(json, "chainedOperation", (raw) =>
-    typeof raw === "boolean" ? raw : undefined
-  );
-  if (chainedOutcome.present) {
-    if (!chainedOutcome.ok) {
-      return { ok: false, detail: "Campo 'chainedOperation' deve ser booleano." };
+    const meetingAtOutcome = optionalNullableField(json, "meetingAt", parseIsoDate);
+    if (meetingAtOutcome.present) {
+      if (!meetingAtOutcome.ok) {
+        return {
+          ok: false,
+          detail: "Campo 'meetingAt' deve ser uma data ISO-8601 válida.",
+        };
+      }
+      dto.meetingAt = meetingAtOutcome.value;
     }
-    dto.chainedOperation = chainedOutcome.value;
-  }
 
-  const meetingAtOutcome = optionalNullableField(json, "meetingAt", parseIsoDate);
-  if (meetingAtOutcome.present) {
-    if (!meetingAtOutcome.ok) {
-      return {
-        ok: false,
-        detail: "Campo 'meetingAt' deve ser uma data ISO-8601 válida.",
-      };
-    }
-    dto.meetingAt = meetingAtOutcome.value;
-  }
-
-  return { ok: true, dto };
+    return { ok: true, dto };
+  };
 }
 
 // ---- POST /api/v1/leads/{id}/messages -----------------------------------

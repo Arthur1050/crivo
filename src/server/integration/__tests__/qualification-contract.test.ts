@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { serializeLead } from "../leads";
-import { parseLeadPatch } from "../parsers";
+import { parseLeadPatch, serializeLead } from "../../../kit/integration";
 
 vi.mock("../../data", () => ({}));
+vi.mock("../auth", () => ({}));
 
 describe("contrato da qualificação — QUAL-01", () => {
   it("devolve a primeira falha na ordem do PATCH", () => {

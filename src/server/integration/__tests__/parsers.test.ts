@@ -2,10 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
   MAX_BODY_BYTES,
   parseLeadCreate,
-  parseLeadPatch,
+  createLeadPatchParser,
   parseMessageCreate,
   parseMessagesQuery,
 } from "../parsers";
+
+import { realEstate } from "../../../verticals/real-estate";
+
+const parseLeadPatch = createLeadPatchParser(realEstate.qualification);
 
 function urlWithQuery(query?: string): URL {
   return new URL(`http://local/api/v1/leads/lead-fixo/messages${query ?? ""}`);
@@ -91,7 +95,7 @@ describe("server/integration parsers", () => {
       const result = parseLeadPatch({ region: "Centro" });
       expect(result.ok).toBe(true);
       if (!result.ok) return;
-      expect("region" in result.dto).toBe(true);
+      expect("region" in (result.dto.qualification ?? {})).toBe(true);
       expect("executiveSummary" in result.dto).toBe(false);
       expect(result.dto.executiveSummary).toBeUndefined();
     });
@@ -112,9 +116,9 @@ describe("server/integration parsers", () => {
       });
       expect(result.ok).toBe(true);
       if (!result.ok) return;
-      expect(result.dto.region).toBe("Centro");
+      expect(result.dto.qualification?.region).toBe("Centro");
       expect(result.dto.executiveSummary).toBeNull();
-      expect("purchaseHorizon" in result.dto).toBe(false);
+      expect("purchaseHorizon" in (result.dto.qualification ?? {})).toBe(false);
     });
 
     it("status presente e válido entra no DTO", () => {
@@ -153,10 +157,10 @@ describe("server/integration parsers", () => {
       });
       expect(result.ok).toBe(true);
       if (!result.ok) return;
-      expect(result.dto.modality).toBeNull();
-      expect(result.dto.propertyType).toBeNull();
-      expect(result.dto.motivation).toBeNull();
-      expect(result.dto.creditStatus).toBeNull();
+      expect(result.dto.qualification?.modality).toBeNull();
+      expect(result.dto.qualification?.propertyType).toBeNull();
+      expect(result.dto.qualification?.motivation).toBeNull();
+      expect(result.dto.qualification?.creditStatus).toBeNull();
     });
 
     it("budgetCents negativo é rejeitado (budget negativo)", () => {
@@ -175,14 +179,14 @@ describe("server/integration parsers", () => {
       const result = parseLeadPatch({ budgetCents: 350000 });
       expect(result.ok).toBe(true);
       if (!result.ok) return;
-      expect(result.dto.budgetCents).toBe(350000n);
+      expect(result.dto.qualification?.budgetCents).toBe(350000n);
     });
 
     it("budgetCents aceito como string numérica e convertido para bigint", () => {
       const result = parseLeadPatch({ budgetCents: "350000" });
       expect(result.ok).toBe(true);
       if (!result.ok) return;
-      expect(result.dto.budgetCents).toBe(350000n);
+      expect(result.dto.qualification?.budgetCents).toBe(350000n);
     });
 
     it("budgetCents string negativa é rejeitada", () => {
@@ -213,7 +217,7 @@ describe("server/integration parsers", () => {
       const result = parseLeadPatch({ chainedOperation: true });
       expect(result.ok).toBe(true);
       if (!result.ok) return;
-      expect(result.dto.chainedOperation).toBe(true);
+      expect(result.dto.qualification?.chainedOperation).toBe(true);
     });
 
     it("objeto vazio é um patch válido — nenhum campo é tocado", () => {

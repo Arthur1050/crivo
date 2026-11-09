@@ -5,8 +5,8 @@ import { eq } from "drizzle-orm";
 import { db } from "../../../db";
 import { leads, tenants } from "../../../db/schema";
 import { getLead, updateLeadStatus, serviceScope } from "../../data";
-import { patchLead, TRANSITIONS } from "../leads";
-import type { LeadPatchDto } from "../parsers";
+import { TRANSITIONS } from "../leads";
+import { applyLeadPatch as patchLead, type LeadPatchDto } from "../../../kit/integration";
 
 type LeadStatusValue = "em_qualificacao" | "qualificado_agendado" | "escalado_humano";
 const ALL_STATUSES: LeadStatusValue[] = [
@@ -158,7 +158,7 @@ describe("server/integration leads — TRANSITIONS + patchLead", () => {
       const leadId = await createTestLead("em_qualificacao");
       await updateLeadStatus(serviceScope(tenantId), leadId, "em_qualificacao", "humano");
 
-      const result = await patchLead(tenantId, leadId, { region: "Centro Novo" });
+      const result = await patchLead(tenantId, leadId, { qualification: { region: "Centro Novo" } });
       expect(result.ok).toBe(true);
       if (!result.ok) return;
       expect(result.lead.region).toBe("Centro Novo");
@@ -171,7 +171,7 @@ describe("server/integration leads — TRANSITIONS + patchLead", () => {
 
       const result = await patchLead(tenantId, leadId, {
         status: "em_qualificacao", // inválido a partir de qualificado_agendado
-        region: "Região Que Não Deveria Ser Gravada",
+        qualification: { region: "Região Que Não Deveria Ser Gravada" },
         executiveSummary: "Resumo que não deveria ser gravado",
       });
 
@@ -185,7 +185,7 @@ describe("server/integration leads — TRANSITIONS + patchLead", () => {
 
     it("lead inexistente no tenant retorna recurso-nao-encontrado (404 na rota — T6)", async () => {
       const result = await patchLead(tenantId, NON_EXISTENT_LEAD_ID, {
-        region: "X",
+        qualification: { region: "X" },
       });
       expect(result).toEqual({ ok: false, code: "recurso-nao-encontrado" });
     });

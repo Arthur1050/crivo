@@ -1,12 +1,7 @@
+import { methodNotAllowed, problem, serializeLead, withIntegrationRoute } from "../../../../../../src/kit/integration";
 import { PROBLEM_CODE } from "../../../../../../src/lib/vocabulary";
 import { getLead, serviceScope } from "../../../../../../src/server/data";
-import { serializeLead } from "../../../../../../src/server/integration/leads";
 import { optOutLead } from "../../../../../../src/server/integration/lgpd";
-import {
-  methodNotAllowed,
-  problem,
-} from "../../../../../../src/kit/integration";
-import { withIntegrationRoute } from "../../../../../../src/kit/integration";
 
 /**
  * `POST /api/v1/leads/{id}/opt-out` — registro de opt-out (design.md —

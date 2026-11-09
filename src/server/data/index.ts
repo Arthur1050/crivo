@@ -1,6 +1,7 @@
 import { AGENT_PHASE, DOCUMENT_STATUS, HUMAN_SEND_STATE, LEAD_STATUS, PROBLEM_CODE, ROLE, SENDER, STATUS_ACTOR } from "../../lib/vocabulary";
 import "server-only";
 
+import type { LeadQualificationColumns } from "../../vertical-kit";
 import { isUniqueViolation } from "./pg-errors";
 import { isUuid, type DocumentFolderFilter } from "../../lib/document-folders";
 import { createHash, randomUUID } from "node:crypto";
@@ -1641,16 +1642,11 @@ export async function getLastAgentMessageAt(tenantId: string): Promise<Date | nu
   return rows[0]?.lastSentAt ?? null;
 }
 
+export type PersistedQualificationColumns = Partial<Pick<typeof leads.$inferInsert, keyof LeadQualificationColumns>>;
+
 export interface UpdateLeadFromAgentInput {
   status?: LeadStatus;
-  modality?: Lead["modality"] | null;
-  region?: string | null;
-  budgetCents?: bigint | null;
-  propertyType?: Lead["propertyType"] | null;
-  purchaseHorizon?: string | null;
-  motivation?: Lead["motivation"] | null;
-  creditStatus?: Lead["creditStatus"] | null;
-  chainedOperation?: boolean | null;
+  leadColumns?: PersistedQualificationColumns;
   executiveSummary?: string | null;
   escalationReason?: string | null;
   meetingAt?: Date | null;
@@ -1681,21 +1677,14 @@ export async function updateLeadFromAgent(
   input: UpdateLeadFromAgentInput,
   executor: EscalationExecutor = db
 ): Promise<Lead | null> {
-  const setValues: Partial<typeof leads.$inferInsert> = { updatedAt: new Date() };
+  const setValues: Partial<typeof leads.$inferInsert> = {
+    ...input.leadColumns,
+    updatedAt: new Date(),
+  };
 
   if (input.status !== undefined) {
     setValues.status = input.status;
     setValues.statusChangedBy = STATUS_ACTOR.agent;
-  }
-  if ("modality" in input) setValues.modality = input.modality;
-  if ("region" in input) setValues.region = input.region;
-  if ("budgetCents" in input) setValues.budgetCents = input.budgetCents;
-  if ("propertyType" in input) setValues.propertyType = input.propertyType;
-  if ("purchaseHorizon" in input) setValues.purchaseHorizon = input.purchaseHorizon;
-  if ("motivation" in input) setValues.motivation = input.motivation;
-  if ("creditStatus" in input) setValues.creditStatus = input.creditStatus;
-  if ("chainedOperation" in input) {
-    setValues.chainedOperation = input.chainedOperation;
   }
   if ("executiveSummary" in input) {
     setValues.executiveSummary = input.executiveSummary;

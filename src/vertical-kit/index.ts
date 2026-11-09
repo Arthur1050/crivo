@@ -31,10 +31,19 @@ export interface LeadQualificationRow {
 }
 export type LeadQualificationColumns = Partial<LeadQualificationRow>;
 
-export interface QualificationFacet<Q, Wire> {
-  parsePatch(json: Record<string, unknown>): ParseResult<Partial<Q>>;
+export const LEAD_QUALIFICATION_FIELDS = [
+  "region", "purchaseHorizon", "modality", "propertyType", "motivation",
+  "creditStatus", "budgetCents", "chainedOperation",
+] as const satisfies readonly (keyof LeadQualificationRow)[];
+
+export type QualificationPatchResult<T> =
+  | { ok: true; dto: T }
+  | { ok: false; detail: string; beforeCoreText?: true };
+
+export interface QualificationFacet<Q, Wire, Columns extends LeadQualificationColumns = LeadQualificationColumns> {
+  parsePatch(json: Record<string, unknown>): QualificationPatchResult<Partial<Q>>;
   serialize(row: LeadQualificationRow): Wire;
-  toLeadColumns(qualification: Partial<Q>): LeadQualificationColumns;
+  toLeadColumns(qualification: Partial<Q>): Columns;
   promptFacts(row: LeadQualificationRow): Record<string, unknown>;
 }
 
@@ -43,12 +52,12 @@ export interface DocumentSegmentsFacet {
   matches(documentSegment: string, querySegment: string): boolean;
 }
 
-export interface Vertical<Q = unknown, Wire = unknown> {
+export interface Vertical<Q = unknown, Wire = unknown, Columns extends LeadQualificationColumns = LeadQualificationColumns> {
   id: string;
   brand: VerticalBrand;
   resources: readonly VerticalResource[];
   appointments: boolean;
-  qualification: QualificationFacet<Q, Wire> | null;
+  qualification: QualificationFacet<Q, Wire, Columns> | null;
   documentSegments: DocumentSegmentsFacet | null;
 }
 
@@ -65,7 +74,7 @@ function nonEmpty(value: unknown): value is string {
 }
 
 /** Valida a configuração na carga, antes de qualquer peça consumir o vertical. */
-export function defineVertical<Q, Wire>(vertical: Vertical<Q, Wire>): Vertical<Q, Wire> {
+export function defineVertical<V extends Vertical>(vertical: V): V {
   if (!isRecord(vertical)) invalid("vertical");
   if (!nonEmpty(vertical.id)) invalid("id");
   if (!isRecord(vertical.brand)) invalid("brand");

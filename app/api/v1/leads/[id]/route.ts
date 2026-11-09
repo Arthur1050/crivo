@@ -1,17 +1,9 @@
+import { applyLeadPatch, methodNotAllowed, parseLeadPatch, problem, serializeLead, type ProblemCode, withIntegrationRoute } from "../../../../../src/kit/integration";
 import { PROBLEM_CODE } from "../../../../../src/lib/vocabulary";
-import { findLead, patchLead, serializeLead } from "../../../../../src/server/integration/leads";
-import {
-  MAX_BODY_BYTES,
-  parseLeadPatch,
-} from "../../../../../src/server/integration/parsers";
-import {
-  methodNotAllowed,
-  problem,
-  type ProblemCode,
-} from "../../../../../src/kit/integration";
-import { withIntegrationRoute } from "../../../../../src/kit/integration";
+import { findLead } from "../../../../../src/server/integration/leads";
+import { MAX_BODY_BYTES } from "../../../../../src/server/integration/parsers";
 
-/** Mapeia os códigos que `patchLead` pode devolver para o status HTTP do
+/** Mapeia os códigos que `applyLeadPatch` pode devolver para o status HTTP do
  * contrato (design.md — Error Handling Strategy). */
 function statusForCode(code: ProblemCode): number {
   switch (code) {
@@ -57,9 +49,9 @@ function detailForCode(code: ProblemCode): string | undefined {
  * `PATCH /api/v1/leads/{id}` — upsert parcial de qualificação + máquina de
  * estados (design.md — Route handlers). Handler fino: `withIntegrationRoute`
  * já autenticou e já agenda o registro de qualquer recusa — este corpo só
- * lê/valida o corpo → delega a `patchLead` → mapeia falha de serviço para
+ * lê/valida o corpo → delega a `applyLeadPatch` → mapeia falha de serviço para
  * problem+json ou serializa o lead atualizado. Um lead de outro tenant nunca
- * chega a existir do ponto de vista de `patchLead` (tenant-scoped na DAL) —
+ * chega a existir do ponto de vista de `applyLeadPatch` (tenant-scoped na DAL) —
  * vira `recurso-nao-encontrado` → 404, nunca 403 (INT-01 AC3).
  */
 export const PATCH = withIntegrationRoute<{ params: Promise<{ id: string }> }>(
@@ -85,7 +77,7 @@ export const PATCH = withIntegrationRoute<{ params: Promise<{ id: string }> }>(
     const parsed = parseLeadPatch(json);
     if (!parsed.ok) return problem(400, PROBLEM_CODE.invalid_payload, parsed.detail);
 
-    const result = await patchLead(auth.tenantId, id, parsed.dto);
+    const result = await applyLeadPatch(auth.tenantId, id, parsed.dto);
     if (!result.ok) {
       return problem(statusForCode(result.code), result.code, detailForCode(result.code));
     }

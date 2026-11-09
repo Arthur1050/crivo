@@ -8,7 +8,7 @@ import { db } from "../../../db";
 import * as schema from "../../../db/schema";
 import { conversations, leadAgentState, leads, messages, reengagementEpisodes, tenants, users, whatsappChannels, whatsappMessageReceipts } from "../../../db/schema";
 import { ingestAgentMessage, optOutLeadByHuman, recordHumanMessage, returnConversationToAgent, takeOverConversation, updateLeadStatus } from "../index";
-import { patchLead } from "../../integration/leads";
+import { applyLeadPatch as patchLead } from "../../../kit/integration";
 import { publishAgentState } from "../../reengagement/agent-state";
 import { authorizeDispatch, claimPreparation, reconcileAcceptance } from "../../reengagement/repository";
 import { getSessionFrame, prepareFrame } from "../../reengagement/context";

@@ -1,5 +1,5 @@
 import { enumValue, optionalNullableField, parseBudgetCents } from "../../lib/patch-fields";
-import type { LeadQualificationRow, ParseResult } from "../../vertical-kit";
+import type { LeadQualificationRow, QualificationPatchResult } from "../../vertical-kit";
 import { CREDIT_STATUS, MODALITY, MOTIVATION, PROPERTY_TYPE } from "./vocabulary";
 
 const enumField = <T extends string>(values: Record<string, T>) => {
@@ -33,12 +33,16 @@ type Qualification = {
   [Field in keyof typeof fields]?: Exclude<ReturnType<(typeof fields)[Field]["parse"]>, undefined> | null;
 };
 
-function parsePatch(json: Record<string, unknown>): ParseResult<Qualification> {
+function parsePatch(json: Record<string, unknown>): QualificationPatchResult<Qualification> {
   const dto: Qualification = {};
   for (const [field, { parse, message }] of Object.entries(fields)) {
     const outcome = optionalNullableField<string | bigint | boolean>(json, field, parse);
     if (!outcome.present) continue;
-    if (!outcome.ok) return { ok: false, detail: `Campo '${field}' ${message}` };
+    if (!outcome.ok) return {
+      ok: false,
+      detail: `Campo '${field}' ${message}`,
+      ...(parse === stringField.parse ? { beforeCoreText: true } : {}),
+    };
     Object.assign(dto, { [field]: outcome.value });
   }
   return { ok: true, dto };

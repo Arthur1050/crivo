@@ -1,11 +1,10 @@
+import { methodNotAllowed, problem, serializeLead, withIntegrationRoute } from "../../../../src/kit/integration";
 import { PROBLEM_CODE } from "../../../../src/lib/vocabulary";
-import { deliverLead, serializeLead } from "../../../../src/server/integration/leads";
+import { deliverLead } from "../../../../src/server/integration/leads";
 import {
   MAX_BODY_BYTES,
   parseLeadCreate,
 } from "../../../../src/server/integration/parsers";
-import { methodNotAllowed, problem } from "../../../../src/kit/integration";
-import { withIntegrationRoute } from "../../../../src/kit/integration";
 
 /**
  * `POST /api/v1/leads` — entrega idempotente de leads (design.md — Route
