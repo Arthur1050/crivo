@@ -19,7 +19,7 @@ type AttendanceValue = "pendente" | "compareceu" | "nao_compareceu";
 const ATTENDANCE_TO_VALUE: Record<AttendanceValue, boolean | null> = {
   pendente: null,
   compareceu: true,
-  nao_compareceu: false,
+  "nao_compareceu": false,
 };
 
 const ATTENDANCE_FROM_VALUE: Record<string, AttendanceValue> = {
@@ -31,7 +31,7 @@ const ATTENDANCE_FROM_VALUE: Record<string, AttendanceValue> = {
 const ATTENDANCE_LABELS: Record<AttendanceValue, string> = {
   pendente: "Pendente",
   compareceu: "Compareceu",
-  nao_compareceu: "Não compareceu",
+  "nao_compareceu": "Não compareceu",
 };
 
 interface LeadControlsProps {

@@ -21,9 +21,9 @@ import {
   WorkWindowDialog,
   type WorkWindowTarget,
 } from "@/src/components/shared/work-window-dialog";
-import { DeactivateMemberDialog } from "@/src/components/usuarios/deactivate-member-dialog";
-import { MemberRolesDialog } from "@/src/components/usuarios/member-roles-dialog";
-import { ResendInviteDialog } from "@/src/components/usuarios/resend-invite-dialog";
+import { DeactivateMemberDialog } from "@/src/components/users/deactivate-member-dialog";
+import { MemberRolesDialog } from "@/src/components/users/member-roles-dialog";
+import { ResendInviteDialog } from "@/src/components/users/resend-invite-dialog";
 import type { Role } from "@/src/kit/access";
 
 export interface MemberRow extends Record<string, unknown> {

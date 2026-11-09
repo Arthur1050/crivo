@@ -11,7 +11,7 @@ import { Dialog, DialogHeader } from "@astryxdesign/core/Dialog";
 import { Layout, LayoutContent, LayoutFooter } from "@astryxdesign/core/Layout";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { TextInput } from "@astryxdesign/core/TextInput";
-import { ROLE_OPTIONS } from "@/src/components/usuarios/role-options";
+import { ROLE_OPTIONS } from "@/src/components/users/role-options";
 import type { Role } from "@/src/kit/access";
 import { inviteUserAction } from "@/src/server/actions/users";
 

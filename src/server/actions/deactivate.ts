@@ -26,14 +26,14 @@ import {
  * exatamente aí que um cliente ficaria sem atendimento.
  */
 
-export type CarteiraDestination =
-  | { tipo: "transferir"; corretorId: string }
-  | { tipo: "redistribuir" }
-  | { tipo: "manter" };
+export type PortfolioDestination =
+  | { kind: "transferir"; assigneeId: string }
+  | { kind: "redistribuir" }
+  | { kind: "manter" };
 
 export interface DeactivateMemberInput {
   memberId: string;
-  destino?: CarteiraDestination;
+  destino?: PortfolioDestination;
 }
 
 export type DeactivateResult =
@@ -55,7 +55,7 @@ export interface DeactivationPreview {
   memberId: string;
   name: string;
   leadsAtivos: { id: string; name: string }[];
-  reunioesFuturas: { leadId: string; leadName: string; appointmentAt: Date }[];
+  upcomingAppointments: { leadId: string; leadName: string; appointmentAt: Date }[];
 }
 
 export async function getDeactivationPreviewAction(input: {
@@ -70,7 +70,7 @@ export async function getDeactivationPreviewAction(input: {
   const member = await getTenantMemberById(session.tenantId, input.memberId);
   if (!member) return { ok: false, error: "Usuário não encontrado." };
 
-  const [ativos, reunioes] = await Promise.all([
+  const [ativos, appointments] = await Promise.all([
     getActiveLeadsOfMember(session.tenantId, member.userId),
     getUpcomingAppointmentsOfMember(session.tenantId, member.userId),
   ]);
@@ -81,7 +81,7 @@ export async function getDeactivationPreviewAction(input: {
       memberId: member.memberId,
       name: member.name,
       leadsAtivos: ativos.map((lead) => ({ id: lead.id, name: lead.name })),
-      reunioesFuturas: reunioes,
+      upcomingAppointments: appointments,
     },
   };
 }
@@ -137,8 +137,8 @@ export async function deactivateMemberAction(
     };
   }
 
-  if (input.destino.tipo === "transferir") {
-    if (input.destino.corretorId === member.userId) {
+  if (input.destino.kind === "transferir") {
+    if (input.destino.assigneeId === member.userId) {
       return {
         ok: false,
         error: "Escolha um corretor diferente para receber a carteira.",
@@ -151,7 +151,7 @@ export async function deactivateMemberAction(
       tenantId: session.tenantId,
       memberId: member.memberId,
       fromUserId: member.userId,
-      toUserId: input.destino.corretorId,
+      toUserId: input.destino.assigneeId,
       now: new Date(),
     });
 
@@ -172,7 +172,7 @@ export async function deactivateMemberAction(
     };
   }
 
-  if (input.destino.tipo === "redistribuir") {
+  if (input.destino.kind === "redistribuir") {
     // Candidatos são os corretores ATIVOS da imobiliária, menos quem está
     // saindo. `getAssigneeLoads` já exclui vínculo desativado.
     const candidates: AssigneeLoad[] = (

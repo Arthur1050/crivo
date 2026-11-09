@@ -29,12 +29,12 @@ export type DistributionHue = (typeof DISTRIBUTION_HUES)[number] | "gray";
  * categoria concorrente, e não deve competir por atenção.
  */
 const BUCKET_HUES: Record<string, DistributionHue> = {
-  novo: "blue",
-  usado: "orange",
-  ambos: "purple",
+  "novo": "blue",
+  "usado": "orange",
+  "ambos": "purple",
   investidor: "teal",
   morador: "pink",
-  nao_informado: "gray",
+  "nao_informado": "gray",
 };
 
 export interface DistributionInput {

@@ -12,16 +12,16 @@ import { Selector } from "@astryxdesign/core/Selector";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { Timestamp } from "@astryxdesign/core/Timestamp";
-import type { MemberRow } from "@/src/components/usuarios/users-table";
+import type { MemberRow } from "@/src/components/users/users-table";
 import {
   deactivateMemberAction,
   getDeactivationPreviewAction,
-  type CarteiraDestination,
+  type PortfolioDestination,
 } from "@/src/server/actions/deactivate";
 
 interface Preview {
   leadsAtivos: { id: string; name: string }[];
-  reunioesFuturas: { leadId: string; leadName: string; appointmentAt: string }[];
+  upcomingAppointments: { leadId: string; leadName: string; appointmentAt: string }[];
 }
 
 export interface BrokerOption {
@@ -78,10 +78,10 @@ function DeactivateForm({
 }) {
   const router = useRouter();
   const [preview, setPreview] = useState<Preview | null>(null);
-  const [destino, setDestino] = useState<CarteiraDestination["tipo"]>(
+  const [destino, setDestino] = useState<PortfolioDestination["kind"]>(
     "redistribuir"
   );
-  const [corretorId, setCorretorId] = useState<string | null>(
+  const [assigneeId, setAssigneeId] = useState<string | null>(
     brokers[0]?.userId ?? null
   );
   const [banner, setBanner] = useState<string | null>(null);
@@ -98,7 +98,7 @@ function DeactivateForm({
         }
         setPreview({
           leadsAtivos: result.preview.leadsAtivos,
-          reunioesFuturas: result.preview.reunioesFuturas.map((meeting) => ({
+          upcomingAppointments: result.preview.upcomingAppointments.map((meeting) => ({
             leadId: meeting.leadId,
             leadName: meeting.leadName,
             appointmentAt: meeting.appointmentAt.toISOString(),
@@ -117,11 +117,11 @@ function DeactivateForm({
     setBanner(null);
     setIsSubmitting(true);
 
-    const escolha: CarteiraDestination | undefined = !hasCarteira
+    const escolha: PortfolioDestination | undefined = !hasCarteira
       ? undefined
       : destino === "transferir"
-        ? { tipo: "transferir", corretorId: corretorId ?? "" }
-        : { tipo: destino };
+        ? { kind: "transferir", assigneeId: assigneeId ?? "" }
+        : { kind: destino };
 
     const result = await deactivateMemberAction({
       memberId: member.memberId,
@@ -158,17 +158,17 @@ function DeactivateForm({
               </Text>
             ) : (
               <>
-                {preview.reunioesFuturas.length > 0 && (
+                {preview.upcomingAppointments.length > 0 && (
                   <List
                     header={
                       <Text type="body" weight="medium">
-                        Reuniões futuras já marcadas ({preview.reunioesFuturas.length})
+                        Reuniões futuras já marcadas ({preview.upcomingAppointments.length})
                       </Text>
                     }
                     density="compact"
                     hasDividers
                   >
-                    {preview.reunioesFuturas.map((meeting) => (
+                    {preview.upcomingAppointments.map((meeting) => (
                       <ListItem
                         key={meeting.leadId}
                         label={meeting.leadName}
@@ -188,7 +188,7 @@ function DeactivateForm({
                     label={`Destino dos ${preview.leadsAtivos.length} leads ativos`}
                     value={destino}
                     onChange={(value) =>
-                      setDestino(value as CarteiraDestination["tipo"])
+                      setDestino(value as PortfolioDestination["kind"])
                     }
                     isRequired
                   >
@@ -219,8 +219,8 @@ function DeactivateForm({
                 {hasCarteira && destino === "transferir" && (
                   <Selector
                     label="Corretor que recebe a carteira"
-                    value={corretorId ?? undefined}
-                    onChange={(value) => setCorretorId(value)}
+                    value={assigneeId ?? undefined}
+                    onChange={(value) => setAssigneeId(value)}
                     options={brokers.map((broker) => ({
                       value: broker.userId,
                       label: broker.name,

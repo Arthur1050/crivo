@@ -252,7 +252,7 @@ describe("server/actions/deactivate — destino da carteira (lote-8, USER-02)", 
 
     const result = await deactivateMemberAction({
       memberId: saindo.memberId,
-      destino: { tipo: "transferir", corretorId: destino.userId },
+      destino: { kind: "transferir", assigneeId: destino.userId },
     });
 
     expect(result).toEqual({ ok: true, leadsAtivos: 2, leadsReatribuidos: 2 });
@@ -298,7 +298,7 @@ describe("server/actions/deactivate — destino da carteira (lote-8, USER-02)", 
 
     const result = await deactivateMemberAction({
       memberId: saindo.memberId,
-      destino: { tipo: "redistribuir" },
+      destino: { kind: "redistribuir" },
     });
 
     expect(result).toEqual({ ok: true, leadsAtivos: 3, leadsReatribuidos: 3 });
@@ -333,7 +333,7 @@ describe("server/actions/deactivate — destino da carteira (lote-8, USER-02)", 
 
     const result = await deactivateMemberAction({
       memberId: saindo.memberId,
-      destino: { tipo: "manter" },
+      destino: { kind: "manter" },
     });
 
     expect(result).toEqual({ ok: true, leadsAtivos: 1, leadsReatribuidos: 0 });
@@ -421,7 +421,7 @@ describe("server/actions/deactivate — destino da carteira (lote-8, USER-02)", 
 
     const result = await deactivateMemberAction({
       memberId: saindo.memberId,
-      destino: { tipo: "transferir", corretorId: destino.userId },
+      destino: { kind: "transferir", assigneeId: destino.userId },
     });
 
     expect(result.ok).toBe(false);
@@ -584,10 +584,10 @@ describe("server/actions/deactivate — destino da carteira (lote-8, USER-02)", 
     if (!result.ok) return;
     expect(result.preview.leadsAtivos.map((l) => l.id)).toEqual([leadAtivo]);
     // Só a futura entra; a reunião passada não é decisão pendente.
-    expect(result.preview.reunioesFuturas.map((r) => r.leadId)).toEqual([
+    expect(result.preview.upcomingAppointments.map((r) => r.leadId)).toEqual([
       leadComReuniao,
     ]);
-    expect(result.preview.reunioesFuturas[0].appointmentAt.getTime()).toBe(
+    expect(result.preview.upcomingAppointments[0].appointmentAt.getTime()).toBe(
       futura.getTime()
     );
   });

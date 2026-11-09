@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { AlertDialog } from "@astryxdesign/core/AlertDialog";
-import type { MemberRow } from "@/src/components/usuarios/users-table";
+import type { MemberRow } from "@/src/components/users/users-table";
 import { resendInviteAction } from "@/src/server/actions/users";
 
 /**

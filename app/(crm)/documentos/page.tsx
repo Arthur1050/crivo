@@ -36,12 +36,12 @@ function asModality(value: string | undefined): DocumentSegment | undefined {
   return value && VALID_MODALITIES.includes(value) ? (value as DocumentSegment) : undefined;
 }
 
-interface DocumentosPageProps {
+interface DocumentsPageProps {
   searchParams: Promise<{
-    modalidade?: string;
+    "modalidade"?: string;
     categoria?: string;
     q?: string;
-    pasta?: string;
+    "pasta"?: string;
   }>;
 }
 
@@ -54,9 +54,9 @@ interface DocumentosPageProps {
  * Composta como gerenciador de arquivos: cabeçalho com ações, busca com o
  * menu "Filtrar e ordenar", pastas e arquivos em grade ou lista.
  */
-export default async function DocumentosPage({
+export default async function DocumentsPage({
   searchParams,
-}: DocumentosPageProps) {
+}: DocumentsPageProps) {
   const params = await searchParams;
   const tenantId = await getActiveTenantId();
   // A leitura da página é exigida de fato; a visibilidade de escrita é só
@@ -65,10 +65,10 @@ export default async function DocumentosPage({
   const { roles } = await requirePermission("documents", "read", access);
   const canWrite = can(roles, "documents", "write");
 
-  const segment = asModality(params.modalidade);
+  const segment = asModality(params["modalidade"]);
   const categoryId = params.categoria || undefined;
   const search = params.q?.trim() || undefined;
-  const folderParam = parseFolderParam(params.pasta);
+  const folderParam = parseFolderParam(params["pasta"]);
   const folder = folderParam.kind === "pasta"
     ? await getDocumentFolder(tenantId, folderParam.folderId)
     : null;

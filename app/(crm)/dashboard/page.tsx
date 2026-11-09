@@ -43,13 +43,13 @@ const MODALITY_LABELS: Record<string, string> = {
   [MODALITY.new]: "Novo",
   [MODALITY.used]: "Usado",
   [MODALITY.both]: "Ambos",
-  nao_informado: "Não informado",
+  "nao_informado": "Não informado",
 };
 
 const MOTIVATION_LABELS: Record<string, string> = {
   [MOTIVATION.investor]: "Investidor",
   [MOTIVATION.resident]: "Morador",
-  nao_informado: "Não informado",
+  "nao_informado": "Não informado",
 };
 
 /**

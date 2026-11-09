@@ -128,7 +128,7 @@ export function DocumentsToolbar({ categories, showFolderFilter = false }: Docum
         <DropdownMenuRadioGroup
           aria-label="Modalidade"
           value={segment ?? ALL}
-          onChange={(value) => updateParams({ modalidade: value === ALL ? null : value })}
+          onChange={(value) => updateParams({ "modalidade": value === ALL ? null : value })}
         >
           <DropdownMenuRadioItem value={ALL} label="Todos os documentos" />
           {MODALITY_OPTIONS.map((option) => (
@@ -157,7 +157,7 @@ export function DocumentsToolbar({ categories, showFolderFilter = false }: Docum
             <DropdownMenuRadioGroup
               aria-label="Pasta"
               value={folder === NO_FOLDER_PARAM ? NO_FOLDER_PARAM : ALL}
-              onChange={(value) => updateParams({ pasta: value === ALL ? null : value })}
+              onChange={(value) => updateParams({ "pasta": value === ALL ? null : value })}
             >
               <DropdownMenuRadioItem value={ALL} label="Todas" />
               <DropdownMenuRadioItem value={NO_FOLDER_PARAM} label={NO_FOLDER_LABEL} />
@@ -183,9 +183,9 @@ export function DocumentsToolbar({ categories, showFolderFilter = false }: Docum
             <DropdownMenuItem
               label="Limpar filtros"
               onClick={() => updateParams({
-                modalidade: null,
+                "modalidade": null,
                 categoria: null,
-                ...(showFolderFilter ? { pasta: null } : {}),
+                ...(showFolderFilter ? { "pasta": null } : {}),
               })}
             />
           </>

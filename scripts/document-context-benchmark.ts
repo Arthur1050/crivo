@@ -65,7 +65,7 @@ export function currentIdentity(workflowVersion: string, sourceRevision?: string
     ? execFileSync("git", ["show", `${sourceRevision}:${file}`], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] })
     : readFileSync(file, "utf8");
   return deriveBenchmarkIdentity({
-    principalSource: source("n8n/workflows/principal.ts"),
+    workflowSource: source("n8n/workflows/principal.ts"),
     systemMessageSources: ["business-hours.mjs", "phase.mjs", "system-message.mjs"].map((file) =>
       source(`n8n/src/${file}`)
     ),

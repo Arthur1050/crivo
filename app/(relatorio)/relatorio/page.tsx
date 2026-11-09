@@ -14,7 +14,7 @@ import {
   requirePermission,
 } from "@/src/kit/session";
 
-interface RelatorioPageProps {
+interface ReportPageProps {
   searchParams: Promise<{ periodo?: string; de?: string; ate?: string }>;
 }
 
@@ -34,7 +34,7 @@ interface RelatorioPageProps {
  * sem `configuracoes:ler` a rota recusa com 404 (AC4), mesmo tratamento de
  * "recurso inexistente" que `app/(crm)/configuracoes/page.tsx` já usa.
  */
-export default async function RelatorioPage({ searchParams }: RelatorioPageProps) {
+export default async function ReportPage({ searchParams }: ReportPageProps) {
   let context;
   try {
     context = await requirePermission("settings", "read", access);

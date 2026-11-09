@@ -132,10 +132,10 @@ export function documentDownloadPath(documentId: string) {
 // Chaveado pelo tipo que o backend grava. Só as falhas que um reprocesso pode
 // resolver sugerem reprocessar: para um PDF escaneado, repetir é inútil.
 const SAFE_FAILURE_MESSAGES: Record<DocumentFailureCode, string> = {
-  nenhum_texto_extraivel:
+  "nenhum_texto_extraivel":
     "O arquivo não tem texto nativo que possa ser extraído, como um PDF escaneado. Envie uma versão com texto selecionável.",
   extracao_invalida: "O arquivo está corrompido ou não pôde ser lido. Envie uma cópia íntegra.",
-  limite_estrutural:
+  "limite_estrutural":
     "O arquivo excede os limites de páginas, imagens ou volume de texto para extração segura.",
   original_ausente: "O original não foi encontrado no armazenamento. Envie o arquivo novamente.",
   storage_invalido: "O armazenamento recusou a leitura do original. Tente reprocessar.",

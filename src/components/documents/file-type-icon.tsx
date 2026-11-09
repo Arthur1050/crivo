@@ -19,7 +19,7 @@ const KIND_ICON: Record<
   pdf: FileTextIcon,
   documento: FileTypeLucideIcon,
   planilha: SheetIcon,
-  apresentacao: PresentationIcon,
+  "apresentacao": PresentationIcon,
   imagem: ImageIcon,
   generico: FileIcon,
 };
@@ -28,7 +28,7 @@ const KIND_HUE: Record<FileKind, FileHue> = {
   pdf: "red",
   documento: "blue",
   planilha: "green",
-  apresentacao: "orange",
+  "apresentacao": "orange",
   imagem: "purple",
   generico: "gray",
 };
@@ -49,7 +49,7 @@ export const FILE_KIND_LABELS: Record<FileKind, string> = {
   pdf: "PDF",
   documento: "Documento",
   planilha: "Planilha",
-  apresentacao: "Apresentação",
+  "apresentacao": "Apresentação",
   imagem: "Imagem",
   generico: "Arquivo",
 };

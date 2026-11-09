@@ -18,7 +18,7 @@ export const metadata: Metadata = {
  * Rota pública no `proxy.ts`, como o login: quem esqueceu a senha, por
  * definição, não tem sessão.
  */
-export default async function RecuperarSenhaPage({
+export default async function RecoverPasswordPage({
   searchParams,
 }: {
   searchParams: Promise<{ token?: string }>;

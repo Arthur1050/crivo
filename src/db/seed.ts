@@ -85,12 +85,12 @@ const REGIONS = [
 const PROPERTY_TYPES = [PROPERTY_KIND.house, PROPERTY_KIND.apartment] as const;
 const MOTIVATIONS = [MOTIVATION.investor, MOTIVATION.resident] as const;
 const CREDIT_STATUSES = [CREDIT_STATUS.pre_approved, CREDIT_STATUS.own_funds, "fgts"] as const;
-const HORIZONS_NOVO = [
+const NEW_PROPERTY_HORIZONS = [
   "24 meses (na planta)",
   "30 meses (em obras)",
   "36 meses (lançamento)",
 ];
-const HORIZONS_USADO = ["imediato", "30 dias", "90 dias"];
+const USED_PROPERTY_HORIZONS = ["imediato", "30 dias", "90 dias"];
 const ESCALATION_REASONS = [
   "Lead pediu para falar diretamente com um corretor humano.",
   "Negociação de permuta complexa que exige avaliação presencial.",
@@ -580,8 +580,8 @@ function buildQualification(seedIndex: number, modality: Modality) {
   const creditStatus = CREDIT_STATUSES[seedIndex % CREDIT_STATUSES.length];
   const purchaseHorizon =
     modality === MODALITY.new
-      ? HORIZONS_NOVO[seedIndex % HORIZONS_NOVO.length]
-      : HORIZONS_USADO[seedIndex % HORIZONS_USADO.length];
+      ? NEW_PROPERTY_HORIZONS[seedIndex % NEW_PROPERTY_HORIZONS.length]
+      : USED_PROPERTY_HORIZONS[seedIndex % USED_PROPERTY_HORIZONS.length];
   const budgetCents = BigInt(280000 + (seedIndex % 12) * 35000) * BigInt(100);
   const chainedOperation = seedIndex % 3 === 0;
   return {

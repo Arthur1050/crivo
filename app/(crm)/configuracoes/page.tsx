@@ -54,7 +54,7 @@ const NO_CATEGORY_LABEL = "Sem categoria";
  * estado e um único save; o card "Documentos" permanece, com o mesmo
  * conteúdo e o mesmo link "Ver todos" (RD-07 AC4).
  */
-export default async function ConfiguracoesPage() {
+export default async function SettingsPage() {
   // PERM-01 AC3/AC5: o corretor não tem acesso a Configurações — nem leitura.
   // Ocultar o item da navegação (AC7) é cosmético; digitar a URL cai aqui, e a
   // guarda recusa no servidor, registrando a negativa em log (AC6). O desfecho

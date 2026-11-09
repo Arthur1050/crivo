@@ -47,12 +47,12 @@ function asPublished(value: string | undefined): boolean | undefined {
   return undefined;
 }
 
-interface ImoveisPageProps {
+interface PropertiesPageProps {
   searchParams: Promise<{
     status?: string;
     publicado?: string;
-    tipo?: string;
-    modalidade?: string;
+    "tipo"?: string;
+    "modalidade"?: string;
     q?: string;
   }>;
 }
@@ -66,7 +66,7 @@ interface ImoveisPageProps {
  * — os controles de escrita só chegam ao client quando verdadeiro; a recusa
  * de verdade é sempre do servidor, nas próprias actions (IMOV-04 AC3).
  */
-export default async function ImoveisPage({ searchParams }: ImoveisPageProps) {
+export default async function PropertiesPage({ searchParams }: PropertiesPageProps) {
   const params = await searchParams;
   const tenantId = await getActiveTenantId();
   const { roles } = await verifySession();
@@ -74,8 +74,8 @@ export default async function ImoveisPage({ searchParams }: ImoveisPageProps) {
 
   const status = asStatus(params.status);
   const published = asPublished(params.publicado);
-  const kind = asKind(params.tipo);
-  const modality = asModality(params.modalidade);
+  const kind = asKind(params["tipo"]);
+  const modality = asModality(params["modalidade"]);
   const search = params.q?.trim() || undefined;
   const hasActiveFilters = Boolean(
     status || published !== undefined || kind || modality || search
