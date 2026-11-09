@@ -19,7 +19,7 @@ export interface VerticalResource {
 export type ParseResult<T> = { ok: true; dto: T } | { ok: false; detail: string };
 
 // Colunas transitórias do lead, preservadas até a migração física do L18c.
-export interface LeadQualificationRow {
+interface QualificationColumnValues {
   modality: string | null;
   region: string | null;
   budgetCents: bigint | null;
@@ -29,12 +29,15 @@ export interface LeadQualificationRow {
   creditStatus: string | null;
   chainedOperation: boolean | null;
 }
-export type LeadQualificationColumns = Partial<LeadQualificationRow>;
 
 export const LEAD_QUALIFICATION_FIELDS = [
   "region", "purchaseHorizon", "modality", "propertyType", "motivation",
   "creditStatus", "budgetCents", "chainedOperation",
-] as const satisfies readonly (keyof LeadQualificationRow)[];
+] as const satisfies readonly (keyof QualificationColumnValues)[];
+
+export type LeadQualificationRow<Row extends QualificationColumnValues = QualificationColumnValues> =
+  Pick<Row, (typeof LEAD_QUALIFICATION_FIELDS)[number]>;
+export type LeadQualificationColumns = Partial<LeadQualificationRow>;
 
 export type QualificationPatchResult<T> =
   | { ok: true; dto: T }

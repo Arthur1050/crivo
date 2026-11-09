@@ -16,8 +16,8 @@
   {
     "path": "src/db/schema.ts",
     "term": "market:property",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
+    "reason": "Coluna e enum de tipo de imóvel do lead; remoção na migração física do L18c.",
+    "removedIn": "L18c",
     "category": "market"
   },
   {
@@ -1804,5 +1804,89 @@
     "reason": "Tipo das colunas de qualificação transitórias do lead; remoção na migração física do L18c.",
     "removedIn": "L18c",
     "category": "market"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "column:leads.region",
+    "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "qualification"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "column:leads.purchase_horizon",
+    "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "qualification"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "column:leads.modality",
+    "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "qualification"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "column:leads.property_type",
+    "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "qualification"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "column:leads.motivation",
+    "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "qualification"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "column:leads.credit_status",
+    "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "qualification"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "column:leads.budget_cents",
+    "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "qualification"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "column:leads.chained_operation",
+    "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "qualification"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "enum:modality",
+    "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "qualification"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "enum:property_type",
+    "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "qualification"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "enum:motivation",
+    "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "qualification"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "enum:credit_status",
+    "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "qualification"
   }
 ]

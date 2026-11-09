@@ -1,7 +1,7 @@
 import { AGENT_PHASE, DOCUMENT_STATUS, HUMAN_SEND_STATE, LEAD_STATUS, PROBLEM_CODE, ROLE, SENDER, STATUS_ACTOR } from "../../lib/vocabulary";
 import "server-only";
 
-import { LEAD_QUALIFICATION_FIELDS, type LeadQualificationColumns } from "../../vertical-kit";
+import { LEAD_QUALIFICATION_FIELDS, type LeadQualificationColumns, type LeadQualificationRow } from "../../vertical-kit";
 import { isUniqueViolation } from "./pg-errors";
 import { isUuid, type DocumentFolderFilter } from "../../lib/document-folders";
 import { createHash, randomUUID } from "node:crypto";
@@ -1571,7 +1571,7 @@ export async function getLastAgentMessageAt(tenantId: string): Promise<Date | nu
   return rows[0]?.lastSentAt ?? null;
 }
 
-export type PersistedQualificationColumns = Partial<Pick<typeof leads.$inferInsert, keyof LeadQualificationColumns>>;
+export type PersistedQualificationColumns = Partial<LeadQualificationRow<Lead>>;
 
 export interface UpdateLeadFromAgentInput {
   status?: LeadStatus;

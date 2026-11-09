@@ -1,9 +1,11 @@
-import { sql } from "drizzle-orm";
+import { getTableColumns, sql } from "drizzle-orm";
 import { check, index, integer, pgEnum, pgTable, text } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 import * as schema from "../../src/db/schema";
 import * as realEstateSchema from "../../src/verticals/real-estate/schema";
+import { LEAD_QUALIFICATION_FIELDS } from "../../src/vertical-kit";
 import baseline from "../boundary/schema-baseline.json";
+import transitional from "../boundary/transitional.json";
 import { snapshotSchema } from "../boundary/schema-snapshot";
 
 function fixture(change?: "column" | "index" | "check" | "enum") {
@@ -27,4 +29,17 @@ describe("foto do schema (KEEP-03)", () => {
   it.each(["column", "index", "check", "enum"] as const)("detecta mudança em %s", (change) => {
     expect(snapshotSchema(fixture(change))).not.toEqual(snapshotSchema(fixture()));
   });
+});
+
+it("registra as colunas e os enums transitórios da qualificação até o L18c (QUAL-01, BOUND-04)", () => {
+  const columns = getTableColumns(schema.leads);
+  const enums = [schema.modalityEnum, schema.propertyTypeEnum, schema.motivationEnum, schema.creditStatusEnum];
+  expect(LEAD_QUALIFICATION_FIELDS).toHaveLength(8);
+  expect(enums.map((item) => item.enumName)).toEqual(["modality", "property_type", "motivation", "credit_status"]);
+  const terms = [
+    ...LEAD_QUALIFICATION_FIELDS.map((field) => `column:leads.${columns[field].name}`),
+    ...enums.map((item) => `enum:${item.enumName}`),
+  ];
+  expect(transitional.filter((item) => item.category === "qualification").map(({ path, term, removedIn }) =>
+    ({ path, term, removedIn }))).toEqual(terms.map((term) => ({ path: "src/db/schema.ts", term, removedIn: "L18c" })));
 });
