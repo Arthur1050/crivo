@@ -396,8 +396,8 @@ mercado, porque uma loja não tem `novo` e `usado`.
 | APPT-01 | P1: Agendamento opcional | Execute | Implementing |
 | CAT-01 | P1: Catálogo e vitrine no vertical | Execute | Implementing |
 | CAT-02 | P1: Catálogo e vitrine no vertical | Execute | Implementing |
-| AGENT-01 | P1: Agente genérico | Tasks | In Tasks |
-| AGENT-02 | P1: Agente genérico | Tasks | In Tasks |
+| AGENT-01 | P1: Agente genérico | Execute | Implementing |
+| AGENT-02 | P1: Agente genérico | Execute | Implementing |
 | SEG-01 | P2: Segmentos de documento | Execute | Implementing |
 
 **Andamento em 2026-11-06:** T19–T23 concluídas; a rastreabilidade de BOUND-03, VERT-02 e dos demais requisitos executados permanece em `Implementing`, aguardando a verificação independente prevista no lote. T23: `bb37b0d`, com 265 arquivos/4.216 testes verdes; ajuste de vocabulário de ator: `99a7e44`, com gate curto de 5 arquivos/163 testes verdes.

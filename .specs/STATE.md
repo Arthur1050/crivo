@@ -459,6 +459,8 @@
 
 ## Handoff
 
+- **2026-11-09 — L18a até T41**. T36–T41 implementadas, com a T41 em `d19e757`. Suíte completa verde com 274 arquivos e 4.266 testes após corrigir a leitura local dos artefatos de publicação. tsc com 0 erros e ESLint com 0 erros e 9 avisos. O vertical de teste foi gerado em pasta temporária e passou nas verificações do grafo. OpenAPI e workflows gerados coincidem com `bf5e646`. Rastreabilidade em `Implementing`. Próximo bloco T42–T43.
+
 - **2026-11-09 — L18a até T35**. T32–T35 implementadas, com a T35 em `f06b24c`. Suíte completa verde com 272 arquivos e 4254 testes. tsc com 0 erros e ESLint com 0 erros e 9 avisos. A foto do schema e os contratos de integração passaram. A T35 preservou um alias para o teste existente do workflow e conferiu o caminho do script `vitrine:e2e`. Rastreabilidade em `Implementing`. Próximo bloco T36–T41.
 
 - **2026-11-09 — L18a até T31**. T24–T31 implementadas, com a T31 em `817a73c`. Gate focado com 34 arquivos e 742 testes verdes, tsc com 0 erros e ESLint com 0 erros e 9 avisos. A suíte completa passou em 271 arquivos e 4.247 testes na segunda rodada, após a remoção de três limites de uma fixture de seed nas branches de teste. A foto do schema passou na suíte e a checagem com `db:push:test` ficou pendente. Rastreabilidade em `Implementing`. Próximo bloco T32–T35.

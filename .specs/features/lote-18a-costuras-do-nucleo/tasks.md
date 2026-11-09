@@ -1100,10 +1100,10 @@ A suíte completa validou a foto do schema. A checagem com `db:push:test` ficou 
 
 **Done when**:
 
-- [ ] Teste por marca e por erro: bloco ausente, bloco sem referência, `__VALUE` sem valor, módulo duplicado, `__IF` sem `__ENDIF`, workflow fora da lista.
-- [ ] As marcas somem por inteiro, sem linha em branco a mais.
-- [ ] Duas execuções produzem os mesmos bytes.
-- [ ] Sem o manifesto ainda em uso, o gate Agent segue sem diferença.
+- [x] Teste por marca e por erro: bloco ausente, bloco sem referência, `__VALUE` sem valor, módulo duplicado, `__IF` sem `__ENDIF`, workflow fora da lista.
+- [x] As marcas somem por inteiro, sem linha em branco a mais.
+- [x] Duas execuções produzem os mesmos bytes.
+- [x] Sem o manifesto ainda em uso, o gate Agent segue sem diferença.
 
 **Tests**: unit
 **Gate**: quick
@@ -1123,8 +1123,8 @@ A suíte completa validou a foto do schema. A checagem com `db:push:test` ficou 
 
 **Done when**:
 
-- [ ] A primeira rodada contra o gerado passa, ou cada asserção que dependia da fonte é listada no commit e tem equivalente de mesma força.
-- [ ] O teste da T2 reprova fonte editada sem regenerar.
+- [x] A primeira rodada contra o gerado passa, ou cada asserção que dependia da fonte é listada no commit e tem equivalente de mesma força.
+- [x] O teste da T2 reprova fonte editada sem regenerar.
 
 **Tests**: unit
 **Gate**: quick
@@ -1144,9 +1144,9 @@ A suíte completa validou a foto do schema. A checagem com `db:push:test` ficou 
 
 **Done when**:
 
-- [ ] Commit de movimento separado.
-- [ ] Testes de módulo passam com só a mudança de caminho.
-- [ ] Gate Agent sem diferença.
+- [x] Commit de movimento separado.
+- [x] Testes de módulo passam com só a mudança de caminho.
+- [x] Gate Agent sem diferença.
 
 **Tests**: unit
 **Gate**: quick
@@ -1166,9 +1166,9 @@ A suíte completa validou a foto do schema. A checagem com `db:push:test` ficou 
 
 **Done when**:
 
-- [ ] Troca feita por script que confere o byte (L-047).
-- [ ] Gate Agent sem diferença.
-- [ ] `git grep` de `imobiliaria-a` nas fontes genéricas sem resultado.
+- [x] Troca feita por script que confere o byte (L-047).
+- [x] Gate Agent sem diferença.
+- [x] `git grep` de `imobiliaria-a` nas fontes genéricas sem resultado.
 
 **Tests**: unit
 **Gate**: quick
@@ -1188,9 +1188,9 @@ A suíte completa validou a foto do schema. A checagem com `db:push:test` ficou 
 
 **Done when**:
 
-- [ ] Movimento por script (L-047).
-- [ ] Gate Agent sem diferença.
-- [ ] Nenhuma fonte genérica fora de trecho `__IF(appointments)__` cita `imóve`, `imobili`, `corretor` ou `buscar_imoveis` em código.
+- [x] Movimento por script (L-047).
+- [x] Gate Agent sem diferença.
+- [x] Nenhuma fonte genérica fora de trecho `__IF(appointments)__` cita `imóve`, `imobili`, `corretor` ou `buscar_imoveis` em código.
 
 **Tests**: unit
 **Gate**: quick
@@ -1210,10 +1210,10 @@ A suíte completa validou a foto do schema. A checagem com `db:push:test` ficou 
 
 **Done when**:
 
-- [ ] Saída em pasta ignorada pelo Git, recriada a cada teste.
-- [ ] O JSON do vertical de teste não tem tool de agendamento nem ramo de lembrete.
-- [ ] O JSON não cita `imóve`, `imobili`, `corretor` nem `buscar_imoveis`, em qualquer caixa.
-- [ ] Gate Agent sem diferença e gate Full da fase verde.
+- [x] Saída em pasta ignorada pelo Git, recriada a cada teste.
+- [x] O JSON do vertical de teste não tem tool de agendamento nem ramo de lembrete.
+- [x] O JSON não cita `imóve`, `imobili`, `corretor` nem `buscar_imoveis`, em qualquer caixa.
+- [x] Gate Agent sem diferença e gate Full da fase verde.
 
 **Tests**: unit
 **Gate**: full
