@@ -29,21 +29,7 @@
   },
   {
     "path": "src/db/schema.ts",
-    "term": "market:storefront",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
-  },
-  {
-    "path": "src/db/schema.ts",
     "term": "market:meeting",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
-  },
-  {
-    "path": "src/db/schema.ts",
-    "term": "market:creci",
     "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
     "removedIn": "L18a",
     "category": "market"
@@ -947,69 +933,6 @@
   {
     "path": "src/db/schema.ts",
     "term": "stored:apartamento",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/db/schema.ts",
-    "term": "stored:sobrado",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/db/schema.ts",
-    "term": "stored:cobertura",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/db/schema.ts",
-    "term": "stored:terreno",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/db/schema.ts",
-    "term": "stored:sala_comercial",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/db/schema.ts",
-    "term": "stored:chacara",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/db/schema.ts",
-    "term": "stored:disponivel",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/db/schema.ts",
-    "term": "stored:reservado",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/db/schema.ts",
-    "term": "stored:vendido",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/db/schema.ts",
-    "term": "stored:grade",
     "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
     "removedIn": "L18a",
     "category": "stored"
@@ -2175,5 +2098,12 @@
     "reason": "Tipo das colunas de qualificação transitórias do lead; remoção na migração física do L18c.",
     "removedIn": "L18c",
     "category": "market"
+  },
+  {
+    "path": "src/server/data/index.ts",
+    "term": "import:src/verticals/real-estate/schema.ts",
+    "reason": "A DAL do catálogo sai do núcleo na T25.",
+    "removedIn": "L18a",
+    "category": "import"
   }
 ]

@@ -14,13 +14,13 @@ import { and, eq, inArray } from "drizzle-orm";
 import { db } from "../../db";
 import {
   accounts,
-  properties,
   sessions,
   tenant_invitations,
   tenant_members,
   tenants,
   users,
 } from "../../db/schema";
+import { properties } from "../../verticals/real-estate/schema";
 import type { Action, Resource, Role } from "../../kit/access";
 import type { AuthContext } from "../../kit/session";
 

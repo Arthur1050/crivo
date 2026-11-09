@@ -3,7 +3,8 @@ import { randomUUID } from "node:crypto";
 import { eq, inArray } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { db } from "../../../db";
-import { properties, tenant_members, tenants, users } from "../../../db/schema";
+import { tenant_members, tenants, users } from "../../../db/schema";
+import { properties } from "../../../verticals/real-estate/schema";
 import { getProperties, setPropertyFeatured } from "../index";
 
 type PropertyInsert = typeof properties.$inferInsert;

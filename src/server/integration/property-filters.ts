@@ -10,7 +10,8 @@
  * imóvel — responsabilidades e formatos de retorno distintos (design.md —
  * Components).
  */
-import { modalityEnum, propertyKindEnum } from "../../db/schema";
+import { modalityEnum } from "../../db/schema";
+import { propertyKindEnum } from "../../verticals/real-estate/schema";
 import { normalizeForSearch } from "../../lib/normalize-text";
 import type { Modality, PropertyKind } from "../data";
 

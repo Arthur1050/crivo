@@ -6,7 +6,8 @@ import { applyVitrineSql } from "../../../scripts/vitrine/apply";
 import { STOREFRONT_VIEW_COLUMNS } from "../../lib/storefront-contract";
 import { searchVisibleProperties } from "../../server/integration/properties";
 import { db } from "../index";
-import { properties, tenants, tenantStorefronts, users } from "../schema";
+import { tenants, users } from "../schema";
+import { properties, tenantStorefronts } from "../../verticals/real-estate/schema";
 import { currentTestDatabaseUrl } from "./vitrine-helpers";
 
 type PropertyInsert = typeof properties.$inferInsert;

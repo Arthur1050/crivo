@@ -22,8 +22,9 @@ import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import path from "node:path";
 import { and, eq, sql } from "drizzle-orm";
-import { properties } from "../src/db/schema";
-import { tenants, tenantStorefronts } from "../src/db/schema";
+import { properties } from "../src/verticals/real-estate/schema";
+import { tenants } from "../src/db/schema";
+import { tenantStorefronts } from "../src/verticals/real-estate/schema";
 import {
   abrirBancoDeTeste,
   type BancoDoDono,

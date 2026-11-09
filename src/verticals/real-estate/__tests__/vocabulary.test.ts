@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
-  creditStatusEnum, modalityEnum, motivationEnum, propertyKindEnum, propertyStatusEnum, propertyTypeEnum, storefrontLayoutEnum,
+  creditStatusEnum, modalityEnum, motivationEnum, propertyTypeEnum,
 } from "../../../db/schema";
+import { propertyKindEnum, propertyStatusEnum, storefrontLayoutEnum } from "../schema";
 import { CREDIT_STATUS, MODALITY, MOTIVATION, PROPERTY_KIND, PROPERTY_STATUS, PROPERTY_TYPE, STOREFRONT_LAYOUT } from "../vocabulary";
 
 describe("vocabulário da imobiliária (VOCAB-01)", () => {

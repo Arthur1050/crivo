@@ -3,7 +3,8 @@ import { randomUUID } from "node:crypto";
 import { and, eq, inArray } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { db } from "../../../db";
-import { properties, tenant_members, tenants, users } from "../../../db/schema";
+import { tenant_members, tenants, users } from "../../../db/schema";
+import { properties } from "../../../verticals/real-estate/schema";
 import { normalizeForSearch } from "../../../lib/normalize-text";
 import {
   createProperty,

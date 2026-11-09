@@ -3,7 +3,8 @@ import { randomUUID } from "node:crypto";
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { inArray } from "drizzle-orm";
 import { db } from "../../db";
-import { properties, tenant_members, tenants, users } from "../../db/schema";
+import { tenant_members, tenants, users } from "../../db/schema";
+import { properties } from "../../verticals/real-estate/schema";
 import type { Action, Resource, Role } from "../../kit/access";
 import type { AuthContext } from "../../kit/session";
 

@@ -1,7 +1,8 @@
 import "server-only";
 import { eq, sql } from "drizzle-orm";
 import { db } from "../../db";
-import { tenants, tenantStorefronts } from "../../db/schema";
+import { tenants } from "../../db/schema";
+import { tenantStorefronts } from "../../verticals/real-estate/schema";
 import type { StorefrontValue } from "../../lib/storefront";
 
 /**

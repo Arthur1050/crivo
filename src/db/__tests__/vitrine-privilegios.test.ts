@@ -4,7 +4,8 @@ import { eq, inArray, sql } from "drizzle-orm";
 import { Client } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { db } from "../index";
-import { properties, tenants, tenantStorefronts, users } from "../schema";
+import { tenants, users } from "../schema";
+import { properties, tenantStorefronts } from "../../verticals/real-estate/schema";
 import { resolveStorefrontTestUrl } from "../../verticals/real-estate/db/test-connection";
 import { currentTestDatabaseUrl } from "./vitrine-helpers";
 

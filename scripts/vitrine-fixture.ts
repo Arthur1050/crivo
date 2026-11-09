@@ -24,7 +24,8 @@ import { eq, inArray } from "drizzle-orm";
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import * as schema from "../src/db/schema";
-import { leads, properties, tenants, tenantStorefronts, users } from "../src/db/schema";
+import { leads, tenants, users } from "../src/db/schema";
+import { properties, tenantStorefronts } from "../src/verticals/real-estate/schema";
 
 export type BancoDoDono = NodePgDatabase<typeof schema>;
 

@@ -35,7 +35,6 @@ import {
   leadAgentState,
   leads,
   messages,
-  properties,
   reengagementEpisodes,
   serviceApiKeys,
   tenant_invitations,
@@ -45,6 +44,7 @@ import {
   users,
   whatsappChannels,
 } from "../../db/schema";
+import { properties } from "../../verticals/real-estate/schema";
 import { attachReceipt } from "../whatsapp/statuses";
 import { assignBroker, type BrokerLoad } from "../../lib/broker-assignment";
 import {

@@ -10,12 +10,10 @@ import {
   documents,
   leads,
   messages,
-  properties,
   reengagementEpisodes,
   serviceApiKeys,
   tenant_members,
   tenantApiKeys,
-  tenantStorefronts,
   tenants,
   users,
   accounts,
@@ -23,6 +21,7 @@ import {
   whatsappMessageReceipts,
   whatsappUsage,
 } from "../schema";
+import { properties, tenantStorefronts } from "../../verticals/real-estate/schema";
 import { runSeed } from "../seed";
 
 const LEAD_STATUSES = [

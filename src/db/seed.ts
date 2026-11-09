@@ -12,18 +12,17 @@ import {
   documents,
   leads,
   messages,
-  properties,
   reengagementEpisodes,
   serviceApiKeys,
   tenant_members,
   tenantApiKeys,
-  tenantStorefronts,
   tenants,
   users,
   whatsappChannels,
   whatsappMessageReceipts,
   whatsappUsage,
 } from "./schema";
+import { properties, tenantStorefronts } from "../verticals/real-estate/schema";
 import { normalizeForSearch } from "../lib/normalize-text";
 
 /**

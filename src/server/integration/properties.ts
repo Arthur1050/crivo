@@ -1,7 +1,7 @@
 import "server-only";
 import { and, asc, count, desc, eq, gte, lte } from "drizzle-orm";
 import { db } from "../../db";
-import { properties } from "../../db/schema";
+import { properties } from "../../verticals/real-estate/schema";
 import { formatCurrencyBRL } from "../../lib/format";
 import type { Modality, PropertyKind } from "../data";
 import type { PropertySearchFilters } from "./property-filters";

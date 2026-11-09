@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 // AD-044: testes da suíte raiz podem importar de `vitrine/`.
 import { MODALIDADES, TIPOS_DE_IMOVEL } from "../../../vitrine/src/lib/apresentacao";
-import { modalityEnum, propertyKindEnum } from "../../db/schema";
+import { modalityEnum } from "../../db/schema";
+import { propertyKindEnum } from "../../verticals/real-estate/schema";
 
 describe("L16b T9 — tipos e modalidades da vitrine acompanham o enum do CRM (L-029)", () => {
   it("os tipos de imóvel são os do enum property_kind, na mesma ordem", () => {

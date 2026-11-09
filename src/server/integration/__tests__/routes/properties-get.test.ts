@@ -5,12 +5,12 @@ import { eq } from "drizzle-orm";
 import { db } from "../../../../db";
 import {
   integrationRefusals,
-  properties,
   serviceApiKeys,
   tenant_members,
   tenants,
   users,
 } from "../../../../db/schema";
+import { properties } from "../../../../verticals/real-estate/schema";
 import {
   DELETE,
   GET,

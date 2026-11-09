@@ -3,7 +3,8 @@ import { randomUUID } from "node:crypto";
 import { eq, inArray } from "drizzle-orm";
 import { afterAll, describe, expect, it } from "vitest";
 import { db } from "../../../db";
-import { tenants, tenantStorefronts } from "../../../db/schema";
+import { tenants } from "../../../db/schema";
+import { tenantStorefronts } from "../../../verticals/real-estate/schema";
 import type { StorefrontValue } from "../../../lib/storefront";
 import { getStorefront, getTenantSlug, saveStorefront } from "../storefront";
 

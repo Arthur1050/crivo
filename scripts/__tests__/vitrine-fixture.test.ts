@@ -2,7 +2,8 @@ import "dotenv/config";
 import { count, eq, inArray, not, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { db } from "../../src/db";
-import { leads, properties, tenants, tenantStorefronts, users } from "../../src/db/schema";
+import { leads, tenants, users } from "../../src/db/schema";
+import { properties, tenantStorefronts } from "../../src/verticals/real-estate/schema";
 import {
   criarFixtureVitrine,
   removerFixtureVitrine,

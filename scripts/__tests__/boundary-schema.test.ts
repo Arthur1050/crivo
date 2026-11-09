@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import { check, index, integer, pgEnum, pgTable, text } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 import * as schema from "../../src/db/schema";
+import * as realEstateSchema from "../../src/verticals/real-estate/schema";
 import baseline from "../boundary/schema-baseline.json";
 import { snapshotSchema } from "../boundary/schema-snapshot";
 
@@ -20,7 +21,7 @@ function fixture(change?: "column" | "index" | "check" | "enum") {
 
 describe("foto do schema (KEEP-03)", () => {
   it("preserva o conjunto de tabelas, colunas, tipos, índices, checks e enums da base", () => {
-    expect(snapshotSchema(schema)).toEqual(baseline);
+    expect(snapshotSchema({ ...schema, ...realEstateSchema })).toEqual(baseline);
   });
 
   it.each(["column", "index", "check", "enum"] as const)("detecta mudança em %s", (change) => {

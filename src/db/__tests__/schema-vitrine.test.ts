@@ -3,7 +3,8 @@ import { randomUUID } from "node:crypto";
 import { eq, inArray, sql } from "drizzle-orm";
 import { afterAll, describe, expect, it } from "vitest";
 import { db } from "../index";
-import { tenants, tenantStorefronts } from "../schema";
+import { tenants } from "../schema";
+import { tenantStorefronts } from "../../verticals/real-estate/schema";
 
 function pgCode(error: unknown): string | undefined {
   if (typeof error !== "object" || error === null) return undefined;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { storefrontFontEnum, storefrontLayoutEnum } from "../../db/schema";
+import { storefrontFontEnum, storefrontLayoutEnum } from "../../verticals/real-estate/schema";
 import {
   STOREFRONT_FONTS,
   STOREFRONT_LAYOUTS,

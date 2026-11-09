@@ -95,6 +95,7 @@ export function realSteps(): PushSteps {
   return {
     dropVitrine: dropVitrineSchema,
     restoreIndexes: (url) => restoreDrizzleBlindIndexes(url).then(() => applyDocumentFoldersSql(url)),
+    // A configuração de teste reúne os schemas de src/db e do vertical real-estate.
     push: (url) =>
       spawnSync("npx drizzle-kit push --config drizzle-test.config.ts", {
         stdio: "inherit",
