@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { AGENT_PHASE, DOCUMENT_STATUS, HUMAN_SEND_STATE, INTEGRATION_HEALTH, LEAD_STATUS, SENDER, STATUS_ACTOR } from "../lib/vocabulary";
-import { FIELD_LABELS } from "../../n8n/src/phase.mjs";
+import { FIELD_LABELS } from "../../n8n/verticals/real-estate/src/phase.mjs";
 import {
   bigint,
   boolean,

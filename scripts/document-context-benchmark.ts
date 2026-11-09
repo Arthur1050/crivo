@@ -4,7 +4,7 @@ import { MODALITY } from "../src/verticals/real-estate/vocabulary";
  * Benchmark do teto de contexto documental (lote-12 — T34, DOCLIM-01).
  *
  * As medições saem do workflow `krivo-benchmark-contexto` no n8n
- * (`n8n/workflows/benchmark-contexto.ts`), uma execução por faixa, e são
+ * (`n8n/verticals/real-estate/workflows/benchmark-contexto.ts`), uma execução por faixa, e são
  * registradas num arquivo de resultados versionado — só métricas, nunca o
  * corpus. Este script faz o resto:
  *
@@ -29,9 +29,9 @@ import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { deriveBenchmarkIdentity } from "../src/server/documents/benchmark-identity";
-import { FIELD_LABELS } from "../n8n/src/phase.mjs";
-import { buildSystemMessage } from "../n8n/src/system-message.mjs";
-import { buildReengagementPrompt } from "../n8n/src/reengagement-prompt.mjs";
+import { FIELD_LABELS } from "../n8n/verticals/real-estate/src/phase.mjs";
+import { buildSystemMessage } from "../n8n/verticals/real-estate/src/system-message.mjs";
+import { buildReengagementPrompt } from "../n8n/verticals/real-estate/src/reengagement-prompt.mjs";
 import type { PreparationFrame } from "../src/server/reengagement/context";
 import {
   computeContextCeiling,
@@ -64,11 +64,24 @@ export function currentIdentity(workflowVersion: string, sourceRevision?: string
   const source = (file: string) => sourceRevision
     ? execFileSync("git", ["show", `${sourceRevision}:${file}`], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] })
     : readFileSync(file, "utf8");
+  const verticalSource = (file: string) => {
+    const path = `n8n/verticals/real-estate/src/${file}`;
+    if (sourceRevision) {
+      try {
+        return source(path);
+      } catch {
+        return source(`n8n/src/${file}`);
+      }
+    }
+    return source(path);
+  };
   return deriveBenchmarkIdentity({
     workflowSource: source("n8n/workflows/principal.ts"),
-    systemMessageSources: ["business-hours.mjs", "phase.mjs", "system-message.mjs"].map((file) =>
-      source(`n8n/src/${file}`)
-    ),
+    systemMessageSources: [
+      source("n8n/src/business-hours.mjs"),
+      verticalSource("phase.mjs"),
+      verticalSource("system-message.mjs"),
+    ],
     workflowVersion,
   });
 }

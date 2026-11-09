@@ -6,8 +6,8 @@ import {
   buildBenchmarkHistory,
   buildBenchmarkQuestion,
   serializeBenchmarkEnvelope,
-} from "../benchmark-corpus.mjs";
-import { scoreBenchmarkAnswer } from "../benchmark-score.mjs";
+} from "../../verticals/real-estate/src/benchmark-corpus.mjs";
+import { scoreBenchmarkAnswer } from "../../verticals/real-estate/src/benchmark-score.mjs";
 import {
   buildCanonicalContext,
   measureCanonicalContext,

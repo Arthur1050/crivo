@@ -455,57 +455,8 @@
     "category": "n8n-modules"
   },
   {
-    "path": "n8n/src/benchmark-corpus.mjs",
-    "term": "market:imobili",
-    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
-    "path": "n8n/src/benchmark-corpus.mjs",
-    "term": "market:financiamento",
-    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
-    "path": "n8n/src/benchmark-corpus.mjs",
-    "term": "market:imóve",
-    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
-    "path": "n8n/src/benchmark-corpus.mjs",
-    "term": "market:corretor",
-    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
     "path": "n8n/src/business-hours.mjs",
     "term": "market:meeting",
-    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
-    "path": "n8n/src/phase.mjs",
-    "term": "market:property",
-    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
-    "path": "n8n/src/phase.mjs",
-    "term": "market:imóve",
-    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
-    "path": "n8n/src/reengagement-prompt.mjs",
-    "term": "market:reuni",
     "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
     "removedIn": "L18c",
     "category": "n8n-modules"
@@ -525,92 +476,8 @@
     "category": "n8n-modules"
   },
   {
-    "path": "n8n/src/system-message.mjs",
-    "term": "market:imobili",
-    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
-    "path": "n8n/src/system-message.mjs",
-    "term": "market:imóve",
-    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
-    "path": "n8n/src/system-message.mjs",
-    "term": "market:corretor",
-    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
-    "path": "n8n/src/system-message.mjs",
-    "term": "market:reuni",
-    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
-    "path": "n8n/src/system-message.mjs",
-    "term": "market:meeting",
-    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
     "path": "n8n/src/voice.mjs",
     "term": "market:imovel",
-    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
-    "path": "n8n/workflows/benchmark-contexto.ts",
-    "term": "market:property",
-    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
-    "path": "n8n/workflows/benchmark-contexto.ts",
-    "term": "market:imobili",
-    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
-    "path": "n8n/workflows/benchmark-contexto.ts",
-    "term": "market:imóve",
-    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
-    "path": "n8n/workflows/benchmark-contexto.ts",
-    "term": "market:reuni",
-    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
-    "path": "n8n/workflows/benchmark-contexto.ts",
-    "term": "market:corretor",
-    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
-    "path": "n8n/workflows/benchmark-contexto.ts",
-    "term": "market:krivo",
-    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
-    "path": "n8n/workflows/benchmark-contexto.ts",
-    "term": "market:meeting",
     "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
     "removedIn": "L18c",
     "category": "n8n-modules"
@@ -992,5 +859,33 @@
     "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
     "removedIn": "L18c",
     "category": "qualification"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "import:n8n/verticals/real-estate/src/phase.mjs",
+    "reason": "Consumidor existente dos campos do agente, incluindo a restrição persistida, até L18c.",
+    "removedIn": "L18c",
+    "category": "import"
+  },
+  {
+    "path": "src/server/integration/parsers.ts",
+    "term": "import:n8n/verticals/real-estate/src/phase.mjs",
+    "reason": "Consumidor existente dos campos do agente, incluindo a restrição persistida, até L18c.",
+    "removedIn": "L18c",
+    "category": "import"
+  },
+  {
+    "path": "src/server/reengagement/agent-state.ts",
+    "term": "import:n8n/verticals/real-estate/src/phase.mjs",
+    "reason": "Consumidor existente dos campos do agente, incluindo a restrição persistida, até L18c.",
+    "removedIn": "L18c",
+    "category": "import"
+  },
+  {
+    "path": "src/server/reengagement/context.ts",
+    "term": "import:n8n/verticals/real-estate/src/phase.mjs",
+    "reason": "Consumidor existente dos campos do agente, incluindo a restrição persistida, até L18c.",
+    "removedIn": "L18c",
+    "category": "import"
   }
 ]

@@ -1,7 +1,7 @@
 import { AGENT_PHASE } from "../../lib/vocabulary";
 import "server-only";
 import { and, desc, eq } from "drizzle-orm";
-import { FIELD_LABELS } from "../../../n8n/src/phase.mjs";
+import { FIELD_LABELS } from "../../../n8n/verticals/real-estate/src/phase.mjs";
 import { db } from "../../db";
 import { conversations, leadAgentState, leads, messages } from "../../db/schema";
 import type { AuthResult } from "../integration/auth";

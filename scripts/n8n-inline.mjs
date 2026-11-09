@@ -60,6 +60,7 @@ export const DEFAULT_SRC_DIR = join(REPO_ROOT, "n8n", "src");
 export const DEFAULT_GENERATED_DIR = join(REPO_ROOT, "n8n", "generated");
 const DEFAULT_VERTICAL = "real-estate";
 const DEFAULT_VERTICALS_DIR = join(REPO_ROOT, "n8n", "verticals");
+const DEFAULT_VERTICAL_SRC_DIR = join(DEFAULT_VERTICALS_DIR, DEFAULT_VERTICAL, "src");
 
 // Marcador: '__INLINE(<arquivo>)__' — aspas simples, sem espaços, nome de
 // arquivo restrito a caracteres seguros (letras/números/ponto/hífen/underscore).
@@ -87,7 +88,7 @@ const IMPORT_LINE_PATTERN = /^import\s*\{[^}]*\}\s*from\s*["'][^"']+["'];?\s*$/g
  * @param {string | string[]} srcDir
  * @returns {string}
  */
-export function readInlinedModule(filename, srcDir = DEFAULT_SRC_DIR) {
+export function readInlinedModule(filename, srcDir = [DEFAULT_SRC_DIR, DEFAULT_VERTICAL_SRC_DIR]) {
   const matches = [srcDir].flat().map((dir) => join(dir, filename)).filter(existsSync);
   if (matches.length > 1) {
     throw new Error("n8n-inline: módulo duplicado " + filename);
@@ -104,6 +105,8 @@ export function readInlinedModule(filename, srcDir = DEFAULT_SRC_DIR) {
   return raw
     .replace(IMPORT_LINE_PATTERN, "")
     .replace(EXPORT_DECLARATION_PATTERN, "$1")
+    // Preserva no texto publicado a referência histórica de tipo do prompt.
+    .replace('import("../../../../src/server/reengagement/context")', 'import("../../src/server/reengagement/context")')
     .trim();
 }
 
@@ -185,29 +188,29 @@ export function generateAll({
   srcDir = DEFAULT_SRC_DIR,
   generatedDir = DEFAULT_GENERATED_DIR,
   vertical = DEFAULT_VERTICAL,
-  verticalsDir = DEFAULT_VERTICALS_DIR,
+  verticalsDir = workflowsDir === DEFAULT_WORKFLOWS_DIR ? DEFAULT_VERTICALS_DIR : undefined,
 } = {}) {
   if (!/^[a-zA-Z0-9_-]+$/.test(vertical)) {
     throw new Error("n8n-inline: vertical inválido " + vertical);
   }
-  const verticalDir = join(verticalsDir, vertical);
-  const manifestPath = join(verticalDir, "agent.mjs");
-  // O manifesto da imobiliária passa a existir quando as fontes forem separadas.
-  const agent = existsSync(manifestPath) ? require(resolve(manifestPath)).agent : undefined;
-  if (!agent && vertical !== DEFAULT_VERTICAL) {
+  const verticalDir = verticalsDir && join(verticalsDir, vertical);
+  const manifestPath = verticalDir && join(verticalDir, "agent.mjs");
+  const agent = manifestPath && existsSync(manifestPath) ? require(resolve(manifestPath)).agent : undefined;
+  if (!agent && (verticalDir || vertical !== DEFAULT_VERTICAL)) {
     throw new Error("n8n-inline: manifesto ausente para " + vertical);
   }
-  const verticalSrcDir = join(verticalDir, "src");
-  const srcDirs = [srcDir, verticalSrcDir];
+  const verticalSrcDir = verticalDir && join(verticalDir, "src");
+  const srcDirs = verticalSrcDir ? [srcDir, verticalSrcDir] : [srcDir];
   const genericModules = new Set(listFiles(srcDir, ".mjs"));
-  for (const file of listFiles(verticalSrcDir, ".mjs")) {
+  for (const file of (verticalSrcDir ? listFiles(verticalSrcDir, ".mjs") : [])) {
     if (genericModules.has(file)) {
       throw new Error("n8n-inline: módulo duplicado " + file);
     }
   }
 
   const workflows = new Map();
-  for (const dir of [workflowsDir, join(verticalDir, "workflows")]) {
+  const workflowDirs = verticalDir ? [workflowsDir, join(verticalDir, "workflows")] : [workflowsDir];
+  for (const dir of workflowDirs) {
     for (const file of listFiles(dir, ".ts")) {
       if (agent && !agent.workflows.includes(file.slice(0, -3))) continue;
       if (workflows.has(file)) {

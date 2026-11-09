@@ -4,8 +4,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { auditProactiveBenchmark, benchmarkRuns, checkBenchmarkIdentity, currentIdentity, planBenchmarkRemediation, validateMeasuredIdentity, type BenchmarkResultsFile, type MeasuredLimit } from "../document-context-benchmark";
 import { deriveBenchmarkIdentity } from "../../src/server/documents/benchmark-identity";
 import { computeContextCeiling } from "../../src/server/documents/context-ceiling";
-import { buildSystemMessage } from "../../n8n/src/system-message.mjs";
-import { buildReengagementPrompt } from "../../n8n/src/reengagement-prompt.mjs";
+import { buildSystemMessage } from "../../n8n/verticals/real-estate/src/system-message.mjs";
+import { buildReengagementPrompt } from "../../n8n/verticals/real-estate/src/reengagement-prompt.mjs";
 import { reengagementFixtureFrame as frame } from "../../n8n/src/__tests__/reengagement-fixtures";
 
 const recorded = JSON.parse(readFileSync(".specs/archive/lote-14-humano-no-laco/benchmark-contexto-2026-10-01.json", "utf8")) as BenchmarkResultsFile;
@@ -26,7 +26,11 @@ describe("T66 — identidade factual, paridade e orçamento proativo AD-031", ()
     expect(previous.systemMessageHash).toBe("b38f4928cd281edcaa85f4514460e2b5aa0e7c573694729cfabf520d94cd348d");
     expect(current).toEqual(previous);
     expect(audit()).toMatchObject({ sharedIdentityEqual: true, changed: [], stale: false, capacityVerified: true });
-    const sources = ["business-hours.mjs", "phase.mjs", "system-message.mjs"].map((file) => readFileSync(`n8n/src/${file}`, "utf8"));
+    const sources = [
+      "n8n/src/business-hours.mjs",
+      "n8n/verticals/real-estate/src/phase.mjs",
+      "n8n/verticals/real-estate/src/system-message.mjs",
+    ].map((file) => readFileSync(file, "utf8"));
     sources[2] += "\n// Mudança sintética do prompt compartilhado";
     const changed = deriveBenchmarkIdentity({ workflowSource: readFileSync("n8n/workflows/principal.ts", "utf8"),
       systemMessageSources: sources, workflowVersion: recorded.agentWorkflowVersion });

@@ -1,5 +1,5 @@
 import { FIELD_LABELS, nextFieldToAsk } from "./phase.mjs";
-import { toSeedMemoryItem } from "./session.mjs";
+import { toSeedMemoryItem } from "../../../src/session.mjs";
 import { buildSystemMessage } from "./system-message.mjs";
 
 export const REENGAGEMENT_READ_ONLY_TOOLS = Object.freeze(["consultar_documentos", "buscar_imoveis"]);
@@ -10,7 +10,7 @@ const record = (value) => typeof value === "object" && value !== null && !Array.
 /**
  * Tarefa de sistema separada do inbound real; nada publica fase, abertura ou memória.
  * O teto recebido é o teto documental já medido/admitido, nunca uma nova janela presumida.
- * @param {{frame: import("../../src/server/reengagement/context").PreparationFrame,
+ * @param {{frame: import("../../../../src/server/reengagement/context").PreparationFrame,
  * settings?: import("./system-message.mjs").SystemMessageSettings|null,
  * businessHours?: import("./system-message.mjs").SystemMessageBusinessHours|null,
  * now?: string|null, documentCeilingBytes?: number}} input

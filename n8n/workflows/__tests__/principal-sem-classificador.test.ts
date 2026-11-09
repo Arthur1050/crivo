@@ -124,7 +124,7 @@ describe("ramo da palavra-chave inalterado (SAIR-02 AC1)", () => {
 });
 
 describe("orientação do agente preservada (SAIR-03 AC1)", () => {
-  const source = readFileSync("n8n/src/system-message.mjs", "utf8").replace(/\r\n/g, "\n");
+  const source = readFileSync("n8n/verticals/real-estate/src/system-message.mjs", "utf8").replace(/\r\n/g, "\n");
   const guidance = /const OPT_OUT_GUIDANCE_INSTRUCTION =[\s\S]*?;\n/.exec(source)?.[0] ?? "";
 
   it("OPT_OUT_GUIDANCE_INSTRUCTION é idêntico ao de 0688deb (sha256)", () => {

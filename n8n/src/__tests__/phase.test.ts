@@ -5,7 +5,7 @@ import {
   REQUIRED_FIELDS,
   nextFieldToAsk,
   resolveConversationPhase,
-} from "../phase.mjs";
+} from "../../verticals/real-estate/src/phase.mjs";
 
 /** Chave de `FIELD_LABELS` — `REQUIRED_FIELDS`/`OPPORTUNISTIC_FIELDS` são
  * `readonly string[]` na fonte, então indexar `FIELD_LABELS` por um item

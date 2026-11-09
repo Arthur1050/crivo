@@ -9,7 +9,7 @@ import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { candidatePageJobs, preparationClaim, generationForDispatch, acknowledgementForSend } from "../n8n/src/scheduler-reengagement.mjs";
-import { buildReengagementPrompt } from "../n8n/src/reengagement-prompt.mjs";
+import { buildReengagementPrompt } from "../n8n/verticals/real-estate/src/reengagement-prompt.mjs";
 import type { PreparationFrame } from "../src/server/reengagement/context";
 import type { SendPreparedEpisodeOptions, SendPreparedEpisodeResult } from "../src/server/reengagement/send";
 import type { AuthContext } from "../src/server/auth/session";

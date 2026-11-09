@@ -16,7 +16,7 @@ import {
   leadStatusEnum,
   senderEnum,
 } from "../../db/schema";
-import { FIELD_LABELS } from "../../../n8n/src/phase.mjs";
+import { FIELD_LABELS } from "../../../n8n/verticals/real-estate/src/phase.mjs";
 import type { PublishAgentStateInput } from "../reengagement/agent-state";
 import { resolveDocumentSegment, type DocumentSegment, type DocumentSegmentFacet } from "../documents/segments";
 import type { PreparationFailureCode } from "../reengagement/repository";

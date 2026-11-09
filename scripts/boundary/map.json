@@ -97,6 +97,10 @@
     "layer": "app"
   },
   {
+    "glob": "n8n/verticals/real-estate/**",
+    "layer": "vertical"
+  },
+  {
     "glob": "n8n/**",
     "layer": "core",
     "package": "@core/agent"

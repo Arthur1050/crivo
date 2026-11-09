@@ -1,7 +1,7 @@
 import { AGENT_PHASE, LEAD_STATUS, SENDER } from "../../lib/vocabulary";
 import "server-only";
 import { and, desc, eq, gte } from "drizzle-orm";
-import { FIELD_LABELS, nextFieldToAsk } from "../../../n8n/src/phase.mjs";
+import { FIELD_LABELS, nextFieldToAsk } from "../../../n8n/verticals/real-estate/src/phase.mjs";
 import { evaluateReengagement } from "../../../n8n/src/reengagement.mjs";
 import { toWhatsAppMsisdn } from "../../../n8n/src/phone.mjs";
 import { isSessionExpired, requiresSessionRebuild, selectOriginSessionFrame, selectSeedMessages } from "../../../n8n/src/session.mjs";

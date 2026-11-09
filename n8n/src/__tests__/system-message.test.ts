@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { FIELD_LABELS, OPPORTUNISTIC_FIELDS, REQUIRED_FIELDS } from "../phase.mjs";
-import { buildSystemMessage } from "../system-message.mjs";
+import { FIELD_LABELS, OPPORTUNISTIC_FIELDS, REQUIRED_FIELDS } from "../../verticals/real-estate/src/phase.mjs";
+import { buildSystemMessage } from "../../verticals/real-estate/src/system-message.mjs";
 
 /** Chave de `FIELD_LABELS` — `REQUIRED_FIELDS`/`OPPORTUNISTIC_FIELDS` são
  * `readonly string[]` na fonte, então indexar `FIELD_LABELS` por um item
