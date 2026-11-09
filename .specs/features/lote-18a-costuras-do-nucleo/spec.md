@@ -258,7 +258,7 @@ de uma loja não carregar `creditStatus`.
 1. The system SHALL definir no vertical da imobiliária o parser, a serialização e a leitura e escrita de `modality`, `region`, `budgetCents`, `propertyType`, `purchaseHorizon`, `motivation`, `creditStatus` e `chainedOperation`.
 2. The system SHALL fazer as peças de lead do núcleo tratar esses campos como um objeto opaco fornecido pelo vertical.
 3. The system SHALL manter as colunas em `leads` neste lote, listadas na lista de transição com remoção no L18c.
-4. WHEN o `POST /leads` ou o `PATCH /leads/{id}` receber um desses campos THEN the system SHALL gravá-lo e validá-lo como em `bf5e646`.
+4. WHEN o `PATCH /leads/{id}` receber um desses campos THEN the system SHALL validá-lo e gravá-lo como em `bf5e646`, e o `POST /leads` SHALL continuar ignorando esses campos, como em `bf5e646`.
 
 **QUAL-02 — Consumidores**
 
