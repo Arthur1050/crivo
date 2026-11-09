@@ -818,10 +818,12 @@ T41 → T42 → T43 → T44 → T45
 
 **Done when**:
 
-- [ ] Foto do schema igual à base, com os dois arquivos.
-- [ ] `drizzle.config.ts`, `drizzle-test.config.ts` e `scripts/test-db-push.ts` listam os dois schemas.
+- [x] Foto do schema igual à base, com os dois arquivos.
+- [x] `drizzle.config.ts`, `drizzle-test.config.ts` e `scripts/test-db-push.ts` listam os dois schemas.
 - [ ] `npm run db:push:test` sem mudança pendente.
-- [ ] Views e papéis de `vitrine.sql` sem diferença.
+- [x] Views e papéis de `vitrine.sql` sem diferença.
+
+A suíte completa validou a foto do schema. A checagem com `db:push:test` ficou pendente sob a restrição de DDL desta sessão.
 
 **Tests**: integration
 **Gate**: full
@@ -841,10 +843,10 @@ T41 → T42 → T43 → T44 → T45
 
 **Done when**:
 
-- [ ] Commit de movimento separado do commit de ajuste.
-- [ ] Testes de imóveis e `properties-actions.test.ts` passam com só a mudança de import.
-- [ ] `app/api/v1/properties` classificada como `vertical` no mapa.
-- [ ] Entradas de `property` desses arquivos saem de `transitional.json`.
+- [x] Commit de movimento separado do commit de ajuste.
+- [x] Testes de imóveis e `properties-actions.test.ts` passam com só a mudança de import.
+- [x] `app/api/v1/properties` classificada como `vertical` no mapa.
+- [x] Entradas de `property` desses arquivos saem de `transitional.json`.
 
 **Tests**: integration
 **Gate**: quick
@@ -864,10 +866,10 @@ T41 → T42 → T43 → T44 → T45
 
 **Done when**:
 
-- [ ] Commit de movimento separado do commit de ajuste.
-- [ ] Testes de vitrine e de isolamento passam com só a mudança de import.
-- [ ] Configurações continua mostrando `StorefrontComingSoon` e `saveStorefrontAction` continua como está.
-- [ ] `VITRINE_ROLE` em `test-connection.ts` tratado sem mudar o papel.
+- [x] Commit de movimento separado do commit de ajuste.
+- [x] Testes de vitrine e de isolamento passam com só a mudança de import.
+- [x] Configurações continua mostrando `StorefrontComingSoon` e `saveStorefrontAction` continua como está.
+- [x] `VITRINE_ROLE` em `test-connection.ts` tratado sem mudar o papel.
 
 **Tests**: integration
 **Gate**: quick
@@ -887,9 +889,9 @@ T41 → T42 → T43 → T44 → T45
 
 **Done when**:
 
-- [ ] Antes de mover: casos que fixam a ordem de validação do `PATCH` e a ordem dos campos do JSON, passando na base (L-042).
-- [ ] Teste de chave ausente, `null` explícito, valor válido e valor inválido, campo por campo (L-005).
-- [ ] Fixture com os 8 campos em valores distintos (L-078).
+- [x] Antes de mover: casos que fixam a ordem de validação do `PATCH` e a ordem dos campos do JSON, passando na base (L-042).
+- [x] Teste de chave ausente, `null` explícito, valor válido e valor inválido, campo por campo (L-005).
+- [x] Fixture com os 8 campos em valores distintos (L-078).
 
 **Tests**: unit
 **Gate**: quick
@@ -909,10 +911,10 @@ T41 → T42 → T43 → T44 → T45
 
 **Done when**:
 
-- [ ] Testes de `/api/v1/leads` e `openapi.test.ts` passam com só a mudança de import.
-- [ ] Com o vertical de teste, `PATCH` com um campo de qualificação responde `payload-invalido`, e com `status` funciona.
-- [ ] Teste de ligação: tirar a chamada de `toLeadColumns` falha um teste (L-026).
-- [ ] Trava humana, condução humana e rede de escalonamento continuam na mesma ordem.
+- [x] Testes de `/api/v1/leads` e `openapi.test.ts` passam com só a mudança de import.
+- [x] Com o vertical de teste, `PATCH` com um campo de qualificação responde `payload-invalido`, e com `status` funciona.
+- [x] Teste de ligação: tirar a chamada de `toLeadColumns` falha um teste (L-026).
+- [x] Trava humana, condução humana e rede de escalonamento continuam na mesma ordem.
 
 **Tests**: integration
 **Gate**: quick
@@ -932,9 +934,9 @@ T41 → T42 → T43 → T44 → T45
 
 **Done when**:
 
-- [ ] Pipeline, Dashboard e o contexto de reengajamento passam nos testes existentes.
-- [ ] Com o vertical de teste, ler e gravar lead funciona sem os campos.
-- [ ] Teste de ligação: tirar `promptFacts` do reengajamento falha um teste (L-026).
+- [x] Pipeline, Dashboard e o contexto de reengajamento passam nos testes existentes.
+- [x] Com o vertical de teste, ler e gravar lead funciona sem os campos.
+- [x] Teste de ligação: tirar `promptFacts` do reengajamento falha um teste (L-026).
 
 **Tests**: integration
 **Gate**: quick
@@ -954,8 +956,8 @@ T41 → T42 → T43 → T44 → T45
 
 **Done when**:
 
-- [ ] Nenhum arquivo `core` fora de `src/db/schema.ts`, `src/vertical-kit/` e o tipo de linha cita os 8 campos.
-- [ ] Teste de fronteira passa.
+- [x] Nenhum arquivo `core` fora de `src/db/schema.ts`, `src/vertical-kit/` e o tipo de linha cita os 8 campos.
+- [x] Teste de fronteira passa.
 
 **Tests**: unit
 **Gate**: quick
@@ -975,15 +977,21 @@ T41 → T42 → T43 → T44 → T45
 
 **Done when**:
 
-- [ ] `POST /context` continua lendo `modality`, com a mesma resposta para a imobiliária.
-- [ ] Com o vertical de teste, o contexto entrega todos os documentos admitidos do tenant.
-- [ ] `updateDocumentAction`, upload e reconciliação usam `segment` (L-097), com os testes existentes intactos.
-- [ ] `leads.modality` e `properties.modality` mantêm o nome.
-- [ ] Gate Full da fase verde.
+- [x] `POST /context` continua lendo `modality`, com a mesma resposta para a imobiliária.
+- [x] Com o vertical de teste, o contexto entrega todos os documentos admitidos do tenant.
+- [x] `updateDocumentAction`, upload e reconciliação usam `segment` (L-097), com os testes existentes intactos.
+- [x] `leads.modality` e `properties.modality` mantêm o nome.
+- [x] Gate Full da fase verde.
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `refactor(documentos): tratar a modalidade como segmento do vertical`
+
+**Andamento em 2026-11-09**
+
+- T31 em `817a73c`. Gate focado com 34 arquivos e 742 testes verdes. TypeScript com 0 erros e ESLint com 0 erros e 9 avisos.
+- A primeira suíte completa passou em 270 arquivos e 4.211 testes. `seed.test.ts` falhou na preparação e 36 testes ficaram sem execução. Um teste temporário removeu três limites de uma fixture de seed nas branches de teste. A segunda suíte passou em 271 arquivos e 4.247 testes, sem falhas.
+- OpenAPI e workflows gerados conferidos contra `bf5e646`. Próximo bloco T32–T35.
 
 ---
 

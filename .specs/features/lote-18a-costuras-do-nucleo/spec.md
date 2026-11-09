@@ -391,14 +391,14 @@ mercado, porque uma loja não tem `novo` e `usado`.
 | VERT-02 | P1: Contrato do vertical | Execute | Implementing |
 | VERT-03 | P1: Contrato do vertical | Execute | Implementing |
 | ACCESS-01 | P1: Permissões compostas | Execute | Implementing |
-| QUAL-01 | P1: Qualificação atrás de costura | Tasks | In Tasks |
-| QUAL-02 | P1: Qualificação atrás de costura | Tasks | In Tasks |
+| QUAL-01 | P1: Qualificação atrás de costura | Execute | Implementing |
+| QUAL-02 | P1: Qualificação atrás de costura | Execute | Implementing |
 | APPT-01 | P1: Agendamento opcional | Tasks | In Tasks |
-| CAT-01 | P1: Catálogo e vitrine no vertical | Tasks | In Tasks |
-| CAT-02 | P1: Catálogo e vitrine no vertical | Tasks | In Tasks |
+| CAT-01 | P1: Catálogo e vitrine no vertical | Execute | Implementing |
+| CAT-02 | P1: Catálogo e vitrine no vertical | Execute | Implementing |
 | AGENT-01 | P1: Agente genérico | Tasks | In Tasks |
 | AGENT-02 | P1: Agente genérico | Tasks | In Tasks |
-| SEG-01 | P2: Segmentos de documento | Tasks | In Tasks |
+| SEG-01 | P2: Segmentos de documento | Execute | Implementing |
 
 **Andamento em 2026-11-06:** T19–T23 concluídas; a rastreabilidade de BOUND-03, VERT-02 e dos demais requisitos executados permanece em `Implementing`, aguardando a verificação independente prevista no lote. T23: `bb37b0d`, com 265 arquivos/4.216 testes verdes; ajuste de vocabulário de ator: `99a7e44`, com gate curto de 5 arquivos/163 testes verdes.
 
