@@ -47,7 +47,7 @@ vi.mock("../storefront/schedule", () => ({ scheduleStorefrontRevalidation: vi.fn
 
 import { revalidatePath } from "next/cache";
 import { scheduleStorefrontRevalidation } from "../storefront/schedule";
-import { getProperties } from "../data";
+import { getProperties } from "../../verticals/real-estate/data/properties";
 import {
   createPropertyAction,
   deletePropertyAction,

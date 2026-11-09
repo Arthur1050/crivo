@@ -3,30 +3,32 @@ import {
   ACCEPTED_MIME_TYPES,
   CATEGORY_COLOR_PALETTE,
   LEAD_STATUSES,
-  MAX_DESCRIPTION_LENGTH,
   MAX_FILE_SIZE_BYTES,
   MAX_NAME_LENGTH,
-  MAX_PHOTO_URLS,
-  PROPERTY_KINDS,
-  PROPERTY_STATUSES,
-  validateAreaSqm,
   validateBaselineCount,
   validateBaselinePercent,
   validateBusinessHours,
   validateCategoryColor,
-  validateDescription,
   validateFileSize,
   validateLeadStatus,
   validateMimeType,
   validateModality,
   validateName,
+} from "../validation";
+import {
+  MAX_DESCRIPTION_LENGTH,
+  MAX_PHOTO_URLS,
+  PROPERTY_KINDS,
+  PROPERTY_STATUSES,
+  validateAreaSqm,
+  validateDescription,
   validatePhotoUrls,
   validatePriceCents,
   validatePropertyKind,
   validatePropertyStatus,
   validateRoomCount,
   validateUf,
-} from "../validation";
+} from "../../verticals/real-estate/validation/properties";
 
 describe("validateName", () => {
   it("aceita um nome comum, aparado", () => {

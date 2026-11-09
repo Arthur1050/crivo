@@ -7,13 +7,13 @@ import {
   type PropertiesEmptyState,
 } from "@/src/components/properties/properties-view";
 import { can } from "@/src/kit/access";
+import { getTenantMembers } from "@/src/server/data";
 import {
   getProperties,
-  getTenantMembers,
   type Modality,
   type PropertyKind,
   type PropertyStatus,
-} from "@/src/server/data";
+} from "@/src/verticals/real-estate/data/properties";
 import { verifySession } from "@/src/kit/session";
 import { getActiveTenantId } from "@/src/server/tenant";
 

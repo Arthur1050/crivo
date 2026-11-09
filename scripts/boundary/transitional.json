@@ -119,13 +119,6 @@
     "category": "market"
   },
   {
-    "path": "src/server/data/index.ts",
-    "term": "market:imóve",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
-  },
-  {
     "path": "src/server/documents/benchmark-identity.ts",
     "term": "market:reuni",
     "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
@@ -205,20 +198,6 @@
   {
     "path": "src/server/reengagement/repository.ts",
     "term": "market:meeting",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
-  },
-  {
-    "path": "src/server/validation.ts",
-    "term": "market:imóve",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
-  },
-  {
-    "path": "src/server/validation.ts",
-    "term": "market:property",
     "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
     "removedIn": "L18a",
     "category": "market"
@@ -1037,13 +1016,6 @@
   },
   {
     "path": "src/server/data/index.ts",
-    "term": "stored:disponivel",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/server/data/index.ts",
     "term": "stored:investidor",
     "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
     "removedIn": "L18a",
@@ -1129,83 +1101,6 @@
   {
     "path": "src/server/documents/uploads.ts",
     "term": "stored:ambos",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/server/integration/properties.ts",
-    "term": "stored:disponivel",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/server/validation.ts",
-    "term": "stored:casa",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/server/validation.ts",
-    "term": "stored:apartamento",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/server/validation.ts",
-    "term": "stored:sobrado",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/server/validation.ts",
-    "term": "stored:cobertura",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/server/validation.ts",
-    "term": "stored:terreno",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/server/validation.ts",
-    "term": "stored:sala_comercial",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/server/validation.ts",
-    "term": "stored:chacara",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/server/validation.ts",
-    "term": "stored:disponivel",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/server/validation.ts",
-    "term": "stored:reservado",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/server/validation.ts",
-    "term": "stored:vendido",
     "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
     "removedIn": "L18a",
     "category": "stored"
@@ -1458,83 +1353,6 @@
   {
     "path": "src/server/documents/repository.ts",
     "term": "identifier:ambos",
-    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
-    "removedIn": "L18a",
-    "category": "identifier"
-  },
-  {
-    "path": "src/server/integration/properties.ts",
-    "term": "identifier:tipo",
-    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
-    "removedIn": "L18a",
-    "category": "identifier"
-  },
-  {
-    "path": "src/server/integration/properties.ts",
-    "term": "identifier:modalidade",
-    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
-    "removedIn": "L18a",
-    "category": "identifier"
-  },
-  {
-    "path": "src/server/integration/properties.ts",
-    "term": "identifier:bairro",
-    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
-    "removedIn": "L18a",
-    "category": "identifier"
-  },
-  {
-    "path": "src/server/integration/properties.ts",
-    "term": "identifier:cidade",
-    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
-    "removedIn": "L18a",
-    "category": "identifier"
-  },
-  {
-    "path": "src/server/integration/properties.ts",
-    "term": "identifier:preco",
-    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
-    "removedIn": "L18a",
-    "category": "identifier"
-  },
-  {
-    "path": "src/server/integration/properties.ts",
-    "term": "identifier:imoveis",
-    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
-    "removedIn": "L18a",
-    "category": "identifier"
-  },
-  {
-    "path": "src/server/integration/property-filters.ts",
-    "term": "identifier:modalidade",
-    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
-    "removedIn": "L18a",
-    "category": "identifier"
-  },
-  {
-    "path": "src/server/integration/property-filters.ts",
-    "term": "identifier:tipo",
-    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
-    "removedIn": "L18a",
-    "category": "identifier"
-  },
-  {
-    "path": "src/server/integration/property-filters.ts",
-    "term": "identifier:bairro",
-    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
-    "removedIn": "L18a",
-    "category": "identifier"
-  },
-  {
-    "path": "src/server/integration/property-filters.ts",
-    "term": "identifier:cidade",
-    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
-    "removedIn": "L18a",
-    "category": "identifier"
-  },
-  {
-    "path": "src/server/integration/property-filters.ts",
-    "term": "identifier:preco",
     "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
     "removedIn": "L18a",
     "category": "identifier"
@@ -2098,12 +1916,5 @@
     "reason": "Tipo das colunas de qualificação transitórias do lead; remoção na migração física do L18c.",
     "removedIn": "L18c",
     "category": "market"
-  },
-  {
-    "path": "src/server/data/index.ts",
-    "term": "import:src/verticals/real-estate/schema.ts",
-    "reason": "A DAL do catálogo sai do núcleo na T25.",
-    "removedIn": "L18a",
-    "category": "import"
   }
 ]

@@ -10,12 +10,11 @@ import {
   createProperty,
   deleteProperty,
   getProperties,
-  getTenants,
-  isActiveMemberOf,
   updateProperty,
   type NewProperty,
   type UpdatePropertyPatch,
-} from "../index";
+} from "../../../verticals/real-estate/data/properties";
+import { getTenants, isActiveMemberOf } from "../index";
 
 const NON_EXISTENT_TENANT_ID = "00000000-0000-4000-8000-000000000000";
 const NON_EXISTENT_USER_ID = "00000000-0000-4000-8000-000000000099";

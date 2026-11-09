@@ -10,10 +10,10 @@
  * imóvel — responsabilidades e formatos de retorno distintos (design.md —
  * Components).
  */
-import { modalityEnum } from "../../db/schema";
-import { propertyKindEnum } from "../../verticals/real-estate/schema";
-import { normalizeForSearch } from "../../lib/normalize-text";
-import type { Modality, PropertyKind } from "../data";
+import { modalityEnum } from "../../../db/schema";
+import { propertyKindEnum } from "../schema";
+import { normalizeForSearch } from "../../../lib/normalize-text";
+import type { Modality, PropertyKind } from "../data/properties";
 
 export type PropertyFiltersParseResult =
   | { ok: true; filters: PropertySearchFilters }
@@ -21,7 +21,7 @@ export type PropertyFiltersParseResult =
 
 /**
  * Filtros já validados e prontos para a consulta (T12 —
- * `searchVisibleProperties`). Preço em CENTAVOS aqui — a conversão de reais
+ * `searchVisibleProperties`). Preço em CENTAVOS aqui — a conversão de priceInReais
  * (o que a query string recebe) para centavos acontece só neste módulo, uma
  * única vez. `neighborhood`/`city` já saem normalizados
  * (`normalizeForSearch`), prontos para comparar contra as colunas
@@ -57,62 +57,62 @@ export function parsePropertyFilters(
 ): PropertyFiltersParseResult {
   const filters: PropertySearchFilters = {};
 
-  const modalidade = params.get("modalidade");
-  if (modalidade !== null) {
-    if (!(modalityEnum.enumValues as readonly string[]).includes(modalidade)) {
+  const modality = params.get("modalidade");
+  if (modality !== null) {
+    if (!(modalityEnum.enumValues as readonly string[]).includes(modality)) {
       return {
         ok: false,
         detail: `Parâmetro 'modalidade' inválido. Valores aceitos: ${modalityEnum.enumValues.join(", ")}.`,
       };
     }
-    filters.modality = modalidade as Modality;
+    filters.modality = modality as Modality;
   }
 
-  const tipo = params.get("tipo");
-  if (tipo !== null) {
-    if (!(propertyKindEnum.enumValues as readonly string[]).includes(tipo)) {
+  const kind = params.get("tipo");
+  if (kind !== null) {
+    if (!(propertyKindEnum.enumValues as readonly string[]).includes(kind)) {
       return {
         ok: false,
         detail: `Parâmetro 'tipo' inválido. Valores aceitos: ${propertyKindEnum.enumValues.join(", ")}.`,
       };
     }
-    filters.kind = tipo as PropertyKind;
+    filters.kind = kind as PropertyKind;
   }
 
-  const bairro = params.get("bairro");
-  if (bairro !== null) {
-    filters.neighborhood = normalizeForSearch(bairro);
+  const neighborhood = params.get("bairro");
+  if (neighborhood !== null) {
+    filters.neighborhood = normalizeForSearch(neighborhood);
   }
 
-  const cidade = params.get("cidade");
-  if (cidade !== null) {
-    filters.city = normalizeForSearch(cidade);
+  const city = params.get("cidade");
+  if (city !== null) {
+    filters.city = normalizeForSearch(city);
   }
 
-  const precoMinRaw = params.get("precoMin");
-  if (precoMinRaw !== null) {
-    const reais = parsePositiveInteger(precoMinRaw);
-    if (reais === undefined) {
+  const minPriceRaw = params.get("precoMin");
+  if (minPriceRaw !== null) {
+    const priceInReais = parsePositiveInteger(minPriceRaw);
+    if (priceInReais === undefined) {
       return {
         ok: false,
         detail:
-          "Parâmetro 'precoMin' deve ser um inteiro maior que zero, em reais.",
+          "Parâmetro 'precoMin' deve ser um inteiro maior que zero, em priceInReais.",
       };
     }
-    filters.minPriceCents = reais * CENTS_PER_REAL;
+    filters.minPriceCents = priceInReais * CENTS_PER_REAL;
   }
 
-  const precoMaxRaw = params.get("precoMax");
-  if (precoMaxRaw !== null) {
-    const reais = parsePositiveInteger(precoMaxRaw);
-    if (reais === undefined) {
+  const maxPriceRaw = params.get("precoMax");
+  if (maxPriceRaw !== null) {
+    const priceInReais = parsePositiveInteger(maxPriceRaw);
+    if (priceInReais === undefined) {
       return {
         ok: false,
         detail:
-          "Parâmetro 'precoMax' deve ser um inteiro maior que zero, em reais.",
+          "Parâmetro 'precoMax' deve ser um inteiro maior que zero, em priceInReais.",
       };
     }
-    filters.maxPriceCents = reais * CENTS_PER_REAL;
+    filters.maxPriceCents = priceInReais * CENTS_PER_REAL;
   }
 
   // Edge Case: precoMin > precoMax é recusa explícita, nunca lista vazia
@@ -124,7 +124,7 @@ export function parsePropertyFilters(
   ) {
     return {
       ok: false,
-      detail: `Parâmetro 'precoMin' (${precoMinRaw}) não pode ser maior que 'precoMax' (${precoMaxRaw}).`,
+      detail: `Parâmetro 'precoMin' (${minPriceRaw}) não pode ser maior que 'precoMax' (${maxPriceRaw}).`,
     };
   }
 

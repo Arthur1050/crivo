@@ -7,8 +7,8 @@ import { tenant_members, tenants, users } from "../../../db/schema";
 import { properties } from "../../../verticals/real-estate/schema";
 import { formatCurrencyBRL } from "../../../lib/format";
 import { normalizeForSearch } from "../../../lib/normalize-text";
-import { searchVisibleProperties } from "../properties";
-import type { PropertySearchFilters } from "../property-filters";
+import { searchVisibleProperties } from "../../../verticals/real-estate/integration/properties";
+import type { PropertySearchFilters } from "../../../verticals/real-estate/integration/property-filters";
 
 type PropertyInsert = typeof properties.$inferInsert;
 

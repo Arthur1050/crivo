@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { Selector } from "@astryxdesign/core/Selector";
 import { HStack } from "@astryxdesign/core/Stack";
 import { TextInput } from "@astryxdesign/core/TextInput";
-import type { Modality, PropertyKind, PropertyStatus } from "@/src/server/data";
+import type { Modality, PropertyKind, PropertyStatus } from "@/src/verticals/real-estate/data/properties";
 
 const STATUS_OPTIONS: { value: PropertyStatus; label: string }[] = [
   { value: PROPERTY_STATUS.available, label: "Disponível" },

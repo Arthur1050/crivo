@@ -1,9 +1,10 @@
 import "server-only";
 import { and, asc, count, desc, eq, gte, lte } from "drizzle-orm";
-import { db } from "../../db";
-import { properties } from "../../verticals/real-estate/schema";
-import { formatCurrencyBRL } from "../../lib/format";
-import type { Modality, PropertyKind } from "../data";
+import { db } from "../../../db";
+import { properties } from "../schema";
+import { PROPERTY_STATUS } from "../vocabulary";
+import { formatCurrencyBRL } from "../../../lib/format";
+import type { Modality, PropertyKind } from "../data/properties";
 import type { PropertySearchFilters } from "./property-filters";
 
 // BUSCA-02: no máximo 3 imóveis por chamada — é resposta de WhatsApp, não
@@ -19,14 +20,14 @@ export const PROPERTY_SEARCH_LIMIT = 3;
  */
 export interface SerializedProperty {
   referencia: string;
-  tipo: PropertyKind;
-  modalidade: Modality;
-  bairro: string;
-  cidade: string;
+  "tipo": PropertyKind;
+  "modalidade": Modality;
+  "bairro": string;
+  "cidade": string;
   uf: string;
   /** Já formatado em Real brasileiro (`formatCurrencyBRL`) — nenhum `bigint`
    * atravessa este DTO (design.md — Risks: "bigint não é JSON-safe"). */
-  preco: string;
+  "preco": string;
   areaM2: number;
   quartos: number;
   banheiros: number;
@@ -34,7 +35,7 @@ export interface SerializedProperty {
 }
 
 export interface PropertySearchResult {
-  imoveis: SerializedProperty[];
+  "imoveis": SerializedProperty[];
   total: number;
 }
 
@@ -43,12 +44,12 @@ function serializeProperty(
 ): SerializedProperty {
   return {
     referencia: row.reference,
-    tipo: row.kind,
-    modalidade: row.modality,
-    bairro: row.neighborhood,
-    cidade: row.city,
+    "tipo": row.kind,
+    "modalidade": row.modality,
+    "bairro": row.neighborhood,
+    "cidade": row.city,
     uf: row.state,
-    preco: formatCurrencyBRL(row.priceCents)!,
+    "preco": formatCurrencyBRL(row.priceCents)!,
     areaM2: row.areaSqm,
     quartos: row.bedrooms,
     banheiros: row.bathrooms,
@@ -72,7 +73,7 @@ export async function searchVisibleProperties(
 ): Promise<PropertySearchResult> {
   const where = and(
     eq(properties.tenantId, tenantId),
-    eq(properties.status, "disponivel"),
+    eq(properties.status, PROPERTY_STATUS.available),
     eq(properties.published, true),
     filters.modality ? eq(properties.modality, filters.modality) : undefined,
     filters.kind ? eq(properties.kind, filters.kind) : undefined,
@@ -104,7 +105,7 @@ export async function searchVisibleProperties(
     .limit(PROPERTY_SEARCH_LIMIT);
 
   return {
-    imoveis: rows.map(serializeProperty),
+    "imoveis": rows.map(serializeProperty),
     total: Number(totalRow.total),
   };
 }

@@ -11,7 +11,7 @@ import {
   type CaptadorOption,
 } from "@/src/components/properties/property-form-dialog";
 import { PropertiesTable } from "@/src/components/properties/properties-table";
-import type { Property } from "@/src/server/data";
+import type { Property } from "@/src/verticals/real-estate/data/properties";
 
 export interface PropertiesEmptyState {
   title: string;

@@ -1,32 +1,34 @@
-"use server";
+import "server-only";
 
 import { revalidatePath } from "next/cache";
-import { getActiveTenantId } from "../tenant";
-import { scheduleStorefrontRevalidation } from "../storefront/schedule";
-import { denyIfForbidden } from "./permission";
+import { isActiveMemberOf } from "../../../server/data";
+import { scheduleStorefrontRevalidation } from "../../../server/storefront/schedule";
+import { validateModality, validateName } from "../../../server/validation";
 import {
   createProperty,
   deleteProperty,
-  isActiveMemberOf,
   setPropertyFeatured,
   updateProperty,
   type Modality,
   type PropertyKind,
   type PropertyStatus,
   type UpdatePropertyPatch,
-} from "../data";
+} from "../data/properties";
 import {
   validateAreaSqm,
   validateDescription,
-  validateModality,
-  validateName,
   validatePhotoUrls,
   validatePriceCents,
   validatePropertyKind,
   validatePropertyStatus,
   validateRoomCount,
   validateUf,
-} from "../validation";
+} from "../validation/properties";
+
+interface CatalogActionContext {
+  authorizeWrite(): Promise<{ ok: false; error: string } | null>;
+  getActiveTenantId(): Promise<string>;
+}
 
 // Escrita do catálogo de imóveis pelo CRM (lote-11 — IMOV-02/04/05/07).
 // `src/server/actions/documents.ts` é o molde na íntegra: o tenant vem
@@ -79,9 +81,10 @@ export interface CreatePropertyInput {
  * falso para ele.
  */
 export async function createPropertyAction(
-  input: CreatePropertyInput
+  input: CreatePropertyInput,
+  context: CatalogActionContext
 ): Promise<ActionResult> {
-  const denied = await denyIfForbidden("catalog", "write");
+  const denied = await context.authorizeWrite();
   if (denied) return denied;
 
   const kindCheck = validatePropertyKind(input.kind ?? "");
@@ -135,7 +138,7 @@ export async function createPropertyAction(
     return { ok: false, error: CAPTURER_ERROR };
   }
 
-  const tenantId = await getActiveTenantId();
+  const tenantId = await context.getActiveTenantId();
 
   const capturerActive = await isActiveMemberOf(
     tenantId,
@@ -202,9 +205,10 @@ export interface UpdatePropertyInput {
  * tipo, não por checagem em runtime).
  */
 export async function updatePropertyAction(
-  input: UpdatePropertyInput
+  input: UpdatePropertyInput,
+  context: CatalogActionContext
 ): Promise<ActionResult> {
-  const denied = await denyIfForbidden("catalog", "write");
+  const denied = await context.authorizeWrite();
   if (denied) return denied;
 
   const patch: UpdatePropertyPatch = {};
@@ -295,7 +299,7 @@ export async function updatePropertyAction(
   if (input.number !== undefined) patch.number = input.number;
   if (input.complement !== undefined) patch.complement = input.complement;
 
-  const tenantId = await getActiveTenantId();
+  const tenantId = await context.getActiveTenantId();
 
   if (input.capturedByUserId !== undefined) {
     const capturerActive =
@@ -322,12 +326,13 @@ export interface DeletePropertyInput {
 }
 
 export async function deletePropertyAction(
-  input: DeletePropertyInput
+  input: DeletePropertyInput,
+  context: CatalogActionContext
 ): Promise<ActionResult> {
-  const denied = await denyIfForbidden("catalog", "write");
+  const denied = await context.authorizeWrite();
   if (denied) return denied;
 
-  const tenantId = await getActiveTenantId();
+  const tenantId = await context.getActiveTenantId();
   const deleted = await deleteProperty(tenantId, input.propertyId);
 
   if (!deleted) {
@@ -348,12 +353,13 @@ export interface SetPropertyPublishedInput {
  * Alterna a publicação sem exigir nenhuma transição de status (IMOV-05 AC2).
  */
 export async function setPropertyPublishedAction(
-  input: SetPropertyPublishedInput
+  input: SetPropertyPublishedInput,
+  context: CatalogActionContext
 ): Promise<ActionResult> {
-  const denied = await denyIfForbidden("catalog", "write");
+  const denied = await context.authorizeWrite();
   if (denied) return denied;
 
-  const tenantId = await getActiveTenantId();
+  const tenantId = await context.getActiveTenantId();
   const updated = await updateProperty(tenantId, input.propertyId, {
     published: input.published,
   });
@@ -377,15 +383,16 @@ export interface SetPropertyStatusInput {
  * tabela de transições (IMOV-05 AC2, design.md — Assumptions).
  */
 export async function setPropertyStatusAction(
-  input: SetPropertyStatusInput
+  input: SetPropertyStatusInput,
+  context: CatalogActionContext
 ): Promise<ActionResult> {
-  const denied = await denyIfForbidden("catalog", "write");
+  const denied = await context.authorizeWrite();
   if (denied) return denied;
 
   const statusCheck = validatePropertyStatus(input.status);
   if (!statusCheck.ok) return statusCheck;
 
-  const tenantId = await getActiveTenantId();
+  const tenantId = await context.getActiveTenantId();
   const updated = await updateProperty(tenantId, input.propertyId, {
     status: input.status,
   });
@@ -411,16 +418,17 @@ export interface SetPropertyFeaturedInput {
  * de revalidação só é agendado depois de gravar.
  */
 export async function setPropertyFeaturedAction(
-  input: SetPropertyFeaturedInput
+  input: SetPropertyFeaturedInput,
+  context: CatalogActionContext
 ): Promise<ActionResult> {
-  const denied = await denyIfForbidden("catalog", "write");
+  const denied = await context.authorizeWrite();
   if (denied) return denied;
 
   if (typeof input.featured !== "boolean") {
     return { ok: false, error: "Destaque deve ser verdadeiro ou falso." };
   }
 
-  const tenantId = await getActiveTenantId();
+  const tenantId = await context.getActiveTenantId();
   const updated = await setPropertyFeatured(tenantId, input.propertyId, input.featured);
 
   if (!updated) {

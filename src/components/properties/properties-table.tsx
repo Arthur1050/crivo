@@ -16,7 +16,7 @@ import { Text } from "@astryxdesign/core/Text";
 import { Token } from "@astryxdesign/core/Token";
 import { formatCurrencyBRL } from "@/src/lib/format";
 import { deletePropertyAction } from "@/src/server/actions/properties";
-import type { Property, PropertyKind, PropertyStatus } from "@/src/server/data";
+import type { Property, PropertyKind, PropertyStatus } from "@/src/verticals/real-estate/data/properties";
 
 const KIND_LABELS: Record<PropertyKind, string> = {
   [PROPERTY_KIND.house]: "Casa",

@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { db } from "../../../db";
 import { tenant_members, tenants, users } from "../../../db/schema";
 import { properties } from "../../../verticals/real-estate/schema";
-import { getProperties, setPropertyFeatured } from "../index";
+import { getProperties, setPropertyFeatured } from "../../../verticals/real-estate/data/properties";
 
 type PropertyInsert = typeof properties.$inferInsert;
 

@@ -1,8 +1,10 @@
 import { PROBLEM_CODE } from "../../../../src/lib/vocabulary";
-import { parsePropertyFilters } from "../../../../src/server/integration/property-filters";
-import { searchVisibleProperties } from "../../../../src/server/integration/properties";
-import { methodNotAllowed, problem } from "../../../../src/kit/integration";
-import { withIntegrationRoute } from "../../../../src/kit/integration";
+import { createIntegrationKit } from "../../../../src/server/integration/kit";
+import { realEstate } from "../../../../src/verticals/real-estate";
+import { parsePropertyFilters } from "../../../../src/verticals/real-estate/integration/property-filters";
+import { searchVisibleProperties } from "../../../../src/verticals/real-estate/integration/properties";
+
+const { methodNotAllowed, problem, withIntegrationRoute } = createIntegrationKit(realEstate);
 
 /**
  * `GET /api/v1/properties?modalidade=&tipo=&bairro=&cidade=&precoMin=&

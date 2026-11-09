@@ -23,8 +23,8 @@ import type {
   Property,
   PropertyKind,
   PropertyStatus,
-} from "@/src/server/data";
-import { MAX_PHOTO_URLS } from "@/src/server/validation";
+} from "@/src/verticals/real-estate/data/properties";
+import { MAX_PHOTO_URLS } from "@/src/verticals/real-estate/validation/properties";
 
 const KIND_OPTIONS: { value: PropertyKind; label: string }[] = [
   { value: PROPERTY_KIND.house, label: "Casa" },

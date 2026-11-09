@@ -4,7 +4,7 @@ import { eq, inArray, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { applyVitrineSql } from "../../../scripts/vitrine/apply";
 import { STOREFRONT_VIEW_COLUMNS } from "../../lib/storefront-contract";
-import { searchVisibleProperties } from "../../server/integration/properties";
+import { searchVisibleProperties } from "../../verticals/real-estate/integration/properties";
 import { db } from "../index";
 import { tenants, users } from "../schema";
 import { properties, tenantStorefronts } from "../../verticals/real-estate/schema";

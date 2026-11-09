@@ -11,13 +11,13 @@ import {
   createInvitation,
   createMembership,
   createPendingUser,
-  deleteUser,
   findUserByEmail,
   getMembership,
   getTenant,
   getTenantMemberById,
   setMemberRoles,
 } from "../data";
+import { deleteUser } from "../../verticals/real-estate/data/properties";
 import { validateName } from "../validation";
 
 /**

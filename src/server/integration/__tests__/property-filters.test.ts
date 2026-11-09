@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { normalizeForSearch } from "../../../lib/normalize-text";
-import { parsePropertyFilters } from "../property-filters";
+import { parsePropertyFilters } from "../../../verticals/real-estate/integration/property-filters";
 
 function params(query: string): URLSearchParams {
   return new URLSearchParams(query);

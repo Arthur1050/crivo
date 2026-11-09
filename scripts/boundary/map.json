@@ -64,14 +64,6 @@
     "package": "@core/client"
   },
   {
-    "glob": "src/server/integration/properties.ts",
-    "layer": "vertical"
-  },
-  {
-    "glob": "src/server/integration/property-filters.ts",
-    "layer": "vertical"
-  },
-  {
     "glob": "src/server/storefront/**",
     "layer": "vertical"
   },
@@ -91,6 +83,10 @@
   {
     "glob": "src/components/**",
     "layer": "app"
+  },
+  {
+    "glob": "app/api/v1/properties/**",
+    "layer": "vertical"
   },
   {
     "glob": "app/**",
