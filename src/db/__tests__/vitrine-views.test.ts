@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { eq, inArray, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { applyVitrineSql } from "../../../scripts/vitrine/apply";
-import { STOREFRONT_VIEW_COLUMNS } from "../../lib/storefront-contract";
+import { STOREFRONT_VIEW_COLUMNS } from "../../verticals/real-estate/storefront/contract";
 import { searchVisibleProperties } from "../../verticals/real-estate/integration/properties";
 import { db } from "../index";
 import { tenants, users } from "../schema";

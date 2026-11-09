@@ -987,13 +987,6 @@
     "category": "stored"
   },
   {
-    "path": "src/lib/storefront-contract.ts",
-    "term": "stored:grade",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
     "path": "src/server/data/index.ts",
     "term": "stored:novo",
     "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
@@ -1031,13 +1024,6 @@
   {
     "path": "src/server/data/index.ts",
     "term": "stored:reservado",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/server/data/storefront.ts",
-    "term": "stored:grade",
     "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
     "removedIn": "L18a",
     "category": "stored"
@@ -1260,34 +1246,6 @@
     "category": "identifier"
   },
   {
-    "path": "src/lib/storefront-contract.ts",
-    "term": "identifier:lojas",
-    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
-    "removedIn": "L18a",
-    "category": "identifier"
-  },
-  {
-    "path": "src/lib/storefront-contract.ts",
-    "term": "identifier:imoveis",
-    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
-    "removedIn": "L18a",
-    "category": "identifier"
-  },
-  {
-    "path": "src/lib/storefront.ts",
-    "term": "identifier:titulo",
-    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
-    "removedIn": "L18a",
-    "category": "identifier"
-  },
-  {
-    "path": "src/lib/storefront.ts",
-    "term": "identifier:agente",
-    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
-    "removedIn": "L18a",
-    "category": "identifier"
-  },
-  {
     "path": "src/server/actions/deactivate.ts",
     "term": "identifier:tipo",
     "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
@@ -1353,27 +1311,6 @@
   {
     "path": "src/server/documents/repository.ts",
     "term": "identifier:ambos",
-    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
-    "removedIn": "L18a",
-    "category": "identifier"
-  },
-  {
-    "path": "src/server/storefront/revalidation.ts",
-    "term": "identifier:normalizar",
-    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
-    "removedIn": "L18a",
-    "category": "identifier"
-  },
-  {
-    "path": "src/server/storefront/revalidation.ts",
-    "term": "identifier:vitrine",
-    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
-    "removedIn": "L18a",
-    "category": "identifier"
-  },
-  {
-    "path": "src/server/storefront/revalidation.ts",
-    "term": "identifier:valor",
     "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
     "removedIn": "L18a",
     "category": "identifier"

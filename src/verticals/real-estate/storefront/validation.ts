@@ -11,7 +11,7 @@ import {
   STOREFRONT_LAYOUTS,
   type StorefrontFont,
   type StorefrontLayout,
-} from "./storefront-contract";
+} from "./contract";
 
 /** Campos que a validação pode recusar, nos nomes da spec e da tela. */
 export type StorefrontField =
@@ -63,7 +63,7 @@ export type StorefrontValidation =
 export const STOREFRONT_LIMITS = {
   creci: 40,
   razaoSocial: 120,
-  titulo: 120,
+  "titulo": 120,
   sobre: 1500,
   endereco: 200,
 } as const;
@@ -140,7 +140,7 @@ export function validateStorefrontInput(input: StorefrontInput): StorefrontValid
   if (legalNameTooLong) return legalNameTooLong;
 
   const headline = normalizeOptionalText(input.headline);
-  const headlineTooLong = tooLong(headline, STOREFRONT_LIMITS.titulo, "titulo", "Título");
+  const headlineTooLong = tooLong(headline, STOREFRONT_LIMITS["titulo"], "titulo", "Título");
   if (headlineTooLong) return headlineTooLong;
 
   const about = normalizeOptionalText(input.about);
@@ -200,7 +200,7 @@ const ACTIVATION_ORDER: readonly ActivationBlocker[] = ["creci", "razaoSocial", 
 export const ACTIVATION_BLOCKER_LABELS: Record<ActivationBlocker, string> = {
   creci: "Informe o CRECI.",
   razaoSocial: "Informe a razão social.",
-  whatsappAgente: "Informe o WhatsApp do agente nas configurações da imobiliária.",
+  "whatsappAgente": "Informe o WhatsApp do agente nas configurações da imobiliária.",
 };
 
 function isBlank(value: string | null | undefined): boolean {
@@ -219,7 +219,7 @@ export function activationBlockers(input: {
   const missing: Record<ActivationBlocker, boolean> = {
     creci: isBlank(input.storefront.creci),
     razaoSocial: isBlank(input.storefront.legalName),
-    whatsappAgente: isBlank(input.agentWhatsapp),
+    "whatsappAgente": isBlank(input.agentWhatsapp),
   };
   return ACTIVATION_ORDER.filter((blocker) => missing[blocker]);
 }

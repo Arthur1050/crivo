@@ -28,7 +28,7 @@ import {
   type StorefrontField,
   type StorefrontValue,
 } from "@/src/lib/storefront";
-import type { StorefrontFont, StorefrontLayout } from "@/src/lib/storefront-contract";
+import type { StorefrontFont, StorefrontLayout } from "@/src/verticals/real-estate/storefront/contract";
 
 const LAYOUT_OPTIONS: { value: StorefrontLayout; label: string }[] = [
   { value: STOREFRONT_LAYOUT.grid, label: "Grade" },

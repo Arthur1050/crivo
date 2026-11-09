@@ -1,6 +1,6 @@
 import "server-only";
 import { after } from "next/server";
-import { getTenantSlug } from "../data/storefront";
+import { getTenantSlug } from "./data";
 import { requestStorefrontRevalidation } from "./revalidation";
 
 /**

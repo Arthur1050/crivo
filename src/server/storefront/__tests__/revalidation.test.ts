@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import vitestConfig from "../../../../vitest.config";
 import {
-  normalizarBaseDaVitrine,
+  normalizeStorefrontBaseUrl,
   requestStorefrontRevalidation,
   type RevalidationDeps,
-} from "../revalidation";
+} from "../../../verticals/real-estate/storefront/revalidation";
 
 const SECRET = "segredo-super-secreto-123";
 const CONFIG = { VITRINE_PUBLIC_URL: "https://vitrine.example.test", VITRINE_REVALIDATE_SECRET: SECRET };
@@ -243,7 +243,7 @@ describe("AD-049 — base da vitrine e segredo validados antes do envio", () => 
       ["https://[::1", null],
       ["https://usuario:senha@vitrine.example.test", null],
     ])("%j → %j", (entrada, esperado) => {
-      expect(normalizarBaseDaVitrine(entrada)).toBe(esperado);
+      expect(normalizeStorefrontBaseUrl(entrada)).toBe(esperado);
     });
   });
 

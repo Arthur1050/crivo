@@ -35,13 +35,13 @@ vi.mock("../../kit/session", async (importActual) => {
 });
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("../storefront/schedule", () => ({ scheduleStorefrontRevalidation: vi.fn() }));
+vi.mock("../../verticals/real-estate/storefront/schedule", () => ({ scheduleStorefrontRevalidation: vi.fn() }));
 
 import { revalidatePath } from "next/cache";
 import { getTenant } from "../data";
-import { saveStorefront } from "../data/storefront";
+import { saveStorefront } from "../../verticals/real-estate/storefront/data";
 import { updateTenantSettingsAction } from "../actions/settings";
-import { scheduleStorefrontRevalidation } from "../storefront/schedule";
+import { scheduleStorefrontRevalidation } from "../../verticals/real-estate/storefront/schedule";
 
 const scheduled = vi.mocked(scheduleStorefrontRevalidation);
 const createdTenantIds: string[] = [];

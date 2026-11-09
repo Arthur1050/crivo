@@ -5,7 +5,7 @@ import {
   STOREFRONT_LAYOUTS,
   STOREFRONT_VIEW_COLUMNS,
   storefrontCacheTag,
-} from "../storefront-contract";
+} from "../../verticals/real-estate/storefront/contract";
 
 describe("L16a T2 — contrato espelhado do lado CRM", () => {
   it("a tag de cache de imob-x é tenant:imob-x:catalogo (AD-042)", () => {

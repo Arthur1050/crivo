@@ -1,6 +1,6 @@
-import { HUMAN_SEND_STATE } from "../../lib/vocabulary";
+import { HUMAN_SEND_STATE } from "../../../lib/vocabulary";
 import "server-only";
-import type { RevalidationRequest } from "../../lib/storefront-contract";
+import type { RevalidationRequest } from "./contract";
 
 /**
  * Aviso de revalidação da vitrine pública (lote-16a — VREV-01, AD-042).
@@ -25,9 +25,9 @@ import type { RevalidationRequest } from "../../lib/storefront-contract";
 
 export const REVALIDATION_TIMEOUT_MS = 3000;
 
-const ESQUEMA_HTTP = /^https?:\/\//i;
+const HTTP_SCHEME = /^https?:\/\//i;
 /** `algo:` seguido de algo que não é porta (`localhost:3000` é host com porta). */
-const OUTRO_ESQUEMA = /^[a-z][a-z0-9+.-]*:(?!\d)/i;
+const OTHER_SCHEME = /^[a-z][a-z0-9+.-]*:(?!\d)/i;
 const SEGREDO_VALIDO = /^[\x21-\x7E]+$/;
 
 /**
@@ -35,20 +35,20 @@ const SEGREDO_VALIDO = /^[\x21-\x7E]+$/;
  * sem query nem fragmento), ou nulo quando ausente ou inválida. Função pura,
  * usada pelo aviso de revalidação e pelo link "Abrir vitrine" de Configurações.
  */
-export function normalizarBaseDaVitrine(valor: string | null | undefined): string | null {
-  const bruto = (valor ?? "").trim();
-  if (bruto === "") return null;
-  let candidata: string;
-  if (ESQUEMA_HTTP.test(bruto)) {
-    candidata = bruto;
-  } else if (bruto.startsWith("/") || bruto.startsWith("\\") || OUTRO_ESQUEMA.test(bruto)) {
+export function normalizeStorefrontBaseUrl(value: string | null | undefined): string | null {
+  const raw = (value ?? "").trim();
+  if (raw === "") return null;
+  let candidate: string;
+  if (HTTP_SCHEME.test(raw)) {
+    candidate = raw;
+  } else if (raw.startsWith("/") || raw.startsWith("\\") || OTHER_SCHEME.test(raw)) {
     return null;
   } else {
-    candidata = `https://${bruto}`;
+    candidate = `https://${raw}`;
   }
   let url: URL;
   try {
-    url = new URL(candidata);
+    url = new URL(candidate);
   } catch {
     return null;
   }
@@ -66,7 +66,7 @@ export interface RevalidationLogger {
 
 export interface RevalidationDeps {
   fetch?: typeof fetch;
-  config?: { VITRINE_PUBLIC_URL?: string; VITRINE_REVALIDATE_SECRET?: string };
+  config?: { "VITRINE_PUBLIC_URL"?: string; "VITRINE_REVALIDATE_SECRET"?: string };
   logger?: RevalidationLogger;
 }
 
@@ -88,13 +88,13 @@ export async function requestStorefrontRevalidation(
   };
   try {
     const config = deps.config ?? process.env;
-    const baseUrl = (config.VITRINE_PUBLIC_URL ?? "").trim();
-    const secret = (config.VITRINE_REVALIDATE_SECRET ?? "").trim();
+    const baseUrl = (config["VITRINE_PUBLIC_URL"] ?? "").trim();
+    const secret = (config["VITRINE_REVALIDATE_SECRET"] ?? "").trim();
     if (baseUrl === "" || secret === "") {
       safeLog(logger.info, `[vitrine] revalidação ignorada: slug=${slug} (vitrine não configurada)`);
       return "ignorado";
     }
-    const base = normalizarBaseDaVitrine(baseUrl);
+    const base = normalizeStorefrontBaseUrl(baseUrl);
     if (base === null) {
       safeLog(logger.warn, `[vitrine] revalidação falhou: slug=${slug} erro=UrlInvalida`);
       return HUMAN_SEND_STATE.failed;

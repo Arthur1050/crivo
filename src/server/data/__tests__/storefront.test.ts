@@ -5,8 +5,8 @@ import { afterAll, describe, expect, it } from "vitest";
 import { db } from "../../../db";
 import { tenants } from "../../../db/schema";
 import { tenantStorefronts } from "../../../verticals/real-estate/schema";
-import type { StorefrontValue } from "../../../lib/storefront";
-import { getStorefront, getTenantSlug, saveStorefront } from "../storefront";
+import type { StorefrontValue } from "../../../verticals/real-estate/storefront/validation";
+import { getStorefront, getTenantSlug, saveStorefront } from "../../../verticals/real-estate/storefront/data";
 
 const created: string[] = [];
 

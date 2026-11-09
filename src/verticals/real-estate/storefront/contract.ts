@@ -9,7 +9,9 @@
  * `src/kit/access.ts`.
  */
 
-export const STOREFRONT_LAYOUTS = ["grade", "editorial"] as const;
+import { STOREFRONT_LAYOUT } from "../vocabulary";
+
+export const STOREFRONT_LAYOUTS = [STOREFRONT_LAYOUT.grid, STOREFRONT_LAYOUT.editorial] as const;
 export type StorefrontLayout = (typeof STOREFRONT_LAYOUTS)[number];
 
 export const STOREFRONT_FONTS = ["inter", "montserrat", "lora", "playfair"] as const;
@@ -25,7 +27,7 @@ export type RevalidationRequest = { slug: string };
 
 /** Colunas das views do schema `vitrine`, no nome e na ordem exatos (AD-040). */
 export const STOREFRONT_VIEW_COLUMNS = {
-  lojas: [
+  "lojas": [
     "slug",
     "nome",
     "logo",
@@ -44,7 +46,7 @@ export const STOREFRONT_VIEW_COLUMNS = {
     "endereco",
     "atualizado_em",
   ],
-  imoveis: [
+  "imoveis": [
     "loja_slug",
     "referencia",
     "tipo",

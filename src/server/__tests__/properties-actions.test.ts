@@ -43,10 +43,10 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 // Lote-16a (VREV-02): o agendamento da revalidação da vitrine é substituído por um
 // espião; o que ele faz de verdade é provado em `storefront/__tests__/schedule.test.ts`.
-vi.mock("../storefront/schedule", () => ({ scheduleStorefrontRevalidation: vi.fn() }));
+vi.mock("../../verticals/real-estate/storefront/schedule", () => ({ scheduleStorefrontRevalidation: vi.fn() }));
 
 import { revalidatePath } from "next/cache";
-import { scheduleStorefrontRevalidation } from "../storefront/schedule";
+import { scheduleStorefrontRevalidation } from "../../verticals/real-estate/storefront/schedule";
 import { getProperties } from "../../verticals/real-estate/data/properties";
 import {
   createPropertyAction,

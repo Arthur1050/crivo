@@ -6,7 +6,7 @@ import { db } from "../../db";
 import { tenants } from "../../db/schema";
 import { tenantStorefronts } from "../../verticals/real-estate/schema";
 import type { Action, Resource, Role } from "../../kit/access";
-import type { StorefrontInput } from "../../lib/storefront";
+import type { StorefrontInput } from "../../verticals/real-estate/storefront/validation";
 import type { AuthContext } from "../../kit/session";
 
 /**
@@ -37,12 +37,12 @@ vi.mock("../../kit/session", async (importActual) => {
 });
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("../storefront/schedule", () => ({ scheduleStorefrontRevalidation: vi.fn() }));
+vi.mock("../../verticals/real-estate/storefront/schedule", () => ({ scheduleStorefrontRevalidation: vi.fn() }));
 
 import { revalidatePath } from "next/cache";
-import { getStorefront, saveStorefront } from "../data/storefront";
+import { getStorefront, saveStorefront } from "../../verticals/real-estate/storefront/data";
 import { saveStorefrontAction } from "../actions/storefront";
-import { scheduleStorefrontRevalidation } from "../storefront/schedule";
+import { scheduleStorefrontRevalidation } from "../../verticals/real-estate/storefront/schedule";
 
 const scheduled = vi.mocked(scheduleStorefrontRevalidation);
 const createdTenantIds: string[] = [];

@@ -50,7 +50,7 @@
     "package": "@core/db"
   },
   {
-    "glob": "src/lib/storefront*.ts",
+    "glob": "src/lib/storefront.ts",
     "layer": "vertical"
   },
   {
@@ -62,14 +62,6 @@
     "glob": "src/stores/**",
     "layer": "core",
     "package": "@core/client"
-  },
-  {
-    "glob": "src/server/storefront/**",
-    "layer": "vertical"
-  },
-  {
-    "glob": "src/server/data/storefront.ts",
-    "layer": "vertical"
   },
   {
     "glob": "src/server/actions/**",

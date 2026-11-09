@@ -1,9 +1,10 @@
 import "server-only";
 import { eq, sql } from "drizzle-orm";
-import { db } from "../../db";
-import { tenants } from "../../db/schema";
-import { tenantStorefronts } from "../../verticals/real-estate/schema";
-import type { StorefrontValue } from "../../lib/storefront";
+import { db } from "../../../db";
+import { tenants } from "../../../db/schema";
+import { tenantStorefronts } from "../schema";
+import type { StorefrontValue } from "./validation";
+import { STOREFRONT_LAYOUT } from "../vocabulary";
 
 /**
  * Acesso a dados da vitrine pública (lote-16a — VCFG-01, VCFG-02, VATIV-01).
@@ -27,7 +28,7 @@ function defaults(tenantId: string): Storefront {
   return {
     tenantId,
     active: false,
-    layout: "grade",
+    layout: STOREFRONT_LAYOUT.grid,
     accentColor: null,
     font: "inter",
     creci: null,

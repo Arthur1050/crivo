@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache";
 import { getActiveTenantId } from "../tenant";
 import { denyIfForbidden } from "./permission";
 import { updateTenantSettings, type Modality } from "../data";
-import { getStorefront } from "../data/storefront";
-import { scheduleStorefrontRevalidation } from "../storefront/schedule";
+import { getStorefront } from "../../verticals/real-estate/storefront/data";
+import { scheduleStorefrontRevalidation } from "../../verticals/real-estate/storefront/schedule";
 import {
   validateAgentVoiceTone,
   validateBaselineCount,

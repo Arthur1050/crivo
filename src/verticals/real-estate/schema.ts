@@ -42,7 +42,7 @@ export const propertyStatusEnum = pgEnum("property_status", [
 
 // Vitrine pública (lote-16a — VCFG-01). Listas fechadas: fonte livre exigiria
 // URL arbitrária na página pública (spec, Assumptions). O contrato espelhado
-// em `src/lib/storefront-contract.ts` falha se divergir destes valores.
+// em `src/verticals/real-estate/storefront/contract.ts` falha se divergir destes valores.
 export const storefrontLayoutEnum = pgEnum("storefront_layout", [
   STOREFRONT_LAYOUT.grid,
   STOREFRONT_LAYOUT.editorial,

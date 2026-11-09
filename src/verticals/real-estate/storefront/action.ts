@@ -1,11 +1,9 @@
-"use server";
+import "server-only";
 
 import { revalidatePath } from "next/cache";
-import { getActiveTenantId } from "../tenant";
-import { denyIfForbidden } from "./permission";
-import { getTenant } from "../data";
-import { saveStorefront } from "../data/storefront";
-import { scheduleStorefrontRevalidation } from "../storefront/schedule";
+import { getTenant } from "../../../server/data";
+import { saveStorefront } from "./data";
+import { scheduleStorefrontRevalidation } from "./schedule";
 import {
   ACTIVATION_BLOCKER_LABELS,
   activationBlockers,
@@ -13,7 +11,12 @@ import {
   type ActivationBlocker,
   type StorefrontField,
   type StorefrontInput,
-} from "../../lib/storefront";
+} from "./validation";
+
+interface StorefrontActionContext {
+  authorizeWrite(): Promise<{ ok: false; error: string } | null>;
+  getActiveTenantId(): Promise<string>;
+}
 
 // Gravação da configuração da vitrine pelo CRM (lote-16a — VCFG-02, VATIV-01,
 // VREV-02). Molde de `settings.ts`: a recusa de permissão é a primeira coisa
@@ -42,9 +45,10 @@ function refuse(errors: StorefrontFieldError[]): SaveStorefrontActionResult {
 }
 
 export async function saveStorefrontAction(
-  input: StorefrontInput
+  input: StorefrontInput,
+  context: StorefrontActionContext
 ): Promise<SaveStorefrontActionResult> {
-  const denied = await denyIfForbidden("settings", "write");
+  const denied = await context.authorizeWrite();
   if (denied) return { ok: false, error: denied.error, errors: [] };
 
   const validation = validateStorefrontInput(input);
@@ -52,7 +56,7 @@ export async function saveStorefrontAction(
     return refuse([{ field: validation.field, message: validation.message }]);
   }
 
-  const tenantId = await getActiveTenantId();
+  const tenantId = await context.getActiveTenantId();
 
   // Desativar não exige nada além do valor (VATIV-01 AC7); ativar exige as três
   // pré-condições, todas listadas na ordem da spec (AC4).

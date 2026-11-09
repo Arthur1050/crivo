@@ -2,7 +2,7 @@ import "server-only";
 
 import { revalidatePath } from "next/cache";
 import { isActiveMemberOf } from "../../../server/data";
-import { scheduleStorefrontRevalidation } from "../../../server/storefront/schedule";
+import { scheduleStorefrontRevalidation } from "../storefront/schedule";
 import { validateModality, validateName } from "../../../server/validation";
 import {
   createProperty,
