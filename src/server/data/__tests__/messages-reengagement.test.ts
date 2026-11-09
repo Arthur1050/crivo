@@ -10,7 +10,8 @@ import { conversations, leadAgentState, leads, messages, reengagementEpisodes, t
 import { ingestAgentMessage } from "../index";
 import { publishAgentState } from "../../reengagement/agent-state";
 import { authorizeDispatch, claimPreparation, expireEpisode, reconcileAcceptance } from "../../reengagement/repository";
-import { getSessionFrame, prepareFrame } from "../../reengagement/context";
+import { getSessionFrame } from "../../reengagement/context";
+import { prepareFrame } from "../../../kit/reengagement";
 
 const tenantId = randomUUID(), foreignTenant = randomUUID(), now = new Date("2026-10-06T15:00:00.500Z"), hour = 3600000;
 let contact = 5534999700000;

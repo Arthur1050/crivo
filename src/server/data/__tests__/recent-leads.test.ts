@@ -3,7 +3,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { inArray } from "drizzle-orm";
 import { db } from "../../../db";
 import { leads, tenant_members, tenants, users } from "../../../db/schema";
-import { getLeads, getRecentLeads, serviceScope } from "../index";
+import { serviceScope } from "../index";
+import { getLeads, getRecentLeads } from "../../../kit/lead-data";
 
 // Fixture PRÓPRIA (não depende do seed) com datas ABSOLUTAS: a ordenação de
 // `getRecentLeads` por firstContactAt DESC precisa ser verificável sem

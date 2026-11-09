@@ -8,7 +8,7 @@ import { db } from "../../../../db";
 import * as schema from "../../../../db/schema";
 import { conversations, integrationRefusals, leadAgentState, leads, messages, reengagementEpisodes, tenantApiKeys, tenants, whatsappChannels } from "../../../../db/schema";
 import { DELETE, GET, PATCH, POST, PUT } from "../../../../../app/api/v1/leads/[id]/reengagement/prepare/route";
-import * as frameService from "../../../reengagement/context";
+import * as frameService from "../../../../kit/reengagement";
 import * as repository from "../../../reengagement/repository";
 import * as cloudApi from "../../../whatsapp/cloud-api";
 import { MAX_BODY_BYTES } from "../../parsers";

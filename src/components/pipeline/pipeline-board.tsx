@@ -38,9 +38,9 @@ import type {
   Broker,
   Lead,
   LeadStatus,
-  LeadWithBroker,
   Modality,
 } from "@/src/server/data";
+import type { LeadWithBroker } from "@/src/kit/lead-data";
 
 const MODALITY_LABELS: Record<Modality, string> = {
   [MODALITY.new]: "Novo",

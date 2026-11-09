@@ -9,7 +9,8 @@ import * as schema from "../../../db/schema";
 import { conversations, leadAgentState, leads, messages, reengagementEpisodes, tenants, whatsappChannels, whatsappMessageReceipts } from "../../../db/schema";
 import { ingestAgentMessage, optOutLeadByHuman } from "../../data";
 import { authorizeDispatch, claimPreparation, reconcileAcceptance } from "../../reengagement/repository";
-import { getSessionFrame, prepareFrame } from "../../reengagement/context";
+import { getSessionFrame } from "../../reengagement/context";
+import { prepareFrame } from "../../../kit/reengagement";
 import { optOutLead } from "../lgpd";
 
 const tenantId = randomUUID(), foreignTenant = randomUUID(), now = new Date("2026-10-06T15:00:00.500Z"), hour = 3600000;

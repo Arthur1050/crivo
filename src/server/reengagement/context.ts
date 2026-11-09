@@ -7,15 +7,15 @@ import { toWhatsAppMsisdn } from "../../../n8n/src/phone.mjs";
 import { isSessionExpired, requiresSessionRebuild, selectOriginSessionFrame, selectSeedMessages } from "../../../n8n/src/session.mjs";
 import { db } from "../../db";
 import { conversations, leadAgentState, leads, messages, reengagementEpisodes, tenants, whatsappChannels } from "../../db/schema";
+import type { QualificationFacet } from "../../vertical-kit";
 import type { AuthResult } from "../integration/auth";
 
 type HistoryMessage = import("../../../n8n/src/session.mjs").HistoryMessage;
-type Lead = typeof leads.$inferSelect;
 export interface PreparationFrame {
   tenantId: string; leadId: string; episodeId: string; phoneNumberId: string; channelRevision: number; preparedAt: string;
   anchor: { id: string; sentAt: string }; resetObservedAt: string | null;
   agent: { phase: typeof AGENT_PHASE.qualifying | typeof AGENT_PHASE.closing; revision: number; askedFields: string[]; openingHistory: string[] };
-  facts: Pick<Lead, "name" | "modality" | "region" | "propertyType" | "purchaseHorizon" | "motivation" | "creditStatus" | "chainedOperation" | "executiveSummary"> & { budgetCents: string | null };
+  facts: Record<string, unknown> & { name: string; executiveSummary: string | null };
   pendingField: string | null;
   origin: { startMessageId: string; endMessageId: string };
   history: HistoryMessage[];
@@ -27,7 +27,14 @@ function finite(date: Date | null) { return date === null || Number.isFinite(dat
 function sameTime(a: Date | null, b: Date | null) { return finite(a) && finite(b) && a?.getTime() === b?.getTime(); }
 
 /** Frame efêmero, sem histórico paralelo. Somente referências de origem são persistidas. */
-export async function prepareFrame(
+type QualificationFacts = Pick<QualificationFacet<unknown, unknown>, "promptFacts">;
+
+export function createPrepareFrame(qualification: QualificationFacts | null) {
+  return prepareFrame.bind(null, qualification);
+}
+
+async function prepareFrame(
+  qualification: QualificationFacts | null,
   context: AuthResult, leadId: string, episodeId: string, input: { claimToken: string },
   options: { now?: () => Date; database?: Pick<typeof db, "transaction"> } = {},
 ): Promise<PrepareFrameResult> {
@@ -69,10 +76,10 @@ export async function prepareFrame(
       const history = rows.map((message) => ({ ...message, sentAt: message.sentAt.toISOString() }));
       const origin = selectOriginSessionFrame(history, anchor.id);
       if (!origin?.startMessageId || !origin.endMessageId || origin.messages.length === 0) return { ok: false, reason: "context-read-failed" };
-      const facts = { name: lead.name, modality: lead.modality, region: lead.region, budgetCents: lead.budgetCents?.toString() ?? null,
-        propertyType: lead.propertyType, purchaseHorizon: lead.purchaseHorizon, motivation: lead.motivation, creditStatus: lead.creditStatus,
-        chainedOperation: lead.chainedOperation, executiveSummary: lead.executiveSummary };
-      const confirmed = Object.keys(FIELD_LABELS).filter((field) => facts[field as keyof typeof facts] !== null && facts[field as keyof typeof facts] !== "");
+      const facts: PreparationFrame["facts"] = {
+        name: lead.name, ...qualification?.promptFacts(lead), executiveSummary: lead.executiveSummary,
+      };
+      const confirmed = Object.keys(FIELD_LABELS).filter((field) => facts[field] != null && facts[field] !== "");
       const frame: PreparationFrame = { tenantId: context.tenantId, leadId, episodeId, phoneNumberId: channel.phoneNumberId, channelRevision: channel.configurationRevision,
         preparedAt: now.toISOString(), anchor: { id: anchor.id, sentAt: anchor.sentAt.toISOString() }, resetObservedAt: episode.resetObservedAt?.toISOString() ?? null,
         agent: { phase: agent.phase, revision: agent.revision, askedFields: agent.askedFields, openingHistory: agent.openingHistory }, facts,

@@ -3,7 +3,8 @@ import { StatusDot } from "@astryxdesign/core/StatusDot";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { Heading, Text } from "@astryxdesign/core/Text";
 import { PipelineBoard } from "@/src/components/pipeline/pipeline-board";
-import { getBrokers, getConversations, getLeads, getTenant } from "@/src/server/data";
+import { getBrokers, getConversations, getTenant } from "@/src/server/data";
+import { getLeads } from "@/src/kit/lead-data";
 import { getLeadScope } from "@/src/kit/session";
 import { getActiveTenantId } from "@/src/server/tenant";
 

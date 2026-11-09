@@ -12,6 +12,10 @@
     "layer": "app"
   },
   {
+    "glob": "scripts/reengagement-proof.ts",
+    "layer": "app"
+  },
+  {
     "glob": "scripts/send-test-integration-alert.ts",
     "layer": "app"
   },

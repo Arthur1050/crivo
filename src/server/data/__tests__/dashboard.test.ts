@@ -7,11 +7,11 @@ import { leads, tenants } from "../../../db/schema";
 import {
   __testOnly_periodLeadsQuery,
   getDashboardKpis,
-  getLeadDistributions,
   getLeadVolumeSeries,
   type DashboardRange,
   serviceScope,
 } from "../index";
+import { getLeadDistributions } from "../../../verticals/real-estate/data/distributions";
 
 // Datas absolutas fixas e controladas (2020) — nunca dependem do seed nem de
 // `new Date()` (design.md — "Duas fontes de agora"; EXECUTE-PROMPT

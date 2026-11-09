@@ -7,13 +7,6 @@
     "category": "import"
   },
   {
-    "path": "scripts/reengagement-proof.ts",
-    "term": "import:src/components/chats/message-thread.tsx",
-    "reason": "Dependência anterior ao lote; removida nas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "import"
-  },
-  {
     "path": "src/db/mint-service-key.ts",
     "term": "market:krivo",
     "reason": "Nome da credencial publicada no n8n; contrato operacional preservado até a ativação do L18c.",
@@ -149,13 +142,6 @@
   {
     "path": "src/server/integration/settings.ts",
     "term": "market:meeting",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
-  },
-  {
-    "path": "src/server/reengagement/context.ts",
-    "term": "market:property",
     "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
     "removedIn": "L18a",
     "category": "market"
@@ -982,20 +968,6 @@
   {
     "path": "src/server/data/index.ts",
     "term": "stored:ambos",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/server/data/index.ts",
-    "term": "stored:investidor",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/server/data/index.ts",
-    "term": "stored:morador",
     "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
     "removedIn": "L18a",
     "category": "stored"

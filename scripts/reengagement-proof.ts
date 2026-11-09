@@ -72,7 +72,7 @@ export async function runFixtureEpisode(options: FixtureEpisodeOptions) {
   if (options.auth.tenantId !== options.auth.leadScope.tenantId) throw new Error("proof-tenant-scope-mismatch");
   const graph = options.graph ?? await loadProofScheduler(); assertProofWiring(graph);
   const [{ listCandidates, claimPreparation, reconcileAcceptance, releasePreparationFailure }, { prepareFrame }, { sendPreparedEpisode }] = await Promise.all([
-    import("../src/server/reengagement/repository"), import("../src/server/reengagement/context"), import("../src/server/reengagement/send"),
+    import("../src/server/reengagement/repository"), import("../src/kit/reengagement"), import("../src/server/reengagement/send"),
   ]);
   const context = { tenantId: options.auth.tenantId };
   type CandidateJob = { leadId: string; anchorMessageId: string; anchorSentAt: string; phoneNumberId: string; action: "prepare" | "omit" | "escalate" | "empty"; tenantId: string };

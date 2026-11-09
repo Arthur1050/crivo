@@ -8,8 +8,7 @@ import { db } from "../../../db";
 import * as schema from "../../../db/schema";
 import { conversations, leadAgentState, leads, messages, reengagementEpisodes, tenants, whatsappChannels } from "../../../db/schema";
 import { claimPreparation } from "../repository";
-import { prepareFrame } from "../context";
-
+import { prepareFrame } from "../../../kit/reengagement";
 const tenantId = randomUUID(), foreignTenant = randomUUID(), now = new Date("2026-10-06T15:00:00Z"), hour = 3600000;
 let contact = 5534999500000;
 async function fixture() {

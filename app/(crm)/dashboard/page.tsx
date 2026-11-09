@@ -19,12 +19,12 @@ import {
   getDashboardKpis,
   getIntegrationRefusalsSince,
   getLastAgentMessageAt,
-  getLeadDistributions,
   getLeadVolumeSeries,
   getPendingAttendanceMeetings,
-  getRecentLeads,
   getTenant,
 } from "@/src/server/data";
+import { getLeadDistributions } from "@/src/verticals/real-estate/data/distributions";
+import { getRecentLeads } from "@/src/kit/lead-data";
 import { verifySession } from "@/src/kit/session";
 import { getActiveTenantId } from "@/src/server/tenant";
 

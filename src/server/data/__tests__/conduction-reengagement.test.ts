@@ -11,7 +11,8 @@ import { ingestAgentMessage, optOutLeadByHuman, recordHumanMessage, returnConver
 import { applyLeadPatch as patchLead } from "../../../kit/integration";
 import { publishAgentState } from "../../reengagement/agent-state";
 import { authorizeDispatch, claimPreparation, reconcileAcceptance } from "../../reengagement/repository";
-import { getSessionFrame, prepareFrame } from "../../reengagement/context";
+import { getSessionFrame } from "../../reengagement/context";
+import { prepareFrame } from "../../../kit/reengagement";
 
 const tenantId = randomUUID(), foreignTenant = randomUUID(), userId = randomUUID();
 const now = new Date("2026-10-06T15:00:00.500Z"), hour = 3600000, scope = { tenantId, assignedUserId: null };

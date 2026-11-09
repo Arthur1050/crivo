@@ -21,7 +21,6 @@ import {
   getDashboardKpis,
   getDocuments,
   getLead,
-  getLeadDistributions,
   getLeads,
   getLeadVolumeSeries,
   getMessages,
@@ -30,6 +29,7 @@ import {
   getTenants,
   serviceScope,
 } from "../index";
+import { getLeadDistributions } from "../../../verticals/real-estate/data/distributions";
 
 const NON_EXISTENT_TENANT_ID = "00000000-0000-4000-8000-000000000000";
 const NON_EXISTENT_LEAD_ID = "00000000-0000-4000-8000-000000000001";

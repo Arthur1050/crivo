@@ -8,7 +8,8 @@ import { db } from "../../../db";
 import * as schema from "../../../db/schema";
 import { conversations, leadAgentState, leads, messages, reengagementEpisodes, tenants, whatsappChannels, whatsappMessageReceipts } from "../../../db/schema";
 import { authorizeDispatch, claimPreparation, reconcileAcceptance } from "../repository";
-import { getSessionFrame, prepareFrame } from "../context";
+import { getSessionFrame } from "../context";
+import { prepareFrame } from "../../../kit/reengagement";
 import { isSessionExpired, toSeedMemoryItem } from "../../../../n8n/src/session.mjs";
 
 const tenantId = randomUUID(), foreignTenant = randomUUID(), now = new Date("2026-10-06T15:00:00Z"), hour = 3600000;
