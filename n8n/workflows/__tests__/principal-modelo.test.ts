@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import principal from "../principal";
+import principal from "../../generated/principal";
 
 /**
  * Nó de modelo do `krivo-agente-principal` (lote-10 T3 — MOD-01).

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import agendarReuniao from "../tool-agendar-reuniao";
+import agendarReuniao from "../../generated/tool-agendar-reuniao";
 
 /**
  * Topologia do sub-workflow `krivo-tool-agendar-reuniao` (lote-8 T29 —

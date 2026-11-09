@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import smokeReset from "../smoke-reset";
+import smokeReset from "../../generated/smoke-reset";
 
 /**
  * `krivo-smoke-reset` — limpeza dos alvos 1 e 2 do checklist da AD-027

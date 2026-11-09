@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readInlinedModule } from "../../../scripts/n8n-inline.mjs";
-import principal from "../principal";
-import scheduler from "../scheduler";
+import principal from "../../generated/principal";
+import scheduler from "../../generated/scheduler";
 
 /**
  * Condução humana no scheduler (lote-14 — T26; SILENCIO-01 AC6, AC7, AC8).
@@ -115,7 +115,7 @@ for (const sweep of SWEEPS) {
 
     it("o código inlina conduction.mjs e chama canAgentContactProactively", () => {
       const code = String(nodeByName(sweep.code).parameters.jsCode);
-      expect(code).toContain("__INLINE(conduction.mjs)__");
+      expect(code).toContain(readInlinedModule("conduction.mjs"));
       expect(code).toContain("canAgentContactProactively(");
     });
 
@@ -262,7 +262,7 @@ describe("varredura D: reset devido e chave da sessão", () => {
 
   it("inlina conduction.mjs e chama memoryResetDue", () => {
     const code = String(nodeByName(D.due).parameters.jsCode);
-    expect(code).toContain("__INLINE(conduction.mjs)__");
+    expect(code).toContain(readInlinedModule("conduction.mjs"));
     expect(code).toContain("memoryResetDue(");
   });
 

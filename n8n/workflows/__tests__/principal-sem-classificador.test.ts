@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { readInlinedModule } from "../../../scripts/n8n-inline.mjs";
-import principal from "../principal";
+import principal from "../../generated/principal";
 
 /**
  * Lote-13b (SAIR-01, SAIR-02, SAIR-03): o principal não tem classificador de
@@ -135,7 +135,7 @@ describe("orientação do agente preservada (SAIR-03 AC1)", () => {
 
   it("o nó que monta o system message inlina o módulo que contém o texto", () => {
     const node = workflow.nodes.find((n) => n.name === SYSTEM_MESSAGE);
-    expect(String(node?.parameters.jsCode)).toContain("__INLINE(system-message.mjs)__");
+    expect(String(node?.parameters.jsCode)).toContain(readInlinedModule("system-message.mjs"));
   });
 });
 

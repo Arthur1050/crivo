@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readInlinedModule } from "../../../scripts/n8n-inline.mjs";
-import responder from "../tool-responder-lead";
+import responder from "../../generated/tool-responder-lead";
 
 /**
  * `responder_lead` relê o lead antes de cada envio (lote-14 — T25;
@@ -146,7 +146,7 @@ describe("arestas da releitura antes do envio (SILENCIO-01 AC4, AC5; L-026)", ()
 describe("Code: pode enviar no turno? (canAgentSendInTurn inline)", () => {
   it("inlina conduction.mjs e chama canAgentSendInTurn", () => {
     const code = String(nodeByName(CAN_SEND).parameters.jsCode);
-    expect(code).toContain("__INLINE(conduction.mjs)__");
+    expect(code).toContain(readInlinedModule("conduction.mjs"));
     expect(code).toContain("canAgentSendInTurn(");
   });
 
