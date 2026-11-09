@@ -8,8 +8,8 @@ import { createIntegrationKit } from "../kit";
 const data = vi.hoisted(() => ({
   getLead: vi.fn(),
   serviceScope: vi.fn((tenantId: string) => ({ tenantId })),
-  assignBrokerForMeeting: vi.fn(),
-  assignBrokerForEscalation: vi.fn(),
+  assignForAppointment: vi.fn(),
+  assignForEscalation: vi.fn(),
   updateLeadFromAgent: vi.fn(),
   createAgentLead: vi.fn(),
   recordIntegrationRefusal: vi.fn(),
@@ -42,8 +42,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   data.getLead.mockResolvedValue(lead);
   data.updateLeadFromAgent.mockResolvedValue(lead);
-  data.assignBrokerForMeeting.mockResolvedValue({ ok: true, brokerId: null, lead });
-  data.assignBrokerForEscalation.mockResolvedValue({ ok: true, brokerId: null, lead });
+  data.assignForAppointment.mockResolvedValue({ ok: true, assigneeId: null, lead });
+  data.assignForEscalation.mockResolvedValue({ ok: true, assigneeId: null, lead });
   data.createAgentLead.mockResolvedValue({ created: true, lead });
 });
 
@@ -94,8 +94,8 @@ describe("costura de qualificação — QUAL-01 e QUAL-02", () => {
 
   it.each([
     { core: {}, target: "updateLeadFromAgent", args: [] },
-    { core: { meetingAt: "2026-09-01T12:00:00Z" }, target: "assignBrokerForMeeting", args: [new Date("2026-09-01T12:00:00Z")] },
-    { core: { status: LEAD_STATUS.escalated, escalationReason: "Pedido" }, target: "assignBrokerForEscalation", args: [expect.any(Date)] },
+    { core: { meetingAt: "2026-09-01T12:00:00Z" }, target: "assignForAppointment", args: [new Date("2026-09-01T12:00:00Z")] },
+    { core: { status: LEAD_STATUS.escalated, escalationReason: "Pedido" }, target: "assignForEscalation", args: [expect.any(Date)] },
   ] as const)("mapeia a qualificação antes da escrita por $target", async ({ core, target, args }) => {
     const facet = realEstate.qualification!;
     const toLeadColumns = vi.fn(facet.toLeadColumns);
@@ -107,7 +107,7 @@ describe("costura de qualificação — QUAL-01 e QUAL-02", () => {
     expect(await kit.applyLeadPatch("tenant-1", leadId, patch.dto)).toMatchObject({ ok: true });
     expect(toLeadColumns).toHaveBeenCalledExactlyOnceWith(expected);
     expect(data[target]).toHaveBeenCalledExactlyOnceWith("tenant-1", leadId, ...args, {
-      ...core, ...("meetingAt" in core ? { meetingAt: args[0] } : {}),
+      ...("meetingAt" in core ? { appointmentAt: args[0] } : core),
       leadColumns: expected,
     });
   });

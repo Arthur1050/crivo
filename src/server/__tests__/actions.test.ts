@@ -8,7 +8,7 @@ import type { Action, Resource, Role } from "../../kit/access";
 import type { AuthContext } from "../../kit/session";
 import {
   createDocument,
-  getBrokers,
+  getAssignees,
   getDocumentCategories,
   getDocuments,
   getLead,
@@ -121,8 +121,8 @@ import {
   type CreateDocumentInput,
 } from "../actions/documents";
 import {
-  setMeetingAttendanceAction,
-  updateLeadBrokerAction,
+  setAppointmentAttendanceAction,
+  updateLeadAssigneeAction,
   updateLeadStatusAction,
   type SetMeetingAttendanceInput,
   type UpdateLeadBrokerInput,
@@ -312,24 +312,24 @@ describe("server actions", () => {
         name: original!.name,
         agentName: original!.agentName,
         supportedSegment: original!.supportedSegment,
-        meetingDays: [1, 3, 5],
-        meetingHoursStart: "09:00",
-        meetingHoursEnd: "17:30",
+        appointmentDays: [1, 3, 5],
+        appointmentHoursStart: "09:00",
+        appointmentHoursEnd: "17:30",
       });
       expect(result).toEqual({ ok: true });
 
       const persisted = await getTenant(activeTenantId);
-      expect(persisted!.meetingDays).toEqual([1, 3, 5]);
-      expect(persisted!.meetingHoursStart).toBe("09:00");
-      expect(persisted!.meetingHoursEnd).toBe("17:30");
+      expect(persisted!.appointmentDays).toEqual([1, 3, 5]);
+      expect(persisted!.appointmentHoursStart).toBe("09:00");
+      expect(persisted!.appointmentHoursEnd).toBe("17:30");
 
       const revertResult = await updateTenantSettingsAction({
         name: original!.name,
         agentName: original!.agentName,
         supportedSegment: original!.supportedSegment,
-        meetingDays: original!.meetingDays,
-        meetingHoursStart: original!.meetingHoursStart,
-        meetingHoursEnd: original!.meetingHoursEnd,
+        appointmentDays: original!.appointmentDays,
+        appointmentHoursStart: original!.appointmentHoursStart,
+        appointmentHoursEnd: original!.appointmentHoursEnd,
       });
       expect(revertResult.ok).toBe(true);
     });
@@ -432,17 +432,17 @@ describe("server actions", () => {
         name: original!.name,
         agentName: original!.agentName,
         supportedSegment: original!.supportedSegment,
-        meetingDays: [1, 2],
-        meetingHoursStart: "18:00",
-        meetingHoursEnd: "09:00",
+        appointmentDays: [1, 2],
+        appointmentHoursStart: "18:00",
+        appointmentHoursEnd: "09:00",
       });
       expect(result.ok).toBe(false);
       if (!result.ok) expect(result.error).toBeTruthy();
 
       const after = await getTenant(activeTenantId);
-      expect(after!.meetingDays).toEqual(original!.meetingDays);
-      expect(after!.meetingHoursStart).toBe(original!.meetingHoursStart);
-      expect(after!.meetingHoursEnd).toBe(original!.meetingHoursEnd);
+      expect(after!.appointmentDays).toEqual(original!.appointmentDays);
+      expect(after!.appointmentHoursStart).toBe(original!.appointmentHoursStart);
+      expect(after!.appointmentHoursEnd).toBe(original!.appointmentHoursEnd);
     });
 
     it("0 dias selecionados com janela preenchida retorna { ok: false, error } e nada é persistido (CONF-05 AC3)", async () => {
@@ -452,16 +452,16 @@ describe("server actions", () => {
         name: original!.name,
         agentName: original!.agentName,
         supportedSegment: original!.supportedSegment,
-        meetingDays: [],
-        meetingHoursStart: "09:00",
-        meetingHoursEnd: "18:00",
+        appointmentDays: [],
+        appointmentHoursStart: "09:00",
+        appointmentHoursEnd: "18:00",
       });
       expect(result.ok).toBe(false);
 
       const after = await getTenant(activeTenantId);
-      expect(after!.meetingDays).toEqual(original!.meetingDays);
-      expect(after!.meetingHoursStart).toBe(original!.meetingHoursStart);
-      expect(after!.meetingHoursEnd).toBe(original!.meetingHoursEnd);
+      expect(after!.appointmentDays).toEqual(original!.appointmentDays);
+      expect(after!.appointmentHoursStart).toBe(original!.appointmentHoursStart);
+      expect(after!.appointmentHoursEnd).toBe(original!.appointmentHoursEnd);
     });
 
     it("null explícito nos 3 campos de horário comercial limpa a configuração via action (CONF-05)", async () => {
@@ -473,33 +473,33 @@ describe("server actions", () => {
         name: original!.name,
         agentName: original!.agentName,
         supportedSegment: original!.supportedSegment,
-        meetingDays: [2, 4],
-        meetingHoursStart: "10:00",
-        meetingHoursEnd: "16:00",
+        appointmentDays: [2, 4],
+        appointmentHoursStart: "10:00",
+        appointmentHoursEnd: "16:00",
       });
 
       const cleared = await updateTenantSettingsAction({
         name: original!.name,
         agentName: original!.agentName,
         supportedSegment: original!.supportedSegment,
-        meetingDays: null,
-        meetingHoursStart: null,
-        meetingHoursEnd: null,
+        appointmentDays: null,
+        appointmentHoursStart: null,
+        appointmentHoursEnd: null,
       });
       expect(cleared).toEqual({ ok: true });
 
       const after = await getTenant(activeTenantId);
-      expect(after!.meetingDays).toBeNull();
-      expect(after!.meetingHoursStart).toBeNull();
-      expect(after!.meetingHoursEnd).toBeNull();
+      expect(after!.appointmentDays).toBeNull();
+      expect(after!.appointmentHoursStart).toBeNull();
+      expect(after!.appointmentHoursEnd).toBeNull();
 
       const revertResult = await updateTenantSettingsAction({
         name: original!.name,
         agentName: original!.agentName,
         supportedSegment: original!.supportedSegment,
-        meetingDays: original!.meetingDays,
-        meetingHoursStart: original!.meetingHoursStart,
-        meetingHoursEnd: original!.meetingHoursEnd,
+        appointmentDays: original!.appointmentDays,
+        appointmentHoursStart: original!.appointmentHoursStart,
+        appointmentHoursEnd: original!.appointmentHoursEnd,
       });
       expect(revertResult.ok).toBe(true);
     });
@@ -516,7 +516,7 @@ describe("server actions", () => {
         supportedSegment: original!.supportedSegment,
         baselineLeadsPerMonth: 100,
         baselineFirstResponseMinutes: 4,
-        baselineLeadToMeetingPct: 35,
+        baselineLeadToAppointmentPct: 35,
         baselineEscalationPct: 12,
         baselineAttendancePct: 68,
       });
@@ -525,7 +525,7 @@ describe("server actions", () => {
       const persisted = await getTenant(activeTenantId);
       expect(persisted!.baselineLeadsPerMonth).toBe(100);
       expect(persisted!.baselineFirstResponseMinutes).toBe(4);
-      expect(persisted!.baselineLeadToMeetingPct).toBe(35);
+      expect(persisted!.baselineLeadToAppointmentPct).toBe(35);
       expect(persisted!.baselineEscalationPct).toBe(12);
       expect(persisted!.baselineAttendancePct).toBe(68);
 
@@ -535,7 +535,7 @@ describe("server actions", () => {
         supportedSegment: original!.supportedSegment,
         baselineLeadsPerMonth: original!.baselineLeadsPerMonth,
         baselineFirstResponseMinutes: original!.baselineFirstResponseMinutes,
-        baselineLeadToMeetingPct: original!.baselineLeadToMeetingPct,
+        baselineLeadToAppointmentPct: original!.baselineLeadToAppointmentPct,
         baselineEscalationPct: original!.baselineEscalationPct,
         baselineAttendancePct: original!.baselineAttendancePct,
       });
@@ -551,7 +551,7 @@ describe("server actions", () => {
         supportedSegment: original!.supportedSegment,
         baselineLeadsPerMonth: 100,
         baselineFirstResponseMinutes: 4,
-        baselineLeadToMeetingPct: 35,
+        baselineLeadToAppointmentPct: 35,
         baselineEscalationPct: 12,
         // Percentual inválido (acima de 100) — deve barrar TODO o save,
         // inclusive os quatro campos válidos acima.
@@ -565,7 +565,7 @@ describe("server actions", () => {
       expect(after!.baselineFirstResponseMinutes).toBe(
         original!.baselineFirstResponseMinutes
       );
-      expect(after!.baselineLeadToMeetingPct).toBe(original!.baselineLeadToMeetingPct);
+      expect(after!.baselineLeadToAppointmentPct).toBe(original!.baselineLeadToAppointmentPct);
       expect(after!.baselineEscalationPct).toBe(original!.baselineEscalationPct);
       expect(after!.baselineAttendancePct).toBe(original!.baselineAttendancePct);
     });
@@ -579,7 +579,7 @@ describe("server actions", () => {
         supportedSegment: original!.supportedSegment,
         baselineLeadsPerMonth: 60,
         baselineFirstResponseMinutes: 7,
-        baselineLeadToMeetingPct: 20,
+        baselineLeadToAppointmentPct: 20,
         baselineEscalationPct: 5,
         baselineAttendancePct: 40,
       });
@@ -590,7 +590,7 @@ describe("server actions", () => {
         supportedSegment: original!.supportedSegment,
         baselineLeadsPerMonth: null,
         baselineFirstResponseMinutes: null,
-        baselineLeadToMeetingPct: null,
+        baselineLeadToAppointmentPct: null,
         baselineEscalationPct: null,
         baselineAttendancePct: null,
       });
@@ -599,7 +599,7 @@ describe("server actions", () => {
       const after = await getTenant(activeTenantId);
       expect(after!.baselineLeadsPerMonth).toBeNull();
       expect(after!.baselineFirstResponseMinutes).toBeNull();
-      expect(after!.baselineLeadToMeetingPct).toBeNull();
+      expect(after!.baselineLeadToAppointmentPct).toBeNull();
       expect(after!.baselineEscalationPct).toBeNull();
       expect(after!.baselineAttendancePct).toBeNull();
 
@@ -609,7 +609,7 @@ describe("server actions", () => {
         supportedSegment: original!.supportedSegment,
         baselineLeadsPerMonth: original!.baselineLeadsPerMonth,
         baselineFirstResponseMinutes: original!.baselineFirstResponseMinutes,
-        baselineLeadToMeetingPct: original!.baselineLeadToMeetingPct,
+        baselineLeadToAppointmentPct: original!.baselineLeadToAppointmentPct,
         baselineEscalationPct: original!.baselineEscalationPct,
         baselineAttendancePct: original!.baselineAttendancePct,
       });
@@ -773,10 +773,10 @@ describe("server actions", () => {
       // Corretores existentes do tenant ativo/outro (seed já semeia
       // corretores em todo tenant — lote-7 REAL-01 AC2), com fallback de
       // criação para o caso raro de um tenant sem nenhum.
-      const activeBrokers = await getBrokers(activeTenantId);
+      const activeBrokers = await getAssignees(activeTenantId);
       brokerActiveId = activeBrokers[0]?.id ?? (await createFixtureBroker(activeTenantId));
 
-      const otherBrokers = await getBrokers(otherTenantId);
+      const otherBrokers = await getAssignees(otherTenantId);
       brokerOtherId = otherBrokers[0]?.id ?? (await createFixtureBroker(otherTenantId));
     });
 
@@ -802,9 +802,9 @@ describe("server actions", () => {
 
     describe("updateLeadBrokerAction", () => {
       it("sucesso persiste o corretor no tenant ativo e chama revalidatePath('/pipeline')", async () => {
-        const result = await updateLeadBrokerAction({
+        const result = await updateLeadAssigneeAction({
           leadId: fixtureLeadId,
-          brokerId: brokerActiveId,
+          assigneeId: brokerActiveId,
         });
         expect(result).toEqual({ ok: true });
         expect(revalidatePath).toHaveBeenCalledWith("/pipeline");
@@ -816,9 +816,9 @@ describe("server actions", () => {
       it("DAL devolvendo null (corretor de outro tenant) produz falha explícita, campo error preenchido", async () => {
         const before = await getLead(serviceScope(activeTenantId), fixtureLeadId);
 
-        const result = await updateLeadBrokerAction({
+        const result = await updateLeadAssigneeAction({
           leadId: fixtureLeadId,
-          brokerId: brokerOtherId,
+          assigneeId: brokerOtherId,
         });
         expect(result.ok).toBe(false);
         if (!result.ok) expect(result.error).toBeTruthy();
@@ -830,11 +830,11 @@ describe("server actions", () => {
       it("um tenantId injetado no payload é ignorado — a action sempre resolve o tenant ativo pela sessao autenticada", async () => {
         const payloadWithForeignTenant = {
           leadId: fixtureLeadId,
-          brokerId: brokerActiveId,
+          assigneeId: brokerActiveId,
           tenantId: otherTenantId,
         } as UpdateLeadBrokerInput & { tenantId: string };
 
-        const result = await updateLeadBrokerAction(payloadWithForeignTenant);
+        const result = await updateLeadAssigneeAction(payloadWithForeignTenant);
         expect(result).toEqual({ ok: true });
 
         const persisted = await getLead(serviceScope(activeTenantId), fixtureLeadId);
@@ -844,7 +844,7 @@ describe("server actions", () => {
 
     describe("setMeetingAttendanceAction", () => {
       it("sucesso persiste 'true' no tenant ativo e chama revalidatePath('/pipeline')", async () => {
-        const result = await setMeetingAttendanceAction({
+        const result = await setAppointmentAttendanceAction({
           leadId: fixtureLeadId,
           attended: true,
         });
@@ -852,18 +852,18 @@ describe("server actions", () => {
         expect(revalidatePath).toHaveBeenCalledWith("/pipeline");
 
         const persisted = await getLead(serviceScope(activeTenantId), fixtureLeadId);
-        expect(persisted!.meetingAttended).toBe(true);
+        expect(persisted!.appointmentAttended).toBe(true);
       });
 
       it("persiste 'false' e depois 'null' (os três estados via action)", async () => {
-        await setMeetingAttendanceAction({ leadId: fixtureLeadId, attended: false });
-        expect((await getLead(serviceScope(activeTenantId), fixtureLeadId))!.meetingAttended).toBe(
+        await setAppointmentAttendanceAction({ leadId: fixtureLeadId, attended: false });
+        expect((await getLead(serviceScope(activeTenantId), fixtureLeadId))!.appointmentAttended).toBe(
           false
         );
 
-        await setMeetingAttendanceAction({ leadId: fixtureLeadId, attended: null });
+        await setAppointmentAttendanceAction({ leadId: fixtureLeadId, attended: null });
         expect(
-          (await getLead(serviceScope(activeTenantId), fixtureLeadId))!.meetingAttended
+          (await getLead(serviceScope(activeTenantId), fixtureLeadId))!.appointmentAttended
         ).toBeNull();
       });
 
@@ -872,7 +872,7 @@ describe("server actions", () => {
         expect(leadOther).toBeDefined();
         const before = await getLead(serviceScope(otherTenantId), leadOther.id);
 
-        const result = await setMeetingAttendanceAction({
+        const result = await setAppointmentAttendanceAction({
           leadId: leadOther.id,
           attended: true,
         });
@@ -880,7 +880,7 @@ describe("server actions", () => {
         if (!result.ok) expect(result.error).toBeTruthy();
 
         const after = await getLead(serviceScope(otherTenantId), leadOther.id);
-        expect(after!.meetingAttended).toBe(before!.meetingAttended);
+        expect(after!.appointmentAttended).toBe(before!.appointmentAttended);
       });
 
       it("nenhuma das duas actions aceita tenantId por parâmetro — tenant vem sempre do cookie (AD-007)", () => {
@@ -889,7 +889,7 @@ describe("server actions", () => {
         // payload é ignorado") já provam o comportamento em runtime.
         const brokerInput: UpdateLeadBrokerInput = {
           leadId: fixtureLeadId,
-          brokerId: brokerActiveId,
+          assigneeId: brokerActiveId,
         };
         const attendanceInput: SetMeetingAttendanceInput = {
           leadId: fixtureLeadId,
@@ -1019,9 +1019,9 @@ describe("server actions", () => {
         sessionRoles = ["corretor"];
         const before = await getLead(serviceScope(activeTenantId), foreignLeadId);
 
-        const result = await updateLeadBrokerAction({
+        const result = await updateLeadAssigneeAction({
           leadId: foreignLeadId,
-          brokerId: foreignBrokerId,
+          assigneeId: foreignBrokerId,
         });
         expect(result.ok).toBe(false);
 
@@ -1031,9 +1031,9 @@ describe("server actions", () => {
 
       it("administrador troca o responsável de qualquer lead do tenant (AC5)", async () => {
         sessionRoles = ["administrador"];
-        const result = await updateLeadBrokerAction({
+        const result = await updateLeadAssigneeAction({
           leadId: foreignLeadId,
-          brokerId: foreignBrokerId,
+          assigneeId: foreignBrokerId,
         });
         expect(result).toEqual({ ok: true });
 
@@ -1045,40 +1045,40 @@ describe("server actions", () => {
     describe("setMeetingAttendanceAction", () => {
       it("corretor registra comparecimento na própria carteira (happy path escopado)", async () => {
         sessionRoles = ["corretor"];
-        const result = await setMeetingAttendanceAction({
+        const result = await setAppointmentAttendanceAction({
           leadId: ownLeadId,
           attended: true,
         });
         expect(result).toEqual({ ok: true });
 
         const persisted = await getLead(serviceScope(activeTenantId), ownLeadId);
-        expect(persisted!.meetingAttended).toBe(true);
+        expect(persisted!.appointmentAttended).toBe(true);
       });
 
       it("corretor NÃO registra comparecimento de lead de outra carteira — falha explícita, nada é gravado", async () => {
         sessionRoles = ["corretor"];
         const before = await getLead(serviceScope(activeTenantId), foreignLeadId);
 
-        const result = await setMeetingAttendanceAction({
+        const result = await setAppointmentAttendanceAction({
           leadId: foreignLeadId,
           attended: true,
         });
         expect(result.ok).toBe(false);
 
         const after = await getLead(serviceScope(activeTenantId), foreignLeadId);
-        expect(after!.meetingAttended).toBe(before!.meetingAttended);
+        expect(after!.appointmentAttended).toBe(before!.appointmentAttended);
       });
 
       it("gestor registra comparecimento em lead fora da própria carteira (AC5)", async () => {
         sessionRoles = ["gestor"];
-        const result = await setMeetingAttendanceAction({
+        const result = await setAppointmentAttendanceAction({
           leadId: foreignLeadId,
           attended: true,
         });
         expect(result).toEqual({ ok: true });
 
         const persisted = await getLead(serviceScope(activeTenantId), foreignLeadId);
-        expect(persisted!.meetingAttended).toBe(true);
+        expect(persisted!.appointmentAttended).toBe(true);
       });
     });
   });

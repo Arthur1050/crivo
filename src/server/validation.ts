@@ -212,9 +212,9 @@ export function validateBaselinePercent(
 }
 
 export interface BusinessHoursInput {
-  meetingDays: number[] | null;
-  meetingHoursStart: string | null;
-  meetingHoursEnd: string | null;
+  appointmentDays: number[] | null;
+  appointmentHoursStart: string | null;
+  appointmentHoursEnd: string | null;
 }
 
 /**
@@ -232,9 +232,9 @@ export interface BusinessHoursInput {
 export function validateBusinessHours(
   input: BusinessHoursInput
 ): ValidationResult {
-  const days = input.meetingDays ?? [];
-  const hasStart = input.meetingHoursStart !== null && input.meetingHoursStart !== "";
-  const hasEnd = input.meetingHoursEnd !== null && input.meetingHoursEnd !== "";
+  const days = input.appointmentDays ?? [];
+  const hasStart = input.appointmentHoursStart !== null && input.appointmentHoursStart !== "";
+  const hasEnd = input.appointmentHoursEnd !== null && input.appointmentHoursEnd !== "";
 
   if (hasStart !== hasEnd) {
     return {
@@ -257,7 +257,7 @@ export function validateBusinessHours(
     };
   }
 
-  if (input.meetingHoursStart! >= input.meetingHoursEnd!) {
+  if (input.appointmentHoursStart! >= input.appointmentHoursEnd!) {
     return {
       ok: false,
       error:

@@ -17,7 +17,7 @@ const NON_EXISTENT_LEAD_ID = "00000000-0000-4000-8000-000000000456";
 describe("server/integration messages — ingestMessage", () => {
   let tenantAId: string;
   let tenantBId: string;
-  const brokerId = randomUUID();
+  const assigneeId = randomUUID();
   const channel = "12345678901234567890", foreignChannel = "22345678901234567890", unverifiedChannel = "32345678901234567890";
   const now = new Date("2026-08-01T12:00:00.000Z");
 
@@ -40,7 +40,7 @@ describe("server/integration messages — ingestMessage", () => {
         slug: `fixture-${tenantBId}`,
       },
     ]);
-    await db.insert(users).values({ id: brokerId, name: "Corretor T30", email: `${brokerId}@fixture.test` });
+    await db.insert(users).values({ id: assigneeId, name: "Corretor T30", email: `${assigneeId}@fixture.test` });
     await db.insert(whatsappChannels).values([
       { tenantId: tenantAId, phoneNumberId: channel, ownershipVerifiedAt: now },
       { tenantId: tenantBId, phoneNumberId: foreignChannel, ownershipVerifiedAt: now },
@@ -61,7 +61,7 @@ describe("server/integration messages — ingestMessage", () => {
     await db.delete(whatsappChannels).where(eq(whatsappChannels.tenantId, tenantBId));
     await db.delete(tenants).where(eq(tenants.id, tenantAId));
     await db.delete(tenants).where(eq(tenants.id, tenantBId));
-    await db.delete(users).where(eq(users.id, brokerId));
+    await db.delete(users).where(eq(users.id, assigneeId));
     await db.$client.end();
   });
 
@@ -341,10 +341,10 @@ describe("server/integration messages — ingestMessage", () => {
 
   it("serviço de integração lê outra carteira no próprio tenant e preserva autor humano", async () => {
     const leadId = await createLead(tenantAId);
-    await db.update(leads).set({ assignedUserId: brokerId }).where(eq(leads.id, leadId));
+    await db.update(leads).set({ assignedUserId: assigneeId }).where(eq(leads.id, leadId));
     const anchor = await ingestMessage(tenantAId, leadId, dto());
     if (!anchor.ok) throw new Error("Mensagem ausente");
-    const [human] = await db.insert(messages).values({ tenantId: tenantAId, conversationId: anchor.message.conversationId, sender: "humano", authorUserId: brokerId, authorName: "Corretor T30", content: "Mensagem da equipe", sentAt: new Date(now.getTime() + 1), whatsappPhoneNumberId: channel }).returning();
+    const [human] = await db.insert(messages).values({ tenantId: tenantAId, conversationId: anchor.message.conversationId, sender: "humano", authorUserId: assigneeId, authorName: "Corretor T30", content: "Mensagem da equipe", sentAt: new Date(now.getTime() + 1), whatsappPhoneNumberId: channel }).returning();
     expect(await listMessages(tenantAId, leadId, 1)).toEqual({ ok: true, messages: [human], anchorMessageId: anchor.message.id, agentStateRevision: 1 });
     expect(serializeMessage(human)).toEqual({ id: human.id, externalId: null, sender: "humano", content: "Mensagem da equipe", sentAt: human.sentAt.toISOString(), authorName: "Corretor T30", whatsappPhoneNumberId: channel });
   });

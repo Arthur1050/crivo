@@ -242,7 +242,7 @@ export interface LeadPatchDto<Q> {
   status?: LeadStatus;
   executiveSummary?: string | null;
   escalationReason?: string | null;
-  meetingAt?: Date | null;
+  appointmentAt?: Date | null;
   qualification?: Partial<Q>;
 }
 
@@ -285,15 +285,15 @@ export function createLeadPatchParser<Q>(qualification: Pick<QualificationFacet<
     if (parsed?.ok === false) return { ok: false, detail: parsed.detail };
     if (parsed && Object.keys(parsed.dto).length > 0) dto.qualification = parsed.dto;
 
-    const meetingAtOutcome = optionalNullableField(json, "meetingAt", parseIsoDate);
-    if (meetingAtOutcome.present) {
-      if (!meetingAtOutcome.ok) {
+    const appointmentAtOutcome = optionalNullableField(json, "meetingAt", parseIsoDate);
+    if (appointmentAtOutcome.present) {
+      if (!appointmentAtOutcome.ok) {
         return {
           ok: false,
           detail: "Campo 'meetingAt' deve ser uma data ISO-8601 válida.",
         };
       }
-      dto.meetingAt = meetingAtOutcome.value;
+      dto.appointmentAt = appointmentAtOutcome.value;
     }
 
     return { ok: true, dto };

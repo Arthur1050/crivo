@@ -53,7 +53,7 @@ export interface RecentLeadRow extends Record<string, unknown> {
   budget: string | null;
   modality: Lead["modality"];
   status: LeadStatus;
-  brokerName: string | null;
+  assigneeName: string | null;
   firstContactAt: string;
 }
 
@@ -113,14 +113,14 @@ const COLUMNS: TableColumn<RecentLeadRow>[] = [
     ),
   },
   {
-    key: "brokerName",
+    key: "assigneeName",
     header: "Corretor",
     width: proportional(1),
     renderCell: (row) =>
-      row.brokerName ? (
+      row.assigneeName ? (
         <HStack gap={2} vAlign="center">
-          <Avatar name={row.brokerName} size="xsm" />
-          <Text type="body">{row.brokerName}</Text>
+          <Avatar name={row.assigneeName} size="xsm" />
+          <Text type="body">{row.assigneeName}</Text>
         </HStack>
       ) : (
         <Fallback />

@@ -246,7 +246,7 @@ interface TenantDef {
   // Preenchê-lo é sempre ato do usuário, inclusive no tenant de demonstração.
   baselineLeadsPerMonth: number | null;
   baselineFirstResponseMinutes: number | null;
-  baselineLeadToMeetingPct: number | null;
+  baselineLeadToAppointmentPct: number | null;
   baselineEscalationPct: number | null;
   baselineAttendancePct: number | null;
   // Identidade institucional (redesign-crm-astryx — RD-02): valores distintos
@@ -287,7 +287,7 @@ interface TenantDef {
 //   - seg-sex 14:00-19:00 → só o corretor da tarde
 //   - sábado               → só o corretor de fim de semana
 // Dias em ISO 1(segunda)-7(domingo), horas "HH:MM" em America/Sao_Paulo —
-// mesma convenção de `tenants.meetingDays`.
+// mesma convenção de `tenants.appointmentDays`.
 const MORNING_WINDOW = {
   workDays: [1, 2, 3, 4, 5],
   workHoursStart: "08:00",
@@ -354,7 +354,7 @@ const TENANT_DEFS: TenantDef[] = [
     supportedSegment: MODALITY.both,
     baselineLeadsPerMonth: null,
     baselineFirstResponseMinutes: null,
-    baselineLeadToMeetingPct: null,
+    baselineLeadToAppointmentPct: null,
     baselineEscalationPct: null,
     baselineAttendancePct: null,
     seedLeadData: false,
@@ -412,7 +412,7 @@ const TENANT_DEFS: TenantDef[] = [
     supportedSegment: MODALITY.both,
     baselineLeadsPerMonth: null,
     baselineFirstResponseMinutes: null,
-    baselineLeadToMeetingPct: null,
+    baselineLeadToAppointmentPct: null,
     baselineEscalationPct: null,
     baselineAttendancePct: null,
     seedLeadData: false,
@@ -473,7 +473,7 @@ const TENANT_DEFS: TenantDef[] = [
     supportedSegment: MODALITY.both,
     baselineLeadsPerMonth: null,
     baselineFirstResponseMinutes: null,
-    baselineLeadToMeetingPct: null,
+    baselineLeadToAppointmentPct: null,
     baselineEscalationPct: null,
     baselineAttendancePct: null,
     seedLeadData: true,
@@ -818,7 +818,7 @@ export async function runSeed(): Promise<SeedResult> {
       supportedSegment: tenantDef.supportedSegment,
       baselineLeadsPerMonth: tenantDef.baselineLeadsPerMonth,
       baselineFirstResponseMinutes: tenantDef.baselineFirstResponseMinutes,
-      baselineLeadToMeetingPct: tenantDef.baselineLeadToMeetingPct,
+      baselineLeadToAppointmentPct: tenantDef.baselineLeadToAppointmentPct,
       baselineEscalationPct: tenantDef.baselineEscalationPct,
       baselineAttendancePct: tenantDef.baselineAttendancePct,
       city: tenantDef.city,
@@ -951,7 +951,7 @@ export async function runSeed(): Promise<SeedResult> {
           : null;
         // Só leads qualificado_agendado têm reunião marcada — coerente com o
         // resumo executivo, que só é preenchido no mesmo caso.
-        const meetingAt = isQualified
+        const appointmentAt = isQualified
           ? new Date(firstContactAt.getTime() + 3 * 86400000)
           : null;
         // lote-8 (AD-022/SEED-01 AC7): o lead só ganha dono no agendamento.
@@ -959,18 +959,18 @@ export async function runSeed(): Promise<SeedResult> {
         // com reunião marcada — esses recebem um corretor, distribuído de
         // forma determinística entre os corretores da imobiliária.
         const assignedUserId =
-          meetingAt && brokerIds.length > 0
+          appointmentAt && brokerIds.length > 0
             ? brokerIds[i % brokerIds.length]
             : null;
         // Última atualização do registro = evento mais recente conhecido do
         // lead (reunião marcada, senão a 1ª resposta). Mantém created_at
         // (nascimento do lead) e updated_at coerentes com firstContactAt em
-        // vez do "agora" fixo do defaultNow() do schema. meetingAt pode cair
+        // vez do "agora" fixo do defaultNow() do schema. appointmentAt pode cair
         // no futuro (reunião agendada) — updated_at nunca deve ultrapassar o
         // momento real do seed, senão registros parecem "modificados no
         // futuro" (quebra o invariante de outras camadas de que updatedAt
         // avança a partir de now() em mutações subsequentes).
-        const updatedAtCandidate = meetingAt ?? firstResponseAt;
+        const updatedAtCandidate = appointmentAt ?? firstResponseAt;
         const updatedAt =
           updatedAtCandidate.getTime() > seedNow.getTime()
             ? seedNow
@@ -995,8 +995,8 @@ export async function runSeed(): Promise<SeedResult> {
             ? buildExecutiveSummary(leadDef.name, leadDef.modality, qualification!)
             : null,
           escalationReason,
-          meetingAt,
-          meetingAttended: null,
+          appointmentAt,
+          appointmentAttended: null,
           firstContactAt,
           firstResponseAt,
           createdAt: firstContactAt,

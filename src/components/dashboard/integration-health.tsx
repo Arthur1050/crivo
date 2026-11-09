@@ -20,7 +20,7 @@ interface IntegrationHealthProps {
    * identificado (SAUDE-02 AC6). */
   refusals: RefusalSummary[];
   /** "Agora" para decidir a janela de 24h (mesmo padrão de
-   * `getPendingAttendanceMeetings`: quem chama decide o instante, a lib pura
+   * `getPendingAttendanceAppointments`: quem chama decide o instante, a lib pura
    * só compara). Default cobre o caso comum sem obrigar todo caller a passar. */
   now?: Date;
 }

@@ -4,16 +4,16 @@ import { ROLE } from "../../lib/vocabulary";
 import { revalidatePath } from "next/cache";
 import { verifySession } from "../../kit/session";
 import { denyIfForbidden } from "./permission";
-import { assignBroker, type BrokerLoad } from "../../lib/broker-assignment";
+import { assignAssignee, type AssigneeLoad } from "../../lib/assignee-assignment";
 import {
   countActiveAdministrators,
   deactivateMembership,
   getActiveLeadsOfMember,
-  getBrokerLoads,
+  getAssigneeLoads,
   getTenantMemberById,
-  getUpcomingMeetingsOfMember,
+  getUpcomingAppointmentsOfMember,
   transferCarteiraAndDeactivate,
-  updateLeadBroker,
+  updateLeadAssignee,
 } from "../data";
 
 /**
@@ -55,7 +55,7 @@ export interface DeactivationPreview {
   memberId: string;
   name: string;
   leadsAtivos: { id: string; name: string }[];
-  reunioesFuturas: { leadId: string; leadName: string; meetingAt: Date }[];
+  reunioesFuturas: { leadId: string; leadName: string; appointmentAt: Date }[];
 }
 
 export async function getDeactivationPreviewAction(input: {
@@ -72,7 +72,7 @@ export async function getDeactivationPreviewAction(input: {
 
   const [ativos, reunioes] = await Promise.all([
     getActiveLeadsOfMember(session.tenantId, member.userId),
-    getUpcomingMeetingsOfMember(session.tenantId, member.userId),
+    getUpcomingAppointmentsOfMember(session.tenantId, member.userId),
   ]);
 
   return {
@@ -174,9 +174,9 @@ export async function deactivateMemberAction(
 
   if (input.destino.tipo === "redistribuir") {
     // Candidatos são os corretores ATIVOS da imobiliária, menos quem está
-    // saindo. `getBrokerLoads` já exclui vínculo desativado.
-    const candidates: BrokerLoad[] = (
-      await getBrokerLoads(session.tenantId)
+    // saindo. `getAssigneeLoads` já exclui vínculo desativado.
+    const candidates: AssigneeLoad[] = (
+      await getAssigneeLoads(session.tenantId)
     ).filter((candidate) => candidate.id !== member.userId);
 
     if (candidates.length === 0) {
@@ -190,14 +190,14 @@ export async function deactivateMemberAction(
     let reatribuidos = 0;
 
     for (const lead of ativos) {
-      const chosen = assignBroker(candidates);
+      const chosen = assignAssignee(candidates);
       if (!chosen) break;
 
       // Escopo de imobiliária inteira, nunca o do ator (lote-9 — SCOPE-02):
       // esta redistribuição move a carteira INTEIRA de quem está saindo,
       // não só os leads do administrador/gestor que está desativando o
       // membro — a permissão já foi checada acima (`usuarios:escrever`).
-      const updated = await updateLeadBroker(
+      const updated = await updateLeadAssignee(
         { tenantId: session.tenantId, assignedUserId: null },
         lead.id,
         chosen
@@ -222,7 +222,7 @@ export async function deactivateMemberAction(
   }
 
   // AC4: manter preserva a atribuição. O sinal de "responsável inativo" é
-  // derivado do vínculo desativado (`LeadWithBroker.brokerDeactivatedAt`),
+  // derivado do vínculo desativado (`LeadWithAssignee.assigneeDeactivatedAt`),
   // sem tocar em nenhum lead.
   await deactivateMembership(session.tenantId, member.memberId);
   revalidatePath("/usuarios");

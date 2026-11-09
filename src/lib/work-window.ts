@@ -4,7 +4,7 @@
  * Função pura, sem I/O: diz se a janela cobre um instante (escalonamento) ou
  * um intervalo inteiro (agendamento), e valida a janela informada na tela.
  * Mesma convenção de `n8n/src/business-hours.mjs` e de
- * `tenants.meetingDays`/`meetingHoursStart`: dias ISO 1(segunda)-7(domingo),
+ * `tenants.appointmentDays`/`appointmentHoursStart`: dias ISO 1(segunda)-7(domingo),
  * horários `HH:MM` interpretados em America/Sao_Paulo, sem timezone
  * armazenada (spec.md — Assumptions).
  */

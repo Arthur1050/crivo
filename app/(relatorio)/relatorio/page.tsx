@@ -86,7 +86,7 @@ export default async function RelatorioPage({ searchParams }: RelatorioPageProps
         baseline={{
           baselineLeadsPerMonth: tenant.baselineLeadsPerMonth,
           baselineFirstResponseMinutes: tenant.baselineFirstResponseMinutes,
-          baselineLeadToMeetingPct: tenant.baselineLeadToMeetingPct,
+          baselineLeadToAppointmentPct: tenant.baselineLeadToAppointmentPct,
           baselineEscalationPct: tenant.baselineEscalationPct,
           baselineAttendancePct: tenant.baselineAttendancePct,
         }}

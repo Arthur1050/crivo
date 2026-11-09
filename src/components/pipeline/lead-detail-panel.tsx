@@ -46,11 +46,11 @@ import { LeadControls } from "@/src/components/pipeline/lead-controls";
 import { RelativeTime } from "@/src/components/shared/relative-time";
 import { formatCurrencyBRL } from "@/src/lib/format";
 import type {
-  Broker,
+  Assignee,
   Lead,
   LeadStatus,
 } from "@/src/server/data";
-import type { LeadWithBroker } from "@/src/kit/lead-data";
+import type { LeadWithAssignee } from "@/src/kit/lead-data";
 
 const FALLBACK = "—";
 
@@ -118,7 +118,7 @@ const QUALIFICATION_FIELDS = [
   "motivation",
   "creditStatus",
   "chainedOperation",
-  "meetingAt",
+  "appointmentAt",
 ] as const satisfies readonly (keyof Lead)[];
 
 function countFilledFields(lead: Lead): number {
@@ -147,11 +147,11 @@ function BooleanValue({ value }: { value: boolean | null }) {
 }
 
 interface LeadDetailPanelProps {
-  lead: LeadWithBroker;
+  lead: LeadWithAssignee;
   /** id da conversa deste lead, quando existir (lote-3 — PIPE-04). */
   conversationId?: string;
   /** Corretores do tenant ativo, para o seletor do `LeadControls` (lote-7 — ATRIB-02). */
-  brokers: Pick<Broker, "id" | "name">[];
+  brokers: Pick<Assignee, "id" | "name">[];
   onClose: () => void;
 }
 
@@ -413,9 +413,9 @@ export function LeadDetailPanel({
                     <Icon icon={CalendarDaysIcon} size="xsm" color="secondary" />
                   }
                 >
-                  {lead.meetingAt ? (
+                  {lead.appointmentAt ? (
                     <Timestamp
-                      value={lead.meetingAt.toISOString()}
+                      value={lead.appointmentAt.toISOString()}
                       format="date_time"
                     />
                   ) : (
@@ -436,9 +436,9 @@ export function LeadDetailPanel({
                 <LeadControls
                   leadId={lead.id}
                   brokers={brokers}
-                  brokerId={lead.assignedUserId}
-                  meetingAt={lead.meetingAt ? lead.meetingAt.toISOString() : null}
-                  meetingAttended={lead.meetingAttended}
+                  assigneeId={lead.assignedUserId}
+                  appointmentAt={lead.appointmentAt ? lead.appointmentAt.toISOString() : null}
+                  appointmentAttended={lead.appointmentAttended}
                 />
               </VStack>
 

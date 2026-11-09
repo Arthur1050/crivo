@@ -63,7 +63,7 @@ async function prepareFrame(
       const [channel] = await tx.select().from(whatsappChannels).where(and(eq(whatsappChannels.tenantId, context.tenantId), eq(whatsappChannels.phoneNumberId, episode.phoneNumberId)));
       if (!channel?.ownershipVerifiedAt || !finite(channel.ownershipVerifiedAt) || !Number.isSafeInteger(channel.configurationRevision)
           || channel.configurationRevision < 1) return { ok: false, reason: "context-changed" };
-      const [settings] = await tx.select({ meetingDays: tenants.meetingDays, meetingHoursStart: tenants.meetingHoursStart, meetingHoursEnd: tenants.meetingHoursEnd }).from(tenants).where(eq(tenants.id, context.tenantId));
+      const [settings] = await tx.select({ meetingDays: tenants.appointmentDays, meetingHoursStart: tenants.appointmentHoursStart, meetingHoursEnd: tenants.appointmentHoursEnd }).from(tenants).where(eq(tenants.id, context.tenantId));
       const decision = evaluateReengagement({ lead, anchor: { messageId: anchor.id, sentAt: anchor.sentAt }, phase: agent.phase,
         channel, destination: toWhatsAppMsisdn(lead.externalId), now, settings });
       if (decision.action !== "prepare" || (agent.phase !== AGENT_PHASE.qualifying && agent.phase !== AGENT_PHASE.closing)) return { ok: false, reason: "not-eligible" };

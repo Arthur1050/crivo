@@ -109,7 +109,7 @@ export const tenants = pgTable(
     // nullable até ser preenchido (mockado no seed por ora; real na Fase 10).
     baselineLeadsPerMonth: integer("baseline_leads_per_month"),
     baselineFirstResponseMinutes: integer("baseline_first_response_minutes"),
-    baselineLeadToMeetingPct: integer("baseline_lead_to_meeting_pct"),
+    baselineLeadToAppointmentPct: integer("baseline_lead_to_meeting_pct"),
     // Baseline pré-piloto (lote-9 — BASE-01), somando-se aos três acima.
     // Nullable pela mesma razão: são snapshot único preenchido pelo usuário,
     // não pelo seed (AD-004) — o de escalonamento é o mais discutível de
@@ -132,9 +132,9 @@ export const tenants = pgTable(
     // campos e o fluxo aplica o fallback seg-sex 9h-18h (design.md). Dias em
     // ISO 1(segunda)-7(domingo); horas em texto "HH:MM" (sem timezone — o
     // fluxo interpreta em America/Sao_Paulo).
-    meetingDays: integer("meeting_days").array(),
-    meetingHoursStart: text("meeting_hours_start"),
-    meetingHoursEnd: text("meeting_hours_end"),
+    appointmentDays: integer("meeting_days").array(),
+    appointmentHoursStart: text("meeting_hours_start"),
+    appointmentHoursEnd: text("meeting_hours_end"),
     // Tom de voz / personalidade do agente (lote-6b — PER-03), texto livre
     // opcional preenchido pela imobiliária em Configurações. Nullable/aditiva
     // (mesmo padrão de `agentPresentationMessage`): descreve o JEITO DE FALAR
@@ -243,8 +243,8 @@ export const leads = pgTable(
     chainedOperation: boolean("chained_operation"),
     executiveSummary: text("executive_summary"),
     escalationReason: text("escalation_reason"),
-    meetingAt: timestamp("meeting_at", { withTimezone: true }),
-    meetingAttended: boolean("meeting_attended"),
+    appointmentAt: timestamp("meeting_at", { withTimezone: true }),
+    appointmentAttended: boolean("meeting_attended"),
     firstContactAt: timestamp("first_contact_at", {
       withTimezone: true,
     }).notNull(),
@@ -297,15 +297,15 @@ export const leads = pgTable(
     // O slot do produto é de 30 minutos alinhados (spec.md — Assumptions),
     // então "mesmo `meeting_at`" é "mesmo intervalo". Sobreposição parcial
     // (14:00 × 14:15) é responsabilidade do filtro de candidatos
-    // (`selectForMeeting`), que exclui quem já tem reunião sobreposta.
+    // (`selectForAppointment`), que exclui quem já tem reunião sobreposta.
     //
     // Parcial, pela mesma disciplina de `leads_tenant_id_external_id_idx`: só
     // vale para lead COM reunião e COM responsável — lead sem reunião ou sem
     // dono (a regra do lote: o lead nasce órfão) nunca colide.
     uniqueIndex("leads_assigned_user_id_meeting_at_idx")
-      .on(table.tenantId, table.assignedUserId, table.meetingAt)
+      .on(table.tenantId, table.assignedUserId, table.appointmentAt)
       .where(
-        sql`${table.meetingAt} is not null and ${table.assignedUserId} is not null`
+        sql`${table.appointmentAt} is not null and ${table.assignedUserId} is not null`
       ),
   ]
 );
@@ -944,7 +944,7 @@ export const tenant_members = pgTable(
     // `additionalFields` do produto. A janela de trabalho é POR VÍNCULO, não
     // por usuário: a mesma pessoa pode atender em horários diferentes em duas
     // imobiliárias. Dias ISO 1(segunda)-7(domingo) e horas "HH:MM" em
-    // America/Sao_Paulo — mesma convenção de `tenants.meetingDays`.
+    // America/Sao_Paulo — mesma convenção de `tenants.appointmentDays`.
     workDays: integer("work_days").array(),
     workHoursStart: text("work_hours_start"),
     workHoursEnd: text("work_hours_end"),

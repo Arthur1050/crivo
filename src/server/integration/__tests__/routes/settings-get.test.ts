@@ -30,9 +30,9 @@ describe("routes: GET /api/v1/settings", () => {
         slug: `fixture-${tenantAId}`,
         agentPresentationMessage: "Mensagem de apresentação do tenant A.",
         agentVoiceTone: "Tom de voz do tenant A.",
-        meetingDays: [1, 3, 5],
-        meetingHoursStart: "08:00",
-        meetingHoursEnd: "12:00",
+        appointmentDays: [1, 3, 5],
+        appointmentHoursStart: "08:00",
+        appointmentHoursEnd: "12:00",
       },
       {
         id: tenantBId,

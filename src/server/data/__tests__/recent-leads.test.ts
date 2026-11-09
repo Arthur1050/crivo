@@ -9,7 +9,7 @@ import { getLeads, getRecentLeads } from "../../../kit/lead-data";
 // Fixture PRÓPRIA (não depende do seed) com datas ABSOLUTAS: a ordenação de
 // `getRecentLeads` por firstContactAt DESC precisa ser verificável sem
 // depender de "agora" nem da distribuição relativa do seed.
-// Cobre RD-04 AC4/AC5 e RD-03 AC3 (brokerName no card do pipeline).
+// Cobre RD-04 AC4/AC5 e RD-03 AC3 (assigneeName no card do pipeline).
 const TENANT_FULL = "aaaaaaaa-0000-4000-8000-000000000001";
 const TENANT_SPARSE = "aaaaaaaa-0000-4000-8000-000000000002";
 const TENANT_EMPTY = "aaaaaaaa-0000-4000-8000-000000000003";
@@ -199,10 +199,10 @@ describe("server/data — getRecentLeads e brokerName em getLeads (RD-03/RD-04)"
       const result = await getRecentLeads(serviceScope(TENANT_FULL));
 
       const comCorretor = result.find((lead) => lead.name === "Lead Mais Recente");
-      expect(comCorretor!.brokerName).toBe(BROKER_FULL_NAME);
+      expect(comCorretor!.assigneeName).toBe(BROKER_FULL_NAME);
 
       const semCorretor = result.find((lead) => lead.name === "Lead Sem Corretor");
-      expect(semCorretor!.brokerName).toBeNull();
+      expect(semCorretor!.assigneeName).toBeNull();
     });
 
     it("preserva budgetCents/modality nulos em vez de omitir o lead (Edge Cases)", async () => {
@@ -271,7 +271,7 @@ describe("server/data — getRecentLeads e brokerName em getLeads (RD-03/RD-04)"
       expect(result).toHaveLength(6);
 
       const comCorretor = result.find((lead) => lead.id === leadId(1));
-      expect(comCorretor!.brokerName).toBe(BROKER_FULL_NAME);
+      expect(comCorretor!.assigneeName).toBe(BROKER_FULL_NAME);
       // Colunas pré-existentes seguem íntegras no mesmo objeto.
       expect(comCorretor!.name).toBe("Lead Mais Recente");
       expect(comCorretor!.tenantId).toBe(TENANT_FULL);
@@ -290,7 +290,7 @@ describe("server/data — getRecentLeads e brokerName em getLeads (RD-03/RD-04)"
 
       expect(semCorretor).toBeDefined();
       expect(semCorretor!.assignedUserId).toBeNull();
-      expect(semCorretor!.brokerName).toBeNull();
+      expect(semCorretor!.assigneeName).toBeNull();
     });
 
     it("o filtro por status continua funcionando com o join", async () => {

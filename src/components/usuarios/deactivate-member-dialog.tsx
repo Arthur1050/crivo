@@ -21,7 +21,7 @@ import {
 
 interface Preview {
   leadsAtivos: { id: string; name: string }[];
-  reunioesFuturas: { leadId: string; leadName: string; meetingAt: string }[];
+  reunioesFuturas: { leadId: string; leadName: string; appointmentAt: string }[];
 }
 
 export interface BrokerOption {
@@ -101,7 +101,7 @@ function DeactivateForm({
           reunioesFuturas: result.preview.reunioesFuturas.map((meeting) => ({
             leadId: meeting.leadId,
             leadName: meeting.leadName,
-            meetingAt: meeting.meetingAt.toISOString(),
+            appointmentAt: meeting.appointmentAt.toISOString(),
           })),
         });
       }
@@ -174,7 +174,7 @@ function DeactivateForm({
                         label={meeting.leadName}
                         endContent={
                           <Timestamp
-                            value={meeting.meetingAt}
+                            value={meeting.appointmentAt}
                             format="date_time"
                           />
                         }

@@ -40,8 +40,8 @@ export async function getTenantSettings(
     supportedModality: tenant.supportedSegment,
     agentPresentationMessage: tenant.agentPresentationMessage,
     agentVoiceTone: tenant.agentVoiceTone,
-    meetingDays: tenant.meetingDays,
-    meetingHoursStart: tenant.meetingHoursStart,
-    meetingHoursEnd: tenant.meetingHoursEnd,
+    meetingDays: tenant.appointmentDays,
+    meetingHoursStart: tenant.appointmentHoursStart,
+    meetingHoursEnd: tenant.appointmentHoursEnd,
   };
 }

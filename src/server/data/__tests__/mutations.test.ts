@@ -146,7 +146,7 @@ describe("server/data mutations", () => {
     });
 
     // lote-9 — SCOPE-02 (T18): a escrita passou a exigir o MESMO escopo da
-    // leitura (lote-8) — mesmo filtro que updateLeadBroker/setMeetingAttendance.
+    // leitura (lote-8) — mesmo filtro que updateLeadAssignee/setAppointmentAttendance.
     describe("escopo de carteira (SCOPE-02)", () => {
       let ownerUserId: string;
       let fixtureLeadId: string;

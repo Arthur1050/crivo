@@ -89,7 +89,7 @@ export const PATCH = withIntegrationRoute<{ params: Promise<{ id: string }> }>(
     return Response.json(
       {
         ...serializeLead(result.lead),
-        ...(result.assignedBroker ? { assignedBroker: result.assignedBroker } : {}),
+        ...(result.assignedAssignee ? { assignedBroker: result.assignedAssignee } : {}),
       },
       { status: 200 }
     );

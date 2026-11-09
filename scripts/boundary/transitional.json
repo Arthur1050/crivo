@@ -28,27 +28,6 @@
     "category": "market"
   },
   {
-    "path": "src/lib/broker-assignment.ts",
-    "term": "market:broker",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
-  },
-  {
-    "path": "src/lib/broker-availability.ts",
-    "term": "market:broker",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
-  },
-  {
-    "path": "src/lib/broker-availability.ts",
-    "term": "market:meeting",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
-  },
-  {
     "path": "src/lib/duplicate-document.ts",
     "term": "market:imobili",
     "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
@@ -58,20 +37,6 @@
   {
     "path": "src/lib/integration-alert.ts",
     "term": "market:imobili",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
-  },
-  {
-    "path": "src/lib/meeting-attendance.ts",
-    "term": "market:meeting",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
-  },
-  {
-    "path": "src/lib/pilot-metrics.ts",
-    "term": "market:meeting",
     "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
     "removedIn": "L18a",
     "category": "market"
@@ -92,13 +57,6 @@
   },
   {
     "path": "src/server/data/index.ts",
-    "term": "market:broker",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
-  },
-  {
-    "path": "src/server/data/index.ts",
     "term": "market:meeting",
     "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
     "removedIn": "L18a",
@@ -107,13 +65,6 @@
   {
     "path": "src/server/documents/benchmark-identity.ts",
     "term": "market:reuni",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
-  },
-  {
-    "path": "src/server/integration/leads.ts",
-    "term": "market:broker",
     "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
     "removedIn": "L18a",
     "category": "market"
@@ -155,20 +106,6 @@
   },
   {
     "path": "src/server/reengagement/repository.ts",
-    "term": "market:broker",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
-  },
-  {
-    "path": "src/server/reengagement/repository.ts",
-    "term": "market:meeting",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
-  },
-  {
-    "path": "src/server/validation.ts",
     "term": "market:meeting",
     "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
     "removedIn": "L18a",

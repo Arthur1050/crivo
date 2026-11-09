@@ -43,16 +43,16 @@ export interface UpdateTenantSettingsInput {
   // Horário comercial (lote-6 — CONF-05). Mesma regra de sempre-enviar dos
   // campos acima: o form manda os 3 sempre, para que limpar a configuração
   // (voltar ao fallback) também seja possível via a mesma action.
-  meetingDays?: number[] | null;
-  meetingHoursStart?: string | null;
-  meetingHoursEnd?: string | null;
+  appointmentDays?: number[] | null;
+  appointmentHoursStart?: string | null;
+  appointmentHoursEnd?: string | null;
   // Baseline pré-piloto (lote-9 — BASE-01). Mesma regra de sempre-enviar dos
   // campos acima: o formulário manda os 5 sempre, para que limpar um
   // baseline (voltar a "não registrado") também passe pela mesma action.
   // Validados (inteiro dentro da faixa) nesta action antes de repassar à DAL.
   baselineLeadsPerMonth?: number | null;
   baselineFirstResponseMinutes?: number | null;
-  baselineLeadToMeetingPct?: number | null;
+  baselineLeadToAppointmentPct?: number | null;
   baselineEscalationPct?: number | null;
   baselineAttendancePct?: number | null;
 }
@@ -85,9 +85,9 @@ export async function updateTenantSettingsAction(
   if (!agentVoiceToneCheck.ok) return agentVoiceToneCheck;
 
   const businessHoursCheck = validateBusinessHours({
-    meetingDays: input.meetingDays ?? null,
-    meetingHoursStart: input.meetingHoursStart ?? null,
-    meetingHoursEnd: input.meetingHoursEnd ?? null,
+    appointmentDays: input.appointmentDays ?? null,
+    appointmentHoursStart: input.appointmentHoursStart ?? null,
+    appointmentHoursEnd: input.appointmentHoursEnd ?? null,
   });
   if (!businessHoursCheck.ok) return businessHoursCheck;
 
@@ -107,7 +107,7 @@ export async function updateTenantSettingsAction(
   if (!firstResponseCheck.ok) return firstResponseCheck;
 
   const leadToMeetingCheck = validateBaselinePercent(
-    input.baselineLeadToMeetingPct,
+    input.baselineLeadToAppointmentPct,
     "Percentual de lead para reunião"
   );
   if (!leadToMeetingCheck.ok) return leadToMeetingCheck;
@@ -147,12 +147,12 @@ export async function updateTenantSettingsAction(
     website: input.website,
     agentPresentationMessage: input.agentPresentationMessage,
     agentVoiceTone: input.agentVoiceTone,
-    meetingDays: input.meetingDays,
-    meetingHoursStart: input.meetingHoursStart,
-    meetingHoursEnd: input.meetingHoursEnd,
+    appointmentDays: input.appointmentDays,
+    appointmentHoursStart: input.appointmentHoursStart,
+    appointmentHoursEnd: input.appointmentHoursEnd,
     baselineLeadsPerMonth: input.baselineLeadsPerMonth,
     baselineFirstResponseMinutes: input.baselineFirstResponseMinutes,
-    baselineLeadToMeetingPct: input.baselineLeadToMeetingPct,
+    baselineLeadToAppointmentPct: input.baselineLeadToAppointmentPct,
     baselineEscalationPct: input.baselineEscalationPct,
     baselineAttendancePct: input.baselineAttendancePct,
   });

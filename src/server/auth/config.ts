@@ -176,7 +176,7 @@ export function createAuth(sendResetPasswordEmail: ReturnType<typeof createEmail
               // Janela de trabalho do corretor (AGENDA-01). Mora no VÍNCULO,
               // não no usuário: a mesma pessoa pode atender de manhã numa
               // imobiliária e à tarde na outra. Mesmo formato de
-              // `tenants.meetingDays`/`meetingHoursStart` — dias ISO 1
+              // `tenants.appointmentDays`/`appointmentHoursStart` — dias ISO 1
               // (segunda) a 7 (domingo), horas "HH:MM" em America/Sao_Paulo.
               workDays: { type: "number[]", required: false },
               workHoursStart: { type: "string", required: false },

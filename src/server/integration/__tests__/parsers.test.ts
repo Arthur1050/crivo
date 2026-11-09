@@ -205,7 +205,7 @@ describe("server/integration parsers", () => {
       const result = parseLeadPatch({ meetingAt: "2026-08-10T14:00:00Z" });
       expect(result.ok).toBe(true);
       if (!result.ok) return;
-      expect(result.dto.meetingAt).toBeInstanceOf(Date);
+      expect(result.dto.appointmentAt).toBeInstanceOf(Date);
     });
 
     it("chainedOperation não-booleano é rejeitado", () => {

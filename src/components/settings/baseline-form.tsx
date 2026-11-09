@@ -62,7 +62,7 @@ export function BaselineForm({ tenant }: BaselineFormProps) {
     tenant.baselineFirstResponseMinutes
   );
   const [leadToMeetingPct, setLeadToMeetingPct] = useState<number | null>(
-    tenant.baselineLeadToMeetingPct
+    tenant.baselineLeadToAppointmentPct
   );
   const [escalationPct, setEscalationPct] = useState<number | null>(
     tenant.baselineEscalationPct
@@ -122,7 +122,7 @@ export function BaselineForm({ tenant }: BaselineFormProps) {
       supportedSegment: tenant.supportedSegment,
       baselineLeadsPerMonth: leadsPerMonth,
       baselineFirstResponseMinutes: firstResponseMinutes,
-      baselineLeadToMeetingPct: leadToMeetingPct,
+      baselineLeadToAppointmentPct: leadToMeetingPct,
       baselineEscalationPct: escalationPct,
       baselineAttendancePct: attendancePct,
     });

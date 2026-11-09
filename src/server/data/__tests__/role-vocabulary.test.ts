@@ -5,7 +5,7 @@ import { eq, inArray, sql } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
 import { db } from "../../../db";
 import { tenant_members, tenants, users } from "../../../db/schema";
-import { countActiveAdministrators, getBrokers } from "../index";
+import { countActiveAdministrators, getAssignees } from "../index";
 
 const tenantId = randomUUID();
 const userIds = Array.from({ length: 4 }, () => randomUUID());
@@ -26,7 +26,7 @@ describe("VOCAB-01 AC6 — predicados de papéis", () => {
     })));
     const query = vi.spyOn(db.$client, "query");
     try {
-      expect((await getBrokers(tenantId)).map(row => row.id)).toEqual([userIds[0]]);
+      expect((await getAssignees(tenantId)).map(row => row.id)).toEqual([userIds[0]]);
       expect(await countActiveAdministrators(tenantId)).toBe(1);
       const statements = query.mock.calls.map(call => {
         const first: unknown = call[0];

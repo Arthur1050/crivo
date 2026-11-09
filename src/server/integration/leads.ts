@@ -1,10 +1,10 @@
 import { LEAD_STATUS, PROBLEM_CODE, STATUS_ACTOR } from "../../lib/vocabulary";
 import "server-only";
 import {
-  assignBrokerForEscalation,
-  assignBrokerForMeeting,
+  assignForEscalation,
+  assignForAppointment,
   createAgentLead,
-  getBrokerContact,
+  getAssigneeContact,
   getLead,
   serviceScope,
   setLeadChannel,
@@ -76,7 +76,7 @@ export function serializeLead<Wire extends object>(
     ...qualification?.serialize(lead),
     executiveSummary: lead.executiveSummary,
     escalationReason: lead.escalationReason,
-    meetingAt: lead.meetingAt ? lead.meetingAt.toISOString() : null,
+    meetingAt: lead.appointmentAt ? lead.appointmentAt.toISOString() : null,
     firstContactAt: lead.firstContactAt.toISOString(),
     optedOutAt: lead.optedOutAt ? lead.optedOutAt.toISOString() : null,
     humanTakeoverAt: lead.humanTakeoverAt
@@ -109,13 +109,13 @@ export const TRANSITIONS: Record<LeadStatusValue, LeadStatusValue[]> = {
  * interno: o agente precisa do e-mail para convidar ao evento (AC8), não da
  * chave primária do usuário.
  */
-export interface AssignedBroker {
+export interface AssignedAssignee {
   name: string;
   email: string;
 }
 
 export type PatchLeadResult =
-  | { ok: true; lead: Lead; assignedBroker?: AssignedBroker | null }
+  | { ok: true; lead: Lead; assignedAssignee?: AssignedAssignee | null }
   | { ok: false; code: ProblemCode };
 
 /**
@@ -151,10 +151,10 @@ export async function patchLead(
 
   // Condução humana (lote-14 — SILENCIO-01 AC9): checada DEPOIS da transição
   // e ANTES da trava humana (quem satisfaz as duas regras recebe o código da
-  // condução). Cobre `status` e `meetingAt`; patch só de qualificação passa.
+  // condução). Cobre `status` e `appointmentAt`; patch só de qualificação passa.
   if (
     lead.humanTakeoverAt &&
-    (dto.status !== undefined || dto.meetingAt !== undefined)
+    (dto.status !== undefined || dto.appointmentAt !== undefined)
   ) {
     return { ok: false, code: PROBLEM_CODE.lead_under_human_control };
   }
@@ -176,11 +176,11 @@ export async function patchLead(
   // Agendamento (lote-8 — ATRIB-02; AD-022): registrar a reunião é o momento
   // em que o lead ganha responsável. A escolha é do CRM, server-side — o
   // chamador informa o horário e recebe de volta quem ficou.
-  if (dto.meetingAt) {
-    const assigned = await assignBrokerForMeeting(
+  if (dto.appointmentAt) {
+    const assigned = await assignForAppointment(
       tenantId,
       leadId,
-      dto.meetingAt,
+      dto.appointmentAt,
       dto
     );
 
@@ -199,8 +199,8 @@ export async function patchLead(
     return {
       ok: true,
       lead: assigned.lead,
-      assignedBroker: assigned.brokerId
-        ? await getBrokerContact(tenantId, assigned.brokerId)
+      assignedAssignee: assigned.assigneeId
+        ? await getAssigneeContact(tenantId, assigned.assigneeId)
         : null,
     };
   }
@@ -210,7 +210,7 @@ export async function patchLead(
   // responsável não é reatribuído (AC5), e imobiliária sem corretor ativo
   // registra o escalonamento assim mesmo (AC4).
   if (dto.status === LEAD_STATUS.escalated) {
-    const assigned = await assignBrokerForEscalation(
+    const assigned = await assignForEscalation(
       tenantId,
       leadId,
       new Date(),
@@ -222,8 +222,8 @@ export async function patchLead(
     return {
       ok: true,
       lead: assigned.lead,
-      assignedBroker: assigned.brokerId
-        ? await getBrokerContact(tenantId, assigned.brokerId)
+      assignedAssignee: assigned.assigneeId
+        ? await getAssigneeContact(tenantId, assigned.assigneeId)
         : null,
     };
   }

@@ -103,9 +103,9 @@ describe("T37 — prepare HTTP entrega somente claim próprio e frame factual", 
   });
 
   it("fora do horário409 sem episódio", async () => {
-    const row = await fixture(); await db.update(tenants).set({ meetingDays: [1, 2, 3, 4, 5], meetingHoursStart: "13:00", meetingHoursEnd: "14:00" }).where(eq(tenants.id, tenantId));
+    const row = await fixture(); await db.update(tenants).set({ appointmentDays: [1, 2, 3, 4, 5], appointmentHoursStart: "13:00", appointmentHoursEnd: "14:00" }).where(eq(tenants.id, tenantId));
     try { await problem(await post(row), 409, "transicao-invalida"); expect(await episode(row)).toBeUndefined(); }
-    finally { await db.update(tenants).set({ meetingDays: null, meetingHoursStart: null, meetingHoursEnd: null }).where(eq(tenants.id, tenantId)); }
+    finally { await db.update(tenants).set({ appointmentDays: null, appointmentHoursStart: null, appointmentHoursEnd: null }).where(eq(tenants.id, tenantId)); }
   });
 
   it.each(["unknown", "takeover", "optout"])("política %s recusada mantém erro operacional específico ou transição409", async (change) => {

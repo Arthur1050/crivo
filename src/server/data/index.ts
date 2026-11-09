@@ -47,12 +47,12 @@ import {
   whatsappChannels,
 } from "../../db/schema";
 import { attachReceipt } from "../whatsapp/statuses";
-import { assignBroker, type BrokerLoad } from "../../lib/broker-assignment";
+import { assignAssignee, type AssigneeLoad } from "../../lib/assignee-assignment";
 import {
   selectForEscalation,
-  selectForMeeting,
-  type BrokerCandidate,
-} from "../../lib/broker-availability";
+  selectForAppointment,
+  type AssigneeCandidate,
+} from "../../lib/assignee-availability";
 import type { LeadScope } from "../../lib/lead-scope";
 import { parseRoles, type Role } from "../../lib/access";
 import { isPendingAttendance } from "../../lib/pilot-metrics";
@@ -98,7 +98,7 @@ export type Tenant = typeof tenants.$inferSelect;
  * `createdAt` é a data DO VÍNCULO — é ela que sustenta o desempate
  * determinístico da política de atribuição.
  */
-export interface Broker {
+export interface Assignee {
   id: string;
   tenantId: string;
   name: string;
@@ -197,7 +197,7 @@ export async function resolveTenantIdBySlug(
  * ao conjunto, nunca igualdade: quem acumula corretor com outro papel
  * continua sendo corretor, que é a mesma união de permissões da PERM-01 AC4.
  */
-const HAS_BROKER_ROLE = sql`${sql.raw("'" + ROLE.attendant + "'")} = any(string_to_array(${tenant_members.role}, ','))`;
+const HAS_ASSIGNEE_ROLE = sql`${sql.raw("'" + ROLE.attendant + "'")} = any(string_to_array(${tenant_members.role}, ','))`;
 
 /**
  * Corretor **elegível a receber lead**: papel corretor e vínculo ativo
@@ -205,12 +205,12 @@ const HAS_BROKER_ROLE = sql`${sql.raw("'" + ROLE.attendant + "'")} = any(string_
  * continua nomeado nos leads que já atendeu, o que é responsabilidade do join
  * com `users` em `getLeads`, não desta condição).
  */
-const IS_ASSIGNABLE_BROKER = and(
-  HAS_BROKER_ROLE,
+const IS_ASSIGNABLE_ASSIGNEE = and(
+  HAS_ASSIGNEE_ROLE,
   isNull(tenant_members.deactivatedAt)
 );
 
-export async function getBrokers(tenantId: string): Promise<Broker[]> {
+export async function getAssignees(tenantId: string): Promise<Assignee[]> {
   return db
     .select({
       id: users.id,
@@ -222,7 +222,7 @@ export async function getBrokers(tenantId: string): Promise<Broker[]> {
     .from(tenant_members)
     .innerJoin(users, eq(tenant_members.userId, users.id))
     .where(
-      and(eq(tenant_members.organizationId, tenantId), IS_ASSIGNABLE_BROKER)
+      and(eq(tenant_members.organizationId, tenantId), IS_ASSIGNABLE_ASSIGNEE)
     );
 }
 
@@ -251,9 +251,9 @@ export async function getLeads<Selection extends QualificationSelection = Record
   return db
     .select({
       ...selectLeadColumns(qualification ?? ({} as Selection)),
-      brokerName: users.name,
+      assigneeName: users.name,
       // O Pipeline sinaliza o vínculo desativado quando a carteira foi mantida.
-      brokerDeactivatedAt: tenant_members.deactivatedAt,
+      assigneeDeactivatedAt: tenant_members.deactivatedAt,
     })
     .from(leads)
     // LEFT (não INNER): leads sem corretor continuam aparecendo no Kanban,
@@ -298,7 +298,7 @@ export async function getRecentLeads<Selection extends QualificationSelection = 
       name: leads.name,
       ...(qualification ?? ({} as Selection)),
       status: leads.status,
-      brokerName: users.name,
+      assigneeName: users.name,
       firstContactAt: leads.firstContactAt,
     })
     .from(leads)
@@ -674,7 +674,7 @@ export async function getDocumentSample(
 /**
  * Membro ativo de uma imobiliária (IMOV-02 AC4): falso para usuário de outro
  * tenant e para vínculo com `deactivatedAt` preenchido — mesma condição de
- * `IS_ASSIGNABLE_BROKER`, sem o filtro de papel (o captador não precisa ser
+ * `IS_ASSIGNABLE_ASSIGNEE`, sem o filtro de papel (o captador não precisa ser
  * corretor; qualquer papel ativo serve).
  */
 export async function isActiveMemberOf(
@@ -707,7 +707,7 @@ export interface DashboardKpis {
   qualificationRate: number | null;
   escalationRate: number | null;
   attendanceRate: number | null;
-  confirmedMeetingCount: number;
+  confirmedAppointmentCount: number;
 }
 
 /**
@@ -715,7 +715,7 @@ export interface DashboardKpis {
  * para o teste conseguir inspecionar o SQL gerado via `.toSQL()` sem
  * executar contra o banco. Projeção explícita: só as 4 colunas que a
  * agregação em TS de fato lê (`status`, `firstContactAt`, `firstResponseAt`,
- * `meetingAttended`) — nunca `executive_summary`, `escalation_reason` nem
+ * `appointmentAttended`) — nunca `executive_summary`, `escalation_reason` nem
  * qualquer outro campo de texto longo do lead.
  */
 function periodLeadsQuery(scope: LeadScope, range: DashboardRange) {
@@ -724,7 +724,7 @@ function periodLeadsQuery(scope: LeadScope, range: DashboardRange) {
       status: leads.status,
       firstContactAt: leads.firstContactAt,
       firstResponseAt: leads.firstResponseAt,
-      meetingAttended: leads.meetingAttended,
+      appointmentAttended: leads.appointmentAttended,
     })
     .from(leads)
     .where(
@@ -780,15 +780,15 @@ export async function getDashboardKpis(
   ).length;
   const escalationRate = leadCount === 0 ? null : escalatedCount / leadCount;
 
-  const confirmedMeetings = periodLeads.filter(
-    (lead) => lead.meetingAttended !== null
+  const confirmedAppointments = periodLeads.filter(
+    (lead) => lead.appointmentAttended !== null
   );
-  const confirmedMeetingCount = confirmedMeetings.length;
-  const attendedCount = confirmedMeetings.filter(
-    (lead) => lead.meetingAttended === true
+  const confirmedAppointmentCount = confirmedAppointments.length;
+  const attendedCount = confirmedAppointments.filter(
+    (lead) => lead.appointmentAttended === true
   ).length;
   const attendanceRate =
-    confirmedMeetingCount === 0 ? null : attendedCount / confirmedMeetingCount;
+    confirmedAppointmentCount === 0 ? null : attendedCount / confirmedAppointmentCount;
 
   return {
     avgFirstResponseMinutes,
@@ -797,7 +797,7 @@ export async function getDashboardKpis(
     qualificationRate,
     escalationRate,
     attendanceRate,
-    confirmedMeetingCount,
+    confirmedAppointmentCount,
   };
 }
 
@@ -889,9 +889,9 @@ export interface TenantSettingsUpdate {
   // acima, sem normalização de texto (dias são inteiros; horas já chegam
   // validadas pela action — T2): chave ausente = coluna intocada; `null`
   // explícito = limpa; valor presente = grava como veio.
-  meetingDays?: number[] | null;
-  meetingHoursStart?: string | null;
-  meetingHoursEnd?: string | null;
+  appointmentDays?: number[] | null;
+  appointmentHoursStart?: string | null;
+  appointmentHoursEnd?: string | null;
   // Baseline pré-piloto (lote-9 — BASE-01), cinco colunas independentes.
   // Mesmo padrão SPG-1 dos campos de horário comercial acima (sem
   // normalização de texto — são `integer`): chave ausente = coluna
@@ -899,7 +899,7 @@ export interface TenantSettingsUpdate {
   // (a validação de faixa já rodou na action antes de chegar aqui).
   baselineLeadsPerMonth?: number | null;
   baselineFirstResponseMinutes?: number | null;
-  baselineLeadToMeetingPct?: number | null;
+  baselineLeadToAppointmentPct?: number | null;
   baselineEscalationPct?: number | null;
   baselineAttendancePct?: number | null;
 }
@@ -948,14 +948,14 @@ export async function updateTenantSettings(
     setValues.agentVoiceTone = agentVoiceTone;
   }
 
-  if (updates.meetingDays !== undefined) {
-    setValues.meetingDays = updates.meetingDays;
+  if (updates.appointmentDays !== undefined) {
+    setValues.appointmentDays = updates.appointmentDays;
   }
-  if (updates.meetingHoursStart !== undefined) {
-    setValues.meetingHoursStart = updates.meetingHoursStart;
+  if (updates.appointmentHoursStart !== undefined) {
+    setValues.appointmentHoursStart = updates.appointmentHoursStart;
   }
-  if (updates.meetingHoursEnd !== undefined) {
-    setValues.meetingHoursEnd = updates.meetingHoursEnd;
+  if (updates.appointmentHoursEnd !== undefined) {
+    setValues.appointmentHoursEnd = updates.appointmentHoursEnd;
   }
 
   if (updates.baselineLeadsPerMonth !== undefined) {
@@ -964,8 +964,8 @@ export async function updateTenantSettings(
   if (updates.baselineFirstResponseMinutes !== undefined) {
     setValues.baselineFirstResponseMinutes = updates.baselineFirstResponseMinutes;
   }
-  if (updates.baselineLeadToMeetingPct !== undefined) {
-    setValues.baselineLeadToMeetingPct = updates.baselineLeadToMeetingPct;
+  if (updates.baselineLeadToAppointmentPct !== undefined) {
+    setValues.baselineLeadToAppointmentPct = updates.baselineLeadToAppointmentPct;
   }
   if (updates.baselineEscalationPct !== undefined) {
     setValues.baselineEscalationPct = updates.baselineEscalationPct;
@@ -1073,14 +1073,14 @@ export async function updateLeadStatus(
  * lote-8 (AD-021): o corretor é um usuário, e "pertencer ao tenant" passou a
  * ser ter vínculo em `tenant_members` com aquela imobiliária.
  */
-export async function updateLeadBroker(
+export async function updateLeadAssignee(
   scope: LeadScope,
   leadId: string,
-  brokerId: string
+  assigneeId: string
 ): Promise<Lead | null> {
   const rows = await db
     .update(leads)
-    .set({ assignedUserId: brokerId, updatedAt: new Date() })
+    .set({ assignedUserId: assigneeId, updatedAt: new Date() })
     .where(
       and(
         eq(leads.tenantId, scope.tenantId),
@@ -1092,9 +1092,9 @@ export async function updateLeadBroker(
             .from(tenant_members)
             .where(
               and(
-                eq(tenant_members.userId, brokerId),
+                eq(tenant_members.userId, assigneeId),
                 eq(tenant_members.organizationId, scope.tenantId),
-                IS_ASSIGNABLE_BROKER
+                IS_ASSIGNABLE_ASSIGNEE
               )
             )
         )
@@ -1111,14 +1111,14 @@ export async function updateLeadBroker(
  * SCOPE-02). Retorna `null` (no-op) para lead inexistente, de outro tenant,
  * ou fora da carteira do corretor, sem escrever nada.
  */
-export async function setMeetingAttendance(
+export async function setAppointmentAttendance(
   scope: LeadScope,
   leadId: string,
   value: boolean | null
 ): Promise<Lead | null> {
   const rows = await db
     .update(leads)
-    .set({ meetingAttended: value, updatedAt: new Date() })
+    .set({ appointmentAttended: value, updatedAt: new Date() })
     .where(
       and(eq(leads.tenantId, scope.tenantId), eq(leads.id, leadId), assignedTo(scope))
     )
@@ -1498,12 +1498,12 @@ export async function recordHumanMessage(
   }
 }
 
-export interface PendingMeeting {
+export interface PendingAppointment {
   leadId: string;
   leadName: string;
-  meetingAt: Date;
+  appointmentAt: Date;
   assignedUserId: string | null;
-  brokerName: string | null;
+  assigneeName: string | null;
 }
 
 /**
@@ -1521,18 +1521,18 @@ export interface PendingMeeting {
  * Ordenado pela reunião mais antiga primeiro (mais urgente), id como
  * desempate determinístico.
  */
-export async function getPendingAttendanceMeetings(
+export async function getPendingAttendanceAppointments(
   scope: LeadScope,
   now: Date
-): Promise<PendingMeeting[]> {
+): Promise<PendingAppointment[]> {
   const rows = await db
     .select({
       leadId: leads.id,
       leadName: leads.name,
-      meetingAt: leads.meetingAt,
-      meetingAttended: leads.meetingAttended,
+      appointmentAt: leads.appointmentAt,
+      appointmentAttended: leads.appointmentAttended,
       assignedUserId: leads.assignedUserId,
-      brokerName: users.name,
+      assigneeName: users.name,
     })
     .from(leads)
     .leftJoin(users, eq(leads.assignedUserId, users.id))
@@ -1540,20 +1540,20 @@ export async function getPendingAttendanceMeetings(
       and(
         eq(leads.tenantId, scope.tenantId),
         assignedTo(scope),
-        isNotNull(leads.meetingAt),
-        isNull(leads.meetingAttended)
+        isNotNull(leads.appointmentAt),
+        isNull(leads.appointmentAttended)
       )
     )
-    .orderBy(asc(leads.meetingAt), asc(leads.id));
+    .orderBy(asc(leads.appointmentAt), asc(leads.id));
 
   return rows
-    .filter((row) => isPendingAttendance(row.meetingAt!, row.meetingAttended, now))
+    .filter((row) => isPendingAttendance(row.appointmentAt!, row.appointmentAttended, now))
     .map((row) => ({
       leadId: row.leadId,
       leadName: row.leadName,
-      meetingAt: row.meetingAt!,
+      appointmentAt: row.appointmentAt!,
       assignedUserId: row.assignedUserId,
-      brokerName: row.brokerName,
+      assigneeName: row.assigneeName,
     }));
 }
 
@@ -1578,12 +1578,12 @@ export interface UpdateLeadFromAgentInput {
   leadColumns?: PersistedQualificationColumns;
   executiveSummary?: string | null;
   escalationReason?: string | null;
-  meetingAt?: Date | null;
+  appointmentAt?: Date | null;
   /**
    * Responsável escolhido pela política de atribuição do CRM (lote-8 —
    * AD-022), nunca pelo payload do agente: `LeadPatchDto` não tem este campo,
    * então nada que venha da rede o alcança. Existe aqui para que a atribuição
-   * caia na MESMA `UPDATE` do status e do `meetingAt`.
+   * caia na MESMA `UPDATE` do status e do `appointmentAt`.
    */
   assignedUserId?: string | null;
 }
@@ -1621,7 +1621,7 @@ export async function updateLeadFromAgent(
   if ("escalationReason" in input) {
     setValues.escalationReason = input.escalationReason;
   }
-  if ("meetingAt" in input) setValues.meetingAt = input.meetingAt;
+  if ("appointmentAt" in input) setValues.appointmentAt = input.appointmentAt;
   if ("assignedUserId" in input) setValues.assignedUserId = input.assignedUserId;
 
   const rows = await executor
@@ -1638,13 +1638,13 @@ const ACTIVE_LEAD_STATUSES: LeadStatus[] = [LEAD_STATUS.engaged, LEAD_STATUS.esc
 
 /**
  * Carga ativa de cada corretor do tenant (lote-7 — ATRIB-01), para
- * `assignBroker` (função pura em `src/lib/broker-assignment.ts`) escolher
+ * `assignAssignee` (função pura em `src/lib/assignee-assignment.ts`) escolher
  * quem recebe um lead novo. Uma única query agregada (LEFT JOIN, nunca
  * INNER): corretor sem nenhum lead ativo aparece com `activeLeads: 0` em vez
  * de sumir do resultado — o join já filtra pelos status ativos, então
  * `count(leads.id)` conta só as linhas que casaram.
  */
-export async function getBrokerLoads(tenantId: string): Promise<BrokerLoad[]> {
+export async function getAssigneeLoads(tenantId: string): Promise<AssigneeLoad[]> {
   const rows = await db
     .select({
       id: tenant_members.userId,
@@ -1661,7 +1661,7 @@ export async function getBrokerLoads(tenantId: string): Promise<BrokerLoad[]> {
       )
     )
     .where(
-      and(eq(tenant_members.organizationId, tenantId), IS_ASSIGNABLE_BROKER)
+      and(eq(tenant_members.organizationId, tenantId), IS_ASSIGNABLE_ASSIGNEE)
     )
     .groupBy(tenant_members.userId, tenant_members.createdAt);
 
@@ -1675,17 +1675,17 @@ export async function getBrokerLoads(tenantId: string): Promise<BrokerLoad[]> {
 /**
  * Duração do slot de reunião do produto (spec.md — Assumptions: "30 minutos,
  * alinhado ao início da hora ou à meia hora"). É o que transforma o
- * `meetingAt` gravado num intervalo, tanto para o filtro de sobreposição
+ * `appointmentAt` gravado num intervalo, tanto para o filtro de sobreposição
  * quanto para a checagem de janela.
  */
-export const MEETING_DURATION_MS = 30 * 60 * 1000;
+export const APPOINTMENT_DURATION_MS = 30 * 60 * 1000;
 
 /**
  * Reuniões já marcadas de cada corretor, agregadas na própria linha do vínculo
  * (subconsulta correlacionada). `json_agg` devolve os instantes como string
  * ISO — convertidos para `Date` no mapeamento.
  */
-const MEETINGS_JSON = sql<string[] | null>`(
+const APPOINTMENTS_JSON = sql<string[] | null>`(
   select json_agg(agenda.meeting_at)
   from ${leads} agenda
   where agenda.assigned_user_id = ${tenant_members.userId}
@@ -1698,9 +1698,9 @@ const MEETINGS_JSON = sql<string[] | null>`(
  * ativa, janela de trabalho declarada e reuniões já marcadas de cada corretor
  * ATIVO da imobiliária, numa query agregada só.
  *
- * Estende `getBrokerLoads` sem substituí-lo: mesmo LEFT JOIN (corretor sem
+ * Estende `getAssigneeLoads` sem substituí-lo: mesmo LEFT JOIN (corretor sem
  * lead ativo continua aparecendo com `activeLeads: 0`) e mesmo filtro
- * `IS_ASSIGNABLE_BROKER` — papel corretor e vínculo ativo, que é o que faz o
+ * `IS_ASSIGNABLE_ASSIGNEE` — papel corretor e vínculo ativo, que é o que faz o
  * corretor desativado sair dos candidatos mesmo com a janela cobrindo o
  * horário (spec.md — Edge Cases).
  *
@@ -1708,10 +1708,10 @@ const MEETINGS_JSON = sql<string[] | null>`(
  * pela metade é janela não declarada, e quem não declarou é indisponível
  * sempre (AGENDA-01 AC5).
  */
-export async function getBrokerCandidates(
+export async function getAssigneeCandidates(
   tenantId: string,
   executor: EscalationExecutor = db
-): Promise<BrokerCandidate[]> {
+): Promise<AssigneeCandidate[]> {
   const rows = await executor
     .select({
       id: tenant_members.userId,
@@ -1720,7 +1720,7 @@ export async function getBrokerCandidates(
       workDays: tenant_members.workDays,
       workHoursStart: tenant_members.workHoursStart,
       workHoursEnd: tenant_members.workHoursEnd,
-      meetings: MEETINGS_JSON,
+      appointments: APPOINTMENTS_JSON,
     })
     .from(tenant_members)
     .leftJoin(
@@ -1732,7 +1732,7 @@ export async function getBrokerCandidates(
       )
     )
     .where(
-      and(eq(tenant_members.organizationId, tenantId), IS_ASSIGNABLE_BROKER)
+      and(eq(tenant_members.organizationId, tenantId), IS_ASSIGNABLE_ASSIGNEE)
     )
     // Pela PK do vínculo: o Postgres deriva as demais colunas de
     // `tenant_members` (dependência funcional), inclusive as da subconsulta.
@@ -1750,9 +1750,9 @@ export async function getBrokerCandidates(
             end: row.workHoursEnd,
           }
         : null,
-    meetings: (row.meetings ?? []).map((meetingAt) => {
-      const start = new Date(meetingAt);
-      return { start, end: new Date(start.getTime() + MEETING_DURATION_MS) };
+    appointments: (row.appointments ?? []).map((appointmentAt) => {
+      const start = new Date(appointmentAt);
+      return { start, end: new Date(start.getTime() + APPOINTMENT_DURATION_MS) };
     }),
   }));
 }
@@ -1765,7 +1765,7 @@ export async function getBrokerCandidates(
  * corretores não pode sair do CRM (AD-018), então quem monta os candidatos não
  * carrega nome nem e-mail de ninguém.
  */
-export async function getBrokerContact(
+export async function getAssigneeContact(
   tenantId: string,
   userId: string
 ): Promise<{ name: string; email: string } | null> {
@@ -1792,7 +1792,7 @@ export type AssignResult =
   | {
       ok: true;
       /** `null` só no escalonamento sem nenhum corretor ativo (ATRIB-03 AC4). */
-      brokerId: string | null;
+      assigneeId: string | null;
       lead: Lead;
     }
   | { ok: false; reason: AssignFailureReason };
@@ -1801,7 +1801,7 @@ export type AssignResult =
  * Atribuição no agendamento (ATRIB-02; AD-022). Escolhe entre os corretores
  * cuja janela cobre INTEIRAMENTE o slot de 30 minutos e que não têm reunião
  * sobreposta, pelo desempate determinístico de sempre — e grava a escolha
- * junto com `meetingAt` e o resto do patch numa **única** `UPDATE`.
+ * junto com `appointmentAt` e o resto do patch numa **única** `UPDATE`.
  *
  * Nada é gravado quando ninguém cobre o horário: o chamador recusa o
  * agendamento com `sem-corretor-disponivel` (AC5). Dois agendamentos
@@ -1815,28 +1815,28 @@ export type AssignResult =
  * responsável: a reunião precisa cair com quem atende naquele horário
  * (spec.md — Success Criteria).
  */
-export async function assignBrokerForMeeting(
+export async function assignForAppointment(
   tenantId: string,
   leadId: string,
-  meetingAt: Date,
+  appointmentAt: Date,
   patch: UpdateLeadFromAgentInput = {}
 ): Promise<AssignResult> {
-  const candidates = await getBrokerCandidates(tenantId);
-  const meetingEnd = new Date(meetingAt.getTime() + MEETING_DURATION_MS);
-  const brokerId = assignBroker(
-    selectForMeeting(candidates, meetingAt, meetingEnd)
+  const candidates = await getAssigneeCandidates(tenantId);
+  const appointmentEnd = new Date(appointmentAt.getTime() + APPOINTMENT_DURATION_MS);
+  const assigneeId = assignAssignee(
+    selectForAppointment(candidates, appointmentAt, appointmentEnd)
   );
 
-  if (!brokerId) return { ok: false, reason: PROBLEM_CODE.no_assignee_available };
+  if (!assigneeId) return { ok: false, reason: PROBLEM_CODE.no_assignee_available };
 
   try {
     const updated = await updateLeadFromAgent(tenantId, leadId, {
       ...patch,
-      meetingAt,
-      assignedUserId: brokerId,
+      appointmentAt,
+      assignedUserId: assigneeId,
     });
     if (!updated) return { ok: false, reason: "lead-nao-encontrado" };
-    return { ok: true, brokerId, lead: updated };
+    return { ok: true, assigneeId, lead: updated };
   } catch (error) {
     if (isUniqueViolation(error)) {
       return { ok: false, reason: PROBLEM_CODE.appointment_conflict };
@@ -1859,7 +1859,7 @@ export async function assignBrokerForMeeting(
  * Lead que JÁ tem responsável não é reatribuído (AC5): o patch é gravado e o
  * responsável atual é devolvido intacto.
  */
-export async function assignBrokerForEscalation(
+export async function assignForEscalation(
   tenantId: string,
   leadId: string,
   at: Date,
@@ -1869,15 +1869,15 @@ export async function assignBrokerForEscalation(
   const assign = async (tx: EscalationExecutor): Promise<AssignResult> => {
     const [lead] = await tx.select().from(leads).where(and(eq(leads.tenantId, tenantId), eq(leads.id, leadId))).for("update");
     if (!lead) return { ok: false, reason: "lead-nao-encontrado" };
-    let brokerId = lead.assignedUserId;
-    if (!brokerId) brokerId = assignBroker(selectForEscalation(await getBrokerCandidates(tenantId, tx), at));
+    let assigneeId = lead.assignedUserId;
+    if (!assigneeId) assigneeId = assignAssignee(selectForEscalation(await getAssigneeCandidates(tenantId, tx), at));
     const updated = await updateLeadFromAgent(tenantId, leadId, {
       ...patch,
       // Chave ausente quando não há corretor: a coluna não é tocada.
-      ...(brokerId ? { assignedUserId: brokerId } : {}),
+      ...(assigneeId ? { assignedUserId: assigneeId } : {}),
     }, tx);
     if (!updated) return { ok: false, reason: "lead-nao-encontrado" };
-    return { ok: true, brokerId, lead: updated };
+    return { ok: true, assigneeId, lead: updated };
   };
   // T23 já mantém lead→episódio na transação externa; nunca abrir savepoint aqui.
   return executor ? assign(executor) : db.transaction(assign);
@@ -1909,8 +1909,8 @@ export interface CreateAgentLeadResult {
  * atribuição por menor carga na criação (ATRIB-01, lote-7) foi removida daqui:
  * quando o lead é criado ainda não existe informação nenhuma sobre quando ele
  * pode se reunir — o horário só emerge durante a conversa. O responsável passa
- * a ser escolhido no agendamento (`assignBrokerForMeeting`) ou, como rede de
- * segurança, no escalonamento (`assignBrokerForEscalation`).
+ * a ser escolhido no agendamento (`assignForAppointment`) ou, como rede de
+ * segurança, no escalonamento (`assignForEscalation`).
  */
 export async function createAgentLead(
   tenantId: string,
@@ -2770,7 +2770,7 @@ export interface CarteiraLead {
   id: string;
   name: string;
   status: LeadStatus;
-  meetingAt: Date | null;
+  appointmentAt: Date | null;
 }
 
 /**
@@ -2789,7 +2789,7 @@ export async function getActiveLeadsOfMember(
       id: leads.id,
       name: leads.name,
       status: leads.status,
-      meetingAt: leads.meetingAt,
+      appointmentAt: leads.appointmentAt,
     })
     .from(leads)
     .where(
@@ -2808,31 +2808,31 @@ export async function getActiveLeadsOfMember(
  * Independente do status: uma reunião marcada vale mesmo em lead já agendado —
  * é justamente o caso mais comum.
  */
-export async function getUpcomingMeetingsOfMember(
+export async function getUpcomingAppointmentsOfMember(
   tenantId: string,
   userId: string,
   from: Date = new Date()
-): Promise<{ leadId: string; leadName: string; meetingAt: Date }[]> {
+): Promise<{ leadId: string; leadName: string; appointmentAt: Date }[]> {
   const rows = await db
     .select({
       leadId: leads.id,
       leadName: leads.name,
-      meetingAt: leads.meetingAt,
+      appointmentAt: leads.appointmentAt,
     })
     .from(leads)
     .where(
       and(
         eq(leads.tenantId, tenantId),
         eq(leads.assignedUserId, userId),
-        gte(leads.meetingAt, from)
+        gte(leads.appointmentAt, from)
       )
     )
-    .orderBy(asc(leads.meetingAt), asc(leads.id));
+    .orderBy(asc(leads.appointmentAt), asc(leads.id));
 
   return rows.map((row) => ({
     leadId: row.leadId,
     leadName: row.leadName,
-    meetingAt: row.meetingAt as Date,
+    appointmentAt: row.appointmentAt as Date,
   }));
 }
 
@@ -2868,7 +2868,7 @@ export async function transferCarteiraAndDeactivate(input: {
         and(
           eq(tenant_members.userId, input.toUserId),
           eq(tenant_members.organizationId, input.tenantId),
-          IS_ASSIGNABLE_BROKER
+          IS_ASSIGNABLE_ASSIGNEE
         )
       )
       .for("update");

@@ -5,17 +5,17 @@
  * (design.md — Components: "reunião marcada e já passada").
  *
  * Marcar comparecimento de uma reunião que ainda não aconteceu não tem
- * significado (spec.md — Assumptions): sem `meetingAt`, ou com `meetingAt`
+ * significado (spec.md — Assumptions): sem `appointmentAt`, ou com `appointmentAt`
  * no futuro (inclusive o instante exato de `now`), o controle continua
  * somente leitura.
  */
-export function canEditMeetingAttendance(
-  meetingAt: Date | string | null,
+export function canEditAppointmentAttendance(
+  appointmentAt: Date | string | null,
   now: Date
 ): boolean {
-  if (meetingAt === null) {
+  if (appointmentAt === null) {
     return false;
   }
-  const meetingInstant = meetingAt instanceof Date ? meetingAt : new Date(meetingAt);
-  return meetingInstant.getTime() < now.getTime();
+  const appointmentInstant = appointmentAt instanceof Date ? appointmentAt : new Date(appointmentAt);
+  return appointmentInstant.getTime() < now.getTime();
 }

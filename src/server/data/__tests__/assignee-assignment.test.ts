@@ -4,7 +4,7 @@ import { afterAll, afterEach, describe, expect, it } from "vitest";
 import { eq, inArray } from "drizzle-orm";
 import { db } from "../../../db";
 import { leads, tenant_members, tenants, users } from "../../../db/schema";
-import { createAgentLead, getBrokerLoads, getBrokers } from "../index";
+import { createAgentLead, getAssigneeLoads, getAssignees } from "../index";
 
 // Tenants + corretores PRÓPRIOS deste arquivo (nunca o snapshot do seed) —
 // mesmo padrão de isolamento dos demais testes de integração da DAL
@@ -103,14 +103,14 @@ describe("server/data — getBrokerLoads / atribuição de corretor em createAge
     it("conta só em_qualificacao e escalado_humano como carga ativa; qualificado_agendado não conta", async () => {
       const tenantId = await createTenant("Tenant Loads A");
       createdTenantIds.push(tenantId);
-      const brokerId = await createBroker(tenantId, "Corretor A", new Date());
+      const assigneeId = await createBroker(tenantId, "Corretor A", new Date());
 
-      await createLead(tenantId, brokerId, "em_qualificacao");
-      await createLead(tenantId, brokerId, "escalado_humano");
-      await createLead(tenantId, brokerId, "qualificado_agendado");
+      await createLead(tenantId, assigneeId, "em_qualificacao");
+      await createLead(tenantId, assigneeId, "escalado_humano");
+      await createLead(tenantId, assigneeId, "qualificado_agendado");
 
-      const loads = await getBrokerLoads(tenantId);
-      const row = loads.find((l) => l.id === brokerId);
+      const loads = await getAssigneeLoads(tenantId);
+      const row = loads.find((l) => l.id === assigneeId);
       expect(row).toBeDefined();
       expect(row!.activeLeads).toBe(2);
     });
@@ -118,11 +118,11 @@ describe("server/data — getBrokerLoads / atribuição de corretor em createAge
     it("devolve corretor com activeLeads: 0 quando não tem nenhum lead ativo (LEFT JOIN, nunca INNER)", async () => {
       const tenantId = await createTenant("Tenant Loads Zero");
       createdTenantIds.push(tenantId);
-      const brokerId = await createBroker(tenantId, "Corretor Sem Lead", new Date());
+      const assigneeId = await createBroker(tenantId, "Corretor Sem Lead", new Date());
 
-      const loads = await getBrokerLoads(tenantId);
+      const loads = await getAssigneeLoads(tenantId);
       expect(loads).toHaveLength(1);
-      expect(loads[0].id).toBe(brokerId);
+      expect(loads[0].id).toBe(assigneeId);
       expect(loads[0].activeLeads).toBe(0);
     });
 
@@ -134,7 +134,7 @@ describe("server/data — getBrokerLoads / atribuição de corretor em createAge
       const brokerAId = await createBroker(tenantAId, "Corretor A", new Date());
       await createBroker(tenantBId, "Corretor B", new Date());
 
-      const loadsA = await getBrokerLoads(tenantAId);
+      const loadsA = await getAssigneeLoads(tenantAId);
       expect(loadsA.map((l) => l.id)).toEqual([brokerAId]);
     });
 
@@ -145,12 +145,12 @@ describe("server/data — getBrokerLoads / atribuição de corretor em createAge
       const tenantId = await createTenant("Tenant Loads Papel");
       createdTenantIds.push(tenantId);
 
-      const brokerId = await createBroker(tenantId, "Corretor", new Date());
+      const assigneeId = await createBroker(tenantId, "Corretor", new Date());
       await createMember(tenantId, "Gestor", new Date(), "gestor");
       await createMember(tenantId, "Administrador", new Date(), "administrador");
 
-      const loads = await getBrokerLoads(tenantId);
-      expect(loads.map((l) => l.id)).toEqual([brokerId]);
+      const loads = await getAssigneeLoads(tenantId);
+      expect(loads.map((l) => l.id)).toEqual([assigneeId]);
     });
 
     // PERM-01 AC4 (união de permissões): quem acumula corretor com outro
@@ -166,7 +166,7 @@ describe("server/data — getBrokerLoads / atribuição de corretor em createAge
         "corretor,administrador"
       );
 
-      const loads = await getBrokerLoads(tenantId);
+      const loads = await getAssigneeLoads(tenantId);
       expect(loads.map((l) => l.id)).toEqual([acumuladoId]);
     });
   });
@@ -176,7 +176,7 @@ describe("server/data — getBrokerLoads / atribuição de corretor em createAge
       const tenantId = await createTenant("Tenant Brokers Papel");
       createdTenantIds.push(tenantId);
 
-      const brokerId = await createBroker(tenantId, "Corretor Listado", new Date());
+      const assigneeId = await createBroker(tenantId, "Corretor Listado", new Date());
       const acumuladoId = await createMember(
         tenantId,
         "Gestor Que Também Atende",
@@ -185,14 +185,14 @@ describe("server/data — getBrokerLoads / atribuição de corretor em createAge
       );
       const gestorId = await createMember(tenantId, "Gestor Puro", new Date(), "gestor");
 
-      const rows = await getBrokers(tenantId);
+      const rows = await getAssignees(tenantId);
       const ids = rows.map((b) => b.id).sort();
-      expect(ids).toEqual([brokerId, acumuladoId].sort());
+      expect(ids).toEqual([assigneeId, acumuladoId].sort());
       expect(ids).not.toContain(gestorId);
 
-      const listado = rows.find((b) => b.id === brokerId);
+      const listado = rows.find((b) => b.id === assigneeId);
       expect(listado!.name).toBe("Corretor Listado");
-      expect(listado!.email).toBe(`${brokerId}@fixture.test`);
+      expect(listado!.email).toBe(`${assigneeId}@fixture.test`);
       expect(listado!.tenantId).toBe(tenantId);
     });
   });

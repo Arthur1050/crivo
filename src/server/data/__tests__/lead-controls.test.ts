@@ -14,15 +14,15 @@ import {
 import {
   getLastAgentMessageAt,
   getLead,
-  setMeetingAttendance,
-  updateLeadBroker,
+  setAppointmentAttendance,
+  updateLeadAssignee,
   serviceScope,
 } from "../index";
 
 // Tenants + corretores + leads PRÓPRIOS deste arquivo (nunca o snapshot do
 // seed) — mesmo padrão de isolamento dos demais testes de integração da DAL
 // (lote-5/6/7). Cobre T7 (lote-7 — ATRIB-02, KPI-02, SHELL-01):
-// updateLeadBroker, setMeetingAttendance, getLastAgentMessageAt.
+// updateLeadAssignee, setAppointmentAttendance, getLastAgentMessageAt.
 async function createTenant(name: string): Promise<string> {
   const id = randomUUID();
   await db.insert(tenants).values({
@@ -133,13 +133,13 @@ describe("server/data — updateLeadBroker / setMeetingAttendance / getLastAgent
 
   describe("updateLeadBroker", () => {
     it("troca o corretor do lead no tenant ativo (happy path)", async () => {
-      const tenantId = await createTenant("Tenant Broker Happy");
+      const tenantId = await createTenant("Tenant Assignee Happy");
       createdTenantIds.push(tenantId);
       const brokerAId = await createBroker(tenantId, "Corretor A");
       const brokerBId = await createBroker(tenantId, "Corretor B");
       const leadId = await createLead(tenantId, brokerAId);
 
-      const updated = await updateLeadBroker(serviceScope(tenantId), leadId, brokerBId);
+      const updated = await updateLeadAssignee(serviceScope(tenantId), leadId, brokerBId);
       expect(updated).not.toBeNull();
       expect(updated!.assignedUserId).toBe(brokerBId);
 
@@ -148,14 +148,14 @@ describe("server/data — updateLeadBroker / setMeetingAttendance / getLastAgent
     });
 
     it("corretor de outro tenant: devolve null e deixa assignedUserId inalterado (teste negativo)", async () => {
-      const tenantAId = await createTenant("Tenant Broker Cross A");
-      const tenantBId = await createTenant("Tenant Broker Cross B");
+      const tenantAId = await createTenant("Tenant Assignee Cross A");
+      const tenantBId = await createTenant("Tenant Assignee Cross B");
       createdTenantIds.push(tenantAId, tenantBId);
       const brokerAId = await createBroker(tenantAId, "Corretor A");
       const brokerBId = await createBroker(tenantBId, "Corretor de Outro Tenant");
       const leadId = await createLead(tenantAId, brokerAId);
 
-      const result = await updateLeadBroker(serviceScope(tenantAId), leadId, brokerBId);
+      const result = await updateLeadAssignee(serviceScope(tenantAId), leadId, brokerBId);
       expect(result).toBeNull();
 
       const reread = await getLead(serviceScope(tenantAId), leadId);
@@ -163,14 +163,14 @@ describe("server/data — updateLeadBroker / setMeetingAttendance / getLastAgent
     });
 
     it("lead de outro tenant: devolve null", async () => {
-      const tenantAId = await createTenant("Tenant Broker LeadCross A");
-      const tenantBId = await createTenant("Tenant Broker LeadCross B");
+      const tenantAId = await createTenant("Tenant Assignee LeadCross A");
+      const tenantBId = await createTenant("Tenant Assignee LeadCross B");
       createdTenantIds.push(tenantAId, tenantBId);
       const brokerBId = await createBroker(tenantBId, "Corretor B");
       const leadBId = await createLead(tenantBId, brokerBId);
 
       // tenantA tentando mover um lead que pertence ao tenantB.
-      const result = await updateLeadBroker(serviceScope(tenantAId), leadBId, brokerBId);
+      const result = await updateLeadAssignee(serviceScope(tenantAId), leadBId, brokerBId);
       expect(result).toBeNull();
 
       const reread = await getLead(serviceScope(tenantBId), leadBId);
@@ -180,13 +180,13 @@ describe("server/data — updateLeadBroker / setMeetingAttendance / getLastAgent
     // lote-8 — ATRIB-02 AC2: só corretor recebe lead. Um gestor da MESMA
     // imobiliária tem vínculo válido, mas não é candidato a responsável.
     it("membro da imobiliária sem papel corretor: devolve null e deixa assignedUserId inalterado", async () => {
-      const tenantId = await createTenant("Tenant Broker Papel");
+      const tenantId = await createTenant("Tenant Assignee Papel");
       createdTenantIds.push(tenantId);
       const brokerAId = await createBroker(tenantId, "Corretor A");
       const gestorId = await createMember(tenantId, "Gestor Puro", "gestor");
       const leadId = await createLead(tenantId, brokerAId);
 
-      const result = await updateLeadBroker(serviceScope(tenantId), leadId, gestorId);
+      const result = await updateLeadAssignee(serviceScope(tenantId), leadId, gestorId);
       expect(result).toBeNull();
 
       const reread = await getLead(serviceScope(tenantId), leadId);
@@ -198,7 +198,7 @@ describe("server/data — updateLeadBroker / setMeetingAttendance / getLastAgent
     // própria carteira; um lead de OUTRO corretor no mesmo tenant devolve
     // null, mesmo sendo do tenant certo.
     it("corretor com escopo de carteira: lead de outro corretor no MESMO tenant devolve null (fora da carteira)", async () => {
-      const tenantId = await createTenant("Tenant Broker Escopo Carteira");
+      const tenantId = await createTenant("Tenant Assignee Escopo Carteira");
       createdTenantIds.push(tenantId);
       const brokerAId = await createBroker(tenantId, "Corretor Dono");
       const brokerBId = await createBroker(tenantId, "Corretor Novo Responsavel");
@@ -206,7 +206,7 @@ describe("server/data — updateLeadBroker / setMeetingAttendance / getLastAgent
       const leadId = await createLead(tenantId, outroCorretorId);
 
       const scope = { tenantId, assignedUserId: brokerAId };
-      const result = await updateLeadBroker(scope, leadId, brokerBId);
+      const result = await updateLeadAssignee(scope, leadId, brokerBId);
       expect(result).toBeNull();
 
       const reread = await getLead(serviceScope(tenantId), leadId);
@@ -216,13 +216,13 @@ describe("server/data — updateLeadBroker / setMeetingAttendance / getLastAgent
     // SCOPE-02 AC5: administrador e gestor (assignedUserId: null no escopo)
     // seguem alcançando qualquer lead do tenant, mesmo o de um corretor.
     it("escopo de imobiliária inteira (admin/gestor): troca o corretor de lead de QUALQUER carteira do tenant", async () => {
-      const tenantId = await createTenant("Tenant Broker Escopo Admin");
+      const tenantId = await createTenant("Tenant Assignee Escopo Admin");
       createdTenantIds.push(tenantId);
       const brokerAId = await createBroker(tenantId, "Corretor Dono");
       const brokerBId = await createBroker(tenantId, "Corretor Novo Responsavel");
       const leadId = await createLead(tenantId, brokerAId);
 
-      const result = await updateLeadBroker(serviceScope(tenantId), leadId, brokerBId);
+      const result = await updateLeadAssignee(serviceScope(tenantId), leadId, brokerBId);
       expect(result).not.toBeNull();
       expect(result!.assignedUserId).toBe(brokerBId);
     });
@@ -234,17 +234,17 @@ describe("server/data — updateLeadBroker / setMeetingAttendance / getLastAgent
       createdTenantIds.push(tenantId);
       const leadId = await createLead(tenantId);
 
-      const toTrue = await setMeetingAttendance(serviceScope(tenantId), leadId, true);
-      expect(toTrue!.meetingAttended).toBe(true);
-      expect((await getLead(serviceScope(tenantId), leadId))!.meetingAttended).toBe(true);
+      const toTrue = await setAppointmentAttendance(serviceScope(tenantId), leadId, true);
+      expect(toTrue!.appointmentAttended).toBe(true);
+      expect((await getLead(serviceScope(tenantId), leadId))!.appointmentAttended).toBe(true);
 
-      const toFalse = await setMeetingAttendance(serviceScope(tenantId), leadId, false);
-      expect(toFalse!.meetingAttended).toBe(false);
-      expect((await getLead(serviceScope(tenantId), leadId))!.meetingAttended).toBe(false);
+      const toFalse = await setAppointmentAttendance(serviceScope(tenantId), leadId, false);
+      expect(toFalse!.appointmentAttended).toBe(false);
+      expect((await getLead(serviceScope(tenantId), leadId))!.appointmentAttended).toBe(false);
 
-      const toNull = await setMeetingAttendance(serviceScope(tenantId), leadId, null);
-      expect(toNull!.meetingAttended).toBeNull();
-      expect((await getLead(serviceScope(tenantId), leadId))!.meetingAttended).toBeNull();
+      const toNull = await setAppointmentAttendance(serviceScope(tenantId), leadId, null);
+      expect(toNull!.appointmentAttended).toBeNull();
+      expect((await getLead(serviceScope(tenantId), leadId))!.appointmentAttended).toBeNull();
     });
 
     it("lead de outro tenant: devolve null sem escrever", async () => {
@@ -253,14 +253,14 @@ describe("server/data — updateLeadBroker / setMeetingAttendance / getLastAgent
       createdTenantIds.push(tenantAId, tenantBId);
       const leadBId = await createLead(tenantBId);
 
-      const result = await setMeetingAttendance(serviceScope(tenantAId), leadBId, true);
+      const result = await setAppointmentAttendance(serviceScope(tenantAId), leadBId, true);
       expect(result).toBeNull();
 
       const reread = await getLead(serviceScope(tenantBId), leadBId);
-      expect(reread!.meetingAttended).toBeNull();
+      expect(reread!.appointmentAttended).toBeNull();
     });
 
-    // lote-9 — SCOPE-02 (T18): mesmo filtro de carteira que updateLeadBroker.
+    // lote-9 — SCOPE-02 (T18): mesmo filtro de carteira que updateLeadAssignee.
     it("corretor com escopo de carteira: lead de outro corretor no MESMO tenant devolve null (fora da carteira)", async () => {
       const tenantId = await createTenant("Tenant Attendance Escopo Carteira");
       createdTenantIds.push(tenantId);
@@ -269,11 +269,11 @@ describe("server/data — updateLeadBroker / setMeetingAttendance / getLastAgent
       const leadId = await createLead(tenantId, outroCorretorId);
 
       const scope = { tenantId, assignedUserId: brokerAId };
-      const result = await setMeetingAttendance(scope, leadId, true);
+      const result = await setAppointmentAttendance(scope, leadId, true);
       expect(result).toBeNull();
 
       const reread = await getLead(serviceScope(tenantId), leadId);
-      expect(reread!.meetingAttended).toBeNull();
+      expect(reread!.appointmentAttended).toBeNull();
     });
 
     // SCOPE-02 AC5: administrador/gestor seguem alcançando qualquer lead.
@@ -283,9 +283,9 @@ describe("server/data — updateLeadBroker / setMeetingAttendance / getLastAgent
       const brokerAId = await createBroker(tenantId, "Corretor Dono");
       const leadId = await createLead(tenantId, brokerAId);
 
-      const result = await setMeetingAttendance(serviceScope(tenantId), leadId, true);
+      const result = await setAppointmentAttendance(serviceScope(tenantId), leadId, true);
       expect(result).not.toBeNull();
-      expect(result!.meetingAttended).toBe(true);
+      expect(result!.appointmentAttended).toBe(true);
     });
   });
 

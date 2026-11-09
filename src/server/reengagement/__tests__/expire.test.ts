@@ -10,7 +10,7 @@ import { conversations, leadAgentState, leads, messages, reengagementEpisodes, t
 import * as cloudApi from "../../whatsapp/cloud-api";
 import { expireEpisode } from "../repository";
 
-const tenantId = randomUUID(), emptyTenant = randomUUID(), brokerId = randomUUID(), previousBroker = randomUUID();
+const tenantId = randomUUID(), emptyTenant = randomUUID(), assigneeId = randomUUID(), previousBroker = randomUUID();
 const tenantIds = [tenantId, emptyTenant], now = new Date("2026-10-06T15:00:00Z"), hour = 3600000;
 let contact = 5534999700000;
 type State = typeof reengagementEpisodes.$inferInsert.state;
@@ -59,8 +59,8 @@ async function waitForLocks(pids: number[], count: number) {
 }
 beforeAll(async () => {
   await db.insert(tenants).values(tenantIds.map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T23", agentName: "Agente", supportedSegment: "ambos" as const })));
-  await db.insert(users).values([brokerId, previousBroker].map((id) => ({ id, name: "Corretor próprio", email: `${id}@fixture.test` })));
-  await db.insert(tenant_members).values([brokerId, previousBroker].map((id) => ({ organizationId: tenantId, userId: id, role: "corretor",
+  await db.insert(users).values([assigneeId, previousBroker].map((id) => ({ id, name: "Corretor próprio", email: `${id}@fixture.test` })));
+  await db.insert(tenant_members).values([assigneeId, previousBroker].map((id) => ({ organizationId: tenantId, userId: id, role: "corretor",
     createdAt: new Date("2026-01-01T00:00:00Z"), workDays: [1, 2, 3, 4, 5], workHoursStart: "09:00", workHoursEnd: "18:00", deactivatedAt: id === previousBroker ? now : null })));
 });
 afterEach(() => { vi.restoreAllMocks(); });
@@ -70,7 +70,7 @@ afterAll(async () => {
   await db.delete(messages).where(inArray(messages.tenantId, tenantIds)); await db.delete(conversations).where(inArray(conversations.tenantId, tenantIds));
   await db.delete(leads).where(inArray(leads.tenantId, tenantIds)); await db.delete(whatsappChannels).where(inArray(whatsappChannels.tenantId, tenantIds));
   await db.delete(tenant_members).where(inArray(tenant_members.organizationId, tenantIds)); await db.delete(tenants).where(inArray(tenants.id, tenantIds));
-  await db.delete(users).where(inArray(users.id, [brokerId, previousBroker])); await db.$client.end();
+  await db.delete(users).where(inArray(users.id, [assigneeId, previousBroker])); await db.$client.end();
 });
 
 describe("T23 — omissão e escalada transacionais por silêncio", () => {
@@ -105,11 +105,11 @@ describe("T23 — omissão e escalada transacionais por silêncio", () => {
   });
   it.each([48 * hour, 48 * hour + 1])("%sms sem episódio cria tombstone e atribui na mesma transação", async (silence) => {
     const row = await fixture(silence, null), outputs = await thread(row), transport = vi.spyOn(cloudApi, "sendWhatsAppText");
-    expect(await expire(row)).toEqual({ ok: true, action: "escalated", episodeId: expect.any(String), brokerId, result: "omitted" });
+    expect(await expire(row)).toEqual({ ok: true, action: "escalated", episodeId: expect.any(String), assigneeId, result: "omitted" });
     expect(await episodes(row)).toEqual([expect.objectContaining({ tenantId, leadId: row.lead.id, phoneNumberId: row.phoneNumberId, anchorMessageId: row.anchor.id,
       state: "omitted", dispatchAuthorizedAt: null, escalatedAt: now, escalationResult: "omitted", escalationReasonCode: "silence-48h", createdAt: now, updatedAt: now })]);
     const stored = await readLead(row);
-    expect(stored).toEqual({ ...row.lead, assignedUserId: brokerId, status: "escalado_humano", statusChangedBy: "agente",
+    expect(stored).toEqual({ ...row.lead, assignedUserId: assigneeId, status: "escalado_humano", statusChangedBy: "agente",
       escalationReason: "Ausência de resposta por 48h; retomada omitida.", updatedAt: stored.updatedAt });
     expect(stored.updatedAt.getTime()).toBeGreaterThanOrEqual(row.lead.updatedAt.getTime()); expect(await thread(row)).toEqual(outputs); expect(transport).not.toHaveBeenCalled();
   });
@@ -118,22 +118,22 @@ describe("T23 — omissão e escalada transacionais por silêncio", () => {
     ["uncertain", "uncertain", "incerta"], ["omitted", "omitted", "omitida"], ["authorized", "uncertain", "incerta"],
   ] as const)("48h usa resultado factual %s, sem enviar nem inventar mensagem", async (state, result, label) => {
     const row = await fixture(48 * hour, state), [before] = await episodes(row), outputs = await thread(row), transport = vi.spyOn(cloudApi, "sendWhatsAppText");
-    expect(await expire(row)).toEqual({ ok: true, action: "escalated", episodeId: before.id, brokerId, result });
+    expect(await expire(row)).toEqual({ ok: true, action: "escalated", episodeId: before.id, assigneeId, result });
     expect(await episodes(row)).toEqual([{ ...before, escalatedAt: now, escalationResult: result, escalationReasonCode: "silence-48h", updatedAt: now,
       ...(state === "authorized" ? { state: "uncertain", reasonCode: "dispatch-unresolved" } : {}) }]);
-    expect(await readLead(row)).toMatchObject({ assignedUserId: brokerId, status: "escalado_humano", statusChangedBy: "agente", escalationReason: `Ausência de resposta por 48h; retomada ${label}.` });
+    expect(await readLead(row)).toMatchObject({ assignedUserId: assigneeId, status: "escalado_humano", statusChangedBy: "agente", escalationReason: `Ausência de resposta por 48h; retomada ${label}.` });
     expect(await thread(row)).toEqual(outputs); expect(transport).not.toHaveBeenCalled();
   });
   it("48h independe de horário/dia/Analytics e preserva responsável anterior", async () => {
     const row = await fixture(48 * hour, "accepted", tenantId, { assignedUserId: previousBroker });
     const outside = new Date("2026-10-11T03:00:00Z");
-    expect(await expire(row, outside)).toMatchObject({ ok: true, action: "escalated", brokerId: previousBroker, result: "accepted" });
+    expect(await expire(row, outside)).toMatchObject({ ok: true, action: "escalated", assigneeId: previousBroker, result: "accepted" });
     expect(await readLead(row)).toMatchObject({ assignedUserId: previousBroker, status: "escalado_humano" });
     expect(await episodes(row)).toEqual([expect.objectContaining({ state: "accepted", escalatedAt: outside, escalationResult: "accepted" })]);
   });
   it("sem corretor ativo mantém handoff sem responsável e repete sem escrita", async () => {
     const row = await fixture(48 * hour, null, emptyTenant), first = await expire(row);
-    expect(first).toEqual({ ok: true, action: "escalated", episodeId: expect.any(String), brokerId: null, result: "omitted" });
+    expect(first).toEqual({ ok: true, action: "escalated", episodeId: expect.any(String), assigneeId: null, result: "omitted" });
     const before = await episodes(row), lead = await readLead(row);
     expect(lead).toMatchObject({ assignedUserId: null, status: "escalado_humano", statusChangedBy: "agente", escalationReason: "Ausência de resposta por 48h; retomada omitida." });
     expect(await expire(row, new Date(now.getTime() + hour))).toEqual({ ok: true, action: "unchanged", episodeId: before[0].id });
@@ -212,10 +212,10 @@ describe("T23 — omissão e escalada transacionais por silêncio", () => {
       pending = [a, b].map((client, index) => expire(row, now, pinned(client, index === 0 ? pidA : pidB)));
       const pids = await Promise.all([pidA.promise, pidB.promise]); expect(pids[0]).not.toBe(pids[1]); expect(await waitForLocks(pids, 2)).toBe(2);
       await blocker.query("COMMIT"); const results = await Promise.all(pending);
-      expect(results).toEqual(expect.arrayContaining([{ ok: true, action: "escalated", episodeId: before.id, brokerId, result: "omitted" }, { ok: true, action: "unchanged", episodeId: before.id }]));
+      expect(results).toEqual(expect.arrayContaining([{ ok: true, action: "escalated", episodeId: before.id, assigneeId, result: "omitted" }, { ok: true, action: "unchanged", episodeId: before.id }]));
       expect(results.filter((result) => result.ok && result.action === "escalated")).toHaveLength(1);
       expect(await episodes(row)).toEqual([{ ...before, escalatedAt: now, escalationResult: "omitted", escalationReasonCode: "silence-48h", updatedAt: now }]);
-      expect(await readLead(row)).toMatchObject({ assignedUserId: brokerId, status: "escalado_humano", escalationReason: "Ausência de resposta por 48h; retomada omitida." });
+      expect(await readLead(row)).toMatchObject({ assignedUserId: assigneeId, status: "escalado_humano", escalationReason: "Ausência de resposta por 48h; retomada omitida." });
     } finally { await blocker.query("ROLLBACK"); await Promise.allSettled(pending); blocker.release(); a.release(); b.release(); }
   });
   it("relógio somente após lead→episódio cruza 48h durante espera", async () => {
@@ -229,7 +229,7 @@ describe("T23 — omissão e escalada transacionais por silêncio", () => {
       await blocker.query("SAVEPOINT order_probe");
       await expect(blocker.query("SELECT id FROM leads WHERE id=$1 FOR UPDATE NOWAIT", [row.lead.id])).rejects.toMatchObject({ code: "55P03" });
       await blocker.query("ROLLBACK TO SAVEPOINT order_probe"); clock = new Date(now.getTime() + 1); await blocker.query("COMMIT");
-      expect(await pending).toEqual({ ok: true, action: "escalated", episodeId: before.id, brokerId, result: "omitted" });
+      expect(await pending).toEqual({ ok: true, action: "escalated", episodeId: before.id, assigneeId, result: "omitted" });
       expect(await episodes(row)).toEqual([{ ...before, escalatedAt: clock, escalationResult: "omitted", escalationReasonCode: "silence-48h", updatedAt: clock }]); expect(readClock).toHaveBeenCalledTimes(1);
     } finally { await blocker.query("ROLLBACK"); if (pending) await Promise.allSettled([pending]); blocker.release(); client.release(); }
   });

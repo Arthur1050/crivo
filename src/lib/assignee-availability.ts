@@ -4,11 +4,11 @@
  *
  * Funções puras, sem I/O: recebem os candidatos já montados pela camada de
  * acesso a dados (carga ativa, janela de trabalho e reuniões já marcadas) e
- * devolvem quem está elegível. Quem desempata continua sendo `assignBroker`
- * (`./broker-assignment`), **intacto**: carga → `createdAt` → `id`.
+ * devolvem quem está elegível. Quem desempata continua sendo `assignAssignee`
+ * (`./assignee-assignment`), **intacto**: carga → `createdAt` → `id`.
  *
  * Dois momentos, duas regras:
- * - **agendamento** (`selectForMeeting`): a janela precisa cobrir o intervalo
+ * - **agendamento** (`selectForAppointment`): a janela precisa cobrir o intervalo
  *   INTEIRO da reunião, e o corretor não pode ter outra reunião sobreposta;
  * - **escalonamento** (`selectForEscalation`): basta a janela cobrir o
  *   instante — e, se ninguém estiver em janela, o filtro **degrada** para
@@ -16,22 +16,22 @@
  *   a um lead órfão (ATRIB-03 AC3).
  */
 
-import type { BrokerLoad } from "./broker-assignment";
+import type { AssigneeLoad } from "./assignee-assignment";
 import { coversInstant, coversInterval, type WorkWindow } from "./work-window";
 
-export interface BrokerMeeting {
+export interface AssigneeAppointment {
   start: Date;
   end: Date;
 }
 
-export interface BrokerCandidate extends BrokerLoad {
+export interface AssigneeCandidate extends AssigneeLoad {
   /** `null` = janela não declarada, indisponível sempre (AGENDA-01 AC5). */
   window: WorkWindow | null;
-  meetings: BrokerMeeting[];
+  appointments: AssigneeAppointment[];
 }
 
-/** Projeção para o desempate: `assignBroker` não vê janela nem reunião. */
-function toLoad(candidate: BrokerCandidate): BrokerLoad {
+/** Projeção para o desempate: `assignAssignee` não vê janela nem reunião. */
+function toLoad(candidate: AssigneeCandidate): AssigneeLoad {
   return {
     id: candidate.id,
     createdAt: candidate.createdAt,
@@ -43,9 +43,9 @@ function toLoad(candidate: BrokerCandidate): BrokerLoad {
  * Dois intervalos meio-abertos `[start, end)` se sobrepõem? Reunião que começa
  * exatamente quando a outra termina NÃO se sobrepõe — é o slot seguinte.
  */
-function overlaps(meeting: BrokerMeeting, start: Date, end: Date): boolean {
-  return meeting.start.getTime() < end.getTime() &&
-    start.getTime() < meeting.end.getTime();
+function overlaps(appointment: AssigneeAppointment, start: Date, end: Date): boolean {
+  return appointment.start.getTime() < end.getTime() &&
+    start.getTime() < appointment.end.getTime();
 }
 
 /**
@@ -54,16 +54,16 @@ function overlaps(meeting: BrokerMeeting, start: Date, end: Date): boolean {
  * "nenhum corretor cobre o horário" — o chamador recusa o agendamento com
  * `sem-corretor-disponivel` (AC5), nunca escolhe alguém fora da janela.
  */
-export function selectForMeeting(
-  candidates: BrokerCandidate[],
+export function selectForAppointment(
+  candidates: AssigneeCandidate[],
   start: Date,
   end: Date
-): BrokerLoad[] {
+): AssigneeLoad[] {
   return candidates
     .filter(
       (candidate) =>
         coversInterval(candidate.window, start, end) &&
-        !candidate.meetings.some((meeting) => overlaps(meeting, start, end))
+        !candidate.appointments.some((appointment) => overlaps(appointment, start, end))
     )
     .map(toLoad);
 }
@@ -78,9 +78,9 @@ export function selectForMeeting(
  * escalonamento com o lead sinalizado (AC4).
  */
 export function selectForEscalation(
-  candidates: BrokerCandidate[],
+  candidates: AssigneeCandidate[],
   at: Date
-): BrokerLoad[] {
+): AssigneeLoad[] {
   const inWindow = candidates.filter((candidate) =>
     coversInstant(candidate.window, at)
   );

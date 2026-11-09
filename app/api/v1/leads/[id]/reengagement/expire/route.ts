@@ -23,7 +23,7 @@ export const POST = withIntegrationRoute<Context>(async (request, auth, { params
       : result.policyReason === "unknown-data" ? PROBLEM_CODE.unknown_agent_state : PROBLEM_CODE.invalid_transition, "Contexto ou elegibilidade não permite omissão ou escalonamento.");
   }
   return Response.json(result.action === "escalated"
-    ? { action: result.action, episodeId: result.episodeId, brokerId: result.brokerId, result: result.result }
+    ? { action: result.action, episodeId: result.episodeId, brokerId: result.assigneeId, result: result.result }
     : { action: result.action, episodeId: result.episodeId });
 });
 

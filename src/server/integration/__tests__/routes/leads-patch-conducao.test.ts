@@ -94,7 +94,7 @@ describe("routes: PATCH /api/v1/leads/[id] — lead conduzido por humano", () =>
     expect((await response.json()).code).toBe("lead-conduzido-por-humano");
     const after = await rowOf(leadId);
     expect(after).toEqual(before);
-    expect(after.meetingAt).toBeNull();
+    expect(after.appointmentAt).toBeNull();
   });
 
   it("marca + patch só de qualificação: 200 e gravado (SILENCIO-01 AC9)", async () => {

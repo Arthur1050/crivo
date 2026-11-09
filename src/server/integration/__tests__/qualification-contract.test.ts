@@ -38,7 +38,7 @@ describe("contrato da qualificação — QUAL-01", () => {
       status: "em_qualificacao", modality: "usado", region: "Zona Norte", budgetCents: 67890123n,
       propertyType: "apartamento", purchaseHorizon: "seis meses", motivation: "investidor",
       creditStatus: "fgts", chainedOperation: false, executiveSummary: "Resumo",
-      escalationReason: "Motivo", meetingAt: null, firstContactAt: new Date("2026-08-01T00:00:00Z"),
+      escalationReason: "Motivo", appointmentAt: null, firstContactAt: new Date("2026-08-01T00:00:00Z"),
       optedOutAt: null, humanTakeoverAt: null, memoryResetRequestedAt: null,
     } satisfies Partial<Parameters<typeof serializeLead>[0]>;
     expect(Object.entries(serializeLead(lead as Parameters<typeof serializeLead>[0]))).toEqual([

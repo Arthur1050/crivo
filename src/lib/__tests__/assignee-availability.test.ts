@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { assignBroker } from "../broker-assignment";
+import { assignAssignee } from "../assignee-assignment";
 import {
   selectForEscalation,
-  selectForMeeting,
-  type BrokerCandidate,
-} from "../broker-availability";
+  selectForAppointment,
+  type AssigneeCandidate,
+} from "../assignee-availability";
 import type { WorkWindow } from "../work-window";
 
 /** 2026-08-24 é segunda (ISO 1); 2026-08-29 é sábado (6). */
@@ -17,14 +17,14 @@ const TARDE: WorkWindow = { days: [1, 2, 3, 4, 5], start: "13:00", end: "19:00" 
 
 function candidate(
   id: string,
-  overrides: Partial<BrokerCandidate> = {}
-): BrokerCandidate {
+  overrides: Partial<AssigneeCandidate> = {}
+): AssigneeCandidate {
   return {
     id,
     createdAt: new Date("2026-01-01T00:00:00.000Z"),
     activeLeads: 0,
     window: MANHA,
-    meetings: [],
+    appointments: [],
     ...overrides,
   };
 }
@@ -35,7 +35,7 @@ describe("selectForMeeting (ATRIB-02 — candidatos ao agendamento)", () => {
     const manha = candidate("manha", { window: MANHA });
     const tarde = candidate("tarde", { window: TARDE });
 
-    const selected = selectForMeeting(
+    const selected = selectForAppointment(
       [manha, tarde],
       saoPaulo("2026-08-24T10:00:00"),
       saoPaulo("2026-08-24T10:30:00")
@@ -48,7 +48,7 @@ describe("selectForMeeting (ATRIB-02 — candidatos ao agendamento)", () => {
     const semJanela = candidate("sem-janela", { window: null });
     const comJanela = candidate("com-janela", { window: MANHA });
 
-    const selected = selectForMeeting(
+    const selected = selectForAppointment(
       [semJanela, comJanela],
       saoPaulo("2026-08-24T10:00:00"),
       saoPaulo("2026-08-24T10:30:00")
@@ -59,7 +59,7 @@ describe("selectForMeeting (ATRIB-02 — candidatos ao agendamento)", () => {
 
   it("exclui quem já tem reunião sobreposta ao mesmo intervalo (AC6)", () => {
     const ocupado = candidate("ocupado", {
-      meetings: [
+      appointments: [
         {
           start: saoPaulo("2026-08-24T10:15:00"),
           end: saoPaulo("2026-08-24T10:45:00"),
@@ -68,7 +68,7 @@ describe("selectForMeeting (ATRIB-02 — candidatos ao agendamento)", () => {
     });
     const livre = candidate("livre");
 
-    const selected = selectForMeeting(
+    const selected = selectForAppointment(
       [ocupado, livre],
       saoPaulo("2026-08-24T10:00:00"),
       saoPaulo("2026-08-24T10:30:00")
@@ -79,7 +79,7 @@ describe("selectForMeeting (ATRIB-02 — candidatos ao agendamento)", () => {
 
   it("reunião encostada (termina no minuto em que a nova começa) não é sobreposição", () => {
     const encostado = candidate("encostado", {
-      meetings: [
+      appointments: [
         {
           start: saoPaulo("2026-08-24T09:30:00"),
           end: saoPaulo("2026-08-24T10:00:00"),
@@ -91,7 +91,7 @@ describe("selectForMeeting (ATRIB-02 — candidatos ao agendamento)", () => {
       ],
     });
 
-    const selected = selectForMeeting(
+    const selected = selectForAppointment(
       [encostado],
       saoPaulo("2026-08-24T10:00:00"),
       saoPaulo("2026-08-24T10:30:00")
@@ -101,7 +101,7 @@ describe("selectForMeeting (ATRIB-02 — candidatos ao agendamento)", () => {
   });
 
   it("devolve lista vazia quando nenhum corretor cobre o horário (insumo da AC5)", () => {
-    const selected = selectForMeeting(
+    const selected = selectForAppointment(
       [candidate("manha", { window: MANHA }), candidate("tarde", { window: TARDE })],
       saoPaulo("2026-08-29T10:00:00"), // sábado — fora de toda janela seg-sex
       saoPaulo("2026-08-29T10:30:00")
@@ -126,7 +126,7 @@ describe("selectForMeeting (ATRIB-02 — candidatos ao agendamento)", () => {
       createdAt: new Date("2026-02-01T00:00:00.000Z"),
     });
 
-    const selected = selectForMeeting(
+    const selected = selectForAppointment(
       [carregado, leveNovo, leveAntigo],
       start,
       end
@@ -137,11 +137,11 @@ describe("selectForMeeting (ATRIB-02 — candidatos ao agendamento)", () => {
       "leve-antigo",
       "leve-novo",
     ]);
-    expect(assignBroker(selected)).toBe("leve-antigo");
+    expect(assignAssignee(selected)).toBe("leve-antigo");
   });
 
   it("o candidato devolvido não carrega janela nem reuniões (a lista nunca sai da regra)", () => {
-    const selected = selectForMeeting(
+    const selected = selectForAppointment(
       [candidate("unico")],
       saoPaulo("2026-08-24T10:00:00"),
       saoPaulo("2026-08-24T10:30:00")
@@ -182,7 +182,7 @@ describe("selectForEscalation (ATRIB-03 — candidatos ao escalonamento)", () =>
       "manha-carregado",
       "manha-leve",
     ]);
-    expect(assignBroker(selected)).toBe("manha-leve");
+    expect(assignAssignee(selected)).toBe("manha-leve");
   });
 
   it("com ninguém em janela, devolve TODOS os candidatos em vez de nenhum (AC3)", () => {
@@ -200,7 +200,7 @@ describe("selectForEscalation (ATRIB-03 — candidatos ao escalonamento)", () =>
       "sem-janela",
       "tarde",
     ]);
-    expect(assignBroker(selected)).toBe("tarde");
+    expect(assignAssignee(selected)).toBe("tarde");
   });
 
   it("quem não declarou janela é excluído enquanto houver alguém em janela", () => {
@@ -217,6 +217,6 @@ describe("selectForEscalation (ATRIB-03 — candidatos ao escalonamento)", () =>
 
   it("sem nenhum candidato, devolve lista vazia (imobiliária sem corretor ativo — AC4)", () => {
     expect(selectForEscalation([], saoPaulo("2026-08-24T09:00:00"))).toEqual([]);
-    expect(assignBroker(selectForEscalation([], saoPaulo("2026-08-24T09:00:00")))).toBeNull();
+    expect(assignAssignee(selectForEscalation([], saoPaulo("2026-08-24T09:00:00")))).toBeNull();
   });
 });

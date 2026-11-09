@@ -8,7 +8,7 @@
  * (design.md — Components).
  */
 
-export interface BrokerLoad {
+export interface AssigneeLoad {
   id: string;
   createdAt: Date;
   activeLeads: number;
@@ -22,7 +22,7 @@ export interface BrokerLoad {
  * Lista vazia devolve `null` (spec.md — "Tenant sem nenhum corretor
  * cadastrado" AC3).
  */
-export function assignBroker(candidates: BrokerLoad[]): string | null {
+export function assignAssignee(candidates: AssigneeLoad[]): string | null {
   if (candidates.length === 0) {
     return null;
   }
@@ -36,7 +36,7 @@ export function assignBroker(candidates: BrokerLoad[]): string | null {
   return chosen.id;
 }
 
-function isBetter(a: BrokerLoad, b: BrokerLoad): boolean {
+function isBetter(a: AssigneeLoad, b: AssigneeLoad): boolean {
   if (a.activeLeads !== b.activeLeads) {
     return a.activeLeads < b.activeLeads;
   }

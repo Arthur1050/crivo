@@ -15,7 +15,7 @@ import {
 } from "../../../db/schema";
 import {
   createDocument,
-  getBrokers,
+  getAssignees,
   getConversations,
   getConversationSummaries,
   getDashboardKpis,
@@ -130,8 +130,8 @@ describe("server/data isolation", () => {
 
   describe("getBrokers", () => {
     it("resultados do tenant A e B são totalmente disjuntos e cada corretor pertence ao tenant pedido (AC 2.1, 2.2)", async () => {
-      const brokersA = await getBrokers(tenantAId);
-      const brokersB = await getBrokers(tenantBId);
+      const brokersA = await getAssignees(tenantAId);
+      const brokersB = await getAssignees(tenantBId);
 
       expect(brokersA.length).toBeGreaterThan(0);
       expect(brokersB.length).toBeGreaterThan(0);
@@ -146,7 +146,7 @@ describe("server/data isolation", () => {
     });
 
     it("retorna [] para um tenant inexistente, nunca um erro (edge case)", async () => {
-      const result = await getBrokers(NON_EXISTENT_TENANT_ID);
+      const result = await getAssignees(NON_EXISTENT_TENANT_ID);
       expect(result).toEqual([]);
     });
   });

@@ -35,11 +35,11 @@ import { RelativeTime } from "@/src/components/shared/relative-time";
 import { formatCurrencyBRL } from "@/src/lib/format";
 import { updateLeadStatusAction } from "@/src/server/actions/pipeline";
 import type {
-  Broker,
+  Assignee,
   Lead,
   LeadStatus,
 } from "@/src/server/data";
-import type { LeadWithBroker } from "@/src/kit/lead-data";
+import type { LeadWithAssignee } from "@/src/kit/lead-data";
 
 type Modality = NonNullable<Lead["modality"]>;
 
@@ -109,11 +109,11 @@ const COLUMNS: ColumnDefinition[] = [
 ];
 
 interface PipelineBoardProps {
-  leads: LeadWithBroker[];
+  leads: LeadWithAssignee[];
   /** `leadId → conversationId`, para o link "Ver conversa" (lote-3 — PIPE-04). */
   conversationIdByLeadId?: Record<string, string>;
   /** Corretores do tenant ativo, repassados ao painel de detalhe (lote-7 — ATRIB-02). */
-  brokers: Pick<Broker, "id" | "name">[];
+  brokers: Pick<Assignee, "id" | "name">[];
 }
 
 /**
@@ -285,7 +285,7 @@ export function PipelineBoard({
  * ainda em qualificação simplesmente ficam mais curtos, sem placeholder nem
  * célula vazia (spec.md — Edge Cases).
  */
-function LeadCardBody({ lead }: { lead: LeadWithBroker }) {
+function LeadCardBody({ lead }: { lead: LeadWithAssignee }) {
   const budget = formatCurrencyBRL(lead.budgetCents);
 
   return (
@@ -347,19 +347,19 @@ function LeadCardBody({ lead }: { lead: LeadWithBroker }) {
             ser exceção e passou a ser o estado inicial de todo lead. Omitir
             silenciosamente esconderia justamente o que o gestor precisa ver
             no funil. */}
-        {lead.brokerName ? (
+        {lead.assigneeName ? (
           // lote-8 (USER-02 AC4): quando a carteira foi MANTIDA numa
           // desativação, o lead segue com o mesmo responsável — e precisa
           // dizer em voz alta que esse responsável está inativo, senão o
           // gestor lê o avatar como atendimento em curso.
-          lead.brokerDeactivatedAt ? (
+          lead.assigneeDeactivatedAt ? (
             <Token
-              label={`${lead.brokerName} · inativo`}
+              label={`${lead.assigneeName} · inativo`}
               color="orange"
               size="sm"
             />
           ) : (
-            <Avatar name={lead.brokerName} size="xsm" />
+            <Avatar name={lead.assigneeName} size="xsm" />
           )
         ) : (
           <Text type="supporting" color="secondary">

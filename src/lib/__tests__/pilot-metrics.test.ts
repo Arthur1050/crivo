@@ -53,50 +53,50 @@ describe("normalizeMonthlyBaseline", () => {
 
 describe("attendanceWindow", () => {
   it("pendingFrom é 30 minutos após a reunião; expiresAt é 14 dias após pendingFrom", () => {
-    const meetingAt = new Date("2026-08-01T10:00:00.000Z");
-    const { pendingFrom, expiresAt } = attendanceWindow(meetingAt);
+    const appointmentAt = new Date("2026-08-01T10:00:00.000Z");
+    const { pendingFrom, expiresAt } = attendanceWindow(appointmentAt);
 
-    expect(pendingFrom.getTime()).toBe(meetingAt.getTime() + 30 * 60 * 1000);
+    expect(pendingFrom.getTime()).toBe(appointmentAt.getTime() + 30 * 60 * 1000);
     expect(expiresAt.getTime()).toBe(pendingFrom.getTime() + 14 * DAY_MS);
   });
 });
 
 describe("isPendingAttendance", () => {
-  const meetingAt = new Date("2026-08-01T10:00:00.000Z");
-  const pendingFrom = new Date(meetingAt.getTime() + 30 * 60 * 1000);
+  const appointmentAt = new Date("2026-08-01T10:00:00.000Z");
+  const pendingFrom = new Date(appointmentAt.getTime() + 30 * 60 * 1000);
   const expiresAt = new Date(pendingFrom.getTime() + 14 * DAY_MS);
 
   it("antes do encerramento (now < pendingFrom) não cobra confirmação", () => {
     const now = new Date(pendingFrom.getTime() - 1);
-    expect(isPendingAttendance(meetingAt, null, now)).toBe(false);
+    expect(isPendingAttendance(appointmentAt, null, now)).toBe(false);
   });
 
   it("exatamente no instante de encerramento (+30min) já cobra confirmação — limite incluso", () => {
-    expect(isPendingAttendance(meetingAt, null, pendingFrom)).toBe(true);
+    expect(isPendingAttendance(appointmentAt, null, pendingFrom)).toBe(true);
   });
 
   it("no meio da janela (poucos dias após o encerramento) cobra confirmação", () => {
     const now = new Date(pendingFrom.getTime() + 3 * DAY_MS);
-    expect(isPendingAttendance(meetingAt, null, now)).toBe(true);
+    expect(isPendingAttendance(appointmentAt, null, now)).toBe(true);
   });
 
   it("exatamente nos 14 dias (no instante de expiresAt) já prescreveu — limite excluso", () => {
-    expect(isPendingAttendance(meetingAt, null, expiresAt)).toBe(false);
+    expect(isPendingAttendance(appointmentAt, null, expiresAt)).toBe(false);
   });
 
   it("um milissegundo antes de expiresAt ainda cobra confirmação", () => {
     const now = new Date(expiresAt.getTime() - 1);
-    expect(isPendingAttendance(meetingAt, null, now)).toBe(true);
+    expect(isPendingAttendance(appointmentAt, null, now)).toBe(true);
   });
 
   it("comparecimento já confirmado como true não cobra mais, mesmo dentro da janela", () => {
     const now = new Date(pendingFrom.getTime() + DAY_MS);
-    expect(isPendingAttendance(meetingAt, true, now)).toBe(false);
+    expect(isPendingAttendance(appointmentAt, true, now)).toBe(false);
   });
 
   it("comparecimento já confirmado como false (ausência) não cobra mais, mesmo dentro da janela", () => {
     const now = new Date(pendingFrom.getTime() + DAY_MS);
-    expect(isPendingAttendance(meetingAt, false, now)).toBe(false);
+    expect(isPendingAttendance(appointmentAt, false, now)).toBe(false);
   });
 });
 

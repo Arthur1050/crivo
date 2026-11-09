@@ -11,4 +11,4 @@ export function getRecentLeads(scope: LeadScope, limit?: number) {
   return selectRecentLeads(scope, limit, recentLeadQualification);
 }
 
-export type LeadWithBroker = Awaited<ReturnType<typeof getLeads>>[number];
+export type LeadWithAssignee = Awaited<ReturnType<typeof getLeads>>[number];

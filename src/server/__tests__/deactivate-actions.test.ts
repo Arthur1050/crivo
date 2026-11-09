@@ -58,8 +58,8 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 import { resolveAuthContext } from "../../kit/session";
 import { auth } from "../../kit/auth";
 import {
-  getBrokerLoads,
-  getBrokers,
+  getAssigneeLoads,
+  getAssignees,
   getLeads,
   transferCarteiraAndDeactivate,
   getTenantMembers,
@@ -107,7 +107,7 @@ async function createLead(input: {
   tenantId: string;
   assignedUserId: string | null;
   status: LeadStatus;
-  meetingAt?: Date;
+  appointmentAt?: Date;
 }): Promise<string> {
   const id = randomUUID();
   leadSeq += 1;
@@ -118,7 +118,7 @@ async function createLead(input: {
     name: `Lead ${leadSeq}`,
     phone: `5534999${String(leadSeq).padStart(6, "0")}`,
     status: input.status,
-    meetingAt: input.meetingAt ?? null,
+    appointmentAt: input.appointmentAt ?? null,
     firstContactAt: new Date(Date.now() - leadSeq * 60000),
     createdAt: new Date(Date.now() - leadSeq * 60000),
   });
@@ -247,7 +247,7 @@ describe("server/actions/deactivate — destino da carteira (lote-8, USER-02)", 
       tenantId,
       assignedUserId: saindo.userId,
       status: "qualificado_agendado",
-      meetingAt: new Date(Date.now() + 86400000),
+      appointmentAt: new Date(Date.now() + 86400000),
     });
 
     const result = await deactivateMemberAction({
@@ -344,8 +344,8 @@ describe("server/actions/deactivate — destino da carteira (lote-8, USER-02)", 
     // O sinal que o Pipeline exibe para administrador e gestor.
     const visiveis = await getLeads({ tenantId, assignedUserId: null });
     const card = visiveis.find((lead) => lead.id === ativo)!;
-    expect(card.brokerName).toBe("Corretor Mantido");
-    expect(card.brokerDeactivatedAt).not.toBeNull();
+    expect(card.assigneeName).toBe("Corretor Mantido");
+    expect(card.assigneeDeactivatedAt).not.toBeNull();
   });
 
   // AC6: sem carteira ativa, desativa direto.
@@ -514,10 +514,10 @@ describe("server/actions/deactivate — destino da carteira (lote-8, USER-02)", 
     expect(result.ok).toBe(true);
 
     // Some das listas de atribuição, nas duas fontes que a política usa.
-    expect((await getBrokers(tenantId)).map((b) => b.id)).not.toContain(
+    expect((await getAssignees(tenantId)).map((b) => b.id)).not.toContain(
       conta.user.id
     );
-    expect((await getBrokerLoads(tenantId)).map((b) => b.id)).not.toContain(
+    expect((await getAssigneeLoads(tenantId)).map((b) => b.id)).not.toContain(
       conta.user.id
     );
 
@@ -529,7 +529,7 @@ describe("server/actions/deactivate — destino da carteira (lote-8, USER-02)", 
     const visiveis = await getLeads({ tenantId, assignedUserId: null });
     const card = visiveis.find((lead) => lead.id === leadHistorico)!;
     expect(card.assignedUserId).toBe(conta.user.id);
-    expect(card.brokerName).toBe("Corretor Saindo");
+    expect(card.assigneeName).toBe("Corretor Saindo");
   });
 
   it("gestor não desativa ninguém e nada é gravado", async () => {
@@ -562,13 +562,13 @@ describe("server/actions/deactivate — destino da carteira (lote-8, USER-02)", 
       tenantId,
       assignedUserId: corretor.userId,
       status: "qualificado_agendado",
-      meetingAt: futura,
+      appointmentAt: futura,
     });
     await createLead({
       tenantId,
       assignedUserId: corretor.userId,
       status: "qualificado_agendado",
-      meetingAt: new Date(Date.now() - 86400000),
+      appointmentAt: new Date(Date.now() - 86400000),
     });
     const leadAtivo = await createLead({
       tenantId,
@@ -587,7 +587,7 @@ describe("server/actions/deactivate — destino da carteira (lote-8, USER-02)", 
     expect(result.preview.reunioesFuturas.map((r) => r.leadId)).toEqual([
       leadComReuniao,
     ]);
-    expect(result.preview.reunioesFuturas[0].meetingAt.getTime()).toBe(
+    expect(result.preview.reunioesFuturas[0].appointmentAt.getTime()).toBe(
       futura.getTime()
     );
   });

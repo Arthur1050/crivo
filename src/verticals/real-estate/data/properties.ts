@@ -16,7 +16,7 @@ export type PropertyStatus = Property["status"];
 // ---------------------------------------------------------------------------
 // Catálogo de imóveis (lote-11 — IMOV-01/02). Molde direto de `getDocuments`
 // (`and(...)` com `undefined` condicional) e de `isNull(tenant_members.
-// deactivatedAt)` (`getBrokers`).
+// deactivatedAt)` (`getAssignees`).
 // ---------------------------------------------------------------------------
 
 export interface PropertyFilters {

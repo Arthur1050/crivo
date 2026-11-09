@@ -196,7 +196,7 @@ describe("routes: PATCH /api/v1/leads/[id] — atribuição por agenda", () => {
 
     const saved = await readLead(leadId);
     expect(saved.assignedUserId).toBe(manhaUserId);
-    expect(saved.meetingAt).toEqual(SLOT);
+    expect(saved.appointmentAt).toEqual(SLOT);
   });
 
   // ATRIB-02 AC5.
@@ -216,7 +216,7 @@ describe("routes: PATCH /api/v1/leads/[id] — atribuição por agenda", () => {
 
     // A reunião não foi criada — e nem o resto do patch entrou.
     const saved = await readLead(leadId);
-    expect(saved.meetingAt).toBeNull();
+    expect(saved.appointmentAt).toBeNull();
     expect(saved.assignedUserId).toBeNull();
     expect(saved.status).toBe("em_qualificacao");
     expect(saved.executiveSummary).toBeNull();
@@ -248,7 +248,7 @@ describe("routes: PATCH /api/v1/leads/[id] — atribuição por agenda", () => {
     const reserva = db.transaction(async (tx) => {
       await tx
         .update(leads)
-        .set({ assignedUserId: manhaUserId, meetingAt: SLOT_CORRIDA })
+        .set({ assignedUserId: manhaUserId, appointmentAt: SLOT_CORRIDA })
         .where(eq(leads.id, leadReservado));
       await portao;
     });
@@ -287,7 +287,7 @@ describe("routes: PATCH /api/v1/leads/[id] — atribuição por agenda", () => {
       .select({ id: leads.id })
       .from(leads)
       .where(
-        sql`${leads.tenantId} = ${tenantId} and ${leads.assignedUserId} = ${manhaUserId} and ${leads.meetingAt} = ${SLOT_CORRIDA}`
+        sql`${leads.tenantId} = ${tenantId} and ${leads.assignedUserId} = ${manhaUserId} and ${leads.appointmentAt} = ${SLOT_CORRIDA}`
       );
     expect(comReuniao).toHaveLength(1);
     expect(comReuniao[0].id).toBe(leadReservado);

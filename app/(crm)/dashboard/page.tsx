@@ -20,7 +20,7 @@ import {
   getIntegrationRefusalsSince,
   getLastAgentMessageAt,
   getLeadVolumeSeries,
-  getPendingAttendanceMeetings,
+  getPendingAttendanceAppointments,
   getTenant,
 } from "@/src/server/data";
 import { getLeadDistributions } from "@/src/verticals/real-estate/data/distributions";
@@ -95,7 +95,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       // Também independente de `period` (lote-9 — PRES-01/PRES-02): a janela
       // de cobrança de comparecimento é fixa (14 dias a partir do fim da
       // reunião), nunca o filtro de período da página.
-      getPendingAttendanceMeetings(scope, now),
+      getPendingAttendanceAppointments(scope, now),
     ]);
 
   // SAUDE-02 AC2/AC3: só busca última atividade e recusas quando o usuário
@@ -121,16 +121,16 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     budget: formatCurrencyBRL(lead.budgetCents),
     modality: lead.modality,
     status: lead.status,
-    brokerName: lead.brokerName,
+    assigneeName: lead.assigneeName,
     firstContactAt: lead.firstContactAt.toISOString(),
   }));
 
-  // `meetingAt` também é `Date` na origem — mesma serialização acima.
+  // `appointmentAt` também é `Date` na origem — mesma serialização acima.
   const pendingMeetingRows = pendingMeetings.map((meeting) => ({
     leadId: meeting.leadId,
     leadName: meeting.leadName,
-    meetingAt: meeting.meetingAt.toISOString(),
-    brokerName: meeting.brokerName,
+    appointmentAt: meeting.appointmentAt.toISOString(),
+    assigneeName: meeting.assigneeName,
   }));
 
   return (
@@ -147,7 +147,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         baseline={{
           baselineLeadsPerMonth: tenant?.baselineLeadsPerMonth ?? null,
           baselineFirstResponseMinutes: tenant?.baselineFirstResponseMinutes ?? null,
-          baselineLeadToMeetingPct: tenant?.baselineLeadToMeetingPct ?? null,
+          baselineLeadToAppointmentPct: tenant?.baselineLeadToAppointmentPct ?? null,
           baselineEscalationPct: tenant?.baselineEscalationPct ?? null,
           baselineAttendancePct: tenant?.baselineAttendancePct ?? null,
         }}

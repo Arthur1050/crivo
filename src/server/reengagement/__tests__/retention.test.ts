@@ -49,7 +49,7 @@ async function waitForLocks(pids: number[]) {
   }
   return 0;
 }
-beforeAll(async () => { await db.insert(tenants).values(tenantIds.map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T63", agentName: "Agente", supportedSegment: "ambos" as const, meetingDays: [1, 2, 3, 4, 5, 6, 7], meetingHoursStart: "09:00", meetingHoursEnd: "18:00" }))); });
+beforeAll(async () => { await db.insert(tenants).values(tenantIds.map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T63", agentName: "Agente", supportedSegment: "ambos" as const, appointmentDays: [1, 2, 3, 4, 5, 6, 7], appointmentHoursStart: "09:00", appointmentHoursEnd: "18:00" }))); });
 afterEach(async () => {
   await db.delete(whatsappMessageReceipts).where(inArray(whatsappMessageReceipts.tenantId, tenantIds));
   await db.delete(whatsappUsage).where(inArray(whatsappUsage.tenantId, tenantIds));

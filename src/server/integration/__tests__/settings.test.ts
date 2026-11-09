@@ -26,9 +26,9 @@ describe("server/integration settings — getTenantSettings", () => {
         slug: `fixture-${configuredTenantId}`,
         agentPresentationMessage: "Oi! Sou o agente virtual.",
         agentVoiceTone: "Caloroso e direto.",
-        meetingDays: [1, 2, 3, 4, 5],
-        meetingHoursStart: "09:00",
-        meetingHoursEnd: "18:00",
+        appointmentDays: [1, 2, 3, 4, 5],
+        appointmentHoursStart: "09:00",
+        appointmentHoursEnd: "18:00",
       },
       {
         id: unconfiguredTenantId,

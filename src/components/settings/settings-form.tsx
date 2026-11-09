@@ -60,7 +60,7 @@ interface FieldErrors {
   modality?: string;
   agentVoiceTone?: string;
   agentWhatsapp?: string;
-  meetingDays?: string;
+  appointmentDays?: string;
   businessHours?: string;
 }
 
@@ -103,15 +103,15 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
   const [agentVoiceTone, setAgentVoiceTone] = useState(
     tenant.agentVoiceTone ?? ""
   );
-  const [meetingDays, setMeetingDays] = useState<string[]>(
-    (tenant.meetingDays ?? []).map(String)
+  const [appointmentDays, setAppointmentDays] = useState<string[]>(
+    (tenant.appointmentDays ?? []).map(String)
   );
-  const [meetingHoursStart, setMeetingHoursStart] = useState<
+  const [appointmentHoursStart, setAppointmentHoursStart] = useState<
     ISOTimeString | undefined
-  >(tenant.meetingHoursStart ? (createISOTimeString(tenant.meetingHoursStart) ?? undefined) : undefined);
-  const [meetingHoursEnd, setMeetingHoursEnd] = useState<
+  >(tenant.appointmentHoursStart ? (createISOTimeString(tenant.appointmentHoursStart) ?? undefined) : undefined);
+  const [appointmentHoursEnd, setAppointmentHoursEnd] = useState<
     ISOTimeString | undefined
-  >(tenant.meetingHoursEnd ? (createISOTimeString(tenant.meetingHoursEnd) ?? undefined) : undefined);
+  >(tenant.appointmentHoursEnd ? (createISOTimeString(tenant.appointmentHoursEnd) ?? undefined) : undefined);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [banner, setBanner] = useState<
     { type: "success" | "error"; message: string } | null
@@ -124,7 +124,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
     if (error.startsWith("Tom de voz e personalidade")) {
       return { agentVoiceTone: error };
     }
-    if (error.startsWith("Dias de atendimento")) return { meetingDays: error };
+    if (error.startsWith("Dias de atendimento")) return { appointmentDays: error };
     if (error.startsWith("Horário de atendimento")) return { businessHours: error };
     return null;
   }
@@ -136,9 +136,9 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
     const agentNameCheck = validateName(agentName, "Nome do agente");
     const modalityCheck = validateSegment(modality);
     const businessHours = {
-      meetingDays: meetingDays.length > 0 ? meetingDays.map(Number) : null,
-      meetingHoursStart: meetingHoursStart ?? null,
-      meetingHoursEnd: meetingHoursEnd ?? null,
+      appointmentDays: appointmentDays.length > 0 ? appointmentDays.map(Number) : null,
+      appointmentHoursStart: appointmentHoursStart ?? null,
+      appointmentHoursEnd: appointmentHoursEnd ?? null,
     };
     const businessHoursCheck = validateBusinessHours(businessHours);
 
@@ -146,7 +146,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
       name: nameCheck.ok ? undefined : nameCheck.error,
       agentName: agentNameCheck.ok ? undefined : agentNameCheck.error,
       modality: modalityCheck.ok ? undefined : modalityCheck.error,
-      meetingDays:
+      appointmentDays:
         !businessHoursCheck.ok &&
         businessHoursCheck.error.startsWith("Dias de atendimento")
           ? businessHoursCheck.error
@@ -162,7 +162,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
       nextErrors.name ||
       nextErrors.agentName ||
       nextErrors.modality ||
-      nextErrors.meetingDays ||
+      nextErrors.appointmentDays ||
       nextErrors.businessHours
     ) {
       setErrors(nextErrors);
@@ -370,14 +370,14 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
         <FormLayout>
           <CheckboxList
             label="Dias de atendimento"
-            value={meetingDays}
+            value={appointmentDays}
             onChange={(values) => {
-              setMeetingDays(values);
-              setErrors((prev) => ({ ...prev, meetingDays: undefined }));
+              setAppointmentDays(values);
+              setErrors((prev) => ({ ...prev, appointmentDays: undefined }));
             }}
             status={
-              errors.meetingDays
-                ? { type: "error", message: errors.meetingDays }
+              errors.appointmentDays
+                ? { type: "error", message: errors.appointmentDays }
                 : undefined
             }
           >
@@ -392,9 +392,9 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
               placeholder="Selecione um horário"
               hourFormat="24h"
               hasClear
-              value={meetingHoursStart}
+              value={appointmentHoursStart}
               onChange={(value) => {
-                setMeetingHoursStart(value);
+                setAppointmentHoursStart(value);
                 setErrors((prev) => ({ ...prev, businessHours: undefined }));
               }}
               status={
@@ -408,9 +408,9 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
               placeholder="Selecione um horário"
               hourFormat="24h"
               hasClear
-              value={meetingHoursEnd}
+              value={appointmentHoursEnd}
               onChange={(value) => {
-                setMeetingHoursEnd(value);
+                setAppointmentHoursEnd(value);
                 setErrors((prev) => ({ ...prev, businessHours: undefined }));
               }}
             />
