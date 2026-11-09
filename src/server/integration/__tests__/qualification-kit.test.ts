@@ -112,3 +112,41 @@ describe("costura de qualificação — QUAL-01 e QUAL-02", () => {
     });
   });
 });
+
+describe("agendamento opcional no PATCH — APPT-01", () => {
+  it.each(["2026-09-02T15:00:00Z", null, "horário inválido"])(
+    "recusa meetingAt igual a %s quando o vertical desliga o agendamento",
+    async (meetingAt) => {
+      const response = await patchRequest({ meetingAt });
+
+      expect(response.status).toBe(400);
+      expect(await response.json()).toMatchObject({
+        type: "urn:acme:problem:payload-invalido",
+        detail: "Campo 'meetingAt' deve ser uma data ISO-8601 válida.",
+      });
+      expect(data.getLead).not.toHaveBeenCalled();
+      expect(data.assignForAppointment).not.toHaveBeenCalled();
+      expect(data.assignForEscalation).not.toHaveBeenCalled();
+      expect(data.updateLeadFromAgent).not.toHaveBeenCalled();
+    }
+  );
+
+  it("grava a transição para goal_reached sem horário no vertical de teste", async () => {
+    data.updateLeadFromAgent.mockResolvedValue({ ...lead, status: LEAD_STATUS.goal_reached });
+
+    const response = await patchRequest({ status: LEAD_STATUS.goal_reached });
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ status: "qualificado_agendado", meetingAt: null });
+    expect(data.updateLeadFromAgent).toHaveBeenCalledExactlyOnceWith("tenant-1", leadId, {
+      status: LEAD_STATUS.goal_reached,
+    });
+    expect(data.assignForAppointment).not.toHaveBeenCalled();
+    expect(data.assignForEscalation).not.toHaveBeenCalled();
+  });
+
+  it("preserva o nulo explícito com o agendamento ligado", () => {
+    expect(createIntegrationKit(realEstate).parseLeadPatch({ meetingAt: null }))
+      .toEqual({ ok: true, dto: { appointmentAt: null } });
+  });
+});

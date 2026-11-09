@@ -246,7 +246,10 @@ export interface LeadPatchDto<Q> {
   qualification?: Partial<Q>;
 }
 
-export function createLeadPatchParser<Q>(qualification: Pick<QualificationFacet<Q, unknown>, "parsePatch"> | null) {
+export function createLeadPatchParser<Q>(
+  qualification: Pick<QualificationFacet<Q, unknown>, "parsePatch"> | null,
+  appointments: boolean
+) {
   return function parseLeadPatch(json: unknown): ParseResult<LeadPatchDto<Q>> {
     if (!isPlainObject(json)) {
       return { ok: false, detail: "Corpo da requisição deve ser um objeto JSON." };
@@ -287,7 +290,7 @@ export function createLeadPatchParser<Q>(qualification: Pick<QualificationFacet<
 
     const appointmentAtOutcome = optionalNullableField(json, "meetingAt", parseIsoDate);
     if (appointmentAtOutcome.present) {
-      if (!appointmentAtOutcome.ok) {
+      if (!appointments || !appointmentAtOutcome.ok) {
         return {
           ok: false,
           detail: "Campo 'meetingAt' deve ser uma data ISO-8601 válida.",

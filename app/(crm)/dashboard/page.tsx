@@ -15,6 +15,7 @@ import { resolveDashboardPeriod } from "@/src/lib/dashboard-period";
 import { formatCurrencyBRL } from "@/src/lib/format";
 import { can } from "@/src/kit/access";
 import { periodDays } from "@/src/lib/pilot-metrics";
+import { realEstate } from "@/src/verticals/real-estate";
 import {
   getDashboardKpis,
   getIntegrationRefusalsSince,
@@ -84,7 +85,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
   const [kpis, tenant, volumeSeries, distributions, recentLeads, pendingMeetings] =
     await Promise.all([
-      getDashboardKpis(scope, period),
+      getDashboardKpis(scope, period, realEstate.appointments),
       getTenant(tenantId),
       getLeadVolumeSeries(scope, period, period.granularity),
       getLeadDistributions(scope, period),
@@ -95,7 +96,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       // Também independente de `period` (lote-9 — PRES-01/PRES-02): a janela
       // de cobrança de comparecimento é fixa (14 dias a partir do fim da
       // reunião), nunca o filtro de período da página.
-      getPendingAttendanceAppointments(scope, now),
+      getPendingAttendanceAppointments(scope, now, realEstate.appointments),
     ]);
 
   // SAUDE-02 AC2/AC3: só busca última atividade e recusas quando o usuário

@@ -7,6 +7,7 @@ import { Timestamp } from "@astryxdesign/core/Timestamp";
 import { KpiTiles } from "@/src/components/dashboard/kpi-tiles";
 import { resolveDashboardPeriod } from "@/src/lib/dashboard-period";
 import { periodDays } from "@/src/lib/pilot-metrics";
+import { realEstate } from "@/src/verticals/real-estate";
 import { getDashboardKpis, getTenant } from "@/src/server/data";
 import {
   PermissionDeniedError,
@@ -46,7 +47,7 @@ export default async function RelatorioPage({ searchParams }: RelatorioPageProps
   const period = resolveDashboardPeriod(params);
 
   const [kpis, tenant] = await Promise.all([
-    getDashboardKpis(context.leadScope, period),
+    getDashboardKpis(context.leadScope, period, realEstate.appointments),
     getTenant(context.tenantId),
   ]);
 

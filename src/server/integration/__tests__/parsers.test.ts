@@ -9,7 +9,7 @@ import {
 
 import { realEstate } from "../../../verticals/real-estate";
 
-const parseLeadPatch = createLeadPatchParser(realEstate.qualification);
+const parseLeadPatch = createLeadPatchParser(realEstate.qualification, realEstate.appointments);
 
 function urlWithQuery(query?: string): URL {
   return new URL(`http://local/api/v1/leads/lead-fixo/messages${query ?? ""}`);

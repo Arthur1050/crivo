@@ -751,7 +751,8 @@ export const __testOnly_periodLeadsQuery = periodLeadsQuery;
  */
 export async function getDashboardKpis(
   scope: LeadScope,
-  range: DashboardRange
+  range: DashboardRange,
+  appointments = true
 ): Promise<DashboardKpis> {
   const periodLeads = await periodLeadsQuery(scope, range);
 
@@ -780,9 +781,9 @@ export async function getDashboardKpis(
   ).length;
   const escalationRate = leadCount === 0 ? null : escalatedCount / leadCount;
 
-  const confirmedAppointments = periodLeads.filter(
-    (lead) => lead.appointmentAttended !== null
-  );
+  const confirmedAppointments = appointments
+    ? periodLeads.filter((lead) => lead.appointmentAttended !== null)
+    : [];
   const confirmedAppointmentCount = confirmedAppointments.length;
   const attendedCount = confirmedAppointments.filter(
     (lead) => lead.appointmentAttended === true
@@ -1523,8 +1524,11 @@ export interface PendingAppointment {
  */
 export async function getPendingAttendanceAppointments(
   scope: LeadScope,
-  now: Date
+  now: Date,
+  appointments = true
 ): Promise<PendingAppointment[]> {
+  if (!appointments) return [];
+
   const rows = await db
     .select({
       leadId: leads.id,
