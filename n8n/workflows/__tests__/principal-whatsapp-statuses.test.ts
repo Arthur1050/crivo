@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import source from "../principal";
+import { principal as source } from "./workflow-baseline";
 import generated from "../../generated/principal";
 import { prepareMainWorkflowStatusPublication, type StatusPublicationEvidence } from "../../../scripts/n8n-status-publication";
 

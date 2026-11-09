@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import source from "../scheduler";
+import { scheduler as source } from "./workflow-baseline";
 import generated from "../../generated/scheduler";
 import { readInlinedModule } from "../../../scripts/n8n-inline.mjs";
 type Edge = { node: string; type: string; index: number };

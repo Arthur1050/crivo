@@ -1,7 +1,18 @@
 export const agent = {
   id: "real-estate",
   appointments: true,
-  values: {},
+  values: {
+    crmBaseUrl: "https://crivo-arthur1050s-projects.vercel.app/api/v1",
+    sampleTenantSlug: "imobiliaria-a",
+    sampleTenantName: "Imobiliária A",
+    conversationStateTableId: "ZsplBxJjXv3kwKZ8",
+    tenantConfigTableId: "xRHckWWd6fxGeNta",
+    appointmentSendsTableId: "m83dxX8YZYg1NDYq",
+    respondToLeadWorkflowId: "Li2hgCX943zKmDXf",
+    scheduleAppointmentWorkflowId: "2qCs6rPzmeOqan65",
+    projectId: "tTVoFkYzH7IEInaG",
+    archivedQualificationWorkflowId: "Q22aiVuQNj1FGU3r",
+  },
   blocks: [],
   workflows: [
     "benchmark-contexto",

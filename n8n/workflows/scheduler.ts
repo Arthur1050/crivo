@@ -25,10 +25,10 @@ import { workflow, trigger, node, ifElse, switchCase, newCredential, expr, split
 
 import readonlyGeneration from "../generated/reengagement-contextual";
 
-const CRM_BASE_URL = "https://crivo-arthur1050s-projects.vercel.app/api/v1";
-const TENANT_CONFIG_TABLE_ID = "xRHckWWd6fxGeNta";
-const CONVERSA_ESTADO_TABLE_ID = "ZsplBxJjXv3kwKZ8";
-const AGENDA_ENVIOS_TABLE_ID = "m83dxX8YZYg1NDYq";
+const CRM_BASE_URL = "__VALUE(crmBaseUrl)__";
+const TENANT_CONFIG_TABLE_ID = "__VALUE(tenantConfigTableId)__";
+const CONVERSA_ESTADO_TABLE_ID = "__VALUE(conversationStateTableId)__";
+const AGENDA_ENVIOS_TABLE_ID = "__VALUE(appointmentSendsTableId)__";
 
 const scheduleEveryHour = trigger({
   type: "n8n-nodes-base.scheduleTrigger",

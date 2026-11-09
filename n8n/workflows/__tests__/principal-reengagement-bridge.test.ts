@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import source from "../principal";
+import { principal as source } from "./workflow-baseline";
 import generated from "../../generated/principal";
 type Edge = { node: string; type: string; index: number };
 type Node = { name: string; type: string; parameters: Record<string, unknown> };

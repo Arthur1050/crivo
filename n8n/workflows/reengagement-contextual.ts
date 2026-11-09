@@ -1,6 +1,6 @@
 import { workflow, node, trigger, languageModel, tool, newCredential, expr } from "@n8n/workflow-sdk";
 
-const CRM_BASE_URL = "https://crivo-arthur1050s-projects.vercel.app/api/v1";
+const CRM_BASE_URL = "__VALUE(crmBaseUrl)__";
 const input = trigger({ type: "n8n-nodes-base.executeWorkflowTrigger", version: 1.2,
   config: { name: "Frame verificado", position: [0, 0], parameters: { inputSource: "workflowInputs", workflowInputs: { values: [{ name: "frame", type: "object" }, { name: "tenantSlug", type: "string" }, { name: "deadline", type: "number" }] } } }, output: [{}] });
 const identity = node({ type: "n8n-nodes-base.code", version: 2,

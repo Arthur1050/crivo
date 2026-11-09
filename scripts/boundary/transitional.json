@@ -638,13 +638,6 @@
   },
   {
     "path": "n8n/workflows/tool-responder-lead.ts",
-    "term": "market:imobili",
-    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
-    "path": "n8n/workflows/tool-responder-lead.ts",
     "term": "market:krivo",
     "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
     "removedIn": "L18c",

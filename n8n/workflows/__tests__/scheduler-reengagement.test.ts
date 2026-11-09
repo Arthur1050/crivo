@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import source from "../scheduler";
+import { scheduler as source } from "./workflow-baseline";
 import generated from "../../generated/scheduler";
 import readonlyGeneration from "../../generated/reengagement-contextual";
 import { reengagementFixtureFrame } from "../../src/__tests__/reengagement-fixtures";

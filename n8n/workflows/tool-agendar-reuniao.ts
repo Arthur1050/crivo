@@ -35,8 +35,8 @@
  */
 import { workflow, node, trigger, ifElse, newCredential, expr } from "@n8n/workflow-sdk";
 
-const CRM_BASE_URL = "https://crivo-arthur1050s-projects.vercel.app/api/v1";
-const AGENDA_ENVIOS_TABLE_ID = "m83dxX8YZYg1NDYq";
+const CRM_BASE_URL = "__VALUE(crmBaseUrl)__";
+const AGENDA_ENVIOS_TABLE_ID = "__VALUE(appointmentSendsTableId)__";
 
 const scheduleTrigger = trigger({
   type: "n8n-nodes-base.executeWorkflowTrigger",
@@ -64,7 +64,7 @@ const scheduleTrigger = trigger({
   output: [
     {
       meetingAtProposto: "2026-08-17T13:00:00.000Z",
-      tenantSlug: "imobiliaria-a",
+      tenantSlug: "__VALUE(sampleTenantSlug)__",
       waId: "553499532444",
       leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
       calendarId: "exemplo@group.calendar.google.com",
@@ -98,7 +98,7 @@ const checkBusinessHours = node({
   output: [
     {
       meetingAtProposto: "2026-08-17T13:00:00.000Z",
-      tenantSlug: "imobiliaria-a",
+      tenantSlug: "__VALUE(sampleTenantSlug)__",
       waId: "553499532444",
       leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
       calendarId: "exemplo@group.calendar.google.com",
@@ -236,7 +236,7 @@ const patchLeadScheduled = node({
       body: {
         id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         status: "qualificado_agendado",
-        assignedBroker: { name: "Corretora Manhã", email: "corretora.manha@imobiliaria-a.com.br" },
+        assignedBroker: { name: "Corretora Manhã", email: "corretora.manha@__VALUE(sampleTenantSlug)__.com.br" },
       },
     },
   ],
@@ -261,8 +261,8 @@ const interpretPatch = node({
     {
       crmConfirmou: true,
       reason: null,
-      corretor: { name: "Corretora Manhã", email: "corretora.manha@imobiliaria-a.com.br" },
-      convidados: ["corretora.manha@imobiliaria-a.com.br"],
+      corretor: { name: "Corretora Manhã", email: "corretora.manha@__VALUE(sampleTenantSlug)__.com.br" },
+      convidados: ["corretora.manha@__VALUE(sampleTenantSlug)__.com.br"],
     },
   ],
 });
@@ -396,7 +396,7 @@ const scheduledResponse = node({
       ok: true,
       meetingAt: "2026-08-17T13:00:00.000Z",
       meetLink: "https://meet.google.com/abc-defg-hij",
-      corretor: { name: "Corretora Manhã", email: "corretora.manha@imobiliaria-a.com.br" },
+      corretor: { name: "Corretora Manhã", email: "corretora.manha@__VALUE(sampleTenantSlug)__.com.br" },
       crmAtualizado: true,
       eventoCriado: true,
       aviso: null,

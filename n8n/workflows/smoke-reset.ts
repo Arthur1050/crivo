@@ -45,7 +45,7 @@ const SMOKE_SESSION_KEY = `${SMOKE_TENANT_SLUG}:${SMOKE_WA_ID}`;
 
 // Id real da Data Table `conversa_estado`, o mesmo de `principal.ts:83` —
 // copiado, nunca inventado.
-const CONVERSA_ESTADO_TABLE_ID = "ZsplBxJjXv3kwKZ8";
+const CONVERSA_ESTADO_TABLE_ID = "__VALUE(conversationStateTableId)__";
 
 const manualTrigger = trigger({
   type: "n8n-nodes-base.manualTrigger",

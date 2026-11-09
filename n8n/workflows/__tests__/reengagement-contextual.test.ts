@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import source from "../reengagement-contextual";
+import { reengagementContextual as source } from "./workflow-baseline";
 import generated from "../../generated/reengagement-contextual";
 import principal from "../../generated/principal";
 import { reengagementFixtureFrame } from "../../src/__tests__/reengagement-fixtures";

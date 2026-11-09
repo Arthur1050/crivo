@@ -69,18 +69,18 @@ import {
 } from "@n8n/workflow-sdk";
 
 // IDs reais dos sub-workflows publicados como draft via MCP (T7/T8, mesmo
-// projeto pessoal tTVoFkYzH7IEInaG) — nunca inventados, copiados da resposta
+// projeto pessoal __VALUE(projectId)__) — nunca inventados, copiados da resposta
 // do MCP na criação. `krivo-tool-responder-lead` e `krivo-tool-agendar-reuniao`.
-const TOOL_RESPONDER_LEAD_WORKFLOW_ID = "Li2hgCX943zKmDXf";
-const TOOL_AGENDAR_REUNIAO_WORKFLOW_ID = "2qCs6rPzmeOqan65";
+const TOOL_RESPONDER_LEAD_WORKFLOW_ID = "__VALUE(respondToLeadWorkflowId)__";
+const TOOL_AGENDAR_REUNIAO_WORKFLOW_ID = "__VALUE(scheduleAppointmentWorkflowId)__";
 
-const CRM_BASE_URL = "https://crivo-arthur1050s-projects.vercel.app/api/v1";
+const CRM_BASE_URL = "__VALUE(crmBaseUrl)__";
 
 // IDs reais das Data Tables — criadas via MCP `create_data_table` na
-// instância nova (re-hospedagem, projeto pessoal tTVoFkYzH7IEInaG). Nunca um
+// instância nova (re-hospedagem, projeto pessoal __VALUE(projectId)__). Nunca um
 // valor inventado: cada id abaixo veio direto da resposta do MCP na criação.
-const TENANT_CONFIG_TABLE_ID = "xRHckWWd6fxGeNta";
-const CONVERSA_ESTADO_TABLE_ID = "ZsplBxJjXv3kwKZ8";
+const TENANT_CONFIG_TABLE_ID = "__VALUE(tenantConfigTableId)__";
+const CONVERSA_ESTADO_TABLE_ID = "__VALUE(conversationStateTableId)__";
 
 // ---------------------------------------------------------------------
 // 1. Entrada: splitter -> ramos isolados de inbound/status
@@ -144,7 +144,7 @@ const statusTenantLookup = node({
   config: { name: "Data Table: tenant do status", position: [640, -400], onError: "continueRegularOutput", parameters: {
     resource: "row", operation: "get", dataTableId: { __rl: true, mode: "id", value: TENANT_CONFIG_TABLE_ID },
     filters: { conditions: [{ keyName: "phoneNumberId", condition: "eq", keyValue: expr("{{ $json.phoneNumberId }}") }] }, returnAll: false, limit: 1,
-  } }, output: [{ phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a" }],
+  } }, output: [{ phoneNumberId: "109876543210001", tenantSlug: "__VALUE(sampleTenantSlug)__" }],
 });
 const prepareStatusCrm = node({
   type: "n8n-nodes-base.code", version: 2,
@@ -152,7 +152,7 @@ const prepareStatusCrm = node({
     "const batch = $('WhatsApp: tipo de evento').item.json;\n" +
     "if ($json.error || $json.phoneNumberId !== batch.phoneNumberId || typeof $json.tenantSlug !== 'string' || !/^[a-z0-9_-]{1,128}$/i.test($json.tenantSlug)) return null;\n" +
     "return { json: { tenantSlug: $json.tenantSlug, batch: { phoneNumberId: batch.phoneNumberId, statuses: batch.statuses } } };\n",
-  } }, output: [{ tenantSlug: "imobiliaria-a", batch: { phoneNumberId: "109876543210001", statuses: [] } }],
+  } }, output: [{ tenantSlug: "__VALUE(sampleTenantSlug)__", batch: { phoneNumberId: "109876543210001", statuses: [] } }],
 });
 const postStatusCrm = node({
   type: "n8n-nodes-base.httpRequest", version: 4.4,
@@ -262,7 +262,7 @@ const tenantConfigLookup = node({
       limit: 1,
     },
   },
-  output: [{ id: 1, phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", calendarId: "exemplo@group.calendar.google.com" }],
+  output: [{ id: 1, phoneNumberId: "109876543210001", tenantSlug: "__VALUE(sampleTenantSlug)__", calendarId: "exemplo@group.calendar.google.com" }],
 });
 
 const combineEventAndTenant = node({
@@ -285,7 +285,7 @@ const combineEventAndTenant = node({
     },
   },
   output: [
-    { waId: "5534999990001", phoneNumberId: "109876543210001", messageId: "wamid.EXEMPLO", text: "Oi", sentAt: "2026-08-05T12:10:00.000Z", hasMedia: false, contactName: "Lead Exemplo", tenantSlug: "imobiliaria-a", calendarId: "exemplo@group.calendar.google.com" },
+    { waId: "5534999990001", phoneNumberId: "109876543210001", messageId: "wamid.EXEMPLO", text: "Oi", sentAt: "2026-08-05T12:10:00.000Z", hasMedia: false, contactName: "Lead Exemplo", tenantSlug: "__VALUE(sampleTenantSlug)__", calendarId: "exemplo@group.calendar.google.com" },
   ],
 });
 
@@ -322,7 +322,7 @@ const conversaEstadoBeforeBuffer = node({
       limit: 1,
     },
   },
-  output: [{ tenantSlug: "imobiliaria-a", waId: "5534999990001", bufferJson: "[]", leadId: "", camposJson: "{}", fase: "qualificando", reengaged: false }],
+  output: [{ tenantSlug: "__VALUE(sampleTenantSlug)__", waId: "5534999990001", bufferJson: "[]", leadId: "", camposJson: "{}", fase: "qualificando", reengaged: false }],
 });
 
 const appendToBuffer = node({
@@ -341,7 +341,7 @@ const appendToBuffer = node({
         "return { json: { tenantSlug: ctx.tenantSlug, waId: ctx.waId, messageId: ctx.messageId, bufferArray, bufferJson: JSON.stringify(bufferArray) } };\n",
     },
   },
-  output: [{ tenantSlug: "imobiliaria-a", waId: "5534999990001", messageId: "wamid.EXEMPLO", bufferArray: [{ messageId: "wamid.EXEMPLO", text: "Oi", sentAt: "2026-08-05T12:10:00.000Z" }], bufferJson: "[...]" }],
+  output: [{ tenantSlug: "__VALUE(sampleTenantSlug)__", waId: "5534999990001", messageId: "wamid.EXEMPLO", bufferArray: [{ messageId: "wamid.EXEMPLO", text: "Oi", sentAt: "2026-08-05T12:10:00.000Z" }], bufferJson: "[...]" }],
 });
 
 const conversaEstadoUpsertBuffer = node({
@@ -501,7 +501,7 @@ const attachTenantToLeadResponse = node({
         "return [{ json: { ...lead, tenantSlug: ctx.tenantSlug, calendarId: ctx.calendarId, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, contactName: ctx.contactName, text: ctx.text, hasMedia: ctx.hasMedia, sentAt: ctx.sentAt, bufferArray: buffer } }];\n",
     },
   },
-  output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", status: "em_qualificacao", optedOutAt: null, tenantSlug: "imobiliaria-a", calendarId: "exemplo@group.calendar.google.com", waId: "5534999990001", phoneNumberId: "109876543210001", contactName: "Lead Exemplo", text: "Oi", hasMedia: false, sentAt: "2026-08-05T12:10:00.000Z", bufferArray: [{ messageId: "wamid.EXEMPLO", text: "Oi", sentAt: "2026-08-05T12:10:00.000Z" }] }],
+  output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", status: "em_qualificacao", optedOutAt: null, tenantSlug: "__VALUE(sampleTenantSlug)__", calendarId: "exemplo@group.calendar.google.com", waId: "5534999990001", phoneNumberId: "109876543210001", contactName: "Lead Exemplo", text: "Oi", hasMedia: false, sentAt: "2026-08-05T12:10:00.000Z", bufferArray: [{ messageId: "wamid.EXEMPLO", text: "Oi", sentAt: "2026-08-05T12:10:00.000Z" }] }],
 });
 
 const splitBufferedMessages = node({
@@ -512,7 +512,7 @@ const splitBufferedMessages = node({
     position: [3640, 0],
     parameters: { fieldToSplitOut: "bufferArray", include: "allOtherFields" },
   },
-  output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", tenantSlug: "imobiliaria-a", bufferArray: { messageId: "wamid.EXEMPLO", text: "Oi", sentAt: "2026-08-05T12:10:00.000Z" } }],
+  output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", tenantSlug: "__VALUE(sampleTenantSlug)__", bufferArray: { messageId: "wamid.EXEMPLO", text: "Oi", sentAt: "2026-08-05T12:10:00.000Z" } }],
 });
 
 const postBufferedMessage = node({
@@ -563,7 +563,7 @@ const prepareAskedAgentState = node({
     "const askedFields = JSON.parse($json.perguntadosJson);\n" +
     "const payload = observed.anchorMessageId ? { anchorMessageId: observed.anchorMessageId, resetObservedAt: observed.resetObservedAt, expectedRevision: observed.expectedRevision, phase: $json.phase, askedFields, openingHistory } : null;\n" +
     "return { json: { desired: $json, payload, tenantSlug: ctx.tenantSlug, leadId: ctx.id } };\n",
-  } }, output: [{ desired: {}, payload: null, tenantSlug: "imobiliaria-a", leadId: "" }],
+  } }, output: [{ desired: {}, payload: null, tenantSlug: "__VALUE(sampleTenantSlug)__", leadId: "" }],
 });
 const hasAskedAgentState = ifElse({ version: 2.3, config: { name: "Agent-state perguntados publicável?", position: [7730, 430], parameters: { conditions: {
   combinator: "and", options: { caseSensitive: true, leftValue: "", typeValidation: "strict" }, conditions: [{ leftValue: expr("{{ $json.payload !== null }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }],
@@ -613,7 +613,7 @@ const prepareFinalAgentState = node({
     "const valid = !$json.error && !!observed.anchorMessageId && anchor === observed.anchorMessageId && rawRevision !== undefined && Number.isSafeInteger(revision) && revision >= 0 && (ownOptOut || [expectedRevision, expectedRevision + 1].includes(revision));\n" +
     "const payload = valid ? { anchorMessageId: anchor, resetObservedAt, expectedRevision: ownOptOut ? revision : expectedRevision, phase, askedFields, openingHistory } : null;\n" +
     "return { json: { desired, payload, tenantSlug: ctx.tenantSlug, leadId: ctx.id } };\n",
-  } }, output: [{ desired: {}, payload: null, tenantSlug: "imobiliaria-a", leadId: "" }],
+  } }, output: [{ desired: {}, payload: null, tenantSlug: "__VALUE(sampleTenantSlug)__", leadId: "" }],
 });
 const hasFinalAgentState = ifElse({ version: 2.3, config: { name: "Agent-state final publicável?", position: [5920, -130], parameters: { conditions: {
   combinator: "and", options: { caseSensitive: true, leftValue: "", typeValidation: "strict" }, conditions: [{ leftValue: expr("{{ $json.payload !== null }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }],
@@ -630,7 +630,7 @@ const confirmFinalAgentState = node({
   config: { name: "Code: agent-state final confirmado", position: [6060, -130], parameters: { mode: "runOnceForEachItem", jsCode:
     "const prepared = $('Code: preparar agent-state final').first().json;\n" + agentStateConfirmationCode +
     "return { json: { tenantSlug: prepared.desired.tenantSlug, waId: prepared.desired.waId, fase: confirmed && state.phase ? state.phase : 'unknown' } };\n",
-  } }, output: [{ tenantSlug: "imobiliaria-a", waId: "5534999990001", fase: "unknown" }],
+  } }, output: [{ tenantSlug: "__VALUE(sampleTenantSlug)__", waId: "5534999990001", fase: "unknown" }],
 });
 
 const decideRoute = node({
@@ -650,7 +650,7 @@ const decideRoute = node({
         "return [{ json: { ...ctx, route } }];\n",
     },
   },
-  output: [{ route: "conversa", id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", status: "em_qualificacao", optedOutAt: null, tenantSlug: "imobiliaria-a", calendarId: "exemplo@group.calendar.google.com", waId: "5534999990001", phoneNumberId: "109876543210001" }],
+  output: [{ route: "conversa", id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", status: "em_qualificacao", optedOutAt: null, tenantSlug: "__VALUE(sampleTenantSlug)__", calendarId: "exemplo@group.calendar.google.com", waId: "5534999990001", phoneNumberId: "109876543210001" }],
 });
 
 const routeSwitch = switchCase({
@@ -724,7 +724,7 @@ const finalizeOptOut = node({
         "return [{ json: { mensagens, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, tenantSlug: ctx.tenantSlug, leadId: ctx.id, fase: 'encerrada' } }];\n",
     },
   },
-  output: [{ mensagens: ["confirmação de opt-out"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "encerrada" }],
+  output: [{ mensagens: ["confirmação de opt-out"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "__VALUE(sampleTenantSlug)__", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "encerrada" }],
 });
 
 // ---------------------------------------------------------------------
@@ -747,7 +747,7 @@ const finalizeSomenteRegistrar = node({
         "return [{ json: { tenantSlug: ctx.tenantSlug, waId: ctx.waId, fase: 'encerrada' } }];\n",
     },
   },
-  output: [{ tenantSlug: "imobiliaria-a", waId: "5534999990001", fase: "encerrada" }],
+  output: [{ tenantSlug: "__VALUE(sampleTenantSlug)__", waId: "5534999990001", fase: "encerrada" }],
 });
 
 // ---------------------------------------------------------------------
@@ -769,7 +769,7 @@ const finalizeMedia = node({
         "return [{ json: { mensagens, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, tenantSlug: ctx.tenantSlug, leadId: ctx.id, fase: ctx.fase || 'qualificando' } }];\n",
     },
   },
-  output: [{ mensagens: ["sigo por texto"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
+  output: [{ mensagens: ["sigo por texto"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "__VALUE(sampleTenantSlug)__", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
 });
 
 // ---------------------------------------------------------------------
@@ -798,7 +798,7 @@ const getSettings = node({
     },
     credentials: { httpHeaderAuth: newCredential("Krivo - chave de servico") },
   },
-  output: [{ realEstateName: "Imobiliária A", agentName: "Ana", supportedModality: "ambos", agentPresentationMessage: "Oi! Sou a Ana.", meetingDays: null, meetingHoursStart: null, meetingHoursEnd: null }],
+  output: [{ realEstateName: "__VALUE(sampleTenantName)__", agentName: "Ana", supportedModality: "ambos", agentPresentationMessage: "Oi! Sou a Ana.", meetingDays: null, meetingHoursStart: null, meetingHoursEnd: null }],
 });
 
 // `sessionKey` composto (tenantSlug:waId) — mesma chave que `conversa_estado`
@@ -829,7 +829,7 @@ const startSessionContextRead = node({
     "const bufferMessageIds = externalIds.map(externalId => persisted.find(m => m.externalId === externalId && m.sender === 'lead')?.id);\n" +
     "if (bufferMessageIds.length > 50 || bufferMessageIds.some(id => typeof id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))) throw new Error('session-buffer-invalid');\n" +
     "return { json: { deadline: Date.now() + 120000, bufferMessageIds, tenantSlug: ctx.tenantSlug, leadId: ctx.id } };\n",
-  } }, output: [{ deadline: 0, bufferMessageIds: [], tenantSlug: "imobiliaria-a", leadId: "" }],
+  } }, output: [{ deadline: 0, bufferMessageIds: [], tenantSlug: "__VALUE(sampleTenantSlug)__", leadId: "" }],
 });
 const postSessionContextRead = node({
   type: "n8n-nodes-base.httpRequest", version: 4.4,
@@ -1242,7 +1242,7 @@ const persistPerguntados = node({
 // `registrar_qualificacao` — padrão {campo, valor} de UM campo por chamada,
 // não um objeto com os 8 campos como parâmetros fromAI independentes.
 // Achado real (não hipótese — execução MCP nesta sessão, workflow scratch
-// `Q22aiVuQNj1FGU3r`, arquivado): com os 8 campos expostos como parâmetros
+// `__VALUE(archivedQualificationWorkflowId)__`, arquivado): com os 8 campos expostos como parâmetros
 // fromAI separados na MESMA chamada, o Gemini populou `modality` e
 // `chainedOperation` com valores fabricados mesmo quando o prompt dizia
 // explicitamente "registre APENAS a região, não registre mais nada" — o
@@ -1637,7 +1637,7 @@ const finalizeAgentTurn = node({
         "return [{ json: { tenantSlug: ctx.tenantSlug, waId: ctx.waId, fase, turnoSemResposta: !calledResponder, autoSaved, respostaFallback, precisaFallback } }];\n",
     },
   },
-  output: [{ tenantSlug: "imobiliaria-a", waId: "5534999990001", fase: "qualificando", turnoSemResposta: false, autoSaved: false, respostaFallback: "", precisaFallback: false }],
+  output: [{ tenantSlug: "__VALUE(sampleTenantSlug)__", waId: "5534999990001", fase: "qualificando", turnoSemResposta: false, autoSaved: false, respostaFallback: "", precisaFallback: false }],
 });
 
 const needsFallbackSendIf = ifElse({
@@ -1677,7 +1677,7 @@ const buildFallbackReply = node({
         "return [{ json: { mensagens: [turno.respostaFallback], waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, tenantSlug: ctx.tenantSlug, leadId: ctx.id, fase: turno.fase } }];\n",
     },
   },
-  output: [{ mensagens: ["resposta do agente que nao passou por responder_lead"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
+  output: [{ mensagens: ["resposta do agente que nao passou por responder_lead"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "__VALUE(sampleTenantSlug)__", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
 });
 
 // lote-14 (T23 — SILENCIO-01 AC4, AC5): o envio de contingência também
@@ -1860,7 +1860,7 @@ const prepClearAfterAgentTurn = node({
         "return [{ json: { tenantSlug: ctx.tenantSlug, waId: ctx.waId, fase: ctx.fase } }];\n",
     },
   },
-  output: [{ tenantSlug: "imobiliaria-a", waId: "5534999990001", fase: "qualificando" }],
+  output: [{ tenantSlug: "__VALUE(sampleTenantSlug)__", waId: "5534999990001", fase: "qualificando" }],
 });
 
 // MEM-04: ramo de opt-out também purga a memória e as duas colunas de
@@ -1952,7 +1952,7 @@ const restoreOptOutPayload = node({
         "return [{ json: ctx }];\n",
     },
   },
-  output: [{ mensagens: ["confirmação de opt-out"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "encerrada" }],
+  output: [{ mensagens: ["confirmação de opt-out"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "__VALUE(sampleTenantSlug)__", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "encerrada" }],
 });
 
 const normalizeFixedReplyRecipient = node({
@@ -1971,7 +1971,7 @@ const normalizeFixedReplyRecipient = node({
         "return [{ json: { ...ctx, recipientMsisdn: toWhatsAppMsisdn(ctx.waId) } }];\n",
     },
   },
-  output: [{ mensagens: ["resposta fixa"], waId: "553499532444", recipientMsisdn: "5534999532444", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
+  output: [{ mensagens: ["resposta fixa"], waId: "553499532444", recipientMsisdn: "5534999532444", phoneNumberId: "109876543210001", tenantSlug: "__VALUE(sampleTenantSlug)__", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
 });
 
 const sendFixedReply = node({
@@ -2048,7 +2048,7 @@ const prepBufferClearAfterSend = node({
         "return [{ json: { tenantSlug: ctx.tenantSlug, waId: ctx.waId, fase: ctx.fase } }];\n",
     },
   },
-  output: [{ tenantSlug: "imobiliaria-a", waId: "5534999990001", fase: "qualificando" }],
+  output: [{ tenantSlug: "__VALUE(sampleTenantSlug)__", waId: "5534999990001", fase: "qualificando" }],
 });
 
 const clearBufferAndFinalize = node({

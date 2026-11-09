@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import source from "../tool-responder-lead";
+import { respondToLead as source } from "./workflow-baseline";
 import generated from "../../generated/tool-responder-lead";
 import { parseMessageCreate } from "../../../src/server/integration/parsers";
 

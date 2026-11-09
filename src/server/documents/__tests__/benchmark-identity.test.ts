@@ -8,9 +8,11 @@ import {
 } from "../benchmark-identity";
 
 const principal = readFileSync("n8n/workflows/principal.ts", "utf8");
-const modules = ["business-hours.mjs", "phase.mjs", "system-message.mjs"].map((file) =>
-  readFileSync(`n8n/src/${file}`, "utf8")
-);
+const modules = [
+  "n8n/src/business-hours.mjs",
+  "n8n/verticals/real-estate/src/phase.mjs",
+  "n8n/verticals/real-estate/src/system-message.mjs",
+].map((file) => readFileSync(file, "utf8"));
 
 describe("benchmark identity (lote-12 T34)", () => {
   // Estas três leituras ancoram a identidade no agente real: se `principal.ts`
