@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { renderWorkflows } from "../../../../scripts/n8n-inline.mjs";
 import { describe, expect, it } from "vitest";
 import {
   deriveBenchmarkIdentity,
@@ -7,7 +8,7 @@ import {
   extractToolCatalog,
 } from "../benchmark-identity";
 
-const principal = readFileSync("n8n/workflows/principal.ts", "utf8");
+const principal = renderWorkflows({ inlineModules: false }).find(({ file }) => file === "principal.ts")!.generatedText;
 const modules = [
   "n8n/src/business-hours.mjs",
   "n8n/verticals/real-estate/src/phase.mjs",

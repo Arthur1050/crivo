@@ -53,6 +53,11 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   ...boundaryRules,
+  {
+    // Os modelos de workflow recebem declarações e usos ao expandir os blocos.
+    files: ["n8n/workflows/*.ts"],
+    rules: { "@typescript-eslint/no-unused-vars": "off" },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:
@@ -62,6 +67,7 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Scaffolds da CLI da Astryx (git-ignored, nunca fazem parte do app).
     "scratch/**",
+    "n8n/verticals/*/blocks/**",
     // Projeto próprio (AD-041): lint, tsconfig e dependências na pasta `vitrine/`.
     "vitrine/**",
   ]),

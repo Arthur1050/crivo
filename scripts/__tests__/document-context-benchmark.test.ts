@@ -32,7 +32,7 @@ describe("T66 — identidade factual, paridade e orçamento proativo AD-031", ()
       "n8n/verticals/real-estate/src/system-message.mjs",
     ].map((file) => readFileSync(file, "utf8"));
     sources[2] += "\n// Mudança sintética do prompt compartilhado";
-    const changed = deriveBenchmarkIdentity({ workflowSource: readFileSync("n8n/workflows/principal.ts", "utf8"),
+    const changed = deriveBenchmarkIdentity({ workflowSource: readFileSync("n8n/generated/principal.ts", "utf8"),
       systemMessageSources: sources, workflowVersion: recorded.agentWorkflowVersion });
     expect(changed.systemMessageHash).not.toBe(previous.systemMessageHash);
     expect(audit(measured, changed)).toMatchObject({ sharedIdentityEqual: false, changed: ["systemMessageHash"], stale: true, capacityVerified: false });

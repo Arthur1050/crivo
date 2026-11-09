@@ -105,7 +105,7 @@ const applyVoiceBarriers = node({
       mode: "runOnceForAllItems",
       language: "javaScript",
       jsCode:
-        '__INLINE(voice.mjs)__' +
+        '__INLINE(__VALUE(voiceModule)__)__' +
         "\n\n" +
         "const trigger = $('Execute Workflow Trigger').first().json;\n" +
         "const row = $input.first().json;\n" +

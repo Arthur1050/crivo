@@ -28,6 +28,7 @@ import { MODALITY } from "../src/verticals/real-estate/vocabulary";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { renderWorkflows } from "./n8n-inline.mjs";
 import { deriveBenchmarkIdentity } from "../src/server/documents/benchmark-identity";
 import { FIELD_LABELS } from "../n8n/verticals/real-estate/src/phase.mjs";
 import { buildSystemMessage } from "../n8n/verticals/real-estate/src/system-message.mjs";
@@ -75,8 +76,12 @@ export function currentIdentity(workflowVersion: string, sourceRevision?: string
     }
     return source(path);
   };
+  const workflowSource = sourceRevision
+    ? source("n8n/generated/principal.ts")
+    : renderWorkflows({ inlineModules: false }).find(({ file }) => file === "principal.ts")?.generatedText;
+  if (!workflowSource) throw new Error("Workflow principal ausente no manifesto.");
   return deriveBenchmarkIdentity({
-    workflowSource: source("n8n/workflows/principal.ts"),
+    workflowSource,
     systemMessageSources: [
       source("n8n/src/business-hours.mjs"),
       verticalSource("phase.mjs"),

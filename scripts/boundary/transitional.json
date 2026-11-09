@@ -498,13 +498,6 @@
   },
   {
     "path": "n8n/workflows/principal.ts",
-    "term": "market:imobili",
-    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
-    "path": "n8n/workflows/principal.ts",
     "term": "market:krivo",
     "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
     "removedIn": "L18c",
@@ -525,20 +518,6 @@
     "category": "n8n-modules"
   },
   {
-    "path": "n8n/workflows/principal.ts",
-    "term": "market:imóve",
-    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
-    "path": "n8n/workflows/principal.ts",
-    "term": "market:corretor",
-    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
     "path": "n8n/workflows/reengagement-contextual.ts",
     "term": "market:krivo",
     "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
@@ -546,36 +525,8 @@
     "category": "n8n-modules"
   },
   {
-    "path": "n8n/workflows/reengagement-contextual.ts",
-    "term": "market:imóve",
-    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
-    "path": "n8n/workflows/reengagement-contextual.ts",
-    "term": "market:property",
-    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
-    "path": "n8n/workflows/scheduler.ts",
-    "term": "market:meeting",
-    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
     "path": "n8n/workflows/scheduler.ts",
     "term": "market:krivo",
-    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
-    "path": "n8n/workflows/scheduler.ts",
-    "term": "market:reuni",
     "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
     "removedIn": "L18c",
     "category": "n8n-modules"
@@ -590,48 +541,6 @@
   {
     "path": "n8n/workflows/smoke-reset.ts",
     "term": "market:krivo",
-    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
-    "path": "n8n/workflows/tool-agendar-reuniao.ts",
-    "term": "market:meeting",
-    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
-    "path": "n8n/workflows/tool-agendar-reuniao.ts",
-    "term": "market:imobili",
-    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
-    "path": "n8n/workflows/tool-agendar-reuniao.ts",
-    "term": "market:krivo",
-    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
-    "path": "n8n/workflows/tool-agendar-reuniao.ts",
-    "term": "market:reuni",
-    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
-    "path": "n8n/workflows/tool-agendar-reuniao.ts",
-    "term": "market:broker",
-    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
-    "path": "n8n/workflows/tool-agendar-reuniao.ts",
-    "term": "market:corretor",
     "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
     "removedIn": "L18c",
     "category": "n8n-modules"

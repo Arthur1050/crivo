@@ -177,17 +177,15 @@ function listFiles(dir, extension) {
 }
 
 /**
- * Gera `n8n/generated/*.ts` a partir de todo `n8n/workflows/*.ts`,
- * substituindo os marcadores pelos módulos de `n8n/src/`. Determinístico:
- * mesma entrada -> mesmos bytes de saída, sempre (nenhum timestamp/random).
- * @param {{workflowsDir?: string, srcDir?: string, generatedDir?: string, vertical?: string, verticalsDir?: string}} [options]
+ * Expande as fontes com o manifesto e os módulos do vertical.
+ * @param {{workflowsDir?: string, srcDir?: string, vertical?: string, verticalsDir?: string, inlineModules?: boolean}} [options]
  * @returns {{file: string, generatedText: string}[]} um registro por arquivo gerado, na mesma ordem (alfabética)
  */
-export function generateAll({
+export function renderWorkflows({
   workflowsDir = DEFAULT_WORKFLOWS_DIR,
   srcDir = DEFAULT_SRC_DIR,
-  generatedDir = DEFAULT_GENERATED_DIR,
   vertical = DEFAULT_VERTICAL,
+  inlineModules = true,
   verticalsDir = workflowsDir === DEFAULT_WORKFLOWS_DIR ? DEFAULT_VERTICALS_DIR : undefined,
 } = {}) {
   if (!/^[a-zA-Z0-9_-]+$/.test(vertical)) {
@@ -226,7 +224,7 @@ export function generateAll({
     const expanded = agent
       ? applyManifest(sourceText, agent, join(verticalDir, "blocks"), usedBlocks)
       : sourceText;
-    return { file, generatedText: inlineWorkflowSource(expanded, srcDirs) };
+    return { file, generatedText: inlineModules ? inlineWorkflowSource(expanded, srcDirs) : expanded };
   });
   for (const block of agent?.blocks ?? []) {
     if (!usedBlocks.has(block)) {
@@ -234,6 +232,15 @@ export function generateAll({
     }
   }
 
+  return results;
+}
+
+/**
+ * Grava os workflows expandidos em ordem determinística.
+ * @param {NonNullable<Parameters<typeof renderWorkflows>[0]> & {generatedDir?: string}} [options]
+ */
+export function generateAll({ generatedDir = DEFAULT_GENERATED_DIR, ...options } = {}) {
+  const results = renderWorkflows(options);
   mkdirSync(generatedDir, { recursive: true });
   for (const { file, generatedText } of results) {
     writeFileSync(join(generatedDir, file), generatedText, "utf8");

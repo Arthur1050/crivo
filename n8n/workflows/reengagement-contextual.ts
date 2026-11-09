@@ -15,27 +15,19 @@ const settings = node({ type: "n8n-nodes-base.httpRequest", version: 4.5,
     headerParameters: { parameters: [{ name: "X-Krivo-Tenant", value: expr("{{ $('Code: identidade fixa').first().json.tenantSlug }}") }] }, options: { timeout: expr("{{ " + remaining + " }}") } }, credentials: { httpHeaderAuth: newCredential("Krivo - chave de servico") } }, output: [{}] });
 const prepare = node({ type: "n8n-nodes-base.code", version: 2,
   config: { name: "Code: tarefa proativa", position: [720, 0], parameters: { mode: "runOnceForEachItem", jsCode:
-    '__INLINE(phase.mjs)__' + '\n\n' + '__INLINE(session.mjs)__' + '\n\n' + '__INLINE(system-message.mjs)__' + '\n\n' + '__INLINE(business-hours.mjs)__' + '\n\n' + '__INLINE(reengagement-prompt.mjs)__' +
+    '__INLINE(phase.mjs)__' + '\n\n' + '__INLINE(__VALUE(sessionModule)__)__' + '\n\n' + '__INLINE(system-message.mjs)__' + '\n\n' + '__INLINE(business-hours.mjs)__' + '\n\n' + '__INLINE(reengagement-prompt.mjs)__' +
     "\n\nconst fixed = $('Code: identidade fixa').first().json; if (Date.now() >= fixed.deadline) throw new Error('generation-timeout');\n" +
     "const built = buildReengagementPrompt({ frame: fixed.frame, settings: $json, businessHours: resolveBusinessHours($json) });\n" +
     "if (!built.ok) throw new Error('context-read-failed');\n" +
     "return { json: { ...fixed, systemMessage: built.systemMessage, prompt: built.prompt, overheadBytes: built.overheadBytes } };" } }, output: [{}] });
-const docs = tool({ type: "n8n-nodes-base.httpRequestTool", version: 4.5,
-  config: { name: "consultar_documentos", position: [920, 240], parameters: { toolDescription: "Consulta documentos completos do tenant quando necessários. Identidade, modalidade, pergunta factual e reserva proativa são fixadas pelo fluxo. Uma falha técnica não autoriza inventar informação.", method: "POST", url: CRM_BASE_URL + "/context", sendBody: true, contentType: "json", specifyBody: "json",
-    jsonBody: expr("{{ (() => { const fixed = $('Code: tarefa proativa').first().json; const facts = fixed.frame.facts; const question = fixed.frame.history.filter(m => m.sender === 'lead').at(-1)?.content; if (typeof question !== 'string' || !question.trim()) throw new Error('context-read-failed'); return { modality: ['novo','usado','ambos'].includes(facts.modality) ? facts.modality : 'ambos', question: question.trim().slice(0,4096), reservedContextBytes: fixed.overheadBytes }; })() }}"),
-    authentication: "genericCredentialType", genericAuthType: "httpHeaderAuth", sendHeaders: true, headerParameters: { parameters: [{ name: "X-Krivo-Tenant", value: expr("{{ $('Code: tarefa proativa').first().json.tenantSlug }}") }] }, options: { timeout: expr("{{ " + remaining + " }}"), response: { response: { neverError: false } } } }, credentials: { httpHeaderAuth: newCredential("Krivo - chave de servico") } }, output: [{}] });
-const properties = tool({ type: "n8n-nodes-base.httpRequestTool", version: 4.5,
-  config: { name: "buscar_imoveis", position: [1120, 240], parameters: { toolDescription: "Busca o inventário real somente pelos fatos de modalidade/tipo já confirmados no frame. Não inventa ausência de imóveis após falha técnica.", method: "GET", url: CRM_BASE_URL + "/properties", sendQuery: true,
-    specifyQuery: "json", jsonQuery: expr("{{ (() => { const facts = $('Code: tarefa proativa').first().json.frame.facts; return JSON.stringify({ modalidade: ['novo','usado','ambos'].includes(facts.modality) ? facts.modality : 'ambos', ...(['casa','apartamento'].includes(facts.propertyType) ? { tipo: facts.propertyType } : {}) }); })() }}"),
-    authentication: "genericCredentialType", genericAuthType: "httpHeaderAuth", sendHeaders: true, headerParameters: { parameters: [{ name: "X-Krivo-Tenant", value: expr("{{ $('Code: tarefa proativa').first().json.tenantSlug }}") }] }, options: { timeout: expr("{{ " + remaining + " }}"), response: { response: { neverError: false } } } }, credentials: { httpHeaderAuth: newCredential("Krivo - chave de servico") } }, output: [{}] });
+// __BLOCK(reengagement-documents-tool)__
+// __BLOCK(reengagement-catalog-tool)__
 const model = languageModel({ type: "@n8n/n8n-nodes-langchain.lmChatOpenAi", version: 1.3,
   config: { name: "OpenAI Chat Model", position: [920, 440], parameters: { model: { __rl: true, mode: "list", value: "gpt-5.4-nano-2026-03-17", cachedResultName: "gpt-5.4-nano-2026-03-17" }, options: { reasoningEffort: "low", timeout: expr("{{ (() => { const remaining = $('Code: identidade fixa').first().json.deadline - Date.now(); if (remaining <= 0) throw new Error('generation-timeout'); return remaining; })() }}") } }, credentials: { openAiApi: newCredential("OpenAI account") } } });
-const agent = node({ type: "@n8n/n8n-nodes-langchain.agent", version: 3.1,
-  config: { name: "Agente proativo somente leitura", position: [980, 0], onError: "continueRegularOutput", parameters: { promptType: "define", text: expr("{{ $('Code: tarefa proativa').first().json.prompt }}"), hasOutputParser: false,
-    options: { systemMessage: expr("{{ $('Code: tarefa proativa').first().json.systemMessage }}"), maxIterations: 8, returnIntermediateSteps: true } }, subnodes: { model, tools: [docs, properties] } }, output: [{ output: "Texto gerado pelo modelo" }] });
+// __BLOCK(reengagement-agent)__
 const finish = node({ type: "n8n-nodes-base.code", version: 2,
   config: { name: "Code: validar texto e leituras", position: [1240, 0], parameters: { mode: "runOnceForEachItem", jsCode:
-    '__INLINE(phase.mjs)__' + '\n\n' + '__INLINE(session.mjs)__' + '\n\n' + '__INLINE(system-message.mjs)__' + '\n\n' + '__INLINE(reengagement-prompt.mjs)__' +
+    '__INLINE(phase.mjs)__' + '\n\n' + '__INLINE(__VALUE(sessionModule)__)__' + '\n\n' + '__INLINE(system-message.mjs)__' + '\n\n' + '__INLINE(reengagement-prompt.mjs)__' +
     "\n\nconst fixed = $('Code: tarefa proativa').first().json; if (Date.now() >= fixed.deadline) return { json: { ok: false, code: 'generation-timeout' } };\n" +
     "if ($json.error) return { json: { ok: false, code: 'generation-failed' } };\n" +
     "const steps = $json.intermediateSteps ?? []; if (!Array.isArray(steps)) return { json: { ok: false, code: 'context-read-failed' } };\n" +
@@ -47,6 +39,6 @@ const generationWorkflow = workflow("krivo-reengagement-contextual", "krivo-reen
   .add(input).to(identity).to(settings).to(prepare).to(agent).to(finish);
 generationWorkflow.regenerateNodeIds(new Map([
   "Frame verificado", "Code: identidade fixa", "HTTP: persona do tenant", "Code: tarefa proativa",
-  "consultar_documentos", "buscar_imoveis", "OpenAI Chat Model", "Agente proativo somente leitura", "Code: validar texto e leituras",
+// __BLOCK(reengagement-tool-node-ids)__
 ].map((name, index) => [name, `140b0047-0000-4000-8000-${String(index + 1).padStart(12, "0")}`])));
 export default generationWorkflow;
