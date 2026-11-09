@@ -384,7 +384,7 @@ mercado, porque uma loja não tem `novo` e `usado`.
 | KEEP-05 | P1: Comportamento preservado | Execute | Implementing |
 | KEEP-06 | P1: Comportamento preservado | Tasks | In Tasks |
 | VOCAB-01 | P1: Vocabulário em inglês | Execute | Implementing |
-| VOCAB-02 | P1: Vocabulário em inglês | Tasks | In Tasks |
+| VOCAB-02 | P1: Vocabulário em inglês | Execute | Implementing |
 | VOCAB-03 | P1: Vocabulário em inglês | Execute | Implementing |
 | ENG-01 | P1: Vocabulário em inglês | Execute | Implementing |
 | VERT-01 | P1: Contrato do vertical | Execute | Implementing |
@@ -393,7 +393,7 @@ mercado, porque uma loja não tem `novo` e `usado`.
 | ACCESS-01 | P1: Permissões compostas | Execute | Implementing |
 | QUAL-01 | P1: Qualificação atrás de costura | Execute | Implementing |
 | QUAL-02 | P1: Qualificação atrás de costura | Execute | Implementing |
-| APPT-01 | P1: Agendamento opcional | Tasks | In Tasks |
+| APPT-01 | P1: Agendamento opcional | Execute | Implementing |
 | CAT-01 | P1: Catálogo e vitrine no vertical | Execute | Implementing |
 | CAT-02 | P1: Catálogo e vitrine no vertical | Execute | Implementing |
 | AGENT-01 | P1: Agente genérico | Tasks | In Tasks |

@@ -1007,11 +1007,11 @@ A suíte completa validou a foto do schema. A checagem com `db:push:test` ficou 
 
 **Done when**:
 
-- [ ] Arquivos `broker-*` e `meeting-attendance.ts` movidos em commit próprio.
-- [ ] Foto do schema igual à base.
-- [ ] `/api/v1` e `/settings` respondem `meetingAt`, `meetingDays` e `assignedBroker`, afirmados com literal.
-- [ ] `git grep` dos nomes antigos sem resultado em código, inclusive comentários (L-063), salvo fio e `n8n/`.
-- [ ] Índice `leads_assigned_user_id_meeting_at_idx` com o mesmo nome.
+- [x] Arquivos `broker-*` e `meeting-attendance.ts` movidos em commit próprio.
+- [x] Foto do schema igual à base.
+- [x] `/api/v1` e `/settings` respondem `meetingAt`, `meetingDays` e `assignedBroker`, afirmados com literal.
+- [x] `git grep` dos nomes antigos sem resultado em código, inclusive comentários (L-063), salvo fio e `n8n/`.
+- [x] Índice `leads_assigned_user_id_meeting_at_idx` com o mesmo nome.
 
 **Tests**: integration
 **Gate**: quick
@@ -1031,11 +1031,11 @@ A suíte completa validou a foto do schema. A checagem com `db:push:test` ficou 
 
 **Done when**:
 
-- [ ] Ligado: testes de agenda, conflito e comparecimento passam sem mudança de valor.
-- [ ] Desligado: `meetingAt` no `PATCH` responde `payload-invalido`, com a mesma mensagem de campo inválido.
-- [ ] Desligado: `engaged` para `goal_reached` funciona sem horário.
-- [ ] Desligado: pendências e métricas de comparecimento devolvem lista vazia.
-- [ ] Os dois lados de cada chave têm teste (L-102).
+- [x] Ligado: testes de agenda, conflito e comparecimento passam sem mudança de valor.
+- [x] Desligado: `meetingAt` no `PATCH` responde `payload-invalido`, com a mesma mensagem de campo inválido.
+- [x] Desligado: `engaged` para `goal_reached` funciona sem horário.
+- [x] Desligado: pendências e métricas de comparecimento devolvem lista vazia.
+- [x] Os dois lados de cada chave têm teste (L-102).
 
 **Tests**: integration
 **Gate**: quick
@@ -1055,9 +1055,9 @@ A suíte completa validou a foto do schema. A checagem com `db:push:test` ficou 
 
 **Done when**:
 
-- [ ] Commit de movimento separado.
-- [ ] Entradas de identificador de `src/` e `app/` saem de `transitional.json`, salvo pastas de rota e campos do fio.
-- [ ] Texto de tela não muda.
+- [x] Commit de movimento separado.
+- [x] Entradas de identificador de `src/` e `app/` saem de `transitional.json`, salvo pastas de rota e campos do fio.
+- [x] Texto de tela não muda.
 
 **Tests**: none
 **Gate**: build
@@ -1077,10 +1077,10 @@ A suíte completa validou a foto do schema. A checagem com `db:push:test` ficou 
 
 **Done when**:
 
-- [ ] Testes de script passam com só a mudança de nome.
-- [ ] `npm run vitrine:e2e` continua iniciando, sem renomear o script do `package.json`, ou com a renomeação refletida nele e no README.
-- [ ] Entradas de identificador de `scripts/` saem de `transitional.json`.
-- [ ] Gate Full da fase verde.
+- [x] Testes de script passam com só a mudança de nome.
+- [x] `npm run vitrine:e2e` continua iniciando, sem renomear o script do `package.json`, ou com a renomeação refletida nele e no README.
+- [x] Entradas de identificador de `scripts/` saem de `transitional.json`.
+- [x] Gate Full da fase verde.
 
 **Tests**: integration
 **Gate**: full
