@@ -20,7 +20,7 @@ const facts = {
 
 beforeAll(async () => {
   await db.insert(tenants).values({
-    id: tenantId, name: "Tenant de teste", agentName: "Agente", supportedModality: "ambos", slug: `fixture-${tenantId}`,
+    id: tenantId, name: "Tenant de teste", agentName: "Agente", supportedSegment: "ambos", slug: `fixture-${tenantId}`,
   });
   await db.insert(leads).values({
     ...facts, id: leadId, tenantId, name: "Pessoa", phone: "123",

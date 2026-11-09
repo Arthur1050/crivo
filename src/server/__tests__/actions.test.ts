@@ -160,21 +160,21 @@ describe("server actions", () => {
       const result = await updateTenantSettingsAction({
         name: "Nome Via Action",
         agentName: "Agente Via Action",
-        supportedModality: "usado",
+        supportedSegment: "usado",
       });
       expect(result).toEqual({ ok: true });
 
       const persisted = await getTenant(activeTenantId);
       expect(persisted!.name).toBe("Nome Via Action");
       expect(persisted!.agentName).toBe("Agente Via Action");
-      expect(persisted!.supportedModality).toBe("usado");
+      expect(persisted!.supportedSegment).toBe("usado");
       expect(revalidatePath).toHaveBeenCalledWith("/configuracoes");
 
       // Reverte para não afetar o seed usado por outros testes/batches.
       const revertResult = await updateTenantSettingsAction({
         name: original!.name,
         agentName: original!.agentName,
-        supportedModality: original!.supportedModality,
+        supportedSegment: original!.supportedSegment,
       });
       expect(revertResult.ok).toBe(true);
     });
@@ -185,7 +185,7 @@ describe("server actions", () => {
       const result = await updateTenantSettingsAction({
         name: "   ",
         agentName: "Agente Válido",
-        supportedModality: "ambos",
+        supportedSegment: "ambos",
       });
       expect(result.ok).toBe(false);
       if (!result.ok) expect(result.error).toBeTruthy();
@@ -193,7 +193,7 @@ describe("server actions", () => {
       const after = await getTenant(activeTenantId);
       expect(after!.name).toBe(original!.name);
       expect(after!.agentName).toBe(original!.agentName);
-      expect(after!.supportedModality).toBe(original!.supportedModality);
+      expect(after!.supportedSegment).toBe(original!.supportedSegment);
     });
 
     it("um tenantId injetado no payload é ignorado — a action sempre grava no tenant ativo, nunca no id informado", async () => {
@@ -206,7 +206,7 @@ describe("server actions", () => {
       const payloadWithForeignTenant = {
         name: "Tentativa Cross-Tenant",
         agentName: activeOriginal!.agentName,
-        supportedModality: activeOriginal!.supportedModality,
+        supportedSegment: activeOriginal!.supportedSegment,
         tenantId: otherTenantId,
       } as UpdateTenantSettingsInput & { tenantId: string };
 
@@ -221,7 +221,7 @@ describe("server actions", () => {
       const revertResult = await updateTenantSettingsAction({
         name: activeOriginal!.name,
         agentName: activeOriginal!.agentName,
-        supportedModality: activeOriginal!.supportedModality,
+        supportedSegment: activeOriginal!.supportedSegment,
       });
       expect(revertResult.ok).toBe(true);
     });
@@ -235,7 +235,7 @@ describe("server actions", () => {
       const result = await updateTenantSettingsAction({
         name: original!.name,
         agentName: original!.agentName,
-        supportedModality: original!.supportedModality,
+        supportedSegment: original!.supportedSegment,
         city: "Uberaba",
         state: "MG",
         agentWhatsapp: "+55 34 90000-0000",
@@ -256,7 +256,7 @@ describe("server actions", () => {
       const revertResult = await updateTenantSettingsAction({
         name: original!.name,
         agentName: original!.agentName,
-        supportedModality: original!.supportedModality,
+        supportedSegment: original!.supportedSegment,
         city: original!.city,
         state: original!.state,
         agentWhatsapp: original!.agentWhatsapp,
@@ -274,7 +274,7 @@ describe("server actions", () => {
       const result = await updateTenantSettingsAction({
         name: original!.name,
         agentName: original!.agentName,
-        supportedModality: original!.supportedModality,
+        supportedSegment: original!.supportedSegment,
         city: "",
         state: "   ",
         agentWhatsapp: "",
@@ -293,7 +293,7 @@ describe("server actions", () => {
       const revertResult = await updateTenantSettingsAction({
         name: original!.name,
         agentName: original!.agentName,
-        supportedModality: original!.supportedModality,
+        supportedSegment: original!.supportedSegment,
         city: original!.city,
         state: original!.state,
         agentWhatsapp: original!.agentWhatsapp,
@@ -311,7 +311,7 @@ describe("server actions", () => {
       const result = await updateTenantSettingsAction({
         name: original!.name,
         agentName: original!.agentName,
-        supportedModality: original!.supportedModality,
+        supportedSegment: original!.supportedSegment,
         meetingDays: [1, 3, 5],
         meetingHoursStart: "09:00",
         meetingHoursEnd: "17:30",
@@ -326,7 +326,7 @@ describe("server actions", () => {
       const revertResult = await updateTenantSettingsAction({
         name: original!.name,
         agentName: original!.agentName,
-        supportedModality: original!.supportedModality,
+        supportedSegment: original!.supportedSegment,
         meetingDays: original!.meetingDays,
         meetingHoursStart: original!.meetingHoursStart,
         meetingHoursEnd: original!.meetingHoursEnd,
@@ -342,7 +342,7 @@ describe("server actions", () => {
       const result = await updateTenantSettingsAction({
         name: original!.name,
         agentName: original!.agentName,
-        supportedModality: original!.supportedModality,
+        supportedSegment: original!.supportedSegment,
         agentVoiceTone: "Direto, bem-humorado, sem enrolação.",
       });
       expect(result).toEqual({ ok: true });
@@ -355,7 +355,7 @@ describe("server actions", () => {
       const revertResult = await updateTenantSettingsAction({
         name: original!.name,
         agentName: original!.agentName,
-        supportedModality: original!.supportedModality,
+        supportedSegment: original!.supportedSegment,
         agentVoiceTone: original!.agentVoiceTone,
       });
       expect(revertResult.ok).toBe(true);
@@ -367,7 +367,7 @@ describe("server actions", () => {
       const result = await updateTenantSettingsAction({
         name: original!.name,
         agentName: original!.agentName,
-        supportedModality: original!.supportedModality,
+        supportedSegment: original!.supportedSegment,
         agentVoiceTone: "",
       });
       expect(result).toEqual({ ok: true });
@@ -378,7 +378,7 @@ describe("server actions", () => {
       const revertResult = await updateTenantSettingsAction({
         name: original!.name,
         agentName: original!.agentName,
-        supportedModality: original!.supportedModality,
+        supportedSegment: original!.supportedSegment,
         agentVoiceTone: original!.agentVoiceTone,
       });
       expect(revertResult.ok).toBe(true);
@@ -391,7 +391,7 @@ describe("server actions", () => {
       const result = await updateTenantSettingsAction({
         name: original!.name,
         agentName: original!.agentName,
-        supportedModality: original!.supportedModality,
+        supportedSegment: original!.supportedSegment,
         agentVoiceTone: tooLong,
       });
       expect(result.ok).toBe(false);
@@ -408,7 +408,7 @@ describe("server actions", () => {
       const result = await updateTenantSettingsAction({
         name: original!.name,
         agentName: original!.agentName,
-        supportedModality: original!.supportedModality,
+        supportedSegment: original!.supportedSegment,
         agentVoiceTone: exactly500,
       });
       expect(result).toEqual({ ok: true });
@@ -419,7 +419,7 @@ describe("server actions", () => {
       const revertResult = await updateTenantSettingsAction({
         name: original!.name,
         agentName: original!.agentName,
-        supportedModality: original!.supportedModality,
+        supportedSegment: original!.supportedSegment,
         agentVoiceTone: original!.agentVoiceTone,
       });
       expect(revertResult.ok).toBe(true);
@@ -431,7 +431,7 @@ describe("server actions", () => {
       const result = await updateTenantSettingsAction({
         name: original!.name,
         agentName: original!.agentName,
-        supportedModality: original!.supportedModality,
+        supportedSegment: original!.supportedSegment,
         meetingDays: [1, 2],
         meetingHoursStart: "18:00",
         meetingHoursEnd: "09:00",
@@ -451,7 +451,7 @@ describe("server actions", () => {
       const result = await updateTenantSettingsAction({
         name: original!.name,
         agentName: original!.agentName,
-        supportedModality: original!.supportedModality,
+        supportedSegment: original!.supportedSegment,
         meetingDays: [],
         meetingHoursStart: "09:00",
         meetingHoursEnd: "18:00",
@@ -472,7 +472,7 @@ describe("server actions", () => {
       await updateTenantSettingsAction({
         name: original!.name,
         agentName: original!.agentName,
-        supportedModality: original!.supportedModality,
+        supportedSegment: original!.supportedSegment,
         meetingDays: [2, 4],
         meetingHoursStart: "10:00",
         meetingHoursEnd: "16:00",
@@ -481,7 +481,7 @@ describe("server actions", () => {
       const cleared = await updateTenantSettingsAction({
         name: original!.name,
         agentName: original!.agentName,
-        supportedModality: original!.supportedModality,
+        supportedSegment: original!.supportedSegment,
         meetingDays: null,
         meetingHoursStart: null,
         meetingHoursEnd: null,
@@ -496,7 +496,7 @@ describe("server actions", () => {
       const revertResult = await updateTenantSettingsAction({
         name: original!.name,
         agentName: original!.agentName,
-        supportedModality: original!.supportedModality,
+        supportedSegment: original!.supportedSegment,
         meetingDays: original!.meetingDays,
         meetingHoursStart: original!.meetingHoursStart,
         meetingHoursEnd: original!.meetingHoursEnd,
@@ -513,7 +513,7 @@ describe("server actions", () => {
       const result = await updateTenantSettingsAction({
         name: original!.name,
         agentName: original!.agentName,
-        supportedModality: original!.supportedModality,
+        supportedSegment: original!.supportedSegment,
         baselineLeadsPerMonth: 100,
         baselineFirstResponseMinutes: 4,
         baselineLeadToMeetingPct: 35,
@@ -532,7 +532,7 @@ describe("server actions", () => {
       const revertResult = await updateTenantSettingsAction({
         name: original!.name,
         agentName: original!.agentName,
-        supportedModality: original!.supportedModality,
+        supportedSegment: original!.supportedSegment,
         baselineLeadsPerMonth: original!.baselineLeadsPerMonth,
         baselineFirstResponseMinutes: original!.baselineFirstResponseMinutes,
         baselineLeadToMeetingPct: original!.baselineLeadToMeetingPct,
@@ -548,7 +548,7 @@ describe("server actions", () => {
       const result = await updateTenantSettingsAction({
         name: original!.name,
         agentName: original!.agentName,
-        supportedModality: original!.supportedModality,
+        supportedSegment: original!.supportedSegment,
         baselineLeadsPerMonth: 100,
         baselineFirstResponseMinutes: 4,
         baselineLeadToMeetingPct: 35,
@@ -576,7 +576,7 @@ describe("server actions", () => {
       await updateTenantSettingsAction({
         name: original!.name,
         agentName: original!.agentName,
-        supportedModality: original!.supportedModality,
+        supportedSegment: original!.supportedSegment,
         baselineLeadsPerMonth: 60,
         baselineFirstResponseMinutes: 7,
         baselineLeadToMeetingPct: 20,
@@ -587,7 +587,7 @@ describe("server actions", () => {
       const cleared = await updateTenantSettingsAction({
         name: original!.name,
         agentName: original!.agentName,
-        supportedModality: original!.supportedModality,
+        supportedSegment: original!.supportedSegment,
         baselineLeadsPerMonth: null,
         baselineFirstResponseMinutes: null,
         baselineLeadToMeetingPct: null,
@@ -606,7 +606,7 @@ describe("server actions", () => {
       const revertResult = await updateTenantSettingsAction({
         name: original!.name,
         agentName: original!.agentName,
-        supportedModality: original!.supportedModality,
+        supportedSegment: original!.supportedSegment,
         baselineLeadsPerMonth: original!.baselineLeadsPerMonth,
         baselineFirstResponseMinutes: original!.baselineFirstResponseMinutes,
         baselineLeadToMeetingPct: original!.baselineLeadToMeetingPct,
@@ -1089,14 +1089,14 @@ describe("server actions", () => {
         { tenantId: activeTenantId, name: `Origem edição ${randomUUID()}` },
         { tenantId: activeTenantId, name: `Destino edição ${randomUUID()}` },
       ]).returning();
-      const doc = await createDocument(activeTenantId, { name: "Pasta na edição.txt", mimeType: "text/plain", sizeBytes: 10, modality: "novo" });
+      const doc = await createDocument(activeTenantId, { name: "Pasta na edição.txt", mimeType: "text/plain", sizeBytes: 10, segment: "novo" });
       try {
         await db.update(documents).set({ folderId: folders[0].id }).where(eq(documents.id, doc.id));
-        expect(await updateDocumentAction({ documentId: doc.id, name: "Movido.txt", modality: "novo", folderId: folders[1].id })).toEqual({ ok: true });
+        expect(await updateDocumentAction({ documentId: doc.id, name: "Movido.txt", segment: "novo", folderId: folders[1].id })).toEqual({ ok: true });
         expect((await db.select().from(documents).where(eq(documents.id, doc.id)))[0]).toMatchObject({ name: "Movido.txt", folderId: folders[1].id });
-        expect(await updateDocumentAction({ documentId: doc.id, name: "Mantido.txt", modality: "novo" })).toEqual({ ok: true });
+        expect(await updateDocumentAction({ documentId: doc.id, name: "Mantido.txt", segment: "novo" })).toEqual({ ok: true });
         expect((await db.select().from(documents).where(eq(documents.id, doc.id)))[0]).toMatchObject({ name: "Mantido.txt", folderId: folders[1].id });
-        expect(await updateDocumentAction({ documentId: doc.id, name: "Raiz.txt", modality: "novo", folderId: null })).toEqual({ ok: true });
+        expect(await updateDocumentAction({ documentId: doc.id, name: "Raiz.txt", segment: "novo", folderId: null })).toEqual({ ok: true });
         expect((await db.select().from(documents).where(eq(documents.id, doc.id)))[0]).toMatchObject({ name: "Raiz.txt", folderId: null });
       } finally {
         await db.delete(documents).where(eq(documents.id, doc.id));
@@ -1106,10 +1106,10 @@ describe("server actions", () => {
 
     it("T15: pasta inválida, ausente ou estrangeira não grava o nome do mesmo pedido", async () => {
       const [foreign] = await db.insert(documentFolders).values({ tenantId: otherTenantId, name: `Pasta estrangeira edição ${randomUUID()}` }).returning();
-      const doc = await createDocument(activeTenantId, { name: "Nome preservado.txt", mimeType: "text/plain", sizeBytes: 10, modality: "novo" });
+      const doc = await createDocument(activeTenantId, { name: "Nome preservado.txt", mimeType: "text/plain", sizeBytes: 10, segment: "novo" });
       try {
         for (const folderId of ["abc", foreign.id, randomUUID()]) {
-          expect(await updateDocumentAction({ documentId: doc.id, name: "Não gravar.txt", modality: "usado", folderId })).toEqual({ ok: false, error: "Pasta não encontrada." });
+          expect(await updateDocumentAction({ documentId: doc.id, name: "Não gravar.txt", segment: "usado", folderId })).toEqual({ ok: false, error: "Pasta não encontrada." });
           expect((await db.select().from(documents).where(eq(documents.id, doc.id)))[0]).toEqual(doc);
         }
         expect((await db.select().from(documentFolders).where(eq(documentFolders.id, foreign.id)))[0]).toEqual(foreign);
@@ -1124,7 +1124,7 @@ describe("server actions", () => {
         name,
         mimeType: "application/pdf",
         sizeBytes: 1024,
-        modality: "novo",
+        segment: "novo",
       });
       expect(result).toEqual({ ok: true });
 
@@ -1142,7 +1142,7 @@ describe("server actions", () => {
         name,
         mimeType: "application/x-msdownload",
         sizeBytes: 1024,
-        modality: "novo",
+        segment: "novo",
       });
       expect(result.ok).toBe(false);
 
@@ -1156,7 +1156,7 @@ describe("server actions", () => {
         name,
         mimeType: "application/pdf",
         sizeBytes: 10 * 1024 * 1024 + 1,
-        modality: "novo",
+        segment: "novo",
       });
       expect(result.ok).toBe(false);
 
@@ -1169,7 +1169,7 @@ describe("server actions", () => {
         name: "   ",
         mimeType: "application/pdf",
         sizeBytes: 1024,
-        modality: "novo",
+        segment: "novo",
       });
       expect(result.ok).toBe(false);
     });
@@ -1180,7 +1180,7 @@ describe("server actions", () => {
         name,
         mimeType: "application/pdf",
         sizeBytes: 1024,
-        modality: "novo",
+        segment: "novo",
       });
       expect(created).toEqual({ ok: true });
       const [doc] = await getDocuments(activeTenantId, { search: name });
@@ -1188,7 +1188,7 @@ describe("server actions", () => {
       const result = await updateDocumentAction({
         documentId: doc.id,
         name: "Doc Renomeado.pdf",
-        modality: "ambos",
+        segment: "ambos",
       });
       expect(result).toEqual({ ok: true });
 
@@ -1196,7 +1196,7 @@ describe("server actions", () => {
         search: "Doc Renomeado",
       });
       expect(updated.name).toBe("Doc Renomeado.pdf");
-      expect(updated.modality).toBe("ambos");
+      expect(updated.segment).toBe("ambos");
 
       await deleteDocumentAction({ documentId: doc.id });
     });
@@ -1205,7 +1205,7 @@ describe("server actions", () => {
       const result = await updateDocumentAction({
         documentId: NON_EXISTENT_ID,
         name: "X",
-        modality: "novo",
+        segment: "novo",
       });
       expect(result.ok).toBe(false);
     });
@@ -1223,7 +1223,7 @@ describe("server actions", () => {
         name,
         mimeType: "application/pdf",
         sizeBytes: 1024,
-        modality: "novo",
+        segment: "novo",
         tenantId: otherTenantId,
       } as CreateDocumentInput & { tenantId: string };
 
@@ -1244,7 +1244,7 @@ describe("server actions", () => {
 
     async function createLifecycleDocument(label: string) {
       const name = `${label} ${randomUUID()}.txt`;
-      await expect(createDocumentAction({ name, mimeType: "text/plain", sizeBytes: 3, modality: "novo" })).resolves.toEqual({ ok: true });
+      await expect(createDocumentAction({ name, mimeType: "text/plain", sizeBytes: 3, segment: "novo" })).resolves.toEqual({ ok: true });
       const [document] = await getDocuments(activeTenantId, { search: name });
       expect(document).toBeDefined();
       return document;
@@ -1261,8 +1261,8 @@ describe("server actions", () => {
       await db.update(documents).set({ extractedText: "conteúdo original", status: "pronto" }).where(eq(documents.id, document.id));
       const future = new Date(Date.now() + 86_400_000).toISOString();
 
-      await expect(updateDocumentAction({ documentId: document.id, name: document.name, modality: "ambos", expiresAt: future })).resolves.toEqual({ ok: true });
-      await expect(lifecycleRow(document.id)).resolves.toMatchObject({ modality: "ambos", extractedText: "conteúdo original" });
+      await expect(updateDocumentAction({ documentId: document.id, name: document.name, segment: "ambos", expiresAt: future })).resolves.toEqual({ ok: true });
+      await expect(lifecycleRow(document.id)).resolves.toMatchObject({ segment: "ambos", extractedText: "conteúdo original" });
       expect((await lifecycleRow(document.id)).expiresAt?.toISOString()).toBe(future);
     });
 
@@ -1271,7 +1271,7 @@ describe("server actions", () => {
       const future = new Date(Date.now() + 86_400_000);
       await db.update(documents).set({ expiresAt: future }).where(eq(documents.id, document.id));
 
-      await expect(updateDocumentAction({ documentId: document.id, name: document.name, modality: "usado" })).resolves.toEqual({ ok: true });
+      await expect(updateDocumentAction({ documentId: document.id, name: document.name, segment: "usado" })).resolves.toEqual({ ok: true });
       expect((await lifecycleRow(document.id)).expiresAt).toEqual(future);
     });
 
@@ -1279,7 +1279,7 @@ describe("server actions", () => {
       const document = await createLifecycleDocument("Validade vazia");
       await db.update(documents).set({ expiresAt: new Date(Date.now() + 86_400_000) }).where(eq(documents.id, document.id));
 
-      await expect(updateDocumentAction({ documentId: document.id, name: document.name, modality: "novo", expiresAt: "" })).resolves.toEqual({ ok: true });
+      await expect(updateDocumentAction({ documentId: document.id, name: document.name, segment: "novo", expiresAt: "" })).resolves.toEqual({ ok: true });
       expect((await lifecycleRow(document.id)).expiresAt).toBeNull();
     });
 
@@ -1288,29 +1288,29 @@ describe("server actions", () => {
       const future = new Date(Date.now() + 86_400_000);
       await db.update(documents).set({ expiresAt: future, extractedText: "não tocar", status: "pronto" }).where(eq(documents.id, document.id));
 
-      await expect(updateDocumentAction({ documentId: document.id, name: document.name, modality: "usado", expiresAt: "ontem talvez" })).resolves.toMatchObject({ ok: false });
-      await expect(lifecycleRow(document.id)).resolves.toMatchObject({ expiresAt: future, extractedText: "não tocar", modality: "novo" });
+      await expect(updateDocumentAction({ documentId: document.id, name: document.name, segment: "usado", expiresAt: "ontem talvez" })).resolves.toMatchObject({ ok: false });
+      await expect(lifecycleRow(document.id)).resolves.toMatchObject({ expiresAt: future, extractedText: "não tocar", segment: "novo" });
     });
 
     it("validade passada é recusada e não altera modalidade", async () => {
       const document = await createLifecycleDocument("Validade passada");
-      await expect(updateDocumentAction({ documentId: document.id, name: document.name, modality: "ambos", expiresAt: new Date(Date.now() - 1_000).toISOString() })).resolves.toMatchObject({ ok: false });
-      expect((await lifecycleRow(document.id)).modality).toBe("novo");
+      await expect(updateDocumentAction({ documentId: document.id, name: document.name, segment: "ambos", expiresAt: new Date(Date.now() - 1_000).toISOString() })).resolves.toMatchObject({ ok: false });
+      expect((await lifecycleRow(document.id)).segment).toBe("novo");
     });
 
     it("gestor edita modalidade e validade como administrador", async () => {
       const document = await createLifecycleDocument("Gestor edita");
       sessionRoles = ["gestor"];
-      await expect(updateDocumentAction({ documentId: document.id, name: "Atualizado gestor.txt", modality: "usado", expiresAt: "" })).resolves.toEqual({ ok: true });
-      await expect(lifecycleRow(document.id)).resolves.toMatchObject({ name: "Atualizado gestor.txt", modality: "usado", expiresAt: null });
+      await expect(updateDocumentAction({ documentId: document.id, name: "Atualizado gestor.txt", segment: "usado", expiresAt: "" })).resolves.toEqual({ ok: true });
+      await expect(lifecycleRow(document.id)).resolves.toMatchObject({ name: "Atualizado gestor.txt", segment: "usado", expiresAt: null });
       sessionRoles = ["administrador"];
     });
 
     it("corretor não edita nem altera o estado existente", async () => {
       const document = await createLifecycleDocument("Corretor edita");
       sessionRoles = ["corretor"];
-      await expect(updateDocumentAction({ documentId: document.id, name: "Não autorizado.txt", modality: "ambos", expiresAt: "" })).resolves.toMatchObject({ ok: false });
-      await expect(lifecycleRow(document.id)).resolves.toMatchObject({ name: document.name, modality: "novo", expiresAt: null });
+      await expect(updateDocumentAction({ documentId: document.id, name: "Não autorizado.txt", segment: "ambos", expiresAt: "" })).resolves.toMatchObject({ ok: false });
+      await expect(lifecycleRow(document.id)).resolves.toMatchObject({ name: document.name, segment: "novo", expiresAt: null });
       sessionRoles = ["administrador"];
     });
 
@@ -1351,9 +1351,9 @@ describe("server actions", () => {
         .where(and(eq(documents.tenantId, activeTenantId), isNull(documents.deletedAt)));
       try {
         await db.delete(tenantDocumentContextLimits).where(eq(tenantDocumentContextLimits.tenantId, activeTenantId));
-        for (const queryModality of ["novo", "usado", "ambos"] as const) {
+        for (const querySegment of ["novo", "usado", "ambos"] as const) {
           await upsertDocumentContextLimit(activeTenantId, {
-            queryModality, maxResponseBytes: 10_000_000, modelId: "m", workflowVersion: "v", systemMessageHash: "s",
+            querySegment, maxResponseBytes: 10_000_000, modelId: "m", workflowVersion: "v", systemMessageHash: "s",
             toolsHash: "t", memoryWindow: 50, benchmarkedAt: new Date(), metrics: {},
           });
         }
@@ -1389,9 +1389,9 @@ describe("server actions", () => {
       await withGenerousCeiling(async () => {
         const deFora = await waitingOutsider();
 
-        await expect(updateDocumentAction({ documentId: deFora.id, name: deFora.name, modality: "ambos", expiresAt: "" })).resolves.toEqual({ ok: true });
+        await expect(updateDocumentAction({ documentId: deFora.id, name: deFora.name, segment: "ambos", expiresAt: "" })).resolves.toEqual({ ok: true });
 
-        await expect(lifecycleRow(deFora.id)).resolves.toMatchObject({ modality: "ambos", status: "pronto" });
+        await expect(lifecycleRow(deFora.id)).resolves.toMatchObject({ segment: "ambos", status: "pronto" });
         await deleteDocumentAction({ documentId: deFora.id });
       });
     });
@@ -1400,7 +1400,7 @@ describe("server actions", () => {
       await withGenerousCeiling(async () => {
         const deFora = await waitingOutsider();
         const [pasta] = await db.insert(documentFolders).values({ tenantId: activeTenantId, name: `Só a pasta ${randomUUID()}` }).returning();
-        const campos = { documentId: deFora.id, name: deFora.name, modality: deFora.modality, categoryId: deFora.categoryId };
+        const campos = { documentId: deFora.id, name: deFora.name, segment: deFora.segment, categoryId: deFora.categoryId };
         try {
           await expect(updateDocumentAction({ ...campos, folderId: pasta.id })).resolves.toEqual({ ok: true });
           await expect(lifecycleRow(deFora.id)).resolves.toMatchObject({ folderId: pasta.id, status: "fora_do_agente" });
@@ -1419,7 +1419,7 @@ describe("server actions", () => {
         const deFora = await waitingOutsider();
         const validade = new Date(Date.now() + 86_400_000).toISOString();
         try {
-          await expect(updateDocumentAction({ documentId: deFora.id, name: deFora.name, modality: deFora.modality, categoryId: deFora.categoryId, expiresAt: validade })).resolves.toEqual({ ok: true });
+          await expect(updateDocumentAction({ documentId: deFora.id, name: deFora.name, segment: deFora.segment, categoryId: deFora.categoryId, expiresAt: validade })).resolves.toEqual({ ok: true });
           await expect(lifecycleRow(deFora.id)).resolves.toMatchObject({ expiresAt: new Date(validade), status: "pronto" });
         } finally {
           await deleteDocumentAction({ documentId: deFora.id });
@@ -1432,7 +1432,7 @@ describe("server actions", () => {
         const deFora = await waitingOutsider();
         const [categoria] = await db.insert(documentCategories).values({ tenantId: activeTenantId, name: `Só a categoria ${randomUUID()}` }).returning();
         try {
-          await expect(updateDocumentAction({ documentId: deFora.id, name: deFora.name, modality: deFora.modality, categoryId: categoria.id })).resolves.toEqual({ ok: true });
+          await expect(updateDocumentAction({ documentId: deFora.id, name: deFora.name, segment: deFora.segment, categoryId: categoria.id })).resolves.toEqual({ ok: true });
           await expect(lifecycleRow(deFora.id)).resolves.toMatchObject({ categoryId: categoria.id, status: "pronto" });
         } finally {
           await deleteDocumentAction({ documentId: deFora.id });
@@ -1472,7 +1472,7 @@ describe("server actions", () => {
     });
 
     it("IDs de outro tenant recebem o mesmo não-encontrado e não sofrem mutação", async () => {
-      const foreign = await createDocument(otherTenantId, { name: `Estrangeiro ${randomUUID()}.txt`, mimeType: "text/plain", sizeBytes: 2, modality: "novo" });
+      const foreign = await createDocument(otherTenantId, { name: `Estrangeiro ${randomUUID()}.txt`, mimeType: "text/plain", sizeBytes: 2, segment: "novo" });
       await expect(deleteDocumentAction({ documentId: foreign.id })).resolves.toEqual({ ok: false, error: "Documento não encontrado." });
       expect((await lifecycleRow(foreign.id)).deletedAt).toBeNull();
     });
@@ -1480,7 +1480,7 @@ describe("server actions", () => {
     it("um tombstone não pode ser reeditado", async () => {
       const document = await createLifecycleDocument("Tombstone bloqueia edição");
       await deleteDocumentAction({ documentId: document.id });
-      await expect(updateDocumentAction({ documentId: document.id, name: "Não muda.txt", modality: "ambos" })).resolves.toEqual({ ok: false, error: "Documento não encontrado." });
+      await expect(updateDocumentAction({ documentId: document.id, name: "Não muda.txt", segment: "ambos" })).resolves.toEqual({ ok: false, error: "Documento não encontrado." });
       expect((await lifecycleRow(document.id)).name).toBe(document.name);
     });
   });
@@ -1662,7 +1662,7 @@ describe("server actions", () => {
       const result = await updateTenantSettingsAction({
         name: "Nome Que Nao Pode Passar",
         agentName: "Agente Que Nao Pode Passar",
-        supportedModality: "novo",
+        supportedSegment: "novo",
       });
 
       expect(result.ok).toBe(false);
@@ -1671,7 +1671,7 @@ describe("server actions", () => {
       const after = await getTenant(activeTenantId);
       expect(after!.name).toBe(before!.name);
       expect(after!.agentName).toBe(before!.agentName);
-      expect(after!.supportedModality).toBe(before!.supportedModality);
+      expect(after!.supportedSegment).toBe(before!.supportedSegment);
     });
 
     // lote-9 — BASE-01 AC6: a recusa por permissão acontece ANTES de
@@ -1684,7 +1684,7 @@ describe("server actions", () => {
       const result = await updateTenantSettingsAction({
         name: before!.name,
         agentName: before!.agentName,
-        supportedModality: before!.supportedModality,
+        supportedSegment: before!.supportedSegment,
         baselineLeadsPerMonth: 999,
         baselineAttendancePct: 99,
       });
@@ -1718,7 +1718,7 @@ describe("server actions", () => {
       await updateTenantSettingsAction({
         name: "Nome Irrelevante",
         agentName: "Agente Irrelevante",
-        supportedModality: "novo",
+        supportedSegment: "novo",
       });
 
       const log = lastDenialLog();
@@ -1737,7 +1737,7 @@ describe("server actions", () => {
       const result = await updateTenantSettingsAction({
         name: original!.name,
         agentName: original!.agentName,
-        supportedModality: original!.supportedModality,
+        supportedSegment: original!.supportedSegment,
       });
 
       expect(result).toEqual({ ok: true });
@@ -1751,7 +1751,7 @@ describe("server actions", () => {
       const settings = await updateTenantSettingsAction({
         name: "Nome Via Gestor",
         agentName: original!.agentName,
-        supportedModality: original!.supportedModality,
+        supportedSegment: original!.supportedSegment,
       });
       expect(settings).toEqual({ ok: true });
       expect((await getTenant(activeTenantId))!.name).toBe("Nome Via Gestor");
@@ -1772,7 +1772,7 @@ describe("server actions", () => {
       await updateTenantSettingsAction({
         name: original!.name,
         agentName: original!.agentName,
-        supportedModality: original!.supportedModality,
+        supportedSegment: original!.supportedSegment,
       });
     });
 
@@ -1783,7 +1783,7 @@ describe("server actions", () => {
       const result = await updateTenantSettingsAction({
         name: original!.name,
         agentName: original!.agentName,
-        supportedModality: original!.supportedModality,
+        supportedSegment: original!.supportedSegment,
       });
 
       expect(result).toEqual({ ok: true });

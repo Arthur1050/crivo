@@ -52,7 +52,7 @@ describe("routes: PATCH /api/v1/leads/[id] — atribuição por agenda", () => {
       id,
       name: `${name} ${id}`,
       agentName: "Agente Atribuição",
-      supportedModality: "ambos",
+      supportedSegment: "ambos",
       slug: `fixture-${id}`,
     });
     const key = `test-key-${randomUUID()}`;

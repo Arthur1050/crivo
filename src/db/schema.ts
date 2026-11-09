@@ -104,7 +104,7 @@ export const tenants = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     name: text("name").notNull(),
     agentName: text("agent_name").notNull(),
-    supportedModality: modalityEnum("supported_modality").notNull(),
+    supportedSegment: modalityEnum("supported_modality").notNull(),
     // Baseline pré-piloto (Lote 4 — DASH-05). Snapshot único por tenant,
     // nullable até ser preenchido (mockado no seed por ora; real na Fase 10).
     baselineLeadsPerMonth: integer("baseline_leads_per_month"),
@@ -630,7 +630,7 @@ export const documents = pgTable(
       .notNull()
       .references(() => tenants.id),
     name: text("name").notNull(),
-    modality: modalityEnum("modality").notNull(),
+    segment: modalityEnum("modality").notNull(),
     mimeType: text("mime_type").notNull(),
     sizeBytes: bigint("size_bytes", { mode: "bigint" }).notNull(),
     categoryId: uuid("category_id").references(() => documentCategories.id, {
@@ -675,7 +675,7 @@ export const documents = pgTable(
     index("documents_tenant_context_idx").on(
       table.tenantId,
       table.status,
-      table.modality,
+      table.segment,
       table.expiresAt,
       table.uploadedAt
     ),
@@ -698,7 +698,7 @@ export const documentUploadIntents = pgTable(
     name: text("name").notNull(),
     mimeType: text("mime_type").notNull(),
     sizeBytes: bigint("size_bytes", { mode: "bigint" }).notNull(),
-    modality: modalityEnum("modality").notNull(),
+    segment: modalityEnum("modality").notNull(),
     categoryId: uuid("category_id").references(() => documentCategories.id, {
       onDelete: "set null",
     }),
@@ -732,7 +732,7 @@ export const tenantDocumentContextLimits = pgTable(
     tenantId: uuid("tenant_id")
       .notNull()
       .references(() => tenants.id),
-    queryModality: modalityEnum("query_modality").notNull(),
+    querySegment: modalityEnum("query_modality").notNull(),
     maxResponseBytes: integer("max_response_bytes").notNull(),
     modelId: text("model_id").notNull(),
     workflowVersion: text("workflow_version").notNull(),
@@ -747,7 +747,7 @@ export const tenantDocumentContextLimits = pgTable(
   (table) => [
     primaryKey({
       name: "tenant_document_context_limits_tenant_modality_pk",
-      columns: [table.tenantId, table.queryModality],
+      columns: [table.tenantId, table.querySegment],
     }),
     check(
       "tenant_document_context_limits_max_response_bytes_positive",

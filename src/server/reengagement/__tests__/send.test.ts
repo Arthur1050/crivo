@@ -49,7 +49,7 @@ async function waitForLocks(pids: number[], count: number) {
   }
   return waiting;
 }
-beforeAll(async () => { await db.insert(tenants).values([tenantId, foreignTenant].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T34", agentName: "Agente", supportedModality: "ambos" as const }))); });
+beforeAll(async () => { await db.insert(tenants).values([tenantId, foreignTenant].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T34", agentName: "Agente", supportedSegment: "ambos" as const }))); });
 beforeEach(() => { vi.stubEnv("WHATSAPP_ACCESS_TOKEN", "synthetic-t34"); });
 afterEach(() => { vi.unstubAllEnvs(); vi.restoreAllMocks(); });
 afterAll(async () => {

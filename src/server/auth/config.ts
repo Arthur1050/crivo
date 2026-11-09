@@ -167,7 +167,7 @@ export function createAuth(sendResetPasswordEmail: ReturnType<typeof createEmail
               // mapeada; a alternativa seria dar default a coluna de domínio,
               // que é enfraquecer o schema para acomodar a biblioteca.
               agentName: { type: "string", required: true },
-              supportedModality: { type: "string", required: true },
+              supportedModality: { type: "string", required: true, fieldName: "supportedSegment" },
             },
           },
           member: {

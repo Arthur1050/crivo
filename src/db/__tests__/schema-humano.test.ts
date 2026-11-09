@@ -51,7 +51,7 @@ describe("schema — condução humana, autoria e reserva de envio (lote-14, T2)
         id,
         name: `Tenant schema-humano ${id}`,
         agentName: "Agente",
-        supportedModality: "ambos" as const,
+        supportedSegment: "ambos" as const,
         slug: `fixture-${id}`,
       }))
     );

@@ -10,9 +10,11 @@ import { Table, pixel, proportional } from "@astryxdesign/core/Table";
 import type { TableColumn } from "@astryxdesign/core/Table";
 import { Text } from "@astryxdesign/core/Text";
 import { Timestamp } from "@astryxdesign/core/Timestamp";
-import type { LeadStatus, Modality } from "@/src/server/data";
+import type { Lead, LeadStatus } from "@/src/server/data";
 
 const FALLBACK = "—";
+
+type Modality = NonNullable<Lead["modality"]>;
 
 const MODALITY_LABELS: Record<Modality, string> = {
   [MODALITY.new]: "Novo",
@@ -49,7 +51,7 @@ export interface RecentLeadRow extends Record<string, unknown> {
   id: string;
   name: string;
   budget: string | null;
-  modality: Modality | null;
+  modality: Lead["modality"];
   status: LeadStatus;
   brokerName: string | null;
   firstContactAt: string;

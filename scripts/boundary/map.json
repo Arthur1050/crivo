@@ -72,6 +72,10 @@
     "layer": "app"
   },
   {
+    "glob": "src/server/documents/workflow-start.ts",
+    "layer": "app"
+  },
+  {
     "glob": "src/server/**",
     "layer": "core",
     "package": "@core/server"
@@ -122,6 +126,10 @@
     "glob": "scripts/**",
     "layer": "core",
     "package": "@core/db"
+  },
+  {
+    "glob": "workflows/process-document.ts",
+    "layer": "app"
   },
   {
     "glob": "workflows/**",

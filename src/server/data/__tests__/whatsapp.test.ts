@@ -44,7 +44,7 @@ function expected(row: Channel) {
     queriedAt: "2026-10-02T11:45:00.000Z", stale: false, updateFailed: false, estimated: true };
 }
 beforeAll(async () => {
-  await db.insert(tenants).values([tenantA, tenantB].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture leitura", agentName: "Agente", supportedModality: "ambos" as const })));
+  await db.insert(tenants).values([tenantA, tenantB].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture leitura", agentName: "Agente", supportedSegment: "ambos" as const })));
   await db.insert(users).values([brokerA, brokerB].map((id) => ({ id, name: "Fixture", email: `${id}@fixture.test` })));
 });
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllEnvs(); });

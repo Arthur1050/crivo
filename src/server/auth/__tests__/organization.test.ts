@@ -82,7 +82,7 @@ describe("server/auth — plugin organization sobre `tenants` (lote-8, TENANT-01
     expect(rows[0].name).toBe("Imobiliária Fixture T4");
     expect(rows[0].slug).toBe(slug);
     expect(rows[0].agentName).toBe("Agente Fixture T4");
-    expect(rows[0].supportedModality).toBe("ambos");
+    expect(rows[0].supportedSegment).toBe("ambos");
   });
 
   it("o vínculo do criador é uma linha de `tenant_members` apontando para o usuário e para a imobiliária", async () => {

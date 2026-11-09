@@ -9,7 +9,7 @@ import { DELETE, GET, PATCH, POST, PUT } from "../../../../../app/api/v1/whatsap
 const now = new Date("2026-10-06T15:00:00Z"), hour = 3600000, owners: string[] = []; let contact = 5534999700000;
 async function context() {
   const tenantId = randomUUID(), apiKey = `fixture-${randomUUID()}`; owners.push(tenantId);
-  await db.insert(tenants).values({ id: tenantId, slug: `fixture-${tenantId}`, name: "Fixture T36", agentName: "Agente", supportedModality: "ambos" });
+  await db.insert(tenants).values({ id: tenantId, slug: `fixture-${tenantId}`, name: "Fixture T36", agentName: "Agente", supportedSegment: "ambos" });
   await db.insert(tenantApiKeys).values({ tenantId, label: "fixtureT36", keyHash: createHash("sha256").update(apiKey).digest("hex") });
   return { tenantId, apiKey };
 }

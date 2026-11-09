@@ -50,7 +50,7 @@ const createdTenantIds: string[] = [];
 async function createTenant(name: string, agentWhatsapp: string | null = "5534999990000"): Promise<string> {
   const id = randomUUID();
   await db.insert(tenants).values({
-    id, name, agentName: `Agente ${name}`, supportedModality: "ambos", slug: `fixture-t15-${id}`, agentWhatsapp,
+    id, name, agentName: `Agente ${name}`, supportedSegment: "ambos", slug: `fixture-t15-${id}`, agentWhatsapp,
   });
   createdTenantIds.push(id);
   sessionTenantId = id;

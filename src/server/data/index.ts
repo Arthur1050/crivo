@@ -1,3 +1,4 @@
+import { DEFAULT_DOCUMENT_SEGMENT, documentSegmentValues, type DocumentSegmentFacet } from "../documents/segments";
 import { AGENT_PHASE, DOCUMENT_STATUS, HUMAN_SEND_STATE, LEAD_STATUS, PROBLEM_CODE, ROLE, SENDER, STATUS_ACTOR } from "../../lib/vocabulary";
 import "server-only";
 
@@ -110,10 +111,8 @@ export type Message = typeof messages.$inferSelect;
 export type Document = typeof documents.$inferSelect;
 export type DocumentCategory = typeof documentCategories.$inferSelect;
 export type LeadStatus = Lead["status"];
-export type Modality = Document["modality"];
+export type DocumentSegment = Document["segment"];
 export type CategoryColor = DocumentCategory["color"];
-
-const ALL_MODALITIES: Modality[] = ["novo", "usado", "ambos"];
 
 /**
  * Única função da camada de acesso que não exige tenant_id — alimenta o
@@ -554,7 +553,7 @@ export async function getConversationSummaries(
 }
 
 export interface DocumentFilters {
-  modality?: Modality;
+  segment?: DocumentSegment;
   categoryId?: string;
   search?: string;
   folder?: DocumentFolderFilter;
@@ -571,7 +570,7 @@ const DOCUMENT_LIST_COLUMNS = {
   id: documents.id,
   tenantId: documents.tenantId,
   name: documents.name,
-  modality: documents.modality,
+  segment: documents.segment,
   mimeType: documents.mimeType,
   sizeBytes: documents.sizeBytes,
   categoryId: documents.categoryId,
@@ -612,7 +611,7 @@ export async function getDocuments(
         isNull(documents.deletedAt),
         filters?.folder?.kind === "pasta" ? eq(documents.folderId, filters.folder.folderId)
           : filters?.folder?.kind === "sem-pasta" ? isNull(documents.folderId) : undefined,
-        filters?.modality ? eq(documents.modality, filters.modality) : undefined,
+        filters?.segment ? eq(documents.segment, filters.segment) : undefined,
         filters?.categoryId
           ? eq(documents.categoryId, filters.categoryId)
           : undefined,
@@ -633,7 +632,7 @@ export async function getDocumentCategories(
 
 export interface DocumentSample {
   recent: Document[];
-  countsByModality: Record<Modality, number>;
+  countsBySegment: Record<DocumentSegment, number>;
 }
 
 /**
@@ -642,7 +641,8 @@ export interface DocumentSample {
  * (todas as 3 modalidades sempre presentes, com 0 quando não há documentos).
  */
 export async function getDocumentSample(
-  tenantId: string
+  tenantId: string,
+  facet: DocumentSegmentFacet | null = null
 ): Promise<DocumentSample> {
   const recent = await db
     .select()
@@ -652,23 +652,23 @@ export async function getDocumentSample(
     .limit(5);
 
   const counts = await db
-    .select({ modality: documents.modality, count: count() })
+    .select({ segment: documents.segment, count: count() })
     .from(documents)
     .where(and(eq(documents.tenantId, tenantId), isNull(documents.deletedAt)))
-    .groupBy(documents.modality);
+    .groupBy(documents.segment);
 
-  const countsByModality = ALL_MODALITIES.reduce(
-    (acc, modality) => {
-      acc[modality] = 0;
+  const countsBySegment = documentSegmentValues(facet).reduce(
+    (acc, segment) => {
+      acc[segment] = 0;
       return acc;
     },
-    {} as Record<Modality, number>
+    {} as Record<DocumentSegment, number>
   );
   for (const row of counts) {
-    countsByModality[row.modality] = Number(row.count);
+    countsBySegment[facet ? row.segment : DEFAULT_DOCUMENT_SEGMENT] += Number(row.count);
   }
 
-  return { recent, countsByModality };
+  return { recent, countsBySegment };
 }
 
 /**
@@ -872,7 +872,7 @@ export async function getLeadVolumeSeries(
 export interface TenantSettingsUpdate {
   name: string;
   agentName: string;
-  supportedModality: Modality;
+  supportedSegment: DocumentSegment;
   // Campos de identidade opcionais (redesign-crm-astryx — RD-07 AC3). Chave
   // ausente = coluna intocada; string vazia/em branco ou `null` = grava null.
   city?: string | null;
@@ -926,7 +926,7 @@ export async function updateTenantSettings(
   const setValues: Partial<typeof tenants.$inferInsert> = {
     name: updates.name,
     agentName: updates.agentName,
-    supportedModality: updates.supportedModality,
+    supportedSegment: updates.supportedSegment,
   };
 
   const city = optionalTenantText(updates.city);
@@ -2214,7 +2214,7 @@ export interface CreateDocumentInput {
   name: string;
   mimeType: string;
   sizeBytes: number | bigint;
-  modality: Modality;
+  segment: DocumentSegment;
   categoryId?: string | null;
 }
 
@@ -2237,7 +2237,7 @@ export async function createDocument(
         typeof input.sizeBytes === "bigint"
           ? input.sizeBytes
           : BigInt(Math.trunc(input.sizeBytes)),
-      modality: input.modality,
+      segment: input.segment,
       categoryId: input.categoryId ?? null,
       storageProvider: "legacy_metadata",
       storageKey: `legacy-metadata/${legacyId}`,
@@ -2255,7 +2255,7 @@ export async function createDocument(
 
 export interface UpdateDocumentInput {
   name: string;
-  modality: Modality;
+  segment: DocumentSegment;
   categoryId?: string | null;
   folderId?: string | null;
   /** Undefined preserves validity; null is the explicit "sem validade". */
@@ -2271,7 +2271,7 @@ export class DocumentFolderNotFoundError extends Error {
   constructor() { super("Pasta não encontrada."); this.name = "DocumentFolderNotFoundError"; }
 }
 
-type DocumentContextFields = Pick<Document, "name" | "modality" | "categoryId" | "expiresAt">;
+type DocumentContextFields = Pick<Document, "name" | "segment" | "categoryId" | "expiresAt">;
 
 /** Campos que entram no contexto do agente; a pasta não é um deles (PAGENTE-01). */
 export async function getDocumentContextFields(
@@ -2279,7 +2279,7 @@ export async function getDocumentContextFields(
   documentId: string
 ): Promise<DocumentContextFields | null> {
   const [row] = await db
-    .select({ name: documents.name, modality: documents.modality, categoryId: documents.categoryId, expiresAt: documents.expiresAt })
+    .select({ name: documents.name, segment: documents.segment, categoryId: documents.categoryId, expiresAt: documents.expiresAt })
     .from(documents)
     .where(and(eq(documents.tenantId, tenantId), eq(documents.id, documentId), isNull(documents.deletedAt)));
   return row ?? null;
@@ -2287,7 +2287,7 @@ export async function getDocumentContextFields(
 
 export function documentContextFieldsChanged(before: DocumentContextFields, after: DocumentContextFields): boolean {
   return before.name !== after.name
-    || before.modality !== after.modality
+    || before.segment !== after.segment
     || before.categoryId !== after.categoryId
     || before.expiresAt?.getTime() !== after.expiresAt?.getTime();
 }
@@ -2299,7 +2299,7 @@ export async function updateDocument(
 ): Promise<Document | null> {
   const setValues: Partial<typeof documents.$inferInsert> = {
     name: updates.name,
-    modality: updates.modality,
+    segment: updates.segment,
   };
   if ("categoryId" in updates) {
     setValues.categoryId = updates.categoryId ?? null;

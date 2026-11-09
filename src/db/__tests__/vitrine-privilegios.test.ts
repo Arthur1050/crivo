@@ -62,7 +62,7 @@ describe("L16a T9 — papel krivo_vitrine e grants (VBANCO-02)", () => {
     slug = `fixture-privilegios-${tenantId}`;
     await db.insert(users).values({ id: userId, name: "Captador privilégios", email: `${userId}@fixture.test` });
     await db.insert(tenants).values({
-      id: tenantId, slug, name: "Fixture privilégios", agentName: "Agente", supportedModality: "ambos",
+      id: tenantId, slug, name: "Fixture privilégios", agentName: "Agente", supportedSegment: "ambos",
       agentWhatsapp: "5534999990000", city: "Uberaba", state: "MG",
     });
     await db.insert(tenantStorefronts).values({

@@ -1,3 +1,4 @@
+import type { DocumentSegmentFacet } from "../documents/segments";
 import "server-only";
 import { lte } from "drizzle-orm";
 import { db } from "../../db";
@@ -61,6 +62,7 @@ export async function purgeHumanSendReservations(now: Date): Promise<{ deleted: 
 }
 
 export interface DocumentMaintenanceDependencies {
+  facet?: DocumentSegmentFacet | null;
   storage: DocumentStorage;
 }
 
@@ -97,7 +99,7 @@ function countByTenant(tenantIds: string[]): Record<string, number> {
  */
 export async function expireDocuments(
   now: Date,
-  { storage }: DocumentMaintenanceDependencies
+  { storage, facet = null }: DocumentMaintenanceDependencies
 ): Promise<ExpireDocumentsResult> {
   const expired = await expireDueDocuments(now);
   const lifecycle = createDocumentLifecycle({ storage, now: () => now });
@@ -112,7 +114,7 @@ export async function expireDocuments(
   // Um expirado sai do corpus e libera espaço: um `fora_do_agente` que agora
   // cabe volta ao agente (DOCLIM-01 AC8), como já acontece na exclusão manual.
   for (const tenantId of new Set(expired.map((document) => document.tenantId))) {
-    await reconcileTenantDocumentAdmission(tenantId, now);
+    await reconcileTenantDocumentAdmission(tenantId, now, facet);
   }
 
   return {

@@ -26,7 +26,7 @@ describe("L16a T8 — views públicas da vitrine (VBANCO-01)", () => {
     tenantIds.push(id);
     const slug = `fixture-vitrine-${id}`;
     await db.insert(tenants).values({
-      id, slug, name: `Imobiliária ${id.slice(0, 8)}`, agentName: "Agente", supportedModality: "ambos",
+      id, slug, name: `Imobiliária ${id.slice(0, 8)}`, agentName: "Agente", supportedSegment: "ambos",
       logo: `https://example.com/${id}.png`, city: "Uberaba", state: "MG",
       agentWhatsapp: opts.whatsapp === undefined ? "5534999990000" : opts.whatsapp,
     });

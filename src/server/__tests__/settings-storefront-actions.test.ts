@@ -56,7 +56,7 @@ const activeStorefront = {
 async function createTenant(name: string, opts: { storefront?: "ativa" | "inativa" | "nenhuma" } = {}): Promise<string> {
   const id = randomUUID();
   await db.insert(tenants).values({
-    id, name, agentName: "Agente Original", supportedModality: "ambos", slug: `fixture-t16-${id}`,
+    id, name, agentName: "Agente Original", supportedSegment: "ambos", slug: `fixture-t16-${id}`,
     city: "Uberaba", agentWhatsapp: ORIGINAL_WHATSAPP,
   });
   createdTenantIds.push(id);
@@ -71,7 +71,7 @@ function settingsInput(tenantName: string, extra: Record<string, unknown> = {}) 
   return {
     name: tenantName,
     agentName: "Agente Original",
-    supportedModality: "ambos" as const,
+    supportedSegment: "ambos" as const,
     ...extra,
   };
 }

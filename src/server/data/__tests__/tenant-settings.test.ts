@@ -15,7 +15,7 @@ const ORIGINAL = {
   id: FIXTURE_TENANT_ID,
   name: "Imobiliária Fixture Settings",
   agentName: "Agente Fixture",
-  supportedModality: "ambos" as const,
+  supportedSegment: "ambos" as const,
   slug: `fixture-${FIXTURE_TENANT_ID}`,
   city: "Uberaba",
   state: "MG",
@@ -28,7 +28,7 @@ const ORIGINAL = {
 const REQUIRED = {
   name: ORIGINAL.name,
   agentName: ORIGINAL.agentName,
-  supportedModality: ORIGINAL.supportedModality,
+  supportedSegment: ORIGINAL.supportedSegment,
 };
 
 describe("server/data — updateTenantSettings estendido (RD-07)", () => {
@@ -49,7 +49,7 @@ describe("server/data — updateTenantSettings estendido (RD-07)", () => {
     const updated = await updateTenantSettings(FIXTURE_TENANT_ID, {
       name: "Imobiliária Renomeada",
       agentName: "Bia",
-      supportedModality: "novo",
+      supportedSegment: "novo",
       city: "Uberlândia",
       state: "MG",
       agentWhatsapp: "+55 34 98888-7777",
@@ -60,7 +60,7 @@ describe("server/data — updateTenantSettings estendido (RD-07)", () => {
     expect(updated).not.toBeNull();
     expect(updated!.name).toBe("Imobiliária Renomeada");
     expect(updated!.agentName).toBe("Bia");
-    expect(updated!.supportedModality).toBe("novo");
+    expect(updated!.supportedSegment).toBe("novo");
     expect(updated!.city).toBe("Uberlândia");
     expect(updated!.state).toBe("MG");
     expect(updated!.agentWhatsapp).toBe("+55 34 98888-7777");
@@ -107,7 +107,7 @@ describe("server/data — updateTenantSettings estendido (RD-07)", () => {
     // Os obrigatórios continuam gravados normalmente no mesmo save.
     expect(updated!.name).toBe(ORIGINAL.name);
     expect(updated!.agentName).toBe(ORIGINAL.agentName);
-    expect(updated!.supportedModality).toBe(ORIGINAL.supportedModality);
+    expect(updated!.supportedSegment).toBe(ORIGINAL.supportedSegment);
   });
 
   it("campo opcional só com espaços em branco também persiste null (RD-07 AC3)", async () => {
@@ -143,11 +143,11 @@ describe("server/data — updateTenantSettings estendido (RD-07)", () => {
     const updated = await updateTenantSettings(FIXTURE_TENANT_ID, {
       name: "Somente Obrigatórios",
       agentName: "Agente Fixture",
-      supportedModality: "usado",
+      supportedSegment: "usado",
     });
 
     expect(updated!.name).toBe("Somente Obrigatórios");
-    expect(updated!.supportedModality).toBe("usado");
+    expect(updated!.supportedSegment).toBe("usado");
     expect(updated!.city).toBe(ORIGINAL.city);
     expect(updated!.state).toBe(ORIGINAL.state);
     expect(updated!.agentWhatsapp).toBe(ORIGINAL.agentWhatsapp);

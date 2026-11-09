@@ -953,91 +953,7 @@
   },
   {
     "path": "src/server/data/index.ts",
-    "term": "stored:novo",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/server/data/index.ts",
-    "term": "stored:usado",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/server/data/index.ts",
-    "term": "stored:ambos",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/server/data/index.ts",
     "term": "stored:reservado",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/server/documents/context-budget.ts",
-    "term": "stored:novo",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/server/documents/context-budget.ts",
-    "term": "stored:usado",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/server/documents/context-budget.ts",
-    "term": "stored:ambos",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/server/documents/repository.ts",
-    "term": "stored:novo",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/server/documents/repository.ts",
-    "term": "stored:usado",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/server/documents/repository.ts",
-    "term": "stored:ambos",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/server/documents/uploads.ts",
-    "term": "stored:novo",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/server/documents/uploads.ts",
-    "term": "stored:usado",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/server/documents/uploads.ts",
-    "term": "stored:ambos",
     "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
     "removedIn": "L18a",
     "category": "stored"
@@ -1220,48 +1136,6 @@
   {
     "path": "src/server/documents/benchmark-identity.ts",
     "term": "identifier:principal",
-    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
-    "removedIn": "L18a",
-    "category": "identifier"
-  },
-  {
-    "path": "src/server/documents/context-budget.ts",
-    "term": "identifier:novo",
-    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
-    "removedIn": "L18a",
-    "category": "identifier"
-  },
-  {
-    "path": "src/server/documents/context-budget.ts",
-    "term": "identifier:usado",
-    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
-    "removedIn": "L18a",
-    "category": "identifier"
-  },
-  {
-    "path": "src/server/documents/context-budget.ts",
-    "term": "identifier:ambos",
-    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
-    "removedIn": "L18a",
-    "category": "identifier"
-  },
-  {
-    "path": "src/server/documents/repository.ts",
-    "term": "identifier:novo",
-    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
-    "removedIn": "L18a",
-    "category": "identifier"
-  },
-  {
-    "path": "src/server/documents/repository.ts",
-    "term": "identifier:usado",
-    "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
-    "removedIn": "L18a",
-    "category": "identifier"
-  },
-  {
-    "path": "src/server/documents/repository.ts",
-    "term": "identifier:ambos",
     "reason": "Identificador ou caminho anterior ao lote; renomeado nas tasks do L18a, salvo o fio do L18c.",
     "removedIn": "L18a",
     "category": "identifier"

@@ -56,7 +56,7 @@ async function waitForLocks(pids: number[]) {
   return 0;
 }
 beforeAll(async () => {
-  await db.insert(tenants).values([tenantId, foreignTenant].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T37", agentName: "Agente", supportedModality: "ambos" as const })));
+  await db.insert(tenants).values([tenantId, foreignTenant].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T37", agentName: "Agente", supportedSegment: "ambos" as const })));
   await db.insert(tenantApiKeys).values({ tenantId, label: "fixtureT37", keyHash: createHash("sha256").update(apiKey).digest("hex") });
 });
 beforeEach(() => { vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(now); });

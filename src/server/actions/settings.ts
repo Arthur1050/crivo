@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getActiveTenantId } from "../tenant";
 import { denyIfForbidden } from "./permission";
-import { updateTenantSettings, type Modality } from "../data";
+import { updateTenantSettings, type DocumentSegment } from "../data";
 import { getStorefront } from "../../verticals/real-estate/storefront/data";
 import { scheduleStorefrontRevalidation } from "../../verticals/real-estate/storefront/schedule";
 import {
@@ -11,7 +11,7 @@ import {
   validateBaselineCount,
   validateBaselinePercent,
   validateBusinessHours,
-  validateModality,
+  validateSegment,
   validateName,
 } from "../validation";
 
@@ -26,7 +26,7 @@ const STOREFRONT_WHATSAPP_ERROR =
 export interface UpdateTenantSettingsInput {
   name: string;
   agentName: string;
-  supportedModality: Modality;
+  supportedSegment: DocumentSegment;
   // Identidade opcional (redesign-crm-astryx — RD-07 AC3). Repassados como
   // vieram: `updateTenantSettings` é quem normaliza (chave ausente = coluna
   // intocada; vazio/só espaços = null). Quem edita esses campos na UI precisa
@@ -78,7 +78,7 @@ export async function updateTenantSettingsAction(
   const agentNameCheck = validateName(input.agentName, "Nome do agente");
   if (!agentNameCheck.ok) return agentNameCheck;
 
-  const modalityCheck = validateModality(input.supportedModality);
+  const modalityCheck = validateSegment(input.supportedSegment);
   if (!modalityCheck.ok) return modalityCheck;
 
   const agentVoiceToneCheck = validateAgentVoiceTone(input.agentVoiceTone);
@@ -140,7 +140,7 @@ export async function updateTenantSettingsAction(
   const updated = await updateTenantSettings(tenantId, {
     name: input.name.trim(),
     agentName: input.agentName.trim(),
-    supportedModality: input.supportedModality,
+    supportedSegment: input.supportedSegment,
     city: input.city,
     state: input.state,
     agentWhatsapp: input.agentWhatsapp,

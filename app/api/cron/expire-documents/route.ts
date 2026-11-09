@@ -57,7 +57,7 @@ export function createExpireDocumentsHandler(
       operatorEmail: process.env.KRIVO_OPERATOR_ALERT_EMAIL,
       send: sendIntegrationAlertEmail,
     };
-    const result = await runDailyMaintenance(now(), { storage, integrationAlert });
+    const result = await runDailyMaintenance(now(), { storage, integrationAlert, facet: realEstate.documentSegments });
     // Só contagens e flags, sem nome de tenant: o log de produção prova que o
     // grupo rodou (ALERTA-04 AC6) sem carregar dado de imobiliária.
     console.info("[manutencao] alerta", {

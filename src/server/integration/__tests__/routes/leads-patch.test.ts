@@ -29,14 +29,14 @@ describe("routes: PATCH /api/v1/leads/[id]", () => {
         id: tenantAId,
         name: `Tenant Teste A leads-patch ${tenantAId}`,
         agentName: "Agente A",
-        supportedModality: "ambos",
+        supportedSegment: "ambos",
         slug: `fixture-${tenantAId}`,
       },
       {
         id: tenantBId,
         name: `Tenant Teste B leads-patch ${tenantBId}`,
         agentName: "Agente B",
-        supportedModality: "ambos",
+        supportedSegment: "ambos",
         slug: `fixture-${tenantBId}`,
       },
     ]);

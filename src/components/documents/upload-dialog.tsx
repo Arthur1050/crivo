@@ -23,13 +23,13 @@ import {
   createDocumentCategoryAction,
   finalizeDocumentUploadAction,
 } from "@/src/server/actions/documents";
-import type { CategoryColor, DocumentCategory, Modality } from "@/src/server/data";
+import type { CategoryColor, DocumentCategory, DocumentSegment } from "@/src/server/data";
 import {
   CATEGORY_COLOR_PALETTE,
   MAX_FILE_SIZE_BYTES,
   validateFileSize,
   validateMimeType,
-  validateModality,
+  validateSegment,
   validateName,
 } from "@/src/server/validation";
 import {
@@ -39,7 +39,7 @@ import {
   type UploadPhase,
 } from "./upload-client";
 
-const MODALITY_OPTIONS: { value: Modality; label: string }[] = [
+const MODALITY_OPTIONS: { value: DocumentSegment; label: string }[] = [
   { value: MODALITY.new, label: "Novo" },
   { value: MODALITY.used, label: "Usado" },
   { value: MODALITY.both, label: "Ambos" },
@@ -67,7 +67,7 @@ function resolveMimeType(file: File): string {
 interface FieldErrors {
   file?: string;
   name?: string;
-  modality?: string;
+  segment?: string;
   expiresAt?: string;
 }
 
@@ -94,7 +94,7 @@ export function UploadDialog({ categories, folder }: UploadDialogProps) {
   const [file, setFile] = useState<File | null>(null);
   const [name, setName] = useState("");
   const [isNameTouched, setIsNameTouched] = useState(false);
-  const [modality, setModality] = useState<Modality | null>(null);
+  const [segment, setModality] = useState<DocumentSegment | null>(null);
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [expiresAt, setExpiresAt] = useState<ISODateTimeString | undefined>(undefined);
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -184,18 +184,18 @@ export function UploadDialog({ categories, folder }: UploadDialogProps) {
     const nameCheck = validateName(name, "Nome do documento");
     const mimeCheck = validateMimeType(mimeType);
     const sizeCheck = validateFileSize(file.size);
-    const modalityCheck = validateModality(modality);
+    const modalityCheck = validateSegment(segment);
     const isExpiryInPast =
       expiresAt !== undefined && new Date(expiresAt).getTime() <= Date.now();
 
     const nextErrors: FieldErrors = {
       name: nameCheck.ok ? undefined : nameCheck.error,
       file: !mimeCheck.ok ? mimeCheck.error : !sizeCheck.ok ? sizeCheck.error : undefined,
-      modality: modalityCheck.ok ? undefined : modalityCheck.error,
+      segment: modalityCheck.ok ? undefined : modalityCheck.error,
       expiresAt: isExpiryInPast ? "A validade precisa ser uma data futura." : undefined,
     };
 
-    if (nextErrors.name || nextErrors.file || nextErrors.modality || nextErrors.expiresAt) {
+    if (nextErrors.name || nextErrors.file || nextErrors.segment || nextErrors.expiresAt) {
       setErrors(nextErrors);
       return;
     }
@@ -212,7 +212,7 @@ export function UploadDialog({ categories, folder }: UploadDialogProps) {
         name,
         mimeType,
         sizeBytes: file.size,
-        modality: modality as Modality,
+        modality: segment as DocumentSegment,
         categoryId: resolvedCategoryId,
         folderId: folder?.id ?? null,
         expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
@@ -351,14 +351,14 @@ export function UploadDialog({ categories, folder }: UploadDialogProps) {
                 <Selector
                   label="Modalidade"
                   placeholder="Selecione a modalidade"
-                  value={modality ?? ""}
+                  value={segment ?? ""}
                   onChange={(value) => {
-                    setModality(value as Modality);
-                    setErrors((prev) => ({ ...prev, modality: undefined }));
+                    setModality(value as DocumentSegment);
+                    setErrors((prev) => ({ ...prev, segment: undefined }));
                   }}
                   options={MODALITY_OPTIONS}
                   status={
-                    errors.modality ? { type: "error", message: errors.modality } : undefined
+                    errors.segment ? { type: "error", message: errors.segment } : undefined
                   }
                   isRequired
                 />

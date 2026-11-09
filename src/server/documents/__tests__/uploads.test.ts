@@ -89,7 +89,7 @@ function inputFor(
     name: `arquivo-${randomUUID()}.txt`,
     mimeType: "text/plain",
     sizeBytes: bytes.byteLength,
-    modality: "novo",
+    segment: "novo",
     ...overrides,
   };
 }
@@ -146,8 +146,8 @@ describe("document upload intake (lote-12 T8)", () => {
     await db.delete(users).where(inArray(users.id, [USER_A, USER_B]));
     await db.delete(tenants).where(inArray(tenants.id, [TENANT_A, TENANT_B]));
     await db.insert(tenants).values([
-      { id: TENANT_A, name: "Uploads A", agentName: "A", supportedModality: "ambos", slug: `uploads-a-${TENANT_A}` },
-      { id: TENANT_B, name: "Uploads B", agentName: "B", supportedModality: "ambos", slug: `uploads-b-${TENANT_B}` },
+      { id: TENANT_A, name: "Uploads A", agentName: "A", supportedSegment: "ambos", slug: `uploads-a-${TENANT_A}` },
+      { id: TENANT_B, name: "Uploads B", agentName: "B", supportedSegment: "ambos", slug: `uploads-b-${TENANT_B}` },
     ]);
     await db.insert(users).values([
       actorA.user,
@@ -465,7 +465,7 @@ describe("document upload intake (lote-12 T8)", () => {
       name: winnerName,
       mimeType: "text/plain",
       sizeBytes: BigInt(bytes.byteLength),
-      modality: "novo",
+      segment: "novo",
       storageProvider: "vercel_blob",
       storageKey: `documents/v1/${TENANT_A}/vencedor-${randomUUID()}`,
       storageEtag: "etag-vencedor",

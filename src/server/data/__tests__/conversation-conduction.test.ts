@@ -41,7 +41,7 @@ describe("server/data — condução humana (lote-14, T5)", () => {
         id,
         name: `Tenant conducao ${id}`,
         agentName: "Agente",
-        supportedModality: "ambos" as const,
+        supportedSegment: "ambos" as const,
         slug: `fixture-${id}`,
       }))
     );

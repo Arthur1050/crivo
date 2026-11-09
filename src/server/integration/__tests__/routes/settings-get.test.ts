@@ -26,7 +26,7 @@ describe("routes: GET /api/v1/settings", () => {
         id: tenantAId,
         name: "Tenant Teste A settings-get",
         agentName: "Agente A",
-        supportedModality: "ambos",
+        supportedSegment: "ambos",
         slug: `fixture-${tenantAId}`,
         agentPresentationMessage: "Mensagem de apresentação do tenant A.",
         agentVoiceTone: "Tom de voz do tenant A.",
@@ -38,7 +38,7 @@ describe("routes: GET /api/v1/settings", () => {
         id: tenantBId,
         name: "Tenant Teste B settings-get",
         agentName: "Agente B",
-        supportedModality: "usado",
+        supportedSegment: "usado",
         slug: `fixture-${tenantBId}`,
         // Sem agentPresentationMessage/horário comercial — fica null.
       },

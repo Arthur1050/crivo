@@ -21,7 +21,7 @@ describe("L15 T1 — estado de saúde da integração em tenants (ALERTA-01)", (
     const id = randomUUID();
     created.push(id);
     await db.insert(tenants).values({
-      id, slug: `fixture-saude-${id}`, name: "Fixture saúde", agentName: "Agente", supportedModality: "ambos",
+      id, slug: `fixture-saude-${id}`, name: "Fixture saúde", agentName: "Agente", supportedSegment: "ambos",
     });
     return id;
   }

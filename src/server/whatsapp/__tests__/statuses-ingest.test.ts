@@ -33,7 +33,7 @@ describe("T9 — lote autenticado e normalizado, Postgres real", () => {
   let contextA: NonNullable<ReturnType<typeof createStatusForwardingContext>>;
   let contextB: NonNullable<ReturnType<typeof createStatusForwardingContext>>;
   beforeAll(async () => {
-    await db.insert(tenants).values([tenantA, tenantB].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture status", agentName: "Agente", supportedModality: "ambos" as const })));
+    await db.insert(tenants).values([tenantA, tenantB].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture status", agentName: "Agente", supportedSegment: "ambos" as const })));
     await db.insert(tenantApiKeys).values([keyA, keyB].map((key, i) => ({ tenantId: i ? tenantB : tenantA, label: "Fixture status", keyHash: createHash("sha256").update(key).digest("hex") })));
     await db.insert(whatsappChannels).values(phones.map((phoneNumberId, i) => ({ tenantId: i === 2 ? tenantB : tenantA, phoneNumberId, ownershipVerifiedAt: i === 3 ? null : now })));
     const authA = await authenticate(requestA);

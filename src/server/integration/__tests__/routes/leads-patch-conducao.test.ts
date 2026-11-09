@@ -18,7 +18,7 @@ describe("routes: PATCH /api/v1/leads/[id] — lead conduzido por humano", () =>
       id: tenantId,
       name: `Tenant Teste leads-patch-conducao ${tenantId}`,
       agentName: "Agente",
-      supportedModality: "ambos",
+      supportedSegment: "ambos",
       slug: `fixture-${tenantId}`,
     });
     apiKey = `test-key-${randomUUID()}`;

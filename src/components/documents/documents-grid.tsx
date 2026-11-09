@@ -48,8 +48,8 @@ export function DocumentsGrid({ documents, categoryById, renderActions }: Docume
                   <HStack gap={2} vAlign="center">
                     <StackItem size="fill">
                       <Badge
-                        label={MODALITY_LABELS[document.modality]}
-                        variant={MODALITY_BADGE_VARIANT[document.modality]}
+                        label={MODALITY_LABELS[document.segment]}
+                        variant={MODALITY_BADGE_VARIANT[document.segment]}
                       />
                     </StackItem>
                     <StatusDot

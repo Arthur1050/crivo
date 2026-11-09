@@ -29,7 +29,7 @@ function publish(row: Fixture, patch: Partial<PublishAgentStateInput> = {}, data
 }
 async function state(row: Fixture) { return db.select().from(leadAgentState).where(and(eq(leadAgentState.tenantId, row.lead.tenantId), eq(leadAgentState.leadId, row.lead.id))); }
 beforeAll(async () => {
-  await db.insert(tenants).values([tenantA, tenantB].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T16 estado", agentName: "Agente", supportedModality: "ambos" as const })));
+  await db.insert(tenants).values([tenantA, tenantB].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T16 estado", agentName: "Agente", supportedSegment: "ambos" as const })));
   await db.insert(users).values({ id: human, email: `${human}@fixture.test`, name: "Equipe fixture" });
 });
 afterAll(async () => {

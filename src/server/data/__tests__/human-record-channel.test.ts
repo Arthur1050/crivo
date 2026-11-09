@@ -45,7 +45,7 @@ async function waitForLocks(pids: number[]) {
   return 0;
 }
 beforeAll(async () => {
-  await db.insert(tenants).values([tenantId, foreignTenant].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T31", agentName: "Agente", supportedModality: "ambos" as const })));
+  await db.insert(tenants).values([tenantId, foreignTenant].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T31", agentName: "Agente", supportedSegment: "ambos" as const })));
   await db.insert(users).values([authorId, otherAuthor].map((id) => ({ id, name: "Autora T31", email: `${id}@fixture.test` })));
   await db.insert(whatsappChannels).values([{ tenantId, phoneNumberId: actualChannel, ownershipVerifiedAt: now }, { tenantId, phoneNumberId: currentChannel, ownershipVerifiedAt: now }, { tenantId: foreignTenant, phoneNumberId: foreignChannel, ownershipVerifiedAt: now }, { tenantId, phoneNumberId: unverifiedChannel }]);
 });

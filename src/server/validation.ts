@@ -98,10 +98,10 @@ export function validateAgentVoiceTone(
   return { ok: true };
 }
 
-export function validateModality(
-  modality: string | null | undefined
+export function validateSegment(
+  segment: string | null | undefined
 ): ValidationResult {
-  if (!modality) {
+  if (!segment) {
     return { ok: false, error: "Modalidade é obrigatória." };
   }
 

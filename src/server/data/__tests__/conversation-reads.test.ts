@@ -42,7 +42,7 @@ describe("server/data — autoria e condução nas leituras (lote-14, T7)", () =
       id: tenantId,
       name: `Tenant leituras ${tenantId}`,
       agentName: "Agente",
-      supportedModality: "ambos",
+      supportedSegment: "ambos",
       slug: `fixture-${tenantId}`,
     });
     brokerAId = await createMember("Corretor A");

@@ -3,7 +3,7 @@ import "server-only";
 import { revalidatePath } from "next/cache";
 import { isActiveMemberOf } from "../../../server/data";
 import { scheduleStorefrontRevalidation } from "../storefront/schedule";
-import { validateModality, validateName } from "../../../server/validation";
+import { validateSegment, validateName } from "../../../server/validation";
 import {
   createProperty,
   deleteProperty,
@@ -90,7 +90,7 @@ export async function createPropertyAction(
   const kindCheck = validatePropertyKind(input.kind ?? "");
   if (!kindCheck.ok) return kindCheck;
 
-  const modalityCheck = validateModality(input.modality);
+  const modalityCheck = validateSegment(input.modality);
   if (!modalityCheck.ok) return modalityCheck;
 
   const neighborhoodCheck = validateName(input.neighborhood ?? "", "Bairro");
@@ -220,7 +220,7 @@ export async function updatePropertyAction(
   }
 
   if (input.modality !== undefined) {
-    const check = validateModality(input.modality);
+    const check = validateSegment(input.modality);
     if (!check.ok) return check;
     patch.modality = input.modality;
   }

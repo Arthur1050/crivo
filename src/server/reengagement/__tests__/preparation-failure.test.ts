@@ -29,7 +29,7 @@ function release(row: Fixture, code: PreparationFailureCode = "generation-failed
   return releasePreparationFailure({ tenantId }, row.lead.id, row.episodeId, { claimToken: row.claimToken, code }, { now: () => clock });
 }
 beforeAll(async () => {
-  await db.insert(tenants).values([tenantId, foreignTenant].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T19", agentName: "Agente", supportedModality: "ambos" as const })));
+  await db.insert(tenants).values([tenantId, foreignTenant].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T19", agentName: "Agente", supportedSegment: "ambos" as const })));
   await db.insert(whatsappChannels).values({ tenantId, phoneNumberId, ownershipVerifiedAt: now, usageEnabled: false });
 });
 afterAll(async () => {

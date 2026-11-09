@@ -22,7 +22,7 @@ describe("T10 — correlação da saída por tenant/canal/wamid", () => {
   });
   let conversationA: string, conversationA2: string, conversationB: string;
   beforeAll(async () => {
-    await db.insert(tenants).values([tenantA, tenantB].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture attach", agentName: "Agente", supportedModality: "ambos" as const })));
+    await db.insert(tenants).values([tenantA, tenantB].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture attach", agentName: "Agente", supportedSegment: "ambos" as const })));
     await db.insert(users).values([userA, userB].map((id) => ({ id, name: "Corretor fixture", email: `${id}@fixture.test` })));
     await db.insert(whatsappChannels).values([{ tenantId: tenantA, phoneNumberId: phoneA, ownershipVerifiedAt: now }, { tenantId: tenantA, phoneNumberId: phoneA2, ownershipVerifiedAt: now }, { tenantId: tenantB, phoneNumberId: phoneB, ownershipVerifiedAt: now }]);
     for (const [tenantId, assignedUserId, index] of [[tenantA, userA, 0], [tenantA, userB, 1], [tenantB, userB, 2]] as const) {

@@ -28,7 +28,7 @@ describe("server/integration properties — searchVisibleProperties (T12)", () =
       id: tenantId,
       name: `Tenant Teste properties ${tenantId}`,
       agentName: "Agente Teste",
-      supportedModality: "ambos",
+      supportedSegment: "ambos",
       slug: `fixture-properties-${tenantId}`,
     });
 
@@ -141,7 +141,7 @@ describe("server/integration properties — searchVisibleProperties (T12)", () =
         id: freshTenantId,
         name: "Tenant Vazio T12",
         agentName: "Agente Vazio",
-        supportedModality: "ambos",
+        supportedSegment: "ambos",
         slug: `fixture-properties-vazio-${freshTenantId}`,
       });
 
@@ -365,7 +365,7 @@ describe("server/integration properties — searchVisibleProperties (T12)", () =
       id,
       name: `Tenant Isolado T12 ${id}`,
       agentName: "Agente Isolado",
-      supportedModality: "ambos",
+      supportedSegment: "ambos",
       slug: `fixture-properties-isolado-${id}`,
     });
     const userId = randomUUID();

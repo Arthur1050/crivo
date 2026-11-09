@@ -26,7 +26,7 @@ describe("T6 — snapshot mensal sem zero presumido (USO-01/02; Done when T6)", 
 
   beforeAll(async () => {
     await db.insert(tenants).values([tenantA, tenantB].map((id) => ({
-      id, slug: `fixture-${id}`, name: "Fixture consumo", agentName: "Agente", supportedModality: "ambos" as const,
+      id, slug: `fixture-${id}`, name: "Fixture consumo", agentName: "Agente", supportedSegment: "ambos" as const,
     })));
     await db.insert(whatsappChannels).values({ tenantId: tenantB, phoneNumberId: foreignPhone });
   });

@@ -8,11 +8,12 @@ import {
   measureCanonicalContext,
   type ContextBudgetDocument,
   type DocumentContextEnvelope,
-  type DocumentModality,
+  type DocumentSegment,
 } from "../documents/context-budget";
+import { resolveDocumentSegment, type DocumentSegmentFacet } from "../documents/segments";
 
 export interface DirectContextQuery {
-  modality: DocumentModality;
+  segment: DocumentSegment;
   /**
    * Pergunta real do lead. No lote 12 o modo `direct` entrega o corpus inteiro,
    * então ela não filtra nada (DOCCTX-01 AC8) — trafega para que o contrato já
@@ -37,14 +38,15 @@ export class DocumentContextBudgetExceeded extends Error {}
 export async function getDirectDocumentContext(
   tenantId: string,
   query: DirectContextQuery,
-  now = new Date()
+  now = new Date(),
+  facet: DocumentSegmentFacet | null = null
 ): Promise<DocumentContextEnvelope> {
   if (query.reservedContextBytes !== undefined && (!Number.isSafeInteger(query.reservedContextBytes) || query.reservedContextBytes < 0)) throw new DocumentContextBudgetExceeded();
   const rows = await db
     .select({
       id: documents.id,
       name: documents.name,
-      modality: documents.modality,
+      segment: documents.segment,
       extractedText: documents.extractedText,
       uploadedAt: documents.uploadedAt,
       categoryName: documentCategories.name,
@@ -65,7 +67,7 @@ export async function getDirectDocumentContext(
   const corpus: ContextBudgetDocument[] = rows.map((row) => ({
     id: row.id,
     name: row.name,
-    modality: row.modality,
+    segment: row.segment,
     content: row.extractedText!,
     uploadedAt: row.uploadedAt,
     status: DOCUMENT_STATUS.ready,
@@ -75,10 +77,12 @@ export async function getDirectDocumentContext(
         : null,
   }));
 
-  const envelope = buildCanonicalContext(corpus, query.modality);
+  const segment = resolveDocumentSegment(query.segment, facet);
+  if (segment === undefined) throw new DocumentContextBudgetExceeded();
+  const envelope = buildCanonicalContext(corpus, segment, facet);
   if (query.reservedContextBytes !== undefined) {
     const [limit] = await db.select({ maxResponseBytes: tenantDocumentContextLimits.maxResponseBytes }).from(tenantDocumentContextLimits)
-      .where(and(eq(tenantDocumentContextLimits.tenantId, tenantId), eq(tenantDocumentContextLimits.queryModality, query.modality)));
+      .where(and(eq(tenantDocumentContextLimits.tenantId, tenantId), eq(tenantDocumentContextLimits.querySegment, segment)));
     const available = Math.max(0, (limit?.maxResponseBytes ?? 0) - query.reservedContextBytes);
     if (measureCanonicalContext(envelope) > available) throw new DocumentContextBudgetExceeded();
   }

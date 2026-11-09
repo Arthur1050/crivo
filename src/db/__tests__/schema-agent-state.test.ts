@@ -20,7 +20,7 @@ describe("T3 — projeção mínima, desconhecida até sincronização (REEN-01 
   let anchorB: string;
   beforeAll(async () => {
     await db.insert(tenants).values([tenantA, tenantB].map((id) => ({
-      id, slug: `fixture-${id}`, name: "Fixture estado agente", agentName: "Agente", supportedModality: "ambos" as const,
+      id, slug: `fixture-${id}`, name: "Fixture estado agente", agentName: "Agente", supportedSegment: "ambos" as const,
     })));
     const fixture = await createAnchor(tenantB);
     leadB = fixture.leadId; anchorB = fixture.anchorMessageId;

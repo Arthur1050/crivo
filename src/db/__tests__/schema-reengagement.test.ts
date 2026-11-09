@@ -26,7 +26,7 @@ describe("T4 — episódio durável (REEN-03 AC8; L14B-01 AC3; Done when T4)", (
 
   beforeAll(async () => {
     await db.insert(tenants).values([tenantA, tenantB].map((id) => ({
-      id, slug: `fixture-${id}`, name: "Fixture episódio", agentName: "Agente", supportedModality: "ambos" as const,
+      id, slug: `fixture-${id}`, name: "Fixture episódio", agentName: "Agente", supportedSegment: "ambos" as const,
     })));
     foreign = await fixture(tenantB);
   });

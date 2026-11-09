@@ -32,7 +32,7 @@ describe("L16a T1 — tabela da vitrine e destaque de imóvel (VCFG-01, VDEST-01
     const id = randomUUID();
     created.push(id);
     await db.insert(tenants).values({
-      id, slug: `fixture-vitrine-${id}`, name: "Fixture vitrine", agentName: "Agente", supportedModality: "ambos",
+      id, slug: `fixture-vitrine-${id}`, name: "Fixture vitrine", agentName: "Agente", supportedSegment: "ambos",
     });
     return id;
   }

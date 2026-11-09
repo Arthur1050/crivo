@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { realEstate } from "../../../src/verticals/real-estate";
 import {
   buildBenchmarkCorpus,
   buildBenchmarkFacts,
@@ -11,7 +12,7 @@ import {
   buildCanonicalContext,
   measureCanonicalContext,
   type ContextBudgetDocument,
-  type DocumentModality,
+  type DocumentSegment,
 } from "../../../src/server/documents/context-budget";
 
 type BenchmarkDocument = ReturnType<typeof buildBenchmarkCorpus>["documents"][number];
@@ -20,7 +21,7 @@ function asCrmDocuments(documents: BenchmarkDocument[]): ContextBudgetDocument[]
   return documents.map((document) => ({
     id: document.id,
     name: document.name,
-    modality: document.modality as DocumentModality,
+    segment: document.modality as DocumentSegment,
     content: document.content,
     uploadedAt: new Date(document.uploadedAt),
     status: "pronto",
@@ -28,14 +29,14 @@ function asCrmDocuments(documents: BenchmarkDocument[]): ContextBudgetDocument[]
   }));
 }
 
-const MODALITIES: DocumentModality[] = ["novo", "usado", "ambos"];
+const MODALITIES: DocumentSegment[] = ["novo", "usado", "ambos"];
 
 describe("benchmark-corpus (lote-12 T34)", () => {
   // A faixa medida só vale como teto se o envelope do benchmark for o mesmo
   // que a admissão do CRM mede. Esta é a prova byte a byte.
   it.each(MODALITIES)("envelope %s é idêntico ao buildCanonicalContext do CRM", (modality) => {
     const corpus = buildBenchmarkCorpus({ targetBytes: 64_000, modality, seed: 3 });
-    const crm = buildCanonicalContext(asCrmDocuments(corpus.documents), modality);
+    const crm = buildCanonicalContext(asCrmDocuments(corpus.documents), modality, realEstate.documentSegments);
 
     expect(corpus.envelope).toBe(JSON.stringify(crm));
     expect(corpus.envelopeBytes).toBe(measureCanonicalContext(crm));
@@ -45,7 +46,7 @@ describe("benchmark-corpus (lote-12 T34)", () => {
     const corpus = buildBenchmarkCorpus({ targetBytes: 40_000, modality: "ambos", seed: 5 });
     for (const modality of MODALITIES) {
       expect(serializeBenchmarkEnvelope(corpus.documents, modality)).toBe(
-        JSON.stringify(buildCanonicalContext(asCrmDocuments(corpus.documents), modality))
+        JSON.stringify(buildCanonicalContext(asCrmDocuments(corpus.documents), modality, realEstate.documentSegments))
       );
     }
   });

@@ -34,14 +34,14 @@ describe("server/data getDashboardKpis", () => {
         id: tenantAId,
         name: "Dashboard Test Tenant A",
         agentName: "Agente A",
-        supportedModality: "ambos",
+        supportedSegment: "ambos",
         slug: `fixture-${tenantAId}`,
       },
       {
         id: tenantBId,
         name: "Dashboard Test Tenant B",
         agentName: "Agente B",
-        supportedModality: "ambos",
+        supportedSegment: "ambos",
         slug: `fixture-${tenantBId}`,
       },
     ]);
@@ -301,14 +301,14 @@ describe("server/data getLeadVolumeSeries / getLeadDistributions", () => {
         id: tenantId,
         name: "Dashboard Series Test Tenant",
         agentName: "Agente Série",
-        supportedModality: "ambos",
+        supportedSegment: "ambos",
         slug: `fixture-${tenantId}`,
       },
       {
         id: otherTenantId,
         name: "Dashboard Series Other Tenant",
         agentName: "Agente Outro",
-        supportedModality: "ambos",
+        supportedSegment: "ambos",
         slug: `fixture-${otherTenantId}`,
       },
     ]);

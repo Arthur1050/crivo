@@ -18,7 +18,7 @@ afterAll(async () => {
 
 describe("VOCAB-01 AC6 — predicados de papéis", () => {
   it("preserva o SQL literal e o pertencimento a múltiplos papéis nas duas consultas reais", async () => {
-    await db.insert(tenants).values({ id: tenantId, name: "Papéis", slug: `roles-${tenantId}`, agentName: "Teste", supportedModality: "ambos" });
+    await db.insert(tenants).values({ id: tenantId, name: "Papéis", slug: `roles-${tenantId}`, agentName: "Teste", supportedSegment: "ambos" });
     await db.insert(users).values(userIds.map((id, index) => ({ id, name: `Pessoa ${index}`, email: `${id}@fixture.test` })));
     const roles = ["gestor,corretor", "administrador,gestor", "gestor", "administrador,corretor"];
     await db.insert(tenant_members).values(userIds.map((userId, index) => ({

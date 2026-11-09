@@ -238,7 +238,7 @@ interface TenantDef {
   slug: string;
   name: string;
   agentName: string;
-  supportedModality: Modality;
+  supportedSegment: Modality;
   // Baseline pré-piloto (Lote 4 — DASH-05; lote-9 — BASE-01). Nullable nos
   // cinco campos, para os três tenants: o baseline é um snapshot único
   // preenchido por quem tem `configuracoes:escrever`, nunca inventado pelo
@@ -351,7 +351,7 @@ const TENANT_DEFS: TenantDef[] = [
     slug: "vale-uberaba",
     name: "Imobiliária Vale do Uberaba",
     agentName: "Bia",
-    supportedModality: MODALITY.both,
+    supportedSegment: MODALITY.both,
     baselineLeadsPerMonth: null,
     baselineFirstResponseMinutes: null,
     baselineLeadToMeetingPct: null,
@@ -409,7 +409,7 @@ const TENANT_DEFS: TenantDef[] = [
     slug: "triangulo",
     name: "Triângulo Imóveis",
     agentName: "Lucas",
-    supportedModality: MODALITY.both,
+    supportedSegment: MODALITY.both,
     baselineLeadsPerMonth: null,
     baselineFirstResponseMinutes: null,
     baselineLeadToMeetingPct: null,
@@ -470,7 +470,7 @@ const TENANT_DEFS: TenantDef[] = [
     slug: "krivo-demo",
     name: "Krivo Demo",
     agentName: "Sofia",
-    supportedModality: MODALITY.both,
+    supportedSegment: MODALITY.both,
     baselineLeadsPerMonth: null,
     baselineFirstResponseMinutes: null,
     baselineLeadToMeetingPct: null,
@@ -815,7 +815,7 @@ export async function runSeed(): Promise<SeedResult> {
       id: tenantId,
       name: tenantDef.name,
       agentName: tenantDef.agentName,
-      supportedModality: tenantDef.supportedModality,
+      supportedSegment: tenantDef.supportedSegment,
       baselineLeadsPerMonth: tenantDef.baselineLeadsPerMonth,
       baselineFirstResponseMinutes: tenantDef.baselineFirstResponseMinutes,
       baselineLeadToMeetingPct: tenantDef.baselineLeadToMeetingPct,

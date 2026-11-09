@@ -55,7 +55,7 @@ async function waitForLocks(pids: number[]) {
   }
   return 0;
 }
-beforeAll(async () => { await db.insert(tenants).values([tenantId, foreignTenant].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T29", agentName: "Agente", supportedModality: "ambos" as const }))); });
+beforeAll(async () => { await db.insert(tenants).values([tenantId, foreignTenant].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T29", agentName: "Agente", supportedSegment: "ambos" as const }))); });
 afterAll(async () => {
   await db.delete(whatsappMessageReceipts).where(eq(whatsappMessageReceipts.tenantId, tenantId)); await db.delete(reengagementEpisodes).where(eq(reengagementEpisodes.tenantId, tenantId));
   await db.delete(leadAgentState).where(eq(leadAgentState.tenantId, tenantId)); await db.delete(messages).where(eq(messages.tenantId, tenantId)); await db.delete(conversations).where(eq(conversations.tenantId, tenantId));

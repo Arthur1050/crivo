@@ -8,7 +8,6 @@ import {
 import {
   validateFileSize,
   validateMimeType,
-  validateModality,
   validateName,
 } from "../validation";
 import {
@@ -27,19 +26,18 @@ import {
   MAX_DOCUMENT_UPLOAD_BYTES,
   VercelBlobDocumentStorage,
 } from "./vercel-blob-storage";
-import { createDocumentProcessingService } from "./processing";
-import { startDocumentProcessingRun } from "./workflow-start";
+import { createDocumentProcessingService, type ProcessingStart } from "./processing";
+import { resolveDocumentSegment, type DocumentSegment, type DocumentSegmentFacet } from "./segments";
 
 const UPLOAD_INTENT_TTL_MS = 60 * 60 * 1000;
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
-const MODALITIES = ["novo", "usado", "ambos"] as const;
 
 export interface CreateDocumentUploadInput {
   clientSha256: string;
   name: string;
   mimeType: string;
   sizeBytes: number;
-  modality: (typeof MODALITIES)[number];
+  segment?: DocumentSegment;
   categoryId?: string | null;
   folderId?: string | null;
   expiresAt?: Date | null;
@@ -101,6 +99,7 @@ export interface DocumentUploadIntakeDependencies {
   storage?: DocumentStorage;
   repository?: DocumentUploadRepository;
   now?: () => Date;
+  facet?: DocumentSegmentFacet | null;
   /**
    * Dispara o processamento de um documento recém-confirmado. O padrão é o
    * Workflow real: um consumidor novo não pode esquecê-lo e deixar documentos
@@ -116,8 +115,6 @@ function validInput(input: CreateDocumentUploadInput, now: Date) {
     input.sizeBytes >= 1 &&
     validateFileSize(input.sizeBytes).ok &&
     input.sizeBytes <= MAX_DOCUMENT_UPLOAD_BYTES &&
-    validateModality(input.modality).ok &&
-    MODALITIES.includes(input.modality) &&
     SHA256_PATTERN.test(input.clientSha256) &&
     (input.expiresAt === undefined ||
       input.expiresAt === null ||
@@ -200,7 +197,8 @@ async function compensateUpload(
  * intent identifier and then verifies the object again from private storage.
  */
 export function createDocumentUploadIntake(
-  dependencies: DocumentUploadIntakeDependencies = {}
+  dependencies: DocumentUploadIntakeDependencies,
+  start: ProcessingStart
 ) {
   const storage = dependencies.storage ?? new VercelBlobDocumentStorage();
   const repository = dependencies.repository ?? defaultRepository;
@@ -208,7 +206,7 @@ export function createDocumentUploadIntake(
   const dispatch =
     dependencies.dispatch ??
     ((job: DocumentProcessingJob) =>
-      createDocumentProcessingService({ storage, start: startDocumentProcessingRun }).dispatch(job));
+      createDocumentProcessingService({ storage, start }).dispatch(job));
 
   /**
    * Nunca lança. Ela roda dentro do bloco que compensa o upload, e o documento
@@ -232,7 +230,8 @@ export function createDocumentUploadIntake(
       if (!actor) throw new Error("Sessão não fornecida para o upload.");
       authorizeOrThrow(actor, "documents", "write");
       const startedAt = now();
-      if (!validInput(input, startedAt)) {
+      const segment = resolveDocumentSegment(input.segment, dependencies.facet ?? null);
+      if (segment === undefined || !validInput(input, startedAt)) {
         return { kind: "invalid", code: "upload_input_invalid" };
       }
       if (input.folderId != null && !isUuid(input.folderId)) return { kind: "folder_not_found" };
@@ -247,7 +246,7 @@ export function createDocumentUploadIntake(
           name: input.name.trim(),
           mimeType: input.mimeType,
           sizeBytes: input.sizeBytes,
-          modality: input.modality,
+          segment,
           categoryId: input.categoryId ?? null,
           folderId: input.folderId ?? null,
           expiresAt: input.expiresAt ?? null,

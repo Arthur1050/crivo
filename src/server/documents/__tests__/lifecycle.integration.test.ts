@@ -17,7 +17,7 @@ const NOW = new Date("2030-02-01T12:00:00.000Z");
 function hash(seed: string) { return seed.padEnd(64, "0").slice(0, 64); }
 async function createDocument(seed: string, overrides: Partial<typeof documents.$inferInsert> = {}, tenantId = TENANT_A) {
   const [row] = await db.insert(documents).values({
-    tenantId, name: `${seed}.txt`, modality: "novo", mimeType: "text/plain", sizeBytes: 12n,
+    tenantId, name: `${seed}.txt`, segment: "novo", mimeType: "text/plain", sizeBytes: 12n,
     storageProvider: "vercel_blob", storageKey: `documents/v1/${tenantId}/${seed}-${randomUUID()}`,
     storageEtag: `etag-${seed}`, contentSha256: hash(`${seed}-${randomUUID()}`), status: "processando",
     processingAttempt: 1, processingStartedAt: NOW, extractedText: "segredo", extractedBytes: 7,
@@ -43,8 +43,8 @@ describe("document lifecycle integration (lote-12 T18)", () => {
     await db.delete(users).where(inArray(users.id, [USER_A, USER_B]));
     await db.delete(tenants).where(inArray(tenants.id, [TENANT_A, TENANT_B]));
     await db.insert(tenants).values([
-      { id: TENANT_A, name: "Lifecycle A", agentName: "A", supportedModality: "ambos", slug: `lifecycle-a-${TENANT_A}` },
-      { id: TENANT_B, name: "Lifecycle B", agentName: "B", supportedModality: "ambos", slug: `lifecycle-b-${TENANT_B}` },
+      { id: TENANT_A, name: "Lifecycle A", agentName: "A", supportedSegment: "ambos", slug: `lifecycle-a-${TENANT_A}` },
+      { id: TENANT_B, name: "Lifecycle B", agentName: "B", supportedSegment: "ambos", slug: `lifecycle-b-${TENANT_B}` },
     ]);
     await db.insert(users).values([{ id: USER_A, name: "Lifecycle A", email: `lifecycle-a-${USER_A}@example.test` }, { id: USER_B, name: "Lifecycle B", email: `lifecycle-b-${USER_B}@example.test` }]);
   });
@@ -67,7 +67,7 @@ describe("document lifecycle integration (lote-12 T18)", () => {
     const d = await createDocument("with-intent");
     const [intent] = await db.insert(documentUploadIntents).values({
       tenantId: TENANT_A, requestedByUserId: USER_A, clientSha256: d.contentSha256, name: d.name,
-      mimeType: d.mimeType, sizeBytes: d.sizeBytes, modality: d.modality, storageKey: d.storageKey,
+      mimeType: d.mimeType, sizeBytes: d.sizeBytes, segment: d.segment, storageKey: d.storageKey,
       expiresAtIntent: NOW, state: "committed", documentId: d.id, storageEtag: d.storageEtag,
     }).returning();
 

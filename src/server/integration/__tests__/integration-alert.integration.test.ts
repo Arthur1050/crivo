@@ -54,7 +54,7 @@ async function newTenant(label: string, overrides: Partial<typeof tenants.$infer
     slug: `fixture-alerta-${label}-${id.slice(0, 8)}`,
     name: `Fixture alerta ${label} ${id.slice(0, 8)}`,
     agentName: "Agente",
-    supportedModality: "ambos",
+    supportedSegment: "ambos",
     ...overrides,
   });
   const [row] = await db.select().from(tenants).where(eq(tenants.id, id));

@@ -59,29 +59,29 @@ describe("server/data mutations", () => {
       const updated = await updateTenantSettings(tenantAId, {
         name: "Nome Temporário de Teste",
         agentName: "Agente Temporário",
-        supportedModality: "novo",
+        supportedSegment: "novo",
       });
       expect(updated).not.toBeNull();
       expect(updated!.name).toBe("Nome Temporário de Teste");
       expect(updated!.agentName).toBe("Agente Temporário");
-      expect(updated!.supportedModality).toBe("novo");
+      expect(updated!.supportedSegment).toBe("novo");
 
       // Reverte para não afetar o seed usado por outros testes/batches.
       const reverted = await updateTenantSettings(tenantAId, {
         name: original!.name,
         agentName: original!.agentName,
-        supportedModality: original!.supportedModality,
+        supportedSegment: original!.supportedSegment,
       });
       expect(reverted!.name).toBe(original!.name);
       expect(reverted!.agentName).toBe(original!.agentName);
-      expect(reverted!.supportedModality).toBe(original!.supportedModality);
+      expect(reverted!.supportedSegment).toBe(original!.supportedSegment);
     });
 
     it("retorna null para um tenant inexistente (not-found), sem lançar erro", async () => {
       const result = await updateTenantSettings(NON_EXISTENT_ID, {
         name: "X",
         agentName: "Y",
-        supportedModality: "ambos",
+        supportedSegment: "ambos",
       });
       expect(result).toBeNull();
     });
@@ -217,7 +217,7 @@ describe("server/data mutations", () => {
         name,
         mimeType: "application/pdf",
         sizeBytes: 1024,
-        modality: "novo",
+        segment: "novo",
       });
       expect(doc.tenantId).toBe(tenantAId);
       expect(doc.name).toBe(name);
@@ -238,17 +238,17 @@ describe("server/data mutations", () => {
         name: `Doc Original ${randomUUID()}.pdf`,
         mimeType: "application/pdf",
         sizeBytes: 2048,
-        modality: "usado",
+        segment: "usado",
       });
 
       const updated = await updateDocument(tenantAId, doc.id, {
         name: "Doc Atualizado.pdf",
-        modality: "ambos",
+        segment: "ambos",
         categoryId: categoryResult.category.id,
       });
       expect(updated).not.toBeNull();
       expect(updated!.name).toBe("Doc Atualizado.pdf");
-      expect(updated!.modality).toBe("ambos");
+      expect(updated!.segment).toBe("ambos");
       expect(updated!.categoryId).toBe(categoryResult.category.id);
 
       await deleteDocument(tenantAId, doc.id);
@@ -258,7 +258,7 @@ describe("server/data mutations", () => {
     it("updateDocument retorna null (not-found) para um documento inexistente", async () => {
       const result = await updateDocument(tenantAId, NON_EXISTENT_ID, {
         name: "X",
-        modality: "novo",
+        segment: "novo",
       });
       expect(result).toBeNull();
     });
@@ -269,12 +269,12 @@ describe("server/data mutations", () => {
         name: originalName,
         mimeType: "application/pdf",
         sizeBytes: 512,
-        modality: "novo",
+        segment: "novo",
       });
 
       const result = await updateDocument(tenantBId, doc.id, {
         name: "Nome Malicioso.pdf",
-        modality: "usado",
+        segment: "usado",
       });
       expect(result).toBeNull();
 
@@ -283,7 +283,7 @@ describe("server/data mutations", () => {
       });
       expect(unchanged).toBeDefined();
       expect(unchanged.name).toBe(originalName);
-      expect(unchanged.modality).toBe("novo");
+      expect(unchanged.segment).toBe("novo");
 
       await deleteDocument(tenantAId, doc.id);
     });
@@ -294,7 +294,7 @@ describe("server/data mutations", () => {
         name,
         mimeType: "application/pdf",
         sizeBytes: 512,
-        modality: "novo",
+        segment: "novo",
       });
 
       const result = await deleteDocument(tenantBId, doc.id);
@@ -312,7 +312,7 @@ describe("server/data mutations", () => {
         name,
         mimeType: "application/pdf",
         sizeBytes: 512,
-        modality: "novo",
+        segment: "novo",
       });
 
       const result = await deleteDocument(tenantAId, doc.id);
@@ -422,7 +422,7 @@ describe("server/data mutations", () => {
         name: docName,
         mimeType: "application/pdf",
         sizeBytes: 512,
-        modality: "novo",
+        segment: "novo",
         categoryId: category.category.id,
       });
       expect(doc.categoryId).toBe(category.category.id);

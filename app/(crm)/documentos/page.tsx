@@ -24,7 +24,7 @@ import {
   getDocumentCategories,
   getDocuments,
   getTenant,
-  type Modality,
+  type DocumentSegment,
 } from "@/src/server/data";
 import { getTenantContextLimitSummary } from "@/src/server/documents/repository";
 import { getDocumentFolder, listDocumentFolderSummaries } from "@/src/server/data/document-folders";
@@ -32,8 +32,8 @@ import { getActiveTenantId } from "@/src/server/tenant";
 
 const VALID_MODALITIES: readonly string[] = [MODALITY.new, MODALITY.used, MODALITY.both];
 
-function asModality(value: string | undefined): Modality | undefined {
-  return value && VALID_MODALITIES.includes(value) ? (value as Modality) : undefined;
+function asModality(value: string | undefined): DocumentSegment | undefined {
+  return value && VALID_MODALITIES.includes(value) ? (value as DocumentSegment) : undefined;
 }
 
 interface DocumentosPageProps {
@@ -65,7 +65,7 @@ export default async function DocumentosPage({
   const { roles } = await requirePermission("documents", "read", access);
   const canWrite = can(roles, "documents", "write");
 
-  const modality = asModality(params.modalidade);
+  const segment = asModality(params.modalidade);
   const categoryId = params.categoria || undefined;
   const search = params.q?.trim() || undefined;
   const folderParam = parseFolderParam(params.pasta);
@@ -73,14 +73,14 @@ export default async function DocumentosPage({
     ? await getDocumentFolder(tenantId, folderParam.folderId)
     : null;
   const mode = resolveDocumentsPageMode(folderParam, folder);
-  const hasActiveFilters = Boolean(modality || categoryId || search || folderParam.kind === "sem-pasta");
+  const hasActiveFilters = Boolean(segment || categoryId || search || folderParam.kind === "sem-pasta");
 
   const [allDocuments, filteredDocuments, categories, tenant, limitSummary, summaries] =
     await Promise.all([
       getDocuments(tenantId),
       mode.kind === "pasta-inexistente"
         ? Promise.resolve([])
-        : getDocuments(tenantId, { modality, categoryId, search, folder: folderFilterFor(mode) }),
+        : getDocuments(tenantId, { segment, categoryId, search, folder: folderFilterFor(mode) }),
       getDocumentCategories(tenantId),
       getTenant(tenantId),
       getTenantContextLimitSummary(tenantId),

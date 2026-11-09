@@ -38,7 +38,7 @@ describe("server/integration leads — TRANSITIONS + patchLead", () => {
         id: tenantId,
         name: `Tenant Teste patchLead ${tenantId}`,
         agentName: "Agente Teste",
-        supportedModality: "ambos",
+        supportedSegment: "ambos",
         slug: `fixture-${tenantId}`,
       });
     });

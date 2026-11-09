@@ -11,7 +11,7 @@ vi.mock("@/src/kit/session", () => {
   return { PermissionDeniedError: MockPermissionDeniedError };
 });
 
-vi.mock("@/src/server/documents/uploads", () => ({
+vi.mock("@/src/kit/documents", () => ({
   createDocumentUploadIntake: () => ({
     reserve: async () => ({ kind: "duplicate_upload" as const }),
     finalize: async () => ({ kind: "not_found" as const }),
@@ -35,6 +35,8 @@ const input = {
   sizeBytes: 28,
   modality: "novo" as const,
 };
+const { modality: segment, ...intakeFields } = input;
+const intakeInput = { ...intakeFields, segment };
 
 function request(body: unknown, headers?: HeadersInit) {
   return new Request("https://krivo.test/api/documents/upload", {
@@ -94,7 +96,7 @@ describe("document upload route (lote-12 T9)", () => {
     const payload = folderId === undefined ? input : { ...input, folderId };
     const response = await handler(request(generateEvent(JSON.stringify(payload))));
     expect(response.status).toBe(200);
-    expect(reserve).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ ...input, folderId }));
+    expect(reserve).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ ...intakeInput, folderId }));
   });
 
   it.each([42, {}, true, []])("T12: folderId com tipo inválido %j responde 400 sem reservar", async (folderId) => {
@@ -119,7 +121,7 @@ describe("document upload route (lote-12 T9)", () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ type: "blob.generate-client-token" });
-    expect(reserve).toHaveBeenCalledWith(input);
+    expect(reserve).toHaveBeenCalledWith(intakeInput);
     expect(handle).toHaveBeenCalledTimes(1);
   });
 

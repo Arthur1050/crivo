@@ -8,14 +8,14 @@ import { duplicateDocumentMessage } from "../../lib/duplicate-document";
  * privado.
  */
 
-export type UploadModality = typeof MODALITY.new | typeof MODALITY.used | typeof MODALITY.both;
+export type UploadSegment = typeof MODALITY.new | typeof MODALITY.used | typeof MODALITY.both;
 
 export interface UploadTicketInput {
   clientSha256: string;
   name: string;
   mimeType: string;
   sizeBytes: number;
-  modality: UploadModality;
+  modality: UploadSegment;
   categoryId?: string | null;
   folderId?: string | null;
   expiresAt?: string | null;

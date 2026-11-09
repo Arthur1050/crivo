@@ -11,7 +11,7 @@ import { assignBrokerForEscalation } from "../index";
 
 const at = new Date("2026-10-06T15:00:00Z"), tenantIds: string[] = [], userIds: string[] = [];
 async function tenant() {
-  const id = randomUUID(); await db.insert(tenants).values({ id, slug: `fixture-${id}`, name: "Fixture T22", agentName: "Agente", supportedModality: "ambos" }); tenantIds.push(id); return id;
+  const id = randomUUID(); await db.insert(tenants).values({ id, slug: `fixture-${id}`, name: "Fixture T22", agentName: "Agente", supportedSegment: "ambos" }); tenantIds.push(id); return id;
 }
 async function member(tenantId: string, patch: Partial<typeof tenant_members.$inferInsert> = {}) {
   const id = randomUUID(); await db.insert(users).values({ id, name: "Corretor próprio", email: `${id}@fixture.test` }); userIds.push(id);

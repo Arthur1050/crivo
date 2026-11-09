@@ -25,7 +25,7 @@ async function createTenant(slug: string): Promise<string> {
     id,
     name: `Imobiliária ${slug}`,
     agentName: "Agente Teste",
-    supportedModality: "ambos",
+    supportedSegment: "ambos",
     slug,
   });
   return id;

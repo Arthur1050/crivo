@@ -14,11 +14,11 @@ import { AGENT_PHASE, SENDER } from "../../lib/vocabulary";
  */
 import {
   leadStatusEnum,
-  modalityEnum,
   senderEnum,
 } from "../../db/schema";
 import { FIELD_LABELS } from "../../../n8n/src/phase.mjs";
 import type { PublishAgentStateInput } from "../reengagement/agent-state";
+import { resolveDocumentSegment, type DocumentSegment, type DocumentSegmentFacet } from "../documents/segments";
 import type { PreparationFailureCode } from "../reengagement/repository";
 
 // Limite de tamanho de corpo (design.md — Tech Decisions; Edge Cases: 413).
@@ -416,7 +416,7 @@ export function parseMessagesQuery(url: URL): ParseMessagesQueryResult {
 export const MAX_CONTEXT_QUESTION_LENGTH = 4096;
 
 export interface ContextQueryDto {
-  modality: (typeof modalityEnum.enumValues)[number];
+  segment: DocumentSegment;
   question: string;
   reservedContextBytes?: number;
 }
@@ -427,19 +427,19 @@ export interface ContextQueryDto {
  * não é o mesmo que payload com string vazia (L-005). O `trim` define tanto
  * a vacuidade quanto o comprimento medido.
  */
-export function parseContextQuery(json: unknown): ParseResult<ContextQueryDto> {
+export function parseContextQuery(json: unknown, facet: DocumentSegmentFacet | null): ParseResult<ContextQueryDto> {
   if (!isPlainObject(json)) {
     return { ok: false, detail: "Corpo da requisição deve ser um objeto JSON." };
   }
 
-  if (json.modality === undefined) {
+  if (facet && json.modality === undefined) {
     return { ok: false, detail: "Campo 'modality' é obrigatório." };
   }
-  const modality = enumValue(json.modality, modalityEnum.enumValues);
-  if (!modality) {
+  const segment = resolveDocumentSegment(json.modality, facet);
+  if (segment === undefined) {
     return {
       ok: false,
-      detail: `Campo 'modality' inválido. Valores aceitos: ${modalityEnum.enumValues.join(", ")}.`,
+      detail: `Campo 'modality' inválido. Valores aceitos: ${facet?.values.join(", ")}.`,
     };
   }
 
@@ -463,5 +463,5 @@ export function parseContextQuery(json: unknown): ParseResult<ContextQueryDto> {
   if (Object.hasOwn(json, "reservedContextBytes") && (!Number.isSafeInteger(json.reservedContextBytes) || (json.reservedContextBytes as number) < 0)) {
     return { ok: false, detail: "reservedContextBytes deve ser um inteiro seguro não negativo." };
   }
-  return { ok: true, dto: { modality, question, ...(Object.hasOwn(json, "reservedContextBytes") ? { reservedContextBytes: json.reservedContextBytes as number } : {}) } };
+  return { ok: true, dto: { segment, question, ...(Object.hasOwn(json, "reservedContextBytes") ? { reservedContextBytes: json.reservedContextBytes as number } : {}) } };
 }

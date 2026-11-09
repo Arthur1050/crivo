@@ -46,7 +46,7 @@ describe("chats/human-opt-out — registerHumanOptOut (lote-14, T17)", () => {
         id,
         name: `Tenant opt-out humano T17 ${id}`,
         agentName: "Agente",
-        supportedModality: "ambos" as const,
+        supportedSegment: "ambos" as const,
         slug: `fixture-t17-${id}`,
       }))
     );

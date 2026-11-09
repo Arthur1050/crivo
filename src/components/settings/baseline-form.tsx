@@ -119,7 +119,7 @@ export function BaselineForm({ tenant }: BaselineFormProps) {
     const result = await updateTenantSettingsAction({
       name: tenant.name,
       agentName: tenant.agentName,
-      supportedModality: tenant.supportedModality,
+      supportedSegment: tenant.supportedSegment,
       baselineLeadsPerMonth: leadsPerMonth,
       baselineFirstResponseMinutes: firstResponseMinutes,
       baselineLeadToMeetingPct: leadToMeetingPct,

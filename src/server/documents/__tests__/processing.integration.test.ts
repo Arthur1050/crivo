@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "../../../db";
 import { documentUploadIntents, documents, tenantDocumentContextLimits, tenants, users } from "../../../db/schema";
-import { createDocumentProcessingService } from "../processing";
+import { createDocumentProcessingService } from "../../../kit/document-services";
 import type { DocumentStorage } from "../storage";
 import type { extractDocument } from "../extraction";
 
@@ -21,17 +21,17 @@ function storage(open: DocumentStorage["open"] = vi.fn(async (key) => ({ key, et
   return { authorizeClientUpload: vi.fn(), head: vi.fn(), delete: vi.fn(), open } as DocumentStorage;
 }
 async function publishLimits(maxResponseBytes: number) {
-  for (const queryModality of ["novo", "usado", "ambos"] as const) {
+  for (const querySegment of ["novo", "usado", "ambos"] as const) {
     await db
       .insert(tenantDocumentContextLimits)
-      .values({ tenantId: TENANT_A, queryModality, maxResponseBytes, modelId: "model", workflowVersion: "workflow", systemMessageHash: "system", toolsHash: "tools", memoryWindow: 50, benchmarkedAt: NOW, metrics: {} })
-      .onConflictDoUpdate({ target: [tenantDocumentContextLimits.tenantId, tenantDocumentContextLimits.queryModality], set: { maxResponseBytes } });
+      .values({ tenantId: TENANT_A, querySegment, maxResponseBytes, modelId: "model", workflowVersion: "workflow", systemMessageHash: "system", toolsHash: "tools", memoryWindow: 50, benchmarkedAt: NOW, metrics: {} })
+      .onConflictDoUpdate({ target: [tenantDocumentContextLimits.tenantId, tenantDocumentContextLimits.querySegment], set: { maxResponseBytes } });
   }
 }
 
 async function createDocument(seed: string, overrides: Partial<typeof documents.$inferInsert> = {}, tenantId = TENANT_A) {
   const [row] = await db.insert(documents).values({
-    tenantId, name: `${seed}.txt`, modality: "novo", mimeType: "text/plain", sizeBytes: BigInt(bytes.byteLength),
+    tenantId, name: `${seed}.txt`, segment: "novo", mimeType: "text/plain", sizeBytes: BigInt(bytes.byteLength),
     storageProvider: "vercel_blob", storageKey: `documents/v1/${tenantId}/${seed}-${randomUUID()}`,
     storageEtag: `etag-${seed}`, contentSha256: hash(`${seed}-${randomUUID()}`), status: "processando",
     processingAttempt: 1, processingStartedAt: NOW, ...overrides,
@@ -55,8 +55,8 @@ describe("document processing integration (lote-12 T13)", () => {
     await db.delete(users).where(inArray(users.id, [USER_A, USER_B]));
     await db.delete(tenants).where(inArray(tenants.id, [TENANT_A, TENANT_B]));
     await db.insert(tenants).values([
-      { id: TENANT_A, name: "Processing A", agentName: "A", supportedModality: "ambos", slug: `processing-a-${TENANT_A}` },
-      { id: TENANT_B, name: "Processing B", agentName: "B", supportedModality: "ambos", slug: `processing-b-${TENANT_B}` },
+      { id: TENANT_A, name: "Processing A", agentName: "A", supportedSegment: "ambos", slug: `processing-a-${TENANT_A}` },
+      { id: TENANT_B, name: "Processing B", agentName: "B", supportedSegment: "ambos", slug: `processing-b-${TENANT_B}` },
     ]);
     await db.insert(users).values([{ id: USER_A, name: "Processing A", email: `processing-a-${USER_A}@example.test` }, { id: USER_B, name: "Processing B", email: `processing-b-${USER_B}@example.test` }]);
     // Sem teto publicado nada entra no contexto (lote-12 T34): o tenant dos

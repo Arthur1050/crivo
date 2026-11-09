@@ -64,8 +64,8 @@ export function DocumentsTable({ documents, categoryById, renderActions, folderB
             </Text>
           </StackItem>
           <Badge
-            label={MODALITY_LABELS[document.modality]}
-            variant={MODALITY_BADGE_VARIANT[document.modality]}
+            label={MODALITY_LABELS[document.segment]}
+            variant={MODALITY_BADGE_VARIANT[document.segment]}
           />
         </HStack>
       ),

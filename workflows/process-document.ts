@@ -1,7 +1,7 @@
 import { DOCUMENT_STATUS } from "../src/lib/vocabulary";
 import { FatalError, RetryableError } from "workflow";
 import { VercelBlobDocumentStorage } from "../src/server/documents/vercel-blob-storage";
-import { createDocumentProcessingService } from "../src/server/documents/processing";
+import { createDocumentProcessingService } from "../src/kit/document-services";
 
 export interface ProcessDocumentInput {
   tenantId: string;

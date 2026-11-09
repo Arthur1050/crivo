@@ -57,7 +57,7 @@ async function createTestTenantWithSlug(slug: string): Promise<string> {
     id,
     name: `Tenant Teste auth.test.ts ${slug}`,
     agentName: "Agente Teste",
-    supportedModality: "ambos",
+    supportedSegment: "ambos",
     slug,
   });
   return id;

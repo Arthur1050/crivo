@@ -58,7 +58,7 @@ async function waitForLocks(pids: number[], count: number) {
   return waiting;
 }
 beforeAll(async () => {
-  await db.insert(tenants).values(tenantIds.map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T23", agentName: "Agente", supportedModality: "ambos" as const })));
+  await db.insert(tenants).values(tenantIds.map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T23", agentName: "Agente", supportedSegment: "ambos" as const })));
   await db.insert(users).values([brokerId, previousBroker].map((id) => ({ id, name: "Corretor próprio", email: `${id}@fixture.test` })));
   await db.insert(tenant_members).values([brokerId, previousBroker].map((id) => ({ organizationId: tenantId, userId: id, role: "corretor",
     createdAt: new Date("2026-01-01T00:00:00Z"), workDays: [1, 2, 3, 4, 5], workHoursStart: "09:00", workHoursEnd: "18:00", deactivatedAt: id === previousBroker ? now : null })));

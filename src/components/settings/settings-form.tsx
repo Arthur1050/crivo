@@ -19,14 +19,14 @@ import { Heading, Text } from "@astryxdesign/core/Text";
 import { TimeInput } from "@astryxdesign/core/TimeInput";
 import { createISOTimeString, type ISOTimeString } from "@astryxdesign/core/utils";
 import { updateTenantSettingsAction } from "@/src/server/actions/settings";
-import type { Modality, Tenant } from "@/src/server/data";
+import type { DocumentSegment, Tenant } from "@/src/server/data";
 import {
   validateBusinessHours,
-  validateModality,
+  validateSegment,
   validateName,
 } from "@/src/server/validation";
 
-const MODALITY_OPTIONS: { value: Modality; label: string }[] = [
+const MODALITY_OPTIONS: { value: DocumentSegment; label: string }[] = [
   { value: MODALITY.new, label: "Novo" },
   { value: MODALITY.used, label: "Usado" },
   { value: MODALITY.both, label: "Ambos" },
@@ -92,7 +92,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
   const router = useRouter();
   const [name, setName] = useState(tenant.name);
   const [agentName, setAgentName] = useState(tenant.agentName);
-  const [modality, setModality] = useState<Modality>(tenant.supportedModality);
+  const [modality, setModality] = useState<DocumentSegment>(tenant.supportedSegment);
   const [city, setCity] = useState(tenant.city ?? "");
   const [state, setState] = useState(tenant.state ?? "");
   const [agentWhatsapp, setAgentWhatsapp] = useState(tenant.agentWhatsapp ?? "");
@@ -134,7 +134,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
 
     const nameCheck = validateName(name, "Nome do tenant");
     const agentNameCheck = validateName(agentName, "Nome do agente");
-    const modalityCheck = validateModality(modality);
+    const modalityCheck = validateSegment(modality);
     const businessHours = {
       meetingDays: meetingDays.length > 0 ? meetingDays.map(Number) : null,
       meetingHoursStart: meetingHoursStart ?? null,
@@ -173,7 +173,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
     const result = await updateTenantSettingsAction({
       name,
       agentName,
-      supportedModality: modality,
+      supportedSegment: modality,
       city,
       state,
       agentWhatsapp,
@@ -261,7 +261,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
               label="Modalidade suportada *"
               value={modality}
               onChange={(value) => {
-                setModality(value as Modality);
+                setModality(value as DocumentSegment);
                 setErrors((prev) => ({ ...prev, modality: undefined }));
               }}
               options={MODALITY_OPTIONS}

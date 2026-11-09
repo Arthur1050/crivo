@@ -13,17 +13,17 @@ import {
   updateDocument,
   updateDocumentCategory,
   type CategoryColor,
-  type Modality,
+  type DocumentSegment,
 } from "../data";
 import {
   validateCategoryColor,
   validateFileSize,
   validateMimeType,
-  validateModality,
+  validateSegment,
   validateName,
 } from "../validation";
-import { createDocumentProcessingService } from "../documents/processing";
-import { reconcileTenantDocumentAdmission, tombstoneDocument } from "../documents/repository";
+import { tombstoneDocument } from "../documents/repository";
+import { createDocumentProcessingService, reconcileTenantDocumentAdmission } from "../../kit/document-services";
 import { VercelBlobDocumentStorage } from "../documents/vercel-blob-storage";
 import { startDocumentProcessingRun } from "../documents/workflow-start";
 import { createDocumentUploadIntake } from "../../kit/documents";
@@ -41,7 +41,7 @@ export interface CreateDocumentInput {
   name: string;
   mimeType: string;
   sizeBytes: number;
-  modality: Modality;
+  segment: DocumentSegment;
   categoryId?: string | null;
 }
 
@@ -60,7 +60,7 @@ export async function createDocumentAction(
   const sizeCheck = validateFileSize(input.sizeBytes);
   if (!sizeCheck.ok) return sizeCheck;
 
-  const modalityCheck = validateModality(input.modality);
+  const modalityCheck = validateSegment(input.segment);
   if (!modalityCheck.ok) return modalityCheck;
 
   const tenantId = await getActiveTenantId();
@@ -68,7 +68,7 @@ export async function createDocumentAction(
     name: input.name.trim(),
     mimeType: input.mimeType,
     sizeBytes: input.sizeBytes,
-    modality: input.modality,
+    segment: input.segment,
     categoryId: input.categoryId ?? null,
   });
 
@@ -79,7 +79,7 @@ export async function createDocumentAction(
 export interface UpdateDocumentInput {
   documentId: string;
   name: string;
-  modality: Modality;
+  segment: DocumentSegment;
   categoryId?: string | null;
   folderId?: string | null;
   /** Omit preserves the existing date; an empty form field explicitly clears it. */
@@ -110,7 +110,7 @@ export async function updateDocumentAction(
   const nameCheck = validateName(input.name, "Nome do documento");
   if (!nameCheck.ok) return nameCheck;
 
-  const modalityCheck = validateModality(input.modality);
+  const modalityCheck = validateSegment(input.segment);
   if (!modalityCheck.ok) return modalityCheck;
 
   const expiry = resolveExpiresAt(input.expiresAt);
@@ -125,7 +125,7 @@ export async function updateDocumentAction(
   try {
     updated = await updateDocument(tenantId, input.documentId, {
       name: input.name.trim(),
-      modality: input.modality,
+      segment: input.segment,
       categoryId: input.categoryId,
       ...(expiry.value === undefined ? {} : { expiresAt: expiry.value }),
       ...("folderId" in input ? { folderId: input.folderId } : {}),

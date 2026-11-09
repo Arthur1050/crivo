@@ -21,7 +21,7 @@ describe("L16a T6 — destaque de imóvel no DAL (VDEST-01)", () => {
     const tenantId = randomUUID();
     tenantIds.push(tenantId);
     await db.insert(tenants).values({
-      id: tenantId, slug: `fixture-destaque-${tenantId}`, name: "Fixture destaque", agentName: "Agente", supportedModality: "ambos",
+      id: tenantId, slug: `fixture-destaque-${tenantId}`, name: "Fixture destaque", agentName: "Agente", supportedSegment: "ambos",
     });
     const userId = randomUUID();
     await db.insert(users).values({ id: userId, name: "Captador destaque", email: `${userId}@fixture.test` });

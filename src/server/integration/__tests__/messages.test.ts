@@ -29,14 +29,14 @@ describe("server/integration messages — ingestMessage", () => {
         id: tenantAId,
         name: `Tenant Teste A messages ${tenantAId}`,
         agentName: "Agente A",
-        supportedModality: "ambos",
+        supportedSegment: "ambos",
         slug: `fixture-${tenantAId}`,
       },
       {
         id: tenantBId,
         name: `Tenant Teste B messages ${tenantBId}`,
         agentName: "Agente B",
-        supportedModality: "ambos",
+        supportedSegment: "ambos",
         slug: `fixture-${tenantBId}`,
       },
     ]);

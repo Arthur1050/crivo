@@ -36,7 +36,7 @@ async function snapshot(row: Fixture) { return { lead: await db.select().from(le
   episodes: await db.select().from(reengagementEpisodes).where(eq(reengagementEpisodes.leadId, row.lead.id)), messages: await db.select().from(messages).where(eq(messages.conversationId, row.conversation.id)).orderBy(messages.id) }; }
 async function problem(response: Response, status: number, code: string) { expect(response.status).toBe(status); expect(await response.json()).toMatchObject({ status, code }); }
 beforeAll(async () => {
-  await db.insert(tenants).values([tenantId, foreignTenant].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T43", agentName: "Agente", supportedModality: "ambos" as const })));
+  await db.insert(tenants).values([tenantId, foreignTenant].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T43", agentName: "Agente", supportedSegment: "ambos" as const })));
   await db.insert(tenantApiKeys).values({ tenantId, label: "fixtureT43", keyHash: proof.credentialSha256 });
 });
 beforeEach(() => {

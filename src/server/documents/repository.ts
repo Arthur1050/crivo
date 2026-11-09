@@ -1,3 +1,4 @@
+import type { DocumentSegment, DocumentSegmentFacet } from "./segments";
 import { DOCUMENT_STATUS } from "../../lib/vocabulary";
 import "server-only";
 
@@ -63,7 +64,7 @@ export interface CreateUploadIntentInput {
   name: string;
   mimeType: string;
   sizeBytes: bigint | number;
-  modality: "novo" | "usado" | "ambos";
+  segment: DocumentSegment;
   categoryId?: string | null;
   folderId?: string | null;
   expiresAt?: Date | null;
@@ -143,7 +144,7 @@ export interface CompleteProcessingInput {
 export type CompareAndSetResult = "applied" | "stale";
 
 export interface DocumentContextLimitInput {
-  queryModality: "novo" | "usado" | "ambos";
+  querySegment: DocumentSegment;
   maxResponseBytes: number;
   modelId: string;
   workflowVersion: string;
@@ -178,7 +179,7 @@ export async function listTenantDocuments(tenantId: string): Promise<DocumentLis
       id: documents.id,
       tenantId: documents.tenantId,
       name: documents.name,
-      modality: documents.modality,
+      segment: documents.segment,
       mimeType: documents.mimeType,
       sizeBytes: documents.sizeBytes,
       categoryId: documents.categoryId,
@@ -345,7 +346,7 @@ export async function commitUploadIntent(
         name: intent.name,
         mimeType: intent.mimeType,
         sizeBytes: intent.sizeBytes,
-        modality: intent.modality,
+        segment: intent.segment,
         categoryId: intent.categoryId,
         folderId: intent.folderId,
         expiresAt: intent.expiresAt,
@@ -475,7 +476,9 @@ export async function getDocumentForProcessing(
 }
 
 /** Reapplies the published direct-context limits after text becomes available. */
-export async function reconcileTenantDocumentAdmission(tenantId: string, now = new Date()): Promise<void> {
+export async function reconcileTenantDocumentAdmission(
+  tenantId: string, now = new Date(), facet: DocumentSegmentFacet | null = null
+): Promise<void> {
   // Um teto `stale` continua valendo com o valor medido: desatualizado impede
   // AMPLIAR (design — "mantém teto anterior sem expansão"), nunca desliga o
   // limite. Modalidade sem teto nenhum vale zero: sem benchmark, nada entra no
@@ -483,13 +486,13 @@ export async function reconcileTenantDocumentAdmission(tenantId: string, now = n
   // dois casos fazia esta função sair cedo, e todo documento `pronto` chegava
   // ao agente sem limite algum.
   const limitsRows = await db
-    .select({ queryModality: tenantDocumentContextLimits.queryModality, maxResponseBytes: tenantDocumentContextLimits.maxResponseBytes })
+    .select({ querySegment: tenantDocumentContextLimits.querySegment, maxResponseBytes: tenantDocumentContextLimits.maxResponseBytes })
     .from(tenantDocumentContextLimits)
     .where(eq(tenantDocumentContextLimits.tenantId, tenantId));
-  const limits: ContextLimits = { novo: 0, usado: 0, ambos: 0 };
-  for (const row of limitsRows) limits[row.queryModality] = row.maxResponseBytes;
+  const limits: ContextLimits = {};
+  for (const row of limitsRows) limits[row.querySegment] = row.maxResponseBytes;
   const rows = await db
-    .select({ id: documents.id, name: documents.name, modality: documents.modality, extractedText: documents.extractedText, uploadedAt: documents.uploadedAt, status: documents.status })
+    .select({ id: documents.id, name: documents.name, segment: documents.segment, extractedText: documents.extractedText, uploadedAt: documents.uploadedAt, status: documents.status })
     .from(documents)
     .where(and(
       eq(documents.tenantId, tenantId),
@@ -501,14 +504,14 @@ export async function reconcileTenantDocumentAdmission(tenantId: string, now = n
   const candidates: ContextBudgetDocument[] = rows.map((row) => ({
     id: row.id,
     name: row.name,
-    modality: row.modality,
+    segment: row.segment,
     content: row.extractedText!,
     uploadedAt: row.uploadedAt,
     // O predicado acima já limita a `pronto`/`fora_do_agente`; o tipo da coluna
     // carrega o enum inteiro, que a admissão não aceita.
     status: row.status as ContextBudgetDocument["status"],
   }));
-  const result = reconcileDocumentAdmission(candidates, limits);
+  const result = reconcileDocumentAdmission(candidates, limits, facet);
   await db.transaction(async (tx) => {
     for (const [id, status] of result.statusByDocumentId) {
       await tx.update(documents).set({ status }).where(and(eq(documents.tenantId, tenantId), eq(documents.id, id), isNull(documents.deletedAt)));
@@ -516,8 +519,8 @@ export async function reconcileTenantDocumentAdmission(tenantId: string, now = n
   });
   // Gatilho do lote condicional de RAG (DOCLIM-01 AC12): uma linha por
   // modalidade estourada, contável nos logs de runtime, sem conteúdo.
-  for (const overflow of findCorpusOverflow(candidates, limits, result)) {
-    console.info(JSON.stringify({ event: "document_corpus_over_ceiling", tenantId, ...overflow }));
+  for (const { segment, ...overflow } of findCorpusOverflow(candidates, limits, result, facet)) {
+    console.info(JSON.stringify({ event: "document_corpus_over_ceiling", tenantId, modality: segment, ...overflow }));
   }
 }
 
@@ -710,7 +713,7 @@ export async function upsertDocumentContextLimit(
     .insert(tenantDocumentContextLimits)
     .values({ tenantId, ...input })
     .onConflictDoUpdate({
-      target: [tenantDocumentContextLimits.tenantId, tenantDocumentContextLimits.queryModality],
+      target: [tenantDocumentContextLimits.tenantId, tenantDocumentContextLimits.querySegment],
       set: {
         maxResponseBytes: input.maxResponseBytes,
         modelId: input.modelId,
@@ -733,7 +736,7 @@ export async function listDocumentContextLimits() {
   return db
     .select({
       tenantId: tenantDocumentContextLimits.tenantId,
-      queryModality: tenantDocumentContextLimits.queryModality,
+      querySegment: tenantDocumentContextLimits.querySegment,
       modelId: tenantDocumentContextLimits.modelId,
       workflowVersion: tenantDocumentContextLimits.workflowVersion,
       systemMessageHash: tenantDocumentContextLimits.systemMessageHash,
@@ -751,7 +754,7 @@ export async function listDocumentContextLimits() {
  */
 export async function markDocumentContextLimitStale(
   tenantId: string,
-  queryModality: "novo" | "usado" | "ambos",
+  querySegment: DocumentSegment,
   reason: string,
   now = new Date()
 ): Promise<boolean> {
@@ -760,7 +763,7 @@ export async function markDocumentContextLimitStale(
     .set({ staleAt: now, staleReason: reason })
     .where(and(
       eq(tenantDocumentContextLimits.tenantId, tenantId),
-      eq(tenantDocumentContextLimits.queryModality, queryModality),
+      eq(tenantDocumentContextLimits.querySegment, querySegment),
       isNull(tenantDocumentContextLimits.staleAt)
     ))
     .returning({ tenantId: tenantDocumentContextLimits.tenantId });

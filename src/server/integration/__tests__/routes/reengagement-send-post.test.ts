@@ -36,7 +36,7 @@ async function episode(row: Fixture) { return (await db.select().from(reengageme
 async function outputs(row: Fixture) { return (await db.select().from(messages).where(eq(messages.conversationId, row.conversation.id))).filter((message) => message.sender === "agente"); }
 async function problem(response: Response, status: number, code: string) { expect(response.status).toBe(status); expect(await response.json()).toMatchObject({ status, code }); }
 beforeAll(async () => {
-  await db.insert(tenants).values([tenantId, foreignTenant].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T39", agentName: "Agente", supportedModality: "ambos" as const })));
+  await db.insert(tenants).values([tenantId, foreignTenant].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T39", agentName: "Agente", supportedSegment: "ambos" as const })));
   await db.insert(tenantApiKeys).values({ tenantId, label: "fixtureT39", keyHash: createHash("sha256").update(apiKey).digest("hex") });
 });
 beforeEach(() => {

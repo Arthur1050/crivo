@@ -61,7 +61,7 @@ async function cleanup() {
 
 try {
   await db.insert(tenants).values({ id: tenantId, name: "Imobiliária Fixture T59", agentName: "Agente Fixture",
-    supportedModality: MODALITY.both, slug: `fixture-t59-${tenantId}` });
+    supportedSegment: MODALITY.both, slug: `fixture-t59-${tenantId}` });
   await db.insert(tenant_members).values({ userId: signup.response.user.id, organizationId: tenantId, role: ROLE.manager });
   await db.insert(whatsappChannels).values({ tenantId, phoneNumberId, accountKind: "test", usageEnabled: false });
   const now = Date.now();

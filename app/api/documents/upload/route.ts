@@ -5,7 +5,7 @@ import { PermissionDeniedError } from "@/src/kit/session";
 import {
   createDocumentUploadIntake,
   type CreateDocumentUploadInput,
-} from "@/src/server/documents/uploads";
+} from "@/src/kit/documents";
 
 export const runtime = "nodejs";
 
@@ -85,7 +85,7 @@ function parseInput(clientPayload: string | null): CreateDocumentUploadInput | n
       name: value.name,
       mimeType: value.mimeType,
       sizeBytes: value.sizeBytes,
-      modality: value.modality,
+      segment: value.modality,
       categoryId: value.categoryId as string | null | undefined,
       folderId: value.folderId as string | null | undefined,
       expiresAt,

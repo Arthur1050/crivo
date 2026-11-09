@@ -1,3 +1,4 @@
+import { getDocumentSample } from "@/src/kit/document-services";
 import { access } from "@/src/kit/access";
 import { MODALITY } from "../../../src/verticals/real-estate/vocabulary";
 import { notFound } from "next/navigation";
@@ -17,9 +18,8 @@ import { SettingsForm } from "@/src/components/settings/settings-form";
 import { StorefrontComingSoon } from "@/src/components/settings/storefront-coming-soon";
 import {
   getDocumentCategories,
-  getDocumentSample,
   getTenant,
-  type Modality,
+  type DocumentSegment,
 } from "@/src/server/data";
 import {
   PermissionDeniedError,
@@ -27,7 +27,7 @@ import {
 } from "@/src/kit/session";
 import { getActiveTenantId } from "@/src/server/tenant";
 
-const MODALITY_LABELS: Record<Modality, string> = {
+const MODALITY_LABELS: Record<DocumentSegment, string> = {
   [MODALITY.new]: "Novo",
   [MODALITY.used]: "Usado",
   [MODALITY.both]: "Ambos",
@@ -35,7 +35,7 @@ const MODALITY_LABELS: Record<Modality, string> = {
 
 // Mesmas cores por modalidade da tabela de Documentos
 // (`src/components/documents/documents-table.tsx`) — UI-02 AC4.
-const MODALITY_BADGE_VARIANT: Record<Modality, "blue" | "purple" | "teal"> = {
+const MODALITY_BADGE_VARIANT: Record<DocumentSegment, "blue" | "purple" | "teal"> = {
   [MODALITY.new]: "blue",
   [MODALITY.used]: "purple",
   [MODALITY.both]: "teal",
@@ -127,10 +127,10 @@ export default async function ConfiguracoesPage() {
           ) : (
             <VStack gap={4}>
               <HStack gap={2}>
-                {(Object.keys(MODALITY_LABELS) as Modality[]).map((modality) => (
+                {(Object.keys(MODALITY_LABELS) as DocumentSegment[]).map((modality) => (
                   <Badge
                     key={modality}
-                    label={`${MODALITY_LABELS[modality]}: ${sample.countsByModality[modality]}`}
+                    label={`${MODALITY_LABELS[modality]}: ${sample.countsBySegment[modality]}`}
                     variant={MODALITY_BADGE_VARIANT[modality]}
                   />
                 ))}
@@ -161,7 +161,7 @@ export default async function ConfiguracoesPage() {
                             </Text>
                           )}
                           <Text type="supporting" color="secondary">
-                            {MODALITY_LABELS[document.modality]}
+                            {MODALITY_LABELS[document.segment]}
                           </Text>
                         </HStack>
                       }

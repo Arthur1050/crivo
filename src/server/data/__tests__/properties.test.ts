@@ -258,7 +258,7 @@ describe("server/data properties — escrita (T6)", () => {
       id,
       name,
       agentName: "Agente Teste T6",
-      supportedModality: "ambos",
+      supportedSegment: "ambos",
       slug: `fixture-t6-${id}`,
     });
     createdTenantIds.push(id);

@@ -1,3 +1,4 @@
+import { realEstate } from "../src/verticals/real-estate";
 import { MODALITY } from "../src/verticals/real-estate/vocabulary";
 /**
  * Benchmark do teto de contexto documental (lote-12 — T34, DOCLIM-01).
@@ -48,10 +49,15 @@ export interface BenchmarkResultsFile {
   /** `activeVersionId` do `krivo-agente-principal` no momento da medição. */
   agentWorkflowVersion: string;
   tokenSource: string;
-  runs: Array<BenchmarkRun & { executionId: string }>;
+  runs: Array<Omit<BenchmarkRun, "segment"> & { modality: BenchmarkRun["segment"]; executionId: string }>;
   /** Commit factual da fonte executada, distinto da versão publicada. */
   sourceRevision?: string;
 }
+
+export function benchmarkRuns(results: BenchmarkResultsFile): BenchmarkRun[] {
+  return results.runs.map(({ modality, ...run }) => ({ ...run, segment: modality }));
+}
+
 
 export function currentIdentity(workflowVersion: string, sourceRevision?: string) {
   if (sourceRevision && !/^[a-f0-9]{7,40}$/i.test(sourceRevision)) throw new Error("Revisão da fonte inválida.");
@@ -151,7 +157,7 @@ async function persist(file: string, measuredSourceRevision?: string) {
 
   const ceilings = MODALITIES.map((modality) => ({
     modality,
-    result: computeContextCeiling(results.runs, modality, DEFAULT_CEILING_POLICY),
+    result: computeContextCeiling(benchmarkRuns(results), modality, DEFAULT_CEILING_POLICY, realEstate.documentSegments),
   }));
   // Teto zero significa que nenhuma faixa passou: gravar isso seria inventar
   // um limite. Melhor falhar e deixar o banner apontando a ausência.
@@ -166,7 +172,7 @@ async function persist(file: string, measuredSourceRevision?: string) {
   for (const tenant of allTenants) {
     for (const { modality, result } of ceilings) {
       await upsertDocumentContextLimit(tenant.id, {
-        queryModality: modality,
+        querySegment: modality,
         maxResponseBytes: result.maxResponseBytes,
         ...identity,
         benchmarkedAt: new Date(results.benchmarkedAt),
@@ -184,7 +190,7 @@ async function persist(file: string, measuredSourceRevision?: string) {
       });
     }
     // O teto novo pode admitir ou excluir documentos já processados.
-    await reconcileTenantDocumentAdmission(tenant.id);
+    await reconcileTenantDocumentAdmission(tenant.id, undefined, realEstate.documentSegments);
   }
 
   for (const { modality, result } of ceilings) {
@@ -195,7 +201,7 @@ async function persist(file: string, measuredSourceRevision?: string) {
 
 export async function checkBenchmarkIdentity(workflowVersion: string, dependencies?: {
   identity: BenchmarkIdentity;
-  list: () => Promise<Array<BenchmarkIdentity & { tenantId: string; queryModality: typeof MODALITY.new | typeof MODALITY.used | typeof MODALITY.both; staleAt: Date | null }>>;
+  list: () => Promise<Array<BenchmarkIdentity & { tenantId: string; querySegment: typeof MODALITY.new | typeof MODALITY.used | typeof MODALITY.both; staleAt: Date | null }>>;
   markStale: (tenantId: string, modality: typeof MODALITY.new | typeof MODALITY.used | typeof MODALITY.both, reason: string) => Promise<boolean>;
 }) {
   const identity = dependencies?.identity ?? currentIdentity(workflowVersion);
@@ -205,7 +211,7 @@ export async function checkBenchmarkIdentity(workflowVersion: string, dependenci
   for (const row of rows) {
     const changed = diffBenchmarkIdentity(row, identity);
     if (changed.length === 0 || row.staleAt) continue;
-    if (await (dependencies?.markStale ?? repository!.markDocumentContextLimitStale)(row.tenantId, row.queryModality, `mudou: ${changed.join(", ")}`)) marked += 1;
+    if (await (dependencies?.markStale ?? repository!.markDocumentContextLimitStale)(row.tenantId, row.querySegment, `mudou: ${changed.join(", ")}`)) marked += 1;
   }
   return { checked: rows.length, marked, paidCalls: 0 as const };
 }
@@ -229,7 +235,7 @@ async function main() {
       if (!MODALITIES.includes(modality as typeof MODALITIES[number])) throw new Error("Modalidade inválida.");
       const report = auditProactiveBenchmark({ current: currentIdentity(workflowVersion),
         measured: results ? { identity: currentIdentity(results.agentWorkflowVersion, sourceRevision), benchmarkedAt: results.benchmarkedAt,
-          maxResponseBytes: computeContextCeiling(results.runs, modality as typeof MODALITIES[number]).maxResponseBytes } : null,
+          maxResponseBytes: computeContextCeiling(benchmarkRuns(results), modality as typeof MODALITIES[number], DEFAULT_CEILING_POLICY, realEstate.documentSegments).maxResponseBytes } : null,
         frame: JSON.parse(readFileSync(frameFile, "utf8")) as PreparationFrame });
       console.log(JSON.stringify(report, null, 2));
     }

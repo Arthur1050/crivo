@@ -37,14 +37,14 @@ describe("routes: GET /api/v1/leads/[id]/messages (lote-6b — CTX-02)", () => {
         id: tenantAId,
         name: `Tenant Teste A leads-messages-get ${tenantAId}`,
         agentName: "Agente A",
-        supportedModality: "ambos",
+        supportedSegment: "ambos",
         slug: `fixture-${tenantAId}`,
       },
       {
         id: tenantBId,
         name: `Tenant Teste B leads-messages-get ${tenantBId}`,
         agentName: "Agente B",
-        supportedModality: "ambos",
+        supportedSegment: "ambos",
         slug: `fixture-${tenantBId}`,
       },
     ]);

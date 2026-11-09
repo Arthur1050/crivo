@@ -14,7 +14,7 @@ async function newTenant() {
   const id = randomUUID();
   created.push(id);
   await db.insert(tenants).values({
-    id, slug: `fixture-dal-vitrine-${id}`, name: "Fixture DAL vitrine", agentName: "Agente", supportedModality: "ambos",
+    id, slug: `fixture-dal-vitrine-${id}`, name: "Fixture DAL vitrine", agentName: "Agente", supportedSegment: "ambos",
   });
   return id;
 }

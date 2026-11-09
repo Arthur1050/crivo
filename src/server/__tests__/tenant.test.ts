@@ -7,7 +7,7 @@ function makeTenant(overrides: Partial<Tenant> & { id: string }): Tenant {
   return {
     name: "Tenant",
     agentName: "Agente",
-    supportedModality: "ambos",
+    supportedSegment: "ambos",
     createdAt: new Date("2026-01-01T00:00:00Z"),
     ...overrides,
   } as Tenant;

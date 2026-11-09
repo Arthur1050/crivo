@@ -70,7 +70,7 @@ describe("chats/human-send — sendHumanMessage (lote-14, T16)", () => {
         id,
         name: `Tenant envio humano T16 ${id}`,
         agentName: "Agente",
-        supportedModality: "ambos" as const,
+        supportedSegment: "ambos" as const,
         slug: `fixture-t16-${id}`,
       }))
     );

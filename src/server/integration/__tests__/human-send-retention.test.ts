@@ -26,7 +26,7 @@ describe("purgeHumanSendReservations (lote-14, T20)", () => {
         id,
         name: `Tenant retenção T20 ${id}`,
         agentName: "Agente",
-        supportedModality: "ambos" as const,
+        supportedSegment: "ambos" as const,
         slug: `fixture-t20-${id}`,
       }))
     );

@@ -12,7 +12,7 @@ import {
   validateFileSize,
   validateLeadStatus,
   validateMimeType,
-  validateModality,
+  validateSegment,
   validateName,
 } from "../validation";
 import {
@@ -108,30 +108,30 @@ describe("validateFileSize", () => {
 
 describe("validateModality", () => {
   it("rejeita undefined", () => {
-    const result = validateModality(undefined);
+    const result = validateSegment(undefined);
     expect(result.ok).toBe(false);
   });
 
   it("rejeita null", () => {
-    const result = validateModality(null);
+    const result = validateSegment(null);
     expect(result.ok).toBe(false);
   });
 
   it("rejeita string vazia", () => {
-    const result = validateModality("");
+    const result = validateSegment("");
     expect(result.ok).toBe(false);
   });
 
   it("aceita 'novo'", () => {
-    expect(validateModality("novo")).toEqual({ ok: true });
+    expect(validateSegment("novo")).toEqual({ ok: true });
   });
 
   it("aceita 'usado'", () => {
-    expect(validateModality("usado")).toEqual({ ok: true });
+    expect(validateSegment("usado")).toEqual({ ok: true });
   });
 
   it("aceita 'ambos'", () => {
-    expect(validateModality("ambos")).toEqual({ ok: true });
+    expect(validateSegment("ambos")).toEqual({ ok: true });
   });
 });
 

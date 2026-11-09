@@ -41,7 +41,7 @@ describe("server/data — envio humano (lote-14, T6)", () => {
         id,
         name: `Tenant envio humano ${id}`,
         agentName: "Agente",
-        supportedModality: "ambos" as const,
+        supportedSegment: "ambos" as const,
         slug: `fixture-${id}`,
       }))
     );

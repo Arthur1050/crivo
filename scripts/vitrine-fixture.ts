@@ -367,7 +367,7 @@ export async function criarFixtureVitrine(db: BancoDoDono): Promise<FixtureVitri
         slug: dados.slug,
         name: dados.nome,
         agentName: "Agente Fixture",
-        supportedModality: MODALITY.both,
+        supportedSegment: MODALITY.both,
         city: dados.cidade,
         state: dados.uf,
         agentWhatsapp: dados.whatsapp,

@@ -38,9 +38,10 @@ import type {
   Broker,
   Lead,
   LeadStatus,
-  Modality,
 } from "@/src/server/data";
 import type { LeadWithBroker } from "@/src/kit/lead-data";
+
+type Modality = NonNullable<Lead["modality"]>;
 
 const MODALITY_LABELS: Record<Modality, string> = {
   [MODALITY.new]: "Novo",

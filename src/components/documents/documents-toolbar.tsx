@@ -20,10 +20,10 @@ import {
   DOCUMENT_SORT_OPTIONS,
 } from "@/src/components/documents/document-sort";
 import { NO_FOLDER_LABEL, NO_FOLDER_PARAM } from "@/src/lib/document-folders";
-import type { DocumentCategory, Modality } from "@/src/server/data";
+import type { DocumentCategory, DocumentSegment } from "@/src/server/data";
 import { searchAfterUrlChange } from "./documents-page-state";
 
-const MODALITY_OPTIONS: { value: Modality; label: string }[] = [
+const MODALITY_OPTIONS: { value: DocumentSegment; label: string }[] = [
   { value: MODALITY.new, label: "Novo" },
   { value: MODALITY.used, label: "Usado" },
   { value: MODALITY.both, label: "Ambos" },
@@ -69,11 +69,11 @@ export function DocumentsToolbar({ categories, showFolderFilter = false }: Docum
     };
   }, []);
 
-  const modality = searchParams.get("modalidade");
+  const segment = searchParams.get("modalidade");
   const categoryId = searchParams.get("categoria");
   const sort = searchParams.get("ordem") ?? DEFAULT_DOCUMENT_SORT;
   const folder = searchParams.get("pasta");
-  const activeFilterCount = Number(Boolean(modality)) + Number(Boolean(categoryId))
+  const activeFilterCount = Number(Boolean(segment)) + Number(Boolean(categoryId))
     + Number(showFolderFilter && folder === NO_FOLDER_PARAM);
 
   function updateParams(changes: Record<string, string | null>) {
@@ -127,7 +127,7 @@ export function DocumentsToolbar({ categories, showFolderFilter = false }: Docum
       >
         <DropdownMenuRadioGroup
           aria-label="Modalidade"
-          value={modality ?? ALL}
+          value={segment ?? ALL}
           onChange={(value) => updateParams({ modalidade: value === ALL ? null : value })}
         >
           <DropdownMenuRadioItem value={ALL} label="Todos os documentos" />

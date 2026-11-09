@@ -1,3 +1,4 @@
+import type { DocumentSegmentFacet } from "./segments";
 import { DOCUMENT_STATUS } from "../../lib/vocabulary";
 import "server-only";
 
@@ -53,12 +54,12 @@ export interface ProcessingStart {
   (input: { tenantId: string; documentId: string; attempt: number }): Promise<{ id: string }>;
 }
 
-const defaultRepository: ProcessingRepository = {
+const defaultRepository = (facet: DocumentSegmentFacet | null): ProcessingRepository => ({
   getForProcessing: getDocumentForProcessing,
   complete: completeDocumentProcessing,
-  reconcile: reconcileTenantDocumentAdmission,
+  reconcile: (tenantId, now) => reconcileTenantDocumentAdmission(tenantId, now, facet),
   claimRetry: claimDocumentProcessingRetry,
-};
+});
 
 const INITIAL_DISPATCH_TRIES = 3;
 
@@ -99,11 +100,12 @@ export function createDocumentProcessingService(input: {
   start: ProcessingStart;
   extract?: typeof extractDocument;
   repository?: ProcessingRepository;
+  facet?: DocumentSegmentFacet | null;
   now?: () => Date;
   extractorVersion?: string;
   log?: (entry: ProcessingLogEntry) => void;
 }) {
-  const repository = input.repository ?? defaultRepository;
+  const repository = input.repository ?? defaultRepository(input.facet ?? null);
   const log = input.log ?? logToRuntime;
   const extract = input.extract ?? extractDocument;
   const now = input.now ?? (() => new Date());

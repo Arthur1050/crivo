@@ -74,7 +74,7 @@ describe("server actions — Chats (lote-14, T18)", () => {
       id: tenantId,
       name: `Tenant actions Chats ${tenantId}`,
       agentName: "Agente",
-      supportedModality: "ambos",
+      supportedSegment: "ambos",
       slug: `fixture-t18-${tenantId}`,
     });
     userId = randomUUID();

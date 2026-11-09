@@ -67,13 +67,13 @@ describe("server/data isolation", () => {
         name: "Fixture documento isolamento A.pdf",
         mimeType: "application/pdf",
         sizeBytes: 100,
-        modality: "novo",
+        segment: "novo",
       }),
       createDocument(tenantBId, {
         name: "Fixture documento isolamento B.pdf",
         mimeType: "application/pdf",
         sizeBytes: 100,
-        modality: "usado",
+        segment: "usado",
       }),
     ]);
 
@@ -280,7 +280,7 @@ describe("server/data isolation", () => {
   // (um de cada corretor, um sem responsável, um de outra imobiliária).
   it("T9: filtro de pasta estrangeira retorna vazio sem expor seus documentos (PFILT-01 AC5)", async () => {
     const [folder] = await db.insert(documentFolders).values({ tenantId: tenantBId, name: `Isolamento ${randomUUID()}` }).returning();
-    const doc = await createDocument(tenantBId, { name: "Documento da pasta estrangeira", mimeType: "application/pdf", sizeBytes: 10, modality: "novo" });
+    const doc = await createDocument(tenantBId, { name: "Documento da pasta estrangeira", mimeType: "application/pdf", sizeBytes: 10, segment: "novo" });
     try {
       await db.update(documents).set({ folderId: folder.id }).where(eq(documents.id, doc.id));
       expect(await getDocuments(tenantAId, { folder: { kind: "pasta", folderId: folder.id } })).toEqual([]);
@@ -312,7 +312,7 @@ describe("server/data isolation", () => {
         id: tenantId,
         name: "Tenant Escopo Carteira",
         agentName: "Agente Escopo",
-        supportedModality: "ambos",
+        supportedSegment: "ambos",
         slug: `fixture-${tenantId}`,
       });
 

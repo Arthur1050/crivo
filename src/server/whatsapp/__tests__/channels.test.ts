@@ -26,7 +26,7 @@ describe("T7 — canal servidor e Analytics independentes (USO-01 AC8; L14B-01 A
   const verifiedAt = new Date("2026-10-02T12:00:00Z");
   beforeAll(async () => {
     await db.insert(tenants).values([tenantA, tenantB].map((id) => ({
-      id, slug: `fixture-${id}`, name: "Fixture canal", agentName: "Agente", supportedModality: "ambos" as const,
+      id, slug: `fixture-${id}`, name: "Fixture canal", agentName: "Agente", supportedSegment: "ambos" as const,
     })));
     await db.insert(tenantApiKeys).values({ tenantId: tenantA, label: "Fixture canais", keyHash: createHash("sha256").update(key).digest("hex") });
   });

@@ -21,7 +21,7 @@ async function folder(name: string, tenantId = tenantA, updatedAt = OLD) {
 async function document(folderId: string | null, overrides: Partial<typeof documents.$inferInsert> = {}) {
   const [row] = await db.insert(documents).values({
     tenantId: tenantA, folderId, name: "Documento", mimeType: "text/plain", sizeBytes: 12n,
-    modality: "novo", storageProvider: "teste", storageKey: randomUUID(), storageEtag: "etag",
+    segment: "novo", storageProvider: "teste", storageKey: randomUUID(), storageEtag: "etag",
     contentSha256: randomUUID().replaceAll("-", "").repeat(2), status: "pronto", uploadedAt: UPLOADED,
     extractedText: "Texto que o agente recebe", processingAttempt: 3, ...overrides,
   }).returning();
@@ -30,7 +30,7 @@ async function document(folderId: string | null, overrides: Partial<typeof docum
 
 beforeAll(async () => {
   await db.insert(tenants).values([tenantA, tenantB].map((id) => ({
-    id, name: "Pastas DAL", slug: `pastas-dal-${id}`, agentName: "Agente", supportedModality: "ambos" as const,
+    id, name: "Pastas DAL", slug: `pastas-dal-${id}`, agentName: "Agente", supportedSegment: "ambos" as const,
   })));
   await db.insert(users).values({ id: userId, name: "Pastas DAL", email: `${userId}@example.test` });
 });
@@ -77,7 +77,7 @@ describe("T7 — escrita das pastas (PCRIAR-01, PREN-01, PEXC-01)", () => {
     const deleted = await document(row.id, { status: "falha", deletedAt: NOW, categoryId: category.id });
     const [intent] = await db.insert(documentUploadIntents).values({
       tenantId: tenantA, folderId: row.id, requestedByUserId: userId, name: "Envio", mimeType: "text/plain",
-      sizeBytes: 21n, modality: "usado", storageKey: randomUUID(), clientSha256: randomUUID().replaceAll("-", "").repeat(2), expiresAtIntent: NOW,
+      sizeBytes: 21n, segment: "usado", storageKey: randomUUID(), clientSha256: randomUUID().replaceAll("-", "").repeat(2), expiresAtIntent: NOW,
     }).returning();
     expect(await deleteDocumentFolder(tenantA, row.id)).toEqual({ kind: "deleted", movedToRootCount: 1 });
     expect(await getDocumentFolder(tenantA, row.id)).toBeNull();

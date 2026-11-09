@@ -1,10 +1,7 @@
 import { PROBLEM_CODE } from "../../../../src/lib/vocabulary";
 import { Buffer } from "node:buffer";
-import { DocumentContextBudgetExceeded, getDirectDocumentContext } from "../../../../src/server/integration/context";
-import {
-  MAX_BODY_BYTES,
-  parseContextQuery,
-} from "../../../../src/server/integration/parsers";
+import { DocumentContextBudgetExceeded, getDirectDocumentContext, parseContextQuery } from "../../../../src/kit/document-context";
+import { MAX_BODY_BYTES } from "../../../../src/server/integration/parsers";
 import { methodNotAllowed, problem } from "../../../../src/kit/integration";
 import { withIntegrationRoute } from "../../../../src/kit/integration";
 
