@@ -21,6 +21,3 @@ export function prepareMainWorkflowStatusPublication(graph: MainWorkflowGraph, t
   if (JSON.stringify(options?.messageStatusUpdates) !== '["delivered","failed"]') throw new Error("status-trigger-config-unverified");
   return graph;
 }
-
-// O consumidor do workflow ainda importa o nome anterior.
-export { prepareMainWorkflowStatusPublication as "preparePrincipalStatusPublication" };

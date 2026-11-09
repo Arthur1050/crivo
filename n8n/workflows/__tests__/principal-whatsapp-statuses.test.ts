@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import source from "../principal";
 import generated from "../../generated/principal";
-import { preparePrincipalStatusPublication, type StatusPublicationEvidence } from "../../../scripts/n8n-status-publication";
+import { prepareMainWorkflowStatusPublication, type StatusPublicationEvidence } from "../../../scripts/n8n-status-publication";
 
 type Node = { name: string; type: string; typeVersion: number; parameters: Record<string, unknown>; onError?: string; retryOnFail?: boolean; maxTries?: number; credentials?: unknown };
 type Edge = { node: string; type: string; index: number };
@@ -77,14 +77,14 @@ describe("T49 — status separado do pipeline conversacional", () => {
     expect(node(SPLIT).parameters.jsCode).not.toContain("__INLINE");
   });
   it("ausência de prova impede payload publicável; prova fixture válida aceita JSON exato", () => {
-    expect(() => preparePrincipalStatusPublication(graph, target)).toThrow("status-origin-unverified");
-    expect(preparePrincipalStatusPublication(graph, target, evidence)).toBe(graph);
+    expect(() => prepareMainWorkflowStatusPublication(graph, target)).toThrow("status-origin-unverified");
+    expect(prepareMainWorkflowStatusPublication(graph, target, evidence)).toBe(graph);
   });
   it.each([{ activeVersionId: "00000000-0000-4000-8000-000000000099" }, { triggerVersion: 2 }, { rejectsInvalidSignatures: false }, { signatureInput: "parsed-body" }, { acceptsValidSignatures: false }])("HMAC/versão instalados ausentes/divergentes não permitem publicar %#", (patch) => {
-    expect(() => preparePrincipalStatusPublication(graph, target, { ...evidence, ...patch } as StatusPublicationEvidence)).toThrow("status-origin-unverified");
+    expect(() => prepareMainWorkflowStatusPublication(graph, target, { ...evidence, ...patch } as StatusPublicationEvidence)).toThrow("status-origin-unverified");
   });
   it("guarda também rejeita serializer default all", () => {
     const wrong = structuredClone(graph); node("WhatsApp Trigger", wrong).parameters.options = { messageStatusUpdates: ["all"] };
-    expect(() => preparePrincipalStatusPublication(wrong, target, evidence)).toThrow("status-trigger-config-unverified");
+    expect(() => prepareMainWorkflowStatusPublication(wrong, target, evidence)).toThrow("status-trigger-config-unverified");
   });
 });

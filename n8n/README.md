@@ -1,7 +1,7 @@
 # n8n/ — Agente de Qualificação (Fase 8 / Lote 6)
 
 **L14b T49, publicação do principal:** gerar pelo inliner e passar o JSON do SDK por
-`preparePrincipalStatusPublication` de `scripts/n8n-status-publication.ts` antes de
+`prepareMainWorkflowStatusPublication` de `scripts/n8n-status-publication.ts` antes de
 qualquer upload/publicação pelo script operacional de T67. O retorno desta função
 é o único payload autorizado pelo protocolo; erro encerra o processo antes do MCP/API.
 Fornecer workflowId/activeVersionId observados e evidência HMAC SHA256 do corpo bruto
