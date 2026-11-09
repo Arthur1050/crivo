@@ -4,6 +4,7 @@ import map from "../../../../scripts/boundary/map.json";
 import { defineVertical } from "../../../vertical-kit";
 import { sourceGraph } from "../../../vertical-kit/__tests__/source-graph";
 import { realEstate } from "../index";
+import { qualification } from "../qualification";
 
 vi.mock("../../../vertical-kit", async importOriginal => {
   const original = await importOriginal<typeof import("../../../vertical-kit")>();
@@ -15,9 +16,10 @@ describe("vertical real-estate — VERT-02", () => {
     expect(defineVertical).toHaveBeenCalledWith(realEstate);
     expect(realEstate).toMatchObject({
       id: "real-estate", brand: { name: "Krivo", problemUrn: "krivo", tenantHeader: "X-Krivo-Tenant", alertTag: "krivo" },
-      appointments: true, qualification: null,
+      appointments: true,
       resources: [{ name: "catalog", permissions: { administrador: ["read", "write"], gestor: ["read", "write"], corretor: ["read"] } }],
     });
+    expect(realEstate.qualification).toBe(qualification);
     expect(realEstate.documentSegments?.values).toEqual(["novo", "usado", "ambos"]);
   });
 

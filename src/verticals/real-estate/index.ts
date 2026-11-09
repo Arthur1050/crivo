@@ -1,5 +1,6 @@
 import { ROLE } from "../../lib/vocabulary";
 import { defineVertical } from "../../vertical-kit";
+import { qualification } from "./qualification";
 import { MODALITY } from "./vocabulary";
 
 const segments = Object.values(MODALITY);
@@ -16,7 +17,7 @@ export const realEstate = defineVertical({
     },
   }],
   appointments: true,
-  qualification: null,
+  qualification,
   documentSegments: {
     values: segments,
     matches(documentSegment, querySegment) {
