@@ -2,6 +2,7 @@ export const agent = {
   id: "real-estate",
   appointments: true,
   values: {
+    gateModule: "gate.mjs",
     sessionModule: "session.mjs",
     voiceModule: "voice.mjs",
     crmBaseUrl: "https://crivo-arthur1050s-projects.vercel.app/api/v1",
@@ -25,6 +26,7 @@ export const agent = {
     "reengagement-documents-tool",
     "reengagement-catalog-tool",
     "reengagement-agent",
+    "reengagement-read-validation",
     "reengagement-tool-node-ids",
     "appointment-reminder-nodes",
     "appointment-reminder-chain",

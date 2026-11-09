@@ -645,7 +645,7 @@ const decideRoute = node({
       mode: "runOnceForAllItems",
       language: "javaScript",
       jsCode:
-        '__INLINE(gate.mjs)__' +
+        '__INLINE(__VALUE(gateModule)__)__' +
         "\n\n" +
         "const ctx = $('Code: contexto do lead').first().json;\n" +
         "const route = gate({ optedOutAt: ctx.optedOutAt, status: ctx.status, humanTakeoverAt: ctx.humanTakeoverAt, hasMedia: ctx.hasMedia, text: ctx.text });\n" +

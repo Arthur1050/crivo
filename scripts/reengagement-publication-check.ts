@@ -5,7 +5,7 @@
  */
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { inlineWorkflowSource } from "./n8n-inline.mjs";
+import { renderWorkflows } from "./n8n-inline.mjs";
 import { prepareMainWorkflowStatusPublication, type StatusPublicationEvidence } from "./n8n-status-publication";
 
 type Graph = Parameters<typeof prepareMainWorkflowStatusPublication>[0] & { settings?: unknown };
@@ -163,13 +163,19 @@ export function checkReengagementPublication(artifacts: LocalPublicationArtifact
 /** Leitura local limitada a operações/provas; nada imprime fonte/gerado/grafo. */
 export async function readLocalPublicationArtifacts(): Promise<LocalPublicationArtifact[]> {
   const artifacts: LocalPublicationArtifact[] = [];
+  const sources = new Map(renderWorkflows({ inlineModules: false }).map(({ file, generatedText }) => [file, generatedText]));
+  const expected = new Map(renderWorkflows().map(({ file, generatedText }) => [file, generatedText]));
   for (const role of roles) {
-    const source = readFileSync(`n8n/workflows/${role}.ts`, "utf8");
+    const source = sources.get(role + ".ts");
+    const expectedGenerated = expected.get(role + ".ts");
+    if (source === undefined || expectedGenerated === undefined) {
+      throw new Error(`Workflow ausente no manifesto: ${role}`);
+    }
     const generated = readFileSync(`n8n/generated/${role}.ts`, "utf8");
     const generatedPath = `../n8n/generated/${role}`;
     const workflowModule = await import(generatedPath) as { default: { toJSON(): Graph } };
     const graph = workflowModule.default.toJSON();
-    artifacts.push({ role, sourceHash: textDigest(source), expectedGeneratedHash: textDigest(inlineWorkflowSource(source)),
+    artifacts.push({ role, sourceHash: textDigest(source), expectedGeneratedHash: textDigest(expectedGenerated),
       generatedHash: textDigest(generated), operationsHash: workflowOperationsDigest(graph), graph });
   }
   return artifacts;
