@@ -15,7 +15,11 @@ describe("vertical de teste — VERT-03", () => {
     expect(defineVertical).toHaveBeenCalledWith(testVertical);
     expect(defineVertical(testVertical)).toBe(testVertical);
     expect(testVertical).toEqual({
-      id: "test", brand: { name: "Acme", problemUrn: "acme", tenantHeader: "X-Acme-Tenant", alertTag: "acme" },
+      id: "test",
+      brand: {
+        name: "Acme", problemUrn: "acme", tenantHeader: "X-Acme-Tenant", alertTag: "acme",
+        tenantNoun: { singular: "empresa", plural: "empresas" },
+      },
       resources: [], appointments: false, qualification: null, documentSegments: null,
     });
   });

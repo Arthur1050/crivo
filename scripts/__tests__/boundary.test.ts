@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import map from "../boundary/map.json";
 import transitional from "../boundary/transitional.json";
-import { checkClassification, checkImports, checkMarketTerms, checkStoredValues, checkIdentifiers, classifyFile, isTest, type BoundaryRule } from "../boundary/check";
+import { checkClassification, checkImports, checkMarketTerms, checkStoredValues, checkIdentifiers, checkTransitionEntries, classifyFile, isTest, type BoundaryRule } from "../boundary/check";
 
 export function repositoryFiles(): string[] {
   function walk(directory: string): string[] {
@@ -22,6 +22,30 @@ function repositorySources() {
   return Object.fromEntries(repositoryFiles().filter((file) => !isTest(file))
     .map((file) => [file, /\.[cm]?[jt]sx?$/.test(file) ? readFileSync(file, "utf8") : ""]));
 }
+
+describe("categorias da lista de transição (BOUND-04, ENG-01)", () => {
+  const entry = { path: "src/db/schema.ts", term: "column:leads.modality" };
+
+  it("restringe o manifesto real às exceções do L18c", () => {
+    expect(checkTransitionEntries(transitional)).toEqual([]);
+  });
+
+  it.each(["stored", "api", "n8n-modules", "route-folders"])("aceita a categoria %s no L18c", category => {
+    expect(checkTransitionEntries([{ ...entry, removedIn: "L18c", category }])).toEqual([]);
+  });
+
+  it.each([{}, { category: null }, { category: "identifier" }, { category: "market" }])("recusa categoria ausente ou inválida (%j)", fields => {
+    expect(checkTransitionEntries([{ ...entry, removedIn: "L18c", ...fields }])).toEqual([
+      { file: entry.path, line: 1, message: expect.stringContaining("Categoria de transição inválida") },
+    ]);
+  });
+
+  it.each([{}, { removedIn: null }, { removedIn: "L18a" }])("recusa lote de remoção ausente ou inválido (%j)", fields => {
+    expect(checkTransitionEntries([{ ...entry, category: "stored", ...fields }])).toEqual([
+      { file: entry.path, line: 1, message: `Exceção ${entry.term} deve ser removida no L18c` },
+    ]);
+  });
+});
 
 describe("classificação da fronteira (BOUND-01)", () => {
   it("classifica a árvore real sem regra órfã e com pacote em todo arquivo core", () => {

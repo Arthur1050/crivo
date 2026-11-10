@@ -1,5 +1,5 @@
 import { DEFAULT_DOCUMENT_SEGMENT, documentSegmentValues, type DocumentSegmentFacet } from "../documents/segments";
-import { AGENT_PHASE, DOCUMENT_STATUS, HUMAN_SEND_STATE, LEAD_STATUS, PROBLEM_CODE, ROLE, SENDER, STATUS_ACTOR } from "../../lib/vocabulary";
+import { AGENT_PHASE, DOCUMENT_STATUS, HUMAN_SEND_RESERVATION_OUTCOME, HUMAN_SEND_STATE, LEAD_STATUS, PROBLEM_CODE, ROLE, SENDER, STATUS_ACTOR } from "../../lib/vocabulary";
 import "server-only";
 
 import { LEAD_QUALIFICATION_FIELDS, type LeadQualificationColumns, type LeadQualificationRow } from "../../vertical-kit";
@@ -1267,7 +1267,7 @@ export async function getLastLeadMessageAt(
 export const HUMAN_SEND_STALE_MS = 2 * 60 * 1000;
 
 export type ReserveHumanSendResult =
-  | { outcome: "reservado"; reservationId: string; resumed: boolean }
+  | { outcome: typeof HUMAN_SEND_RESERVATION_OUTCOME.reserved; reservationId: string; resumed: boolean }
   | { outcome: "ja-enviada"; message: Message }
   | { outcome: "envio-em-andamento" };
 
@@ -1303,7 +1303,7 @@ export async function reserveHumanSend(
     })
     .returning({ id: humanMessageSends.id });
   if (inserted[0]) {
-    return { outcome: "reservado", reservationId: inserted[0].id, resumed: false };
+    return { outcome: HUMAN_SEND_RESERVATION_OUTCOME.reserved, reservationId: inserted[0].id, resumed: false };
   }
 
   const [existing] = await db
@@ -1351,7 +1351,7 @@ export async function reserveHumanSend(
     )
     .returning({ id: humanMessageSends.id });
   if (!resumed[0]) return { outcome: "envio-em-andamento" };
-  return { outcome: "reservado", reservationId: resumed[0].id, resumed: true };
+  return { outcome: HUMAN_SEND_RESERVATION_OUTCOME.reserved, reservationId: resumed[0].id, resumed: true };
 }
 
 /**

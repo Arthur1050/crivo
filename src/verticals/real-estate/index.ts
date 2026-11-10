@@ -7,7 +7,10 @@ const segments = Object.values(MODALITY);
 
 export const realEstate = defineVertical({
   id: "real-estate",
-  brand: { name: "Krivo", problemUrn: "krivo", tenantHeader: "X-Krivo-Tenant", alertTag: "krivo" },
+  brand: {
+    name: "Krivo", problemUrn: "krivo", tenantHeader: "X-Krivo-Tenant", alertTag: "krivo",
+    tenantNoun: { singular: "imobiliária", plural: "imobiliárias" },
+  },
   resources: [{
     name: "catalog",
     permissions: {

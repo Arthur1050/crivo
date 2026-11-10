@@ -11,6 +11,7 @@ export const STATUS_ACTOR = { human: "humano", agent: "agente" } as const;
 export const INTEGRATION_HEALTH = { healthy: "saudavel", problem: "problema" } as const;
 export const DOCUMENT_STATUS = { processing: "processando", ready: "pronto", failed: "falha", outside_agent: "fora_do_agente" } as const;
 export const HUMAN_SEND_STATE = { sending: "enviando", sent: "enviada", failed: "falhou" } as const;
+export const HUMAN_SEND_RESERVATION_OUTCOME = { reserved: "reservado" } as const;
 export const PROBLEM_CODE = {
   unauthenticated: "nao-autenticado",
   not_found: "recurso-nao-encontrado",

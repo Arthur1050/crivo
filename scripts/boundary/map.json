@@ -37,6 +37,10 @@
     "layer": "app"
   },
   {
+    "glob": "scripts/preview-message-pricing.tsx",
+    "layer": "app"
+  },
+  {
     "glob": "src/verticals/real-estate/**",
     "layer": "vertical"
   },

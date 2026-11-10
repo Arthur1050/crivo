@@ -54,12 +54,12 @@ export type AuthFailure =
 export type AuthResolution = { ok: true; context: AuthContext } | AuthFailure;
 
 /**
- * Corretor "puro" — o vínculo tem o papel corretor e NENHUM outro. É a
- * condição exata da SCOPE-01: quem acumula gestor + corretor enxerga a
+ * Atendente com papel exclusivo: o vínculo só tem o papel de atendimento.
+ * Pela SCOPE-01, quem acumula gestão e atendimento enxerga a
  * imobiliária inteira, porque papéis acumulados são união de permissões, nunca
  * interseção.
  */
-function isBrokerOnly(roles: Role[]): boolean {
+function isAttendantOnly(roles: Role[]): boolean {
   return roles.length > 0 && roles.every((role) => role === ROLE.attendant);
 }
 
@@ -89,7 +89,7 @@ export class PermissionDeniedError extends Error {
  *
  * Separada de `requirePermission` porque é ela que carrega TODO o
  * comportamento — a outra só resolve a sessão. É o que permite exercitar a
- * recusa real com uma sessão de corretor controlada, sem precisar de um
+ * recusa real com uma sessão de atendente controlada, sem precisar de um
  * request scope do Next.
  */
 export function authorizeOrThrow(
@@ -176,7 +176,7 @@ export function createSessionKit(auth: AuthInstance, policy: AccessPolicy) {
         roles,
         leadScope: {
           tenantId: active.organizationId,
-          assignedUserId: isBrokerOnly(roles) ? user.id : null,
+          assignedUserId: isAttendantOnly(roles) ? user.id : null,
         },
       },
     };

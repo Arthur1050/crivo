@@ -32,7 +32,7 @@ export interface InvitationEmail {
   to: string;
   /** Nome de quem foi convidado, usado na saudação. */
   name: string;
-  /** Nome da imobiliária que convidou. */
+  /** Nome da organização que convidou. */
   tenantName: string;
   /** URL completa da tela de aceite, já com o token. */
   url: string;
@@ -62,7 +62,7 @@ export function createEmailSender(brand: VerticalBrand) {
       text: [
         `Olá, ${invitation.name}.`,
         "",
-        `Você foi convidado para acessar o ${brand.name} da imobiliária ${invitation.tenantName}.`,
+        `Você foi convidado para acessar o ${brand.name} da ${brand.tenantNoun.singular} ${invitation.tenantName}.`,
         "Defina a sua senha e ative a conta por este link:",
         invitation.url,
         "",

@@ -25,6 +25,26 @@ export interface TransitionalEntry {
   category: string;
 }
 
+const TRANSITION_CATEGORIES = ["stored", "api", "n8n-modules", "route-folders"] as const;
+
+export function checkTransitionEntries(entries: readonly {
+  path: string;
+  term: string;
+  removedIn?: unknown;
+  category?: unknown;
+}[]): Violation[] {
+  const violations: Violation[] = [];
+  for (const { path, term, removedIn, category } of entries) {
+    if (removedIn !== "L18c") {
+      violations.push({ file: path, line: 1, message: `Exceção ${term} deve ser removida no L18c` });
+    }
+    if (!TRANSITION_CATEGORIES.some(allowed => allowed === category)) {
+      violations.push({ file: path, line: 1, message: `Categoria de transição inválida para ${term}: ${String(category)}` });
+    }
+  }
+  return violations;
+}
+
 export type Sources = Readonly<Record<string, string>>;
 
 interface CodeToken {

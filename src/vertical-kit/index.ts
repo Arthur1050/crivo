@@ -9,6 +9,7 @@ export interface VerticalBrand {
   problemUrn: string;
   tenantHeader: string;
   alertTag: string;
+  tenantNoun: { singular: string; plural: string };
 }
 
 export interface VerticalResource {
@@ -83,6 +84,11 @@ export function defineVertical<V extends Vertical>(vertical: V): V {
   if (!isRecord(vertical.brand)) invalid("brand");
   for (const field of ["name", "problemUrn", "tenantHeader", "alertTag"] as const) {
     if (!nonEmpty(vertical.brand[field])) invalid(`brand.${field}`);
+  }
+  const { tenantNoun } = vertical.brand;
+  if (!isRecord(tenantNoun)) invalid("brand.tenantNoun");
+  for (const field of ["singular", "plural"] as const) {
+    if (!nonEmpty(tenantNoun[field])) invalid(`brand.tenantNoun.${field}`);
   }
   if (!Array.isArray(vertical.resources)) invalid("resources");
   const names = new Set<string>();

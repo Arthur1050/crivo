@@ -1,5 +1,5 @@
 import { MODALITY } from "../../verticals/real-estate/vocabulary";
-import { duplicateDocumentMessage } from "../../lib/duplicate-document";
+import { formatDuplicateDocumentMessage } from "../../kit/duplicate-document";
 
 /**
  * Lógica de upload do navegador, isolada do componente para ser testável sem
@@ -35,7 +35,7 @@ export type UploadFailureCode =
  * ação concreta, porque é a única em que já existe um documento a editar.
  */
 export const UPLOAD_FAILURE_MESSAGES: Record<UploadFailureCode, string> = {
-  duplicate_upload: duplicateDocumentMessage(),
+  duplicate_upload: formatDuplicateDocumentMessage(),
   upload_forbidden: "Você não tem permissão para enviar documentos.",
   upload_folder_not_found:
     "A pasta escolhida não existe mais. Recarregue a página e envie de novo.",
@@ -119,7 +119,7 @@ export async function requestUploadTicket(
     const code = codeFromBody(body, response.status);
     if (code === "duplicate_upload") {
       const existingName = (body as { existingName?: unknown } | null)?.existingName;
-      return { ok: false, code, message: duplicateDocumentMessage(typeof existingName === "string" ? existingName : null) };
+      return { ok: false, code, message: formatDuplicateDocumentMessage(typeof existingName === "string" ? existingName : null) };
     }
     return failure(code);
   }

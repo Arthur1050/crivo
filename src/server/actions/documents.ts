@@ -27,7 +27,7 @@ import { createDocumentProcessingService, reconcileTenantDocumentAdmission } fro
 import { VercelBlobDocumentStorage } from "../documents/vercel-blob-storage";
 import { startDocumentProcessingRun } from "../documents/workflow-start";
 import { createDocumentUploadIntake } from "../../kit/documents";
-import { duplicateDocumentMessage } from "../../lib/duplicate-document";
+import { formatDuplicateDocumentMessage } from "../../kit/duplicate-document";
 import { FOLDER_ERROR_MESSAGES, isUuid } from "../../lib/document-folders";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
@@ -204,7 +204,7 @@ export async function finalizeDocumentUploadAction(
     return { ok: true };
   }
   if (result.kind === "duplicate_content") {
-    return { ok: false, error: duplicateDocumentMessage(result.documentName) };
+    return { ok: false, error: formatDuplicateDocumentMessage(result.documentName) };
   }
   if (result.kind === "rejected") {
     return {

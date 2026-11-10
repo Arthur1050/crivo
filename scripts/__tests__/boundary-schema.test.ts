@@ -40,6 +40,6 @@ it("registra as colunas e os enums transitórios da qualificação até o L18c (
     ...LEAD_QUALIFICATION_FIELDS.map((field) => `column:leads.${columns[field].name}`),
     ...enums.map((item) => `enum:${item.enumName}`),
   ];
-  expect(transitional.filter((item) => item.category === "qualification").map(({ path, term, removedIn }) =>
-    ({ path, term, removedIn }))).toEqual(terms.map((term) => ({ path: "src/db/schema.ts", term, removedIn: "L18c" })));
+  expect(transitional.filter((item) => /^(column|enum):/.test(item.term)).map(({ path, term, removedIn, category }) =>
+    ({ path, term, removedIn, category }))).toEqual(terms.map((term) => ({ path: "src/db/schema.ts", term, removedIn: "L18c", category: "stored" })));
 });

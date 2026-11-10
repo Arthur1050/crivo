@@ -6,13 +6,33 @@ import { CORE_RESOURCES, defineVertical, type Vertical, type VerticalResource } 
 
 function fixture(): Vertical {
   return {
-    id: "example", brand: { name: "Exemplo", problemUrn: "example", tenantHeader: "X-Example-Tenant", alertTag: "example" },
+    id: "example",
+    brand: {
+      name: "Exemplo", problemUrn: "example", tenantHeader: "X-Example-Tenant", alertTag: "example",
+      tenantNoun: { singular: "loja", plural: "lojas" },
+    },
     resources: [{ name: "orders", permissions: { [ROLE.admin]: ["read", "write"], [ROLE.manager]: ["read"], [ROLE.attendant]: [] } }],
     appointments: false, qualification: null, documentSegments: null,
   };
 }
 
 describe("defineVertical — VERT-01", () => {
+  it.each(["tenantNoun", "singular", "plural"] as const)("valida o nome do tenant em %s", field => {
+    for (const value of [undefined, null, 7, " "]) {
+      const vertical = fixture();
+      const { tenantNoun } = vertical.brand;
+      const brand = {
+        ...vertical.brand,
+        tenantNoun: field === "tenantNoun" ? value : { ...tenantNoun, [field]: value },
+      } as Vertical["brand"];
+      if (value === undefined) {
+        Reflect.deleteProperty(field === "tenantNoun" ? brand : brand.tenantNoun, field);
+      }
+      const path = field === "tenantNoun" ? "brand.tenantNoun" : `brand.tenantNoun.${field}`;
+      expect(() => defineVertical({ ...vertical, brand })).toThrow(`Vertical inválido: ${path}.`);
+    }
+  });
+
   it("entrega o mesmo objeto válido, preservando todos os campos", () => {
     const vertical = fixture();
     expect(defineVertical(vertical)).toBe(vertical);

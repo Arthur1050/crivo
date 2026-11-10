@@ -68,9 +68,9 @@ export function createIntegrationAlertFormatter(brand: import("../vertical-kit")
     alerts: TenantHealthSnapshot[],
     options: { test?: boolean } = {}
   ): { subject: string; text: string } {
-    const subject = `${options.test ? "[teste] " : ""}[${brand.alertTag}] Integração com problema em ${alerts.length} imobiliária(s)`;
+    const subject = `${options.test ? "[teste] " : ""}[${brand.alertTag}] Integração com problema em ${alerts.length} ${brand.tenantNoun.singular}(s)`;
     const text = [
-      "A integração do agente com o CRM passou a ter problema nas imobiliárias abaixo.",
+      `A integração do agente com o CRM passou a ter problema nas ${brand.tenantNoun.plural} abaixo.`,
       "",
       alerts.map(describeTenant).join("\n\n"),
     ].join("\n");

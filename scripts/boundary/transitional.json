@@ -1,115 +1,80 @@
 [
   {
-    "path": "scripts/preview-message-pricing.tsx",
-    "term": "import:src/components/chats/message-pricing.tsx",
-    "reason": "Dependência anterior ao lote; removida nas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "import"
-  },
-  {
     "path": "src/db/mint-service-key.ts",
     "term": "market:krivo",
     "reason": "Nome da credencial publicada no n8n; contrato operacional preservado até a ativação do L18c.",
     "removedIn": "L18c",
-    "category": "market"
+    "category": "stored"
   },
   {
     "path": "src/db/schema.ts",
     "term": "market:property",
-    "reason": "Coluna e enum de tipo de imóvel do lead; remoção na migração física do L18c.",
+    "reason": "Colunas, nomes de restrições e valores físicos preservados até a migração do L18c.",
     "removedIn": "L18c",
-    "category": "market"
+    "category": "stored"
   },
   {
     "path": "src/db/schema.ts",
     "term": "market:meeting",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
-  },
-  {
-    "path": "src/lib/duplicate-document.ts",
-    "term": "market:imobili",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
-  },
-  {
-    "path": "src/lib/integration-alert.ts",
-    "term": "market:imobili",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
-  },
-  {
-    "path": "src/server/auth/email.ts",
-    "term": "market:imobili",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
-  },
-  {
-    "path": "src/server/auth/session.ts",
-    "term": "market:broker",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
+    "reason": "Colunas, nomes de restrições e valores físicos preservados até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
   },
   {
     "path": "src/server/data/index.ts",
     "term": "market:meeting",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
+    "reason": "Referência SQL à coluna meeting_at preservada até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
   },
   {
     "path": "src/server/documents/benchmark-identity.ts",
     "term": "market:reuni",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
+    "reason": "Nome da tool agendar_reuniao preservado no contrato do agente publicado até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
   },
   {
     "path": "src/server/integration/leads.ts",
     "term": "market:meeting",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
+    "reason": "Campo meetingAt preservado no /api/v1 até o L18c.",
+    "removedIn": "L18c",
+    "category": "api"
   },
   {
     "path": "src/server/integration/parsers.ts",
     "term": "market:meeting",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
+    "reason": "Campo meetingAt preservado no /api/v1 até o L18c.",
+    "removedIn": "L18c",
+    "category": "api"
   },
   {
     "path": "src/server/integration/problem.ts",
     "term": "market:corretor",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
+    "reason": "Título Nenhum corretor disponível preservado no /api/v1 até o L18c.",
+    "removedIn": "L18c",
+    "category": "api"
   },
   {
     "path": "src/server/integration/settings.ts",
     "term": "market:meeting",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
+    "reason": "Campos meetingDays, meetingHoursStart e meetingHoursEnd preservados no /api/v1 até o L18c.",
+    "removedIn": "L18c",
+    "category": "api"
   },
   {
     "path": "src/server/reengagement/context.ts",
     "term": "market:meeting",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
+    "reason": "Chaves do contrato de horário de atendimento consumido pelo módulo de reengajamento do n8n até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
   },
   {
     "path": "src/server/reengagement/repository.ts",
     "term": "market:meeting",
-    "reason": "Ocorrência anterior ao lote; removida pelas tasks de costura do L18a.",
-    "removedIn": "L18a",
-    "category": "market"
+    "reason": "Chaves do contrato de horário de atendimento consumido pelo módulo de reengajamento do n8n até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
   },
   {
     "path": "n8n/generated/benchmark-contexto.ts",
@@ -555,113 +520,106 @@
   {
     "path": "src/db/schema.ts",
     "term": "stored:novo",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
+    "reason": "Colunas, nomes de restrições e valores físicos preservados até a migração do L18c.",
+    "removedIn": "L18c",
     "category": "stored"
   },
   {
     "path": "src/db/schema.ts",
     "term": "stored:usado",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
+    "reason": "Colunas, nomes de restrições e valores físicos preservados até a migração do L18c.",
+    "removedIn": "L18c",
     "category": "stored"
   },
   {
     "path": "src/db/schema.ts",
     "term": "stored:ambos",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
+    "reason": "Colunas, nomes de restrições e valores físicos preservados até a migração do L18c.",
+    "removedIn": "L18c",
     "category": "stored"
   },
   {
     "path": "src/db/schema.ts",
     "term": "stored:casa",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
+    "reason": "Colunas, nomes de restrições e valores físicos preservados até a migração do L18c.",
+    "removedIn": "L18c",
     "category": "stored"
   },
   {
     "path": "src/db/schema.ts",
     "term": "stored:apartamento",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
+    "reason": "Colunas, nomes de restrições e valores físicos preservados até a migração do L18c.",
+    "removedIn": "L18c",
     "category": "stored"
   },
   {
     "path": "src/db/schema.ts",
     "term": "stored:investidor",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
+    "reason": "Colunas, nomes de restrições e valores físicos preservados até a migração do L18c.",
+    "removedIn": "L18c",
     "category": "stored"
   },
   {
     "path": "src/db/schema.ts",
     "term": "stored:morador",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
+    "reason": "Colunas, nomes de restrições e valores físicos preservados até a migração do L18c.",
+    "removedIn": "L18c",
     "category": "stored"
   },
   {
     "path": "src/db/schema.ts",
     "term": "stored:pre_aprovado",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
+    "reason": "Colunas, nomes de restrições e valores físicos preservados até a migração do L18c.",
+    "removedIn": "L18c",
     "category": "stored"
   },
   {
     "path": "src/db/schema.ts",
     "term": "stored:recurso_proprio",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
+    "reason": "Colunas, nomes de restrições e valores físicos preservados até a migração do L18c.",
+    "removedIn": "L18c",
     "category": "stored"
   },
   {
     "path": "src/db/schema.ts",
     "term": "stored:humano",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
+    "reason": "Colunas, nomes de restrições e valores físicos preservados até a migração do L18c.",
+    "removedIn": "L18c",
     "category": "stored"
   },
   {
     "path": "src/lib/distribution.ts",
     "term": "stored:novo",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
+    "reason": "Chaves de qualificação persistidas, usadas na distribuição até a migração do L18c.",
+    "removedIn": "L18c",
     "category": "stored"
   },
   {
     "path": "src/lib/distribution.ts",
     "term": "stored:usado",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
+    "reason": "Chaves de qualificação persistidas, usadas na distribuição até a migração do L18c.",
+    "removedIn": "L18c",
     "category": "stored"
   },
   {
     "path": "src/lib/distribution.ts",
     "term": "stored:ambos",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
+    "reason": "Chaves de qualificação persistidas, usadas na distribuição até a migração do L18c.",
+    "removedIn": "L18c",
     "category": "stored"
   },
   {
     "path": "src/lib/distribution.ts",
     "term": "stored:investidor",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
+    "reason": "Chaves de qualificação persistidas, usadas na distribuição até a migração do L18c.",
+    "removedIn": "L18c",
     "category": "stored"
   },
   {
     "path": "src/lib/distribution.ts",
     "term": "stored:morador",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
-    "category": "stored"
-  },
-  {
-    "path": "src/server/data/index.ts",
-    "term": "stored:reservado",
-    "reason": "Literal anterior ao lote; substituído pelo vocabulário nas tasks do L18a.",
-    "removedIn": "L18a",
+    "reason": "Chaves de qualificação persistidas, usadas na distribuição até a migração do L18c.",
+    "removedIn": "L18c",
     "category": "stored"
   },
   {
@@ -669,125 +627,125 @@
     "term": "market:corretor",
     "reason": "Valor persistido do papel e código de problema; o vocabulário preserva os valores até a ativação do L18c (T10, VOCAB-01 AC3).",
     "removedIn": "L18c",
-    "category": "stored-values"
+    "category": "stored"
   },
   {
     "path": "src/vertical-kit/index.ts",
     "term": "market:property",
     "reason": "Tipo das colunas de qualificação transitórias do lead; remoção na migração física do L18c.",
     "removedIn": "L18c",
-    "category": "market"
+    "category": "stored"
   },
   {
     "path": "src/db/schema.ts",
     "term": "column:leads.region",
     "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
     "removedIn": "L18c",
-    "category": "qualification"
+    "category": "stored"
   },
   {
     "path": "src/db/schema.ts",
     "term": "column:leads.purchase_horizon",
     "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
     "removedIn": "L18c",
-    "category": "qualification"
+    "category": "stored"
   },
   {
     "path": "src/db/schema.ts",
     "term": "column:leads.modality",
     "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
     "removedIn": "L18c",
-    "category": "qualification"
+    "category": "stored"
   },
   {
     "path": "src/db/schema.ts",
     "term": "column:leads.property_type",
     "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
     "removedIn": "L18c",
-    "category": "qualification"
+    "category": "stored"
   },
   {
     "path": "src/db/schema.ts",
     "term": "column:leads.motivation",
     "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
     "removedIn": "L18c",
-    "category": "qualification"
+    "category": "stored"
   },
   {
     "path": "src/db/schema.ts",
     "term": "column:leads.credit_status",
     "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
     "removedIn": "L18c",
-    "category": "qualification"
+    "category": "stored"
   },
   {
     "path": "src/db/schema.ts",
     "term": "column:leads.budget_cents",
     "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
     "removedIn": "L18c",
-    "category": "qualification"
+    "category": "stored"
   },
   {
     "path": "src/db/schema.ts",
     "term": "column:leads.chained_operation",
     "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
     "removedIn": "L18c",
-    "category": "qualification"
+    "category": "stored"
   },
   {
     "path": "src/db/schema.ts",
     "term": "enum:modality",
     "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
     "removedIn": "L18c",
-    "category": "qualification"
+    "category": "stored"
   },
   {
     "path": "src/db/schema.ts",
     "term": "enum:property_type",
     "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
     "removedIn": "L18c",
-    "category": "qualification"
+    "category": "stored"
   },
   {
     "path": "src/db/schema.ts",
     "term": "enum:motivation",
     "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
     "removedIn": "L18c",
-    "category": "qualification"
+    "category": "stored"
   },
   {
     "path": "src/db/schema.ts",
     "term": "enum:credit_status",
     "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
     "removedIn": "L18c",
-    "category": "qualification"
+    "category": "stored"
   },
   {
     "path": "src/db/schema.ts",
     "term": "import:n8n/verticals/real-estate/src/phase.mjs",
     "reason": "Consumidor existente dos campos do agente, incluindo a restrição persistida, até L18c.",
     "removedIn": "L18c",
-    "category": "import"
+    "category": "n8n-modules"
   },
   {
     "path": "src/server/integration/parsers.ts",
     "term": "import:n8n/verticals/real-estate/src/phase.mjs",
     "reason": "Consumidor existente dos campos do agente, incluindo a restrição persistida, até L18c.",
     "removedIn": "L18c",
-    "category": "import"
+    "category": "n8n-modules"
   },
   {
     "path": "src/server/reengagement/agent-state.ts",
     "term": "import:n8n/verticals/real-estate/src/phase.mjs",
     "reason": "Consumidor existente dos campos do agente, incluindo a restrição persistida, até L18c.",
     "removedIn": "L18c",
-    "category": "import"
+    "category": "n8n-modules"
   },
   {
     "path": "src/server/reengagement/context.ts",
     "term": "import:n8n/verticals/real-estate/src/phase.mjs",
     "reason": "Consumidor existente dos campos do agente, incluindo a restrição persistida, até L18c.",
     "removedIn": "L18c",
-    "category": "import"
+    "category": "n8n-modules"
   }
 ]
