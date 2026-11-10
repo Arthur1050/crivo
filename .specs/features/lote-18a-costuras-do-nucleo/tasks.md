@@ -1280,10 +1280,12 @@ A suíte completa validou a foto do schema. A checagem com `db:push:test` ficou 
 
 **Done when**:
 
-- [ ] Mesmo banco de teste, mesma fixture e mesmas larguras da T3.
-- [ ] Cada par comparado por página e papel, e a diferença registrada no `validation.md`, ou "nenhuma".
-- [ ] Menu de cada papel igual ao da base.
-- [ ] Diferença real vira correção antes de prosseguir.
+- [x] Mesmo banco de teste, mesma fixture e mesmas larguras da T3.
+- [x] Cada par comparado por página e papel, e a diferença registrada no `validation.md`, ou "nenhuma".
+- [x] Menu de cada papel igual ao da base.
+- [x] Diferença real vira correção antes de prosseguir.
+
+**Execução (2026-11-10, Claude)**: o fim subiu do próprio checkout, com `npm run preview:test` na mesma porta, depois de a base ser derrubada. As 15 capturas de `evidence/end/` batem com as de `evidence/base/`: 0 pixel diferente em 14 pares e, no Login, só o cursor do mouse e o caret no campo de e-mail. Nenhuma diferença real; tabela em `validation.md`.
 
 **Tests**: none
 **Gate**: quick
