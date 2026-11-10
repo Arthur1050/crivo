@@ -1233,9 +1233,9 @@ A suíte completa validou a foto do schema. A checagem com `db:push:test` ficou 
 
 **Done when**:
 
-- [ ] Uma operação real de cada grupo conclui e confere a linha gravada (L-027).
-- [ ] Caso confere que o grafo de imports do teste não alcança `src/verticals/real-estate/`.
-- [ ] Peça que falhar vira correção nesta task, nunca exceção na lista.
+- [x] Uma operação real de cada grupo conclui e confere a linha gravada (L-027).
+- [x] Caso confere que o grafo de imports do teste não alcança `src/verticals/real-estate/`.
+- [x] Peça que falhar vira correção nesta task, nunca exceção na lista.
 
 **Tests**: integration
 **Gate**: quick
@@ -1255,10 +1255,10 @@ A suíte completa validou a foto do schema. A checagem com `db:push:test` ficou 
 
 **Done when**:
 
-- [ ] Toda entrada tem `removedIn: L18c` e categoria entre colunas e valores gravados, campos do `/api/v1`, módulos de `n8n/` e pastas de rota.
-- [ ] Teste reprova entrada de outra categoria.
-- [ ] O commit lista a contagem de entradas por categoria, para o spec do L18c.
-- [ ] A lista de termos em português é revista contra uma amostra dos identificadores restantes.
+- [x] Toda entrada tem `removedIn: L18c` e categoria entre colunas e valores gravados, campos do `/api/v1`, módulos de `n8n/` e pastas de rota.
+- [x] Teste reprova entrada de outra categoria.
+- [x] O commit lista a contagem de entradas por categoria, para o spec do L18c.
+- [x] A lista de termos em português é revista contra uma amostra dos identificadores restantes.
 
 **Tests**: unit
 **Gate**: quick

@@ -459,6 +459,7 @@
 
 ## Handoff
 
+- **2026-11-10 — L18a até T43**. T42–T43 implementadas em `10c8021` e `0ad44fb`. Gate final do bloco com 13 arquivos e 276 testes, tsc com 0 erros e ESLint com 0 erros e 9 avisos. OpenAPI e workflows gerados coincidem com `bf5e646`. Rastreabilidade em `Implementing`. Próximo bloco T44–T45.
 - **2026-11-09 — L18a até T41**. T36–T41 implementadas, com a T41 em `d19e757`. Suíte completa verde com 274 arquivos e 4.266 testes após corrigir a leitura local dos artefatos de publicação. tsc com 0 erros e ESLint com 0 erros e 9 avisos. O vertical de teste foi gerado em pasta temporária e passou nas verificações do grafo. OpenAPI e workflows gerados coincidem com `bf5e646`. Rastreabilidade em `Implementing`. Próximo bloco T42–T43.
 
 - **2026-11-09 — L18a até T35**. T32–T35 implementadas, com a T35 em `f06b24c`. Suíte completa verde com 272 arquivos e 4254 testes. tsc com 0 erros e ESLint com 0 erros e 9 avisos. A foto do schema e os contratos de integração passaram. A T35 preservou um alias para o teste existente do workflow e conferiu o caminho do script `vitrine:e2e`. Rastreabilidade em `Implementing`. Próximo bloco T36–T41.
