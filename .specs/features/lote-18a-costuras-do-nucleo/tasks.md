@@ -211,10 +211,12 @@ T41 → T42 → T43 → T44 → T45
 
 **Done when**:
 
-- [ ] `npm run preview:test` no ar e fixture de dados repovoada, sem outra sessão de captura.
-- [ ] PNG de Dashboard, Pipeline, Chats, Documentos, Imóveis, Configurações, Usuários e Login em largura desktop, com o administrador.
-- [ ] PNG das mesmas páginas logadas com o corretor, inclusive o menu lateral dele.
-- [ ] O commit lista os logins por papel, sem senha, e a base usada.
+- [x] `npm run preview:test` no ar e fixture de dados repovoada, sem outra sessão de captura.
+- [x] PNG de Dashboard, Pipeline, Chats, Documentos, Imóveis, Configurações, Usuários e Login em largura desktop, com o administrador.
+- [x] PNG das mesmas páginas logadas com o corretor, inclusive o menu lateral dele.
+- [x] O commit lista os logins por papel, sem senha, e a base usada.
+
+**Execução (2026-11-10, Claude)**: worktree descartável em `bf5e646` (`../crivo-l18a-base`, removido ao fim da T44), `npm ci` e `npm run preview:test` na porta 3210 contra o banco de teste base (`ep-holy-rice`), com as variáveis do ambiente local carregadas no processo. A fixture é a que a última suíte deixou no banco de teste (25 leads, 4 imóveis, 6 pastas e 3 documentos na `krivo-demo`); nenhum script de fixture rodou, e nenhuma suíte rodou entre a T3 e a T44, então as duas usam o mesmo estado. Capturas em JPEG (formato que a extensão grava) em `evidence/base/`, janela de 1440 × 900 (área útil de 1384 × 849): `login.jpg`, `admin-01` a `admin-07` (Dashboard, Pipeline, Chats, Documentos, Imóveis, Configurações, Usuários) e `corretor-01` a `corretor-07` (as mesmas rotas; Configurações e Usuários dão 404 para o corretor, com o menu lateral dele visível). As capturas do corretor de 02 a 07 saíram em escala 0,6 (830 × 509), e a T44 usou as mesmas escalas.
 
 **Tests**: none
 **Gate**: quick
