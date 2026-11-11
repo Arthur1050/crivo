@@ -412,11 +412,24 @@ funcionalidades. Decisão de arquitetura na AD-052; decisões de lote em
 
 - **L18a — Costuras do núcleo**: fronteira verificável, contrato do vertical e símbolos em inglês, no pacote
   único. O Krivo não muda. Spec em `features/lote-18a-costuras-do-nucleo/spec.md`.
-- **L18b — Workspaces**: mover para `packages/*` e `apps/imobiliaria` seguindo o mapa de fronteira, com o build
+- **L18b — Workspaces**: mover para `packages/*` e `apps/real-estate` seguindo o mapa de fronteira, com o build
   provado num preview (L-088). A mudança do Root Directory na Vercel pede autorização. Spec depois do L18a.
 - **L18c — Ativação em produção**: DDL, valores gravados em inglês, qualificação em tabela 1:1, `/api/v1` nos
   dois vocabulários até o agente republicado ser conferido (L-061). Uma ação por task, com autorização e
   rollback. Spec depois do L18b.
+  - **Herdado do L18a (backlog)**: (1) 9 testes de `n8n/workflows/__tests__/` (`principal-agent-state`,
+    `principal-outgoing-channel`, `principal-reengagement-bridge`, `principal-whatsapp-statuses`,
+    `reengagement-contextual`, `scheduler-reengagement`, `scheduler-silence-expire`, `scheduler-whatsapp-usage` e
+    `tool-responder-channel`) comparam com a fonte de `bf5e646` por `git show bf5e646:...`
+    (`workflow-baseline.ts`) e quebram na próxima mudança legítima de workflow: trocá-los por asserções sobre
+    `n8n/generated/`, já que a prova byte a byte do gerado está em `scripts/__tests__/boundary-generated.test.ts`.
+    (2) `scripts/boundary/transitional.json` é a lista de trabalho, com os 4 imports de
+    `n8n/verticals/real-estate/src/phase.mjs` no núcleo entre as entradas `n8n-modules`. (3) O `db:push:test`
+    sai com 0 apesar do erro `42P07` em `leads_tenant_id_id_idx`, igual em `bf5e646` (L-068). (4) O único teste que grava
+    `tenant_document_context_limits` em tenant do seed é `withGenerousCeiling`, em `src/server/__tests__/actions.test.ts`
+    (anterior ao L18a): 3 linhas (`novo`, `usado`, `ambos`) no primeiro tenant, apagadas no `finally`. Causa provável
+    das sobras que já derrubaram o seed: o teste estoura o tempo (falha conhecida com o banco acumulado) e o
+    `finally` não chega a rodar. Correção candidata: limpeza também no `afterAll` do arquivo.
 
 ## L19 — App de lojas de materiais
 

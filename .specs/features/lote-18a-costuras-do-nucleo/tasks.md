@@ -1305,12 +1305,22 @@ A suíte completa validou a foto do schema. A checagem com `db:push:test` ficou 
 
 **Done when**:
 
-- [ ] README explica vertical, manifesto, blocos e marcas.
-- [ ] `git diff bf5e646 -- docs/integration/openapi.yaml n8n/generated/` vazio.
-- [ ] `npm test` sem falha, com pelo menos 250 arquivos e 4041 testes.
+- [x] README explica vertical, manifesto, blocos e marcas.
+- [x] `git diff bf5e646 -- docs/integration/openapi.yaml n8n/generated/` vazio.
+- [x] `npm test` sem falha, com pelo menos 250 arquivos e 4041 testes.
 - [ ] `npx tsc --noEmit -p .` sem aumento, ESLint em 0 erros e no máximo 9 avisos, `next build` contra o banco de teste sem erro.
-- [ ] O commit afirma que não houve comando contra produção, publicação no n8n nem mudança na Vercel.
+- [x] O commit afirma que não houve comando contra produção, publicação no n8n nem mudança na Vercel.
 - [ ] Depois do commit, roda o Verifier independente, com as lições delegadas ao agente Opus 5.5 (AD-045).
+
+**Execução (2026-11-10, Claude)**:
+
+- `npm test` (1ª rodada, `2154adc`+`5c0b65e`): 276 arquivos, 4.287 de 4.290 testes; 3 falhas em 2 testes do próprio lote que a T43 deixou desatualizados (o gate dela rodou 13 arquivos): `vertical-alert.test.ts` esperava "imobiliária(s)" no alerta do vertical de teste, que com `brand.tenantNoun` diz "empresa(s)", e `boundary-eslint.test.ts` usava como arquivo com exceção `scripts/preview-message-pricing.tsx`, que a T43 reclassificou como app. Alinhados em `88f0f5c`, sem tocar asserção da imobiliária; o caso de exceção passou a `src/server/integration/parsers.ts` (exceção de `phase.mjs`), com uma grafia recusada a mais.
+- `npm test` (2ª rodada, `88f0f5c` + estas docs): **276 arquivos, 4.291 testes, 0 falhas**, saída 0, 1.220 s. `actions.test.ts` e `expire.test.ts` passaram, sem timeout nem erro de `updatedAt`.
+- `npx tsc --noEmit -p .`: 0 erros. `npx eslint .`: 0 erros, 9 avisos (linha de base).
+- `git diff --exit-code bf5e646 -- docs/integration/openapi.yaml n8n/generated/`: saída 0, sem diferença.
+- `next build` **não rodou**: o projeto não tem caminho comprovado de build do CRM contra o banco de teste (`vitrine:e2e` faz o build da `vitrine/`, e `dev:test`/`preview:test` só sobem o `next dev`); sem ele, o build carregaria a `DATABASE_URL` de produção do ambiente local. Fica para o orquestrador decidir o caminho.
+- Pendências fechadas na mesma task: AD-052 com `apps/real-estate` e `apps/building-materials` (e o L18b no roadmap); emendas da execução no `design.md`; backlog herdado no L18c do `ROADMAP-POS-PILOTO.md`; `brokerName` de volta na asserção negativa de `properties.test.ts`, ao lado de `assigneeName`; pasta vazia `src/verticals/imobiliaria/__tests__` apagada (não era rastreada). O `db:push:test` da base (`bf5e646`, só no banco de teste base) também sai com 0 e o mesmo `42P07` em `leads_tenant_id_id_idx`: não é do lote.
+
 
 **Tests**: none
 **Gate**: full

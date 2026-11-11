@@ -426,6 +426,15 @@ Cada etapa deixa a suíte verde, e o Tasks detalha:
 
 ---
 
+## Emendas da execução
+
+Registradas no fechamento (2026-11-10). O código é a verdade; estas linhas só explicam onde ele se afastou do desenho acima.
+
+- **`brand.tenantNoun` no contrato (T43)**: `VerticalBrand` ganhou `tenantNoun: { singular; plural }`, validado por `defineVertical` (`src/vertical-kit/index.ts`). O núcleo monta com ele os textos que citam o tenant, como a mensagem de documento duplicado (`src/lib/duplicate-document.ts`) e o assunto do alerta de integração (`src/lib/integration-alert.ts`), sem escrever "imobiliária".
+- **Núcleo ainda importa `phase.mjs` do vertical**: `src/db/schema.ts`, `src/server/integration/parsers.ts`, `src/server/reengagement/agent-state.ts` e `src/server/reengagement/context.ts` importam `FIELD_LABELS` (e o `context.ts` também `nextFieldToAsk`) de `n8n/verticals/real-estate/src/phase.mjs`. Os quatro ficam em `transitional.json` na categoria `n8n-modules` até o L18c, quando a qualificação vai para a tabela 1:1 e o agente é republicado.
+- **`src/lib/storefront.ts` mantido como reexportação** de `src/verticals/real-estate/storefront/validation`, para não mudar os imports existentes neste lote.
+- **Server actions do catálogo e da vitrine (T25, T26)**: as entradas `"use server"` continuam no app, em `src/server/actions/properties.ts` e `src/server/actions/storefront.ts`. Elas resolvem a sessão e o tenant (`getActiveTenantId`, `denyIfForbidden`) e chamam as implementações do vertical em `src/verticals/real-estate/actions/properties` e `src/verticals/real-estate/storefront/action`, como a decisão "Actions: camada `app` no L18a" de Tech Decisions.
+
 ## O que este lote deixa para os próximos
 
 - **L18b**: `map.json` já diz o destino de cada arquivo, e `src/kit/`, `src/verticals/` e `src/vertical-kit/` movem sem edição.

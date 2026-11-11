@@ -380,9 +380,9 @@ mercado, porque uma loja não tem `novo` e `usado`.
 | KEEP-01 | P1: Comportamento preservado | Execute | Implementing |
 | KEEP-02 | P1: Comportamento preservado | Execute | Implementing |
 | KEEP-03 | P1: Comportamento preservado | Execute | Implementing |
-| KEEP-04 | P1: Comportamento preservado | Tasks | In Tasks |
+| KEEP-04 | P1: Comportamento preservado | Execute | Implementing |
 | KEEP-05 | P1: Comportamento preservado | Execute | Implementing |
-| KEEP-06 | P1: Comportamento preservado | Tasks | In Tasks |
+| KEEP-06 | P1: Comportamento preservado | Execute | Implementing |
 | VOCAB-01 | P1: Vocabulário em inglês | Execute | Implementing |
 | VOCAB-02 | P1: Vocabulário em inglês | Execute | Implementing |
 | VOCAB-03 | P1: Vocabulário em inglês | Execute | Implementing |
@@ -403,6 +403,8 @@ mercado, porque uma loja não tem `novo` e `usado`.
 **Andamento em 2026-11-06:** T19–T23 concluídas; a rastreabilidade de BOUND-03, VERT-02 e dos demais requisitos executados permanece em `Implementing`, aguardando a verificação independente prevista no lote. T23: `bb37b0d`, com 265 arquivos/4.216 testes verdes; ajuste de vocabulário de ator: `99a7e44`, com gate curto de 5 arquivos/163 testes verdes.
 
 **Andamento em 2026-11-10:** T42–T43 concluídas em `10c8021` e `0ad44fb`. VERT-03, BOUND-04 e ENG-01 seguem em `Implementing`. O gate da T43 passou com 13 arquivos e 276 testes. A lista do L18c tem 33 entradas `stored`, 4 `api`, 70 `n8n-modules` e 0 `route-folders`.
+
+**Andamento em 2026-11-10 (T3, T44, T45):** capturas da base e do fim sem diferença visível (`validation.md`); suíte completa com 276 arquivos e 4.291 testes, 0 falhas; tsc com 0 erros; ESLint com 0 erros e 9 avisos; OpenAPI e gerados iguais a `bf5e646`; `next build` contra o banco de teste não rodou, por falta de caminho comprovado. KEEP-04 e KEEP-06 passam a `Implementing`; todos os requisitos aguardam o Verifier.
 
 **Coverage:** 26 total, 26 mapped to tasks, 0 unmapped
 

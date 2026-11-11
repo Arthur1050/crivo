@@ -68,4 +68,4 @@ Nunca leia, imprima ou copie o arquivo de variáveis de ambiente nem seus valore
 - Uma sessão de captura por vez.
 
 ## n8n
-Edite `n8n/workflows/*.ts` e rode `node scripts/n8n-inline.mjs`, que gera `n8n/generated/`. Nunca publique os gerados da `main` no n8n: eles trazem o reengajamento do L14b, que não está ativo em produção. Mudanças em produção são aplicadas nó a nó na versão publicada, com autorização.
+Edite `n8n/workflows/*.ts` (núcleo) ou `n8n/verticals/<id>/` (manifesto `agent.mjs`, `blocks/`, `src/`, `workflows/`) e rode `node scripts/n8n-inline.mjs`, que gera `n8n/generated/` para o vertical `real-estate` (`--vertical <id>` gera outro; marcas e regras em `n8n/README.md` § 1). O gerado do `real-estate` tem de continuar igual byte a byte (`scripts/__tests__/boundary-generated.test.ts`) até o L18c. Nunca publique os gerados da `main` no n8n: eles trazem o reengajamento do L14b, que não está ativo em produção. Mudanças em produção são aplicadas nó a nó na versão publicada, com autorização.

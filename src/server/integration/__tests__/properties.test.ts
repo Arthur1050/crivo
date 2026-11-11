@@ -316,6 +316,7 @@ describe("server/integration properties — searchVisibleProperties (T12)", () =
       for (const item of result.imoveis) {
         expect(item).not.toHaveProperty("capturedByUserId");
         expect(item).not.toHaveProperty("captador");
+        expect(item).not.toHaveProperty("brokerName");
         expect(item).not.toHaveProperty("assigneeName");
         expect(item).not.toHaveProperty("brokerPhone");
         expect(item).not.toHaveProperty("brokerEmail");
