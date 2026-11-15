@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "../../../db";
 import { documentUploadIntents, documents, tenantDocumentContextLimits, tenants, users } from "../../../db/schema";
+import { getDirectDocumentContext } from "../../../kit/document-context";
 import { createDocumentProcessingService } from "../../../kit/document-services";
 import type { DocumentStorage } from "../storage";
 import type { extractDocument } from "../extraction";
@@ -94,5 +95,30 @@ describe("document processing integration (lote-12 T13)", () => {
   it("despacho do retry sem execução volta a falha retomável, nunca processando órfão", async () => { const d = await createDocument("dispatch-first", { status: "falha" }); const start = vi.fn(async () => { throw new Error("offline"); }); await expect(service({ start }).retry({ tenantId: TENANT_A, documentId: d.id })).resolves.toEqual({ kind: "failed", code: "processamento_indisponivel" }); expect(start).toHaveBeenCalledTimes(3); expect(await row(d.id)).toMatchObject({ status: "falha", processingAttempt: 2, failureCode: "processamento_indisponivel" }); });
   it("terceira falha de dispatch encerra sem processando eterno", async () => { const d = await createDocument("dispatch-third", { status: "falha", processingAttempt: 2 }); await expect(service({ start: vi.fn(async () => { throw new Error("offline"); }) }).retry({ tenantId: TENANT_A, documentId: d.id })).resolves.toEqual({ kind: "failed", code: "processamento_indisponivel" }); expect(await row(d.id)).toMatchObject({ status: "falha", processingAttempt: 3, failureCode: "processamento_indisponivel" }); });
   it("sanitiza mensagem interna de dispatch", async () => { const d = await createDocument("dispatch-sanitize", { status: "falha", processingAttempt: 2 }); await service({ start: vi.fn(async () => { throw new Error("secret /private/path"); }) }).retry({ tenantId: TENANT_A, documentId: d.id }); expect((await row(d.id)).failureMessage).toBe("Não foi possível processar agora. Tente novamente."); });
+  // A admissão usa a faceta de segmentos da imobiliária que o app entrega ao processamento: um documento
+  // `usado` só conta nos contextos `usado` e `ambos`, então o teto de `novo` não o barra.
+  it("admite pelo segmento da imobiliária: usado cabe no teto de usado mesmo sem caber no de novo", async () => {
+    const ceilings = { novo: 1, usado: 1_000_000, ambos: 1_000_000 } as const;
+    await db.insert(tenantDocumentContextLimits).values(Object.entries(ceilings).map(([querySegment, maxResponseBytes]) => ({
+      tenantId: TENANT_B, querySegment: querySegment as keyof typeof ceilings, maxResponseBytes, modelId: "model", workflowVersion: "workflow",
+      systemMessageHash: "system", toolsHash: "tools", memoryWindow: 50, benchmarkedAt: NOW, metrics: {},
+    })));
+    try {
+      const used = await createDocument("segment-used", { segment: "usado" }, TENANT_B);
+      await expect(service().process({ tenantId: TENANT_B, documentId: used.id, attempt: 1 })).resolves.toEqual({ kind: "completed", status: "pronto" });
+      expect(await row(used.id)).toMatchObject({ status: "pronto", extractedText: "texto integral" });
+      const created = await createDocument("segment-new", { segment: "novo" }, TENANT_B);
+      await service().process({ tenantId: TENANT_B, documentId: created.id, attempt: 1 });
+      expect(await row(created.id)).toMatchObject({ status: "fora_do_agente", extractedText: "texto integral" });
+      expect(await row(used.id)).toMatchObject({ status: "pronto" });
+      const context = async (segment: "novo" | "usado" | "ambos") =>
+        (await getDirectDocumentContext(TENANT_B, { segment, question: "documentos" }, NOW)).documents.map((document) => document.id);
+      expect(await context("usado")).toEqual([used.id]);
+      expect(await context("ambos")).toEqual([used.id]);
+      expect(await context("novo")).toEqual([]);
+    } finally {
+      await db.delete(tenantDocumentContextLimits).where(eq(tenantDocumentContextLimits.tenantId, TENANT_B));
+    }
+  });
   it("não muda documento de outro tenant durante conclusão", async () => { const d = await createDocument("other-complete", {}, TENANT_B); await expect(service().process({ tenantId: TENANT_A, documentId: d.id, attempt: 1 })).resolves.toEqual({ kind: "stale" }); expect((await row(d.id)).extractedText).toBeNull(); });
 });
