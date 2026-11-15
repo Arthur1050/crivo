@@ -2,6 +2,8 @@ import "dotenv/config";
 import { createHash, randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, expect, it, vi } from "vitest";
+import { classifyFile, type BoundaryRule } from "../../../scripts/boundary/check";
+import map from "../../../scripts/boundary/map.json";
 import { db } from "../../db";
 import {
   conversations, documentUploadIntents, leads, messages, tenant_members, tenants, users,
@@ -113,11 +115,12 @@ it("gera o tipo de problema com a marca de Acme", async () => {
   expect(await response.json()).toMatchObject({ type: "urn:acme:problem:recurso-nao-encontrado" });
 });
 
-it("mantém as peças no grafo de imports sem alcançar o vertical imobiliário", () => {
+it("mantém as peças no grafo de imports sem alcançar nenhum arquivo de camada vertical", () => {
   const { sources } = sourceGraph("src/vertical-kit/__tests__/fixture-vertical.integration.test.ts");
   expect(Object.keys(sources)).toEqual(expect.arrayContaining([
     "src/db/schema.ts", "src/lib/access.ts", "src/server/documents/uploads.ts",
     "src/server/integration/leads.ts", "src/server/integration/lgpd.ts", "src/server/integration/messages.ts",
   ]));
-  expect(Object.keys(sources).filter(file => file.startsWith("src/verticals/real-estate/"))).toEqual([]);
+  // A camada vem do mapa da fronteira, não da pasta: inclui `n8n/verticals/` e os arquivos avulsos do vertical.
+  expect(Object.keys(sources).filter(file => classifyFile(file, map as BoundaryRule[])?.layer === "vertical")).toEqual([]);
 });

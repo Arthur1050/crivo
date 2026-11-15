@@ -19,6 +19,8 @@ export function sourceGraph(entry: string) {
         const base = specifier.startsWith("@/") ? specifier.slice(2)
           : specifier.startsWith(".") ? posix.join(posix.dirname(file), specifier) : null;
         if (base === null) externalImports.push(specifier);
+        // JSON entra no grafo como folha: não tem imports a seguir.
+        else if (base.endsWith(".json") && existsSync(base)) sources[base] ??= readFileSync(base, "utf8");
         else {
           const resolved = [base, ...[".ts", ".tsx", ".mjs", ".mts", ".js", "/index.ts"].map(extension => base + extension)].find(candidate => existsSync(candidate) && /\.[cm]?[jt]sx?$/.test(candidate));
           if (!resolved) throw new Error(`Import não resolvido: ${file} -> ${specifier}`);
