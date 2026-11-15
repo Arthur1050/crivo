@@ -263,7 +263,9 @@ de uma loja não carregar `creditStatus`.
 **QUAL-02 — Consumidores**
 
 1. The system SHALL obter do vertical os campos de qualificação usados por `src/server/reengagement/context.ts` e `src/server/data/index.ts`.
-2. WHERE o vertical não define qualificação the system SHALL ler e gravar leads sem esses campos, e o `PATCH` com um deles SHALL responder o mesmo problema de campo inválido que `parseLeadPatch` devolve hoje.
+2. WHERE o vertical não define qualificação the system SHALL ler e gravar leads sem esses campos, e o `PATCH` com um deles SHALL responder 400 `payload-invalido` com `detail` igual a `Campo '<campo>' inválido.`, citando o primeiro deles na ordem de `LEAD_QUALIFICATION_FIELDS`, depois das validações de `status`, `executiveSummary` e `escalationReason`. Para a imobiliária, que define qualificação, a resposta continua a de `bf5e646`.
+
+> **Emenda (correção do Verifier, 2026-11-15)**: o texto anterior pedia "o mesmo problema que `parseLeadPatch` devolve hoje", mas em `bf5e646` não havia vertical sem qualificação e um campo desconhecido era ignorado. O AC2 passa a registrar o texto escolhido na execução (`src/server/integration/parsers.ts`, `createLeadPatchParser`).
 
 **Independent Test**: Criar e atualizar um lead pelo vertical de teste sem qualificação, e verificar pelos testes atuais de `/api/v1/leads` que a imobiliária responde igual a `bf5e646`.
 
@@ -301,12 +303,14 @@ produtos sem herdar `property_kind`.
 
 **CAT-01 — Catálogo**
 
-1. The system SHALL classificar como `vertical` o schema de `properties`, os módulos `src/server/actions/properties.ts`, `src/server/integration/properties.ts` e `src/server/integration/property-filters.ts`, a rota `app/api/v1/properties` e o benchmark que depende deles.
+1. The system SHALL classificar como `vertical` o schema de `properties`, os módulos `src/server/integration/properties.ts` e `src/server/integration/property-filters.ts`, a rota `app/api/v1/properties` e o benchmark que depende deles. A server action `src/server/actions/properties.ts` fica em `app`, como entrada `"use server"` que resolve sessão e tenant e chama a implementação do vertical em `src/verticals/real-estate/actions/properties`.
 2. The system SHALL exportar do núcleo o schema das tabelas `core` e do vertical o schema de `properties` e `tenant_storefronts`, compostos em um único schema para o Drizzle, sem mudar o DDL.
 
 **CAT-02 — Vitrine**
 
-1. The system SHALL classificar como `vertical` o código de vitrine de `src/lib/storefront*.ts`, `src/server/storefront/`, `src/server/data/storefront.ts` e `src/server/actions/storefront.ts`.
+1. The system SHALL classificar como `vertical` o código de vitrine de `src/lib/storefront*.ts`, `src/server/storefront/` e `src/server/data/storefront.ts`. A server action `src/server/actions/storefront.ts` fica em `app` e chama a implementação do vertical em `src/verticals/real-estate/storefront/action`.
+
+> **Emenda (correção do Verifier, 2026-11-15)**: CAT-01 AC1 e CAT-02 AC1 alinhados à decisão "Actions: camada `app` no L18a" do `design.md` (Tech Decisions e Emendas da execução).
 2. The system SHALL manter o comportamento da AD-050: card "Em breve" e `saveStorefrontAction` como estão.
 
 **Independent Test**: Rodar os testes de imóveis, vitrine e isolamento da vitrine depois da mudança, com as asserções de valor inalteradas.
