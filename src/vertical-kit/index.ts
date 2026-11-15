@@ -49,6 +49,10 @@ export interface QualificationFacet<Q, Wire, Columns extends LeadQualificationCo
   serialize(row: LeadQualificationRow): Wire;
   toLeadColumns(qualification: Partial<Q>): Columns;
   promptFacts(row: LeadQualificationRow): Record<string, unknown>;
+  /** Campos que o agente registra em `askedFields`, na ordem do vertical. */
+  agentFields: readonly string[];
+  /** Próximo campo que o agente pergunta, ou `null` quando não há pendência. */
+  nextFieldToAsk(asked: string[]): string | null;
 }
 
 export interface DocumentSegmentsFacet {
@@ -107,8 +111,12 @@ export function defineVertical<V extends Vertical>(vertical: V): V {
   if (typeof vertical.appointments !== "boolean") invalid("appointments");
   if (vertical.qualification !== null) {
     if (!isRecord(vertical.qualification)) invalid("qualification");
-    for (const field of ["parsePatch", "serialize", "toLeadColumns", "promptFacts"] as const) {
+    for (const field of ["parsePatch", "serialize", "toLeadColumns", "promptFacts", "nextFieldToAsk"] as const) {
       if (typeof vertical.qualification[field] !== "function") invalid(`qualification.${field}`);
+    }
+    const { agentFields } = vertical.qualification;
+    if (!Array.isArray(agentFields) || !agentFields.every(nonEmpty) || new Set(agentFields).size !== agentFields.length) {
+      invalid("qualification.agentFields");
     }
   }
   if (vertical.documentSegments !== null) {

@@ -4,7 +4,7 @@ import type { Vertical } from "../../vertical-kit";
 import { createProblemResponses } from "./problem";
 import { authenticate, type AuthResult } from "./auth";
 import { withIntegrationRoute } from "./route";
-import { createLeadPatchParser, type LeadPatchDto } from "./parsers";
+import { createAgentStateParser, createLeadPatchParser, type LeadPatchDto } from "./parsers";
 import { patchLead, serializeLead } from "./leads";
 
 export function createIntegrationKit<Q, Wire extends object>(vertical: Vertical<Q, Wire, PersistedQualificationColumns>) {
@@ -15,6 +15,7 @@ export function createIntegrationKit<Q, Wire extends object>(vertical: Vertical<
     ...responses,
     authenticateIntegration,
     parseLeadPatch: createLeadPatchParser(qualification, appointments),
+    parseAgentState: createAgentStateParser(qualification),
     serializeLead: (lead: Lead) => serializeLead(lead, qualification),
     applyLeadPatch(tenantId: string, leadId: string, dto: LeadPatchDto<Q>) {
       const { qualification: patch, ...coreFields } = dto;

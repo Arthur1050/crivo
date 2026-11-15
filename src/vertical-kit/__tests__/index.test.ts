@@ -65,19 +65,28 @@ describe("defineVertical — VERT-01", () => {
     }
   });
 
-  it("preserva as quatro funções da qualificação e a correspondência dos segmentos", () => {
+  it("preserva as funções e os campos do agente da qualificação e a correspondência dos segmentos", () => {
     const qualification = {
       parsePatch: () => ({ ok: true as const, dto: { material: "madeira" } }),
       serialize: () => ({ wireMaterial: "aço" }), toLeadColumns: () => ({ region: "Sul" }), promptFacts: () => ({ need: "cimento" }),
+      agentFields: ["material", "quantity"], nextFieldToAsk: (asked: string[]) => asked.length ? null : "material",
     };
     const documentSegments = { values: ["retail", "wholesale"], matches: (document: string, query: string) => document === query };
     const vertical = defineVertical({ ...fixture(), qualification, documentSegments });
     expect(vertical.qualification).toBe(qualification);
+    expect(vertical.qualification?.agentFields).toEqual(["material", "quantity"]);
+    expect(vertical.qualification?.nextFieldToAsk([])).toBe("material");
     expect(vertical.documentSegments).toBe(documentSegments);
   });
 
   it("rejeita callbacks ausentes e valores de segmento inválidos", () => {
     expect(() => defineVertical({ ...fixture(), qualification: {} } as Vertical)).toThrow("qualification.parsePatch");
+    const functions = { parsePatch: () => ({ ok: true as const, dto: {} }), serialize: () => ({}), toLeadColumns: () => ({}), promptFacts: () => ({}) };
+    expect(() => defineVertical({ ...fixture(), qualification: { ...functions, agentFields: [] } } as unknown as Vertical)).toThrow("Vertical inválido: qualification.nextFieldToAsk.");
+    for (const agentFields of [undefined, "modality", [""], ["modality", "modality"]]) {
+      expect(() => defineVertical({ ...fixture(), qualification: { ...functions, agentFields, nextFieldToAsk: () => null } } as unknown as Vertical))
+        .toThrow("Vertical inválido: qualification.agentFields.");
+    }
     expect(() => defineVertical({ ...fixture(), documentSegments: { values: [null], matches: () => true } } as unknown as Vertical)).toThrow("documentSegments.values");
     expect(() => defineVertical({ ...fixture(), documentSegments: { values: [] } } as unknown as Vertical)).toThrow("documentSegments.matches");
   });

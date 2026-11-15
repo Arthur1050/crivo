@@ -16,7 +16,6 @@ import {
   leadStatusEnum,
   senderEnum,
 } from "../../db/schema";
-import { FIELD_LABELS } from "../../../n8n/verticals/real-estate/src/phase.mjs";
 import type { PublishAgentStateInput } from "../reengagement/agent-state";
 import { resolveDocumentSegment, type DocumentSegment, type DocumentSegmentFacet } from "../documents/segments";
 import type { PreparationFailureCode } from "../reengagement/repository";
@@ -71,27 +70,33 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-/** Only the projection calculated for the supplied anchor/revision is accepted. */
-export function parseAgentState(value: unknown): ParseResult<PublishAgentStateInput> {
-  const fields = ["anchorMessageId", "resetObservedAt", "expectedRevision", "phase", "askedFields", "openingHistory"];
-  if (!isPlainObject(value) || Object.keys(value).some((key) => !fields.includes(key))) {
-    return { ok: false, detail: "Estado do agente contém campos inválidos." };
-  }
-  const { anchorMessageId, expectedRevision, phase, askedFields, openingHistory } = value;
-  if (typeof anchorMessageId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(anchorMessageId)
-      || !Number.isSafeInteger(expectedRevision) || (expectedRevision as number) < 0
-      || (phase !== null && phase !== AGENT_PHASE.qualifying && phase !== AGENT_PHASE.closing && phase !== AGENT_PHASE.ended)
-      || !Array.isArray(askedFields) || askedFields.length > 8 || !askedFields.every((field) => typeof field === "string" && Object.hasOwn(FIELD_LABELS, field))
-      || !Array.isArray(openingHistory) || !openingHistory.every((opening) => typeof opening === "string")) {
-    return { ok: false, detail: "Âncora, revisão ou projeção do agente inválida." };
-  }
-  let resetObservedAt: Date | null = null;
-  if (value.resetObservedAt !== null) {
-    const parsed = parseExactIsoDate(value.resetObservedAt);
-    if (!parsed) return { ok: false, detail: "Reset observado deve ser um instante ISO válido ou null." };
-    resetObservedAt = parsed;
-  }
-  return { ok: true, dto: { anchorMessageId, resetObservedAt, expectedRevision: expectedRevision as number, phase, askedFields, openingHistory } };
+/**
+ * Only the projection calculated for the supplied anchor/revision is accepted.
+ * Os campos perguntados vêm da faceta de qualificação; sem faceta, só a lista vazia passa.
+ */
+export function createAgentStateParser(qualification: Pick<QualificationFacet<unknown, unknown>, "agentFields"> | null) {
+  const agentFields: readonly string[] = qualification?.agentFields ?? [];
+  return function parseAgentState(value: unknown): ParseResult<PublishAgentStateInput> {
+    const fields = ["anchorMessageId", "resetObservedAt", "expectedRevision", "phase", "askedFields", "openingHistory"];
+    if (!isPlainObject(value) || Object.keys(value).some((key) => !fields.includes(key))) {
+      return { ok: false, detail: "Estado do agente contém campos inválidos." };
+    }
+    const { anchorMessageId, expectedRevision, phase, askedFields, openingHistory } = value;
+    if (typeof anchorMessageId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(anchorMessageId)
+        || !Number.isSafeInteger(expectedRevision) || (expectedRevision as number) < 0
+        || (phase !== null && phase !== AGENT_PHASE.qualifying && phase !== AGENT_PHASE.closing && phase !== AGENT_PHASE.ended)
+        || !Array.isArray(askedFields) || askedFields.length > 8 || !askedFields.every((field) => typeof field === "string" && agentFields.includes(field))
+        || !Array.isArray(openingHistory) || !openingHistory.every((opening) => typeof opening === "string")) {
+      return { ok: false, detail: "Âncora, revisão ou projeção do agente inválida." };
+    }
+    let resetObservedAt: Date | null = null;
+    if (value.resetObservedAt !== null) {
+      const parsed = parseExactIsoDate(value.resetObservedAt);
+      if (!parsed) return { ok: false, detail: "Reset observado deve ser um instante ISO válido ou null." };
+      resetObservedAt = parsed;
+    }
+    return { ok: true, dto: { anchorMessageId, resetObservedAt, expectedRevision: expectedRevision as number, phase, askedFields, openingHistory } };
+  };
 }
 
 export function parseAutomationCandidatesQuery(url: URL): ParseResult<{ cursor?: string; limit: number }> {

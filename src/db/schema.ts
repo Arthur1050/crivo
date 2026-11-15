@@ -1,6 +1,5 @@
 import { sql } from "drizzle-orm";
 import { AGENT_PHASE, DOCUMENT_STATUS, HUMAN_SEND_STATE, INTEGRATION_HEALTH, LEAD_STATUS, SENDER, STATUS_ACTOR } from "../lib/vocabulary";
-import { FIELD_LABELS } from "../../n8n/verticals/real-estate/src/phase.mjs";
 import {
   bigint,
   boolean,
@@ -375,6 +374,14 @@ export const messages = pgTable(
   ]
 );
 
+// Campos aceitos em `asked_fields`, como estão gravados no banco e nesta ordem.
+// A lista que vale em runtime é a da faceta de qualificação do vertical; esta
+// cópia só sustenta a restrição física até a migração do L18c (transitional.json).
+const STORED_ASKED_FIELDS = [
+  "modality", "region", "propertyType", "budgetCents",
+  "purchaseHorizon", "motivation", "creditStatus", "chainedOperation",
+];
+
 // L14b T3 — projeção da fase, sempre ligada a lead/âncora do tenant.
 // A âncora corrente da MESMA lead é revalidada pelo repositório sob lock (T16).
 export const leadAgentState = pgTable(
@@ -395,7 +402,7 @@ export const leadAgentState = pgTable(
     foreignKey({ name: "lead_agent_state_tenant_lead_fk", columns: [table.tenantId, table.leadId], foreignColumns: [leads.tenantId, leads.id] }).onDelete("cascade"),
     foreignKey({ name: "lead_agent_state_tenant_anchor_fk", columns: [table.tenantId, table.anchorMessageId], foreignColumns: [messages.tenantId, messages.id] }).onDelete("cascade"),
     check("lead_agent_state_positive_revision", sql`${table.revision} > 0`),
-    check("lead_agent_state_asked_fields", sql`cardinality(${table.askedFields}) <= 8 and ${table.askedFields} <@ ARRAY[${sql.join(Object.keys(FIELD_LABELS).map((field) => sql`${field}`), sql`, `)}]::text[]`.inlineParams()),
+    check("lead_agent_state_asked_fields", sql`cardinality(${table.askedFields}) <= 8 and ${table.askedFields} <@ ARRAY[${sql.join(STORED_ASKED_FIELDS.map((field) => sql`${field}`), sql`, `)}]::text[]`.inlineParams()),
   ],
 );
 

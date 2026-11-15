@@ -722,30 +722,9 @@
   },
   {
     "path": "src/db/schema.ts",
-    "term": "import:n8n/verticals/real-estate/src/phase.mjs",
-    "reason": "Consumidor existente dos campos do agente, incluindo a restrição persistida, até L18c.",
+    "term": "check:lead_agent_state_asked_fields",
+    "reason": "Lista de campos gravados em asked_fields mantida na restrição física até a migração do L18c; em runtime vale a faceta de qualificação.",
     "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
-    "path": "src/server/integration/parsers.ts",
-    "term": "import:n8n/verticals/real-estate/src/phase.mjs",
-    "reason": "Consumidor existente dos campos do agente, incluindo a restrição persistida, até L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
-    "path": "src/server/reengagement/agent-state.ts",
-    "term": "import:n8n/verticals/real-estate/src/phase.mjs",
-    "reason": "Consumidor existente dos campos do agente, incluindo a restrição persistida, até L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
-  },
-  {
-    "path": "src/server/reengagement/context.ts",
-    "term": "import:n8n/verticals/real-estate/src/phase.mjs",
-    "reason": "Consumidor existente dos campos do agente, incluindo a restrição persistida, até L18c.",
-    "removedIn": "L18c",
-    "category": "n8n-modules"
+    "category": "stored"
   }
 ]

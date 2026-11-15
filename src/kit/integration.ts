@@ -4,7 +4,7 @@ import { realEstate } from "../verticals/real-estate";
 
 export const {
   problem, methodNotAllowed, authenticateIntegration, withIntegrationRoute,
-  parseLeadPatch, serializeLead, applyLeadPatch,
+  parseLeadPatch, parseAgentState, serializeLead, applyLeadPatch,
 } = createIntegrationKit(realEstate);
 export { authenticateIntegration as authenticate };
 export { PROBLEM_CONTENT_TYPE } from "../server/integration/problem";

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import * as schema from "../../src/db/schema";
 import * as realEstateSchema from "../../src/verticals/real-estate/schema";
 import { LEAD_QUALIFICATION_FIELDS } from "../../src/vertical-kit";
+import { qualification } from "../../src/verticals/real-estate/qualification";
 import baseline from "../boundary/schema-baseline.json";
 import transitional from "../boundary/transitional.json";
 import { snapshotSchema } from "../boundary/schema-snapshot";
@@ -42,4 +43,13 @@ it("registra as colunas e os enums transitórios da qualificação até o L18c (
   ];
   expect(transitional.filter((item) => /^(column|enum):/.test(item.term)).map(({ path, term, removedIn, category }) =>
     ({ path, term, removedIn, category }))).toEqual(terms.map((term) => ({ path: "src/db/schema.ts", term, removedIn: "L18c", category: "stored" })));
+});
+
+it("mantém a lista gravada da restrição de asked_fields igual à faceta da imobiliária até o L18c (KEEP-03, BOUND-04)", () => {
+  const { tables } = snapshotSchema(schema) as { tables: Record<string, { checkConstraints: Record<string, { value: string }> }> };
+  const { value } = tables["public.lead_agent_state"].checkConstraints.lead_agent_state_asked_fields;
+  expect(value).toBe(`cardinality("lead_agent_state"."asked_fields") <= 8 and "lead_agent_state"."asked_fields" <@ ARRAY[${
+    qualification.agentFields.map((field) => `'${field}'`).join(", ")}]::text[]`);
+  expect(transitional.filter((item) => item.term.startsWith("check:")).map(({ path, term, removedIn, category }) => ({ path, term, removedIn, category })))
+    .toEqual([{ path: "src/db/schema.ts", term: "check:lead_agent_state_asked_fields", removedIn: "L18c", category: "stored" }]);
 });

@@ -1,5 +1,6 @@
 import { enumValue, optionalNullableField, parseBudgetCents } from "../../lib/patch-fields";
 import type { LeadQualificationRow, QualificationPatchResult } from "../../vertical-kit";
+import { FIELD_LABELS, nextFieldToAsk } from "../../../n8n/verticals/real-estate/src/phase.mjs";
 import { CREDIT_STATUS, MODALITY, MOTIVATION, PROPERTY_TYPE } from "./vocabulary";
 
 const enumField = <T extends string>(values: Record<string, T>) => {
@@ -66,4 +67,7 @@ export const qualification = {
   serialize,
   toLeadColumns: (patch: Qualification) => patch,
   promptFacts: serialize,
+  // A política de campos do agente é do `phase.mjs`, também usado nos workflows.
+  agentFields: Object.freeze(Object.keys(FIELD_LABELS)),
+  nextFieldToAsk,
 };

@@ -8,10 +8,9 @@ import { db } from "../../../db";
 import * as schema from "../../../db/schema";
 import { conversations, leadAgentState, leads, messages, reengagementEpisodes, tenants, whatsappChannels, whatsappMessageReceipts } from "../../../db/schema";
 import { ingestAgentMessage } from "../index";
-import { publishAgentState } from "../../reengagement/agent-state";
 import { authorizeDispatch, claimPreparation, expireEpisode, reconcileAcceptance } from "../../reengagement/repository";
 import { getSessionFrame } from "../../reengagement/context";
-import { prepareFrame } from "../../../kit/reengagement";
+import { prepareFrame, publishAgentState } from "../../../kit/reengagement";
 
 const tenantId = randomUUID(), foreignTenant = randomUUID(), now = new Date("2026-10-06T15:00:00.500Z"), hour = 3600000;
 let contact = 5534999700000;

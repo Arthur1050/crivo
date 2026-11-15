@@ -17,13 +17,15 @@ describe("ESLint da fronteira (BOUND-02)", () => {
     ]);
   });
 
-  // A T43 reclassificou `scripts/preview-message-pricing.tsx` como app; a exceção de import que resta no núcleo
-  // é a de `phase.mjs` (`n8n-modules`, até o L18c), em `src/server/integration/parsers.ts`.
-  it.each(["@/n8n/verticals/real-estate/src/phase.mjs", "../../../n8n/verticals/real-estate/src/phase.mjs"])("respeita a exceção de transição: %s", async (target) => {
-    expect(await violations("src/server/integration/parsers.ts", `import '${target}';`)).toEqual([]);
+  // A lista de campos do agente passou a chegar pela faceta de qualificação: não resta exceção de import
+  // no núcleo, e o `phase.mjs` que `parsers.ts` importava até a correção do Verifier volta a ser recusado.
+  it.each(["@/n8n/verticals/real-estate/src/phase.mjs", "../../../n8n/verticals/real-estate/src/phase.mjs"])("recusa o import do phase.mjs do vertical no núcleo: %s", async (target) => {
+    expect(await violations("src/server/integration/parsers.ts", `import '${target}';`)).toEqual([
+      { ruleId: "no-restricted-imports", severity: 2 },
+    ]);
   });
 
-  it.each(["@/src/components/chats/message-thread", "../../../n8n/verticals/real-estate/src/system-message.mjs"])("mantém a recusa para outro import no arquivo com exceção: %s", async (target) => {
+  it.each(["@/src/components/chats/message-thread", "../../../n8n/verticals/real-estate/src/system-message.mjs"])("mantém a recusa para outro import do vertical ou do app: %s", async (target) => {
     expect(await violations("src/server/integration/parsers.ts", `import '${target}';`)).toEqual([
       { ruleId: "no-restricted-imports", severity: 2 },
     ]);

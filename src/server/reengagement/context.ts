@@ -1,7 +1,6 @@
 import { AGENT_PHASE, LEAD_STATUS, SENDER } from "../../lib/vocabulary";
 import "server-only";
 import { and, desc, eq, gte } from "drizzle-orm";
-import { FIELD_LABELS, nextFieldToAsk } from "../../../n8n/verticals/real-estate/src/phase.mjs";
 import { evaluateReengagement } from "../../../n8n/src/reengagement.mjs";
 import { toWhatsAppMsisdn } from "../../../n8n/src/phone.mjs";
 import { isSessionExpired, requiresSessionRebuild, selectOriginSessionFrame, selectSeedMessages } from "../../../n8n/src/session.mjs";
@@ -27,7 +26,7 @@ function finite(date: Date | null) { return date === null || Number.isFinite(dat
 function sameTime(a: Date | null, b: Date | null) { return finite(a) && finite(b) && a?.getTime() === b?.getTime(); }
 
 /** Frame efêmero, sem histórico paralelo. Somente referências de origem são persistidas. */
-type QualificationFacts = Pick<QualificationFacet<unknown, unknown>, "promptFacts">;
+type QualificationFacts = Pick<QualificationFacet<unknown, unknown>, "promptFacts" | "agentFields" | "nextFieldToAsk">;
 
 export function createPrepareFrame(qualification: QualificationFacts | null) {
   return prepareFrame.bind(null, qualification);
@@ -67,7 +66,9 @@ async function prepareFrame(
       const decision = evaluateReengagement({ lead, anchor: { messageId: anchor.id, sentAt: anchor.sentAt }, phase: agent.phase,
         channel, destination: toWhatsAppMsisdn(lead.externalId), now, settings });
       if (decision.action !== "prepare" || (agent.phase !== AGENT_PHASE.qualifying && agent.phase !== AGENT_PHASE.closing)) return { ok: false, reason: "not-eligible" };
-      if (!Array.isArray(agent.askedFields) || agent.askedFields.some((field) => !Object.hasOwn(FIELD_LABELS, field))
+      // Sem faceta de qualificação, nenhum campo perguntado é válido e não há próximo campo.
+      const agentFields: readonly string[] = qualification?.agentFields ?? [];
+      if (!Array.isArray(agent.askedFields) || agent.askedFields.some((field) => !agentFields.includes(field))
           || !Array.isArray(agent.openingHistory) || agent.openingHistory.some((opening) => typeof opening !== "string")) return { ok: false, reason: "context-read-failed" };
       const rows = await tx.select({ id: messages.id, sender: messages.sender, content: messages.content, sentAt: messages.sentAt, authorName: messages.authorName })
         .from(messages).where(and(eq(messages.tenantId, context.tenantId), eq(messages.conversationId, anchor.conversationId),
@@ -79,11 +80,11 @@ async function prepareFrame(
       const facts: PreparationFrame["facts"] = {
         name: lead.name, ...qualification?.promptFacts(lead), executiveSummary: lead.executiveSummary,
       };
-      const confirmed = Object.keys(FIELD_LABELS).filter((field) => facts[field] != null && facts[field] !== "");
+      const confirmed = agentFields.filter((field) => facts[field] != null && facts[field] !== "");
       const frame: PreparationFrame = { tenantId: context.tenantId, leadId, episodeId, phoneNumberId: channel.phoneNumberId, channelRevision: channel.configurationRevision,
         preparedAt: now.toISOString(), anchor: { id: anchor.id, sentAt: anchor.sentAt.toISOString() }, resetObservedAt: episode.resetObservedAt?.toISOString() ?? null,
         agent: { phase: agent.phase, revision: agent.revision, askedFields: agent.askedFields, openingHistory: agent.openingHistory }, facts,
-        pendingField: nextFieldToAsk([...agent.askedFields, ...confirmed]), origin: { startMessageId: origin.startMessageId, endMessageId: origin.endMessageId }, history: origin.messages };
+        pendingField: qualification?.nextFieldToAsk([...agent.askedFields, ...confirmed]) ?? null, origin: { startMessageId: origin.startMessageId, endMessageId: origin.endMessageId }, history: origin.messages };
       await tx.update(reengagementEpisodes).set({ originSessionStartMessageId: origin.startMessageId, originSessionEndMessageId: origin.endMessageId }).where(eq(reengagementEpisodes.id, episodeId));
       return { ok: true, frame };
     });

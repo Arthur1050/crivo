@@ -9,10 +9,9 @@ import * as schema from "../../../db/schema";
 import { conversations, leadAgentState, leads, messages, reengagementEpisodes, tenants, users, whatsappChannels, whatsappMessageReceipts } from "../../../db/schema";
 import { ingestAgentMessage, optOutLeadByHuman, recordHumanMessage, returnConversationToAgent, takeOverConversation, updateLeadStatus } from "../index";
 import { applyLeadPatch as patchLead } from "../../../kit/integration";
-import { publishAgentState } from "../../reengagement/agent-state";
 import { authorizeDispatch, claimPreparation, reconcileAcceptance } from "../../reengagement/repository";
 import { getSessionFrame } from "../../reengagement/context";
-import { prepareFrame } from "../../../kit/reengagement";
+import { prepareFrame, publishAgentState } from "../../../kit/reengagement";
 
 const tenantId = randomUUID(), foreignTenant = randomUUID(), userId = randomUUID();
 const now = new Date("2026-10-06T15:00:00.500Z"), hour = 3600000, scope = { tenantId, assignedUserId: null };

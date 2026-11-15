@@ -1,9 +1,9 @@
 import { AGENT_PHASE } from "../../lib/vocabulary";
 import "server-only";
 import { and, desc, eq } from "drizzle-orm";
-import { FIELD_LABELS } from "../../../n8n/verticals/real-estate/src/phase.mjs";
 import { db } from "../../db";
 import { conversations, leadAgentState, leads, messages } from "../../db/schema";
+import type { QualificationFacet } from "../../vertical-kit";
 import type { AuthResult } from "../integration/auth";
 
 export interface PublishAgentStateInput {
@@ -18,12 +18,16 @@ type AgentState = typeof leadAgentState.$inferSelect;
 type StateRefusal = "invalid-state" | "lead-not-found" | "context-changed" | "revision-conflict" | "phase-closed";
 export type PublishAgentStateResult = { ok: true; replay: boolean; state: AgentState } | { ok: false; reason: StateRefusal };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-function valid(input: PublishAgentStateInput): boolean {
+type AgentFields = Pick<QualificationFacet<unknown, unknown>, "agentFields">;
+
+// Sem faceta de qualificação, nenhum campo é válido: só a lista vazia passa.
+function valid(qualification: AgentFields | null, input: PublishAgentStateInput): boolean {
+  const agentFields: readonly string[] = qualification?.agentFields ?? [];
   return typeof input.anchorMessageId === "string" && UUID.test(input.anchorMessageId)
     && Number.isSafeInteger(input.expectedRevision) && input.expectedRevision >= 0
     && (input.resetObservedAt === null || (input.resetObservedAt instanceof Date && Number.isFinite(input.resetObservedAt.getTime())))
     && (input.phase === null || [AGENT_PHASE.qualifying, AGENT_PHASE.closing, AGENT_PHASE.ended].includes(input.phase))
-    && Array.isArray(input.askedFields) && input.askedFields.length <= 8 && input.askedFields.every((field) => typeof field === "string" && Object.hasOwn(FIELD_LABELS, field))
+    && Array.isArray(input.askedFields) && input.askedFields.length <= 8 && input.askedFields.every((field) => typeof field === "string" && agentFields.includes(field))
     && Array.isArray(input.openingHistory) && input.openingHistory.every((opening) => typeof opening === "string");
 }
 function sameTime(a: Date | null, b: Date | null) { return a?.getTime() === b?.getTime(); }
@@ -40,13 +44,18 @@ function identical(state: AgentState, input: PublishAgentStateInput) {
  * Primeira publicação expectedRevision0 cria revision1. Invalidação integrada
  * pelo inbound será T27; aqui nenhuma janela/pipeline/mensagem é alterada.
  */
-export async function publishAgentState(
+export function createPublishAgentState(qualification: AgentFields | null) {
+  return publishAgentState.bind(null, qualification);
+}
+
+async function publishAgentState(
+  qualification: AgentFields | null,
   context: AuthResult,
   leadId: string,
   input: PublishAgentStateInput,
   options: { now?: () => Date; database?: Pick<typeof db, "transaction"> } = {},
 ): Promise<PublishAgentStateResult> {
-  if (!valid(input)) return { ok: false, reason: "invalid-state" };
+  if (!valid(qualification, input)) return { ok: false, reason: "invalid-state" };
   return (options.database ?? db).transaction(async (tx): Promise<PublishAgentStateResult> => {
     const [lead] = await tx.select().from(leads).where(and(eq(leads.tenantId, context.tenantId), eq(leads.id, leadId))).for("update");
     if (!lead) return { ok: false, reason: "lead-not-found" };

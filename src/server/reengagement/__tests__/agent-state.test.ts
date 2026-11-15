@@ -7,7 +7,8 @@ import { db } from "../../../db";
 import * as schema from "../../../db/schema";
 import { conversations, leadAgentState, leads, messages, tenants, users } from "../../../db/schema";
 import { serviceScope, takeOverConversation } from "../../data";
-import { publishAgentState, type PublishAgentStateInput } from "../agent-state";
+import { publishAgentState } from "../../../kit/reengagement";
+import type { PublishAgentStateInput } from "../agent-state";
 import { evaluateReengagement } from "../../../../n8n/src/reengagement.mjs";
 
 const tenantA = randomUUID(), tenantB = randomUUID(), human = randomUUID();

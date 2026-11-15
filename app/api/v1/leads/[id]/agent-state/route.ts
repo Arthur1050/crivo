@@ -1,8 +1,8 @@
 import { PROBLEM_CODE } from "../../../../../../src/lib/vocabulary";
-import { MAX_BODY_BYTES, parseAgentState } from "../../../../../../src/server/integration/parsers";
-import { methodNotAllowed, problem } from "../../../../../../src/kit/integration";
+import { MAX_BODY_BYTES } from "../../../../../../src/server/integration/parsers";
+import { methodNotAllowed, parseAgentState, problem } from "../../../../../../src/kit/integration";
 import { withIntegrationRoute } from "../../../../../../src/kit/integration";
-import { publishAgentState } from "../../../../../../src/server/reengagement/agent-state";
+import { publishAgentState } from "../../../../../../src/kit/reengagement";
 
 type Context = { params: Promise<{ id: string }> };
 export const POST = withIntegrationRoute<Context>(async (request, auth, { params }) => {
