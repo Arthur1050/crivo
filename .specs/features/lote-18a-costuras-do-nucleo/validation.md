@@ -29,176 +29,137 @@
 
 ## Validation: Lote 18a — FAIL
 
-**Data**: 2026-11-10
+**Data**: 2026-11-15 (reverificação; a primeira foi em 2026-11-10)
 **Spec**: `.specs/features/lote-18a-costuras-do-nucleo/spec.md`
-**Faixa de diff**: `bf5e646..e35ce43` (66 commits, 472 arquivos)
+**Faixa de diff**: `bf5e646..a04e800` (76 commits, 474 arquivos); correções do Verifier em `e35ce43..a04e800` (10 commits, 33 arquivos)
 **Verifier**: subagente independente (autor ≠ verificador), sem contexto da execução
 
-Resumo: o comportamento do Krivo está preservado (contratos, schema, gerados, build, tsc, ESLint, suíte), e as costuras novas estão quase todas cobertas por testes discriminantes. O veredito é FAIL por dois motivos que o método trata como bloqueantes: um mutante sobrevivente no caminho de dados da imobiliária (a faceta de segmentos no processamento de documentos) e um teste do vertical de teste que afirma uma propriedade do grafo de imports que não é verdadeira (ele alcança `n8n/verticals/real-estate/src/phase.mjs`). As duas correções são de teste; nenhuma exige mudar o código de produção.
+Resumo: as duas lacunas bloqueantes de 2026-11-10 estão fechadas, com mutantes refeitos de forma independente (M26 e o grafo da VERT-03 mortos), e as correções F1 a F7 e F9 conferem com o código. A F1 tirou do núcleo os imports de `phase.mjs` sem mudar o SQL do `CHECK`, e os 18 mutantes desenhados para ela e para as F3 a F5 morreram. Os gates passaram: suíte com 278 arquivos e 4.319 testes, 0 falha; tsc 0; ESLint 0 erros e 9 avisos; diff com a base 0; build com 29 de 29 páginas. O veredito continua FAIL por um motivo só, que o método trata como bloqueante: a emenda da F6 escreveu na QUAL-02 AC2 duas regras de ordem que nenhum teste afirma, e os mutantes Q1 e Q2 sobrevivem. A correção é de teste, não de código.
 
-### Conclusão das tasks
+## Reverificação de 2026-11-15
 
-T1–T45 marcadas como feitas em `tasks.md`, com duas caixas abertas: T24 (`npm run db:push:test` sem mudança pendente) e T45 (`next build` e Verifier). O `next build` foi rodado nesta verificação (abaixo). O `db:push:test` não foi repetido aqui: ele derruba o schema `vitrine` e reaplica em todas as branches de teste, e a suíte completa estava rodando; fica a prova registrada pelo executor (saída 0, com o mesmo `42P07` em `leads_tenant_id_id_idx` que ocorre em `bf5e646`).
+### Lacunas do FAIL anterior
 
-### Checagem ancorada na spec
+| # | Lacuna de 2026-11-10 | Evidência nesta verificação | Resultado |
+| --- | --- | --- | --- |
+| 1 | M26: a faceta de segmentos chega ao processamento de documentos | `src/kit/document-services.ts:9` passa `facet: realEstate.documentSegments`; `src/server/documents/__tests__/processing.integration.test.ts:100-121`: tetos `novo` 1 e `usado`/`ambos` 1.000.000, `usado` → `{ kind: "completed", status: "pronto" }` (`:108-109`), `novo` → `fora_do_agente` (`:112`), contexto `usado` e `ambos` = `[used.id]` e `novo` = `[]` (`:116-118`). A regra é a de `bf5e646` (`context-budget.ts`, `applies`: consulta `ambos`, documento `ambos` ou mesmo segmento). M26 refeito: morto. M26b (`reconcileTenantDocumentAdmission` com `null`, `:13`): morto por `repository.test.ts` | ✅ Fechada |
+| 2 | VERT-03: grafo do vertical de teste filtrado pela camada do `map.json` | `src/vertical-kit/__tests__/fixture-vertical.integration.test.ts:118-126` filtra por `classifyFile(file, map)?.layer === "vertical"` e afirma `[]`; `source-graph.ts:22-23` trata JSON como folha. Mutante F3 (import de `phase.mjs` devolvido a `src/db/schema.ts`, na árvore real com cópia e restauração): morto, com `"n8n/verticals/real-estate/src/phase.mjs"` no diff da falha | ✅ Fechada |
+| 3 | M1: campos de `brand` e `tenantNoun` validados | `src/vertical-kit/__tests__/index.test.ts:20-28` (`name`, `problemUrn`, `tenantHeader`, `alertTag` com `undefined`, `null`, `7`, `""`, `" "` → `Vertical inválido: brand.<campo>.`); `:30-44` (`tenantNoun`, `singular`, `plural`, agora também com `""`). M1a, M1b e M1c: mortos | ✅ Fechada |
+| 4 | Inliner sem teste de `--vertical` e `--out` | `scripts/__tests__/n8n-inline-cli.test.ts:32-48` (`--out` e `--vertical real-estate --out` gravam só na pasta pedida, iguais a `renderWorkflows`, com `n8n/generated/` intocado) e `:50-61` (vertical sem manifesto ou com nome inválido sai com erro e não grava). N14 (`--out` ignorado) e N15 (`--vertical` ignorado): mortos | ✅ Fechada |
+| 5 | Spec sem as emendas da QUAL-02 AC2 e das CAT-01/02 | `spec.md:263-268` (texto `Campo '<campo>' inválido.` e a emenda); `spec.md:306` e `:311` (actions em `app`) e `:313` (emenda) | ✅ Fechada no texto; a emenda da QUAL-02 abriu a lacuna nova G1 (abaixo). A emenda das CAT ficou entre o AC1 e o AC2 da CAT-02 (`spec.md:313`), o que quebra a numeração da lista (cosmético) |
+| 6 | `workflow-baseline.ts` sem documentar a dependência de `git show bf5e646` | `n8n/workflows/__tests__/workflow-baseline.ts:1-10` (clone raso sem `bf5e646` quebra os testes; troca no backlog); `.specs/ROADMAP-POS-PILOTO.md` item (1) | ✅ Fechada |
+| 7 | Imports de `phase.mjs` no núcleo e entrada `check:` | `git grep phase.mjs -- src app scripts/boundary eslint.config.mjs` (fora de teste): só `src/verticals/real-estate/qualification.ts:3` (camada `vertical`). `scripts/boundary/transitional.json:724-728`: `check:lead_agent_state_asked_fields`, `stored`, `L18c`; as 4 entradas `import:` saíram. `src/db/schema.ts:380-383` lista os 8 campos na ordem de `FIELD_LABELS`, e o `CHECK` (`:405`) gera o mesmo SQL: `scripts/__tests__/boundary-schema.test.ts:26` (foto igual à base) e `:48-54` (lista igual a `qualification.agentFields` e entrada única `check:`) | ✅ Fechada |
+| 8 | F8: suíte completa verde | `npm test` nesta verificação: 278 arquivos, 4.319 testes, 0 falha, saída 0 (1.218 s), com o teste de Havana em 2020 | ✅ Gate fechado (a caixa da F8 fica aberta porque o veredito é FAIL) |
+
+**F9 (Havana)**: `src/db/__tests__/schema-whatsapp-usage.test.ts:94-109` manteve as mesmas 6 asserções (3 `toEqual` de instante, `freeServiceVolume` 999 e as duas recusas `23514`), com os instantes de 2026 trocados pelos de 2020 e nada mais. Em 2020 Cuba saiu do horário de verão em 1º/11 à 01:00 local, então a meia-noite de 1º/11 se repete em 04:00Z e 05:00Z, e a de 1º/12 cai em 05:00Z: a fixture tem a mesma forma da original. Contagem de `expect(` igual (52 antes e depois).
+
+**Auditoria dos testes alterados nas correções** (`e35ce43..a04e800`, 15 arquivos): nenhum perdeu `expect(` nem ganhou `skip`/`only`/`todo`. `openapi.test.ts`, `agent-state.test.ts`, `conduction-reengagement.test.ts` e `messages-reengagement.test.ts` só trocaram import (diff conferido linha a linha). Em `qualification-facts.test.ts` (arquivo novo do L18a, ausente em `bf5e646`), o caso sem faceta passou de `pendingField: "region"` para `pendingField: null` com `askedFields: []`, o que segue a decisão F1 do usuário; o caso com `["modality"]` sem faceta ficou como recusa (`:75-80`). Em `boundary-eslint.test.ts`, o caso de exceção virou recusa, porque a exceção deixou de existir.
+
+### Checagem ancorada na spec (critérios tocados pelas correções)
 
 | Critério | Resultado definido na spec | Evidência `arquivo:linha` | Resultado |
 | --- | --- | --- | --- |
-| BOUND-01 AC1–2 (mapa único, pacote de todo `core`) | todo arquivo classificado; `core` com pacote | `scripts/__tests__/boundary.test.ts:51` - `expect(checkClassification(repositoryFiles(), rules)).toEqual([])`; `:67` exige pacote | ✅ PASS (mapa por glob, primeira regra vence) |
-| BOUND-01 AC3 | falha citando o caminho | `scripts/__tests__/boundary.test.ts:55` - `"Arquivo sem classificação: src/new.ts"` | ✅ PASS |
-| BOUND-01 AC4 | regra órfã falha citando o caminho | `scripts/__tests__/boundary.test.ts:61` - `"Regra órfã: src/missing.ts"` | ✅ PASS |
-| BOUND-02 AC1 | erro `no-restricted-imports` | `scripts/__tests__/boundary-eslint.test.ts:15` - `{ ruleId: "no-restricted-imports", severity: 2 }` | ✅ PASS |
-| BOUND-02 AC2–4 | falha citando os dois caminhos | `scripts/__tests__/boundary.test.ts:95-105` - `Import proibido: ${file} -> ${target}` (core→vertical, core→app, vertical→app, client→core server, client→server-only); `:107` reexportação e import dinâmico | ✅ PASS |
-| BOUND-03 AC1 | 13 termos, qualquer caixa, arquivo e linha | `scripts/__tests__/boundary.test.ts:129` - `line: 2, message: Termo de mercado "${term}"` | ✅ PASS (texto JSX não é checado; não há arquivo `core` com JSX hoje) |
-| BOUND-03 AC2 | comentário ignorado | `scripts/__tests__/boundary.test.ts:143` - `toEqual([])` | ✅ PASS |
-| BOUND-03 AC3 | comentário com nome novo, por `git grep` | `git grep` desta verificação: `selectForMeeting`, `normalizarBaseDaVitrine`, `interpretarPatchAgendamento`, `broker-assignment`, `meetingAttended`, `lib/permissions` com 0 ocorrências fora de teste; `supportedModality`, `meetingDays`/`meetingHours*` e `brokerId` restantes são campo do fio ou do better-auth | ✅ PASS (prova por processo, sem teste) |
-| BOUND-04 AC1–2 | arquivo único; só itens do L18c | `scripts/__tests__/boundary.test.ts:29` - `checkTransitionEntries(transitional)` = `[]`; `:37` recusa categoria fora de `stored/api/n8n-modules/route-folders` | ✅ PASS (107 entradas: 33 `stored`, 4 `api`, 70 `n8n-modules`) |
-| BOUND-04 AC3 | entrada órfã falha | `scripts/__tests__/boundary.test.ts:113`, `:147`, `:189`, `:230` - `Exceção sem ocorrência` | ✅ PASS |
-| KEEP-01 AC1 | `openapi.yaml` sem diferença | `git diff --exit-code bf5e646 -- docs/integration/openapi.yaml n8n/generated/` → saída 0 | ✅ PASS |
-| KEEP-01 AC2–3 | mesmos campos, valores, corpos e códigos | testes de rota existentes com valores inalterados (auditoria abaixo); ex.: `src/server/integration/__tests__/routes/leads-patch.test.ts` só troca `supportedModality` → `supportedSegment` na fixture | ✅ PASS |
-| KEEP-02 AC1–2 | 9 arquivos sem diferença; falha cita arquivo e 1ª linha | `scripts/__tests__/boundary-generated.test.ts:46` (regera e compara hashes), `:57` - `"erros.ts:1: primeira linha diferente da base"` | ✅ PASS |
-| KEEP-02 AC3 | hashes intocados depois da criação | `git log -- scripts/boundary/generated-hashes.json` → só `321623d`; `n8n/` igual a `bf5e646` nesse commit | ✅ PASS |
-| KEEP-03 AC1 | foto do schema igual à base | `scripts/__tests__/boundary-schema.test.ts:26` - `expect(snapshotSchema({ ...schema, ...realEstateSchema })).toEqual(baseline)`; `src/db/` igual a `bf5e646` em `eb04f04` | ✅ PASS |
-| KEEP-03 AC2 | `db:push:test` sem mudança pendente | sem prova independente; registro do executor (saída 0 e `42P07` também na base) | ⚠️ não reverificado |
-| KEEP-03 AC3 | views e papéis da vitrine iguais | `scripts/{vitrine/vitrine.sql => storefront/storefront.sql}` com 0 linha alterada; `git diff --exit-code bf5e646 -- vitrine/` → 0 | ✅ PASS |
-| KEEP-04 AC1 | `npm test` verde, ≥ 250 arquivos e 4041 testes | `npm test` desta verificação: 276 arquivos, 4291 testes, 0 falhas | ✅ PASS |
-| KEEP-04 AC2–3 | teste existente só muda símbolo, import ou entrega | auditoria dos 174 testes alterados (abaixo) | ✅ PASS |
-| KEEP-04 AC4–5 | tsc sem aumento; ESLint 0 erros, ≤ 9 avisos | `npx tsc --noEmit -p .` → 0 erros; `npx eslint .` → 0 erros, 9 avisos | ✅ PASS |
-| KEEP-04 AC6 | `next build` contra o banco de teste sem erro | rodado nesta verificação (abaixo): saída 0 | ✅ PASS |
-| KEEP-05 AC1–3 | 8 telas, URLs e menus iguais | tabela de capturas no topo deste arquivo (`evidence/base/` e `evidence/end/`) | ✅ PASS |
-| KEEP-06 | nada em produção | `git branch -r --contains HEAD` vazio (nada publicado); nenhum comando de banco de produção nesta verificação; n8n e Vercel não tocados | ✅ PASS (sem prova possível sobre ações de sessões anteriores além do registro) |
-| VOCAB-01 AC1, AC3 | constante por valor, valor atual | `src/lib/__tests__/vocabulary.test.ts:19-38` - `expect(actual).toEqual(expected)` com literais (ex.: `attendant: "corretor"`) | ✅ PASS |
-| VOCAB-01 AC2 | constantes do vertical | `src/verticals/real-estate/__tests__/vocabulary.test.ts:18`, `:27` | ✅ PASS |
-| VOCAB-01 AC4 | literal fora dos módulos falha, com arquivo e linha | `scripts/__tests__/boundary.test.ts:161-171` - `Valor gravado literal "corretor"`; `:157` árvore real | ✅ PASS |
-| VOCAB-01 AC5 | tipos derivados | `src/lib/__tests__/vocabulary.test.ts:51` - `expectTypeOf<Role>().toEqualTypeOf<...>()` | ✅ PASS |
-| VOCAB-01 AC6 | predicados com o mesmo SQL | `src/server/data/__tests__/role-vocabulary.test.ts:36-37` - SQL `'corretor' = any(string_to_array(...))` | ✅ PASS |
-| VOCAB-02 AC1–2 | nomes novos, colunas mantidas | `scripts/__tests__/boundary-schema.test.ts:26` (colunas iguais); `src/server/data/__tests__/optional-appointments.test.ts:36` usa `appointmentAt` | ✅ PASS |
-| VOCAB-02 AC3 | `appointmentAt` ↔ `meetingAt` na borda | `src/server/integration/__tests__/qualification-kit.test.ts:110` (`meetingAt` → `appointmentAt`), `:140` (`meetingAt: null` na resposta), `:150` | ✅ PASS |
-| VOCAB-03 AC1 | `read`/`write` e recursos novos | `src/lib/__tests__/access.test.ts:92` - `RESOURCES` igual à lista | ✅ PASS |
-| VOCAB-03 AC2 | matriz igual célula por célula | `src/lib/__tests__/access.test.ts:90-100` - matriz literal de `bf5e646` | ✅ PASS |
-| ENG-01 AC1–4 | identificador em português falha; rota e `n8n/` fora | `scripts/__tests__/boundary.test.ts:199`, `:203`, `:213`, `:217`, `:223` | ✅ PASS |
-| VERT-01 AC1 | campos do contrato | `src/vertical-kit/__tests__/index.test.ts:51` (cada campo obrigatório) | ✅ PASS |
-| VERT-01 AC2 | kit só importa o vocabulário | `src/vertical-kit/__tests__/index.test.ts:91-106` | ✅ PASS |
-| VERT-01 AC3 | `id` vazio e colisão lançam erro nomeando o campo | `src/vertical-kit/__tests__/index.test.ts:42` (`/\bid\b/`), `:46` (`resources[0].name`) | ✅ PASS |
-| VERT-01 AC4 | papel ausente quebra a compilação | `src/vertical-kit/__tests__/index.test.ts:86` - `@ts-expect-error` | ✅ PASS |
-| VERT-01 AC5 | núcleo recebe o vertical por parâmetro ou fábrica | 4 arquivos `core` importam `n8n/verticals/real-estate/src/phase.mjs` (exceção `n8n-modules` até o L18c) | ⚠️ PASS com exceção registrada (ver lacuna 2) |
-| VERT-02 AC1–2 | `real-estate`, agendamento, `catalog`, segmentos, marca | `src/verticals/real-estate/__tests__/index.test.ts:17-23` | ✅ PASS |
-| VERT-02 AC3 | app passa o vertical | `src/kit/*` com `realEstate`; mutantes M25 e M29 mortos pelos testes de rota; M26 sobreviveu | ❌ lacuna (ver lacuna 1) |
+| VERT-01 AC1 | campos do contrato; peças do agente fora do bundle do navegador | `src/vertical-kit/__tests__/index.test.ts:46`, `:61-66`, `:78-90` (`agentFields` e `nextFieldToAsk` preservados), `:92-99` (`qualification.nextFieldToAsk` e `qualification.agentFields` recusados com `undefined`, texto, `[""]` e duplicado); nenhum arquivo `"use client"` importa `src/verticals/real-estate` | ✅ PASS |
+| VERT-01 AC2 | kit só importa o vocabulário | `src/vertical-kit/__tests__/index.test.ts:110` | ✅ PASS |
+| VERT-01 AC3 | `id` vazio e colisão lançam erro nomeando o campo | `index.test.ts:52-53` (`/\bid\b/`), `:56-58` (`resources[0].name`) | ✅ PASS |
+| VERT-01 AC4 | papel ausente quebra a compilação | `index.test.ts:104-107` (`@ts-expect-error`) | ✅ PASS |
+| VERT-01 AC5 | núcleo recebe o vertical por parâmetro ou fábrica | `createAgentStateParser` (`src/server/integration/parsers.ts:77`) em `createIntegrationKit` (`src/server/integration/kit.ts:18`); `createPublishAgentState` (`src/server/reengagement/agent-state.ts:47`) e `createPrepareFrame` ligados em `src/kit/reengagement.ts:7-8`; nenhum `core` importa `phase.mjs` (lacuna 7); `scripts/__tests__/boundary-eslint.test.ts:22-26` recusa as duas grafias. Mutantes N8 e N9 (app entrega `null`): mortos | ✅ PASS (a exceção de 2026-11-10 saiu) |
+| VERT-02 AC1–2 | `real-estate`, agendamento, `catalog`, segmentos, marca | `src/verticals/real-estate/__tests__/index.test.ts:15-23` | ✅ PASS |
+| VERT-02 AC3 | app passa o vertical a toda peça que o exige | `src/kit/document-services.ts:9`, `:13`, `:17`; `src/kit/integration.ts:5-8`; `src/kit/reengagement.ts:7-8`. M25, M26, M26b, M29, N8 e N9 mortos; `agent-fields.test.ts:58-61` e `:86-89` e `qualification-facts.test.ts:89-96` provam a ligação pelo `src/kit/` | ✅ PASS |
 | VERT-03 AC1 | vertical sem catálogo, agendamento e segmentos, outra marca | `src/vertical-kit/__tests__/fixture-vertical.test.ts:14` | ✅ PASS |
-| VERT-03 AC2 | lead, conversa, mensagem, documento, permissão e LGPD no banco | `src/vertical-kit/__tests__/fixture-vertical.integration.test.ts:49` (lead, mensagem, conversa, opt-out), `:81` (permissão), `:93-110` (reserva de documento) | ✅ PASS |
-| VERT-03 AC3 | `type` com a marca | `src/vertical-kit/__tests__/fixture-vertical.integration.test.ts:113` - `"urn:acme:problem:recurso-nao-encontrado"` | ✅ PASS |
-| VERT-03 Independent Test | nenhum arquivo `vertical` da imobiliária no grafo | `src/vertical-kit/__tests__/fixture-vertical.integration.test.ts:116-123` filtra só `src/verticals/real-estate/`; o grafo real inclui `n8n/verticals/real-estate/src/phase.mjs` (via `src/db/schema.ts`) | ❌ lacuna (ver lacuna 2) |
-| ACCESS-01 AC1–4 | fábrica, `catalog` com as permissões de `imoveis`, recurso desconhecido recusado, vertical de teste sem `catalog` | `src/lib/__tests__/access.test.ts:90`, `:102`, `:112-116`, `:117` | ✅ PASS |
-| QUAL-01 AC1–2 | faceta com os 8 campos; núcleo trata como opaco | `src/verticals/real-estate/__tests__/qualification.test.ts:19-43`; `src/server/integration/__tests__/qualification-kit.test.ts:99-113` | ✅ PASS |
-| QUAL-01 AC3 | colunas na lista de transição | `scripts/__tests__/boundary-schema.test.ts:34-45` | ✅ PASS |
-| QUAL-01 AC4 | PATCH valida e grava como na base; POST ignora | `src/server/integration/__tests__/qualification-contract.test.ts:8-30` (ordem das falhas); `src/server/integration/__tests__/qualification-kit.test.ts:80-92` | ✅ PASS |
-| QUAL-02 AC1 | consumidores leem do vertical | `src/server/reengagement/__tests__/qualification-facts.test.ts:55-69`; `src/server/data/__tests__/qualification-readers.test.ts:37-50` | ✅ PASS |
-| QUAL-02 AC2 | sem faceta: mesmo problema de campo inválido | `src/server/integration/__tests__/qualification-kit.test.ts:51-65` - `detail: "Campo '${field}' inválido."` | ⚠️ lacuna de precisão: a spec diz "o mesmo problema que `parseLeadPatch` devolve hoje", mas em `bf5e646` campo desconhecido era ignorado e os campos de enum tinham `... Valores aceitos: ...`; o texto escolhido é razoável, não é "o mesmo" |
-| APPT-01 AC1 | agendamento ligado como na base | testes existentes de agenda/atribuição inalterados; `src/server/data/__tests__/optional-appointments.test.ts:57` | ✅ PASS |
-| APPT-01 AC2 | recusa `meetingAt` com o problema atual | `src/server/integration/__tests__/qualification-kit.test.ts:117-131` - `"Campo 'meetingAt' deve ser uma data ISO-8601 válida."` (texto de `bf5e646`) | ✅ PASS |
-| APPT-01 AC3 | `engaged` → `goal_reached` sem horário | `src/server/integration/__tests__/qualification-kit.test.ts:134-146` | ✅ PASS |
-| APPT-01 AC4 | listas vazias de pendências e comparecimento | `src/server/data/__tests__/optional-appointments.test.ts:56-70` | ✅ PASS |
-| APPT-01 AC5 | texto do agendamento fora do núcleo | termos `reuni`/`meeting` barrados no núcleo (`scripts/__tests__/boundary.test.ts:125`) | ⚠️ lacuna de precisão: a spec não diz quais códigos o núcleo devolve |
-| CAT-01 AC1 | catálogo classificado como `vertical` | `scripts/boundary/map.json` (`src/verticals/real-estate/**`, `app/api/v1/properties/**`) | ⚠️ PASS com desvio: `src/server/actions/properties.ts` ficou `app` (emenda do design), e a spec diz `vertical` |
-| CAT-01 AC2 | schemas compostos, DDL igual | `scripts/__tests__/boundary-schema.test.ts:26`; `drizzle.config.ts:11` e `drizzle-test.config.ts:23` com os dois schemas | ✅ PASS |
-| CAT-02 AC1–2 | vitrine no vertical; AD-050 mantida | `scripts/boundary/map.json`; testes de vitrine e de actions com valores inalterados (auditoria) | ✅ PASS (mesmo desvio das actions) |
-| AGENT-01 AC1–2 | gerado de fontes genéricas e manifesto, sem mudar texto | `scripts/__tests__/n8n-inline-vertical.test.ts:55-75`; `scripts/__tests__/boundary-generated.test.ts:46` | ✅ PASS |
-| AGENT-01 AC3 | sem tool de agendamento e sem lembrete | `scripts/__tests__/n8n-agent-fixture.test.ts:155-170` | ✅ PASS |
-| AGENT-01 AC4 | nenhum nó com termo da imobiliária | `scripts/__tests__/n8n-agent-fixture.test.ts:172-186` - `/im[oó]ve|imobili|corretor|buscar_imoveis/i` | ✅ PASS |
-| AGENT-02 AC1 | `__INLINE` nas duas pastas; `--vertical` e `--out` | `scripts/__tests__/n8n-inline-vertical.test.ts:55`; `--vertical`/`--out` da linha de comando sem teste próprio | ⚠️ PASS parcial (a CLI é fina, `scripts/n8n-inline.mjs` `parseArgs`) |
-| AGENT-02 AC2 | nome duplicado falha citando o nome | `scripts/__tests__/n8n-inline-vertical.test.ts:94-98` - `/módulo duplicado duplicate\.mjs/` | ✅ PASS |
-| AGENT-02 AC3 | determinismo | `scripts/__tests__/n8n-inline.test.ts:168`, `:190`; `scripts/__tests__/n8n-inline-vertical.test.ts:74` | ✅ PASS |
-| SEG-01 AC1 | símbolo `segment`, coluna `modality` | `src/server/integration/__tests__/document-segments.integration.test.ts:34`; `scripts/__tests__/boundary-schema.test.ts:26` | ✅ PASS |
-| SEG-01 AC2 | contexto filtrado como na base para a imobiliária | `src/server/integration/__tests__/document-context.integration.test.ts:75-150` (pelo `src/kit/document-context.ts`, valores inalterados); `src/verticals/real-estate/__tests__/index.test.ts:30` | ✅ PASS no contexto; ❌ no processamento (lacuna 1) |
-| SEG-01 AC3 | sem segmentos: lista e entrega todos | `src/server/integration/__tests__/document-segments.integration.test.ts:59-83`, `:85-107` | ✅ PASS |
+| VERT-03 AC2 | peças de lead, conversa, mensagem, documento, permissão e LGPD no banco | `fixture-vertical.integration.test.ts` (7 testes verdes na suíte); estado do agente sem faceta: `agent-fields.test.ts:50-56` e `:77-84` (só `[]` passa) | ✅ PASS |
+| VERT-03 AC3 | `type` com a marca | `fixture-vertical.integration.test.ts:113-116` - `"urn:acme:problem:recurso-nao-encontrado"` | ✅ PASS |
+| VERT-03 Independent Test | nenhum arquivo `vertical` da imobiliária no grafo | `fixture-vertical.integration.test.ts:125` (camada do mapa, `[]`); mutante F3 morto | ✅ PASS |
+| QUAL-01 AC1–2 | 8 campos na faceta; núcleo trata como opaco | `src/verticals/real-estate/__tests__/qualification.test.ts:19-43`; `agent-fields.test.ts:32-37` (os 8 campos na ordem do `phase.mjs` e `nextFieldToAsk`); N4 (ordem trocada) e N5 (um campo a menos): mortos | ✅ PASS |
+| QUAL-01 AC3 | colunas na lista de transição | `scripts/__tests__/boundary-schema.test.ts:35-46`; a lista gravada do `CHECK` em `:48-54` | ✅ PASS |
+| QUAL-01 AC4 | PATCH valida e grava como em `bf5e646`; POST ignora | `src/server/integration/__tests__/qualification-contract.test.ts:8`, `:35`; `qualification-kit.test.ts:80-92` | ✅ PASS |
+| QUAL-02 AC1 | consumidores leem do vertical | `src/server/reengagement/__tests__/qualification-facts.test.ts:52-64` (fatos da faceta e pendência `propertyType`), `:89-96`; `src/server/data/__tests__/qualification-readers.test.ts:37`. N6, N7 e N13 mortos | ✅ PASS |
+| QUAL-02 AC2 | sem qualificação: 400 `payload-invalido`, `detail` `Campo '<campo>' inválido.`, citando o primeiro na ordem de `LEAD_QUALIFICATION_FIELDS`, depois das validações de `status`, `executiveSummary` e `escalationReason` | `src/server/integration/__tests__/qualification-kit.test.ts:50-64` - `detail: \`Campo '${field}' inválido.\``, com um campo por requisição | ❌ lacuna G1: o texto e o código 400 estão provados, mas a ordem entre campos e a precedência das validações do núcleo não têm asserção (Q1 e Q2 sobrevivem) |
+| SEG-01 AC1 | símbolo `segment`, coluna `modality` | `src/server/integration/__tests__/document-segments.integration.test.ts:49`; `boundary-schema.test.ts:26` | ✅ PASS |
+| SEG-01 AC2 | contexto filtrado como em `bf5e646` para a imobiliária | `src/server/integration/__tests__/document-context.integration.test.ts:75-150`; no processamento, `processing.integration.test.ts:100-121` (lacuna 1) | ✅ PASS |
+| SEG-01 AC3 | sem segmentos: lista e entrega todos | `document-segments.integration.test.ts:59`, `:85` | ✅ PASS |
+| AGENT-02 AC1 | `__INLINE` nas duas pastas; `--vertical` e `--out`, imobiliária e `n8n/generated/` como padrão | `scripts/__tests__/n8n-inline-vertical.test.ts:55`; `scripts/__tests__/n8n-inline-cli.test.ts:32-61` (`--out` sem `--vertical` gera a imobiliária). A pasta padrão `n8n/generated/` é provada pela função (`boundary-generated.test.ts:46`), não pela linha de comando sem `--out`, que regravaria o repositório | ✅ PASS |
+| AGENT-02 AC2 | nome duplicado falha citando o nome | `n8n-inline-vertical.test.ts:94-98` | ✅ PASS |
+| AGENT-02 AC3 | determinismo | `scripts/__tests__/n8n-inline.test.ts:168`, `:190` | ✅ PASS |
 
-**Edge cases**: arquivo novo sem classificação (`boundary.test.ts:55`) ✅; `core.autocrlf` (o inliner normaliza CRLF; rodar `node scripts/n8n-inline.mjs` no Windows regrava os 9 gerados com LF e o `git status` acusa 3 deles como modificados sem diferença de conteúdo, resolvido com `git checkout --`; o `npm test` deixa o mesmo efeito nos mesmos 3 arquivos, com `git hash-object` igual ao blob de `HEAD`) ✅ com observação; publicação de gerados não ocorreu ✅; suíte única (verificado antes de rodar) ✅.
+Os demais critérios (BOUND, KEEP, VOCAB, ENG, ACCESS, APPT, CAT, AGENT-01) não foram tocados pelas correções; a evidência de 2026-11-10 continua valendo, com a suíte, o tsc, o ESLint, o diff e o build repetidos abaixo. Os arquivos citados nela não mudaram em `e35ce43..a04e800`, salvo `index.test.ts`, `boundary-eslint.test.ts` e `boundary-schema.test.ts`, cujas linhas estão atualizadas acima. KEEP-03 AC2 continua sem prova independente (`db:push:test` não rodou, pelo motivo registrado em `tasks.md`).
 
-### Auditoria dos testes existentes (KEEP-04 AC2–3)
-
-Script próprio comparou os 174 arquivos de teste modificados ou renomeados entre `bf5e646` e `HEAD`: nenhum perdeu `expect(` ou `it(`/`describe(`, nenhum ganhou `skip`/`only`/`todo`. Os literais removidos são caminhos de import, nomes de recurso e ação (`ler`/`escrever`/`documentos`/`configuracoes`/`usuarios`/`imoveis` → `read`/`write`/`documents`/`settings`/`users`/`catalog`, com a paridade provada em `src/lib/__tests__/access.test.ts:90`), nomes de fixture (`Tenant Broker …` → `Tenant Assignee …`), `supportedModality` → `supportedSegment` e `meetingAt` → `appointmentAt` como propriedade do schema. Nenhum valor gravado ou do fio mudou. `src/server/integration/__tests__/properties.test.ts` ganhou uma asserção negativa (`assigneeName`).
-
-- **Exceção da T37 (`157e7fa`)**: as 6 asserções `toContain("__INLINE(x.mjs)__")` viraram `toContain(readInlinedModule("x.mjs"))` sobre o gerado; a nova forma é mais forte (exige o módulo inteiro inlined).
-- **Não declarado na T37 (`55027e5`, T39)**: 9 testes de `n8n/workflows/__tests__/` passaram a comparar o gerado atual com a fonte de `bf5e646` lida por `git show` (`n8n/workflows/__tests__/workflow-baseline.ts:12`), e não com a fonte atual. A força não caiu, porque o gerado atual continua do lado testado e o teste de hashes regera a partir da fonte atual. Porém o commit não explica a troca, e esses testes passam a depender do histórico do git (um clone raso sem `bf5e646` os quebra). Fica como ressalva para o L18b.
-- **`88f0f5c`**: não afrouxou nada. Em `vertical-alert.test.ts`, o assunto esperado do vertical de teste passou de "imobiliária(s)" para "empresa(s)", que é o comportamento correto depois do `brand.tenantNoun`, e o corpo passou a ser conferido (`"nas empresas abaixo.\n\nTenant Azul (tenant-blue)"`). Em `boundary-eslint.test.ts`, o caso de exceção passou para a exceção que ainda existe (`parsers.ts` → `phase.mjs`, nas duas grafias), e o caso de recusa passou de 1 alvo para 2. O mutante M16 confirma que o teste atualizado discrimina.
+**Edge cases**: `core.autocrlf` ✅ (a suíte regravou `principal.ts`, `scheduler.ts` e `smoke-reset.ts` de `n8n/generated/` só com fim de linha; `git diff` vazio; restaurados com `git checkout --`); suíte única (nenhum `vitest` ou `next` ativo antes de começar) ✅; nada publicado (`git branch -r --contains HEAD` vazio, nenhum push) ✅.
 
 ### Sensor de discriminação
 
-Worktree descartável em `HEAD` (`e35ce43`), com `node_modules` por junção e os testes rodados da raiz real com `--root` no worktree. Cada mutante foi aplicado, testado e revertido por `git checkout`; a junção foi desfeita antes de `git worktree remove --force`. `git status --porcelain` do repositório real: vazio antes e depois (igual ao baseline).
+Worktree descartável em `a04e800`, no scratchpad, com `node_modules` por junção. Testes sem banco rodaram com o diretório no worktree; testes de banco rodaram da raiz real com `--root` no worktree (branch base do banco de teste, que a suíte paralela não usa). O mutante F3 depende de caminhos relativos ao diretório atual (`source-graph.ts`), então rodou na árvore real depois da suíte, com cópia de `src/db/schema.ts` no scratchpad e restauração. Cada mutante foi aplicado com uma substituição de ocorrência única e revertido por `git checkout --` no worktree; a junção foi desfeita antes de `git worktree remove --force`. `git status --porcelain` do repositório real: vazio antes do primeiro mutante e depois do último.
 
 | # | Arquivo | Mutação | Morto? |
 | --- | --- | --- | --- |
-| M1 | `src/vertical-kit/index.ts:85` | `defineVertical` deixa de validar `brand.name`/`problemUrn`/`tenantHeader`/`alertTag` | ❌ Sobreviveu (fora das ACs; validação sem teste) |
-| M2 | `src/vertical-kit/index.ts:98` | aceita recurso com nome de recurso do núcleo | ✅ |
-| M3 | `src/lib/access.ts:42` | `createAccess` ignora o 1º recurso do vertical | ✅ |
-| M4 | `src/lib/access.ts:48` | `can` exige todos os papéis em vez da união | ✅ |
-| M5 | `src/server/integration/parsers.ts:293` | PATCH aceita `meetingAt` com `appointments: false` | ✅ |
-| M6 | `src/server/integration/parsers.ts:286` | sem faceta, não recusa campo de qualificação | ✅ |
-| M7 | `src/verticals/real-estate/qualification.ts:44` | remove `beforeCoreText` (ordem das falhas do PATCH) | ✅ |
-| M8 | `src/verticals/real-estate/qualification.ts:58` | `serialize` troca `motivation` por `creditStatus` | ✅ |
-| M9 | `src/server/integration/kit.ts:23` | `applyLeadPatch` pula `toLeadColumns` | ✅ |
-| M10 | `src/server/documents/context-budget.ts:33` | sem faceta, nenhum documento se aplica | ✅ |
-| M11 | `src/server/documents/segments.ts:15` | sem faceta, usa o segmento pedido em vez do fixo | ✅ |
-| M12 | `src/server/integration/context.ts:85` | teto lido pelo segmento bruto da consulta (`null` com faceta ausente) | ✅ |
-| M13 | `src/server/data/index.ts:1530` | pendências ignoram `appointments: false` | ✅ |
-| M14 | `src/server/data/index.ts:784` | comparecimento ignora `appointments: false` | ✅ |
-| M15 | `src/lib/duplicate-document.ts:12` | mensagem de duplicata fixa "imobiliária" | ✅ |
-| M16 | `src/lib/integration-alert.ts:73` | corpo do alerta fixa "imobiliárias" | ✅ |
-| M17 | `src/server/integration/problem.ts:84` | `type` ignora a marca | ✅ |
-| M18 | `scripts/boundary/check.ts:207` | fronteira não recusa vertical → app | ✅ |
-| M19 | `scripts/boundary/check.ts:90` | termos de mercado sensíveis à caixa | ✅ |
-| M20 | `scripts/boundary/check.ts:251` | regra órfã não reprova | ✅ |
-| M21 | `scripts/n8n-inline.mjs:168` | `__VALUE__` expande para o nome | ✅ |
-| M22 | `scripts/n8n-inline.mjs:136` | `__IF__` mantém trecho com chave `false` | ✅ |
-| M23 | `scripts/n8n-inline.mjs:161` | `__BLOCK__` deixa linha extra | ✅ |
-| M24 | `scripts/n8n-inline.mjs:204` | módulo duplicado nas duas pastas não reprova | ✅ |
-| M25 | `app/api/cron/expire-documents/route.ts:60` | cron diário sem a faceta da imobiliária | ✅ |
-| M26 | `src/kit/document-services.ts:9` | processamento de documento da imobiliária com `facet: null` | ❌ Sobreviveu a 6 arquivos e 133 testes (`processing.integration`, `processing`, `lifecycle.integration`, `document-context.integration`, `context-ceiling`, `repository`) |
-| M27 | `src/server/data/index.ts:668` | amostra de documentos conta tudo no segmento padrão | ✅ |
-| M28 | `src/server/reengagement/context.ts:80` | frame sem os fatos da qualificação | ✅ |
-| M29 | `src/server/integration/leads.ts:76` | JSON do lead sem os campos de qualificação | ✅ (morto pelos testes de rota `leads-get`/`leads-patch` e `qualification-contract`; sobrevive a `qualification-kit` + `leads.test.ts` sozinhos) |
-| M30 | `scripts/boundary/check.ts:200` | `vertical-kit` pode importar qualquer módulo | ✅ |
+| M26 | `src/kit/document-services.ts:9` | processamento da imobiliária com `facet: null` | ✅ (`processing.integration.test.ts`, 1 de 18) |
+| M26b | `src/kit/document-services.ts:13` | reconciliação da admissão com `null` | ✅ (`repository.test.ts`, DOCLIM-01 AC12) |
+| M1a | `src/vertical-kit/index.ts:90` | `defineVertical` não valida `brand.name`/`problemUrn`/`tenantHeader`/`alertTag` | ✅ (4 testes) |
+| M1b | `src/vertical-kit/index.ts:95` | não valida `tenantNoun.singular`/`plural` | ✅ (2 testes) |
+| M1c | `src/vertical-kit/index.ts:95` | `tenantNoun` aceita texto vazio | ✅ (2 testes) |
+| N1 | `src/server/integration/parsers.ts:88` | sem faceta, o parser aceita `askedFields` não vazio | ✅ |
+| N2 | `src/server/reengagement/agent-state.ts:30` | sem faceta, a publicação aceita `askedFields` não vazio | ✅ |
+| N3 | `src/server/reengagement/context.ts:71` | sem faceta, o frame aceita estado gravado com campo perguntado | ✅ |
+| N4 | `src/verticals/real-estate/qualification.ts:71` | `agentFields` com `region` e `propertyType` trocados | ✅ (`agent-fields`, `boundary-schema`) |
+| N5 | `src/verticals/real-estate/qualification.ts:71` | `agentFields` sem `chainedOperation` | ✅ (4 testes) |
+| N6 | `src/server/reengagement/context.ts:87` | `pendingField` ignora a faceta (`null`) | ✅ |
+| N7 | `src/server/reengagement/context.ts:87` | `nextFieldToAsk` sem os campos confirmados | ✅ |
+| N8 | `src/kit/reengagement.ts:8` | app entrega `null` à publicação do estado | ✅ |
+| N9 | `src/server/integration/kit.ts:18` | kit entrega `null` ao parser do estado | ✅ |
+| N10 | `src/vertical-kit/index.ts:119` | `defineVertical` não valida `agentFields` | ✅ |
+| N11 | `src/vertical-kit/index.ts:114` | `defineVertical` não exige `nextFieldToAsk` | ✅ |
+| N12 | `src/db/schema.ts:381` | lista gravada do `CHECK` em outra ordem | ✅ (foto do schema e lista da faceta) |
+| N13 | `src/server/reengagement/context.ts:83` | `confirmed` vazio | ✅ |
+| N14 | `scripts/n8n-inline.mjs:259` | `--out` ignorado | ✅ (2 testes) |
+| N15 | `scripts/n8n-inline.mjs:260` | `--vertical` ignorado | ✅ (2 testes) |
+| E1 | `eslint.config.mjs:39` | regra de import com uma entrada por glob, como antes da F1 | ✅ (caminhos relativos `../../../n8n/...` deixam de ser recusados) |
+| F3 | `src/db/schema.ts:3` | import de `phase.mjs` devolvido ao schema | ✅ (`fixture-vertical.integration.test.ts`) |
+| Q1 | `src/server/integration/parsers.ts:290` | sem faceta, cita o último campo presente em vez do primeiro de `LEAD_QUALIFICATION_FIELDS` | ❌ Sobreviveu (`qualification-kit`, `parsers`, `fixture-vertical`: 68 testes) |
+| Q2 | `src/server/integration/parsers.ts:263` | sem faceta, recusa o campo de qualificação antes de validar `status`, `executiveSummary` e `escalationReason` | ❌ Sobreviveu (mesmos 68 testes) |
 
-**Profundidade**: ampliada (30 mutantes, caminhos de integridade de dados e de fronteira).
-**Resultado do sensor**: 28 de 30 mortos; 2 sobreviventes (M26 bloqueante, M1 menor) - FAIL.
+**Profundidade**: ampliada (24 mutantes: os 2 da primeira verificação refeitos, 1 irmão do M26, 2 variantes do M1, 15 para a F1, 2 para a F5, 1 para a F3 e 2 para a emenda da F6).
+**Resultado do sensor**: 22 de 24 mortos; 2 sobreviventes (Q1 e Q2, a mesma lacuna) - FAIL.
 
 ### Gate
 
-- **Build**: `npx tsc --noEmit -p .` → 0 erros; `npx eslint .` → 0 erros e 9 avisos (linha de base).
-- **`next build` contra o banco de teste**: script no scratchpad com o mecanismo de `scripts/dev-test-db.mjs` (`DATABASE_URL` trocada pela DSN de teste só no processo filho, aborta sem `TEST_DATABASE_URL` e se a DSN coincidir com a padrão). Host impresso e conferido antes de rodar: `ep-holy-rice-…/neondb` (o host de teste registrado em `lote-16c-vitrine-ativacao/validation.md:37`). Resultado: `✓ Compiled successfully`, TypeScript sem erro, 29 de 29 páginas estáticas geradas, saída 0. O log traz `BetterAuthError: You are using the default secret` na coleta de dados das páginas, não fatal: a variável não está no ambiente local; não é do lote.
-- **Suíte completa (`npm test`)**: rodada nesta verificação, sem outra suíte ativa (conferido antes): 276 arquivos e 4291 testes, 0 falhas, 0 pulados, saída 0, em 1213 s. Delta sobre a base: +26 arquivos e +250 testes.
-- **Base**: 250 arquivos e 4041 testes em `bf5e646`.
+Rodados uma vez, em sequência, na árvore real em `a04e800`:
 
-### Emendas da execução (`design.md`) e AD-052
+- **Suíte completa (`npm test`)**: 278 arquivos e 4.319 testes, 0 falha, 0 pulado, saída 0, em 1.218 s. Nenhuma outra suíte ativa (conferido antes). Delta sobre a base (250 arquivos e 4.041 testes): +28 arquivos e +278 testes. Fecha o gate da F8.
+- **`npx tsc --noEmit -p .`**: 0 erros.
+- **`npx eslint .`**: 0 erros e 9 avisos (linha de base).
+- **`git diff --exit-code bf5e646 -- docs/integration/openapi.yaml n8n/generated/`**: saída 0 (depois de restaurar os 3 gerados regravados só com fim de linha).
+- **`next build` contra o banco de teste** (`build-test-db.mjs` do scratchpad, `DATABASE_URL` trocada só no processo filho): host conferido antes (`ep-holy-rice-…/neondb`, diferente do padrão); `✓ Compiled successfully`, 29 de 29 páginas estáticas, saída 0.
 
-1. **`brand.tenantNoun`**: coerente. É campo de `brand`, validado por `defineVertical`, e mantém em português só o que a pessoa lê (AD-052). Os testes da imobiliária continuam com "imobiliária(s)".
-2. **Núcleo importa `phase.mjs` do vertical**: legal pela BOUND-04 AC2 (módulo de `n8n/` que depende do L18c), mas incoerente com duas coisas. (a) A VERT-03 pede o vertical de teste sem nenhum arquivo `vertical` da imobiliária no grafo, e o grafo do teste de integração alcança `n8n/verticals/real-estate/src/phase.mjs`. (b) A AD-052 diz que `packages/*` nunca importa `apps/*`, e o design promete que o L18b "só move pastas". Como o L18b vem antes do L18c, mover pastas deixaria `@core/db` (`src/db/schema.ts`, no `CHECK lead_agent_state_asked_fields`) e `@core/server` importando `apps/real-estate`. O L18b precisa resolver isso antes de mover (passar `FIELD_LABELS` pela faceta de qualificação ou manter a lista de campos no núcleo), ou a AD-052 precisa registrar a exceção.
-3. **`src/lib/storefront.ts` como reexportação**: coerente; o mapa o classifica como `vertical`.
-4. **Actions do catálogo e da vitrine no app**: coerente com a decisão de design "Actions: camada `app` no L18a", mas a CAT-01 AC1 e a CAT-02 AC1 da spec ainda dizem `vertical` para `src/server/actions/properties.ts` e `src/server/actions/storefront.ts`. A spec deveria ser emendada.
-
-### Qualidade de código
+### Qualidade de código das correções
 
 | Princípio | Status |
 | --- | --- |
-| Código mínimo e mudanças cirúrgicas | ✅ (renomeações separadas dos ajustes, conforme os commits de movimento) |
+| Código mínimo e mudanças cirúrgicas | ✅ (F1 em 21 arquivos, os demais commits só de teste ou docs) |
 | Sem escopo extra | ✅ |
-| Segue os padrões do projeto | ✅ |
-| Checagem ancorada na spec | ⚠️ (QUAL-02 AC2 e APPT-01 AC5 com lacuna de precisão) |
+| Segue os padrões do projeto | ✅ (fábricas por faceta, como `createPrepareFrame`) |
+| Checagem ancorada na spec | ❌ QUAL-02 AC2 (G1) |
 | Testes mapeiam para AC | ✅ |
-| Diretrizes documentadas (`CLAUDE.md`, `AGENTS.md`) | ✅ commits em pt-BR, sem trailer de atribuição em `bf5e646..HEAD` (0 ocorrências) |
-| Padrões silenciosos | ⚠️ `appointments = true` (`src/server/data/index.ts:755`, `:1528`) e `facet = null` (`src/server/documents/repository.ts:480`, `src/server/integration/lgpd.ts:102`, `src/server/integration/context.ts:42`) como padrão de parâmetro: um chamador que esquecer o vertical cai em silêncio no comportamento de um dos verticais. É a origem do M26. |
+| Diretrizes documentadas (`CLAUDE.md`, `AGENTS.md`) | ✅ commits em pt-BR, Conventional Commits, 0 trailer de atribuição em `bf5e646..a04e800` |
+
+**Observações sem efeito no veredito**:
+
+1. `eslint.config.mjs:33-39` percorre as pastas com caminhos relativos ao diretório atual (`existsSync`, `readdirSync`). Rodado de outra pasta, o ESLint carregaria a configuração sem as regras de fronteira das globs `/**`, sem aviso. Com `npx eslint .` na raiz funciona, e o `boundary-eslint.test.ts` roda na raiz.
+2. A entrada `check:lead_agent_state_asked_fields` não é conferida pelo detector genérico de exceção órfã de `scripts/boundary/check.ts` (que trata `market:` e `import:`); quem a prende é `boundary-schema.test.ts:48-54`, como já acontece com as entradas `column:` e `enum:`.
+3. `src/vertical-kit/__tests__/fixture-vertical.test.ts:31` ainda filtra o grafo pela pasta `src/verticals/real-estate/`; o grafo dele é pequeno e o `checkImports` da linha `:33` cobre o resto, mas o filtro pela camada, como no teste de integração, seria mais fiel.
+4. O limite de 8 em `askedFields` (`parsers.ts:88`, `agent-state.ts:30`) continua fixo no núcleo, e não vem de `agentFields.length`. Não há AC sobre isso; vale olhar no L18c.
 
 ### Lacunas que viram tasks de correção (ordem de gravidade)
 
-1. **M26, faceta de segmentos no processamento de documentos (Major)**: nenhum teste prova que `src/kit/document-services.ts` passa `realEstate.documentSegments` ao serviço de processamento; com `facet: null`, a admissão da imobiliária depois de processar um documento passa a usar um segmento só, e 133 testes passam. Correção: em `src/server/documents/__tests__/processing.integration.test.ts`, um caso da imobiliária em que o resultado da admissão depende do segmento (por exemplo, um documento `usado` que cabe no teto de `usado` mas não no de `novo`), afirmando o status `pronto`/`fora_do_agente` e o contexto. Verificar com o mesmo mutante.
-2. **VERT-03, grafo do vertical de teste (Major)**: `src/vertical-kit/__tests__/fixture-vertical.integration.test.ts:122` filtra só `src/verticals/real-estate/` e afirma "sem alcançar o vertical imobiliário", mas o grafo inclui `n8n/verticals/real-estate/src/phase.mjs`. Correção: filtrar pela classificação do mapa (`layer === "vertical"`) e afirmar que o único arquivo alcançado é o da exceção registrada em `transitional.json`, para o teste não mentir e para a exceção falhar quando for removida. Registrar no plano do L18b o item da emenda 2.
-3. **M1, validação da marca sem teste (Minor)**: `defineVertical` valida `brand.name`, `problemUrn`, `tenantHeader` e `alertTag`, mas nenhum teste exercita esses campos vazios. Correção: estender `src/vertical-kit/__tests__/index.test.ts:20` aos quatro campos.
-4. **QUAL-02 AC2, precisão da spec (Minor)**: emendar a spec com o texto escolhido (`Campo '<campo>' inválido.`) ou alinhar o texto ao de `bf5e646`.
-5. **CAT-01/CAT-02, spec desatualizada (Minor)**: emendar a spec para as actions no `app`, como o design.
-6. **`workflow-baseline.ts` (Minor)**: documentar no commit ou no `design.md` a troca de `55027e5` e a dependência de `git show bf5e646`; avaliar no L18b um arquivo de referência versionado em vez do histórico.
-7. **KEEP-03 AC2 (Minor)**: rodar `npm run db:push:test` em janela sem suíte e registrar a saída; o `42P07` é anterior ao lote.
-8. **AGENT-02 AC1 (Minor)**: teste da linha de comando com `--vertical` e `--out`.
+1. **G1, QUAL-02 AC2 sem asserção da ordem (Minor, bloqueante pelo método)**: a emenda da F6 (`spec.md:266`) define que, sem qualificação, o `detail` cita o primeiro campo na ordem de `LEAD_QUALIFICATION_FIELDS` e só depois das validações de `status`, `executiveSummary` e `escalationReason`. O código faz isso (`src/server/integration/parsers.ts:289-292`, depois de `:265-287`), mas `src/server/integration/__tests__/qualification-kit.test.ts:50-64` manda um campo por requisição. Q1 e Q2 sobrevivem. Correção: em `qualification-kit.test.ts`, (a) um PATCH com dois campos fora da ordem do objeto (por exemplo `{ chainedOperation: true, region: "Centro" }`), afirmando `Campo 'region' inválido.`; (b) um PATCH com `status` inválido e um campo de qualificação, afirmando o `detail` de `status` (`Campo 'status' inválido. Valores aceitos: ...`); (c) o mesmo com `executiveSummary: 7`, afirmando `Campo 'executiveSummary' deve ser uma string.`. Verificar com Q1 e Q2.
+2. **Numeração da CAT-02 (Cosmético)**: a emenda em `spec.md:313` ficou entre o AC1 e o AC2 da CAT-02; mover o bloco para depois do AC2.
+3. **KEEP-03 AC2 (Minor, herdada)**: `db:push:test` segue sem prova independente; fica com o registro do executor.
 
 ### Rastreabilidade
 
-Nenhum requisito muda de status neste relatório: com o veredito FAIL, todos ficam em `Implementing` até as correções 1 e 2 e uma nova verificação.
+Nenhum requisito muda de status: com o veredito FAIL, todos ficam em `Implementing` até a correção G1 e uma nova verificação, que pode se limitar a Q1, Q2 e ao gate curto dos arquivos tocados, mais a suíte completa.
+
+---
+
+### Primeira verificação (2026-11-10), em resumo
+
+Veredito FAIL, sobre `bf5e646..e35ce43` (66 commits, 472 arquivos): 30 mutantes, 28 mortos; sobreviveram M26 (faceta de segmentos no processamento, Major) e M1 (validação da marca, Minor). A VERT-03 afirmava um grafo sem o vertical imobiliário que alcançava `n8n/verticals/real-estate/src/phase.mjs` (Major). Suíte com 276 arquivos e 4.291 testes, tsc 0, ESLint 0 e 9, diff 0 e build com 29 páginas. As 8 lacunas viraram as correções F1 a F7 de `tasks.md`, e a falha de Havana da F8 virou a F9. O relatório completo está no histórico do git (`150ed22`).
