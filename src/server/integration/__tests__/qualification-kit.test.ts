@@ -64,6 +64,28 @@ describe("costura de qualificação — QUAL-01 e QUAL-02", () => {
     expect(data.updateLeadFromAgent).not.toHaveBeenCalled();
   });
 
+  it("sem faceta, cita o primeiro campo na ordem de LEAD_QUALIFICATION_FIELDS, não a do corpo", async () => {
+    const response = await patchRequest({ chainedOperation: true, budgetCents: 1, region: "Centro" });
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({
+      type: "urn:acme:problem:payload-invalido", detail: "Campo 'region' inválido.",
+    });
+    expect(data.updateLeadFromAgent).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["status", { status: "inexistente" }, /^Campo 'status' inválido\. Valores aceitos: /],
+    ["executiveSummary", { executiveSummary: 7 }, /^Campo 'executiveSummary' deve ser uma string\.$/],
+    ["escalationReason", { escalationReason: 7 }, /^Campo 'escalationReason' deve ser uma string\.$/],
+  ])("sem faceta, a validação de %s vem antes da recusa do campo de qualificação", async (_, core, detail) => {
+    const response = await patchRequest({ ...core, region: "Centro" });
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body).toMatchObject({ type: "urn:acme:problem:payload-invalido" });
+    expect(body.detail).toMatch(detail);
+    expect(data.updateLeadFromAgent).not.toHaveBeenCalled();
+  });
+
   it("aceita status sem qualificação e omite os dados gravados do JSON", async () => {
     const response = await patchRequest({ status: LEAD_STATUS.goal_reached });
     expect(response.status).toBe(200);
