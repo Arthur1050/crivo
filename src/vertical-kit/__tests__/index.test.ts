@@ -17,8 +17,18 @@ function fixture(): Vertical {
 }
 
 describe("defineVertical — VERT-01", () => {
+  it.each(["name", "problemUrn", "tenantHeader", "alertTag"] as const)("valida a marca em %s, vazia ou ausente", field => {
+    for (const value of [undefined, null, 7, "", " "]) {
+      const vertical = fixture();
+      const brand = { ...vertical.brand, [field]: value } as Vertical["brand"];
+      if (value === undefined) Reflect.deleteProperty(brand, field);
+      expect(Object.hasOwn(brand, field)).toBe(value !== undefined);
+      expect(() => defineVertical({ ...vertical, brand })).toThrow(`Vertical inválido: brand.${field}.`);
+    }
+  });
+
   it.each(["tenantNoun", "singular", "plural"] as const)("valida o nome do tenant em %s", field => {
-    for (const value of [undefined, null, 7, " "]) {
+    for (const value of [undefined, null, 7, "", " "]) {
       const vertical = fixture();
       const { tenantNoun } = vertical.brand;
       const brand = {
