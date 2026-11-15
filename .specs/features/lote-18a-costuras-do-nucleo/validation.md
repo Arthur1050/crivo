@@ -29,14 +29,74 @@
 
 ## Validation: Lote 18a — FAIL
 
-**Data**: 2026-11-15 (reverificação; a primeira foi em 2026-11-10)
+**Data**: 2026-11-15 (reverificação final; a primeira foi em 2026-11-10 e a segunda mais cedo em 2026-11-15)
 **Spec**: `.specs/features/lote-18a-costuras-do-nucleo/spec.md`
-**Faixa de diff**: `bf5e646..a04e800` (76 commits, 474 arquivos); correções do Verifier em `e35ce43..a04e800` (10 commits, 33 arquivos)
+**Faixa de diff**: `bf5e646..b595e81` (79 commits, 474 arquivos); correções do Verifier em `e35ce43..b595e81` (12 commits); desde a reverificação anterior, `52970c2..b595e81` (2 commits, 3 arquivos: `spec.md`, `tasks.md` e `qualification-kit.test.ts`)
 **Verifier**: subagente independente (autor ≠ verificador), sem contexto da execução
 
-Resumo: as duas lacunas bloqueantes de 2026-11-10 estão fechadas, com mutantes refeitos de forma independente (M26 e o grafo da VERT-03 mortos), e as correções F1 a F7 e F9 conferem com o código. A F1 tirou do núcleo os imports de `phase.mjs` sem mudar o SQL do `CHECK`, e os 18 mutantes desenhados para ela e para as F3 a F5 morreram. Os gates passaram: suíte com 278 arquivos e 4.319 testes, 0 falha; tsc 0; ESLint 0 erros e 9 avisos; diff com a base 0; build com 29 de 29 páginas. O veredito continua FAIL por um motivo só, que o método trata como bloqueante: a emenda da F6 escreveu na QUAL-02 AC2 duas regras de ordem que nenhum teste afirma, e os mutantes Q1 e Q2 sobrevivem. A correção é de teste, não de código.
+Resumo: a F10 fechou as duas metades da G1 que a reverificação anterior testou: Q1 e Q2 agora morrem, e as variantes Q2b e Q2c, que põem a recusa entre as validações do núcleo, também. A F11 corrigiu a numeração da CAT-02. Os gates curtos passaram. O veredito continua FAIL por uma lacuna só, ainda dentro da G1: o caso novo da ordem manda o corpo exatamente na ordem inversa de `LEAD_QUALIFICATION_FIELDS`. Com isso, o mutante Q1b, que cita o último campo do corpo, devolve `region` e sobrevive. Q3, que cita o primeiro campo do corpo, morre. A correção é de teste, não de código.
 
-## Reverificação de 2026-11-15
+## Reverificação final de 2026-11-15
+
+Sobre `b595e81`. `git diff 52970c2..HEAD --stat`: só `spec.md` (+1 −1), `tasks.md` (+2) e `src/server/integration/__tests__/qualification-kit.test.ts` (+22). Nenhum arquivo de código mudou.
+
+### G1: QUAL-02 AC2 sem faceta
+
+| Regra da QUAL-02 AC2 (`spec.md:266`) | Evidência `arquivo:linha` | Resultado |
+| --- | --- | --- |
+| 400 `payload-invalido`, `detail` `Campo '<campo>' inválido.` | `qualification-kit.test.ts:51-64` (um campo por requisição, com valor, `null` e `[]`), `:69-72` | ✅ |
+| cita o primeiro campo na ordem de `LEAD_QUALIFICATION_FIELDS` (`src/vertical-kit/index.ts:34-37`: `region`, `purchaseHorizon`, `modality`, `propertyType`, `motivation`, `creditStatus`, `budgetCents`, `chainedOperation`) | `qualification-kit.test.ts:67-74`: corpo `{ chainedOperation, budgetCents, region }` (`:68`) → `detail: "Campo 'region' inválido."` (`:71`) | ⚠️ Parcial. O caso distingue "primeiro da lista" de "último da lista" (Q1) e de "primeiro do corpo" (Q3). Mas o corpo está na ordem inversa da lista, então "último do corpo" também dá `region` (Q1b sobrevive), embora o título do caso diga "não a do corpo" |
+| depois das validações de `status`, `executiveSummary` e `escalationReason` | `qualification-kit.test.ts:76-88`: cada valor inválido junto de `region` (`:81`) → `detail` de `status` (`:77`, `^Campo 'status' inválido\. Valores aceitos: `), `executiveSummary` (`:78`) e `escalationReason` (`:79`, `deve ser uma string.`) | ✅ Q2, Q2b e Q2c mortos |
+| não grava | `:73`, `:87` (`updateLeadFromAgent` não chamado) | ✅ |
+
+As expectativas dos casos novos conferem com o texto da AC2 e com o código (`src/server/integration/parsers.ts:265-292`). Nenhuma asserção antiga mudou: o diff do arquivo só adiciona linhas.
+
+**CAT-02 (F11)**: `spec.md:311-312` lista os itens 1 e 2 em sequência, e a emenda vem logo depois, em `:314`. ✅
+
+### Sensor de discriminação
+
+Mutantes injetados no próprio `src/server/integration/parsers.ts`, a partir de uma cópia guardada no scratchpad (SHA-256 `af3812a6…a9`), por um script que exige ocorrência única de cada trecho. Depois de cada mutante, o arquivo foi restaurado da cópia, e no fim o hash conferiu com o original. Não usei `git stash`. Rodaram `qualification-kit.test.ts`, `parsers.test.ts` e `qualification-contract.test.ts`, com 72 testes. `git status --porcelain` saiu vazio antes do primeiro mutante e depois do último, as duas saídas iguais.
+
+| # | Mutação em `createLeadPatchParser` (`parsers.ts`) | Morto? |
+| --- | --- | --- |
+| Q1 | `:290` `LEAD_QUALIFICATION_FIELDS.findLast(...)`: cita o último campo presente na ordem da lista | ✅ (1 falha: `:67`) |
+| Q1b | `:290` `Object.keys(json).findLast(...)`: cita o último campo de qualificação na ordem do corpo | ❌ Sobreviveu (72 de 72 passam) |
+| Q3 | `:290` `Object.keys(json).find(...)`: cita o primeiro campo de qualificação na ordem do corpo | ✅ (1 falha: `:67`) |
+| Q2 | bloco `:289-292` movido para antes da validação de `status` (`:263`) | ✅ (3 falhas: `:76-88`) |
+| Q2b | bloco movido para depois de `status` e antes de `executiveSummary` (`:276`) | ✅ (2 falhas: `executiveSummary`, `escalationReason`) |
+| Q2c | recusa dentro do laço, entre `executiveSummary` e `escalationReason` (`:280`) | ✅ (1 falha: `escalationReason`) |
+
+**Profundidade**: focada na G1, com 6 mutantes: Q1 e Q2 refeitos e 4 novos.
+**Resultado do sensor**: 5 de 6 mortos. Sobreviveu a Q1b, a regra de ordem da AC2. FAIL.
+
+### Gate
+
+Na árvore real em `b595e81`, em sequência:
+
+- **`npx vitest run src/server/integration/__tests__/qualification-kit.test.ts`**: 1 arquivo, 22 testes, 0 falha.
+- **`npx tsc --noEmit -p .`**: 0 erros, saída 0.
+- **`npx eslint .`**: 0 erros e 9 avisos (linha de base).
+- **`validate_spec.py lote-18a-costuras-do-nucleo`**: 0 erros e 0 avisos.
+- A suíte completa e o build não rodaram nesta rodada, por instrução: a mudança é só um teste sem banco e documentação. Ambos passaram em `a04e800` (278 arquivos, 4.319 testes, 0 falha; 29 de 29 páginas).
+- Trailers: `git log bf5e646..b595e81` não tem `Co-Authored-By` nem "Generated with".
+
+### Lacuna que vira task de correção
+
+1. **G1 residual, QUAL-02 AC2: ordem do corpo inversa à da lista (Minor, bloqueante pelo método)**. O corpo de `qualification-kit.test.ts:68`, `{ chainedOperation, budgetCents, region }`, está na ordem inversa de `LEAD_QUALIFICATION_FIELDS`. Por isso "último do corpo" e "primeiro da lista" dão o mesmo `region`, e Q1b sobrevive.
+   - **Correção** (só de teste): pôr `region` no meio do corpo, por exemplo `{ chainedOperation: true, region: "Centro", budgetCents: 1 }`, mantendo a asserção `Campo 'region' inválido.`. Assim o primeiro do corpo é `chainedOperation`, o último do corpo é `budgetCents`, o último da lista é `chainedOperation`, e só o primeiro da lista dá `region`.
+   - **Verificação**: refazer Q1, Q1b e Q3.
+
+Fora isso, a KEEP-03 AC2 segue como antes (Minor, herdada).
+
+### Rastreabilidade
+
+Nenhum requisito muda de status. Com o veredito FAIL, todos ficam em `Implementing`, e a caixa da F8 continua aberta, embora o gate da suíte completa já tenha passado em `a04e800`.
+
+As observações não bloqueantes da reverificação anterior continuam valendo (seção seguinte, "Observações sem efeito no veredito", itens 1 a 4).
+
+---
+
+## Reverificação de 2026-11-15 (anterior, sobre `a04e800`)
 
 ### Lacunas do FAIL anterior
 
