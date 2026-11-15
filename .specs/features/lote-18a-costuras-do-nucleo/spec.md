@@ -309,9 +309,9 @@ produtos sem herdar `property_kind`.
 **CAT-02 — Vitrine**
 
 1. The system SHALL classificar como `vertical` o código de vitrine de `src/lib/storefront*.ts`, `src/server/storefront/` e `src/server/data/storefront.ts`. A server action `src/server/actions/storefront.ts` fica em `app` e chama a implementação do vertical em `src/verticals/real-estate/storefront/action`.
+2. The system SHALL manter o comportamento da AD-050: card "Em breve" e `saveStorefrontAction` como estão.
 
 > **Emenda (correção do Verifier, 2026-11-15)**: CAT-01 AC1 e CAT-02 AC1 alinhados à decisão "Actions: camada `app` no L18a" do `design.md` (Tech Decisions e Emendas da execução).
-2. The system SHALL manter o comportamento da AD-050: card "Em breve" e `saveStorefrontAction` como estão.
 
 **Independent Test**: Rodar os testes de imóveis, vitrine e isolamento da vitrine depois da mudança, com as asserções de valor inalteradas.
 
