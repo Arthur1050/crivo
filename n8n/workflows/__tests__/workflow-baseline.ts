@@ -1,3 +1,13 @@
+/**
+ * Referência dos workflows anteriores à extração do núcleo (L18a, T39 em `55027e5`).
+ *
+ * Os testes de `n8n/workflows/__tests__/` que usam este módulo comparam o gerado atual com a fonte de
+ * `bf5e646`, lida do histórico por `git show bf5e646:n8n/...`, e não com a fonte atual: assim a referência
+ * não muda junto com o que está sendo testado. O custo é depender do histórico do git: um clone raso
+ * sem `bf5e646` quebra esses testes, e a primeira mudança legítima de workflow também.
+ * A troca por asserções sobre `n8n/generated/` está no backlog do L18c (`.specs/ROADMAP-POS-PILOTO.md`),
+ * já que a prova byte a byte do gerado fica em `scripts/__tests__/boundary-generated.test.ts`.
+ */
 import { execFileSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { ModuleKind, ScriptTarget, transpileModule } from "typescript";

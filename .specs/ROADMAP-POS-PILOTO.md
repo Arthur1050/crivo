@@ -423,8 +423,9 @@ funcionalidades. Decisão de arquitetura na AD-052; decisões de lote em
     `tool-responder-channel`) comparam com a fonte de `bf5e646` por `git show bf5e646:...`
     (`workflow-baseline.ts`) e quebram na próxima mudança legítima de workflow: trocá-los por asserções sobre
     `n8n/generated/`, já que a prova byte a byte do gerado está em `scripts/__tests__/boundary-generated.test.ts`.
-    (2) `scripts/boundary/transitional.json` é a lista de trabalho, com os 4 imports de
-    `n8n/verticals/real-estate/src/phase.mjs` no núcleo entre as entradas `n8n-modules`. (3) O `db:push:test`
+    (2) `scripts/boundary/transitional.json` é a lista de trabalho; os 4 imports de
+    `n8n/verticals/real-estate/src/phase.mjs` no núcleo saíram na correção do Verifier (faceta de qualificação),
+    e a lista de campos da restrição de `asked_fields` ficou como `check:lead_agent_state_asked_fields` (`stored`). (3) O `db:push:test`
     sai com 0 apesar do erro `42P07` em `leads_tenant_id_id_idx`, igual em `bf5e646` (L-068). (4) O único teste que grava
     `tenant_document_context_limits` em tenant do seed é `withGenerousCeiling`, em `src/server/__tests__/actions.test.ts`
     (anterior ao L18a): 3 linhas (`novo`, `usado`, `ambos`) no primeiro tenant, apagadas no `finally`. Causa provável
