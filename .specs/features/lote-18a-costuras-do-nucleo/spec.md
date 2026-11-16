@@ -377,32 +377,32 @@ mercado, porque uma loja não tem `novo` e `usado`.
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| BOUND-01 | P1: Fronteira verificável | Execute | Implementing |
-| BOUND-02 | P1: Fronteira verificável | Execute | Implementing |
-| BOUND-03 | P1: Fronteira verificável | Execute | Implementing |
-| BOUND-04 | P1: Fronteira verificável | Execute | Implementing |
-| KEEP-01 | P1: Comportamento preservado | Execute | Implementing |
-| KEEP-02 | P1: Comportamento preservado | Execute | Implementing |
-| KEEP-03 | P1: Comportamento preservado | Execute | Implementing |
-| KEEP-04 | P1: Comportamento preservado | Execute | Implementing |
-| KEEP-05 | P1: Comportamento preservado | Execute | Implementing |
-| KEEP-06 | P1: Comportamento preservado | Execute | Implementing |
-| VOCAB-01 | P1: Vocabulário em inglês | Execute | Implementing |
-| VOCAB-02 | P1: Vocabulário em inglês | Execute | Implementing |
-| VOCAB-03 | P1: Vocabulário em inglês | Execute | Implementing |
-| ENG-01 | P1: Vocabulário em inglês | Execute | Implementing |
-| VERT-01 | P1: Contrato do vertical | Execute | Implementing |
-| VERT-02 | P1: Contrato do vertical | Execute | Implementing |
-| VERT-03 | P1: Contrato do vertical | Execute | Implementing |
-| ACCESS-01 | P1: Permissões compostas | Execute | Implementing |
-| QUAL-01 | P1: Qualificação atrás de costura | Execute | Implementing |
-| QUAL-02 | P1: Qualificação atrás de costura | Execute | Implementing |
-| APPT-01 | P1: Agendamento opcional | Execute | Implementing |
-| CAT-01 | P1: Catálogo e vitrine no vertical | Execute | Implementing |
-| CAT-02 | P1: Catálogo e vitrine no vertical | Execute | Implementing |
-| AGENT-01 | P1: Agente genérico | Execute | Implementing |
-| AGENT-02 | P1: Agente genérico | Execute | Implementing |
-| SEG-01 | P2: Segmentos de documento | Execute | Implementing |
+| BOUND-01 | P1: Fronteira verificável | Verify | Verified |
+| BOUND-02 | P1: Fronteira verificável | Verify | Verified |
+| BOUND-03 | P1: Fronteira verificável | Verify | Verified |
+| BOUND-04 | P1: Fronteira verificável | Verify | Verified |
+| KEEP-01 | P1: Comportamento preservado | Verify | Verified |
+| KEEP-02 | P1: Comportamento preservado | Verify | Verified |
+| KEEP-03 | P1: Comportamento preservado | Verify | Verified |
+| KEEP-04 | P1: Comportamento preservado | Verify | Verified |
+| KEEP-05 | P1: Comportamento preservado | Verify | Verified |
+| KEEP-06 | P1: Comportamento preservado | Verify | Verified |
+| VOCAB-01 | P1: Vocabulário em inglês | Verify | Verified |
+| VOCAB-02 | P1: Vocabulário em inglês | Verify | Verified |
+| VOCAB-03 | P1: Vocabulário em inglês | Verify | Verified |
+| ENG-01 | P1: Vocabulário em inglês | Verify | Verified |
+| VERT-01 | P1: Contrato do vertical | Verify | Verified |
+| VERT-02 | P1: Contrato do vertical | Verify | Verified |
+| VERT-03 | P1: Contrato do vertical | Verify | Verified |
+| ACCESS-01 | P1: Permissões compostas | Verify | Verified |
+| QUAL-01 | P1: Qualificação atrás de costura | Verify | Verified |
+| QUAL-02 | P1: Qualificação atrás de costura | Verify | Verified |
+| APPT-01 | P1: Agendamento opcional | Verify | Verified |
+| CAT-01 | P1: Catálogo e vitrine no vertical | Verify | Verified |
+| CAT-02 | P1: Catálogo e vitrine no vertical | Verify | Verified |
+| AGENT-01 | P1: Agente genérico | Verify | Verified |
+| AGENT-02 | P1: Agente genérico | Verify | Verified |
+| SEG-01 | P2: Segmentos de documento | Verify | Verified |
 
 **Andamento em 2026-11-06:** T19–T23 concluídas; a rastreabilidade de BOUND-03, VERT-02 e dos demais requisitos executados permanece em `Implementing`, aguardando a verificação independente prevista no lote. T23: `bb37b0d`, com 265 arquivos/4.216 testes verdes; ajuste de vocabulário de ator: `99a7e44`, com gate curto de 5 arquivos/163 testes verdes.
 
@@ -410,15 +410,17 @@ mercado, porque uma loja não tem `novo` e `usado`.
 
 **Andamento em 2026-11-10 (T3, T44, T45):** capturas da base e do fim sem diferença visível (`validation.md`); suíte completa com 276 arquivos e 4.291 testes, 0 falhas; tsc com 0 erros; ESLint com 0 erros e 9 avisos; OpenAPI e gerados iguais a `bf5e646`; `next build` contra o banco de teste não rodou, por falta de caminho comprovado. KEEP-04 e KEEP-06 passam a `Implementing`; todos os requisitos aguardam o Verifier.
 
+**Fechamento em 2026-11-16:** Verifier PASS em `75d218c` (`validation.md`, 4ª checagem autorizada pelo usuário além do limite de 3). Os 26 requisitos passam a `Verified`. KEEP-03 AC2 fica como Minor herdada: o `db:push:test` não teve prova independente, porque derruba o schema `vitrine` dos bancos de teste.
+
 **Coverage:** 26 total, 26 mapped to tasks, 0 unmapped
 
 ---
 
 ## Success Criteria
 
-- [ ] O teste de fronteira e o ESLint passam, e a lista de transição só traz itens do L18c.
-- [ ] O vertical de teste passa pelas peças de lead, conversa, mensagem, documento, permissão e LGPD no banco de teste.
-- [ ] `openapi.yaml` sem diferença, `n8n/generated/` sem diferença e DDL igual ao de `bf5e646`.
-- [ ] `npm test` sem falha, com pelo menos 4041 testes, e nenhuma asserção de valor gravado ou do fio alterada.
-- [ ] Capturas de tela na base e no fim do lote mostram as 8 páginas iguais.
-- [ ] Verifier independente com veredito PASS.
+- [x] O teste de fronteira e o ESLint passam, e a lista de transição só traz itens do L18c.
+- [x] O vertical de teste passa pelas peças de lead, conversa, mensagem, documento, permissão e LGPD no banco de teste.
+- [x] `openapi.yaml` sem diferença, `n8n/generated/` sem diferença e DDL igual ao de `bf5e646`.
+- [x] `npm test` sem falha, com pelo menos 4041 testes, e nenhuma asserção de valor gravado ou do fio alterada.
+- [x] Capturas de tela na base e no fim do lote mostram as 8 páginas iguais.
+- [x] Verifier independente com veredito PASS.

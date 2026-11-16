@@ -1,5 +1,7 @@
 # Lote 18a — Costuras do núcleo — Validação
 
+> Desde o fechamento (2026-11-16, AD-029), `tasks.md` e `EXECUTE-PROMPT.md` estão em [`../../archive/lote-18a-costuras-do-nucleo/`](../../archive/lote-18a-costuras-do-nucleo/); as citações de `tasks.md` abaixo se referem a esse arquivo.
+
 ## Capturas da base e do fim (T3, T44 — KEEP-05)
 
 **Data**: 2026-11-10. **Base**: `bf5e646`, num worktree descartável. **Fim**: `lote-18a` em `2154adc` (código igual ao de `0ad44fb`, a T43). As duas subiram com `npm run preview:test` na porta 3210, contra o mesmo banco de teste base, em sequência (a base foi derrubada antes de o fim subir), sem suíte nem script de fixture entre elas. Mesma janela do Chrome (1440 × 900, área útil de 1384 × 849) e mesmas escalas por captura.

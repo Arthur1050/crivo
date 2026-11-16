@@ -431,6 +431,12 @@ funcionalidades. Decisão de arquitetura na AD-052; decisões de lote em
     (anterior ao L18a): 3 linhas (`novo`, `usado`, `ambos`) no primeiro tenant, apagadas no `finally`. Causa provável
     das sobras que já derrubaram o seed: o teste estoura o tempo (falha conhecida com o banco acumulado) e o
     `finally` não chega a rodar. Correção candidata: limpeza também no `afterAll` do arquivo.
+    (5) Observações não bloqueantes do Verifier (`features/lote-18a-costuras-do-nucleo/validation.md`):
+    `eslint.config.mjs` resolve as pastas das regras de fronteira a partir do diretório atual, e o ESLint rodado de
+    outra pasta perde essas regras sem aviso; a entrada `check:` não passa pelo detector de exceção órfã (quem a segura
+    é `boundary-schema.test.ts`); `src/vertical-kit/__tests__/fixture-vertical.test.ts:31` ainda filtra o grafo por
+    prefixo de pasta, e não pela camada do `map.json` (L-108); o limite de 8 itens de `askedFields` continua fixo
+    no núcleo. (6) KEEP-03 AC2 sem prova independente: o `db:push:test` derruba o schema `vitrine` dos bancos de teste.
 
 ## L19 — App de lojas de materiais
 
