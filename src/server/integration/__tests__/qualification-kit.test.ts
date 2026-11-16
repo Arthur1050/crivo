@@ -65,7 +65,7 @@ describe("costura de qualificação — QUAL-01 e QUAL-02", () => {
   });
 
   it("sem faceta, cita o primeiro campo na ordem de LEAD_QUALIFICATION_FIELDS, não a do corpo", async () => {
-    const response = await patchRequest({ chainedOperation: true, budgetCents: 1, region: "Centro" });
+    const response = await patchRequest({ chainedOperation: true, region: "Centro", budgetCents: 1 });
     expect(response.status).toBe(400);
     expect(await response.json()).toMatchObject({
       type: "urn:acme:problem:payload-invalido", detail: "Campo 'region' inválido.",
