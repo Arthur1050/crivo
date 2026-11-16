@@ -27,16 +27,61 @@
 
 ---
 
-## Validation: Lote 18a — FAIL
+## Validation: Lote 18a — PASS
 
-**Data**: 2026-11-15 (reverificação final; a primeira foi em 2026-11-10 e a segunda mais cedo em 2026-11-15)
+**Data**: 2026-11-16 (checagem da G1, a 4ª, autorizada pelo usuário acima do limite de 3 iterações; a primeira verificação foi em 2026-11-10, e as duas reverificações em 2026-11-15)
 **Spec**: `.specs/features/lote-18a-costuras-do-nucleo/spec.md`
-**Faixa de diff**: `bf5e646..b595e81` (79 commits, 474 arquivos); correções do Verifier em `e35ce43..b595e81` (12 commits); desde a reverificação anterior, `52970c2..b595e81` (2 commits, 3 arquivos: `spec.md`, `tasks.md` e `qualification-kit.test.ts`)
+**Faixa de diff**: `bf5e646..75d218c` (81 commits, 474 arquivos); correções do Verifier em `e35ce43..75d218c`; desde a reverificação final, `025accf..75d218c` (1 commit, 2 arquivos: `tasks.md` e `qualification-kit.test.ts`)
 **Verifier**: subagente independente (autor ≠ verificador), sem contexto da execução
 
-Resumo: a F10 fechou as duas metades da G1 que a reverificação anterior testou: Q1 e Q2 agora morrem, e as variantes Q2b e Q2c, que põem a recusa entre as validações do núcleo, também. A F11 corrigiu a numeração da CAT-02. Os gates curtos passaram. O veredito continua FAIL por uma lacuna só, ainda dentro da G1: o caso novo da ordem manda o corpo exatamente na ordem inversa de `LEAD_QUALIFICATION_FIELDS`. Com isso, o mutante Q1b, que cita o último campo do corpo, devolve `region` e sobrevive. Q3, que cita o primeiro campo do corpo, morre. A correção é de teste, não de código.
+Resumo: a F12 tirou o corpo do caso sem faceta da ordem inversa de `LEAD_QUALIFICATION_FIELDS`. Com `region` no meio do corpo, os quatro mutantes da regra de ordem e de precedência da QUAL-02 AC2 morrem, inclusive o Q1b, que sobrevivia. Era a única lacuna bloqueante. Os gates curtos passaram, e a suíte completa e o build já tinham passado em `a04e800`, sem mudança de código desde então. Seguem a KEEP-03 AC2 como Minor herdada e as observações não bloqueantes da reverificação de `a04e800`.
 
-## Reverificação final de 2026-11-15
+## Checagem da G1 de 2026-11-16
+
+Sobre `75d218c`. `git diff 025accf..HEAD --stat`: só `.specs/features/lote-18a-costuras-do-nucleo/tasks.md` (+1) e `src/server/integration/__tests__/qualification-kit.test.ts` (+1 −1). Nenhum arquivo de código mudou.
+
+### G1: QUAL-02 AC2 sem faceta
+
+| Regra da QUAL-02 AC2 (`spec.md:266`) | Evidência `arquivo:linha` | Resultado |
+| --- | --- | --- |
+| cita o primeiro campo na ordem de `LEAD_QUALIFICATION_FIELDS` (`src/vertical-kit/index.ts:34-37`) | `src/server/integration/__tests__/qualification-kit.test.ts:67-74`: corpo `{ chainedOperation, region, budgetCents }` (`:68`) → `detail: "Campo 'region' inválido."` (`:71`), sem gravar (`:73`) | ✅ Primeiro do corpo e último da lista dão `chainedOperation`, último do corpo dá `budgetCents`; só o primeiro da lista dá `region` |
+| depois das validações de `status`, `executiveSummary` e `escalationReason` | `qualification-kit.test.ts:76-88`, sem mudança desde `025accf` | ✅ |
+| código | `src/server/integration/parsers.ts:289-292`, depois de `:265` (`status`) e `:280` (`executiveSummary`, `escalationReason`) | ✅ |
+
+A única linha alterada do teste é o corpo (`:68`). A asserção (`:71`) e o título do caso ficaram iguais; nenhuma asserção foi removida ou enfraquecida.
+
+### Sensor de discriminação
+
+Mutantes injetados em `src/server/integration/parsers.ts:290` (Q2 no topo do parser, antes de `:265`), a partir de uma cópia no scratchpad (SHA-256 `af3812a6…a9`), por um script que exige ocorrência única do trecho. Depois de cada mutante, o arquivo foi restaurado da cópia e o hash conferiu com o original. Não usei `git stash`. Rodaram `qualification-kit.test.ts` e `parsers.test.ts`, com 70 testes. `git status --porcelain` saiu vazio antes do primeiro mutante e depois do último, as duas saídas iguais.
+
+| # | Mutação em `createLeadPatchParser` | Morto? |
+| --- | --- | --- |
+| Q1 | `:290` `[...LEAD_QUALIFICATION_FIELDS].reverse().find(...)`: cita o último campo presente na ordem da lista | ✅ (1 falha: `qualification-kit.test.ts:67`) |
+| Q1b | `:290` campos de qualificação de `Object.keys(json)`, `.pop()`: cita o último na ordem do corpo | ✅ (1 falha: `:67`) |
+| Q3 | `:290` campos de qualificação de `Object.keys(json)`, `[0]`: cita o primeiro na ordem do corpo | ✅ (1 falha: `:67`) |
+| Q2 | recusa sem faceta inserida antes da validação de `status` (`:265`) | ✅ (3 falhas: `:76-88`, os casos de `status`, `executiveSummary` e `escalationReason`) |
+
+**Resultado do sensor**: 4 de 4 mortos.
+
+### Gate
+
+Na árvore real em `75d218c`, em sequência:
+
+- **`npx vitest run src/server/integration/__tests__/qualification-kit.test.ts src/server/integration/__tests__/parsers.test.ts`**: 2 arquivos, 70 testes, 0 falha.
+- **`npx tsc --noEmit -p .`**: 0 erros.
+- **`npx eslint src/server/integration`**: 0 erros e 1 aviso (diretiva `eslint-disable` sem uso em `src/server/integration/__tests__/route-instrumentation.test.ts:60`; o arquivo é igual ao de `bf5e646`, então o aviso é da linha de base).
+- A suíte completa e o build não rodaram, por instrução: desde `a04e800`, onde passaram (278 arquivos, 4.319 testes, 0 falha; 29 de 29 páginas), só mudaram testes sem banco e documentação.
+- Trailers: `git log bf5e646..75d218c` não tem `Co-Authored-By` nem "Generated with".
+
+### Rastreabilidade
+
+Com o veredito PASS, os requisitos do lote podem passar de `Implementing` para verificados na tabela da spec (`spec.md:380` em diante); esta checagem não altera a spec. A F8 foi marcada em `tasks.md`: o gate da suíte completa passou em `a04e800`, e a G1 que a mantinha aberta fechou aqui.
+
+**Não bloqueantes, mantidos**: KEEP-03 AC2 (Minor, herdada): `db:push:test` segue sem prova independente, com o registro do executor. As observações sem efeito no veredito da reverificação de `a04e800` (itens 1 a 4) continuam valendo.
+
+---
+
+## Reverificação final de 2026-11-15 (FAIL, sobre `b595e81`)
 
 Sobre `b595e81`. `git diff 52970c2..HEAD --stat`: só `spec.md` (+1 −1), `tasks.md` (+2) e `src/server/integration/__tests__/qualification-kit.test.ts` (+22). Nenhum arquivo de código mudou.
 
