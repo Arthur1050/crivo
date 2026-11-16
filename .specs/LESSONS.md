@@ -542,6 +542,36 @@ Corroborated across multiple features. Safe to apply as guidance.
 - evidence: src/server/__tests__/actions.test.ts:1436 (spec) (+1 more)
 - last seen: 2026-11-02T12:17:52Z
 
+### L-103 - Quando o app injeta no núcleo uma dependência opcional cujo valor ausente (null) é um caminho válido, como a faceta de um vertical, escreva pelo ponto de montagem do app (src/kit/) um teste que falhe se ele passar null, porque o ramo sem a dependência deixa a suíte verde e testar só a peça não prova a ligação.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `src/kit` · harmful: 0
+- features: lote-18a-costuras-do-nucleo
+- evidence: M26 (src/kit/document-services.ts) (src/kit) (+1 more)
+- last seen: 2026-11-16T03:55:25Z
+
+### L-104 - Para provar qual item uma regra de escolha cita entre vários (o primeiro campo inválido na ordem canônica, não na do corpo), mande os itens juntos na mesma entrada, numa ordem em que o primeiro e o último da entrada e o último da ordem canônica caiam em outro item, porque um campo por requisição ou a ordem inversa da canônica deixam vivas as regras erradas.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `tests` · harmful: 0
+- features: lote-18a-costuras-do-nucleo
+- evidence: Q1b (qualification-kit.test.ts:68) (tests) (+1 more)
+- last seen: 2026-11-16T03:55:25Z
+
+### L-106 - Um AC que manda manter o comportamento 'como hoje' ou 'como na base' num caminho que a base não tinha (um vertical sem a faceta, um campo antes ignorado) precisa escrever o resultado literal esperado (status, texto da mensagem, ordem e precedência), porque não há comportamento atual a copiar e o executor escolhe sozinho.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `specs` · harmful: 0
+- features: lote-18a-costuras-do-nucleo
+- evidence: QUAL-01.4 e QUAL-02 AC2 (spec.md) (specs) (+1 more)
+- last seen: 2026-11-16T03:55:25Z
+
+### L-107 - Teste de fuso não deve depender de uma regra de horário de verão futura, porque a tzdata muda sem mudança de código (a 2026f manteve Cuba em -04 em novembro de 2026); use uma transição já ocorrida com a mesma forma.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `tests` · harmful: 0
+- features: lote-18a-costuras-do-nucleo
+- evidence: schema-whatsapp-usage.test.ts T11 (Havana, tzdata 2026f) (tests) (+1 more)
+- last seen: 2026-11-16T03:55:25Z
+
+### L-108 - Teste ou regra de fronteira entre camadas deve classificar cada arquivo pela fonte única das camadas (o map.json, via classifyFile), não por prefixo de pasta nem glob copiado, porque a mesma camada vive em mais de uma pasta (src/verticals/<id>/ e n8n/verticals/<id>/) e imports por caminho relativo escapam do filtro.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `scripts/boundary` · harmful: 0
+- features: lote-18a-costuras-do-nucleo
+- evidence: VERT-03 (fixture-vertical.integration.test.ts) (scripts/boundary) (+1 more)
+- last seen: 2026-11-16T03:55:25Z
+
 ## Candidates (under observation - do NOT load as guidance yet)
 
 Seen once or not yet corroborated. Tracked, not trusted.

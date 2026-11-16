@@ -4,7 +4,7 @@
   "window_days": 45,
   "quarantine_threshold": 2,
   "prune_requires_confirmation": true,
-  "next_id": 103,
+  "next_id": 109,
   "lessons": [
     {
       "id": "L-001",
@@ -1679,6 +1679,101 @@
       ],
       "created": "2026-11-02T12:10:38Z",
       "last_seen": "2026-11-02T12:17:52Z"
+    },
+    {
+      "id": "L-103",
+      "key": "surviving_mutant::quando o app injeta no nucleo uma dependencia opcional cujo valor ausente null e um caminho valido como a faceta de um vertical escreva pelo ponto de montagem do app src kit um teste que falhe se ele passar null porque o ramo sem a dependencia deixa a suite verde e testar so a peca nao prova a ligacao",
+      "text": "Quando o app injeta no núcleo uma dependência opcional cujo valor ausente (null) é um caminho válido, como a faceta de um vertical, escreva pelo ponto de montagem do app (src/kit/) um teste que falhe se ele passar null, porque o ramo sem a dependência deixa a suíte verde e testar só a peça não prova a ligação.",
+      "signal": "surviving_mutant",
+      "scope": "src/kit",
+      "status": "confirmed",
+      "features": [
+        "lote-18a-costuras-do-nucleo"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "M26 (src/kit/document-services.ts) (src/kit)",
+        "Revisao de fechamento L18a (AD-045, 2026-11-16): decisao confirmar; M26 sobreviveu em 2026-11-10 e N8, N9 e M26b tem a mesma forma; src/kit/document-services.ts:9 passa facet: realEstate.documentSegments e processing.integration.test.ts:100-121 mata o M26. Nao duplica a L-026: la o mutante remove a chamada, aqui a chamada fica e o argumento vira null, que e valido para vertical sem faceta."
+      ],
+      "created": "2026-11-16T03:53:08Z",
+      "last_seen": "2026-11-16T03:55:25Z"
+    },
+    {
+      "id": "L-104",
+      "key": "surviving_mutant::para provar qual item uma regra de escolha cita entre varios o primeiro campo invalido na ordem canonica nao na do corpo mande os itens juntos na mesma entrada numa ordem em que o primeiro e o ultimo da entrada e o ultimo da ordem canonica caiam em outro item porque um campo por requisicao ou a ordem inversa da canonica deixam vivas as regras erradas",
+      "text": "Para provar qual item uma regra de escolha cita entre vários (o primeiro campo inválido na ordem canônica, não na do corpo), mande os itens juntos na mesma entrada, numa ordem em que o primeiro e o último da entrada e o último da ordem canônica caiam em outro item, porque um campo por requisição ou a ordem inversa da canônica deixam vivas as regras erradas.",
+      "signal": "surviving_mutant",
+      "scope": "tests",
+      "status": "confirmed",
+      "features": [
+        "lote-18a-costuras-do-nucleo"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "Q1b (qualification-kit.test.ts:68) (tests)",
+        "Revisao de fechamento L18a (AD-045, 2026-11-16): decisao confirmar; Q1 sobreviveu com um campo por requisicao (a04e800) e Q1b com o corpo na ordem inversa (b595e81), custando a 4a verificacao; qualification-kit.test.ts:68 com region no meio mata Q1, Q1b e Q3. Absorve a parte de escolha entre varios campos da L-105. Irma da L-078 e da L-053, sem duplica-las."
+      ],
+      "created": "2026-11-16T03:53:08Z",
+      "last_seen": "2026-11-16T03:55:25Z"
+    },
+    {
+      "id": "L-106",
+      "key": "spec_precision_gap::um ac que manda manter o comportamento como hoje ou como na base num caminho que a base nao tinha um vertical sem a faceta um campo antes ignorado precisa escrever o resultado literal esperado status texto da mensagem ordem e precedencia porque nao ha comportamento atual a copiar e o executor escolhe sozinho",
+      "text": "Um AC que manda manter o comportamento 'como hoje' ou 'como na base' num caminho que a base não tinha (um vertical sem a faceta, um campo antes ignorado) precisa escrever o resultado literal esperado (status, texto da mensagem, ordem e precedência), porque não há comportamento atual a copiar e o executor escolhe sozinho.",
+      "signal": "spec_precision_gap",
+      "scope": "specs",
+      "status": "confirmed",
+      "features": [
+        "lote-18a-costuras-do-nucleo"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "QUAL-01.4 e QUAL-02 AC2 (spec.md) (specs)",
+        "Revisao de fechamento L18a (AD-045, 2026-11-16): decisao confirmar; a emenda de spec.md:268 registra que QUAL-02 AC2 pedia o problema que parseLeadPatch devolve hoje, mas em bf5e646 nao havia vertical sem qualificacao. Nao e a L-042 (tarefa para comportamento preexistente) nem a L-102 (casos positivos de um efeito proibido)."
+      ],
+      "created": "2026-11-16T03:53:09Z",
+      "last_seen": "2026-11-16T03:55:25Z"
+    },
+    {
+      "id": "L-107",
+      "key": "gate_fail::teste de fuso nao deve depender de uma regra de horario de verao futura porque a tzdata muda sem mudanca de codigo a 2026f manteve cuba em 04 em novembro de 2026 use uma transicao ja ocorrida com a mesma forma",
+      "text": "Teste de fuso não deve depender de uma regra de horário de verão futura, porque a tzdata muda sem mudança de código (a 2026f manteve Cuba em -04 em novembro de 2026); use uma transição já ocorrida com a mesma forma.",
+      "signal": "gate_fail",
+      "scope": "tests",
+      "status": "confirmed",
+      "features": [
+        "lote-18a-costuras-do-nucleo"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "schema-whatsapp-usage.test.ts T11 (Havana, tzdata 2026f) (tests)",
+        "Revisao de fechamento L18a (AD-045, 2026-11-16): decisao confirmar; src/db/__tests__/schema-whatsapp-usage.test.ts:94-109 usa 2020 com o comentario da tzdata 2026f e as mesmas 6 assercoes (F9). Nao e a L-096 (TZ do processo) nem a L-100 (formatadores em dias diferentes)."
+      ],
+      "created": "2026-11-16T03:53:09Z",
+      "last_seen": "2026-11-16T03:55:25Z"
+    },
+    {
+      "id": "L-108",
+      "key": "surviving_mutant::teste ou regra de fronteira entre camadas deve classificar cada arquivo pela fonte unica das camadas o map json via classifyfile nao por prefixo de pasta nem glob copiado porque a mesma camada vive em mais de uma pasta src verticals id e n8n verticals id e imports por caminho relativo escapam do filtro",
+      "text": "Teste ou regra de fronteira entre camadas deve classificar cada arquivo pela fonte única das camadas (o map.json, via classifyFile), não por prefixo de pasta nem glob copiado, porque a mesma camada vive em mais de uma pasta (src/verticals/<id>/ e n8n/verticals/<id>/) e imports por caminho relativo escapam do filtro.",
+      "signal": "surviving_mutant",
+      "scope": "scripts/boundary",
+      "status": "confirmed",
+      "features": [
+        "lote-18a-costuras-do-nucleo"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "VERT-03 (fixture-vertical.integration.test.ts) (scripts/boundary)",
+        "Revisao de fechamento L18a (AD-045, 2026-11-16): decisao confirmar; VERT-03 filtrava por src/verticals/real-estate/ e deixava passar n8n/verticals/real-estate/src/phase.mjs (F3), e o E1 mostrou o mesmo com caminhos relativos no eslint.config.mjs; fixture-vertical.integration.test.ts:125 agora usa classifyFile (scripts/boundary/check.ts:231). Ainda vale: fixture-vertical.test.ts:31 filtra por prefixo (observacao 3 do Verifier)."
+      ],
+      "created": "2026-11-16T03:53:09Z",
+      "last_seen": "2026-11-16T03:55:25Z"
     }
   ]
 }
