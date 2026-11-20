@@ -1,5 +1,7 @@
 "use client";
 
+import { LEAD_STATUS } from "../../lib/vocabulary";
+import { MODALITY } from "../../verticals/real-estate/vocabulary";
 import { Avatar } from "@astryxdesign/core/Avatar";
 import { Badge } from "@astryxdesign/core/Badge";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
@@ -8,34 +10,36 @@ import { Table, pixel, proportional } from "@astryxdesign/core/Table";
 import type { TableColumn } from "@astryxdesign/core/Table";
 import { Text } from "@astryxdesign/core/Text";
 import { Timestamp } from "@astryxdesign/core/Timestamp";
-import type { LeadStatus, Modality } from "@/src/server/data";
+import type { Lead, LeadStatus } from "@/src/server/data";
 
 const FALLBACK = "—";
 
+type Modality = NonNullable<Lead["modality"]>;
+
 const MODALITY_LABELS: Record<Modality, string> = {
-  novo: "Novo",
-  usado: "Usado",
-  ambos: "Ambos",
+  [MODALITY.new]: "Novo",
+  [MODALITY.used]: "Usado",
+  [MODALITY.both]: "Ambos",
 };
 
 const MODALITY_BADGE_VARIANT: Record<Modality, "blue" | "purple" | "teal"> = {
-  novo: "blue",
-  usado: "purple",
-  ambos: "teal",
+  [MODALITY.new]: "blue",
+  [MODALITY.used]: "purple",
+  [MODALITY.both]: "teal",
 };
 
 // Mesmas cores semânticas das colunas do Kanban (design.md § R1/R2), para que
 // um status signifique visualmente a mesma coisa nas duas telas.
 const STATUS_LABELS: Record<LeadStatus, string> = {
-  em_qualificacao: "Em qualificação",
-  qualificado_agendado: "Qualificado e agendado",
-  escalado_humano: "Escalado para humano",
+  [LEAD_STATUS.engaged]: "Em qualificação",
+  [LEAD_STATUS.goal_reached]: "Qualificado e agendado",
+  [LEAD_STATUS.escalated]: "Escalado para humano",
 };
 
 const STATUS_BADGE_VARIANT: Record<LeadStatus, "warning" | "green" | "red"> = {
-  em_qualificacao: "warning",
-  qualificado_agendado: "green",
-  escalado_humano: "red",
+  [LEAD_STATUS.engaged]: "warning",
+  [LEAD_STATUS.goal_reached]: "green",
+  [LEAD_STATUS.escalated]: "red",
 };
 
 /**
@@ -47,9 +51,9 @@ export interface RecentLeadRow extends Record<string, unknown> {
   id: string;
   name: string;
   budget: string | null;
-  modality: Modality | null;
+  modality: Lead["modality"];
   status: LeadStatus;
-  brokerName: string | null;
+  assigneeName: string | null;
   firstContactAt: string;
 }
 
@@ -109,14 +113,14 @@ const COLUMNS: TableColumn<RecentLeadRow>[] = [
     ),
   },
   {
-    key: "brokerName",
+    key: "assigneeName",
     header: "Corretor",
     width: proportional(1),
     renderCell: (row) =>
-      row.brokerName ? (
+      row.assigneeName ? (
         <HStack gap={2} vAlign="center">
-          <Avatar name={row.brokerName} size="xsm" />
-          <Text type="body">{row.brokerName}</Text>
+          <Avatar name={row.assigneeName} size="xsm" />
+          <Text type="body">{row.assigneeName}</Text>
         </HStack>
       ) : (
         <Fallback />

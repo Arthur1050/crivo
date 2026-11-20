@@ -47,7 +47,7 @@ describe("e2e smoke — criar lead → qualificar → mensagens → escalar (2 t
         id: tenantId,
         name: `Tenant Smoke ${label} ${tenantId}`,
         agentName: `Agente ${label}`,
-        supportedModality: "ambos",
+        supportedSegment: "ambos",
         slug: `fixture-${tenantId}`,
       });
 

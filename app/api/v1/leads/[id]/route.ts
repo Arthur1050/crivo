@@ -1,30 +1,23 @@
-import { findLead, patchLead, serializeLead } from "../../../../../src/server/integration/leads";
-import {
-  MAX_BODY_BYTES,
-  parseLeadPatch,
-} from "../../../../../src/server/integration/parsers";
-import {
-  methodNotAllowed,
-  problem,
-  type ProblemCode,
-} from "../../../../../src/server/integration/problem";
-import { withIntegrationRoute } from "../../../../../src/server/integration/route";
+import { applyLeadPatch, methodNotAllowed, parseLeadPatch, problem, serializeLead, type ProblemCode, withIntegrationRoute } from "../../../../../src/kit/integration";
+import { PROBLEM_CODE } from "../../../../../src/lib/vocabulary";
+import { findLead } from "../../../../../src/server/integration/leads";
+import { MAX_BODY_BYTES } from "../../../../../src/server/integration/parsers";
 
-/** Mapeia os códigos que `patchLead` pode devolver para o status HTTP do
+/** Mapeia os códigos que `applyLeadPatch` pode devolver para o status HTTP do
  * contrato (design.md — Error Handling Strategy). */
 function statusForCode(code: ProblemCode): number {
   switch (code) {
-    case "recurso-nao-encontrado":
+    case PROBLEM_CODE.not_found:
       return 404;
-    case "transicao-invalida":
-    case "lead-travado-por-humano":
-    case "motivo-escalonamento-obrigatorio":
+    case PROBLEM_CODE.invalid_transition:
+    case PROBLEM_CODE.lead_locked_by_human:
+    case PROBLEM_CODE.escalation_reason_required:
     // lote-8 — ATRIB-02: as duas recusas de agendamento são conflito com o
     // estado atual da agenda, a mesma família das demais 409 desta rota.
-    case "sem-corretor-disponivel":
-    case "conflito-de-agenda":
+    case PROBLEM_CODE.no_assignee_available:
+    case PROBLEM_CODE.appointment_conflict:
     // lote-14 — SILENCIO-01 AC9: conflito com a condução humana em curso.
-    case "lead-conduzido-por-humano":
+    case PROBLEM_CODE.lead_under_human_control:
       return 409;
     default:
       return 400;
@@ -33,19 +26,19 @@ function statusForCode(code: ProblemCode): number {
 
 function detailForCode(code: ProblemCode): string | undefined {
   switch (code) {
-    case "recurso-nao-encontrado":
+    case PROBLEM_CODE.not_found:
       return "Lead não encontrado.";
-    case "transicao-invalida":
+    case PROBLEM_CODE.invalid_transition:
       return "Transição de status não permitida a partir do status atual.";
-    case "lead-travado-por-humano":
+    case PROBLEM_CODE.lead_locked_by_human:
       return "Um humano já alterou o status deste lead pelo Kanban; mudanças de status via API estão bloqueadas.";
-    case "motivo-escalonamento-obrigatorio":
+    case PROBLEM_CODE.escalation_reason_required:
       return "Escalar para humano exige o campo 'escalationReason' preenchido e não-vazio.";
-    case "sem-corretor-disponivel":
+    case PROBLEM_CODE.no_assignee_available:
       return "Nenhum corretor com janela de trabalho cobrindo o horário solicitado. Ofereça outro horário ao lead.";
-    case "conflito-de-agenda":
+    case PROBLEM_CODE.appointment_conflict:
       return "O corretor escolhido acabou de receber outra reunião neste mesmo horário. Ofereça outro horário ao lead.";
-    case "lead-conduzido-por-humano":
+    case PROBLEM_CODE.lead_under_human_control:
       return "Um humano conduz esta conversa pelo CRM; status e reunião não podem ser alterados pela API até a devolução ao agente.";
     default:
       return undefined;
@@ -56,9 +49,9 @@ function detailForCode(code: ProblemCode): string | undefined {
  * `PATCH /api/v1/leads/{id}` — upsert parcial de qualificação + máquina de
  * estados (design.md — Route handlers). Handler fino: `withIntegrationRoute`
  * já autenticou e já agenda o registro de qualquer recusa — este corpo só
- * lê/valida o corpo → delega a `patchLead` → mapeia falha de serviço para
+ * lê/valida o corpo → delega a `applyLeadPatch` → mapeia falha de serviço para
  * problem+json ou serializa o lead atualizado. Um lead de outro tenant nunca
- * chega a existir do ponto de vista de `patchLead` (tenant-scoped na DAL) —
+ * chega a existir do ponto de vista de `applyLeadPatch` (tenant-scoped na DAL) —
  * vira `recurso-nao-encontrado` → 404, nunca 403 (INT-01 AC3).
  */
 export const PATCH = withIntegrationRoute<{ params: Promise<{ id: string }> }>(
@@ -69,7 +62,7 @@ export const PATCH = withIntegrationRoute<{ params: Promise<{ id: string }> }>(
     if (Buffer.byteLength(bodyText, "utf8") > MAX_BODY_BYTES) {
       return problem(
         413,
-        "corpo-grande-demais",
+        PROBLEM_CODE.body_too_large,
         `Corpo da requisição excede o limite de ${MAX_BODY_BYTES} bytes.`
       );
     }
@@ -78,13 +71,13 @@ export const PATCH = withIntegrationRoute<{ params: Promise<{ id: string }> }>(
     try {
       json = bodyText.trim() === "" ? {} : JSON.parse(bodyText);
     } catch {
-      return problem(400, "payload-invalido", "Corpo da requisição não é JSON válido.");
+      return problem(400, PROBLEM_CODE.invalid_payload, "Corpo da requisição não é JSON válido.");
     }
 
     const parsed = parseLeadPatch(json);
-    if (!parsed.ok) return problem(400, "payload-invalido", parsed.detail);
+    if (!parsed.ok) return problem(400, PROBLEM_CODE.invalid_payload, parsed.detail);
 
-    const result = await patchLead(auth.tenantId, id, parsed.dto);
+    const result = await applyLeadPatch(auth.tenantId, id, parsed.dto);
     if (!result.ok) {
       return problem(statusForCode(result.code), result.code, detailForCode(result.code));
     }
@@ -96,7 +89,7 @@ export const PATCH = withIntegrationRoute<{ params: Promise<{ id: string }> }>(
     return Response.json(
       {
         ...serializeLead(result.lead),
-        ...(result.assignedBroker ? { assignedBroker: result.assignedBroker } : {}),
+        ...(result.assignedAssignee ? { assignedBroker: result.assignedAssignee } : {}),
       },
       { status: 200 }
     );
@@ -112,7 +105,7 @@ export const GET = withIntegrationRoute<{ params: Promise<{ id: string }> }>(
   async (_request, auth, { params }) => {
     const { id } = await params;
     const lead = await findLead(auth.tenantId, id);
-    if (!lead) return problem(404, "recurso-nao-encontrado", "Lead não encontrado.");
+    if (!lead) return problem(404, PROBLEM_CODE.not_found, "Lead não encontrado.");
     return Response.json(serializeLead(lead));
   }
 );

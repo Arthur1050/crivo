@@ -1,22 +1,23 @@
 "use server";
 
+import { ROLE } from "../../lib/vocabulary";
 import { revalidatePath } from "next/cache";
-import { verifySession } from "../auth/session";
-import { sendInvitationEmail } from "../auth/email";
+import { verifySession } from "../../kit/session";
+import { sendInvitationEmail } from "../../kit/email";
 import { denyIfForbidden } from "./permission";
-import { ROLES, type Role } from "../../lib/permissions";
+import { ROLES, type Role } from "../../kit/access";
 import {
   countActiveAdministrators,
   createInvitation,
   createMembership,
   createPendingUser,
-  deleteUser,
   findUserByEmail,
   getMembership,
   getTenant,
   getTenantMemberById,
   setMemberRoles,
 } from "../data";
+import { deleteUser } from "../../verticals/real-estate/data/properties";
 import { validateName } from "../validation";
 
 /**
@@ -89,7 +90,7 @@ export interface InviteUserInput {
 export async function inviteUserAction(
   input: InviteUserInput
 ): Promise<InviteResult> {
-  const denied = await denyIfForbidden("usuarios", "escrever");
+  const denied = await denyIfForbidden("users", "write");
   if (denied) return denied;
 
   const nameCheck = validateName(input.name, "Nome");
@@ -175,7 +176,7 @@ export interface ResendInviteInput {
 export async function resendInviteAction(
   input: ResendInviteInput
 ): Promise<InviteResult> {
-  const denied = await denyIfForbidden("usuarios", "escrever");
+  const denied = await denyIfForbidden("users", "write");
   if (denied) return denied;
 
   const session = await verifySession();
@@ -230,7 +231,7 @@ export interface UpdateMemberRolesInput {
 export async function updateMemberRolesAction(
   input: UpdateMemberRolesInput
 ): Promise<UsersActionResult> {
-  const denied = await denyIfForbidden("usuarios", "escrever");
+  const denied = await denyIfForbidden("users", "write");
   if (denied) return denied;
 
   const rolesCheck = validateRoles(input.roles);
@@ -247,8 +248,8 @@ export async function updateMemberRolesAction(
   // ignora o vínculo que está sendo alterado — é justamente ele que deixaria
   // de ser administrador.
   const losesAdmin =
-    member.roles.includes("administrador") &&
-    !input.roles.includes("administrador");
+    member.roles.includes(ROLE.admin) &&
+    !input.roles.includes(ROLE.admin);
 
   if (losesAdmin) {
     const remaining = await countActiveAdministrators(
@@ -285,7 +286,7 @@ export interface DeleteUserInput {
 export async function deleteUserAction(
   input: DeleteUserInput
 ): Promise<UsersActionResult> {
-  const denied = await denyIfForbidden("usuarios", "escrever");
+  const denied = await denyIfForbidden("users", "write");
   if (denied) return denied;
 
   const session = await verifySession();

@@ -3,14 +3,15 @@ import { StatusDot } from "@astryxdesign/core/StatusDot";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { Heading, Text } from "@astryxdesign/core/Text";
 import { PipelineBoard } from "@/src/components/pipeline/pipeline-board";
-import { getBrokers, getConversations, getLeads, getTenant } from "@/src/server/data";
-import { getLeadScope } from "@/src/server/auth/session";
+import { getAssignees, getConversations, getTenant } from "@/src/server/data";
+import { getLeads } from "@/src/kit/lead-data";
+import { getLeadScope } from "@/src/kit/session";
 import { getActiveTenantId } from "@/src/server/tenant";
 
 /**
  * Kanban de leads do tenant ativo (lote-3 — PIPE-01; recomposto em
  * redesign-crm-astryx — RD-03, design.md § R1). RSC carrega `getLeads`
- * (já ordenado `updatedAt DESC, id` — T3, agora com `brokerName`) e entrega
+ * (já ordenado `updatedAt DESC, id` — T3, agora com `assigneeName`) e entrega
  * ao `PipelineBoard` client, que agrupa por status. Também carrega
  * `getConversations` para montar o mapa `leadId → conversationId` do link
  * cruzado "Ver conversa" (lote-3 — PIPE-04): um objeto simples (não um
@@ -24,7 +25,7 @@ export default async function PipelinePage() {
     getLeads(scope),
     getConversations(scope),
     getTenant(tenantId),
-    getBrokers(tenantId),
+    getAssignees(tenantId),
   ]);
 
   const conversationIdByLeadId = Object.fromEntries(

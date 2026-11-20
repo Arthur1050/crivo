@@ -1,3 +1,4 @@
+import { SENDER } from "../src/lib/vocabulary";
 /** T58 fixture preview. Run: npx tsx scripts/preview-message-pricing.tsx [port]
  * Browser: http://127.0.0.1:4178/?state=paid-service (or any state below).
  * No application routes, credentials, database, or real conversation data.
@@ -61,7 +62,7 @@ createServer((request, response) => {
               <ChatMessage sender={inbound ? "assistant" : "user"}>
                 <ChatMessageBubble
                   variant={inbound ? "ghost" : "filled"}
-                  metadata={<MessagePricing sender={inbound ? "lead" : "agente"} pricing={pricing} />}
+                  metadata={<MessagePricing sender={inbound ? "lead" : SENDER.agent} pricing={pricing} />}
                 >
                   Mensagem de teste da apresentação.
                 </ChatMessageBubble>

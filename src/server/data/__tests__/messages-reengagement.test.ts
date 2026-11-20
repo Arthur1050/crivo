@@ -8,9 +8,9 @@ import { db } from "../../../db";
 import * as schema from "../../../db/schema";
 import { conversations, leadAgentState, leads, messages, reengagementEpisodes, tenants, whatsappChannels, whatsappMessageReceipts } from "../../../db/schema";
 import { ingestAgentMessage } from "../index";
-import { publishAgentState } from "../../reengagement/agent-state";
 import { authorizeDispatch, claimPreparation, expireEpisode, reconcileAcceptance } from "../../reengagement/repository";
-import { getSessionFrame, prepareFrame } from "../../reengagement/context";
+import { getSessionFrame } from "../../reengagement/context";
+import { prepareFrame, publishAgentState } from "../../../kit/reengagement";
 
 const tenantId = randomUUID(), foreignTenant = randomUUID(), now = new Date("2026-10-06T15:00:00.500Z"), hour = 3600000;
 let contact = 5534999700000;
@@ -56,7 +56,7 @@ async function waitForLocks(pids: number[]) {
   }
   return 0;
 }
-beforeAll(async () => { await db.insert(tenants).values([tenantId, foreignTenant].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T27", agentName: "Agente", supportedModality: "ambos" as const }))); });
+beforeAll(async () => { await db.insert(tenants).values([tenantId, foreignTenant].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T27", agentName: "Agente", supportedSegment: "ambos" as const }))); });
 afterAll(async () => {
   await db.delete(whatsappMessageReceipts).where(eq(whatsappMessageReceipts.tenantId, tenantId)); await db.delete(reengagementEpisodes).where(eq(reengagementEpisodes.tenantId, tenantId));
   await db.delete(leadAgentState).where(eq(leadAgentState.tenantId, tenantId)); await db.delete(messages).where(eq(messages.tenantId, tenantId)); await db.delete(conversations).where(eq(conversations.tenantId, tenantId));

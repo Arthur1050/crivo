@@ -1,5 +1,6 @@
 "use client";
 
+import { MODALITY } from "../../verticals/real-estate/vocabulary";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Banner } from "@astryxdesign/core/Banner";
@@ -12,18 +13,18 @@ import { TextInput } from "@astryxdesign/core/TextInput";
 import { Token } from "@astryxdesign/core/Token";
 import { NO_FOLDER_LABEL, type DocumentFolderOption } from "@/src/lib/document-folders";
 import { updateDocumentAction } from "@/src/server/actions/documents";
-import type { Document, DocumentCategory, Modality } from "@/src/server/data";
-import { validateModality, validateName } from "@/src/server/validation";
+import type { Document, DocumentCategory, DocumentSegment } from "@/src/server/data";
+import { validateSegment, validateName } from "@/src/server/validation";
 
-const MODALITY_OPTIONS: { value: Modality; label: string }[] = [
-  { value: "novo", label: "Novo" },
-  { value: "usado", label: "Usado" },
-  { value: "ambos", label: "Ambos" },
+const MODALITY_OPTIONS: { value: DocumentSegment; label: string }[] = [
+  { value: MODALITY.new, label: "Novo" },
+  { value: MODALITY.used, label: "Usado" },
+  { value: MODALITY.both, label: "Ambos" },
 ];
 
 interface FieldErrors {
   name?: string;
-  modality?: string;
+  segment?: string;
 }
 
 interface EditDocumentDialogProps {
@@ -79,7 +80,7 @@ interface EditDocumentFormProps {
 function EditDocumentForm({ document, categories, folders, onClose }: EditDocumentFormProps) {
   const router = useRouter();
   const [name, setName] = useState(document.name);
-  const [modality, setModality] = useState<Modality>(document.modality);
+  const [segment, setModality] = useState<DocumentSegment>(document.segment);
   const [categoryId, setCategoryId] = useState<string | null>(
     document.categoryId ?? null
   );
@@ -92,14 +93,14 @@ function EditDocumentForm({ document, categories, folders, onClose }: EditDocume
     setBanner(null);
 
     const nameCheck = validateName(name, "Nome do documento");
-    const modalityCheck = validateModality(modality);
+    const modalityCheck = validateSegment(segment);
 
     const nextErrors: FieldErrors = {
       name: nameCheck.ok ? undefined : nameCheck.error,
-      modality: modalityCheck.ok ? undefined : modalityCheck.error,
+      segment: modalityCheck.ok ? undefined : modalityCheck.error,
     };
 
-    if (nextErrors.name || nextErrors.modality) {
+    if (nextErrors.name || nextErrors.segment) {
       setErrors(nextErrors);
       return;
     }
@@ -109,7 +110,7 @@ function EditDocumentForm({ document, categories, folders, onClose }: EditDocume
     const result = await updateDocumentAction({
       documentId: document.id,
       name,
-      modality,
+      segment,
       categoryId,
       ...(folders === undefined ? {} : { folderId }),
     });
@@ -120,7 +121,7 @@ function EditDocumentForm({ document, categories, folders, onClose }: EditDocume
       if (result.error.startsWith("Nome do documento")) {
         setErrors({ name: result.error });
       } else if (result.error.startsWith("Modalidade")) {
-        setErrors({ modality: result.error });
+        setErrors({ segment: result.error });
       } else {
         // Ex.: "Documento não encontrado." (apagado em outra aba) — mostra o
         // erro e não fecha silenciosamente nem cria um novo registro.
@@ -159,14 +160,14 @@ function EditDocumentForm({ document, categories, folders, onClose }: EditDocume
 
             <Selector
               label="Modalidade"
-              value={modality}
+              value={segment}
               onChange={(value) => {
-                setModality(value as Modality);
-                setErrors((prev) => ({ ...prev, modality: undefined }));
+                setModality(value as DocumentSegment);
+                setErrors((prev) => ({ ...prev, segment: undefined }));
               }}
               options={MODALITY_OPTIONS}
               status={
-                errors.modality ? { type: "error", message: errors.modality } : undefined
+                errors.segment ? { type: "error", message: errors.segment } : undefined
               }
               isRequired
             />

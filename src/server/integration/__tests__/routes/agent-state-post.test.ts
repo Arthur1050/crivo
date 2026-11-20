@@ -30,7 +30,7 @@ async function problem(response: Response, status: number, code: string) {
   expect(await response.json()).toMatchObject({ status, code, type: `urn:krivo:problem:${code}` });
 }
 beforeAll(async () => {
-  await db.insert(tenants).values([tenantId, foreignTenant].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T35", agentName: "Agente", supportedModality: "ambos" as const })));
+  await db.insert(tenants).values([tenantId, foreignTenant].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T35", agentName: "Agente", supportedSegment: "ambos" as const })));
   await db.insert(tenantApiKeys).values({ tenantId, label: "fixtureT35", keyHash: createHash("sha256").update(apiKey).digest("hex") });
 });
 afterAll(async () => {

@@ -13,21 +13,21 @@ import {
   updateDocument,
   updateDocumentCategory,
   type CategoryColor,
-  type Modality,
+  type DocumentSegment,
 } from "../data";
 import {
   validateCategoryColor,
   validateFileSize,
   validateMimeType,
-  validateModality,
+  validateSegment,
   validateName,
 } from "../validation";
-import { createDocumentProcessingService } from "../documents/processing";
-import { reconcileTenantDocumentAdmission, tombstoneDocument } from "../documents/repository";
+import { tombstoneDocument } from "../documents/repository";
+import { createDocumentProcessingService, reconcileTenantDocumentAdmission } from "../../kit/document-services";
 import { VercelBlobDocumentStorage } from "../documents/vercel-blob-storage";
 import { startDocumentProcessingRun } from "../documents/workflow-start";
-import { createDocumentUploadIntake } from "../documents/uploads";
-import { duplicateDocumentMessage } from "../../lib/duplicate-document";
+import { createDocumentUploadIntake } from "../../kit/documents";
+import { formatDuplicateDocumentMessage } from "../../kit/duplicate-document";
 import { FOLDER_ERROR_MESSAGES, isUuid } from "../../lib/document-folders";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
@@ -41,14 +41,14 @@ export interface CreateDocumentInput {
   name: string;
   mimeType: string;
   sizeBytes: number;
-  modality: Modality;
+  segment: DocumentSegment;
   categoryId?: string | null;
 }
 
 export async function createDocumentAction(
   input: CreateDocumentInput
 ): Promise<ActionResult> {
-  const denied = await denyIfForbidden("documentos", "escrever");
+  const denied = await denyIfForbidden("documents", "write");
   if (denied) return denied;
 
   const nameCheck = validateName(input.name, "Nome do documento");
@@ -60,7 +60,7 @@ export async function createDocumentAction(
   const sizeCheck = validateFileSize(input.sizeBytes);
   if (!sizeCheck.ok) return sizeCheck;
 
-  const modalityCheck = validateModality(input.modality);
+  const modalityCheck = validateSegment(input.segment);
   if (!modalityCheck.ok) return modalityCheck;
 
   const tenantId = await getActiveTenantId();
@@ -68,7 +68,7 @@ export async function createDocumentAction(
     name: input.name.trim(),
     mimeType: input.mimeType,
     sizeBytes: input.sizeBytes,
-    modality: input.modality,
+    segment: input.segment,
     categoryId: input.categoryId ?? null,
   });
 
@@ -79,7 +79,7 @@ export async function createDocumentAction(
 export interface UpdateDocumentInput {
   documentId: string;
   name: string;
-  modality: Modality;
+  segment: DocumentSegment;
   categoryId?: string | null;
   folderId?: string | null;
   /** Omit preserves the existing date; an empty form field explicitly clears it. */
@@ -104,13 +104,13 @@ function resolveExpiresAt(value: string | undefined, now = new Date()):
 export async function updateDocumentAction(
   input: UpdateDocumentInput
 ): Promise<ActionResult> {
-  const denied = await denyIfForbidden("documentos", "escrever");
+  const denied = await denyIfForbidden("documents", "write");
   if (denied) return denied;
 
   const nameCheck = validateName(input.name, "Nome do documento");
   if (!nameCheck.ok) return nameCheck;
 
-  const modalityCheck = validateModality(input.modality);
+  const modalityCheck = validateSegment(input.segment);
   if (!modalityCheck.ok) return modalityCheck;
 
   const expiry = resolveExpiresAt(input.expiresAt);
@@ -125,7 +125,7 @@ export async function updateDocumentAction(
   try {
     updated = await updateDocument(tenantId, input.documentId, {
       name: input.name.trim(),
-      modality: input.modality,
+      segment: input.segment,
       categoryId: input.categoryId,
       ...(expiry.value === undefined ? {} : { expiresAt: expiry.value }),
       ...("folderId" in input ? { folderId: input.folderId } : {}),
@@ -154,7 +154,7 @@ export interface DeleteDocumentInput {
 export async function deleteDocumentAction(
   input: DeleteDocumentInput
 ): Promise<ActionResult> {
-  const denied = await denyIfForbidden("documentos", "escrever");
+  const denied = await denyIfForbidden("documents", "write");
   if (denied) return denied;
 
   const tenantId = await getActiveTenantId();
@@ -184,7 +184,7 @@ export interface FinalizeDocumentUploadInput {
 export async function finalizeDocumentUploadAction(
   input: FinalizeDocumentUploadInput
 ): Promise<ActionResult> {
-  const denied = await denyIfForbidden("documentos", "escrever");
+  const denied = await denyIfForbidden("documents", "write");
   if (denied) return denied;
 
   const intake = createDocumentUploadIntake();
@@ -204,7 +204,7 @@ export async function finalizeDocumentUploadAction(
     return { ok: true };
   }
   if (result.kind === "duplicate_content") {
-    return { ok: false, error: duplicateDocumentMessage(result.documentName) };
+    return { ok: false, error: formatDuplicateDocumentMessage(result.documentName) };
   }
   if (result.kind === "rejected") {
     return {
@@ -224,7 +224,7 @@ export interface RetryDocumentInput {
 export async function retryDocumentAction(
   input: RetryDocumentInput
 ): Promise<ActionResult> {
-  const denied = await denyIfForbidden("documentos", "escrever");
+  const denied = await denyIfForbidden("documents", "write");
   if (denied) return denied;
 
   const tenantId = await getActiveTenantId();
@@ -250,7 +250,7 @@ export interface CreateDocumentCategoryInput {
 export async function createDocumentCategoryAction(
   input: CreateDocumentCategoryInput
 ): Promise<ActionResult> {
-  const denied = await denyIfForbidden("documentos", "escrever");
+  const denied = await denyIfForbidden("documents", "write");
   if (denied) return denied;
 
   const nameCheck = validateName(input.name, "Nome da categoria");
@@ -289,7 +289,7 @@ export interface UpdateDocumentCategoryInput {
 export async function updateDocumentCategoryAction(
   input: UpdateDocumentCategoryInput
 ): Promise<ActionResult> {
-  const denied = await denyIfForbidden("documentos", "escrever");
+  const denied = await denyIfForbidden("documents", "write");
   if (denied) return denied;
 
   const colorCheck = validateCategoryColor(input.color);
@@ -315,7 +315,7 @@ export interface DeleteDocumentCategoryInput {
 export async function deleteDocumentCategoryAction(
   input: DeleteDocumentCategoryInput
 ): Promise<ActionResult> {
-  const denied = await denyIfForbidden("documentos", "escrever");
+  const denied = await denyIfForbidden("documents", "write");
   if (denied) return denied;
 
   const tenantId = await getActiveTenantId();

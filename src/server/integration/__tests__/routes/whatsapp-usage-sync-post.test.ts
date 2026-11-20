@@ -22,7 +22,7 @@ function post(phoneNumberId: string, body: unknown = { phoneNumberId }, raw?: st
 async function periods(phoneNumberId: string) { return db.select().from(whatsappUsage).where(and(eq(whatsappUsage.tenantId, tenantId), eq(whatsappUsage.phoneNumberId, phoneNumberId))); }
 async function payload(response: Response, status = 200) { expect(response.status).toBe(status); return response.json(); }
 beforeAll(async () => {
-  await db.insert(tenants).values([tenantId, foreignTenant].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T44", agentName: "Agente", supportedModality: "ambos" as const })));
+  await db.insert(tenants).values([tenantId, foreignTenant].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T44", agentName: "Agente", supportedSegment: "ambos" as const })));
   await db.insert(tenantApiKeys).values({ tenantId, label: "fixtureT44", keyHash: createHash("sha256").update(apiKey).digest("hex") });
 });
 beforeEach(() => {

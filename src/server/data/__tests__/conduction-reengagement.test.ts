@@ -8,10 +8,10 @@ import { db } from "../../../db";
 import * as schema from "../../../db/schema";
 import { conversations, leadAgentState, leads, messages, reengagementEpisodes, tenants, users, whatsappChannels, whatsappMessageReceipts } from "../../../db/schema";
 import { ingestAgentMessage, optOutLeadByHuman, recordHumanMessage, returnConversationToAgent, takeOverConversation, updateLeadStatus } from "../index";
-import { patchLead } from "../../integration/leads";
-import { publishAgentState } from "../../reengagement/agent-state";
+import { applyLeadPatch as patchLead } from "../../../kit/integration";
 import { authorizeDispatch, claimPreparation, reconcileAcceptance } from "../../reengagement/repository";
-import { getSessionFrame, prepareFrame } from "../../reengagement/context";
+import { getSessionFrame } from "../../reengagement/context";
+import { prepareFrame, publishAgentState } from "../../../kit/reengagement";
 
 const tenantId = randomUUID(), foreignTenant = randomUUID(), userId = randomUUID();
 const now = new Date("2026-10-06T15:00:00.500Z"), hour = 3600000, scope = { tenantId, assignedUserId: null };
@@ -59,7 +59,7 @@ async function waitForLocks(pids: number[]) {
   return 0;
 }
 beforeAll(async () => {
-  await db.insert(tenants).values([tenantId, foreignTenant].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T28", agentName: "Agente", supportedModality: "ambos" as const })));
+  await db.insert(tenants).values([tenantId, foreignTenant].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T28", agentName: "Agente", supportedSegment: "ambos" as const })));
   await db.insert(users).values({ id: userId, name: "Humana T28", email: `${userId}@fixture.test` });
 });
 afterAll(async () => {

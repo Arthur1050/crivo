@@ -1,3 +1,4 @@
+import { INTEGRATION_HEALTH } from "../../lib/vocabulary";
 import type { ReactNode } from "react";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { List, ListItem } from "@astryxdesign/core/List";
@@ -19,7 +20,7 @@ interface IntegrationHealthProps {
    * identificado (SAUDE-02 AC6). */
   refusals: RefusalSummary[];
   /** "Agora" para decidir a janela de 24h (mesmo padrão de
-   * `getPendingAttendanceMeetings`: quem chama decide o instante, a lib pura
+   * `getPendingAttendanceAppointments`: quem chama decide o instante, a lib pura
    * só compara). Default cobre o caso comum sem obrigar todo caller a passar. */
   now?: Date;
 }
@@ -51,7 +52,7 @@ export function IntegrationHealth({
 }: IntegrationHealthProps): ReactNode {
   const refusalCount = refusals.reduce((sum, refusal) => sum + refusal.count, 0);
   const state = resolveIntegrationHealth({ lastSuccessAt, refusalCount }, now);
-  const isProblem = state === "problema";
+  const isProblem = state === INTEGRATION_HEALTH.problem;
 
   return (
     <VStack gap={4}>

@@ -23,7 +23,7 @@ function run(row: Channel, now: () => Date, fetcher: typeof fetch = async (url) 
   return syncUsage({ tenantId: tenantA }, { phoneNumberId: row.phoneNumberId }, { now, adapter, fetch: fetcher, database });
 }
 beforeAll(async () => {
-  await db.insert(tenants).values([tenantA, tenantB].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture sync", agentName: "Agente", supportedModality: "ambos" as const })));
+  await db.insert(tenants).values([tenantA, tenantB].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture sync", agentName: "Agente", supportedSegment: "ambos" as const })));
 });
 beforeEach(() => { vi.stubEnv("WHATSAPP_ACCESS_TOKEN", "fixture-sync-server-token"); });
 afterEach(() => { vi.unstubAllEnvs(); vi.restoreAllMocks(); vi.useRealTimers(); });

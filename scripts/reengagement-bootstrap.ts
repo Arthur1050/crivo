@@ -1,3 +1,4 @@
+import { AGENT_PHASE } from "../src/lib/vocabulary";
 /** T65: diagnóstico somente leitura. Aplicação exige o gate posterior e
  * publishAgentState com âncora/reset/expectedRevision revalidados sob lock.
  * Uso: tsx scripts/reengagement-bootstrap.ts --tenant-id <uuid>
@@ -6,7 +7,7 @@
  */
 import type { PreflightInput, PreflightReport } from "./whatsapp-account-preflight";
 
-type Phase = "qualificando" | "agendando" | "encerrada";
+type Phase = typeof AGENT_PHASE.qualifying | typeof AGENT_PHASE.closing | typeof AGENT_PHASE.ended;
 type Gate = { state: "confirmed" | "pending"; code: string };
 export interface CrmSnapshot {
   tenantId: string;
@@ -27,7 +28,7 @@ export interface BootstrapDependencies {
   preflight?: (input: PreflightInput) => Promise<PreflightReport>;
 }
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const phases = ["qualificando", "agendando", "encerrada"];
+const phases = [AGENT_PHASE.qualifying, AGENT_PHASE.closing, AGENT_PHASE.ended];
 const gate = (code: string, confirmed = false): Gate => ({ state: confirmed ? "confirmed" : "pending", code });
 const object = (value: unknown): Record<string, unknown> | null => value !== null && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
 function date(value: unknown): string | null | undefined {
@@ -76,7 +77,7 @@ export async function diagnoseReengagementBootstrap(input: { tenantId?: string; 
   const leads = initial.leads.map((lead, index) => {
     const observation = observations[index];
     const row = observation.state === "observed" ? observation.row : null;
-    const phase = row && typeof row.fase === "string" && phases.includes(row.fase) ? row.fase as Phase : null;
+    const phase = row && typeof row.fase === "string" && phases.some(value => value === row.fase) ? row.fase as Phase : null;
     const observedRevision = row && Number.isSafeInteger(row.expectedRevision) && Number(row.expectedRevision) >= 0 ? Number(row.expectedRevision) : null;
     const observedAnchor = row && typeof row.anchorMessageId === "string" && UUID.test(row.anchorMessageId) ? row.anchorMessageId : null;
     const observedReset = row && Object.hasOwn(row, "resetObservedAt") ? date(row.resetObservedAt) : undefined;
@@ -90,7 +91,7 @@ export async function diagnoseReengagementBootstrap(input: { tenantId?: string; 
       else if (observedAnchor !== lead.anchorId || live.anchorId !== lead.anchorId) result = gate("anchor-changed");
       else if (observedReset !== date(lead.resetAt) || date(live.resetAt) !== date(lead.resetAt)) result = gate("reset-changed");
       else if (observedRevision !== lead.revision || live.revision !== lead.revision) result = gate("revision-conflict");
-      else if (live.projection?.anchorId === live.anchorId && date(live.projection.resetAt) === date(live.resetAt) && live.projection.phase === "encerrada" && phase !== "encerrada") result = gate("phase-closed");
+      else if (live.projection?.anchorId === live.anchorId && date(live.projection.resetAt) === date(live.resetAt) && live.projection.phase === AGENT_PHASE.ended && phase !== AGENT_PHASE.ended) result = gate("phase-closed");
       else result = gate(live.projection?.phase === phase && live.projection.anchorId === observedAnchor && date(live.projection.resetAt) === observedReset ? "projection-phase-current" : "observed-context-verified", true);
     }
     return { leadId: lead.id, phase, source: observation.state === "observed" ? "n8n-data-table-row" : observation.state,

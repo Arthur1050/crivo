@@ -7,7 +7,8 @@ import { db } from "../../../db";
 import * as schema from "../../../db/schema";
 import { conversations, leadAgentState, leads, messages, tenants, users } from "../../../db/schema";
 import { serviceScope, takeOverConversation } from "../../data";
-import { publishAgentState, type PublishAgentStateInput } from "../agent-state";
+import { publishAgentState } from "../../../kit/reengagement";
+import type { PublishAgentStateInput } from "../agent-state";
 import { evaluateReengagement } from "../../../../n8n/src/reengagement.mjs";
 
 const tenantA = randomUUID(), tenantB = randomUUID(), human = randomUUID();
@@ -29,7 +30,7 @@ function publish(row: Fixture, patch: Partial<PublishAgentStateInput> = {}, data
 }
 async function state(row: Fixture) { return db.select().from(leadAgentState).where(and(eq(leadAgentState.tenantId, row.lead.tenantId), eq(leadAgentState.leadId, row.lead.id))); }
 beforeAll(async () => {
-  await db.insert(tenants).values([tenantA, tenantB].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T16 estado", agentName: "Agente", supportedModality: "ambos" as const })));
+  await db.insert(tenants).values([tenantA, tenantB].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T16 estado", agentName: "Agente", supportedSegment: "ambos" as const })));
   await db.insert(users).values({ id: human, email: `${human}@fixture.test`, name: "Equipe fixture" });
 });
 afterAll(async () => {

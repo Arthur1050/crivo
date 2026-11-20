@@ -5,12 +5,12 @@ import { eq } from "drizzle-orm";
 import { db } from "../../../../db";
 import {
   integrationRefusals,
-  properties,
   serviceApiKeys,
   tenant_members,
   tenants,
   users,
 } from "../../../../db/schema";
+import { properties } from "../../../../verticals/real-estate/schema";
 import {
   DELETE,
   GET,
@@ -48,14 +48,14 @@ describe("routes: GET /api/v1/properties", () => {
         id: tenantAId,
         name: `Tenant Teste A properties-get ${tenantAId}`,
         agentName: "Agente A",
-        supportedModality: "ambos",
+        supportedSegment: "ambos",
         slug: tenantASlug,
       },
       {
         id: tenantBId,
         name: `Tenant Teste B properties-get ${tenantBId}`,
         agentName: "Agente B",
-        supportedModality: "ambos",
+        supportedSegment: "ambos",
         slug: tenantBSlug,
       },
     ]);

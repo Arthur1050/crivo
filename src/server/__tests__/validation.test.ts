@@ -3,30 +3,32 @@ import {
   ACCEPTED_MIME_TYPES,
   CATEGORY_COLOR_PALETTE,
   LEAD_STATUSES,
-  MAX_DESCRIPTION_LENGTH,
   MAX_FILE_SIZE_BYTES,
   MAX_NAME_LENGTH,
-  MAX_PHOTO_URLS,
-  PROPERTY_KINDS,
-  PROPERTY_STATUSES,
-  validateAreaSqm,
   validateBaselineCount,
   validateBaselinePercent,
   validateBusinessHours,
   validateCategoryColor,
-  validateDescription,
   validateFileSize,
   validateLeadStatus,
   validateMimeType,
-  validateModality,
+  validateSegment,
   validateName,
+} from "../validation";
+import {
+  MAX_DESCRIPTION_LENGTH,
+  MAX_PHOTO_URLS,
+  PROPERTY_KINDS,
+  PROPERTY_STATUSES,
+  validateAreaSqm,
+  validateDescription,
   validatePhotoUrls,
   validatePriceCents,
   validatePropertyKind,
   validatePropertyStatus,
   validateRoomCount,
   validateUf,
-} from "../validation";
+} from "../../verticals/real-estate/validation/properties";
 
 describe("validateName", () => {
   it("aceita um nome comum, aparado", () => {
@@ -106,30 +108,30 @@ describe("validateFileSize", () => {
 
 describe("validateModality", () => {
   it("rejeita undefined", () => {
-    const result = validateModality(undefined);
+    const result = validateSegment(undefined);
     expect(result.ok).toBe(false);
   });
 
   it("rejeita null", () => {
-    const result = validateModality(null);
+    const result = validateSegment(null);
     expect(result.ok).toBe(false);
   });
 
   it("rejeita string vazia", () => {
-    const result = validateModality("");
+    const result = validateSegment("");
     expect(result.ok).toBe(false);
   });
 
   it("aceita 'novo'", () => {
-    expect(validateModality("novo")).toEqual({ ok: true });
+    expect(validateSegment("novo")).toEqual({ ok: true });
   });
 
   it("aceita 'usado'", () => {
-    expect(validateModality("usado")).toEqual({ ok: true });
+    expect(validateSegment("usado")).toEqual({ ok: true });
   });
 
   it("aceita 'ambos'", () => {
-    expect(validateModality("ambos")).toEqual({ ok: true });
+    expect(validateSegment("ambos")).toEqual({ ok: true });
   });
 });
 
@@ -177,90 +179,90 @@ describe("validateLeadStatus", () => {
 describe("validateBusinessHours (CONF-05)", () => {
   it("aceita os 3 campos vazios (horário comercial não configurado — limpa)", () => {
     const result = validateBusinessHours({
-      meetingDays: null,
-      meetingHoursStart: null,
-      meetingHoursEnd: null,
+      appointmentDays: null,
+      appointmentHoursStart: null,
+      appointmentHoursEnd: null,
     });
     expect(result).toEqual({ ok: true });
   });
 
   it("aceita meetingDays null e horas em string vazia (equivalente a ausente)", () => {
     const result = validateBusinessHours({
-      meetingDays: null,
-      meetingHoursStart: "",
-      meetingHoursEnd: "",
+      appointmentDays: null,
+      appointmentHoursStart: "",
+      appointmentHoursEnd: "",
     });
     expect(result).toEqual({ ok: true });
   });
 
   it("aceita dias + janela completos com início < fim", () => {
     const result = validateBusinessHours({
-      meetingDays: [1, 2, 3, 4, 5],
-      meetingHoursStart: "09:00",
-      meetingHoursEnd: "18:00",
+      appointmentDays: [1, 2, 3, 4, 5],
+      appointmentHoursStart: "09:00",
+      appointmentHoursEnd: "18:00",
     });
     expect(result).toEqual({ ok: true });
   });
 
   it("aceita um único dia (sábado) com janela reduzida", () => {
     const result = validateBusinessHours({
-      meetingDays: [6],
-      meetingHoursStart: "09:00",
-      meetingHoursEnd: "12:00",
+      appointmentDays: [6],
+      appointmentHoursStart: "09:00",
+      appointmentHoursEnd: "12:00",
     });
     expect(result).toEqual({ ok: true });
   });
 
   it("rejeita início igual ao fim (início < fim é estrito)", () => {
     const result = validateBusinessHours({
-      meetingDays: [1],
-      meetingHoursStart: "09:00",
-      meetingHoursEnd: "09:00",
+      appointmentDays: [1],
+      appointmentHoursStart: "09:00",
+      appointmentHoursEnd: "09:00",
     });
     expect(result.ok).toBe(false);
   });
 
   it("rejeita início depois do fim", () => {
     const result = validateBusinessHours({
-      meetingDays: [1],
-      meetingHoursStart: "18:00",
-      meetingHoursEnd: "09:00",
+      appointmentDays: [1],
+      appointmentHoursStart: "18:00",
+      appointmentHoursEnd: "09:00",
     });
     expect(result.ok).toBe(false);
   });
 
   it("rejeita 0 dias com janela preenchida", () => {
     const result = validateBusinessHours({
-      meetingDays: [],
-      meetingHoursStart: "09:00",
-      meetingHoursEnd: "18:00",
+      appointmentDays: [],
+      appointmentHoursStart: "09:00",
+      appointmentHoursEnd: "18:00",
     });
     expect(result.ok).toBe(false);
   });
 
   it("rejeita meetingDays null com janela preenchida (equivalente a 0 dias)", () => {
     const result = validateBusinessHours({
-      meetingDays: null,
-      meetingHoursStart: "09:00",
-      meetingHoursEnd: "18:00",
+      appointmentDays: null,
+      appointmentHoursStart: "09:00",
+      appointmentHoursEnd: "18:00",
     });
     expect(result.ok).toBe(false);
   });
 
   it("rejeita só o início preenchido, sem o fim", () => {
     const result = validateBusinessHours({
-      meetingDays: [1, 2, 3],
-      meetingHoursStart: "09:00",
-      meetingHoursEnd: null,
+      appointmentDays: [1, 2, 3],
+      appointmentHoursStart: "09:00",
+      appointmentHoursEnd: null,
     });
     expect(result.ok).toBe(false);
   });
 
   it("rejeita só o fim preenchido, sem o início", () => {
     const result = validateBusinessHours({
-      meetingDays: [1, 2, 3],
-      meetingHoursStart: null,
-      meetingHoursEnd: "18:00",
+      appointmentDays: [1, 2, 3],
+      appointmentHoursStart: null,
+      appointmentHoursEnd: "18:00",
     });
     expect(result.ok).toBe(false);
   });

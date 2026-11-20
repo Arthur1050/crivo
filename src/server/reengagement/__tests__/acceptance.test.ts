@@ -50,7 +50,7 @@ function deferred<T>() { let resolve!: (value: T) => void; const promise = new P
 function pinned(client: PoolClient, pid: ReturnType<typeof deferred<number>>): Pick<typeof db, "transaction"> {
   const database = drizzle(client, { schema }); return { transaction: (callback, config) => database.transaction(async (tx) => { pid.resolve((await tx.execute<{ pid: number }>(sql`SELECT pg_backend_pid() AS pid`)).rows[0].pid); return callback(tx); }, config) };
 }
-beforeAll(async () => { await db.insert(tenants).values([tenantId, foreignTenant].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T21", agentName: "Agente", supportedModality: "ambos" as const }))); });
+beforeAll(async () => { await db.insert(tenants).values([tenantId, foreignTenant].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T21", agentName: "Agente", supportedSegment: "ambos" as const }))); });
 afterEach(() => { vi.restoreAllMocks(); });
 afterAll(async () => {
   await db.delete(whatsappMessageReceipts).where(eq(whatsappMessageReceipts.tenantId, tenantId));

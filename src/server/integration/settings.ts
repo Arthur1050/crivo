@@ -1,5 +1,5 @@
 import "server-only";
-import { getTenant, type Modality } from "../data";
+import { getTenant, type DocumentSegment } from "../data";
 
 /**
  * Representação de settings do tenant na API de integração (design.md —
@@ -10,7 +10,7 @@ import { getTenant, type Modality } from "../data";
 export interface TenantSettings {
   realEstateName: string;
   agentName: string;
-  supportedModality: Modality;
+  supportedModality: DocumentSegment;
   agentPresentationMessage: string | null;
   // Tom de voz / personalidade do agente (lote-6b — PER-03), `null` quando o
   // tenant não configurou. Consumido pelo prompt (n8n) — design.md §
@@ -37,11 +37,11 @@ export async function getTenantSettings(
   return {
     realEstateName: tenant.name,
     agentName: tenant.agentName,
-    supportedModality: tenant.supportedModality,
+    supportedModality: tenant.supportedSegment,
     agentPresentationMessage: tenant.agentPresentationMessage,
     agentVoiceTone: tenant.agentVoiceTone,
-    meetingDays: tenant.meetingDays,
-    meetingHoursStart: tenant.meetingHoursStart,
-    meetingHoursEnd: tenant.meetingHoursEnd,
+    meetingDays: tenant.appointmentDays,
+    meetingHoursStart: tenant.appointmentHoursStart,
+    meetingHoursEnd: tenant.appointmentHoursEnd,
   };
 }

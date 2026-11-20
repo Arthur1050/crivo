@@ -1,3 +1,6 @@
+import { LEAD_QUALIFICATION_FIELDS, type QualificationFacet } from "../../vertical-kit";
+import { enumValue, optionalNullableField } from "../../lib/patch-fields";
+import { AGENT_PHASE, SENDER } from "../../lib/vocabulary";
 /**
  * Parsers puros payload→DTO da API de integração (design.md —
  * `src/server/integration/parsers.ts`). Sem I/O, sem dependências externas —
@@ -10,15 +13,11 @@
  * ganhar um valor novo, o parser acompanha automaticamente.
  */
 import {
-  creditStatusEnum,
   leadStatusEnum,
-  modalityEnum,
-  motivationEnum,
-  propertyTypeEnum,
   senderEnum,
 } from "../../db/schema";
-import { FIELD_LABELS } from "../../../n8n/src/phase.mjs";
 import type { PublishAgentStateInput } from "../reengagement/agent-state";
+import { resolveDocumentSegment, type DocumentSegment, type DocumentSegmentFacet } from "../documents/segments";
 import type { PreparationFailureCode } from "../reengagement/repository";
 
 // Limite de tamanho de corpo (design.md — Tech Decisions; Edge Cases: 413).
@@ -40,10 +39,6 @@ export type ParseResult<T> =
   | { ok: false; detail: string };
 
 type LeadStatus = (typeof leadStatusEnum.enumValues)[number];
-type Modality = (typeof modalityEnum.enumValues)[number];
-type PropertyType = (typeof propertyTypeEnum.enumValues)[number];
-type MotivationValue = (typeof motivationEnum.enumValues)[number];
-type CreditStatus = (typeof creditStatusEnum.enumValues)[number];
 type Sender = (typeof senderEnum.enumValues)[number];
 
 // ISO-8601 completo (data + hora + timezone) — as 3 datas do contrato
@@ -71,43 +66,37 @@ function parseExactIsoDate(value: unknown): Date | undefined {
   return parsed;
 }
 
-/** Inteiro ≥ 0, aceito como `number` ou `string` numérica — gravado bigint
- * (bigint não é serializável em JSON, então nunca chega como tal). */
-function parseBudgetCents(value: unknown): bigint | undefined {
-  if (typeof value === "number") {
-    return Number.isInteger(value) && value >= 0 ? BigInt(value) : undefined;
-  }
-  if (typeof value === "string" && /^\d+$/.test(value)) {
-    return BigInt(value);
-  }
-  return undefined;
-}
-
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-/** Only the projection calculated for the supplied anchor/revision is accepted. */
-export function parseAgentState(value: unknown): ParseResult<PublishAgentStateInput> {
-  const fields = ["anchorMessageId", "resetObservedAt", "expectedRevision", "phase", "askedFields", "openingHistory"];
-  if (!isPlainObject(value) || Object.keys(value).some((key) => !fields.includes(key))) {
-    return { ok: false, detail: "Estado do agente contém campos inválidos." };
-  }
-  const { anchorMessageId, expectedRevision, phase, askedFields, openingHistory } = value;
-  if (typeof anchorMessageId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(anchorMessageId)
-      || !Number.isSafeInteger(expectedRevision) || (expectedRevision as number) < 0
-      || (phase !== null && phase !== "qualificando" && phase !== "agendando" && phase !== "encerrada")
-      || !Array.isArray(askedFields) || askedFields.length > 8 || !askedFields.every((field) => typeof field === "string" && Object.hasOwn(FIELD_LABELS, field))
-      || !Array.isArray(openingHistory) || !openingHistory.every((opening) => typeof opening === "string")) {
-    return { ok: false, detail: "Âncora, revisão ou projeção do agente inválida." };
-  }
-  let resetObservedAt: Date | null = null;
-  if (value.resetObservedAt !== null) {
-    const parsed = parseExactIsoDate(value.resetObservedAt);
-    if (!parsed) return { ok: false, detail: "Reset observado deve ser um instante ISO válido ou null." };
-    resetObservedAt = parsed;
-  }
-  return { ok: true, dto: { anchorMessageId, resetObservedAt, expectedRevision: expectedRevision as number, phase, askedFields, openingHistory } };
+/**
+ * Only the projection calculated for the supplied anchor/revision is accepted.
+ * Os campos perguntados vêm da faceta de qualificação; sem faceta, só a lista vazia passa.
+ */
+export function createAgentStateParser(qualification: Pick<QualificationFacet<unknown, unknown>, "agentFields"> | null) {
+  const agentFields: readonly string[] = qualification?.agentFields ?? [];
+  return function parseAgentState(value: unknown): ParseResult<PublishAgentStateInput> {
+    const fields = ["anchorMessageId", "resetObservedAt", "expectedRevision", "phase", "askedFields", "openingHistory"];
+    if (!isPlainObject(value) || Object.keys(value).some((key) => !fields.includes(key))) {
+      return { ok: false, detail: "Estado do agente contém campos inválidos." };
+    }
+    const { anchorMessageId, expectedRevision, phase, askedFields, openingHistory } = value;
+    if (typeof anchorMessageId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(anchorMessageId)
+        || !Number.isSafeInteger(expectedRevision) || (expectedRevision as number) < 0
+        || (phase !== null && phase !== AGENT_PHASE.qualifying && phase !== AGENT_PHASE.closing && phase !== AGENT_PHASE.ended)
+        || !Array.isArray(askedFields) || askedFields.length > 8 || !askedFields.every((field) => typeof field === "string" && agentFields.includes(field))
+        || !Array.isArray(openingHistory) || !openingHistory.every((opening) => typeof opening === "string")) {
+      return { ok: false, detail: "Âncora, revisão ou projeção do agente inválida." };
+    }
+    let resetObservedAt: Date | null = null;
+    if (value.resetObservedAt !== null) {
+      const parsed = parseExactIsoDate(value.resetObservedAt);
+      if (!parsed) return { ok: false, detail: "Reset observado deve ser um instante ISO válido ou null." };
+      resetObservedAt = parsed;
+    }
+    return { ok: true, dto: { anchorMessageId, resetObservedAt, expectedRevision: expectedRevision as number, phase, askedFields, openingHistory } };
+  };
 }
 
 export function parseAutomationCandidatesQuery(url: URL): ParseResult<{ cursor?: string; limit: number }> {
@@ -187,15 +176,6 @@ function nonEmptyTrimmed(value: unknown): string | undefined {
   return trimmed === "" ? undefined : trimmed;
 }
 
-function enumValue<T extends string>(
-  value: unknown,
-  allowed: readonly T[]
-): T | undefined {
-  return typeof value === "string" && (allowed as readonly string[]).includes(value)
-    ? (value as T)
-    : undefined;
-}
-
 // ---- POST /api/v1/leads -------------------------------------------------
 
 export interface LeadCreateDto {
@@ -263,139 +243,69 @@ export function parseLeadCreate(json: unknown): ParseResult<LeadCreateDto> {
 
 // ---- PATCH /api/v1/leads/{id} -------------------------------------------
 
-export interface LeadPatchDto {
-  // NOT NULL no schema — presente precisa ser um valor válido do enum,
-  // nunca `null` (diferente dos demais campos, todos nullable).
+export interface LeadPatchDto<Q> {
   status?: LeadStatus;
-  modality?: Modality | null;
-  region?: string | null;
-  budgetCents?: bigint | null;
-  propertyType?: PropertyType | null;
-  purchaseHorizon?: string | null;
-  motivation?: MotivationValue | null;
-  creditStatus?: CreditStatus | null;
-  chainedOperation?: boolean | null;
   executiveSummary?: string | null;
   escalationReason?: string | null;
-  meetingAt?: Date | null;
+  appointmentAt?: Date | null;
+  qualification?: Partial<Q>;
 }
 
-/**
- * Resolve um campo opcional-e-anulável do patch: chave ausente no JSON →
- * `{ present: false }` (dto não ganha a chave — coluna intocada, padrão
- * SPG-1); `null` explícito → `{ present: true, ok: true, value: null }`
- * (limpa a coluna); valor presente → validado por `parseValue` (`undefined`
- * de `parseValue` sinaliza formato inválido).
- */
-function optionalNullableField<T>(
-  body: Record<string, unknown>,
-  key: string,
-  parseValue: (raw: unknown) => T | undefined
-):
-  | { present: false }
-  | { present: true; ok: true; value: T | null }
-  | { present: true; ok: false } {
-  if (!(key in body)) return { present: false };
-  const raw = body[key];
-  if (raw === null) return { present: true, ok: true, value: null };
-  const parsed = parseValue(raw);
-  return parsed === undefined
-    ? { present: true, ok: false }
-    : { present: true, ok: true, value: parsed };
-}
-
-export function parseLeadPatch(json: unknown): ParseResult<LeadPatchDto> {
-  if (!isPlainObject(json)) {
-    return { ok: false, detail: "Corpo da requisição deve ser um objeto JSON." };
-  }
-
-  const dto: LeadPatchDto = {};
-
-  // `status` não aceita `null` explícito — coluna NOT NULL no schema.
-  if ("status" in json) {
-    const status = enumValue(json.status, leadStatusEnum.enumValues);
-    if (!status) {
-      return {
-        ok: false,
-        detail: `Campo 'status' inválido. Valores aceitos: ${leadStatusEnum.enumValues.join(", ")}.`,
-      };
+export function createLeadPatchParser<Q>(
+  qualification: Pick<QualificationFacet<Q, unknown>, "parsePatch"> | null,
+  appointments: boolean
+) {
+  return function parseLeadPatch(json: unknown): ParseResult<LeadPatchDto<Q>> {
+    if (!isPlainObject(json)) {
+      return { ok: false, detail: "Corpo da requisição deve ser um objeto JSON." };
     }
-    dto.status = status;
-  }
 
-  const stringFields: (keyof LeadPatchDto)[] = [
-    "region",
-    "purchaseHorizon",
-    "executiveSummary",
-    "escalationReason",
-  ];
-  for (const field of stringFields) {
-    const outcome = optionalNullableField(json, field, (raw) =>
-      typeof raw === "string" ? raw.trim() : undefined
-    );
-    if (!outcome.present) continue;
-    if (!outcome.ok) {
-      return { ok: false, detail: `Campo '${field}' deve ser uma string.` };
+    const dto: LeadPatchDto<Q> = {};
+
+    if ("status" in json) {
+      const status = enumValue(json.status, leadStatusEnum.enumValues);
+      if (!status) {
+        return {
+          ok: false,
+          detail: `Campo 'status' inválido. Valores aceitos: ${leadStatusEnum.enumValues.join(", ")}.`,
+        };
+      }
+      dto.status = status;
     }
-    (dto[field] as string | null | undefined) = outcome.value;
-  }
 
-  const enumFields: {
-    field: keyof LeadPatchDto;
-    allowed: readonly string[];
-  }[] = [
-    { field: "modality", allowed: modalityEnum.enumValues },
-    { field: "propertyType", allowed: propertyTypeEnum.enumValues },
-    { field: "motivation", allowed: motivationEnum.enumValues },
-    { field: "creditStatus", allowed: creditStatusEnum.enumValues },
-  ];
-  for (const { field, allowed } of enumFields) {
-    const outcome = optionalNullableField(json, field, (raw) =>
-      enumValue(raw, allowed)
-    );
-    if (!outcome.present) continue;
-    if (!outcome.ok) {
-      return {
-        ok: false,
-        detail: `Campo '${field}' inválido. Valores aceitos: ${allowed.join(", ")}.`,
-      };
+    const parsed = qualification?.parsePatch(json);
+    // Os textos do vertical precedem os do núcleo. Os demais campos vêm depois.
+    if (parsed?.ok === false && parsed.beforeCoreText) return { ok: false, detail: parsed.detail };
+
+    for (const field of ["executiveSummary", "escalationReason"] as const) {
+      const outcome = optionalNullableField(json, field, (raw) =>
+        typeof raw === "string" ? raw.trim() : undefined
+      );
+      if (!outcome.present) continue;
+      if (!outcome.ok) return { ok: false, detail: `Campo '${field}' deve ser uma string.` };
+      dto[field] = outcome.value;
     }
-    (dto[field] as string | null | undefined) = outcome.value;
-  }
 
-  const budgetOutcome = optionalNullableField(json, "budgetCents", parseBudgetCents);
-  if (budgetOutcome.present) {
-    if (!budgetOutcome.ok) {
-      return {
-        ok: false,
-        detail: "Campo 'budgetCents' deve ser um inteiro maior ou igual a 0.",
-      };
+    if (!qualification) {
+      const field = LEAD_QUALIFICATION_FIELDS.find((field) => field in json);
+      if (field) return { ok: false, detail: `Campo '${field}' inválido.` };
     }
-    dto.budgetCents = budgetOutcome.value;
-  }
+    if (parsed?.ok === false) return { ok: false, detail: parsed.detail };
+    if (parsed && Object.keys(parsed.dto).length > 0) dto.qualification = parsed.dto;
 
-  const chainedOutcome = optionalNullableField(json, "chainedOperation", (raw) =>
-    typeof raw === "boolean" ? raw : undefined
-  );
-  if (chainedOutcome.present) {
-    if (!chainedOutcome.ok) {
-      return { ok: false, detail: "Campo 'chainedOperation' deve ser booleano." };
+    const appointmentAtOutcome = optionalNullableField(json, "meetingAt", parseIsoDate);
+    if (appointmentAtOutcome.present) {
+      if (!appointments || !appointmentAtOutcome.ok) {
+        return {
+          ok: false,
+          detail: "Campo 'meetingAt' deve ser uma data ISO-8601 válida.",
+        };
+      }
+      dto.appointmentAt = appointmentAtOutcome.value;
     }
-    dto.chainedOperation = chainedOutcome.value;
-  }
 
-  const meetingAtOutcome = optionalNullableField(json, "meetingAt", parseIsoDate);
-  if (meetingAtOutcome.present) {
-    if (!meetingAtOutcome.ok) {
-      return {
-        ok: false,
-        detail: "Campo 'meetingAt' deve ser uma data ISO-8601 válida.",
-      };
-    }
-    dto.meetingAt = meetingAtOutcome.value;
-  }
-
-  return { ok: true, dto };
+    return { ok: true, dto };
+  };
 }
 
 // ---- POST /api/v1/leads/{id}/messages -----------------------------------
@@ -406,7 +316,7 @@ export function parseLeadPatch(json: unknown): ParseResult<LeadPatchDto> {
  * (envio pela tela de Chats); aceitar `senderEnum.enumValues` aqui deixaria o
  * agente fabricar a fala de um corretor.
  */
-export const AGENT_WRITABLE_SENDERS = ["agente", "lead"] as const satisfies readonly Sender[];
+export const AGENT_WRITABLE_SENDERS = [SENDER.agent, "lead"] as const satisfies readonly Sender[];
 
 export interface MessageCreateDto {
   externalId: string;
@@ -514,7 +424,7 @@ export function parseMessagesQuery(url: URL): ParseMessagesQueryResult {
 export const MAX_CONTEXT_QUESTION_LENGTH = 4096;
 
 export interface ContextQueryDto {
-  modality: (typeof modalityEnum.enumValues)[number];
+  segment: DocumentSegment;
   question: string;
   reservedContextBytes?: number;
 }
@@ -525,19 +435,19 @@ export interface ContextQueryDto {
  * não é o mesmo que payload com string vazia (L-005). O `trim` define tanto
  * a vacuidade quanto o comprimento medido.
  */
-export function parseContextQuery(json: unknown): ParseResult<ContextQueryDto> {
+export function parseContextQuery(json: unknown, facet: DocumentSegmentFacet | null): ParseResult<ContextQueryDto> {
   if (!isPlainObject(json)) {
     return { ok: false, detail: "Corpo da requisição deve ser um objeto JSON." };
   }
 
-  if (json.modality === undefined) {
+  if (facet && json.modality === undefined) {
     return { ok: false, detail: "Campo 'modality' é obrigatório." };
   }
-  const modality = enumValue(json.modality, modalityEnum.enumValues);
-  if (!modality) {
+  const segment = resolveDocumentSegment(json.modality, facet);
+  if (segment === undefined) {
     return {
       ok: false,
-      detail: `Campo 'modality' inválido. Valores aceitos: ${modalityEnum.enumValues.join(", ")}.`,
+      detail: `Campo 'modality' inválido. Valores aceitos: ${facet?.values.join(", ")}.`,
     };
   }
 
@@ -561,5 +471,5 @@ export function parseContextQuery(json: unknown): ParseResult<ContextQueryDto> {
   if (Object.hasOwn(json, "reservedContextBytes") && (!Number.isSafeInteger(json.reservedContextBytes) || (json.reservedContextBytes as number) < 0)) {
     return { ok: false, detail: "reservedContextBytes deve ser um inteiro seguro não negativo." };
   }
-  return { ok: true, dto: { modality, question, ...(Object.hasOwn(json, "reservedContextBytes") ? { reservedContextBytes: json.reservedContextBytes as number } : {}) } };
+  return { ok: true, dto: { segment, question, ...(Object.hasOwn(json, "reservedContextBytes") ? { reservedContextBytes: json.reservedContextBytes as number } : {}) } };
 }

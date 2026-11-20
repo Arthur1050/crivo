@@ -15,13 +15,12 @@ import {
 } from "../../../db/schema";
 import {
   createDocument,
-  getBrokers,
+  getAssignees,
   getConversations,
   getConversationSummaries,
   getDashboardKpis,
   getDocuments,
   getLead,
-  getLeadDistributions,
   getLeads,
   getLeadVolumeSeries,
   getMessages,
@@ -30,6 +29,7 @@ import {
   getTenants,
   serviceScope,
 } from "../index";
+import { getLeadDistributions } from "../../../verticals/real-estate/data/distributions";
 
 const NON_EXISTENT_TENANT_ID = "00000000-0000-4000-8000-000000000000";
 const NON_EXISTENT_LEAD_ID = "00000000-0000-4000-8000-000000000001";
@@ -67,13 +67,13 @@ describe("server/data isolation", () => {
         name: "Fixture documento isolamento A.pdf",
         mimeType: "application/pdf",
         sizeBytes: 100,
-        modality: "novo",
+        segment: "novo",
       }),
       createDocument(tenantBId, {
         name: "Fixture documento isolamento B.pdf",
         mimeType: "application/pdf",
         sizeBytes: 100,
-        modality: "usado",
+        segment: "usado",
       }),
     ]);
 
@@ -130,8 +130,8 @@ describe("server/data isolation", () => {
 
   describe("getBrokers", () => {
     it("resultados do tenant A e B são totalmente disjuntos e cada corretor pertence ao tenant pedido (AC 2.1, 2.2)", async () => {
-      const brokersA = await getBrokers(tenantAId);
-      const brokersB = await getBrokers(tenantBId);
+      const brokersA = await getAssignees(tenantAId);
+      const brokersB = await getAssignees(tenantBId);
 
       expect(brokersA.length).toBeGreaterThan(0);
       expect(brokersB.length).toBeGreaterThan(0);
@@ -146,7 +146,7 @@ describe("server/data isolation", () => {
     });
 
     it("retorna [] para um tenant inexistente, nunca um erro (edge case)", async () => {
-      const result = await getBrokers(NON_EXISTENT_TENANT_ID);
+      const result = await getAssignees(NON_EXISTENT_TENANT_ID);
       expect(result).toEqual([]);
     });
   });
@@ -280,7 +280,7 @@ describe("server/data isolation", () => {
   // (um de cada corretor, um sem responsável, um de outra imobiliária).
   it("T9: filtro de pasta estrangeira retorna vazio sem expor seus documentos (PFILT-01 AC5)", async () => {
     const [folder] = await db.insert(documentFolders).values({ tenantId: tenantBId, name: `Isolamento ${randomUUID()}` }).returning();
-    const doc = await createDocument(tenantBId, { name: "Documento da pasta estrangeira", mimeType: "application/pdf", sizeBytes: 10, modality: "novo" });
+    const doc = await createDocument(tenantBId, { name: "Documento da pasta estrangeira", mimeType: "application/pdf", sizeBytes: 10, segment: "novo" });
     try {
       await db.update(documents).set({ folderId: folder.id }).where(eq(documents.id, doc.id));
       expect(await getDocuments(tenantAId, { folder: { kind: "pasta", folderId: folder.id } })).toEqual([]);
@@ -312,7 +312,7 @@ describe("server/data isolation", () => {
         id: tenantId,
         name: "Tenant Escopo Carteira",
         agentName: "Agente Escopo",
-        supportedModality: "ambos",
+        supportedSegment: "ambos",
         slug: `fixture-${tenantId}`,
       });
 

@@ -1,6 +1,9 @@
+import { DEFAULT_DOCUMENT_SEGMENT, documentSegmentValues, type DocumentSegmentFacet } from "../documents/segments";
+import { AGENT_PHASE, DOCUMENT_STATUS, HUMAN_SEND_RESERVATION_OUTCOME, HUMAN_SEND_STATE, LEAD_STATUS, PROBLEM_CODE, ROLE, SENDER, STATUS_ACTOR } from "../../lib/vocabulary";
 import "server-only";
 
-import { isUniqueViolation, isForeignKeyViolation } from "./pg-errors";
+import { LEAD_QUALIFICATION_FIELDS, type LeadQualificationColumns, type LeadQualificationRow } from "../../vertical-kit";
+import { isUniqueViolation } from "./pg-errors";
 import { isUuid, type DocumentFolderFilter } from "../../lib/document-folders";
 import { createHash, randomUUID } from "node:crypto";
 import {
@@ -34,7 +37,6 @@ import {
   leadAgentState,
   leads,
   messages,
-  properties,
   reengagementEpisodes,
   serviceApiKeys,
   tenant_invitations,
@@ -45,15 +47,14 @@ import {
   whatsappChannels,
 } from "../../db/schema";
 import { attachReceipt } from "../whatsapp/statuses";
-import { assignBroker, type BrokerLoad } from "../../lib/broker-assignment";
+import { assignAssignee, type AssigneeLoad } from "../../lib/assignee-assignment";
 import {
   selectForEscalation,
-  selectForMeeting,
-  type BrokerCandidate,
-} from "../../lib/broker-availability";
+  selectForAppointment,
+  type AssigneeCandidate,
+} from "../../lib/assignee-availability";
 import type { LeadScope } from "../../lib/lead-scope";
-import { normalizeForSearch } from "../../lib/normalize-text";
-import { parseRoles, type Role } from "../../lib/permissions";
+import { parseRoles, type Role } from "../../lib/access";
 import { isPendingAttendance } from "../../lib/pilot-metrics";
 import { isHumanConducted } from "../../../n8n/src/conduction.mjs";
 
@@ -81,7 +82,7 @@ export function serviceScope(tenantId: string): LeadScope {
  * ele fica visível para administrador e gestor e invisível para quem só tem
  * papel corretor, que é exatamente a AC5.
  */
-function assignedTo(scope: LeadScope) {
+export function assignedTo(scope: LeadScope) {
   return scope.assignedUserId === null
     ? undefined
     : eq(leads.assignedUserId, scope.assignedUserId);
@@ -97,7 +98,7 @@ export type Tenant = typeof tenants.$inferSelect;
  * `createdAt` é a data DO VÍNCULO — é ela que sustenta o desempate
  * determinístico da política de atribuição.
  */
-export interface Broker {
+export interface Assignee {
   id: string;
   tenantId: string;
   name: string;
@@ -109,14 +110,9 @@ export type Conversation = typeof conversations.$inferSelect;
 export type Message = typeof messages.$inferSelect;
 export type Document = typeof documents.$inferSelect;
 export type DocumentCategory = typeof documentCategories.$inferSelect;
-export type Property = typeof properties.$inferSelect;
 export type LeadStatus = Lead["status"];
-export type Modality = Document["modality"];
+export type DocumentSegment = Document["segment"];
 export type CategoryColor = DocumentCategory["color"];
-export type PropertyKind = Property["kind"];
-export type PropertyStatus = Property["status"];
-
-const ALL_MODALITIES: Modality[] = ["novo", "usado", "ambos"];
 
 /**
  * Única função da camada de acesso que não exige tenant_id — alimenta o
@@ -201,7 +197,7 @@ export async function resolveTenantIdBySlug(
  * ao conjunto, nunca igualdade: quem acumula corretor com outro papel
  * continua sendo corretor, que é a mesma união de permissões da PERM-01 AC4.
  */
-const HAS_BROKER_ROLE = sql`'corretor' = any(string_to_array(${tenant_members.role}, ','))`;
+const HAS_ASSIGNEE_ROLE = sql`${sql.raw("'" + ROLE.attendant + "'")} = any(string_to_array(${tenant_members.role}, ','))`;
 
 /**
  * Corretor **elegível a receber lead**: papel corretor e vínculo ativo
@@ -209,12 +205,12 @@ const HAS_BROKER_ROLE = sql`'corretor' = any(string_to_array(${tenant_members.ro
  * continua nomeado nos leads que já atendeu, o que é responsabilidade do join
  * com `users` em `getLeads`, não desta condição).
  */
-const IS_ASSIGNABLE_BROKER = and(
-  HAS_BROKER_ROLE,
+const IS_ASSIGNABLE_ASSIGNEE = and(
+  HAS_ASSIGNEE_ROLE,
   isNull(tenant_members.deactivatedAt)
 );
 
-export async function getBrokers(tenantId: string): Promise<Broker[]> {
+export async function getAssignees(tenantId: string): Promise<Assignee[]> {
   return db
     .select({
       id: users.id,
@@ -226,7 +222,7 @@ export async function getBrokers(tenantId: string): Promise<Broker[]> {
     .from(tenant_members)
     .innerJoin(users, eq(tenant_members.userId, users.id))
     .where(
-      and(eq(tenant_members.organizationId, tenantId), IS_ASSIGNABLE_BROKER)
+      and(eq(tenant_members.organizationId, tenantId), IS_ASSIGNABLE_ASSIGNEE)
     );
 }
 
@@ -235,27 +231,29 @@ export async function getBrokers(tenantId: string): Promise<Broker[]> {
  * Extensão ADITIVA do retorno de `getLeads` (redesign-crm-astryx — RD-03 AC3):
  * todas as colunas de `leads` continuam presentes e inalteradas.
  */
-export type LeadWithBroker = Lead & {
-  brokerName: string | null;
-  /**
-   * `null` = responsável ativo (ou lead sem responsável). Preenchido quando o
-   * vínculo do responsável foi desativado e a carteira dele foi MANTIDA
-   * (USER-02 AC4): é o sinal de "responsável inativo" que o Pipeline exibe
-   * para administrador e gestor. Derivado do vínculo, não de coluna nova em
-   * `leads` — a atribuição em si continua intacta.
-   */
-  brokerDeactivatedAt: Date | null;
-};
+const leadColumns = getTableColumns(leads);
+type QualificationSelection = Partial<Pick<typeof leadColumns, keyof LeadQualificationColumns>>;
 
-export async function getLeads(
+function selectLeadColumns<Selection extends QualificationSelection>(qualification: Selection) {
+  const selection: Partial<typeof leadColumns> = { ...leadColumns, ...qualification };
+  // Conserva a ordem da projeção original quando o vertical pede todas as colunas.
+  for (const field of LEAD_QUALIFICATION_FIELDS) {
+    if (!Object.hasOwn(qualification, field)) delete selection[field];
+  }
+  return selection as Omit<typeof leadColumns, keyof LeadQualificationColumns> & Selection;
+}
+
+export async function getLeads<Selection extends QualificationSelection = Record<never, never>>(
   scope: LeadScope,
-  filters?: { status?: LeadStatus }
-): Promise<LeadWithBroker[]> {
+  filters?: { status?: LeadStatus },
+  qualification?: Selection
+) {
   return db
     .select({
-      ...getTableColumns(leads),
-      brokerName: users.name,
-      brokerDeactivatedAt: tenant_members.deactivatedAt,
+      ...selectLeadColumns(qualification ?? ({} as Selection)),
+      assigneeName: users.name,
+      // O Pipeline sinaliza o vínculo desativado quando a carteira foi mantida.
+      assigneeDeactivatedAt: tenant_members.deactivatedAt,
     })
     .from(leads)
     // LEFT (não INNER): leads sem corretor continuam aparecendo no Kanban,
@@ -281,16 +279,6 @@ export async function getLeads(
     .orderBy(desc(leads.updatedAt), asc(leads.id));
 }
 
-export interface RecentLead {
-  id: string;
-  name: string;
-  budgetCents: bigint | null;
-  modality: Lead["modality"];
-  status: LeadStatus;
-  brokerName: string | null;
-  firstContactAt: Date;
-}
-
 /**
  * Últimos leads gerados pelo agente, para o card "Leads Recentes" do
  * dashboard (redesign-crm-astryx — RD-04 AC4/AC5). Ordena por
@@ -299,18 +287,18 @@ export interface RecentLead {
  * o período filtra KPIs e gráficos, nunca esta lista. Tenants com menos
  * leads que `limit` retornam apenas os existentes; sem leads, `[]`.
  */
-export async function getRecentLeads(
+export async function getRecentLeads<Selection extends QualificationSelection = Record<never, never>>(
   scope: LeadScope,
-  limit = 5
-): Promise<RecentLead[]> {
+  limit = 5,
+  qualification?: Selection
+) {
   return db
     .select({
       id: leads.id,
       name: leads.name,
-      budgetCents: leads.budgetCents,
-      modality: leads.modality,
+      ...(qualification ?? ({} as Selection)),
       status: leads.status,
-      brokerName: users.name,
+      assigneeName: users.name,
       firstContactAt: leads.firstContactAt,
     })
     .from(leads)
@@ -565,7 +553,7 @@ export async function getConversationSummaries(
 }
 
 export interface DocumentFilters {
-  modality?: Modality;
+  segment?: DocumentSegment;
   categoryId?: string;
   search?: string;
   folder?: DocumentFolderFilter;
@@ -582,7 +570,7 @@ const DOCUMENT_LIST_COLUMNS = {
   id: documents.id,
   tenantId: documents.tenantId,
   name: documents.name,
-  modality: documents.modality,
+  segment: documents.segment,
   mimeType: documents.mimeType,
   sizeBytes: documents.sizeBytes,
   categoryId: documents.categoryId,
@@ -623,7 +611,7 @@ export async function getDocuments(
         isNull(documents.deletedAt),
         filters?.folder?.kind === "pasta" ? eq(documents.folderId, filters.folder.folderId)
           : filters?.folder?.kind === "sem-pasta" ? isNull(documents.folderId) : undefined,
-        filters?.modality ? eq(documents.modality, filters.modality) : undefined,
+        filters?.segment ? eq(documents.segment, filters.segment) : undefined,
         filters?.categoryId
           ? eq(documents.categoryId, filters.categoryId)
           : undefined,
@@ -644,7 +632,7 @@ export async function getDocumentCategories(
 
 export interface DocumentSample {
   recent: Document[];
-  countsByModality: Record<Modality, number>;
+  countsBySegment: Record<DocumentSegment, number>;
 }
 
 /**
@@ -653,7 +641,8 @@ export interface DocumentSample {
  * (todas as 3 modalidades sempre presentes, com 0 quando não há documentos).
  */
 export async function getDocumentSample(
-  tenantId: string
+  tenantId: string,
+  facet: DocumentSegmentFacet | null = null
 ): Promise<DocumentSample> {
   const recent = await db
     .select()
@@ -663,79 +652,29 @@ export async function getDocumentSample(
     .limit(5);
 
   const counts = await db
-    .select({ modality: documents.modality, count: count() })
+    .select({ segment: documents.segment, count: count() })
     .from(documents)
     .where(and(eq(documents.tenantId, tenantId), isNull(documents.deletedAt)))
-    .groupBy(documents.modality);
+    .groupBy(documents.segment);
 
-  const countsByModality = ALL_MODALITIES.reduce(
-    (acc, modality) => {
-      acc[modality] = 0;
+  const countsBySegment = documentSegmentValues(facet).reduce(
+    (acc, segment) => {
+      acc[segment] = 0;
       return acc;
     },
-    {} as Record<Modality, number>
+    {} as Record<DocumentSegment, number>
   );
   for (const row of counts) {
-    countsByModality[row.modality] = Number(row.count);
+    countsBySegment[facet ? row.segment : DEFAULT_DOCUMENT_SEGMENT] += Number(row.count);
   }
 
-  return { recent, countsByModality };
-}
-
-// ---------------------------------------------------------------------------
-// Catálogo de imóveis (lote-11 — IMOV-01/02). Molde direto de `getDocuments`
-// (`and(...)` com `undefined` condicional) e de `isNull(tenant_members.
-// deactivatedAt)` (`getBrokers`).
-// ---------------------------------------------------------------------------
-
-export interface PropertyFilters {
-  status?: PropertyStatus;
-  published?: boolean;
-  kind?: PropertyKind;
-  modality?: Modality;
-  // Comparado contra `neighborhoodNormalized`/`cityNormalized` — o chamador
-  // não precisa normalizar antes; `getProperties` normaliza aqui, uma vez,
-  // com a mesma função usada na escrita (design.md — Colunas `*Normalized`).
-  search?: string;
-}
-
-export async function getProperties(
-  tenantId: string,
-  filters?: PropertyFilters
-): Promise<Property[]> {
-  const normalizedSearch = filters?.search
-    ? normalizeForSearch(filters.search)
-    : undefined;
-
-  return db
-    .select()
-    .from(properties)
-    .where(
-      and(
-        eq(properties.tenantId, tenantId),
-        filters?.status ? eq(properties.status, filters.status) : undefined,
-        filters?.published !== undefined
-          ? eq(properties.published, filters.published)
-          : undefined,
-        filters?.kind ? eq(properties.kind, filters.kind) : undefined,
-        filters?.modality
-          ? eq(properties.modality, filters.modality)
-          : undefined,
-        normalizedSearch
-          ? or(
-              ilike(properties.neighborhoodNormalized, `%${normalizedSearch}%`),
-              ilike(properties.cityNormalized, `%${normalizedSearch}%`)
-            )
-          : undefined
-      )
-    )
-    .orderBy(desc(properties.updatedAt));
+  return { recent, countsBySegment };
 }
 
 /**
  * Membro ativo de uma imobiliária (IMOV-02 AC4): falso para usuário de outro
  * tenant e para vínculo com `deactivatedAt` preenchido — mesma condição de
- * `IS_ASSIGNABLE_BROKER`, sem o filtro de papel (o captador não precisa ser
+ * `IS_ASSIGNABLE_ASSIGNEE`, sem o filtro de papel (o captador não precisa ser
  * corretor; qualquer papel ativo serve).
  */
 export async function isActiveMemberOf(
@@ -756,174 +695,6 @@ export async function isActiveMemberOf(
   return rows.length > 0;
 }
 
-/**
- * Campos de entrada de um imóvel (IMOV-01/03). `sequence` e `reference`
- * nascem calculados por `createProperty` — nunca aceitos aqui, o que é o que
- * torna `UpdatePropertyPatch` (abaixo) imutável para os dois por construção
- * (IMOV-03 AC6), não por checagem em runtime.
- */
-export interface NewProperty {
-  capturedByUserId: string;
-  kind: PropertyKind;
-  modality: Modality;
-  status?: PropertyStatus;
-  published?: boolean;
-  street?: string | null;
-  number?: string | null;
-  complement?: string | null;
-  neighborhood: string;
-  city: string;
-  state: string;
-  priceCents: bigint;
-  areaSqm: number;
-  bedrooms: number;
-  bathrooms: number;
-  parkingSpots: number;
-  description?: string | null;
-  photoUrls?: string[];
-}
-
-export type UpdatePropertyPatch = Partial<NewProperty>;
-
-export type CreatePropertyResult =
-  | { ok: true; id: string }
-  | { ok: false; error: string };
-
-const MAX_PROPERTY_REFERENCE_ATTEMPTS = 3;
-
-function buildPropertyReference(sequence: number): string {
-  return `IM-${String(sequence).padStart(4, "0")}`;
-}
-
-/**
- * `sequence` nasce como `max(sequence) + 1` **por tenant** (IMOV-03 AC5) e
- * `reference` é derivada dele. A corrida entre duas criações concorrentes
- * lendo o mesmo `max` é resolvida pelo índice único do banco (IMOV-03 AC7),
- * nunca pela aplicação — por isso a leitura do `max` não roda em transação
- * com o insert: é a rejeição do índice na segunda tentativa que garante a
- * unicidade, e o retry aqui é só recuperação dessa rejeição.
- */
-export async function createProperty(
-  tenantId: string,
-  input: NewProperty
-): Promise<CreatePropertyResult> {
-  for (let attempt = 0; attempt < MAX_PROPERTY_REFERENCE_ATTEMPTS; attempt++) {
-    const [row] = await db
-      .select({ maxSequence: max(properties.sequence) })
-      .from(properties)
-      .where(eq(properties.tenantId, tenantId));
-    const sequence = (row?.maxSequence ?? 0) + 1;
-
-    try {
-      const rows = await db
-        .insert(properties)
-        .values({
-          tenantId,
-          capturedByUserId: input.capturedByUserId,
-          sequence,
-          reference: buildPropertyReference(sequence),
-          kind: input.kind,
-          modality: input.modality,
-          status: input.status ?? "disponivel",
-          published: input.published ?? false,
-          street: input.street ?? null,
-          number: input.number ?? null,
-          complement: input.complement ?? null,
-          neighborhood: input.neighborhood,
-          neighborhoodNormalized: normalizeForSearch(input.neighborhood),
-          city: input.city,
-          cityNormalized: normalizeForSearch(input.city),
-          state: input.state,
-          priceCents: input.priceCents,
-          areaSqm: input.areaSqm,
-          bedrooms: input.bedrooms,
-          bathrooms: input.bathrooms,
-          parkingSpots: input.parkingSpots,
-          description: input.description ?? null,
-          photoUrls: input.photoUrls ?? [],
-        })
-        .returning({ id: properties.id });
-      return { ok: true, id: rows[0].id };
-    } catch (err) {
-      if (!isUniqueViolation(err)) throw err;
-      // Colisão em (tenant_id, sequence) ou (tenant_id, reference): outra
-      // criação concorrente já ocupou este número — recalcula o `max` e
-      // tenta de novo (até `MAX_PROPERTY_REFERENCE_ATTEMPTS` vezes).
-    }
-  }
-  return {
-    ok: false,
-    error:
-      "Não foi possível gerar uma referência única para o imóvel. Tente novamente.",
-  };
-}
-
-/**
- * Retorna `false` (no-op) quando nenhuma linha corresponde a `tenantId` +
- * `propertyId`. `sequence`/`reference` não podem aparecer em `patch` — o
- * tipo `UpdatePropertyPatch` não os declara (IMOV-03 AC6). Ao alterar
- * `neighborhood`/`city`, a coluna `*Normalized` gêmea é recalculada aqui,
- * nunca deixada como estava.
- */
-export async function updateProperty(
-  tenantId: string,
-  propertyId: string,
-  patch: UpdatePropertyPatch
-): Promise<boolean> {
-  const setValues = {
-    ...patch,
-    updatedAt: sql`now()`,
-    ...(patch.neighborhood !== undefined
-      ? { neighborhoodNormalized: normalizeForSearch(patch.neighborhood) }
-      : {}),
-    ...(patch.city !== undefined
-      ? { cityNormalized: normalizeForSearch(patch.city) }
-      : {}),
-  };
-
-  const rows = await db
-    .update(properties)
-    .set(setValues)
-    .where(and(eq(properties.tenantId, tenantId), eq(properties.id, propertyId)))
-    .returning({ id: properties.id });
-  return rows.length > 0;
-}
-
-/**
- * Retorna `false` (no-op) quando nenhuma linha corresponde a `tenantId` +
- * `propertyId` — nunca lança erro para um id inexistente/de outro tenant.
- */
-export async function deleteProperty(
-  tenantId: string,
-  propertyId: string
-): Promise<boolean> {
-  const rows = await db
-    .delete(properties)
-    .where(and(eq(properties.tenantId, tenantId), eq(properties.id, propertyId)))
-    .returning({ id: properties.id });
-  return rows.length > 0;
-}
-
-/**
- * Destaque da vitrine pública (lote-16a — VDEST-01). Escrita própria, fora de
- * `UpdatePropertyPatch`: o destaque só interessa à vitrine e não faz parte da
- * edição do imóvel nem do contrato `/api/v1`. Sem teto de destaques por
- * imobiliária (AC5). Retorna `false` (no-op) quando nenhuma linha corresponde
- * a `tenantId` + `propertyId` — imóvel de outro tenant é tratado como inexistente.
- */
-export async function setPropertyFeatured(
-  tenantId: string,
-  propertyId: string,
-  featured: boolean
-): Promise<boolean> {
-  const rows = await db
-    .update(properties)
-    .set({ featured, updatedAt: sql`now()` })
-    .where(and(eq(properties.tenantId, tenantId), eq(properties.id, propertyId)))
-    .returning({ id: properties.id });
-  return rows.length > 0;
-}
-
 export interface DashboardRange {
   from: Date;
   to: Date;
@@ -936,7 +707,7 @@ export interface DashboardKpis {
   qualificationRate: number | null;
   escalationRate: number | null;
   attendanceRate: number | null;
-  confirmedMeetingCount: number;
+  confirmedAppointmentCount: number;
 }
 
 /**
@@ -944,7 +715,7 @@ export interface DashboardKpis {
  * para o teste conseguir inspecionar o SQL gerado via `.toSQL()` sem
  * executar contra o banco. Projeção explícita: só as 4 colunas que a
  * agregação em TS de fato lê (`status`, `firstContactAt`, `firstResponseAt`,
- * `meetingAttended`) — nunca `executive_summary`, `escalation_reason` nem
+ * `appointmentAttended`) — nunca `executive_summary`, `escalation_reason` nem
  * qualquer outro campo de texto longo do lead.
  */
 function periodLeadsQuery(scope: LeadScope, range: DashboardRange) {
@@ -953,7 +724,7 @@ function periodLeadsQuery(scope: LeadScope, range: DashboardRange) {
       status: leads.status,
       firstContactAt: leads.firstContactAt,
       firstResponseAt: leads.firstResponseAt,
-      meetingAttended: leads.meetingAttended,
+      appointmentAttended: leads.appointmentAttended,
     })
     .from(leads)
     .where(
@@ -980,7 +751,8 @@ export const __testOnly_periodLeadsQuery = periodLeadsQuery;
  */
 export async function getDashboardKpis(
   scope: LeadScope,
-  range: DashboardRange
+  range: DashboardRange,
+  appointments = true
 ): Promise<DashboardKpis> {
   const periodLeads = await periodLeadsQuery(scope, range);
 
@@ -1000,24 +772,24 @@ export async function getDashboardKpis(
         ) / respondedCount;
 
   const qualifiedCount = periodLeads.filter(
-    (lead) => lead.status === "qualificado_agendado"
+    (lead) => lead.status === LEAD_STATUS.goal_reached
   ).length;
   const qualificationRate = leadCount === 0 ? null : qualifiedCount / leadCount;
 
   const escalatedCount = periodLeads.filter(
-    (lead) => lead.status === "escalado_humano"
+    (lead) => lead.status === LEAD_STATUS.escalated
   ).length;
   const escalationRate = leadCount === 0 ? null : escalatedCount / leadCount;
 
-  const confirmedMeetings = periodLeads.filter(
-    (lead) => lead.meetingAttended !== null
-  );
-  const confirmedMeetingCount = confirmedMeetings.length;
-  const attendedCount = confirmedMeetings.filter(
-    (lead) => lead.meetingAttended === true
+  const confirmedAppointments = appointments
+    ? periodLeads.filter((lead) => lead.appointmentAttended !== null)
+    : [];
+  const confirmedAppointmentCount = confirmedAppointments.length;
+  const attendedCount = confirmedAppointments.filter(
+    (lead) => lead.appointmentAttended === true
   ).length;
   const attendanceRate =
-    confirmedMeetingCount === 0 ? null : attendedCount / confirmedMeetingCount;
+    confirmedAppointmentCount === 0 ? null : attendedCount / confirmedAppointmentCount;
 
   return {
     avgFirstResponseMinutes,
@@ -1026,7 +798,7 @@ export async function getDashboardKpis(
     qualificationRate,
     escalationRate,
     attendanceRate,
-    confirmedMeetingCount,
+    confirmedAppointmentCount,
   };
 }
 
@@ -1092,69 +864,6 @@ export async function getLeadVolumeSeries(
   return buckets;
 }
 
-export interface LeadDistributionBucket {
-  bucket: string;
-  count: number;
-}
-
-export interface LeadDistributions {
-  modality: LeadDistributionBucket[];
-  motivation: LeadDistributionBucket[];
-}
-
-// Buckets fixos (sempre presentes, mesmo com contagem 0) — "nao_informado"
-// cobre leads com o campo nulo (spec.md — distribuições nunca excluem dado).
-const MODALITY_BUCKETS = ["novo", "usado", "ambos", "nao_informado"] as const;
-const MOTIVATION_BUCKETS = ["investidor", "morador", "nao_informado"] as const;
-
-/**
- * Distribuições de P por `modality` e `motivation` (lote-4 — DASH-04).
- * Buckets fixos, cada distribuição somando |P| (todo lead cai em exatamente
- * um bucket, incluindo "nao_informado" para campo nulo).
- */
-export async function getLeadDistributions(
-  scope: LeadScope,
-  range: DashboardRange
-): Promise<LeadDistributions> {
-  const rows = await db
-    .select({ modality: leads.modality, motivation: leads.motivation })
-    .from(leads)
-    .where(
-      and(
-        eq(leads.tenantId, scope.tenantId),
-        assignedTo(scope),
-        gte(leads.firstContactAt, range.from),
-        lte(leads.firstContactAt, range.to)
-      )
-    );
-
-  const modalityCounts = new Map<string, number>();
-  const motivationCounts = new Map<string, number>();
-  for (const row of rows) {
-    const modalityBucket = row.modality ?? "nao_informado";
-    modalityCounts.set(
-      modalityBucket,
-      (modalityCounts.get(modalityBucket) ?? 0) + 1
-    );
-    const motivationBucket = row.motivation ?? "nao_informado";
-    motivationCounts.set(
-      motivationBucket,
-      (motivationCounts.get(motivationBucket) ?? 0) + 1
-    );
-  }
-
-  return {
-    modality: MODALITY_BUCKETS.map((bucket) => ({
-      bucket,
-      count: modalityCounts.get(bucket) ?? 0,
-    })),
-    motivation: MOTIVATION_BUCKETS.map((bucket) => ({
-      bucket,
-      count: motivationCounts.get(bucket) ?? 0,
-    })),
-  };
-}
-
 // --- Writes (lote-2 — CONF-01/02, DOC-01/02/04/05/06/07) ---------------
 //
 // Toda escrita abaixo filtra por tenantId no WHERE — nunca só pelo id do
@@ -1164,7 +873,7 @@ export async function getLeadDistributions(
 export interface TenantSettingsUpdate {
   name: string;
   agentName: string;
-  supportedModality: Modality;
+  supportedSegment: DocumentSegment;
   // Campos de identidade opcionais (redesign-crm-astryx — RD-07 AC3). Chave
   // ausente = coluna intocada; string vazia/em branco ou `null` = grava null.
   city?: string | null;
@@ -1181,9 +890,9 @@ export interface TenantSettingsUpdate {
   // acima, sem normalização de texto (dias são inteiros; horas já chegam
   // validadas pela action — T2): chave ausente = coluna intocada; `null`
   // explícito = limpa; valor presente = grava como veio.
-  meetingDays?: number[] | null;
-  meetingHoursStart?: string | null;
-  meetingHoursEnd?: string | null;
+  appointmentDays?: number[] | null;
+  appointmentHoursStart?: string | null;
+  appointmentHoursEnd?: string | null;
   // Baseline pré-piloto (lote-9 — BASE-01), cinco colunas independentes.
   // Mesmo padrão SPG-1 dos campos de horário comercial acima (sem
   // normalização de texto — são `integer`): chave ausente = coluna
@@ -1191,7 +900,7 @@ export interface TenantSettingsUpdate {
   // (a validação de faixa já rodou na action antes de chegar aqui).
   baselineLeadsPerMonth?: number | null;
   baselineFirstResponseMinutes?: number | null;
-  baselineLeadToMeetingPct?: number | null;
+  baselineLeadToAppointmentPct?: number | null;
   baselineEscalationPct?: number | null;
   baselineAttendancePct?: number | null;
 }
@@ -1218,7 +927,7 @@ export async function updateTenantSettings(
   const setValues: Partial<typeof tenants.$inferInsert> = {
     name: updates.name,
     agentName: updates.agentName,
-    supportedModality: updates.supportedModality,
+    supportedSegment: updates.supportedSegment,
   };
 
   const city = optionalTenantText(updates.city);
@@ -1240,14 +949,14 @@ export async function updateTenantSettings(
     setValues.agentVoiceTone = agentVoiceTone;
   }
 
-  if (updates.meetingDays !== undefined) {
-    setValues.meetingDays = updates.meetingDays;
+  if (updates.appointmentDays !== undefined) {
+    setValues.appointmentDays = updates.appointmentDays;
   }
-  if (updates.meetingHoursStart !== undefined) {
-    setValues.meetingHoursStart = updates.meetingHoursStart;
+  if (updates.appointmentHoursStart !== undefined) {
+    setValues.appointmentHoursStart = updates.appointmentHoursStart;
   }
-  if (updates.meetingHoursEnd !== undefined) {
-    setValues.meetingHoursEnd = updates.meetingHoursEnd;
+  if (updates.appointmentHoursEnd !== undefined) {
+    setValues.appointmentHoursEnd = updates.appointmentHoursEnd;
   }
 
   if (updates.baselineLeadsPerMonth !== undefined) {
@@ -1256,8 +965,8 @@ export async function updateTenantSettings(
   if (updates.baselineFirstResponseMinutes !== undefined) {
     setValues.baselineFirstResponseMinutes = updates.baselineFirstResponseMinutes;
   }
-  if (updates.baselineLeadToMeetingPct !== undefined) {
-    setValues.baselineLeadToMeetingPct = updates.baselineLeadToMeetingPct;
+  if (updates.baselineLeadToAppointmentPct !== undefined) {
+    setValues.baselineLeadToAppointmentPct = updates.baselineLeadToAppointmentPct;
   }
   if (updates.baselineEscalationPct !== undefined) {
     setValues.baselineEscalationPct = updates.baselineEscalationPct;
@@ -1274,7 +983,7 @@ export async function updateTenantSettings(
   return rows[0] ?? null;
 }
 
-export type StatusActor = "humano" | "agente";
+export type StatusActor = typeof STATUS_ACTOR.human | typeof STATUS_ACTOR.agent;
 
 type ConductionTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type ConductionOptions = { now?: () => Date; database?: Pick<typeof db, "transaction"> };
@@ -1337,7 +1046,7 @@ export async function updateLeadStatus(
   scope: LeadScope,
   leadId: string,
   status: LeadStatus,
-  actor: StatusActor = "humano",
+  actor: StatusActor = STATUS_ACTOR.human,
   options: ConductionOptions = {},
 ): Promise<Lead | null> {
   return (options.database ?? db).transaction(async (tx) => {
@@ -1365,14 +1074,14 @@ export async function updateLeadStatus(
  * lote-8 (AD-021): o corretor é um usuário, e "pertencer ao tenant" passou a
  * ser ter vínculo em `tenant_members` com aquela imobiliária.
  */
-export async function updateLeadBroker(
+export async function updateLeadAssignee(
   scope: LeadScope,
   leadId: string,
-  brokerId: string
+  assigneeId: string
 ): Promise<Lead | null> {
   const rows = await db
     .update(leads)
-    .set({ assignedUserId: brokerId, updatedAt: new Date() })
+    .set({ assignedUserId: assigneeId, updatedAt: new Date() })
     .where(
       and(
         eq(leads.tenantId, scope.tenantId),
@@ -1384,9 +1093,9 @@ export async function updateLeadBroker(
             .from(tenant_members)
             .where(
               and(
-                eq(tenant_members.userId, brokerId),
+                eq(tenant_members.userId, assigneeId),
                 eq(tenant_members.organizationId, scope.tenantId),
-                IS_ASSIGNABLE_BROKER
+                IS_ASSIGNABLE_ASSIGNEE
               )
             )
         )
@@ -1403,14 +1112,14 @@ export async function updateLeadBroker(
  * SCOPE-02). Retorna `null` (no-op) para lead inexistente, de outro tenant,
  * ou fora da carteira do corretor, sem escrever nada.
  */
-export async function setMeetingAttendance(
+export async function setAppointmentAttendance(
   scope: LeadScope,
   leadId: string,
   value: boolean | null
 ): Promise<Lead | null> {
   const rows = await db
     .update(leads)
-    .set({ meetingAttended: value, updatedAt: new Date() })
+    .set({ appointmentAttended: value, updatedAt: new Date() })
     .where(
       and(eq(leads.tenantId, scope.tenantId), eq(leads.id, leadId), assignedTo(scope))
     )
@@ -1449,7 +1158,7 @@ export async function takeOverConversation(
     if (!locked) return { outcome: "fora-do-escopo" };
     const clock = conductionClock(options.now ?? (() => now));
     if (locked.lead.optedOutAt) return { outcome: "opt-out" };
-    if (locked.lead.humanTakeoverAt || locked.lead.status === "escalado_humano") return { outcome: "ja-humano", lead: locked.lead };
+    if (locked.lead.humanTakeoverAt || locked.lead.status === LEAD_STATUS.escalated) return { outcome: "ja-humano", lead: locked.lead };
     await invalidateConduction(tx, locked, clock, "human-takeover");
     const [lead] = await tx.update(leads).set({ humanTakeoverAt: clock, humanTakeoverBy: userId, updatedAt: clock })
       .where(eq(leads.id, leadId)).returning();
@@ -1483,11 +1192,11 @@ export async function returnConversationToAgent(
     if (!locked) return { outcome: "fora-do-escopo" };
     const clock = conductionClock(options.now ?? (() => now));
     if (locked.lead.optedOutAt) return { outcome: "opt-out" };
-    if (!locked.lead.humanTakeoverAt && locked.lead.status !== "escalado_humano") return { outcome: "ja-agente", lead: locked.lead };
+    if (!locked.lead.humanTakeoverAt && locked.lead.status !== LEAD_STATUS.escalated) return { outcome: "ja-agente", lead: locked.lead };
     await invalidateConduction(tx, locked, clock, "memory-reset", true);
     const [lead] = await tx.update(leads).set({
       humanTakeoverAt: null, humanTakeoverBy: null,
-      status: locked.lead.status === "escalado_humano" ? "em_qualificacao" : locked.lead.status,
+      status: locked.lead.status === LEAD_STATUS.escalated ? LEAD_STATUS.engaged : locked.lead.status,
       statusChangedBy: null, memoryResetRequestedAt: clock, updatedAt: clock,
     }).where(eq(leads.id, leadId)).returning();
     return { outcome: "devolvido", lead };
@@ -1558,7 +1267,7 @@ export async function getLastLeadMessageAt(
 export const HUMAN_SEND_STALE_MS = 2 * 60 * 1000;
 
 export type ReserveHumanSendResult =
-  | { outcome: "reservado"; reservationId: string; resumed: boolean }
+  | { outcome: typeof HUMAN_SEND_RESERVATION_OUTCOME.reserved; reservationId: string; resumed: boolean }
   | { outcome: "ja-enviada"; message: Message }
   | { outcome: "envio-em-andamento" };
 
@@ -1585,7 +1294,7 @@ export async function reserveHumanSend(
       leadId,
       requestId,
       userId,
-      state: "enviando",
+      state: HUMAN_SEND_STATE.sending,
       createdAt: now,
       updatedAt: now,
     })
@@ -1594,7 +1303,7 @@ export async function reserveHumanSend(
     })
     .returning({ id: humanMessageSends.id });
   if (inserted[0]) {
-    return { outcome: "reservado", reservationId: inserted[0].id, resumed: false };
+    return { outcome: HUMAN_SEND_RESERVATION_OUTCOME.reserved, reservationId: inserted[0].id, resumed: false };
   }
 
   const [existing] = await db
@@ -1612,7 +1321,7 @@ export async function reserveHumanSend(
     throw new Error("reserveHumanSend: conflito sem reserva existente.");
   }
 
-  if (existing.state === "enviada") {
+  if (existing.state === HUMAN_SEND_STATE.sent) {
     const [message] = existing.messageId
       ? await db
           .select()
@@ -1625,13 +1334,13 @@ export async function reserveHumanSend(
   }
 
   const age = now.getTime() - existing.updatedAt.getTime();
-  if (existing.state === "enviando" && age < HUMAN_SEND_STALE_MS) {
+  if (existing.state === HUMAN_SEND_STATE.sending && age < HUMAN_SEND_STALE_MS) {
     return { outcome: "envio-em-andamento" };
   }
 
   const resumed = await db
     .update(humanMessageSends)
-    .set({ state: "enviando", userId, failure: null, updatedAt: now })
+    .set({ state: HUMAN_SEND_STATE.sending, userId, failure: null, updatedAt: now })
     .where(
       and(
         eq(humanMessageSends.id, existing.id),
@@ -1642,7 +1351,7 @@ export async function reserveHumanSend(
     )
     .returning({ id: humanMessageSends.id });
   if (!resumed[0]) return { outcome: "envio-em-andamento" };
-  return { outcome: "reservado", reservationId: resumed[0].id, resumed: true };
+  return { outcome: HUMAN_SEND_RESERVATION_OUTCOME.reserved, reservationId: resumed[0].id, resumed: true };
 }
 
 /**
@@ -1657,12 +1366,12 @@ export async function failHumanSend(
 ): Promise<void> {
   await db
     .update(humanMessageSends)
-    .set({ state: "falhou", failure, updatedAt: now })
+    .set({ state: HUMAN_SEND_STATE.failed, failure, updatedAt: now })
     .where(
       and(
         eq(humanMessageSends.tenantId, tenantId),
         eq(humanMessageSends.requestId, requestId),
-        eq(humanMessageSends.state, "enviando")
+        eq(humanMessageSends.state, HUMAN_SEND_STATE.sending)
       )
     );
 }
@@ -1708,12 +1417,12 @@ export async function recordHumanMessage(
         .where(and(eq(humanMessageSends.tenantId, tenantId), eq(humanMessageSends.requestId, input.requestId))).for("update");
       if (reservation && reservation.leadId !== leadId) return null;
       const ownHumanMessage = async (message: Message | undefined) => {
-        if (!message || message.sender !== "humano") return false;
+        if (!message || message.sender !== SENDER.human) return false;
         const [owner] = await tx.select({ leadId: conversations.leadId }).from(conversations)
           .where(and(eq(conversations.tenantId, tenantId), eq(conversations.id, message.conversationId)));
         return owner?.leadId === leadId;
       };
-      if (reservation?.state === "enviada") {
+      if (reservation?.state === HUMAN_SEND_STATE.sent) {
         const [original] = reservation.messageId ? await tx.select().from(messages)
           .where(and(eq(messages.tenantId, tenantId), eq(messages.id, reservation.messageId))) : [];
         if (!original || !await ownHumanMessage(original)) return null;
@@ -1738,7 +1447,7 @@ export async function recordHumanMessage(
         .values({
           tenantId,
           conversationId: conversation!.id,
-          sender: "humano",
+          sender: SENDER.human,
           content: input.content,
           sentAt: input.sentAt,
           externalId: input.wamid,
@@ -1769,7 +1478,7 @@ export async function recordHumanMessage(
       await tx
         .update(humanMessageSends)
         .set({
-          state: "enviada",
+          state: HUMAN_SEND_STATE.sent,
           wamid: input.wamid,
           messageId: message.id,
           failure: null,
@@ -1790,12 +1499,12 @@ export async function recordHumanMessage(
   }
 }
 
-export interface PendingMeeting {
+export interface PendingAppointment {
   leadId: string;
   leadName: string;
-  meetingAt: Date;
+  appointmentAt: Date;
   assignedUserId: string | null;
-  brokerName: string | null;
+  assigneeName: string | null;
 }
 
 /**
@@ -1813,18 +1522,21 @@ export interface PendingMeeting {
  * Ordenado pela reunião mais antiga primeiro (mais urgente), id como
  * desempate determinístico.
  */
-export async function getPendingAttendanceMeetings(
+export async function getPendingAttendanceAppointments(
   scope: LeadScope,
-  now: Date
-): Promise<PendingMeeting[]> {
+  now: Date,
+  appointments = true
+): Promise<PendingAppointment[]> {
+  if (!appointments) return [];
+
   const rows = await db
     .select({
       leadId: leads.id,
       leadName: leads.name,
-      meetingAt: leads.meetingAt,
-      meetingAttended: leads.meetingAttended,
+      appointmentAt: leads.appointmentAt,
+      appointmentAttended: leads.appointmentAttended,
       assignedUserId: leads.assignedUserId,
-      brokerName: users.name,
+      assigneeName: users.name,
     })
     .from(leads)
     .leftJoin(users, eq(leads.assignedUserId, users.id))
@@ -1832,20 +1544,20 @@ export async function getPendingAttendanceMeetings(
       and(
         eq(leads.tenantId, scope.tenantId),
         assignedTo(scope),
-        isNotNull(leads.meetingAt),
-        isNull(leads.meetingAttended)
+        isNotNull(leads.appointmentAt),
+        isNull(leads.appointmentAttended)
       )
     )
-    .orderBy(asc(leads.meetingAt), asc(leads.id));
+    .orderBy(asc(leads.appointmentAt), asc(leads.id));
 
   return rows
-    .filter((row) => isPendingAttendance(row.meetingAt!, row.meetingAttended, now))
+    .filter((row) => isPendingAttendance(row.appointmentAt!, row.appointmentAttended, now))
     .map((row) => ({
       leadId: row.leadId,
       leadName: row.leadName,
-      meetingAt: row.meetingAt!,
+      appointmentAt: row.appointmentAt!,
       assignedUserId: row.assignedUserId,
-      brokerName: row.brokerName,
+      assigneeName: row.assigneeName,
     }));
 }
 
@@ -1859,28 +1571,23 @@ export async function getLastAgentMessageAt(tenantId: string): Promise<Date | nu
   const rows = await db
     .select({ lastSentAt: max(messages.sentAt) })
     .from(messages)
-    .where(and(eq(messages.tenantId, tenantId), eq(messages.sender, "agente")));
+    .where(and(eq(messages.tenantId, tenantId), eq(messages.sender, SENDER.agent)));
   return rows[0]?.lastSentAt ?? null;
 }
 
+export type PersistedQualificationColumns = Partial<LeadQualificationRow<Lead>>;
+
 export interface UpdateLeadFromAgentInput {
   status?: LeadStatus;
-  modality?: Lead["modality"] | null;
-  region?: string | null;
-  budgetCents?: bigint | null;
-  propertyType?: Lead["propertyType"] | null;
-  purchaseHorizon?: string | null;
-  motivation?: Lead["motivation"] | null;
-  creditStatus?: Lead["creditStatus"] | null;
-  chainedOperation?: boolean | null;
+  leadColumns?: PersistedQualificationColumns;
   executiveSummary?: string | null;
   escalationReason?: string | null;
-  meetingAt?: Date | null;
+  appointmentAt?: Date | null;
   /**
    * Responsável escolhido pela política de atribuição do CRM (lote-8 —
    * AD-022), nunca pelo payload do agente: `LeadPatchDto` não tem este campo,
    * então nada que venha da rede o alcança. Existe aqui para que a atribuição
-   * caia na MESMA `UPDATE` do status e do `meetingAt`.
+   * caia na MESMA `UPDATE` do status e do `appointmentAt`.
    */
   assignedUserId?: string | null;
 }
@@ -1903,21 +1610,14 @@ export async function updateLeadFromAgent(
   input: UpdateLeadFromAgentInput,
   executor: EscalationExecutor = db
 ): Promise<Lead | null> {
-  const setValues: Partial<typeof leads.$inferInsert> = { updatedAt: new Date() };
+  const setValues: Partial<typeof leads.$inferInsert> = {
+    ...input.leadColumns,
+    updatedAt: new Date(),
+  };
 
   if (input.status !== undefined) {
     setValues.status = input.status;
-    setValues.statusChangedBy = "agente";
-  }
-  if ("modality" in input) setValues.modality = input.modality;
-  if ("region" in input) setValues.region = input.region;
-  if ("budgetCents" in input) setValues.budgetCents = input.budgetCents;
-  if ("propertyType" in input) setValues.propertyType = input.propertyType;
-  if ("purchaseHorizon" in input) setValues.purchaseHorizon = input.purchaseHorizon;
-  if ("motivation" in input) setValues.motivation = input.motivation;
-  if ("creditStatus" in input) setValues.creditStatus = input.creditStatus;
-  if ("chainedOperation" in input) {
-    setValues.chainedOperation = input.chainedOperation;
+    setValues.statusChangedBy = STATUS_ACTOR.agent;
   }
   if ("executiveSummary" in input) {
     setValues.executiveSummary = input.executiveSummary;
@@ -1925,7 +1625,7 @@ export async function updateLeadFromAgent(
   if ("escalationReason" in input) {
     setValues.escalationReason = input.escalationReason;
   }
-  if ("meetingAt" in input) setValues.meetingAt = input.meetingAt;
+  if ("appointmentAt" in input) setValues.appointmentAt = input.appointmentAt;
   if ("assignedUserId" in input) setValues.assignedUserId = input.assignedUserId;
 
   const rows = await executor
@@ -1938,17 +1638,17 @@ export async function updateLeadFromAgent(
 
 // Únicos status que contam como "carga ativa" de um corretor (lote-7 —
 // ATRIB-01): um lead já agendado ou perdido não ocupa mais a atenção dele.
-const ACTIVE_LEAD_STATUSES: LeadStatus[] = ["em_qualificacao", "escalado_humano"];
+const ACTIVE_LEAD_STATUSES: LeadStatus[] = [LEAD_STATUS.engaged, LEAD_STATUS.escalated];
 
 /**
  * Carga ativa de cada corretor do tenant (lote-7 — ATRIB-01), para
- * `assignBroker` (função pura em `src/lib/broker-assignment.ts`) escolher
+ * `assignAssignee` (função pura em `src/lib/assignee-assignment.ts`) escolher
  * quem recebe um lead novo. Uma única query agregada (LEFT JOIN, nunca
  * INNER): corretor sem nenhum lead ativo aparece com `activeLeads: 0` em vez
  * de sumir do resultado — o join já filtra pelos status ativos, então
  * `count(leads.id)` conta só as linhas que casaram.
  */
-export async function getBrokerLoads(tenantId: string): Promise<BrokerLoad[]> {
+export async function getAssigneeLoads(tenantId: string): Promise<AssigneeLoad[]> {
   const rows = await db
     .select({
       id: tenant_members.userId,
@@ -1965,7 +1665,7 @@ export async function getBrokerLoads(tenantId: string): Promise<BrokerLoad[]> {
       )
     )
     .where(
-      and(eq(tenant_members.organizationId, tenantId), IS_ASSIGNABLE_BROKER)
+      and(eq(tenant_members.organizationId, tenantId), IS_ASSIGNABLE_ASSIGNEE)
     )
     .groupBy(tenant_members.userId, tenant_members.createdAt);
 
@@ -1979,17 +1679,17 @@ export async function getBrokerLoads(tenantId: string): Promise<BrokerLoad[]> {
 /**
  * Duração do slot de reunião do produto (spec.md — Assumptions: "30 minutos,
  * alinhado ao início da hora ou à meia hora"). É o que transforma o
- * `meetingAt` gravado num intervalo, tanto para o filtro de sobreposição
+ * `appointmentAt` gravado num intervalo, tanto para o filtro de sobreposição
  * quanto para a checagem de janela.
  */
-export const MEETING_DURATION_MS = 30 * 60 * 1000;
+export const APPOINTMENT_DURATION_MS = 30 * 60 * 1000;
 
 /**
  * Reuniões já marcadas de cada corretor, agregadas na própria linha do vínculo
  * (subconsulta correlacionada). `json_agg` devolve os instantes como string
  * ISO — convertidos para `Date` no mapeamento.
  */
-const MEETINGS_JSON = sql<string[] | null>`(
+const APPOINTMENTS_JSON = sql<string[] | null>`(
   select json_agg(agenda.meeting_at)
   from ${leads} agenda
   where agenda.assigned_user_id = ${tenant_members.userId}
@@ -2002,9 +1702,9 @@ const MEETINGS_JSON = sql<string[] | null>`(
  * ativa, janela de trabalho declarada e reuniões já marcadas de cada corretor
  * ATIVO da imobiliária, numa query agregada só.
  *
- * Estende `getBrokerLoads` sem substituí-lo: mesmo LEFT JOIN (corretor sem
+ * Estende `getAssigneeLoads` sem substituí-lo: mesmo LEFT JOIN (corretor sem
  * lead ativo continua aparecendo com `activeLeads: 0`) e mesmo filtro
- * `IS_ASSIGNABLE_BROKER` — papel corretor e vínculo ativo, que é o que faz o
+ * `IS_ASSIGNABLE_ASSIGNEE` — papel corretor e vínculo ativo, que é o que faz o
  * corretor desativado sair dos candidatos mesmo com a janela cobrindo o
  * horário (spec.md — Edge Cases).
  *
@@ -2012,10 +1712,10 @@ const MEETINGS_JSON = sql<string[] | null>`(
  * pela metade é janela não declarada, e quem não declarou é indisponível
  * sempre (AGENDA-01 AC5).
  */
-export async function getBrokerCandidates(
+export async function getAssigneeCandidates(
   tenantId: string,
   executor: EscalationExecutor = db
-): Promise<BrokerCandidate[]> {
+): Promise<AssigneeCandidate[]> {
   const rows = await executor
     .select({
       id: tenant_members.userId,
@@ -2024,7 +1724,7 @@ export async function getBrokerCandidates(
       workDays: tenant_members.workDays,
       workHoursStart: tenant_members.workHoursStart,
       workHoursEnd: tenant_members.workHoursEnd,
-      meetings: MEETINGS_JSON,
+      appointments: APPOINTMENTS_JSON,
     })
     .from(tenant_members)
     .leftJoin(
@@ -2036,7 +1736,7 @@ export async function getBrokerCandidates(
       )
     )
     .where(
-      and(eq(tenant_members.organizationId, tenantId), IS_ASSIGNABLE_BROKER)
+      and(eq(tenant_members.organizationId, tenantId), IS_ASSIGNABLE_ASSIGNEE)
     )
     // Pela PK do vínculo: o Postgres deriva as demais colunas de
     // `tenant_members` (dependência funcional), inclusive as da subconsulta.
@@ -2054,9 +1754,9 @@ export async function getBrokerCandidates(
             end: row.workHoursEnd,
           }
         : null,
-    meetings: (row.meetings ?? []).map((meetingAt) => {
-      const start = new Date(meetingAt);
-      return { start, end: new Date(start.getTime() + MEETING_DURATION_MS) };
+    appointments: (row.appointments ?? []).map((appointmentAt) => {
+      const start = new Date(appointmentAt);
+      return { start, end: new Date(start.getTime() + APPOINTMENT_DURATION_MS) };
     }),
   }));
 }
@@ -2069,7 +1769,7 @@ export async function getBrokerCandidates(
  * corretores não pode sair do CRM (AD-018), então quem monta os candidatos não
  * carrega nome nem e-mail de ninguém.
  */
-export async function getBrokerContact(
+export async function getAssigneeContact(
   tenantId: string,
   userId: string
 ): Promise<{ name: string; email: string } | null> {
@@ -2089,14 +1789,14 @@ export async function getBrokerContact(
 
 export type AssignFailureReason =
   | "lead-nao-encontrado"
-  | "sem-corretor-disponivel"
-  | "conflito-de-agenda";
+  | typeof PROBLEM_CODE.no_assignee_available
+  | typeof PROBLEM_CODE.appointment_conflict;
 
 export type AssignResult =
   | {
       ok: true;
       /** `null` só no escalonamento sem nenhum corretor ativo (ATRIB-03 AC4). */
-      brokerId: string | null;
+      assigneeId: string | null;
       lead: Lead;
     }
   | { ok: false; reason: AssignFailureReason };
@@ -2105,7 +1805,7 @@ export type AssignResult =
  * Atribuição no agendamento (ATRIB-02; AD-022). Escolhe entre os corretores
  * cuja janela cobre INTEIRAMENTE o slot de 30 minutos e que não têm reunião
  * sobreposta, pelo desempate determinístico de sempre — e grava a escolha
- * junto com `meetingAt` e o resto do patch numa **única** `UPDATE`.
+ * junto com `appointmentAt` e o resto do patch numa **única** `UPDATE`.
  *
  * Nada é gravado quando ninguém cobre o horário: o chamador recusa o
  * agendamento com `sem-corretor-disponivel` (AC5). Dois agendamentos
@@ -2119,31 +1819,31 @@ export type AssignResult =
  * responsável: a reunião precisa cair com quem atende naquele horário
  * (spec.md — Success Criteria).
  */
-export async function assignBrokerForMeeting(
+export async function assignForAppointment(
   tenantId: string,
   leadId: string,
-  meetingAt: Date,
+  appointmentAt: Date,
   patch: UpdateLeadFromAgentInput = {}
 ): Promise<AssignResult> {
-  const candidates = await getBrokerCandidates(tenantId);
-  const meetingEnd = new Date(meetingAt.getTime() + MEETING_DURATION_MS);
-  const brokerId = assignBroker(
-    selectForMeeting(candidates, meetingAt, meetingEnd)
+  const candidates = await getAssigneeCandidates(tenantId);
+  const appointmentEnd = new Date(appointmentAt.getTime() + APPOINTMENT_DURATION_MS);
+  const assigneeId = assignAssignee(
+    selectForAppointment(candidates, appointmentAt, appointmentEnd)
   );
 
-  if (!brokerId) return { ok: false, reason: "sem-corretor-disponivel" };
+  if (!assigneeId) return { ok: false, reason: PROBLEM_CODE.no_assignee_available };
 
   try {
     const updated = await updateLeadFromAgent(tenantId, leadId, {
       ...patch,
-      meetingAt,
-      assignedUserId: brokerId,
+      appointmentAt,
+      assignedUserId: assigneeId,
     });
     if (!updated) return { ok: false, reason: "lead-nao-encontrado" };
-    return { ok: true, brokerId, lead: updated };
+    return { ok: true, assigneeId, lead: updated };
   } catch (error) {
     if (isUniqueViolation(error)) {
-      return { ok: false, reason: "conflito-de-agenda" };
+      return { ok: false, reason: PROBLEM_CODE.appointment_conflict };
     }
     throw error;
   }
@@ -2163,7 +1863,7 @@ export async function assignBrokerForMeeting(
  * Lead que JÁ tem responsável não é reatribuído (AC5): o patch é gravado e o
  * responsável atual é devolvido intacto.
  */
-export async function assignBrokerForEscalation(
+export async function assignForEscalation(
   tenantId: string,
   leadId: string,
   at: Date,
@@ -2173,15 +1873,15 @@ export async function assignBrokerForEscalation(
   const assign = async (tx: EscalationExecutor): Promise<AssignResult> => {
     const [lead] = await tx.select().from(leads).where(and(eq(leads.tenantId, tenantId), eq(leads.id, leadId))).for("update");
     if (!lead) return { ok: false, reason: "lead-nao-encontrado" };
-    let brokerId = lead.assignedUserId;
-    if (!brokerId) brokerId = assignBroker(selectForEscalation(await getBrokerCandidates(tenantId, tx), at));
+    let assigneeId = lead.assignedUserId;
+    if (!assigneeId) assigneeId = assignAssignee(selectForEscalation(await getAssigneeCandidates(tenantId, tx), at));
     const updated = await updateLeadFromAgent(tenantId, leadId, {
       ...patch,
       // Chave ausente quando não há corretor: a coluna não é tocada.
-      ...(brokerId ? { assignedUserId: brokerId } : {}),
+      ...(assigneeId ? { assignedUserId: assigneeId } : {}),
     }, tx);
     if (!updated) return { ok: false, reason: "lead-nao-encontrado" };
-    return { ok: true, brokerId, lead: updated };
+    return { ok: true, assigneeId, lead: updated };
   };
   // T23 já mantém lead→episódio na transação externa; nunca abrir savepoint aqui.
   return executor ? assign(executor) : db.transaction(assign);
@@ -2213,8 +1913,8 @@ export interface CreateAgentLeadResult {
  * atribuição por menor carga na criação (ATRIB-01, lote-7) foi removida daqui:
  * quando o lead é criado ainda não existe informação nenhuma sobre quando ele
  * pode se reunir — o horário só emerge durante a conversa. O responsável passa
- * a ser escolhido no agendamento (`assignBrokerForMeeting`) ou, como rede de
- * segurança, no escalonamento (`assignBrokerForEscalation`).
+ * a ser escolhido no agendamento (`assignForAppointment`) ou, como rede de
+ * segurança, no escalonamento (`assignForEscalation`).
  */
 export async function createAgentLead(
   tenantId: string,
@@ -2228,7 +1928,7 @@ export async function createAgentLead(
       phone: input.phone,
       externalId: input.externalId,
       firstContactAt: input.firstContactAt,
-      status: "em_qualificacao",
+      status: LEAD_STATUS.engaged,
     })
     .onConflictDoNothing({
       target: [leads.tenantId, leads.externalId],
@@ -2429,7 +2129,7 @@ export async function ingestAgentMessage(
 
       if (inserted.length > 0) {
         const message = inserted[0];
-        if (input.sender === "agente" && leadRows[0].firstResponseAt === null) {
+        if (input.sender === SENDER.agent && leadRows[0].firstResponseAt === null) {
           await tx
             .update(leads)
             .set({ firstResponseAt: input.sentAt })
@@ -2453,8 +2153,8 @@ export async function ingestAgentMessage(
             }
             if (episode.bridgeInvalidatedAt || !["authorized", "accepted_pending_record", "accepted"].includes(episode.state)) continue;
             const reset = lead.memoryResetRequestedAt?.getTime(), observed = episode.resetObservedAt?.getTime();
-            const eligible = lead.status === "em_qualificacao" && lead.optedOutAt === null && lead.humanTakeoverAt === null
-              && previousPhase !== "encerrada"
+            const eligible = lead.status === LEAD_STATUS.engaged && lead.optedOutAt === null && lead.humanTakeoverAt === null
+              && previousPhase !== AGENT_PHASE.ended
               && validPreviousProjection
               && channel?.ownershipVerifiedAt && Number.isFinite(channel.ownershipVerifiedAt.getTime())
               && lead.whatsappPhoneNumberId === channel.phoneNumberId && episode.phoneNumberId === channel.phoneNumberId
@@ -2473,7 +2173,7 @@ export async function ingestAgentMessage(
               && (first || (firstInbound?.sender === "lead" && firstInbound.whatsappPhoneNumberId === episode.phoneNumberId
                 && Number.isFinite(firstInbound.sentAt.getTime()) && firstInbound.sentAt.getTime() > episode.anchorSentAt.getTime()
                 && firstInbound.sentAt.getTime() < episode.anchorSentAt.getTime() + 48 * 3600000))
-              && (episode.state !== "accepted" || (resume?.sender === "agente" && resume.whatsappPhoneNumberId === episode.phoneNumberId && Number.isFinite(resume.sentAt.getTime())));
+              && (episode.state !== "accepted" || (resume?.sender === SENDER.agent && resume.whatsappPhoneNumberId === episode.phoneNumberId && Number.isFinite(resume.sentAt.getTime())));
             const continuous = first ? message.sentAt.getTime() < episode.anchorSentAt.getTime() + 48 * 3600000
               : episode.bridgeLastInboundAt && Number.isFinite(episode.bridgeLastInboundAt.getTime()) && message.sentAt.getTime() - episode.bridgeLastInboundAt.getTime() <= 12 * 3600000;
             if (!eligible || !validOrigin || !continuous) {
@@ -2484,7 +2184,7 @@ export async function ingestAgentMessage(
             }
           }
         }
-        if (message.sender === "agente" || message.sender === "humano") await attachReceipt(serviceScope(tenantId), message.id, tx);
+        if (message.sender === SENDER.agent || message.sender === SENDER.human) await attachReceipt(serviceScope(tenantId), message.id, tx);
         return { created: true, message, anchorMessageId: anchor?.id ?? null, agentStateRevision: agent?.revision ?? null };
       }
 
@@ -2518,7 +2218,7 @@ export interface CreateDocumentInput {
   name: string;
   mimeType: string;
   sizeBytes: number | bigint;
-  modality: Modality;
+  segment: DocumentSegment;
   categoryId?: string | null;
 }
 
@@ -2541,7 +2241,7 @@ export async function createDocument(
         typeof input.sizeBytes === "bigint"
           ? input.sizeBytes
           : BigInt(Math.trunc(input.sizeBytes)),
-      modality: input.modality,
+      segment: input.segment,
       categoryId: input.categoryId ?? null,
       storageProvider: "legacy_metadata",
       storageKey: `legacy-metadata/${legacyId}`,
@@ -2549,7 +2249,7 @@ export async function createDocument(
       contentSha256: createHash("sha256")
         .update(`${tenantId}:${legacyId}`)
         .digest("hex"),
-      status: "falha",
+      status: DOCUMENT_STATUS.failed,
       failureCode: "LEGACY_METADATA_UPLOAD_DISABLED",
       failureMessage: "O documento precisa ser reenviado pelo fluxo de upload atual.",
     })
@@ -2559,7 +2259,7 @@ export async function createDocument(
 
 export interface UpdateDocumentInput {
   name: string;
-  modality: Modality;
+  segment: DocumentSegment;
   categoryId?: string | null;
   folderId?: string | null;
   /** Undefined preserves validity; null is the explicit "sem validade". */
@@ -2575,7 +2275,7 @@ export class DocumentFolderNotFoundError extends Error {
   constructor() { super("Pasta não encontrada."); this.name = "DocumentFolderNotFoundError"; }
 }
 
-type DocumentContextFields = Pick<Document, "name" | "modality" | "categoryId" | "expiresAt">;
+type DocumentContextFields = Pick<Document, "name" | "segment" | "categoryId" | "expiresAt">;
 
 /** Campos que entram no contexto do agente; a pasta não é um deles (PAGENTE-01). */
 export async function getDocumentContextFields(
@@ -2583,7 +2283,7 @@ export async function getDocumentContextFields(
   documentId: string
 ): Promise<DocumentContextFields | null> {
   const [row] = await db
-    .select({ name: documents.name, modality: documents.modality, categoryId: documents.categoryId, expiresAt: documents.expiresAt })
+    .select({ name: documents.name, segment: documents.segment, categoryId: documents.categoryId, expiresAt: documents.expiresAt })
     .from(documents)
     .where(and(eq(documents.tenantId, tenantId), eq(documents.id, documentId), isNull(documents.deletedAt)));
   return row ?? null;
@@ -2591,7 +2291,7 @@ export async function getDocumentContextFields(
 
 export function documentContextFieldsChanged(before: DocumentContextFields, after: DocumentContextFields): boolean {
   return before.name !== after.name
-    || before.modality !== after.modality
+    || before.segment !== after.segment
     || before.categoryId !== after.categoryId
     || before.expiresAt?.getTime() !== after.expiresAt?.getTime();
 }
@@ -2603,7 +2303,7 @@ export async function updateDocument(
 ): Promise<Document | null> {
   const setValues: Partial<typeof documents.$inferInsert> = {
     name: updates.name,
-    modality: updates.modality,
+    segment: updates.segment,
   };
   if ("categoryId" in updates) {
     setValues.categoryId = updates.categoryId ?? null;
@@ -2956,7 +2656,7 @@ export async function setMemberWorkWindow(
 }
 
 /** Vínculo com o papel administrador e ativo (`deactivatedAt` nulo). */
-const HAS_ADMIN_ROLE = sql`'administrador' = any(string_to_array(${tenant_members.role}, ','))`;
+const HAS_ADMIN_ROLE = sql`${sql.raw("'" + ROLE.admin + "'")} = any(string_to_array(${tenant_members.role}, ','))`;
 
 /**
  * Quantos administradores ATIVOS a imobiliária tem, ignorando opcionalmente um
@@ -3074,7 +2774,7 @@ export interface CarteiraLead {
   id: string;
   name: string;
   status: LeadStatus;
-  meetingAt: Date | null;
+  appointmentAt: Date | null;
 }
 
 /**
@@ -3093,7 +2793,7 @@ export async function getActiveLeadsOfMember(
       id: leads.id,
       name: leads.name,
       status: leads.status,
-      meetingAt: leads.meetingAt,
+      appointmentAt: leads.appointmentAt,
     })
     .from(leads)
     .where(
@@ -3112,31 +2812,31 @@ export async function getActiveLeadsOfMember(
  * Independente do status: uma reunião marcada vale mesmo em lead já agendado —
  * é justamente o caso mais comum.
  */
-export async function getUpcomingMeetingsOfMember(
+export async function getUpcomingAppointmentsOfMember(
   tenantId: string,
   userId: string,
   from: Date = new Date()
-): Promise<{ leadId: string; leadName: string; meetingAt: Date }[]> {
+): Promise<{ leadId: string; leadName: string; appointmentAt: Date }[]> {
   const rows = await db
     .select({
       leadId: leads.id,
       leadName: leads.name,
-      meetingAt: leads.meetingAt,
+      appointmentAt: leads.appointmentAt,
     })
     .from(leads)
     .where(
       and(
         eq(leads.tenantId, tenantId),
         eq(leads.assignedUserId, userId),
-        gte(leads.meetingAt, from)
+        gte(leads.appointmentAt, from)
       )
     )
-    .orderBy(asc(leads.meetingAt), asc(leads.id));
+    .orderBy(asc(leads.appointmentAt), asc(leads.id));
 
   return rows.map((row) => ({
     leadId: row.leadId,
     leadName: row.leadName,
-    meetingAt: row.meetingAt as Date,
+    appointmentAt: row.appointmentAt as Date,
   }));
 }
 
@@ -3172,7 +2872,7 @@ export async function transferCarteiraAndDeactivate(input: {
         and(
           eq(tenant_members.userId, input.toUserId),
           eq(tenant_members.organizationId, input.tenantId),
-          IS_ASSIGNABLE_BROKER
+          IS_ASSIGNABLE_ASSIGNEE
         )
       )
       .for("update");
@@ -3224,45 +2924,6 @@ export async function deactivateMembership(
     )
     .returning({ id: tenant_members.id });
   return rows.length > 0;
-}
-
-export type DeleteUserResult =
-  | { ok: true }
-  | { ok: false; propertiesCaptured: number };
-
-/**
- * Exclusão real de um usuário (lote-11 — T9; spec.md Edge Cases: "exclusão de
- * usuário tentada enquanto ele for captador de algum imóvel"). `tenant_members`
- * referencia `users.id` com `onDelete: "cascade"` (schema.ts), então apagar o
- * usuário já remove o vínculo em qualquer imobiliária a que ele pertença —
- * nenhum delete explícito de `tenant_members` é necessário aqui.
- *
- * `properties.captured_by_user_id` referencia `users.id` sem `onDelete`
- * (restrict — o default do Postgres): se o usuário ainda captar algum imóvel,
- * a exclusão é rejeitada pelo próprio banco, e a contagem de imóveis é lida
- * só nesse caminho de erro para compor a recusa legível.
- *
- * Uma violação de FK vinda de OUTRA tabela (ex.: `leads.assigned_user_id`,
- * que também referencia `users.id` sem cascata) não é traduzida aqui — está
- * fora do escopo desta task, que só cobre `captured_by_user_id` — e é
- * relançada como está.
- */
-export async function deleteUser(userId: string): Promise<DeleteUserResult> {
-  try {
-    await db.delete(users).where(eq(users.id, userId));
-    return { ok: true };
-  } catch (err) {
-    if (!isForeignKeyViolation(err)) throw err;
-
-    const [row] = await db
-      .select({ capturedCount: count() })
-      .from(properties)
-      .where(eq(properties.capturedByUserId, userId));
-    const capturedCount = Number(row.capturedCount);
-
-    if (capturedCount === 0) throw err;
-    return { ok: false, propertiesCaptured: capturedCount };
-  }
 }
 
 // ---------------------------------------------------------------------------

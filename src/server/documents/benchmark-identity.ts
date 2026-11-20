@@ -34,18 +34,18 @@ function sha256(text: string) {
  * modelo (removido pela AD-038), e qualquer outro nó de modelo que volte ao
  * arquivo não pode virar a identidade do agente.
  */
-export function extractModelId(principalSource: string): string {
-  const at = principalSource.indexOf('name: "OpenAI Chat Model"');
-  const end = at < 0 ? -1 : principalSource.indexOf("\n});", at);
-  const match = at < 0 ? null : principalSource.slice(at, end < 0 ? undefined : end).match(/value:\s*"([^"]+)"/);
+export function extractModelId(workflowSource: string): string {
+  const at = workflowSource.indexOf('name: "OpenAI Chat Model"');
+  const end = at < 0 ? -1 : workflowSource.indexOf("\n});", at);
+  const match = at < 0 ? null : workflowSource.slice(at, end < 0 ? undefined : end).match(/value:\s*"([^"]+)"/);
   if (!match) throw new Error("Modelo do agente não encontrado em principal.ts.");
   return match[1];
 }
 
 /** Janela de memória do agente (`contextWindowLength` da memória Postgres). */
-export function extractMemoryWindow(principalSource: string): number {
-  const at = principalSource.indexOf("@n8n/n8n-nodes-langchain.memoryPostgresChat");
-  const match = principalSource.slice(at).match(/contextWindowLength:\s*(\d+)/);
+export function extractMemoryWindow(workflowSource: string): number {
+  const at = workflowSource.indexOf("@n8n/n8n-nodes-langchain.memoryPostgresChat");
+  const match = workflowSource.slice(at).match(/contextWindowLength:\s*(\d+)/);
   if (at < 0 || !match) throw new Error("Janela de memória do agente não encontrada em principal.ts.");
   return Number(match[1]);
 }
@@ -54,12 +54,12 @@ export function extractMemoryWindow(principalSource: string): number {
  * Catálogo de tools como o modelo o enxerga: nome e descrição de cada tool, e
  * os parâmetros `$fromAI` do bloco dela. Mudar qualquer um muda o hash.
  */
-export function extractToolCatalog(principalSource: string): string {
+export function extractToolCatalog(workflowSource: string): string {
   return AGENT_TOOL_NAMES.map((name) => {
-    const at = principalSource.indexOf(`name: "${name}"`);
+    const at = workflowSource.indexOf(`name: "${name}"`);
     if (at < 0) throw new Error(`Tool ${name} não encontrada em principal.ts.`);
-    const end = principalSource.indexOf("\n});", at);
-    const block = principalSource.slice(at, end < 0 ? undefined : end);
+    const end = workflowSource.indexOf("\n});", at);
+    const block = workflowSource.slice(at, end < 0 ? undefined : end);
     const description = block.match(/(?:toolDescription|description):\s*((?:\s*"(?:[^"\\]|\\.)*"\s*\+?)+)/)?.[1] ?? "";
     const params = [...block.matchAll(/(?:\$fromAI|fromAi)\(\s*['"]([^'"]+)['"]\s*,\s*['"]((?:[^'"\\]|\\.)*)['"]/g)]
       .map((match) => `${match[1]}=${match[2]}`)
@@ -69,19 +69,19 @@ export function extractToolCatalog(principalSource: string): string {
 }
 
 export function deriveBenchmarkIdentity(input: {
-  principalSource: string;
+  workflowSource: string;
   /** Módulos que compõem o system message, na ordem do inline. */
   systemMessageSources: string[];
   /** `activeVersionId` do workflow publicado no n8n. */
   workflowVersion: string;
 }): BenchmarkIdentity {
   // O checkout no Windows pode trazer CRLF: a identidade é do conteúdo.
-  const principalSource = lf(input.principalSource);
+  const workflowSource = lf(input.workflowSource);
   return {
-    modelId: extractModelId(principalSource),
+    modelId: extractModelId(workflowSource),
     workflowVersion: input.workflowVersion,
     systemMessageHash: sha256(input.systemMessageSources.join("\n")),
-    toolsHash: sha256(extractToolCatalog(principalSource)),
-    memoryWindow: extractMemoryWindow(principalSource),
+    toolsHash: sha256(extractToolCatalog(workflowSource)),
+    memoryWindow: extractMemoryWindow(workflowSource),
   };
 }

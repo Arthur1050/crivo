@@ -24,7 +24,7 @@ async function newTenant(overrides: Partial<typeof tenants.$inferInsert> = {}) {
     slug: `fixture-health-${id}`,
     name: `Fixture saúde ${id.slice(0, 8)}`,
     agentName: "Agente",
-    supportedModality: "ambos",
+    supportedSegment: "ambos",
     ...overrides,
   });
   return id;

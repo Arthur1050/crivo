@@ -1,5 +1,6 @@
 "use client";
 
+import { STOREFRONT_LAYOUT } from "../../verticals/real-estate/vocabulary";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckIcon, StoreIcon } from "lucide-react";
@@ -27,10 +28,10 @@ import {
   type StorefrontField,
   type StorefrontValue,
 } from "@/src/lib/storefront";
-import type { StorefrontFont, StorefrontLayout } from "@/src/lib/storefront-contract";
+import type { StorefrontFont, StorefrontLayout } from "@/src/verticals/real-estate/storefront/contract";
 
 const LAYOUT_OPTIONS: { value: StorefrontLayout; label: string }[] = [
-  { value: "grade", label: "Grade" },
+  { value: STOREFRONT_LAYOUT.grid, label: "Grade" },
   { value: "editorial", label: "Editorial" },
 ];
 

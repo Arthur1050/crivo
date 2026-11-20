@@ -3,15 +3,16 @@ import { randomUUID } from "node:crypto";
 import { eq, inArray } from "drizzle-orm";
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { db } from "../../db";
-import { tenants, tenantStorefronts } from "../../db/schema";
-import type { Action, Resource, Role } from "../../lib/permissions";
-import type { StorefrontInput } from "../../lib/storefront";
-import type { AuthContext } from "../auth/session";
+import { tenants } from "../../db/schema";
+import { tenantStorefronts } from "../../verticals/real-estate/schema";
+import type { Action, Resource, Role } from "../../kit/access";
+import type { StorefrontInput } from "../../verticals/real-estate/storefront/validation";
+import type { AuthContext } from "../../kit/session";
 
 /**
  * Server action da vitrine (tasks.md — L16a T15; VCFG-02, VATIV-01, VREV-02).
  * Mesmo harness de `properties-actions.test.ts`: identidade fabricada, decisão
- * de permissão real (matriz de `src/lib/permissions.ts`), imobiliária-fixture
+ * de permissão real (matriz de `src/kit/access.ts`), imobiliária-fixture
  * própria por teste.
  */
 
@@ -19,8 +20,8 @@ let sessionRoles: Role[] = ["administrador"];
 let sessionTenantId = "";
 const sessionUser = { id: "", name: "", email: "" };
 
-vi.mock("../auth/session", async (importActual) => {
-  const actual = await importActual<typeof import("../auth/session")>();
+vi.mock("../../kit/session", async (importActual) => {
+  const actual = await importActual<typeof import("../../kit/session")>();
   const fakeSession = async (): Promise<AuthContext> => ({
     user: sessionUser,
     tenantId: sessionTenantId,
@@ -31,17 +32,17 @@ vi.mock("../auth/session", async (importActual) => {
     ...actual,
     verifySession: fakeSession,
     requirePermission: async (resource: Resource, action: Action) =>
-      actual.authorizeOrThrow(await fakeSession(), resource, action),
+      actual.authorizeOrThrow(await fakeSession(), resource, action, (await import("../../kit/access")).access),
   };
 });
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("../storefront/schedule", () => ({ scheduleStorefrontRevalidation: vi.fn() }));
+vi.mock("../../verticals/real-estate/storefront/schedule", () => ({ scheduleStorefrontRevalidation: vi.fn() }));
 
 import { revalidatePath } from "next/cache";
-import { getStorefront, saveStorefront } from "../data/storefront";
+import { getStorefront, saveStorefront } from "../../verticals/real-estate/storefront/data";
 import { saveStorefrontAction } from "../actions/storefront";
-import { scheduleStorefrontRevalidation } from "../storefront/schedule";
+import { scheduleStorefrontRevalidation } from "../../verticals/real-estate/storefront/schedule";
 
 const scheduled = vi.mocked(scheduleStorefrontRevalidation);
 const createdTenantIds: string[] = [];
@@ -49,7 +50,7 @@ const createdTenantIds: string[] = [];
 async function createTenant(name: string, agentWhatsapp: string | null = "5534999990000"): Promise<string> {
   const id = randomUUID();
   await db.insert(tenants).values({
-    id, name, agentName: `Agente ${name}`, supportedModality: "ambos", slug: `fixture-t15-${id}`, agentWhatsapp,
+    id, name, agentName: `Agente ${name}`, supportedSegment: "ambos", slug: `fixture-t15-${id}`, agentWhatsapp,
   });
   createdTenantIds.push(id);
   sessionTenantId = id;

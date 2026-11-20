@@ -3,7 +3,8 @@ import { randomUUID } from "node:crypto";
 import { eq, inArray, sql } from "drizzle-orm";
 import { afterAll, describe, expect, it } from "vitest";
 import { db } from "../index";
-import { tenants, tenantStorefronts } from "../schema";
+import { tenants } from "../schema";
+import { tenantStorefronts } from "../../verticals/real-estate/schema";
 
 function pgCode(error: unknown): string | undefined {
   if (typeof error !== "object" || error === null) return undefined;
@@ -31,7 +32,7 @@ describe("L16a T1 — tabela da vitrine e destaque de imóvel (VCFG-01, VDEST-01
     const id = randomUUID();
     created.push(id);
     await db.insert(tenants).values({
-      id, slug: `fixture-vitrine-${id}`, name: "Fixture vitrine", agentName: "Agente", supportedModality: "ambos",
+      id, slug: `fixture-vitrine-${id}`, name: "Fixture vitrine", agentName: "Agente", supportedSegment: "ambos",
     });
     return id;
   }

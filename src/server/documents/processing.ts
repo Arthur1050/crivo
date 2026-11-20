@@ -1,3 +1,5 @@
+import type { DocumentSegmentFacet } from "./segments";
+import { DOCUMENT_STATUS } from "../../lib/vocabulary";
 import "server-only";
 
 import { DocumentStorageError, type DocumentStorage } from "./storage";
@@ -14,7 +16,7 @@ export interface ProcessingDocument {
   tenantId: string;
   storageKey: string;
   mimeType: string;
-  status: "processando";
+  status: typeof DOCUMENT_STATUS.processing;
   processingAttempt: number;
   expiresAt: Date | null;
   deletedAt: Date | null;
@@ -25,7 +27,7 @@ export interface ProcessingRepository {
   complete(tenantId: string, input: {
     documentId: string;
     processingAttempt: number;
-    status: "pronto" | "falha";
+    status: typeof DOCUMENT_STATUS.ready | typeof DOCUMENT_STATUS.failed;
     extractedText?: string | null;
     extractedBytes?: number | null;
     extractorVersion?: string | null;
@@ -52,12 +54,12 @@ export interface ProcessingStart {
   (input: { tenantId: string; documentId: string; attempt: number }): Promise<{ id: string }>;
 }
 
-const defaultRepository: ProcessingRepository = {
+const defaultRepository = (facet: DocumentSegmentFacet | null): ProcessingRepository => ({
   getForProcessing: getDocumentForProcessing,
   complete: completeDocumentProcessing,
-  reconcile: reconcileTenantDocumentAdmission,
+  reconcile: (tenantId, now) => reconcileTenantDocumentAdmission(tenantId, now, facet),
   claimRetry: claimDocumentProcessingRetry,
-};
+});
 
 const INITIAL_DISPATCH_TRIES = 3;
 
@@ -98,11 +100,12 @@ export function createDocumentProcessingService(input: {
   start: ProcessingStart;
   extract?: typeof extractDocument;
   repository?: ProcessingRepository;
+  facet?: DocumentSegmentFacet | null;
   now?: () => Date;
   extractorVersion?: string;
   log?: (entry: ProcessingLogEntry) => void;
 }) {
-  const repository = input.repository ?? defaultRepository;
+  const repository = input.repository ?? defaultRepository(input.facet ?? null);
   const log = input.log ?? logToRuntime;
   const extract = input.extract ?? extractDocument;
   const now = input.now ?? (() => new Date());
@@ -118,7 +121,7 @@ export function createDocumentProcessingService(input: {
     const completion = await repository.complete(tenantId, {
       documentId,
       processingAttempt: attempt,
-      status: "falha",
+      status: DOCUMENT_STATUS.failed,
       failureCode: code,
       failureMessage: code === "processamento_indisponivel"
         ? "Não foi possível processar agora. Tente novamente."
@@ -175,7 +178,7 @@ export function createDocumentProcessingService(input: {
     const completion = await repository.complete(job.tenantId, {
       documentId: job.documentId,
       processingAttempt: job.attempt,
-      status: "pronto",
+      status: DOCUMENT_STATUS.ready,
       extractedText: extracted.text,
       extractedBytes: extracted.extractedBytes,
       extractorVersion,
@@ -183,7 +186,7 @@ export function createDocumentProcessingService(input: {
     });
     if (completion !== "applied") return { kind: "stale" as const };
     await repository.reconcile(job.tenantId, at);
-    return { kind: "completed" as const, status: "pronto" as const };
+    return { kind: "completed" as const, status: DOCUMENT_STATUS.ready };
   }
 
   return {

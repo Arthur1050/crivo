@@ -26,7 +26,7 @@ describe("T6 — snapshot mensal sem zero presumido (USO-01/02; Done when T6)", 
 
   beforeAll(async () => {
     await db.insert(tenants).values([tenantA, tenantB].map((id) => ({
-      id, slug: `fixture-${id}`, name: "Fixture consumo", agentName: "Agente", supportedModality: "ambos" as const,
+      id, slug: `fixture-${id}`, name: "Fixture consumo", agentName: "Agente", supportedSegment: "ambos" as const,
     })));
     await db.insert(whatsappChannels).values({ tenantId: tenantB, phoneNumberId: foreignPhone });
   });
@@ -92,19 +92,20 @@ describe("T6 — snapshot mensal sem zero presumido (USO-01/02; Done when T6)", 
   });
 
   it("T11 Havana termina outubro e começa novembro na primeira meia-noite repetida", async () => {
+    // 2020, e não 2026: a tzdata 2026f manteve Cuba em -04 depois de 1º/11/2026; em 2020 a meia-noite de 1º/11 também se repete.
     const [october] = await db.insert(whatsappUsage).values({ ...await period(), accountTimezone: "America/Havana",
-      monthStart: new Date("2026-10-01T04:00:00Z"), monthEnd: new Date("2026-11-01T04:00:00Z") }).returning();
+      monthStart: new Date("2020-10-01T04:00:00Z"), monthEnd: new Date("2020-11-01T04:00:00Z") }).returning();
     const [november] = await db.insert(whatsappUsage).values({ ...await period(), accountTimezone: "America/Havana",
-      monthStart: new Date("2026-11-01T04:00:00Z"), monthEnd: new Date("2026-12-01T05:00:00Z"),
-      queryEnd: new Date("2026-11-01T04:30:00Z"), lastSuccessAt: new Date("2026-11-01T04:30:15Z"), freeServiceVolume: 999 }).returning();
-    expect(october.monthEnd).toEqual(new Date("2026-11-01T04:00:00Z"));
-    expect(november.monthStart).toEqual(new Date("2026-11-01T04:00:00Z"));
-    expect(november.queryEnd).toEqual(new Date("2026-11-01T04:30:00Z"));
+      monthStart: new Date("2020-11-01T04:00:00Z"), monthEnd: new Date("2020-12-01T05:00:00Z"),
+      queryEnd: new Date("2020-11-01T04:30:00Z"), lastSuccessAt: new Date("2020-11-01T04:30:15Z"), freeServiceVolume: 999 }).returning();
+    expect(october.monthEnd).toEqual(new Date("2020-11-01T04:00:00Z"));
+    expect(november.monthStart).toEqual(new Date("2020-11-01T04:00:00Z"));
+    expect(november.queryEnd).toEqual(new Date("2020-11-01T04:30:00Z"));
     expect(november.freeServiceVolume).toBe(999);
     expect(await codeOf(db.insert(whatsappUsage).values({ ...await period(), accountTimezone: "America/Havana",
-      monthStart: new Date("2026-10-01T04:00:00Z"), monthEnd: new Date("2026-11-01T05:00:00Z") }))).toBe("23514");
+      monthStart: new Date("2020-10-01T04:00:00Z"), monthEnd: new Date("2020-11-01T05:00:00Z") }))).toBe("23514");
     expect(await codeOf(db.insert(whatsappUsage).values({ ...await period(), accountTimezone: "America/Havana",
-      monthStart: new Date("2026-11-01T05:00:00Z"), monthEnd: new Date("2026-12-01T05:00:00Z") }))).toBe("23514");
+      monthStart: new Date("2020-11-01T05:00:00Z"), monthEnd: new Date("2020-12-01T05:00:00Z") }))).toBe("23514");
   });
 
   it("T11 gap de Amman aceita primeiro instante local01 e recusa fronteira anterior", async () => {

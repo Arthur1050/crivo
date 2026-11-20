@@ -25,7 +25,7 @@ describe("T5 — recibos isolados e ciclo da mensagem (PRECO-02 AC2; L14B-01 AC5
 
   beforeAll(async () => {
     await db.insert(tenants).values([tenantA, tenantB].map((id) => ({
-      id, slug: `fixture-${id}`, name: "Fixture recibo", agentName: "Agente", supportedModality: "ambos" as const,
+      id, slug: `fixture-${id}`, name: "Fixture recibo", agentName: "Agente", supportedSegment: "ambos" as const,
     })));
     for (const tenantId of [tenantA, tenantB]) {
       const [lead] = await db.insert(leads).values({ tenantId, name: "Lead recibo", phone: "+5534900000000", status: "em_qualificacao", firstContactAt: new Date() }).returning();

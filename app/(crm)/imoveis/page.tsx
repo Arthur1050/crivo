@@ -1,3 +1,4 @@
+import { MODALITY, PROPERTY_KIND, PROPERTY_STATUS } from "../../../src/verticals/real-estate/vocabulary";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Heading, Text } from "@astryxdesign/core/Text";
 import { PropertiesToolbar } from "@/src/components/properties/properties-toolbar";
@@ -5,28 +6,28 @@ import {
   PropertiesView,
   type PropertiesEmptyState,
 } from "@/src/components/properties/properties-view";
-import { can } from "@/src/lib/permissions";
+import { can } from "@/src/kit/access";
+import { getTenantMembers } from "@/src/server/data";
 import {
   getProperties,
-  getTenantMembers,
   type Modality,
   type PropertyKind,
   type PropertyStatus,
-} from "@/src/server/data";
-import { verifySession } from "@/src/server/auth/session";
+} from "@/src/verticals/real-estate/data/properties";
+import { verifySession } from "@/src/kit/session";
 import { getActiveTenantId } from "@/src/server/tenant";
 
-const VALID_STATUSES: readonly string[] = ["disponivel", "reservado", "vendido"];
+const VALID_STATUSES: readonly string[] = [PROPERTY_STATUS.available, PROPERTY_STATUS.reserved, PROPERTY_STATUS.sold];
 const VALID_KINDS: readonly string[] = [
-  "casa",
-  "apartamento",
-  "sobrado",
-  "cobertura",
-  "terreno",
-  "sala_comercial",
-  "chacara",
+  PROPERTY_KIND.house,
+  PROPERTY_KIND.apartment,
+  PROPERTY_KIND.townhouse,
+  PROPERTY_KIND.penthouse,
+  PROPERTY_KIND.land,
+  PROPERTY_KIND.commercial_room,
+  PROPERTY_KIND.farmhouse,
 ];
-const VALID_MODALITIES: readonly string[] = ["novo", "usado", "ambos"];
+const VALID_MODALITIES: readonly string[] = [MODALITY.new, MODALITY.used, MODALITY.both];
 
 function asStatus(value: string | undefined): PropertyStatus | undefined {
   return value && VALID_STATUSES.includes(value) ? (value as PropertyStatus) : undefined;
@@ -46,12 +47,12 @@ function asPublished(value: string | undefined): boolean | undefined {
   return undefined;
 }
 
-interface ImoveisPageProps {
+interface PropertiesPageProps {
   searchParams: Promise<{
     status?: string;
     publicado?: string;
-    tipo?: string;
-    modalidade?: string;
+    "tipo"?: string;
+    "modalidade"?: string;
     q?: string;
   }>;
 }
@@ -65,16 +66,16 @@ interface ImoveisPageProps {
  * — os controles de escrita só chegam ao client quando verdadeiro; a recusa
  * de verdade é sempre do servidor, nas próprias actions (IMOV-04 AC3).
  */
-export default async function ImoveisPage({ searchParams }: ImoveisPageProps) {
+export default async function PropertiesPage({ searchParams }: PropertiesPageProps) {
   const params = await searchParams;
   const tenantId = await getActiveTenantId();
   const { roles } = await verifySession();
-  const canWrite = can(roles, "imoveis", "escrever");
+  const canWrite = can(roles, "catalog", "write");
 
   const status = asStatus(params.status);
   const published = asPublished(params.publicado);
-  const kind = asKind(params.tipo);
-  const modality = asModality(params.modalidade);
+  const kind = asKind(params["tipo"]);
+  const modality = asModality(params["modalidade"]);
   const search = params.q?.trim() || undefined;
   const hasActiveFilters = Boolean(
     status || published !== undefined || kind || modality || search

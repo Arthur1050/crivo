@@ -15,7 +15,7 @@ export interface MoveDocumentsToFolderInput { documentIds: string[]; folderId: s
 export async function createDocumentFolderAction(
   input: CreateDocumentFolderInput
 ): Promise<FolderActionResult<{ folder: DocumentFolderOption }>> {
-  const denied = await denyIfForbidden("documentos", "escrever");
+  const denied = await denyIfForbidden("documents", "write");
   if (denied) return { ok: false, code: "sem-permissao", error: denied.error };
   const check = validateName(input.name, FOLDER_NAME_LABEL);
   if (!check.ok) return { ok: false, code: "nome-invalido", error: check.error };
@@ -28,7 +28,7 @@ export async function createDocumentFolderAction(
 export async function renameDocumentFolderAction(
   input: RenameDocumentFolderInput
 ): Promise<FolderActionResult<{ folder: DocumentFolderOption }>> {
-  const denied = await denyIfForbidden("documentos", "escrever");
+  const denied = await denyIfForbidden("documents", "write");
   if (denied) return { ok: false, code: "sem-permissao", error: denied.error };
   const check = validateName(input.name, FOLDER_NAME_LABEL);
   if (!check.ok) return { ok: false, code: "nome-invalido", error: check.error };
@@ -42,7 +42,7 @@ export async function renameDocumentFolderAction(
 export async function deleteDocumentFolderAction(
   input: DeleteDocumentFolderInput
 ): Promise<FolderActionResult<{ movedToRootCount: number }>> {
-  const denied = await denyIfForbidden("documentos", "escrever");
+  const denied = await denyIfForbidden("documents", "write");
   if (denied) return { ok: false, code: "sem-permissao", error: denied.error };
   const result = await deleteDocumentFolder(await getActiveTenantId(), input.folderId);
   if (result.kind === "not_found") return { ok: false, code: "pasta-nao-encontrada", error: FOLDER_ERROR_MESSAGES["pasta-nao-encontrada"] };
@@ -53,7 +53,7 @@ export async function deleteDocumentFolderAction(
 export async function moveDocumentsToFolderAction(
   input: MoveDocumentsToFolderInput
 ): Promise<FolderActionResult<{ movedCount: number }>> {
-  const denied = await denyIfForbidden("documentos", "escrever");
+  const denied = await denyIfForbidden("documents", "write");
   if (denied) return { ok: false, code: "sem-permissao", error: denied.error };
   const result = await moveDocumentsToFolder(await getActiveTenantId(), input.documentIds, input.folderId);
   if (result.kind !== "moved") {

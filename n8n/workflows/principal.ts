@@ -69,18 +69,20 @@ import {
 } from "@n8n/workflow-sdk";
 
 // IDs reais dos sub-workflows publicados como draft via MCP (T7/T8, mesmo
-// projeto pessoal tTVoFkYzH7IEInaG) — nunca inventados, copiados da resposta
+// projeto pessoal __VALUE(projectId)__) — nunca inventados, copiados da resposta
 // do MCP na criação. `krivo-tool-responder-lead` e `krivo-tool-agendar-reuniao`.
-const TOOL_RESPONDER_LEAD_WORKFLOW_ID = "Li2hgCX943zKmDXf";
-const TOOL_AGENDAR_REUNIAO_WORKFLOW_ID = "2qCs6rPzmeOqan65";
+const TOOL_RESPONDER_LEAD_WORKFLOW_ID = "__VALUE(respondToLeadWorkflowId)__";
+// __IF(appointments)__
+const TOOL_AGENDAR_REUNIAO_WORKFLOW_ID = "__VALUE(scheduleAppointmentWorkflowId)__";
+// __ENDIF__
 
-const CRM_BASE_URL = "https://crivo-arthur1050s-projects.vercel.app/api/v1";
+const CRM_BASE_URL = "__VALUE(crmBaseUrl)__";
 
 // IDs reais das Data Tables — criadas via MCP `create_data_table` na
-// instância nova (re-hospedagem, projeto pessoal tTVoFkYzH7IEInaG). Nunca um
+// instância nova (re-hospedagem, projeto pessoal __VALUE(projectId)__). Nunca um
 // valor inventado: cada id abaixo veio direto da resposta do MCP na criação.
-const TENANT_CONFIG_TABLE_ID = "xRHckWWd6fxGeNta";
-const CONVERSA_ESTADO_TABLE_ID = "ZsplBxJjXv3kwKZ8";
+const TENANT_CONFIG_TABLE_ID = "__VALUE(tenantConfigTableId)__";
+const CONVERSA_ESTADO_TABLE_ID = "__VALUE(conversationStateTableId)__";
 
 // ---------------------------------------------------------------------
 // 1. Entrada: splitter -> ramos isolados de inbound/status
@@ -144,7 +146,7 @@ const statusTenantLookup = node({
   config: { name: "Data Table: tenant do status", position: [640, -400], onError: "continueRegularOutput", parameters: {
     resource: "row", operation: "get", dataTableId: { __rl: true, mode: "id", value: TENANT_CONFIG_TABLE_ID },
     filters: { conditions: [{ keyName: "phoneNumberId", condition: "eq", keyValue: expr("{{ $json.phoneNumberId }}") }] }, returnAll: false, limit: 1,
-  } }, output: [{ phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a" }],
+  } }, output: [{ phoneNumberId: "109876543210001", tenantSlug: "__VALUE(sampleTenantSlug)__" }],
 });
 const prepareStatusCrm = node({
   type: "n8n-nodes-base.code", version: 2,
@@ -152,7 +154,7 @@ const prepareStatusCrm = node({
     "const batch = $('WhatsApp: tipo de evento').item.json;\n" +
     "if ($json.error || $json.phoneNumberId !== batch.phoneNumberId || typeof $json.tenantSlug !== 'string' || !/^[a-z0-9_-]{1,128}$/i.test($json.tenantSlug)) return null;\n" +
     "return { json: { tenantSlug: $json.tenantSlug, batch: { phoneNumberId: batch.phoneNumberId, statuses: batch.statuses } } };\n",
-  } }, output: [{ tenantSlug: "imobiliaria-a", batch: { phoneNumberId: "109876543210001", statuses: [] } }],
+  } }, output: [{ tenantSlug: "__VALUE(sampleTenantSlug)__", batch: { phoneNumberId: "109876543210001", statuses: [] } }],
 });
 const postStatusCrm = node({
   type: "n8n-nodes-base.httpRequest", version: 4.4,
@@ -262,7 +264,7 @@ const tenantConfigLookup = node({
       limit: 1,
     },
   },
-  output: [{ id: 1, phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", calendarId: "exemplo@group.calendar.google.com" }],
+  output: [{ id: 1, phoneNumberId: "109876543210001", tenantSlug: "__VALUE(sampleTenantSlug)__", calendarId: "exemplo@group.calendar.google.com" }],
 });
 
 const combineEventAndTenant = node({
@@ -285,7 +287,7 @@ const combineEventAndTenant = node({
     },
   },
   output: [
-    { waId: "5534999990001", phoneNumberId: "109876543210001", messageId: "wamid.EXEMPLO", text: "Oi", sentAt: "2026-08-05T12:10:00.000Z", hasMedia: false, contactName: "Lead Exemplo", tenantSlug: "imobiliaria-a", calendarId: "exemplo@group.calendar.google.com" },
+    { waId: "5534999990001", phoneNumberId: "109876543210001", messageId: "wamid.EXEMPLO", text: "Oi", sentAt: "2026-08-05T12:10:00.000Z", hasMedia: false, contactName: "Lead Exemplo", tenantSlug: "__VALUE(sampleTenantSlug)__", calendarId: "exemplo@group.calendar.google.com" },
   ],
 });
 
@@ -322,7 +324,7 @@ const conversaEstadoBeforeBuffer = node({
       limit: 1,
     },
   },
-  output: [{ tenantSlug: "imobiliaria-a", waId: "5534999990001", bufferJson: "[]", leadId: "", camposJson: "{}", fase: "qualificando", reengaged: false }],
+  output: [{ tenantSlug: "__VALUE(sampleTenantSlug)__", waId: "5534999990001", bufferJson: "[]", leadId: "", camposJson: "{}", fase: "qualificando", reengaged: false }],
 });
 
 const appendToBuffer = node({
@@ -341,7 +343,7 @@ const appendToBuffer = node({
         "return { json: { tenantSlug: ctx.tenantSlug, waId: ctx.waId, messageId: ctx.messageId, bufferArray, bufferJson: JSON.stringify(bufferArray) } };\n",
     },
   },
-  output: [{ tenantSlug: "imobiliaria-a", waId: "5534999990001", messageId: "wamid.EXEMPLO", bufferArray: [{ messageId: "wamid.EXEMPLO", text: "Oi", sentAt: "2026-08-05T12:10:00.000Z" }], bufferJson: "[...]" }],
+  output: [{ tenantSlug: "__VALUE(sampleTenantSlug)__", waId: "5534999990001", messageId: "wamid.EXEMPLO", bufferArray: [{ messageId: "wamid.EXEMPLO", text: "Oi", sentAt: "2026-08-05T12:10:00.000Z" }], bufferJson: "[...]" }],
 });
 
 const conversaEstadoUpsertBuffer = node({
@@ -501,7 +503,7 @@ const attachTenantToLeadResponse = node({
         "return [{ json: { ...lead, tenantSlug: ctx.tenantSlug, calendarId: ctx.calendarId, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, contactName: ctx.contactName, text: ctx.text, hasMedia: ctx.hasMedia, sentAt: ctx.sentAt, bufferArray: buffer } }];\n",
     },
   },
-  output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", status: "em_qualificacao", optedOutAt: null, tenantSlug: "imobiliaria-a", calendarId: "exemplo@group.calendar.google.com", waId: "5534999990001", phoneNumberId: "109876543210001", contactName: "Lead Exemplo", text: "Oi", hasMedia: false, sentAt: "2026-08-05T12:10:00.000Z", bufferArray: [{ messageId: "wamid.EXEMPLO", text: "Oi", sentAt: "2026-08-05T12:10:00.000Z" }] }],
+  output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", status: "em_qualificacao", optedOutAt: null, tenantSlug: "__VALUE(sampleTenantSlug)__", calendarId: "exemplo@group.calendar.google.com", waId: "5534999990001", phoneNumberId: "109876543210001", contactName: "Lead Exemplo", text: "Oi", hasMedia: false, sentAt: "2026-08-05T12:10:00.000Z", bufferArray: [{ messageId: "wamid.EXEMPLO", text: "Oi", sentAt: "2026-08-05T12:10:00.000Z" }] }],
 });
 
 const splitBufferedMessages = node({
@@ -512,7 +514,7 @@ const splitBufferedMessages = node({
     position: [3640, 0],
     parameters: { fieldToSplitOut: "bufferArray", include: "allOtherFields" },
   },
-  output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", tenantSlug: "imobiliaria-a", bufferArray: { messageId: "wamid.EXEMPLO", text: "Oi", sentAt: "2026-08-05T12:10:00.000Z" } }],
+  output: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", tenantSlug: "__VALUE(sampleTenantSlug)__", bufferArray: { messageId: "wamid.EXEMPLO", text: "Oi", sentAt: "2026-08-05T12:10:00.000Z" } }],
 });
 
 const postBufferedMessage = node({
@@ -563,7 +565,7 @@ const prepareAskedAgentState = node({
     "const askedFields = JSON.parse($json.perguntadosJson);\n" +
     "const payload = observed.anchorMessageId ? { anchorMessageId: observed.anchorMessageId, resetObservedAt: observed.resetObservedAt, expectedRevision: observed.expectedRevision, phase: $json.phase, askedFields, openingHistory } : null;\n" +
     "return { json: { desired: $json, payload, tenantSlug: ctx.tenantSlug, leadId: ctx.id } };\n",
-  } }, output: [{ desired: {}, payload: null, tenantSlug: "imobiliaria-a", leadId: "" }],
+  } }, output: [{ desired: {}, payload: null, tenantSlug: "__VALUE(sampleTenantSlug)__", leadId: "" }],
 });
 const hasAskedAgentState = ifElse({ version: 2.3, config: { name: "Agent-state perguntados publicável?", position: [7730, 430], parameters: { conditions: {
   combinator: "and", options: { caseSensitive: true, leftValue: "", typeValidation: "strict" }, conditions: [{ leftValue: expr("{{ $json.payload !== null }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }],
@@ -613,7 +615,7 @@ const prepareFinalAgentState = node({
     "const valid = !$json.error && !!observed.anchorMessageId && anchor === observed.anchorMessageId && rawRevision !== undefined && Number.isSafeInteger(revision) && revision >= 0 && (ownOptOut || [expectedRevision, expectedRevision + 1].includes(revision));\n" +
     "const payload = valid ? { anchorMessageId: anchor, resetObservedAt, expectedRevision: ownOptOut ? revision : expectedRevision, phase, askedFields, openingHistory } : null;\n" +
     "return { json: { desired, payload, tenantSlug: ctx.tenantSlug, leadId: ctx.id } };\n",
-  } }, output: [{ desired: {}, payload: null, tenantSlug: "imobiliaria-a", leadId: "" }],
+  } }, output: [{ desired: {}, payload: null, tenantSlug: "__VALUE(sampleTenantSlug)__", leadId: "" }],
 });
 const hasFinalAgentState = ifElse({ version: 2.3, config: { name: "Agent-state final publicável?", position: [5920, -130], parameters: { conditions: {
   combinator: "and", options: { caseSensitive: true, leftValue: "", typeValidation: "strict" }, conditions: [{ leftValue: expr("{{ $json.payload !== null }}"), operator: { type: "boolean", operation: "true" }, rightValue: true }],
@@ -630,7 +632,7 @@ const confirmFinalAgentState = node({
   config: { name: "Code: agent-state final confirmado", position: [6060, -130], parameters: { mode: "runOnceForEachItem", jsCode:
     "const prepared = $('Code: preparar agent-state final').first().json;\n" + agentStateConfirmationCode +
     "return { json: { tenantSlug: prepared.desired.tenantSlug, waId: prepared.desired.waId, fase: confirmed && state.phase ? state.phase : 'unknown' } };\n",
-  } }, output: [{ tenantSlug: "imobiliaria-a", waId: "5534999990001", fase: "unknown" }],
+  } }, output: [{ tenantSlug: "__VALUE(sampleTenantSlug)__", waId: "5534999990001", fase: "unknown" }],
 });
 
 const decideRoute = node({
@@ -643,14 +645,14 @@ const decideRoute = node({
       mode: "runOnceForAllItems",
       language: "javaScript",
       jsCode:
-        '__INLINE(gate.mjs)__' +
+        '__INLINE(__VALUE(gateModule)__)__' +
         "\n\n" +
         "const ctx = $('Code: contexto do lead').first().json;\n" +
         "const route = gate({ optedOutAt: ctx.optedOutAt, status: ctx.status, humanTakeoverAt: ctx.humanTakeoverAt, hasMedia: ctx.hasMedia, text: ctx.text });\n" +
         "return [{ json: { ...ctx, route } }];\n",
     },
   },
-  output: [{ route: "conversa", id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", status: "em_qualificacao", optedOutAt: null, tenantSlug: "imobiliaria-a", calendarId: "exemplo@group.calendar.google.com", waId: "5534999990001", phoneNumberId: "109876543210001" }],
+  output: [{ route: "conversa", id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", status: "em_qualificacao", optedOutAt: null, tenantSlug: "__VALUE(sampleTenantSlug)__", calendarId: "exemplo@group.calendar.google.com", waId: "5534999990001", phoneNumberId: "109876543210001" }],
 });
 
 const routeSwitch = switchCase({
@@ -724,7 +726,7 @@ const finalizeOptOut = node({
         "return [{ json: { mensagens, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, tenantSlug: ctx.tenantSlug, leadId: ctx.id, fase: 'encerrada' } }];\n",
     },
   },
-  output: [{ mensagens: ["confirmação de opt-out"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "encerrada" }],
+  output: [{ mensagens: ["confirmação de opt-out"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "__VALUE(sampleTenantSlug)__", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "encerrada" }],
 });
 
 // ---------------------------------------------------------------------
@@ -747,7 +749,7 @@ const finalizeSomenteRegistrar = node({
         "return [{ json: { tenantSlug: ctx.tenantSlug, waId: ctx.waId, fase: 'encerrada' } }];\n",
     },
   },
-  output: [{ tenantSlug: "imobiliaria-a", waId: "5534999990001", fase: "encerrada" }],
+  output: [{ tenantSlug: "__VALUE(sampleTenantSlug)__", waId: "5534999990001", fase: "encerrada" }],
 });
 
 // ---------------------------------------------------------------------
@@ -769,7 +771,7 @@ const finalizeMedia = node({
         "return [{ json: { mensagens, waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, tenantSlug: ctx.tenantSlug, leadId: ctx.id, fase: ctx.fase || 'qualificando' } }];\n",
     },
   },
-  output: [{ mensagens: ["sigo por texto"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
+  output: [{ mensagens: ["sigo por texto"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "__VALUE(sampleTenantSlug)__", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
 });
 
 // ---------------------------------------------------------------------
@@ -798,7 +800,7 @@ const getSettings = node({
     },
     credentials: { httpHeaderAuth: newCredential("Krivo - chave de servico") },
   },
-  output: [{ realEstateName: "Imobiliária A", agentName: "Ana", supportedModality: "ambos", agentPresentationMessage: "Oi! Sou a Ana.", meetingDays: null, meetingHoursStart: null, meetingHoursEnd: null }],
+  output: [{ realEstateName: "__VALUE(sampleTenantName)__", agentName: "Ana", supportedModality: "ambos", agentPresentationMessage: "Oi! Sou a Ana.", meetingDays: null, meetingHoursStart: null, meetingHoursEnd: null }],
 });
 
 // `sessionKey` composto (tenantSlug:waId) — mesma chave que `conversa_estado`
@@ -829,7 +831,7 @@ const startSessionContextRead = node({
     "const bufferMessageIds = externalIds.map(externalId => persisted.find(m => m.externalId === externalId && m.sender === 'lead')?.id);\n" +
     "if (bufferMessageIds.length > 50 || bufferMessageIds.some(id => typeof id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))) throw new Error('session-buffer-invalid');\n" +
     "return { json: { deadline: Date.now() + 120000, bufferMessageIds, tenantSlug: ctx.tenantSlug, leadId: ctx.id } };\n",
-  } }, output: [{ deadline: 0, bufferMessageIds: [], tenantSlug: "imobiliaria-a", leadId: "" }],
+  } }, output: [{ deadline: 0, bufferMessageIds: [], tenantSlug: "__VALUE(sampleTenantSlug)__", leadId: "" }],
 });
 const postSessionContextRead = node({
   type: "n8n-nodes-base.httpRequest", version: 4.4,
@@ -843,7 +845,7 @@ const postSessionContextRead = node({
 const sessionContextReady = node({
   type: "n8n-nodes-base.code", version: 2,
   config: { name: "Code: session-context pronto", position: [4900, 170], parameters: { mode: "runOnceForEachItem", jsCode:
-    '__INLINE(session.mjs)__' +
+    '__INLINE(__VALUE(sessionModule)__)__' +
     "\nconst init = $('Code: iniciar leitura session-context').first().json; const unavailable = { available: false, pending: false, frame: null, history: [], requiresRebuild: false, bufferMessageIds: init.bufferMessageIds };\n" +
     "if ($json.error || !$json.frame || !Number.isSafeInteger($json.frame.revision) || $json.frame.revision < 0 || !Array.isArray($json.history) || $json.history.length > 50 || typeof $json.requiresRebuild !== 'boolean' || !($json.frame.resetRequestedAt === null || Number.isFinite(Date.parse($json.frame.resetRequestedAt))) || $json.history.some(m => !m || typeof m.id !== 'string' || typeof m.content !== 'string' || !['lead','agente','humano'].includes(m.sender) || !Number.isFinite(Date.parse(m.sentAt)))) return { json: unavailable };\n" +
     "let frame = { ...$json.frame }, history = $json.history.filter(m => !init.bufferMessageIds.includes(m.id));\n" +
@@ -876,7 +878,7 @@ const checkSessionExpired = node({
       mode: "runOnceForAllItems",
       language: "javaScript",
       jsCode:
-        '__INLINE(session.mjs)__' +
+        '__INLINE(__VALUE(sessionModule)__)__' +
         "\n" +
         '__INLINE(conduction.mjs)__' +
         "\n\n" +
@@ -1034,7 +1036,7 @@ const buildSeedMessages = node({
       mode: "runOnceForAllItems",
       language: "javaScript",
       jsCode:
-        '__INLINE(session.mjs)__' +
+        '__INLINE(__VALUE(sessionModule)__)__' +
         "\n\n" +
         "let context = null; try { context = $('Code: sessão expirada?').first().json.sessionContext; } catch {}\n" +
         "if (context) { const selected = context.available ? context.history : []; const items = selected.map(m => toSeedMemoryItem(m)).filter(it => it !== null).map(it => ({ json: { type: it.type, message: it.message, nadaParaSemear: false } })); return items.length ? items : [{ json: { nadaParaSemear: true } }]; }\n" +
@@ -1234,214 +1236,10 @@ const persistPerguntados = node({
   output: [{ id: 1 }],
 });
 
-// Tools nativas (design.md — "Por que 3 tools nativas e 2 sub-workflows"):
-// a barreira já é server-side no CRM. `leadId` das 3 SEMPRE vem de
-// expressão do fluxo ('Code: gate'), NUNCA de $fromAI (design.md — Risks &
-// Concerns: leadId vindo do modelo permitiria escrita cross-lead).
-//
-// `registrar_qualificacao` — padrão {campo, valor} de UM campo por chamada,
-// não um objeto com os 8 campos como parâmetros fromAI independentes.
-// Achado real (não hipótese — execução MCP nesta sessão, workflow scratch
-// `Q22aiVuQNj1FGU3r`, arquivado): com os 8 campos expostos como parâmetros
-// fromAI separados na MESMA chamada, o Gemini populou `modality` e
-// `chainedOperation` com valores fabricados mesmo quando o prompt dizia
-// explicitamente "registre APENAS a região, não registre mais nada" — o
-// modelo "ajuda" preenchendo campos vizinhos disponíveis no schema da tool.
-// Com {campo, valor} como par único, o corpo enviado ficou estruturalmente
-// limitado a UMA chave (confirmado na 2ª execução: `{"region":"Uberaba"}`,
-// nada mais) — o mesmo princípio de "estruturalmente incapaz" que
-// `phase.mjs` já usa. A coerção de tipo (chainedOperation vira boolean,
-// budgetCents vira number) é feita por código determinístico dentro da
-// expressão, nunca pelo modelo.
-const registrarQualificacaoTool = tool({
-  type: "n8n-nodes-base.httpRequestTool",
-  version: 4.5,
-  config: {
-    name: "registrar_qualificacao",
-    position: [7560, 500],
-    parameters: {
-      toolDescription:
-        "Registra UM campo de qualificação que o lead revelou espontaneamente (modality, region, budgetCents, propertyType, purchaseHorizon, motivation, creditStatus ou chainedOperation). Uma chamada por campo — nunca invente valor para campo que o lead não mencionou.",
-      method: "PATCH",
-      url: expr(`${CRM_BASE_URL}/leads/{{ $('Code: gate').first().json.id }}`),
-      authentication: "genericCredentialType",
-      genericAuthType: "httpHeaderAuth",
-      sendHeaders: true,
-      headerParameters: {
-        parameters: [{ name: "X-Krivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }],
-      },
-      sendBody: true,
-      contentType: "json",
-      specifyBody: "json",
-      jsonBody: expr(
-        "{{ (() => {\n" +
-          "  const campo = $fromAI('campo', 'Nome do campo de qualificacao a registrar: modality, region, budgetCents, propertyType, purchaseHorizon, motivation, creditStatus ou chainedOperation. Um campo por chamada.', 'string');\n" +
-          "  const valorBruto = $fromAI('valor', 'Valor a gravar nesse campo, como texto. Para chainedOperation use literalmente \"true\" ou \"false\".', 'string');\n" +
-          "  let valor = valorBruto;\n" +
-          "  if (campo === 'chainedOperation') valor = valorBruto === 'true';\n" +
-          "  if (campo === 'budgetCents') valor = Number(valorBruto);\n" +
-          "  return { [campo]: valor };\n" +
-          "})() }}"
-      ),
-      options: { response: { response: { neverError: true } } },
-    },
-    credentials: { httpHeaderAuth: newCredential("Krivo - chave de servico") },
-  },
-  output: [{}],
-});
-
-// `escalar_para_humano` — `status` é constante (nunca vem do modelo); só
-// `motivo` (single string field, sem risco de campo cruzado) é fromAI.
-// `neverError:true` garante que um 409 (transicao-invalida /
-// lead-travado-por-humano, AD-013) chegue ao agente com o `code` intacto
-// no corpo — sem isso, `httpRequestTool` lançaria um erro genérico do n8n
-// ("Authorization failed"-like summary) que perde o `code`, o canal de
-// correção que a Done-when desta task exige.
-const escalarParaHumanoTool = tool({
-  type: "n8n-nodes-base.httpRequestTool",
-  version: 4.5,
-  config: {
-    name: "escalar_para_humano",
-    position: [7560, 700],
-    parameters: {
-      toolDescription:
-        "Transfere a conversa para um atendente humano. Use quando o lead pedir explicitamente por um humano, ou quando o pedido dele for algo que só um humano resolve. Sempre informe o motivo.",
-      method: "PATCH",
-      url: expr(`${CRM_BASE_URL}/leads/{{ $('Code: gate').first().json.id }}`),
-      authentication: "genericCredentialType",
-      genericAuthType: "httpHeaderAuth",
-      sendHeaders: true,
-      headerParameters: {
-        parameters: [{ name: "X-Krivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }],
-      },
-      sendBody: true,
-      contentType: "json",
-      specifyBody: "json",
-      jsonBody: expr(
-        "{{ { status: 'escalado_humano', escalationReason: $fromAI('motivo', 'Motivo pelo qual a conversa esta sendo escalada para um humano', 'string') } }}"
-      ),
-      options: { response: { response: { neverError: true } } },
-      // ACHADO REAL (Fase 5 do lote-10, cenário 2, 2026-09-07 e 2026-09-08):
-      // o `PATCH /leads/{id}` devolve o LEAD INTEIRO, e o `name` do topo é o
-      // nome do lead. Ao anunciar a passagem para um humano, o modelo leu esse
-      // `name` e disse ao lead que ele mesmo iria atendê-lo ("o Arthur T. vai
-      // continuar seu atendimento"), ignorando `assignedBroker.name`. Instrução
-      // de prompt NÃO resolveu — foi tentada em `16cfbf4` e o erro repetiu na
-      // rodada seguinte. Quando a resposta errada é o campo mais óbvio do
-      // payload, a correção é na fronteira, não na discrição do modelo
-      // (AD-018): os campos que identificam o lead saem da resposta, e o único
-      // nome que sobra é o do responsável. `except` (em vez de `selected`)
-      // preserva tudo o mais — inclusive o `code` do `problem+json` de um 409,
-      // que é o canal de correção que a AD-013 exige.
-      optimizeResponse: true,
-      responseType: "json",
-      fieldsToInclude: "except",
-      fields: "name,contactName,phone,externalId",
-    },
-    credentials: { httpHeaderAuth: newCredential("Krivo - chave de servico") },
-  },
-  output: [{}],
-});
-
-// `consultar_documentos` — sem nenhum parâmetro `$fromAI`: modalidade e
-// pergunta saem do próprio fluxo. O agente decide QUANDO chamar, nunca inventa
-// argumento (AD-018).
-//
-// Desde o lote-12 (T21/T28) a chamada é POST com corpo `{modality, question}`.
-// Duas razões: a pergunta do lead é dado pessoal e em query string terminaria
-// em log de acesso, histórico e referer; e o contrato passou a aceitar
-// `ambos`, que o GET anterior recusava — por isso o fallback deixou de ser
-// 'novo', que escondia documentos de usado, e passou a ser o corpus inteiro,
-// que é a resposta certa quando a modalidade do lead ainda é desconhecida.
-//
-// A pergunta é o buffer da vez, o mesmo texto que vira `userMessage` no
-// prompt. O corte em 4.096 caracteres e o fallback existem para nunca produzir
-// um 400 do contrato: `question` vazia é recusada por definição (DOCCTX-01 AC9).
-const consultarDocumentosTool = tool({
-  type: "n8n-nodes-base.httpRequestTool",
-  version: 4.5,
-  config: {
-    name: "consultar_documentos",
-    position: [7560, 900],
-    retryOnFail: true,
-    maxTries: 2,
-    parameters: {
-      toolDescription: "Consulta as políticas, regulamentos e materiais de apoio desta imobiliária e devolve o conteúdo dos documentos. Use quando precisar de uma informação do negócio para responder ao lead — não chame em todo turno. A pergunta do lead e a modalidade são enviadas automaticamente pelo fluxo; não há parâmetro a preencher.",
-      method: "POST",
-      url: `${CRM_BASE_URL}/context`,
-      sendBody: true,
-      contentType: "json",
-      specifyBody: "json",
-      jsonBody: expr(
-        "{{ (() => {" +
-          "  const ctx = $('Code: gate').first().json;" +
-          "  const modality = ['novo', 'usado', 'ambos'].includes(ctx.modality) ? ctx.modality : 'ambos';" +
-          "  const buffer = Array.isArray(ctx.bufferArray) ? ctx.bufferArray : [];" +
-          "  const texto = buffer.map((m) => m && m.text).filter(Boolean).join(String.fromCharCode(10)).trim();" +
-          "  const question = (texto || String(ctx.text || '').trim() || 'Informacoes gerais desta imobiliaria').slice(0, 4096);" +
-          "  return { modality, question };" +
-          "})() }}"
-      ),
-      authentication: "genericCredentialType",
-      genericAuthType: "httpHeaderAuth",
-      sendHeaders: true,
-      headerParameters: {
-        parameters: [{ name: "X-Krivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }],
-      },
-      options: { response: { response: { neverError: true } } },
-    },
-    credentials: { httpHeaderAuth: newCredential("Krivo - chave de servico") },
-  },
-  output: [{}],
-});
-
-// `buscar_imoveis` (lote-11 — BUSCA-04): consulta o inventário real de
-// imóveis. Todo critério é um parâmetro de query próprio e opcional
-// (`$fromAI`) — BUSCA-04 AC4, um parâmetro por critério, nunca um blob único.
-// `X-Krivo-Tenant` vem de `Code: gate` por expressão do fluxo, igual às
-// outras tools — a imobiliária consultada NUNCA é escolhida pelo modelo
-// (BUSCA-04 AC3). `retryOnFail`/`maxTries` ficam em `config`, nunca dentro de
-// `parameters` — é o bug que o commit a80760c corrigiu em
-// `consultar_documentos`: aninhados em `parameters`, o schema do node HTTP
-// Request não os aplica e o retry nunca é configurado de fato.
-const buscarImoveisTool = tool({
-  type: "n8n-nodes-base.httpRequestTool",
-  version: 4.5,
-  config: {
-    name: "buscar_imoveis",
-    position: [7560, 1700],
-    retryOnFail: true,
-    maxTries: 2,
-    parameters: {
-      toolDescription:
-        "Consulta o inventário real de imóveis disponíveis desta imobiliária pelos critérios que o lead informar. Todos os parâmetros são opcionais — inclua só os que o lead efetivamente mencionou. Preço em reais (nunca centavos). Omitir filtros desconhecidos: não enviar strings vazias ou números zero como preenchimento. Cidade é apenas o nome da cidade, sem /UF, e só deve ser filtrada quando confirmada pelo lead; não inferir de imóvel apresentado. Bairro aceita um nome de bairro real, nunca expressões de proximidade. Para consultar alternativas sem um bairro específico, omita bairro. A tool não calcula distância ou adjacência. Uma falha técnica não é resultado vazio; não invente ausência de imóveis.",
-      method: "GET",
-      url: `${CRM_BASE_URL}/properties`,
-      sendQuery: true,
-      queryParameters: {
-        parameters: [
-          { name: "modalidade", value: fromAi("modalidade", "Modalidade do imóvel: novo, usado ou ambos. Só inclua se o lead mencionou. Se desconhecido, omita; não enviar string vazia.", "string") },
-          { name: "tipo", value: fromAi("tipo", "Tipo do imóvel: casa, apartamento, sobrado, cobertura, terreno, sala_comercial ou chacara. Só inclua se o lead mencionou. Se desconhecido, omita; não enviar string vazia.", "string") },
-          { name: "bairro", value: fromAi("bairro", "Nome real do bairro que o lead procura. Só inclua se o lead mencionou. Nunca usar próximo, arredores ou bairros próximos como nome. Na busca alternativa sem bairro específico, omita bairro. Se desconhecido, omita; não enviar string vazia.", "string") },
-          { name: "cidade", value: fromAi("cidade", "Nome da cidade confirmada pelo lead, sem /UF. Não inferir de imóvel apresentado. Se desconhecido, omita; não enviar string vazia.", "string") },
-          { name: "precoMin", value: fromAi("precoMin", "Preço mínimo em reais, inteiro maior que zero. Só inclua se o lead deu um valor mínimo. Se desconhecido, omita; não enviar zero.", "number") },
-          { name: "precoMax", value: fromAi("precoMax", "Preço máximo em reais, inteiro maior que zero. Só inclua se o lead deu um valor máximo. Se desconhecido, omita; não enviar zero.", "number") },
-          { name: "quartosMin", value: fromAi("quartosMin", "Número mínimo de quartos/dormitórios, inteiro maior que zero. Só inclua se o lead mencionou. Se desconhecido, omita; não enviar zero.", "number") },
-        ],
-      },
-      authentication: "genericCredentialType",
-      genericAuthType: "httpHeaderAuth",
-      sendHeaders: true,
-      headerParameters: {
-        parameters: [{ name: "X-Krivo-Tenant", value: expr("{{ $('Code: gate').first().json.tenantSlug }}") }],
-      },
-      options: { response: { response: { neverError: true } } },
-    },
-    credentials: { httpHeaderAuth: newCredential("Krivo - chave de servico") },
-  },
-  output: [{}],
-});
-
+// __BLOCK(qualification-tool)__
+// __BLOCK(escalation-tool)__
+// __BLOCK(documents-tool)__
+// __BLOCK(search-catalog-tool)__
 // Sub-workflows (T7/T8) — compõem múltiplos efeitos, expostos como tool via
 // `toolWorkflow`. `leadId` sempre de expressão do fluxo aqui também, pela
 // mesma razão das tools nativas.
@@ -1488,49 +1286,9 @@ const responderLeadTool = tool({
   output: [{}],
 });
 
-const agendarReuniaoTool = tool({
-  type: "@n8n/n8n-nodes-langchain.toolWorkflow",
-  version: 2.2,
-  config: {
-    name: "agendar_reuniao",
-    position: [7560, 1300],
-    parameters: {
-      description:
-        "Confirma um horário de reunião com o corretor. Só chame na fase de agendamento, com um horário específico (proposto pelo lead ou por você, dentro do horário comercial informado no system message).",
-      source: "database",
-      workflowId: { __rl: true, mode: "id", value: TOOL_AGENDAR_REUNIAO_WORKFLOW_ID },
-      workflowInputs: {
-        mappingMode: "defineBelow",
-        value: {
-          meetingAtProposto: fromAi("meetingAtProposto", "Horário da reunião proposto, ISO-8601 com timezone, ex: 2026-08-17T13:00:00-03:00"),
-          tenantSlug: expr("{{ $('Code: gate').first().json.tenantSlug }}"),
-          waId: expr("{{ $('Code: gate').first().json.waId }}"),
-          leadId: expr("{{ $('Code: gate').first().json.id }}"),
-          calendarId: expr("{{ $('Code: gate').first().json.calendarId }}"),
-          contactName: expr("{{ $('Code: contexto do lead').first().json.contactName }}"),
-          meetingDays: expr("{{ $('HTTP: GET /settings').first().json.meetingDays }}"),
-          meetingHoursStart: expr("{{ $('HTTP: GET /settings').first().json.meetingHoursStart }}"),
-          meetingHoursEnd: expr("{{ $('HTTP: GET /settings').first().json.meetingHoursEnd }}"),
-        },
-        // Mesmo achado do `responderLeadTool` acima (T12) — `schema`
-        // obrigatório para o resourceMapper mapear qualquer campo.
-        schema: [
-          { id: "meetingAtProposto", displayName: "meetingAtProposto", required: true, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
-          { id: "tenantSlug", displayName: "tenantSlug", required: true, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
-          { id: "waId", displayName: "waId", required: true, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
-          { id: "leadId", displayName: "leadId", required: true, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
-          { id: "calendarId", displayName: "calendarId", required: true, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
-          { id: "contactName", displayName: "contactName", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
-          { id: "meetingDays", displayName: "meetingDays", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
-          { id: "meetingHoursStart", displayName: "meetingHoursStart", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
-          { id: "meetingHoursEnd", displayName: "meetingHoursEnd", required: false, defaultMatch: false, display: true, type: "string", canBeUsedToMatch: false },
-        ],
-      },
-    },
-  },
-  output: [{}],
-});
-
+// __IF(appointments)__
+// __BLOCK(appointment-tool)__
+// __ENDIF__
 // Trocar de modelo é trocar este 1 nó (lote-10 T3 troca a familia inteira —
 // Gemini -> OpenAI — sem tocar em nenhum outro nó do grafo).
 const agentModel = languageModel({
@@ -1593,7 +1351,7 @@ const aiAgent = node({
     subnodes: {
       model: agentModel,
       memory: conversationMemory,
-      tools: [registrarQualificacaoTool, escalarParaHumanoTool, consultarDocumentosTool, buscarImoveisTool, responderLeadTool, agendarReuniaoTool],
+// __BLOCK(agent-tools-list)__
     },
   },
   output: [{ output: "Beleza, e qual a região que você procura?" }],
@@ -1637,7 +1395,7 @@ const finalizeAgentTurn = node({
         "return [{ json: { tenantSlug: ctx.tenantSlug, waId: ctx.waId, fase, turnoSemResposta: !calledResponder, autoSaved, respostaFallback, precisaFallback } }];\n",
     },
   },
-  output: [{ tenantSlug: "imobiliaria-a", waId: "5534999990001", fase: "qualificando", turnoSemResposta: false, autoSaved: false, respostaFallback: "", precisaFallback: false }],
+  output: [{ tenantSlug: "__VALUE(sampleTenantSlug)__", waId: "5534999990001", fase: "qualificando", turnoSemResposta: false, autoSaved: false, respostaFallback: "", precisaFallback: false }],
 });
 
 const needsFallbackSendIf = ifElse({
@@ -1677,7 +1435,7 @@ const buildFallbackReply = node({
         "return [{ json: { mensagens: [turno.respostaFallback], waId: ctx.waId, phoneNumberId: ctx.phoneNumberId, tenantSlug: ctx.tenantSlug, leadId: ctx.id, fase: turno.fase } }];\n",
     },
   },
-  output: [{ mensagens: ["resposta do agente que nao passou por responder_lead"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
+  output: [{ mensagens: ["resposta do agente que nao passou por responder_lead"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "__VALUE(sampleTenantSlug)__", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
 });
 
 // lote-14 (T23 — SILENCIO-01 AC4, AC5): o envio de contingência também
@@ -1860,7 +1618,7 @@ const prepClearAfterAgentTurn = node({
         "return [{ json: { tenantSlug: ctx.tenantSlug, waId: ctx.waId, fase: ctx.fase } }];\n",
     },
   },
-  output: [{ tenantSlug: "imobiliaria-a", waId: "5534999990001", fase: "qualificando" }],
+  output: [{ tenantSlug: "__VALUE(sampleTenantSlug)__", waId: "5534999990001", fase: "qualificando" }],
 });
 
 // MEM-04: ramo de opt-out também purga a memória e as duas colunas de
@@ -1952,7 +1710,7 @@ const restoreOptOutPayload = node({
         "return [{ json: ctx }];\n",
     },
   },
-  output: [{ mensagens: ["confirmação de opt-out"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "encerrada" }],
+  output: [{ mensagens: ["confirmação de opt-out"], waId: "5534999990001", phoneNumberId: "109876543210001", tenantSlug: "__VALUE(sampleTenantSlug)__", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "encerrada" }],
 });
 
 const normalizeFixedReplyRecipient = node({
@@ -1971,7 +1729,7 @@ const normalizeFixedReplyRecipient = node({
         "return [{ json: { ...ctx, recipientMsisdn: toWhatsAppMsisdn(ctx.waId) } }];\n",
     },
   },
-  output: [{ mensagens: ["resposta fixa"], waId: "553499532444", recipientMsisdn: "5534999532444", phoneNumberId: "109876543210001", tenantSlug: "imobiliaria-a", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
+  output: [{ mensagens: ["resposta fixa"], waId: "553499532444", recipientMsisdn: "5534999532444", phoneNumberId: "109876543210001", tenantSlug: "__VALUE(sampleTenantSlug)__", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", fase: "qualificando" }],
 });
 
 const sendFixedReply = node({
@@ -2048,7 +1806,7 @@ const prepBufferClearAfterSend = node({
         "return [{ json: { tenantSlug: ctx.tenantSlug, waId: ctx.waId, fase: ctx.fase } }];\n",
     },
   },
-  output: [{ tenantSlug: "imobiliaria-a", waId: "5534999990001", fase: "qualificando" }],
+  output: [{ tenantSlug: "__VALUE(sampleTenantSlug)__", waId: "5534999990001", fase: "qualificando" }],
 });
 
 const clearBufferAndFinalize = node({

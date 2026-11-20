@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { describe, expect, it, vi } from "vitest";
-import { PermissionDeniedError, type AuthContext } from "../../auth/session";
+import { PermissionDeniedError, type AuthContext } from "../../../kit/session";
 import { createDocumentPreviewGetHandler } from "../../../../app/api/documents/[id]/preview/route";
 
 const context: AuthContext = {
@@ -55,7 +55,7 @@ describe("document preview route (lote-12 T16)", () => {
   });
 
   it("uma negativa de documentos:ler não consulta documento nem retorna conteúdo parcial", async () => {
-    const denied = new PermissionDeniedError("documentos", "ler");
+    const denied = new PermissionDeniedError("documents", "read");
     const { handler, find } = route({ authorize: vi.fn(async () => { throw denied; }) });
     const response = await handler(request(), params());
     expect(response.status).toBe(403);

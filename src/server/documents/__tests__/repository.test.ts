@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { reconcileTenantDocumentAdmission } from "../../../kit/document-services";
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { and, eq, inArray, isNull } from "drizzle-orm";
@@ -20,7 +21,6 @@ import {
   expireDueDocuments,
   listTenantDocuments,
   markDocumentContextLimitStale,
-  reconcileTenantDocumentAdmission,
   retryDocumentProcessing,
   tombstoneDocument,
   upsertDocumentContextLimit,
@@ -45,7 +45,7 @@ function intentInput(seed: string, overrides: Partial<Parameters<typeof createUp
     name: `${seed}.txt`,
     mimeType: "text/plain",
     sizeBytes: 12,
-    modality: "novo" as const,
+    segment: "novo" as const,
     storageKey: `documents/${TENANT_A}/${seed}/${randomUUID()}`,
     expiresAtIntent: new Date(NOW.getTime() + HOUR),
     ...overrides,
@@ -82,9 +82,9 @@ describe("documents repository (lote-12 T4)", () => {
     await db.delete(users).where(eq(users.id, USER_ID));
     await db.delete(tenants).where(inArray(tenants.id, [TENANT_A, TENANT_B, TENANT_C]));
     await db.insert(tenants).values([
-      { id: TENANT_A, name: "Repository A", agentName: "A", supportedModality: "ambos", slug: `repository-a-${TENANT_A}` },
-      { id: TENANT_B, name: "Repository B", agentName: "B", supportedModality: "ambos", slug: `repository-b-${TENANT_B}` },
-      { id: TENANT_C, name: "Repository C", agentName: "C", supportedModality: "ambos", slug: `repository-c-${TENANT_C}` },
+      { id: TENANT_A, name: "Repository A", agentName: "A", supportedSegment: "ambos", slug: `repository-a-${TENANT_A}` },
+      { id: TENANT_B, name: "Repository B", agentName: "B", supportedSegment: "ambos", slug: `repository-b-${TENANT_B}` },
+      { id: TENANT_C, name: "Repository C", agentName: "C", supportedSegment: "ambos", slug: `repository-c-${TENANT_C}` },
     ]);
     await db.insert(users).values({ id: USER_ID, name: "Repository user", email: `repository-${USER_ID}@example.test` });
   });
@@ -289,11 +289,11 @@ describe("documents repository (lote-12 T4)", () => {
   });
 
   it("limites são upsertados por tenant e modalidade sem alterar outro tenant", async () => {
-    const base = { queryModality: "novo" as const, maxResponseBytes: 100, modelId: "model-a", workflowVersion: "workflow-a", systemMessageHash: "system-a", toolsHash: "tools-a", memoryWindow: 50, benchmarkedAt: NOW, metrics: { bytes: 100 } };
+    const base = { querySegment: "novo" as const, maxResponseBytes: 100, modelId: "model-a", workflowVersion: "workflow-a", systemMessageHash: "system-a", toolsHash: "tools-a", memoryWindow: 50, benchmarkedAt: NOW, metrics: { bytes: 100 } };
     await upsertDocumentContextLimit(TENANT_A, base);
     await upsertDocumentContextLimit(TENANT_A, { ...base, maxResponseBytes: 80, metrics: { bytes: 80 } });
     await upsertDocumentContextLimit(TENANT_B, base);
-    const rows = await db.select().from(tenantDocumentContextLimits).where(and(eq(tenantDocumentContextLimits.queryModality, "novo"), inArray(tenantDocumentContextLimits.tenantId, [TENANT_A, TENANT_B, TENANT_C])));
+    const rows = await db.select().from(tenantDocumentContextLimits).where(and(eq(tenantDocumentContextLimits.querySegment, "novo"), inArray(tenantDocumentContextLimits.tenantId, [TENANT_A, TENANT_B, TENANT_C])));
     expect(rows).toHaveLength(2);
     expect(rows.find((row) => row.tenantId === TENANT_A)?.maxResponseBytes).toBe(80);
     expect(rows.find((row) => row.tenantId === TENANT_B)?.maxResponseBytes).toBe(100);
@@ -304,7 +304,7 @@ describe("documents repository (lote-12 T4)", () => {
       const document = await committedDocument(seed, TENANT_C);
       await db
         .update(documents)
-        .set({ status: "pronto", modality: "ambos", extractedText: text, extractedBytes: text.length })
+        .set({ status: "pronto", segment: "ambos", extractedText: text, extractedBytes: text.length })
         .where(eq(documents.id, document.id));
       return document;
     }
@@ -315,9 +315,9 @@ describe("documents repository (lote-12 T4)", () => {
     }
 
     async function setLimits(maxResponseBytes: number) {
-      for (const queryModality of ["novo", "usado", "ambos"] as const) {
+      for (const querySegment of ["novo", "usado", "ambos"] as const) {
         await upsertDocumentContextLimit(TENANT_C, {
-          queryModality, maxResponseBytes, modelId: "m", workflowVersion: "v", systemMessageHash: "s",
+          querySegment, maxResponseBytes, modelId: "m", workflowVersion: "v", systemMessageHash: "s",
           toolsHash: "t", memoryWindow: 50, benchmarkedAt: NOW, metrics: {},
         });
       }
@@ -347,8 +347,8 @@ describe("documents repository (lote-12 T4)", () => {
       await db.delete(documentUploadIntents).where(eq(documentUploadIntents.tenantId, TENANT_C));
       await db.delete(documents).where(eq(documents.tenantId, TENANT_C));
       await setLimits(300);
-      for (const queryModality of ["novo", "usado", "ambos"] as const) {
-        expect(await markDocumentContextLimitStale(TENANT_C, queryModality, "mudou: modelId", NOW)).toBe(true);
+      for (const querySegment of ["novo", "usado", "ambos"] as const) {
+        expect(await markDocumentContextLimitStale(TENANT_C, querySegment, "mudou: modelId", NOW)).toBe(true);
       }
       const small = await readyDocument("pequeno", "curto");
       const big = await readyDocument("grande", "x".repeat(2_000));
@@ -376,7 +376,7 @@ describe("documents repository (lote-12 T4)", () => {
       const [row] = await db
         .select({ staleReason: tenantDocumentContextLimits.staleReason, maxResponseBytes: tenantDocumentContextLimits.maxResponseBytes })
         .from(tenantDocumentContextLimits)
-        .where(and(eq(tenantDocumentContextLimits.tenantId, TENANT_C), eq(tenantDocumentContextLimits.queryModality, "novo")));
+        .where(and(eq(tenantDocumentContextLimits.tenantId, TENANT_C), eq(tenantDocumentContextLimits.querySegment, "novo")));
       expect(row).toEqual({ staleReason: "mudou: modelId", maxResponseBytes: 300 });
     });
   });

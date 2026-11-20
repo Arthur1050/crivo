@@ -14,15 +14,15 @@ import { and, eq, inArray } from "drizzle-orm";
 import { db } from "../../db";
 import {
   accounts,
-  properties,
   sessions,
   tenant_invitations,
   tenant_members,
   tenants,
   users,
 } from "../../db/schema";
-import type { Action, Resource, Role } from "../../lib/permissions";
-import type { AuthContext } from "../auth/session";
+import { properties } from "../../verticals/real-estate/schema";
+import type { Action, Resource, Role } from "../../kit/access";
+import type { AuthContext } from "../../kit/session";
 
 /**
  * Ações de convite e papéis (tasks.md — T20; spec.md USER-01).
@@ -30,7 +30,7 @@ import type { AuthContext } from "../auth/session";
  * Harness igual ao de `actions.test.ts`: a guarda de sessão é mockada de forma
  * PARCIAL — só a identidade é fabricada (`verifySession`); a decisão de
  * permissão que roda é a real (`authorizeOrThrow`, matriz de
- * `src/lib/permissions.ts` e log estruturado). `resolveAuthContext` vem do
+ * `src/kit/access.ts` e log estruturado). `resolveAuthContext` vem do
  * módulo de verdade, e é com ela que a AC8 é provada sobre uma sessão real.
  *
  * O adaptador de e-mail é mockado: nenhum e-mail sai da suíte, e o caminho de
@@ -42,7 +42,7 @@ const mocks = vi.hoisted(() => ({
   sendResetPasswordEmail: vi.fn(),
 }));
 
-vi.mock("../auth/email", () => ({
+vi.mock("../../kit/email", () => ({
   sendInvitationEmail: mocks.sendInvitationEmail,
   sendResetPasswordEmail: mocks.sendResetPasswordEmail,
 }));
@@ -52,8 +52,8 @@ let sessionRoles: Role[] = ["administrador"];
 let sessionTenantId = "";
 let sessionUser = { id: "", name: "", email: "" };
 
-vi.mock("../auth/session", async (importActual) => {
-  const actual = await importActual<typeof import("../auth/session")>();
+vi.mock("../../kit/session", async (importActual) => {
+  const actual = await importActual<typeof import("../../kit/session")>();
   const fakeSession = async (): Promise<AuthContext> => ({
     user: sessionUser,
     tenantId: sessionTenantId,
@@ -64,15 +64,15 @@ vi.mock("../auth/session", async (importActual) => {
     ...actual,
     verifySession: fakeSession,
     requirePermission: async (resource: Resource, action: Action) =>
-      actual.authorizeOrThrow(await fakeSession(), resource, action),
+      actual.authorizeOrThrow(await fakeSession(), resource, action, (await import("../../kit/access")).access),
   };
 });
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { revalidatePath } from "next/cache";
-import { auth } from "../auth/config";
-import { resolveAuthContext } from "../auth/session";
+import { auth } from "../../kit/auth";
+import { resolveAuthContext } from "../../kit/session";
 import { getTenantMembers } from "../data";
 import { deactivateMemberAction } from "../actions/deactivate";
 import {
@@ -93,7 +93,7 @@ async function createTenant(name: string): Promise<string> {
     id,
     name,
     agentName: `Agente ${name}`,
-    supportedModality: "ambos",
+    supportedSegment: "ambos",
     slug: `fixture-${id}`,
   });
   createdTenantIds.push(id);

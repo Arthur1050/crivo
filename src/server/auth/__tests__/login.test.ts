@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { eq, inArray } from "drizzle-orm";
 import { db } from "../../../db";
 import { accounts, sessions, users } from "../../../db/schema";
-import { auth } from "../config";
+import { auth } from "../../../kit/auth";
 
 // Cobre AUTH-01 AC2/AC3/AC4/AC5 pelo lado do servidor. A tela em si é
 // componente React (camada "none" na matriz) e foi verificada visualmente no

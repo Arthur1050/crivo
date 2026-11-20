@@ -10,8 +10,9 @@ import {
   lojaPorSlug,
 } from "../../../vitrine/src/dados/consultas";
 import { db } from "../index";
-import { properties, tenants, tenantStorefronts, users } from "../schema";
-import { resolveVitrineTestUrl } from "../test-connection";
+import { tenants, users } from "../schema";
+import { properties, tenantStorefronts } from "../../verticals/real-estate/schema";
+import { resolveStorefrontTestUrl } from "../../verticals/real-estate/db/test-connection";
 import { currentTestDatabaseUrl } from "./vitrine-helpers";
 
 type PropertyInsert = typeof properties.$inferInsert;
@@ -26,7 +27,7 @@ describe("L16b T4 — consultas da vitrine como krivo_vitrine (VSEG-01, VCAT-02,
   let sequence = 0;
   // Leitura pelo papel `krivo_vitrine` da branch do worker, com o `db` da própria vitrine.
   const leitura = criarDb(
-    resolveVitrineTestUrl({
+    resolveStorefrontTestUrl({
       baseUrl: currentTestDatabaseUrl(),
       password: process.env.VITRINE_TEST_DB_PASSWORD,
     })
@@ -41,7 +42,7 @@ describe("L16b T4 — consultas da vitrine como krivo_vitrine (VSEG-01, VCAT-02,
       slug,
       name: opts.nome ?? `Imobiliária ${id.slice(0, 8)}`,
       agentName: "Agente",
-      supportedModality: "ambos",
+      supportedSegment: "ambos",
       city: "Uberaba",
       state: "MG",
       agentWhatsapp: "5534999990000",

@@ -21,8 +21,8 @@ import { resetPassword } from "@/src/lib/auth-client";
 const LINK_INVALIDO =
   "Este link não vale mais: ou já foi usado, ou passou de 1 hora. Peça um novo abaixo.";
 
-const SENHA_CURTA = "A senha precisa ter ao menos 8 caracteres.";
-const SENHAS_DIFERENTES = "As duas senhas não são iguais.";
+const PASSWORD_TOO_SHORT = "A senha precisa ter ao menos 8 caracteres.";
+const PASSWORDS_DO_NOT_MATCH = "As duas senhas não são iguais.";
 
 /**
  * Redefinição de senha com o token do e-mail (spec.md — AUTH-02 AC3/AC4).
@@ -44,11 +44,11 @@ export function ResetPasswordForm({ token }: { token: string }) {
     setError(null);
 
     if (password.length < 8) {
-      setError(SENHA_CURTA);
+      setError(PASSWORD_TOO_SHORT);
       return;
     }
     if (password !== confirmacao) {
-      setError(SENHAS_DIFERENTES);
+      setError(PASSWORDS_DO_NOT_MATCH);
       return;
     }
 

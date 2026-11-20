@@ -3,7 +3,7 @@
  *
  * Módulo puro e sem imports: é lido pela DAL, pelas actions, pela rota de
  * upload, pelos componentes cliente e pela página. Nenhum `server-only` aqui
- * de propósito, pelo mesmo motivo de `src/lib/permissions.ts`.
+ * de propósito, pelo mesmo motivo de `src/kit/access.ts`.
  */
 
 /** Valor reservado do parâmetro `pasta`: filtro "sem pasta" na raiz. */

@@ -1,16 +1,17 @@
 "use client";
 
+import { MODALITY, PROPERTY_KIND, PROPERTY_STATUS } from "../../verticals/real-estate/vocabulary";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Selector } from "@astryxdesign/core/Selector";
 import { HStack } from "@astryxdesign/core/Stack";
 import { TextInput } from "@astryxdesign/core/TextInput";
-import type { Modality, PropertyKind, PropertyStatus } from "@/src/server/data";
+import type { Modality, PropertyKind, PropertyStatus } from "@/src/verticals/real-estate/data/properties";
 
 const STATUS_OPTIONS: { value: PropertyStatus; label: string }[] = [
-  { value: "disponivel", label: "Disponível" },
-  { value: "reservado", label: "Reservado" },
-  { value: "vendido", label: "Vendido" },
+  { value: PROPERTY_STATUS.available, label: "Disponível" },
+  { value: PROPERTY_STATUS.reserved, label: "Reservado" },
+  { value: PROPERTY_STATUS.sold, label: "Vendido" },
 ];
 
 const PUBLISHED_OPTIONS: { value: string; label: string }[] = [
@@ -19,19 +20,19 @@ const PUBLISHED_OPTIONS: { value: string; label: string }[] = [
 ];
 
 const KIND_OPTIONS: { value: PropertyKind; label: string }[] = [
-  { value: "casa", label: "Casa" },
-  { value: "apartamento", label: "Apartamento" },
-  { value: "sobrado", label: "Sobrado" },
-  { value: "cobertura", label: "Cobertura" },
-  { value: "terreno", label: "Terreno" },
-  { value: "sala_comercial", label: "Sala comercial" },
-  { value: "chacara", label: "Chácara" },
+  { value: PROPERTY_KIND.house, label: "Casa" },
+  { value: PROPERTY_KIND.apartment, label: "Apartamento" },
+  { value: PROPERTY_KIND.townhouse, label: "Sobrado" },
+  { value: PROPERTY_KIND.penthouse, label: "Cobertura" },
+  { value: PROPERTY_KIND.land, label: "Terreno" },
+  { value: PROPERTY_KIND.commercial_room, label: "Sala comercial" },
+  { value: PROPERTY_KIND.farmhouse, label: "Chácara" },
 ];
 
 const MODALITY_OPTIONS: { value: Modality; label: string }[] = [
-  { value: "novo", label: "Novo" },
-  { value: "usado", label: "Usado" },
-  { value: "ambos", label: "Ambos" },
+  { value: MODALITY.new, label: "Novo" },
+  { value: MODALITY.used, label: "Usado" },
+  { value: MODALITY.both, label: "Ambos" },
 ];
 
 const SEARCH_DEBOUNCE_MS = 300;

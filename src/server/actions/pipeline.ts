@@ -1,10 +1,11 @@
 "use server";
 
+import { SENDER } from "../../lib/vocabulary";
 import { revalidatePath } from "next/cache";
-import { getLeadScope } from "../auth/session";
+import { getLeadScope } from "../../kit/session";
 import {
-  setMeetingAttendance,
-  updateLeadBroker,
+  setAppointmentAttendance,
+  updateLeadAssignee,
   updateLeadStatus,
   type LeadStatus,
 } from "../data";
@@ -43,7 +44,7 @@ export async function updateLeadStatusAction(
     scope,
     input.leadId,
     input.status as LeadStatus,
-    "humano"
+    SENDER.human
   );
 
   if (!updated) {
@@ -56,22 +57,22 @@ export async function updateLeadStatusAction(
 
 export interface UpdateLeadBrokerInput {
   leadId: string;
-  brokerId: string;
+  assigneeId: string;
 }
 
 /**
  * Troca o corretor responsável por um lead a partir do painel de detalhe
  * (lote-7 — ATRIB-02): mesmo molde de `updateLeadStatusAction` — tenant
  * resolvido pelo cookie (AD-007), nunca por parâmetro; a DAL já valida que o
- * corretor pertence ao tenant ativo (`updateLeadBroker`), então um `null`
+ * corretor pertence ao tenant ativo (`updateLeadAssignee`), então um `null`
  * dela (corretor de outro tenant OU lead inexistente/de outro tenant) vira
  * falha explícita aqui, nunca sucesso silencioso.
  */
-export async function updateLeadBrokerAction(
+export async function updateLeadAssigneeAction(
   input: UpdateLeadBrokerInput
 ): Promise<ActionResult> {
   const scope = await getLeadScope();
-  const updated = await updateLeadBroker(scope, input.leadId, input.brokerId);
+  const updated = await updateLeadAssignee(scope, input.leadId, input.assigneeId);
 
   if (!updated) {
     return { ok: false, error: "Corretor ou lead não encontrado." };
@@ -92,11 +93,11 @@ export interface SetMeetingAttendanceInput {
  * null` — os três estados do controle (pendente/compareceu/não compareceu)
  * — e a DAL escopa por tenant ativo.
  */
-export async function setMeetingAttendanceAction(
+export async function setAppointmentAttendanceAction(
   input: SetMeetingAttendanceInput
 ): Promise<ActionResult> {
   const scope = await getLeadScope();
-  const updated = await setMeetingAttendance(scope, input.leadId, input.attended);
+  const updated = await setAppointmentAttendance(scope, input.leadId, input.attended);
 
   if (!updated) {
     return { ok: false, error: "Lead não encontrado." };

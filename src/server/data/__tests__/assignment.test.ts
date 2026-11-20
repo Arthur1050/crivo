@@ -5,10 +5,10 @@ import { eq, inArray, sql } from "drizzle-orm";
 import { db } from "../../../db";
 import { leads, tenant_members, tenants, users } from "../../../db/schema";
 import {
-  assignBrokerForEscalation,
-  assignBrokerForMeeting,
-  getBrokerCandidates,
-  MEETING_DURATION_MS,
+  assignForEscalation,
+  assignForAppointment,
+  getAssigneeCandidates,
+  APPOINTMENT_DURATION_MS,
 } from "../index";
 
 /**
@@ -41,7 +41,7 @@ async function createTenant(name: string): Promise<string> {
     id,
     name,
     agentName: "Agente Teste",
-    supportedModality: "ambos",
+    supportedSegment: "ambos",
     slug: `fixture-${id}`,
   });
   createdTenantIds.push(id);
@@ -87,7 +87,7 @@ async function createLead(
   options: {
     assignedUserId?: string | null;
     status?: "em_qualificacao" | "qualificado_agendado" | "escalado_humano";
-    meetingAt?: Date | null;
+    appointmentAt?: Date | null;
   } = {}
 ): Promise<string> {
   const id = randomUUID();
@@ -98,7 +98,7 @@ async function createLead(
     name: "Lead Fixture",
     phone: "+55 34 90000-1111",
     status: options.status ?? "em_qualificacao",
-    meetingAt: options.meetingAt ?? null,
+    appointmentAt: options.appointmentAt ?? null,
     firstContactAt: new Date(),
   });
   return id;
@@ -131,24 +131,24 @@ describe("server/data — atribuição por agenda (lote-8, ATRIB-02/ATRIB-03)", 
   describe("getBrokerCandidates", () => {
     it("devolve carga ativa, janela declarada e reuniões marcadas do corretor, numa consulta só", async () => {
       const tenantId = await createTenant("Candidatos A");
-      const brokerId = await createMember(tenantId, "Corretor A");
+      const assigneeId = await createMember(tenantId, "Corretor A");
 
-      await createLead(tenantId, { assignedUserId: brokerId, status: "em_qualificacao" });
-      await createLead(tenantId, { assignedUserId: brokerId, status: "escalado_humano" });
+      await createLead(tenantId, { assignedUserId: assigneeId, status: "em_qualificacao" });
+      await createLead(tenantId, { assignedUserId: assigneeId, status: "escalado_humano" });
       await createLead(tenantId, {
-        assignedUserId: brokerId,
+        assignedUserId: assigneeId,
         status: "qualificado_agendado",
-        meetingAt: SLOT,
+        appointmentAt: SLOT,
       });
 
-      const candidates = await getBrokerCandidates(tenantId);
+      const candidates = await getAssigneeCandidates(tenantId);
 
       expect(candidates).toHaveLength(1);
-      // `qualificado_agendado` não conta como carga (mesma regra de getBrokerLoads).
+      // `qualificado_agendado` não conta como carga (mesma regra de getAssigneeLoads).
       expect(candidates[0].activeLeads).toBe(2);
       expect(candidates[0].window).toEqual(MANHA);
-      expect(candidates[0].meetings).toEqual([
-        { start: SLOT, end: new Date(SLOT.getTime() + MEETING_DURATION_MS) },
+      expect(candidates[0].appointments).toEqual([
+        { start: SLOT, end: new Date(SLOT.getTime() + APPOINTMENT_DURATION_MS) },
       ]);
     });
 
@@ -156,20 +156,20 @@ describe("server/data — atribuição por agenda (lote-8, ATRIB-02/ATRIB-03)", 
       const tenantId = await createTenant("Candidatos Sem Janela");
       await createMember(tenantId, "Corretor Sem Janela", { window: null });
 
-      const candidates = await getBrokerCandidates(tenantId);
+      const candidates = await getAssigneeCandidates(tenantId);
 
       expect(candidates).toHaveLength(1);
       expect(candidates[0].window).toBeNull();
-      expect(candidates[0].meetings).toEqual([]);
+      expect(candidates[0].appointments).toEqual([]);
     });
 
     it("corretor sem nenhum lead aparece com activeLeads 0 (LEFT JOIN, nunca INNER)", async () => {
       const tenantId = await createTenant("Candidatos Vazio");
-      const brokerId = await createMember(tenantId, "Corretor Ocioso");
+      const assigneeId = await createMember(tenantId, "Corretor Ocioso");
 
-      const candidates = await getBrokerCandidates(tenantId);
+      const candidates = await getAssigneeCandidates(tenantId);
 
-      expect(candidates.map((c) => c.id)).toEqual([brokerId]);
+      expect(candidates.map((c) => c.id)).toEqual([assigneeId]);
       expect(candidates[0].activeLeads).toBe(0);
     });
 
@@ -181,7 +181,7 @@ describe("server/data — atribuição por agenda (lote-8, ATRIB-02/ATRIB-03)", 
       });
       const gestorId = await createMember(tenantId, "Gestor", { role: "gestor" });
 
-      const ids = (await getBrokerCandidates(tenantId)).map((c) => c.id);
+      const ids = (await getAssigneeCandidates(tenantId)).map((c) => c.id);
 
       expect(ids).toEqual([ativoId]);
       expect(ids).not.toContain(desativadoId);
@@ -192,29 +192,29 @@ describe("server/data — atribuição por agenda (lote-8, ATRIB-02/ATRIB-03)", 
       const tenantId = await createTenant("Candidatos Tenant A");
       const outroTenantId = await createTenant("Candidatos Tenant B");
 
-      const brokerId = await createMember(tenantId, "Corretor Compartilhado");
+      const assigneeId = await createMember(tenantId, "Corretor Compartilhado");
       // O MESMO usuário atende nas duas imobiliárias (usuário é multi-tenant).
       await createMember(outroTenantId, "Corretor Compartilhado", {
-        userId: brokerId,
+        userId: assigneeId,
       });
       const alheioId = await createMember(outroTenantId, "Corretor Vizinho");
 
       // Reunião e carga que existem só na imobiliária vizinha.
       await createLead(outroTenantId, {
-        assignedUserId: brokerId,
+        assignedUserId: assigneeId,
         status: "qualificado_agendado",
-        meetingAt: SLOT,
+        appointmentAt: SLOT,
       });
       await createLead(outroTenantId, {
-        assignedUserId: brokerId,
+        assignedUserId: assigneeId,
         status: "em_qualificacao",
       });
 
-      const candidates = await getBrokerCandidates(tenantId);
+      const candidates = await getAssigneeCandidates(tenantId);
 
-      expect(candidates.map((c) => c.id)).toEqual([brokerId]);
+      expect(candidates.map((c) => c.id)).toEqual([assigneeId]);
       expect(candidates.map((c) => c.id)).not.toContain(alheioId);
-      expect(candidates[0].meetings).toEqual([]);
+      expect(candidates[0].appointments).toEqual([]);
       expect(candidates[0].activeLeads).toBe(0);
     });
   });
@@ -232,16 +232,16 @@ describe("server/data — atribuição por agenda (lote-8, ATRIB-02/ATRIB-03)", 
       });
       const leadId = await createLead(tenantId);
 
-      const result = await assignBrokerForMeeting(tenantId, leadId, SLOT, {
+      const result = await assignForAppointment(tenantId, leadId, SLOT, {
         status: "qualificado_agendado",
       });
 
-      expect(result).toMatchObject({ ok: true, brokerId: manhaId });
-      expect(result.ok && result.brokerId).not.toBe(tardeId);
+      expect(result).toMatchObject({ ok: true, assigneeId: manhaId });
+      expect(result.ok && result.assigneeId).not.toBe(tardeId);
 
       const saved = await readLead(leadId);
       expect(saved.assignedUserId).toBe(manhaId);
-      expect(saved.meetingAt).toEqual(SLOT);
+      expect(saved.appointmentAt).toEqual(SLOT);
       expect(saved.status).toBe("qualificado_agendado");
     });
 
@@ -250,7 +250,7 @@ describe("server/data — atribuição por agenda (lote-8, ATRIB-02/ATRIB-03)", 
       await createMember(tenantId, "Corretor Manhã", { window: MANHA });
       const leadId = await createLead(tenantId);
 
-      const result = await assignBrokerForMeeting(
+      const result = await assignForAppointment(
         tenantId,
         leadId,
         SLOT_FORA_DE_JANELA,
@@ -261,7 +261,7 @@ describe("server/data — atribuição por agenda (lote-8, ATRIB-02/ATRIB-03)", 
 
       const saved = await readLead(leadId);
       expect(saved.assignedUserId).toBeNull();
-      expect(saved.meetingAt).toBeNull();
+      expect(saved.appointmentAt).toBeNull();
       expect(saved.status).toBe("em_qualificacao");
     });
 
@@ -274,22 +274,22 @@ describe("server/data — atribuição por agenda (lote-8, ATRIB-02/ATRIB-03)", 
       await createLead(tenantId, {
         assignedUserId: ocupadoId,
         status: "qualificado_agendado",
-        meetingAt: SLOT,
+        appointmentAt: SLOT,
       });
       const leadId = await createLead(tenantId);
 
-      const result = await assignBrokerForMeeting(tenantId, leadId, SLOT, {});
+      const result = await assignForAppointment(tenantId, leadId, SLOT, {});
 
-      expect(result).toMatchObject({ ok: true, brokerId: livreId });
+      expect(result).toMatchObject({ ok: true, assigneeId: livreId });
     });
 
     it("o índice único do banco recusa duas reuniões do mesmo corretor no mesmo instante", async () => {
       const tenantId = await createTenant("Índice de Conflito");
-      const brokerId = await createMember(tenantId, "Corretor Único");
+      const assigneeId = await createMember(tenantId, "Corretor Único");
       await createLead(tenantId, {
-        assignedUserId: brokerId,
+        assignedUserId: assigneeId,
         status: "qualificado_agendado",
-        meetingAt: SLOT,
+        appointmentAt: SLOT,
       });
       const outroLeadId = await createLead(tenantId);
 
@@ -298,7 +298,7 @@ describe("server/data — atribuição por agenda (lote-8, ATRIB-02/ATRIB-03)", 
       await expect(
         db
           .update(leads)
-          .set({ assignedUserId: brokerId, meetingAt: SLOT })
+          .set({ assignedUserId: assigneeId, appointmentAt: SLOT })
           .where(eq(leads.id, outroLeadId))
       ).rejects.toThrow();
 
@@ -307,24 +307,24 @@ describe("server/data — atribuição por agenda (lote-8, ATRIB-02/ATRIB-03)", 
       await db
         .update(leads)
         .set({
-          assignedUserId: brokerId,
-          meetingAt: new Date(SLOT.getTime() + MEETING_DURATION_MS),
+          assignedUserId: assigneeId,
+          appointmentAt: new Date(SLOT.getTime() + APPOINTMENT_DURATION_MS),
         })
         .where(eq(leads.id, outroLeadId));
-      expect((await readLead(outroLeadId)).assignedUserId).toBe(brokerId);
+      expect((await readLead(outroLeadId)).assignedUserId).toBe(assigneeId);
     });
 
     it("dois agendamentos concorrentes no mesmo corretor e intervalo: exatamente um confirma (AC7)", async () => {
       const tenantId = await createTenant("Agendamento Concorrente");
-      const brokerId = await createMember(tenantId, "Corretor Único");
+      const assigneeId = await createMember(tenantId, "Corretor Único");
       const leadA = await createLead(tenantId);
       const leadB = await createLead(tenantId);
 
       const [primeiro, segundo] = await Promise.all([
-        assignBrokerForMeeting(tenantId, leadA, SLOT, {
+        assignForAppointment(tenantId, leadA, SLOT, {
           status: "qualificado_agendado",
         }),
-        assignBrokerForMeeting(tenantId, leadB, SLOT, {
+        assignForAppointment(tenantId, leadB, SLOT, {
           status: "qualificado_agendado",
         }),
       ]);
@@ -337,14 +337,14 @@ describe("server/data — atribuição por agenda (lote-8, ATRIB-02/ATRIB-03)", 
         .select({ id: leads.id })
         .from(leads)
         .where(
-          sql`${leads.tenantId} = ${tenantId} and ${leads.assignedUserId} = ${brokerId} and ${leads.meetingAt} = ${SLOT}`
+          sql`${leads.tenantId} = ${tenantId} and ${leads.assignedUserId} = ${assigneeId} and ${leads.appointmentAt} = ${SLOT}`
         );
       expect(comReuniao).toHaveLength(1);
     });
 
     it("quem perde a corrida pelo mesmo intervalo recebe conflito-de-agenda", async () => {
       const tenantId = await createTenant("Conflito de Agenda");
-      const brokerId = await createMember(tenantId, "Corretor Único");
+      const assigneeId = await createMember(tenantId, "Corretor Único");
       const leadReservado = await createLead(tenantId);
       const leadPerdedor = await createLead(tenantId);
 
@@ -359,7 +359,7 @@ describe("server/data — atribuição por agenda (lote-8, ATRIB-02/ATRIB-03)", 
       const reserva = db.transaction(async (tx) => {
         await tx
           .update(leads)
-          .set({ assignedUserId: brokerId, meetingAt: SLOT })
+          .set({ assignedUserId: assigneeId, appointmentAt: SLOT })
           .where(eq(leads.id, leadReservado));
         await portao;
       });
@@ -372,7 +372,7 @@ describe("server/data — atribuição por agenda (lote-8, ATRIB-02/ATRIB-03)", 
         return Number((bloqueado.rows[0] as { n: number }).n) > 0;
       });
 
-      const perdedor = assignBrokerForMeeting(tenantId, leadPerdedor, SLOT, {
+      const perdedor = assignForAppointment(tenantId, leadPerdedor, SLOT, {
         status: "qualificado_agendado",
       });
 
@@ -397,7 +397,7 @@ describe("server/data — atribuição por agenda (lote-8, ATRIB-02/ATRIB-03)", 
       // O perdedor não gravou nada.
       const salvo = await readLead(leadPerdedor);
       expect(salvo.assignedUserId).toBeNull();
-      expect(salvo.meetingAt).toBeNull();
+      expect(salvo.appointmentAt).toBeNull();
       expect(salvo.status).toBe("em_qualificacao");
     });
   });
@@ -413,12 +413,12 @@ describe("server/data — atribuição por agenda (lote-8, ATRIB-02/ATRIB-03)", 
       await createLead(tenantId, { assignedUserId: carregadoId });
       const leadId = await createLead(tenantId);
 
-      const result = await assignBrokerForEscalation(tenantId, leadId, SLOT, {
+      const result = await assignForEscalation(tenantId, leadId, SLOT, {
         status: "escalado_humano",
         escalationReason: "pediu corretor",
       });
 
-      expect(result).toMatchObject({ ok: true, brokerId: leveId });
+      expect(result).toMatchObject({ ok: true, assigneeId: leveId });
 
       const saved = await readLead(leadId);
       expect(saved.assignedUserId).toBe(leveId);
@@ -432,12 +432,12 @@ describe("server/data — atribuição por agenda (lote-8, ATRIB-02/ATRIB-03)", 
       await createMember(tenantId, "Corretor Desativado", { deactivated: true });
       const leadId = await createLead(tenantId);
 
-      const result = await assignBrokerForEscalation(tenantId, leadId, SLOT, {
+      const result = await assignForEscalation(tenantId, leadId, SLOT, {
         status: "escalado_humano",
         escalationReason: "sem ninguém para atender",
       });
 
-      expect(result).toMatchObject({ ok: true, brokerId: null });
+      expect(result).toMatchObject({ ok: true, assigneeId: null });
 
       const saved = await readLead(leadId);
       expect(saved.status).toBe("escalado_humano");
@@ -452,12 +452,12 @@ describe("server/data — atribuição por agenda (lote-8, ATRIB-02/ATRIB-03)", 
       const ociosoId = await createMember(tenantId, "Corretor Ocioso");
       const leadId = await createLead(tenantId, { assignedUserId: donoId });
 
-      const result = await assignBrokerForEscalation(tenantId, leadId, SLOT, {
+      const result = await assignForEscalation(tenantId, leadId, SLOT, {
         status: "escalado_humano",
         escalationReason: "insistiu",
       });
 
-      expect(result).toMatchObject({ ok: true, brokerId: donoId });
+      expect(result).toMatchObject({ ok: true, assigneeId: donoId });
 
       const saved = await readLead(leadId);
       expect(saved.assignedUserId).toBe(donoId);

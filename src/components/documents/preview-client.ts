@@ -1,3 +1,4 @@
+import { DOCUMENT_STATUS } from "../../lib/vocabulary";
 /**
  * Busca do texto extraído para o preview (lote-12 — T24). Isolada do
  * componente para ser testável sem DOM.
@@ -6,7 +7,7 @@
  * preview daquele documento.
  */
 
-export type DocumentPreviewStatus = "pronto" | "fora_do_agente";
+export type DocumentPreviewStatus = typeof DOCUMENT_STATUS.ready | typeof DOCUMENT_STATUS.outside_agent;
 
 export type DocumentPreview =
   | { ok: true; status: DocumentPreviewStatus; text: string; warning?: string }
@@ -50,7 +51,7 @@ export async function fetchDocumentPreview(
   const record = body as { status?: unknown; text?: unknown; warning?: unknown } | null;
   if (
     typeof record?.text !== "string" ||
-    (record.status !== "pronto" && record.status !== "fora_do_agente")
+    (record.status !== DOCUMENT_STATUS.ready && record.status !== DOCUMENT_STATUS.outside_agent)
   ) {
     return { ok: false, message: MESSAGES.unavailable };
   }

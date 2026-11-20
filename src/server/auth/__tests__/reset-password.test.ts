@@ -10,7 +10,7 @@ import { accounts, sessions, users, verifications } from "../../../db/schema";
 // certo apontando para a tela certa (AUTH-02 AC1).
 const enviados: { to: string; name: string; url: string }[] = [];
 
-vi.mock("../email", () => ({
+vi.mock("../../../kit/email", () => ({
   sendResetPasswordEmail: vi.fn(async (reset: { to: string; name: string; url: string }) => {
     enviados.push(reset);
     return { ok: true, id: "fixture" };
@@ -18,7 +18,7 @@ vi.mock("../email", () => ({
   sendInvitationEmail: vi.fn(async () => ({ ok: true, id: "fixture" })),
 }));
 
-const { auth } = await import("../config");
+const { auth } = await import("../../../kit/auth");
 
 const SENHA_ANTIGA = "senha-antiga-123";
 const SENHA_NOVA = "senha-nova-456";

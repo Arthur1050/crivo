@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { inArray } from "drizzle-orm";
 import { db } from "../../../db";
 import { accounts, loginAttempts, sessions, users } from "../../../db/schema";
-import { auth } from "../config";
+import { auth } from "../../../kit/auth";
 
 // AUTH-01 AC4 pelo ângulo que o limite por IP NÃO cobre: "para o mesmo
 // e-mail". Todas as tentativas deste arquivo chegam de IPs diferentes, um por

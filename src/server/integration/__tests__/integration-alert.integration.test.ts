@@ -1,3 +1,4 @@
+import { realEstate } from "../../../verticals/real-estate";
 import "dotenv/config";
 import { randomUUID } from "node:crypto";
 import { eq, inArray, like } from "drizzle-orm";
@@ -18,7 +19,7 @@ vi.mock("../../data/integration-health", async (importOriginal) => {
 
 import * as healthData from "../../data/integration-health";
 import { runIntegrationAlert } from "../integration-alert";
-import type { EmailResult } from "../../auth/email";
+import type { EmailResult } from "../../../kit/email";
 
 const mockedSnapshots = vi.mocked(healthData.getTenantHealthSnapshots);
 const mockedClaim = vi.mocked(healthData.claimIntegrationProblems);
@@ -53,7 +54,7 @@ async function newTenant(label: string, overrides: Partial<typeof tenants.$infer
     slug: `fixture-alerta-${label}-${id.slice(0, 8)}`,
     name: `Fixture alerta ${label} ${id.slice(0, 8)}`,
     agentName: "Agente",
-    supportedModality: "ambos",
+    supportedSegment: "ambos",
     ...overrides,
   });
   const [row] = await db.select().from(tenants).where(eq(tenants.id, id));
@@ -101,7 +102,7 @@ describe("runIntegrationAlert — transição e e-mail (ALERTA-01, ALERTA-02)", 
   it("queda envia um e-mail ao operador e grava problema; a segunda execução não envia (AC2, AC6)", async () => {
     const tenant = await fallingTenant("queda");
 
-    const first = await runIntegrationAlert(NOW, { operatorEmail: OPERATOR, send: sendOk });
+    const first = await runIntegrationAlert(NOW, { brand: realEstate.brand, operatorEmail: OPERATOR, send: sendOk });
     const emails = mentioning(tenant);
     expect(emails).toHaveLength(1);
     expect(emails[0].to).toBe(OPERATOR);
@@ -113,7 +114,7 @@ describe("runIntegrationAlert — transição e e-mail (ALERTA-01, ALERTA-02)", 
     expect(afterFirst.integrationHealthChangedAt?.toISOString()).toBe(NOW.toISOString());
 
     sent.length = 0;
-    await runIntegrationAlert(new Date(NOW.getTime() + 24 * HOUR_MS), { operatorEmail: OPERATOR, send: sendOk });
+    await runIntegrationAlert(new Date(NOW.getTime() + 24 * HOUR_MS), { brand: realEstate.brand, operatorEmail: OPERATOR, send: sendOk });
     expect(mentioning(tenant)).toHaveLength(0);
     const afterSecond = await stateOf(tenant.id);
     expect(afterSecond.integrationHealthState).toBe("problema");
@@ -124,7 +125,7 @@ describe("runIntegrationAlert — transição e e-mail (ALERTA-01, ALERTA-02)", 
     const one = await fallingTenant("par-a");
     const two = await fallingTenant("par-b");
 
-    await runIntegrationAlert(NOW, { operatorEmail: OPERATOR, send: sendOk });
+    await runIntegrationAlert(NOW, { brand: realEstate.brand, operatorEmail: OPERATOR, send: sendOk });
 
     expect(sendOk).toHaveBeenCalledTimes(1);
     expect(sent[0].text).toContain(one.name);
@@ -138,7 +139,7 @@ describe("runIntegrationAlert — transição e e-mail (ALERTA-01, ALERTA-02)", 
     const healthy = await newTenant("novo-saudavel");
     await addAgentMessage(healthy.id, new Date(NOW.getTime() - HOUR_MS));
 
-    await runIntegrationAlert(NOW, { operatorEmail: OPERATOR, send: sendOk });
+    await runIntegrationAlert(NOW, { brand: realEstate.brand, operatorEmail: OPERATOR, send: sendOk });
 
     expect(mentioning(broken)).toHaveLength(0);
     const brokenRow = await stateOf(broken.id);
@@ -156,7 +157,7 @@ describe("runIntegrationAlert — transição e e-mail (ALERTA-01, ALERTA-02)", 
     });
     await addAgentMessage(tenant.id, new Date(NOW.getTime() - HOUR_MS));
 
-    await runIntegrationAlert(NOW, { operatorEmail: OPERATOR, send: sendOk });
+    await runIntegrationAlert(NOW, { brand: realEstate.brand, operatorEmail: OPERATOR, send: sendOk });
 
     expect(mentioning(tenant)).toHaveLength(0);
     const row = await stateOf(tenant.id);
@@ -168,7 +169,7 @@ describe("runIntegrationAlert — transição e e-mail (ALERTA-01, ALERTA-02)", 
     const changedAt = new Date("2033-04-10T03:00:00.000Z");
     const tenant = await newTenant("igual", { integrationHealthState: "problema", integrationHealthChangedAt: changedAt });
 
-    await runIntegrationAlert(NOW, { operatorEmail: OPERATOR, send: sendOk });
+    await runIntegrationAlert(NOW, { brand: realEstate.brand, operatorEmail: OPERATOR, send: sendOk });
 
     expect(mentioning(tenant)).toHaveLength(0);
     const row = await stateOf(tenant.id);
@@ -184,7 +185,7 @@ describe("runIntegrationAlert — transição e e-mail (ALERTA-01, ALERTA-02)", 
       return actual.claimIntegrationProblems(ids, at);
     });
 
-    const result = await runIntegrationAlert(NOW, { operatorEmail: OPERATOR, send: sendOk });
+    const result = await runIntegrationAlert(NOW, { brand: realEstate.brand, operatorEmail: OPERATOR, send: sendOk });
 
     expect(mentioning(tenant)).toHaveLength(0);
     expect(result.sent).toBe(0);
@@ -201,7 +202,7 @@ describe("runIntegrationAlert — transição e e-mail (ALERTA-01, ALERTA-02)", 
       { tenantId: justBefore.id, route: `${ROUTE_PREFIX}/antes`, method: "POST", status: 401, code: "invalid_token", occurredAt: new Date(NOW.getTime() - DAY_MS - 1) },
     ]);
 
-    await runIntegrationAlert(NOW, { operatorEmail: OPERATOR, send: sendOk });
+    await runIntegrationAlert(NOW, { brand: realEstate.brand, operatorEmail: OPERATOR, send: sendOk });
 
     expect(mentioning(onBoundary)).toHaveLength(1);
     expect(mentioning(onBoundary)[0].text).toContain(`${ROUTE_PREFIX}/limite: 1`);
@@ -219,7 +220,7 @@ describe("runIntegrationAlert — transição e e-mail (ALERTA-01, ALERTA-02)", 
       return actual.claimIntegrationProblems(ids, at);
     });
 
-    const result = await runIntegrationAlert(NOW, { operatorEmail: OPERATOR, send: sendOk });
+    const result = await runIntegrationAlert(NOW, { brand: realEstate.brand, operatorEmail: OPERATOR, send: sendOk });
 
     expect(mentioning(taken)).toHaveLength(0);
     expect(mentioning(won)).toHaveLength(1);
@@ -233,7 +234,7 @@ describe("runIntegrationAlert — transição e e-mail (ALERTA-01, ALERTA-02)", 
     await fallingTenant("contagem-a");
     await fallingTenant("contagem-b");
 
-    const result = await runIntegrationAlert(NOW, { operatorEmail: OPERATOR, send: sendOk });
+    const result = await runIntegrationAlert(NOW, { brand: realEstate.brand, operatorEmail: OPERATOR, send: sendOk });
 
     const after = (await db.select({ id: tenants.id }).from(tenants)).length;
     expect(result.evaluated).toBeGreaterThanOrEqual(before + 2);
@@ -245,7 +246,7 @@ describe("runIntegrationAlert — transição e e-mail (ALERTA-01, ALERTA-02)", 
   it("sem tenants avaliados: evaluated 0 e nenhum e-mail", async () => {
     mockedSnapshots.mockResolvedValueOnce([]);
 
-    const result = await runIntegrationAlert(NOW, { operatorEmail: OPERATOR, send: sendOk });
+    const result = await runIntegrationAlert(NOW, { brand: realEstate.brand, operatorEmail: OPERATOR, send: sendOk });
 
     expect(result).toEqual({ evaluated: 0, sent: 0, skipped: null, sendFailed: false });
     expect(sendOk).not.toHaveBeenCalled();
@@ -256,7 +257,7 @@ describe("runIntegrationAlert — falhas (ALERTA-03)", () => {
   it.each([[undefined], [""], ["   "]])("destinatário %j: não envia, o tenant segue saudavel e skipped é reportado (AC1, L-030)", async (operatorEmail) => {
     const tenant = await fallingTenant("sem-destino");
 
-    const result = await runIntegrationAlert(NOW, { operatorEmail, send: sendOk });
+    const result = await runIntegrationAlert(NOW, { brand: realEstate.brand, operatorEmail, send: sendOk });
 
     expect(sendOk).not.toHaveBeenCalled();
     expect(result.skipped).toBe("destinatario-ausente");
@@ -268,10 +269,10 @@ describe("runIntegrationAlert — falhas (ALERTA-03)", () => {
 
   it("depois que o destinatário existe, a queda retida sai no mesmo dia seguinte", async () => {
     const tenant = await fallingTenant("destino-tardio");
-    await runIntegrationAlert(NOW, { operatorEmail: undefined, send: sendOk });
+    await runIntegrationAlert(NOW, { brand: realEstate.brand, operatorEmail: undefined, send: sendOk });
     expect(mentioning(tenant)).toHaveLength(0);
 
-    await runIntegrationAlert(new Date(NOW.getTime() + 24 * HOUR_MS), { operatorEmail: OPERATOR, send: sendOk });
+    await runIntegrationAlert(new Date(NOW.getTime() + 24 * HOUR_MS), { brand: realEstate.brand, operatorEmail: OPERATOR, send: sendOk });
 
     expect(mentioning(tenant)).toHaveLength(1);
     expect((await stateOf(tenant.id)).integrationHealthState).toBe("problema");
@@ -281,7 +282,7 @@ describe("runIntegrationAlert — falhas (ALERTA-03)", () => {
     const tenant = await fallingTenant("envio-falho");
     const failing = vi.fn(async (): Promise<EmailResult> => ({ ok: false, error: "Domínio não verificado" }));
 
-    const failed = await runIntegrationAlert(NOW, { operatorEmail: OPERATOR, send: failing });
+    const failed = await runIntegrationAlert(NOW, { brand: realEstate.brand, operatorEmail: OPERATOR, send: failing });
 
     expect(failed.sendFailed).toBe(true);
     expect(failed.sent).toBe(0);
@@ -289,7 +290,7 @@ describe("runIntegrationAlert — falhas (ALERTA-03)", () => {
     expect(row.integrationHealthState).toBe("saudavel");
     expect(row.integrationHealthChangedAt?.toISOString()).toBe("2033-04-01T03:00:00.000Z");
 
-    const retry = await runIntegrationAlert(new Date(NOW.getTime() + 24 * HOUR_MS), { operatorEmail: OPERATOR, send: sendOk });
+    const retry = await runIntegrationAlert(new Date(NOW.getTime() + 24 * HOUR_MS), { brand: realEstate.brand, operatorEmail: OPERATOR, send: sendOk });
     expect(mentioning(tenant)).toHaveLength(1);
     expect(retry.sendFailed).toBe(false);
     expect((await stateOf(tenant.id)).integrationHealthState).toBe("problema");
@@ -299,7 +300,7 @@ describe("runIntegrationAlert — falhas (ALERTA-03)", () => {
     const tenant = await fallingTenant("envio-lanca");
     const throwing = vi.fn(async (): Promise<EmailResult> => { throw new Error("rede fora"); });
 
-    const result = await runIntegrationAlert(NOW, { operatorEmail: OPERATOR, send: throwing });
+    const result = await runIntegrationAlert(NOW, { brand: realEstate.brand, operatorEmail: OPERATOR, send: throwing });
 
     expect(result.sendFailed).toBe(true);
     expect((await stateOf(tenant.id)).integrationHealthState).toBe("saudavel");

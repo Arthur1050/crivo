@@ -1,3 +1,4 @@
+import { INTEGRATION_HEALTH, SENDER } from "../../lib/vocabulary";
 import "server-only";
 import { and, count, eq, gte, inArray, max } from "drizzle-orm";
 import { db } from "../../db";
@@ -27,7 +28,7 @@ export async function getTenantHealthSnapshots(since: Date): Promise<TenantHealt
   const lastMessageRows = await db
     .select({ tenantId: messages.tenantId, lastSentAt: max(messages.sentAt) })
     .from(messages)
-    .where(eq(messages.sender, "agente"))
+    .where(eq(messages.sender, SENDER.agent))
     .groupBy(messages.tenantId);
 
   const refusalRows = await db
@@ -106,13 +107,13 @@ export async function claimIntegrationProblems(
     const locked = await tx
       .select({ id: tenants.id, changedAt: tenants.integrationHealthChangedAt })
       .from(tenants)
-      .where(and(inArray(tenants.id, tenantIds), eq(tenants.integrationHealthState, "saudavel")))
+      .where(and(inArray(tenants.id, tenantIds), eq(tenants.integrationHealthState, INTEGRATION_HEALTH.healthy)))
       .for("update");
     if (locked.length === 0) return [];
     await tx
       .update(tenants)
-      .set({ integrationHealthState: "problema", integrationHealthChangedAt: at })
-      .where(and(inArray(tenants.id, locked.map((row) => row.id)), eq(tenants.integrationHealthState, "saudavel")));
+      .set({ integrationHealthState: INTEGRATION_HEALTH.problem, integrationHealthChangedAt: at })
+      .where(and(inArray(tenants.id, locked.map((row) => row.id)), eq(tenants.integrationHealthState, INTEGRATION_HEALTH.healthy)));
     return locked.map((row) => ({ tenantId: row.id, previousChangedAt: row.changedAt, claimedAt: at }));
   });
 }
@@ -126,11 +127,11 @@ export async function releaseIntegrationProblems(claimed: ClaimedProblem[]): Pro
   for (const claim of claimed) {
     await db
       .update(tenants)
-      .set({ integrationHealthState: "saudavel", integrationHealthChangedAt: claim.previousChangedAt })
+      .set({ integrationHealthState: INTEGRATION_HEALTH.healthy, integrationHealthChangedAt: claim.previousChangedAt })
       .where(
         and(
           eq(tenants.id, claim.tenantId),
-          eq(tenants.integrationHealthState, "problema"),
+          eq(tenants.integrationHealthState, INTEGRATION_HEALTH.problem),
           eq(tenants.integrationHealthChangedAt, claim.claimedAt)
         )
       );

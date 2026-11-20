@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { realEstate } from "../../../verticals/real-estate";
 import { randomUUID } from "node:crypto";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { eq, inArray } from "drizzle-orm";
@@ -69,7 +70,7 @@ async function createDocument(
   const [row] = await db.insert(documents).values({
     tenantId,
     name: `doc-${seed}.txt`,
-    modality: "novo",
+    segment: "novo",
     mimeType: "text/plain",
     sizeBytes: 12n,
     storageProvider: "vercel_blob",
@@ -96,7 +97,7 @@ async function createIntent(
     name: `intent-${seed}.txt`,
     mimeType: "text/plain",
     sizeBytes: 12n,
-    modality: "novo",
+    segment: "novo",
     storageKey: `documents/v1/${tenantId}/intent-${seed}`,
     expiresAtIntent: new Date(NOW.getTime() - 1),
     ...overrides,
@@ -161,8 +162,8 @@ async function reserveHuman(leadId: string, createdAt: Date, messageId: string |
 describe("rotina diária de manutenção documental (lote-12 T19)", () => {
   beforeAll(async () => {
     await db.insert(tenants).values([
-      { id: TENANT_A, name: "Manutenção A", agentName: "A", supportedModality: "ambos", slug: `maint-a-${TENANT_A}` },
-      { id: TENANT_B, name: "Manutenção B", agentName: "B", supportedModality: "ambos", slug: `maint-b-${TENANT_B}` },
+      { id: TENANT_A, name: "Manutenção A", agentName: "A", supportedSegment: "ambos", slug: `maint-a-${TENANT_A}` },
+      { id: TENANT_B, name: "Manutenção B", agentName: "B", supportedSegment: "ambos", slug: `maint-b-${TENANT_B}` },
     ]);
     await db.insert(users).values([{ id: USER_A, name: "Manutenção A", email: `maint-a-${USER_A}@example.test` }]);
   });
@@ -182,27 +183,27 @@ describe("rotina diária de manutenção documental (lote-12 T19)", () => {
   describe("boundary de expiração (L-023)", () => {
     it("documento com expiresAt exatamente igual a now é expirado e removido", async () => {
       const document = await createDocument({ expiresAt: NOW });
-      const result = await runDailyMaintenance(NOW, { storage: storage() });
+      const result = await runDailyMaintenance(NOW, { facet: realEstate.documentSegments, storage: storage() });
       expect(result.deletedByTenant[TENANT_A]).toBe(1);
       expect(await documentRow(document.id)).toBeUndefined();
     });
 
     it("documento com expiresAt um milissegundo depois de now sobrevive intacto", async () => {
       const document = await createDocument({ expiresAt: new Date(NOW.getTime() + 1) });
-      const result = await runDailyMaintenance(NOW, { storage: storage() });
+      const result = await runDailyMaintenance(NOW, { facet: realEstate.documentSegments, storage: storage() });
       expect(result.deletedByTenant[TENANT_A]).toBeUndefined();
       expect(await documentRow(document.id)).toMatchObject({ deletedAt: null, extractedText: "conteúdo sensível" });
     });
 
     it("documento com expiresAt um milissegundo antes de now é removido", async () => {
       const document = await createDocument({ expiresAt: new Date(NOW.getTime() - 1) });
-      await runDailyMaintenance(NOW, { storage: storage() });
+      await runDailyMaintenance(NOW, { facet: realEstate.documentSegments, storage: storage() });
       expect(await documentRow(document.id)).toBeUndefined();
     });
 
     it("documento sem validade nunca é alcançado pela expiração", async () => {
       const document = await createDocument({ expiresAt: null });
-      await runDailyMaintenance(NOW, { storage: storage() });
+      await runDailyMaintenance(NOW, { facet: realEstate.documentSegments, storage: storage() });
       expect(await documentRow(document.id)).toMatchObject({ deletedAt: null });
     });
   });
@@ -212,7 +213,7 @@ describe("rotina diária de manutenção documental (lote-12 T19)", () => {
       const document = await createDocument({ expiresAt: NOW });
       const failing = storage({ delete: vi.fn(async () => { throw new DocumentStorageError("transient"); }) });
 
-      const result = await runDailyMaintenance(NOW, { storage: failing });
+      const result = await runDailyMaintenance(NOW, { facet: realEstate.documentSegments, storage: failing });
 
       expect(result.pendingByTenant[TENANT_A]).toBe(1);
       expect(result.deletedByTenant[TENANT_A]).toBeUndefined();
@@ -228,7 +229,7 @@ describe("rotina diária de manutenção documental (lote-12 T19)", () => {
       await createDocument({ expiresAt: NOW });
       const failing = storage({ delete: vi.fn(async () => { throw new DocumentStorageError("transient"); }) });
 
-      const result = await runDailyMaintenance(NOW, { storage: failing });
+      const result = await runDailyMaintenance(NOW, { facet: realEstate.documentSegments, storage: failing });
 
       expect(result.refusalsPurgeFailed).toBe(false);
       expect(mockedPurge).toHaveBeenCalledTimes(1);
@@ -240,7 +241,7 @@ describe("rotina diária de manutenção documental (lote-12 T19)", () => {
       mockedExpireDue.mockRejectedValueOnce(new Error("falha simulada de expiração"));
       const intent = await createIntent();
 
-      const result = await runDailyMaintenance(NOW, { storage: storage() });
+      const result = await runDailyMaintenance(NOW, { facet: realEstate.documentSegments, storage: storage() });
 
       expect(result.expiryFailed).toBe(true);
       expect(result.total).toBe(0);
@@ -254,7 +255,7 @@ describe("rotina diária de manutenção documental (lote-12 T19)", () => {
       const document = await createDocument({ expiresAt: NOW });
       await createIntent();
 
-      const result = await runDailyMaintenance(NOW, { storage: storage() });
+      const result = await runDailyMaintenance(NOW, { facet: realEstate.documentSegments, storage: storage() });
 
       expect(result.tombstoneRetryFailed).toBe(true);
       expect(result.tombstonesRemoved).toBe(0);
@@ -268,7 +269,7 @@ describe("rotina diária de manutenção documental (lote-12 T19)", () => {
       mockedExpireIntents.mockRejectedValueOnce(new Error("falha simulada de intents"));
       const document = await createDocument({ expiresAt: NOW });
 
-      const result = await runDailyMaintenance(NOW, { storage: storage() });
+      const result = await runDailyMaintenance(NOW, { facet: realEstate.documentSegments, storage: storage() });
 
       expect(result.intentCleanupFailed).toBe(true);
       expect(result.intentsExpired).toBe(0);
@@ -282,7 +283,7 @@ describe("rotina diária de manutenção documental (lote-12 T19)", () => {
       const document = await createDocument({ expiresAt: NOW });
       const intent = await createIntent();
 
-      const result = await runDailyMaintenance(NOW, { storage: storage() });
+      const result = await runDailyMaintenance(NOW, { facet: realEstate.documentSegments, storage: storage() });
 
       expect(result.refusalsPurgeFailed).toBe(true);
       expect(result.refusalsDeleted).toBe(0);
@@ -298,7 +299,7 @@ describe("rotina diária de manutenção documental (lote-12 T19)", () => {
       mockedExpireIntents.mockRejectedValueOnce(new Error("provider://token-secreto"));
       mockedPurge.mockRejectedValueOnce(new Error("provider://token-secreto"));
 
-      const result = await runDailyMaintenance(NOW, { storage: storage() });
+      const result = await runDailyMaintenance(NOW, { facet: realEstate.documentSegments, storage: storage() });
 
       expect(result).toMatchObject({
         expiryFailed: true,
@@ -318,7 +319,7 @@ describe("rotina diária de manutenção documental (lote-12 T19)", () => {
       const intent = await createIntent();
       const store = storage();
 
-      const result = await runDailyMaintenance(NOW, { storage: store });
+      const result = await runDailyMaintenance(NOW, { facet: realEstate.documentSegments, storage: store });
 
       expect(result.intentsExpired).toBe(1);
       expect(result.intentObjectsRemoved).toBe(1);
@@ -330,7 +331,7 @@ describe("rotina diária de manutenção documental (lote-12 T19)", () => {
       const intent = await createIntent({ expiresAtIntent: new Date(NOW.getTime() + 60_000) });
       const store = storage();
 
-      const result = await runDailyMaintenance(NOW, { storage: store });
+      const result = await runDailyMaintenance(NOW, { facet: realEstate.documentSegments, storage: store });
 
       expect(result.intentsExpired).toBe(0);
       expect(store.delete).not.toHaveBeenCalledWith(intent.storageKey);
@@ -339,7 +340,7 @@ describe("rotina diária de manutenção documental (lote-12 T19)", () => {
 
     it("intenção já committed não é reaberta pela compensação", async () => {
       const intent = await createIntent({ state: "committed" });
-      const result = await runDailyMaintenance(NOW, { storage: storage() });
+      const result = await runDailyMaintenance(NOW, { facet: realEstate.documentSegments, storage: storage() });
       expect(result.intentsExpired).toBe(0);
       expect(await intentRow(intent.id)).toMatchObject({ state: "committed" });
     });
@@ -348,7 +349,7 @@ describe("rotina diária de manutenção documental (lote-12 T19)", () => {
       await createIntent();
       const absent = storage({ delete: vi.fn(async () => { throw new DocumentStorageError("absent"); }) });
 
-      const result = await runDailyMaintenance(NOW, { storage: absent });
+      const result = await runDailyMaintenance(NOW, { facet: realEstate.documentSegments, storage: absent });
 
       expect(result.intentsExpired).toBe(1);
       expect(result.intentObjectsRemoved).toBe(1);
@@ -358,7 +359,7 @@ describe("rotina diária de manutenção documental (lote-12 T19)", () => {
       const intent = await createIntent();
       const failing = storage({ delete: vi.fn(async () => { throw new DocumentStorageError("transient"); }) });
 
-      const result = await runDailyMaintenance(NOW, { storage: failing });
+      const result = await runDailyMaintenance(NOW, { facet: realEstate.documentSegments, storage: failing });
 
       expect(result.intentsExpired).toBe(1);
       expect(result.intentObjectsRemoved).toBe(0);
@@ -371,10 +372,10 @@ describe("rotina diária de manutenção documental (lote-12 T19)", () => {
     it("tombstone que sobrou de uma execução anterior é concluído", async () => {
       const document = await createDocument({ expiresAt: NOW });
       const failing = storage({ delete: vi.fn(async () => { throw new DocumentStorageError("transient"); }) });
-      await runDailyMaintenance(NOW, { storage: failing });
+      await runDailyMaintenance(NOW, { facet: realEstate.documentSegments, storage: failing });
       expect(await documentRow(document.id)).toMatchObject({ deletedAt: NOW });
 
-      const result = await runDailyMaintenance(NOW, { storage: storage() });
+      const result = await runDailyMaintenance(NOW, { facet: realEstate.documentSegments, storage: storage() });
 
       expect(result.tombstonesRemoved).toBeGreaterThanOrEqual(1);
       expect(await documentRow(document.id)).toBeUndefined();
@@ -383,7 +384,7 @@ describe("rotina diária de manutenção documental (lote-12 T19)", () => {
     it("documento expirado nesta execução não é contado também como retry", async () => {
       await createDocument({ expiresAt: NOW });
 
-      const result = await runDailyMaintenance(NOW, { storage: storage() });
+      const result = await runDailyMaintenance(NOW, { facet: realEstate.documentSegments, storage: storage() });
 
       expect(result.deletedByTenant[TENANT_A]).toBe(1);
       expect(result.tombstonesRemoved).toBe(0);
@@ -394,7 +395,7 @@ describe("rotina diária de manutenção documental (lote-12 T19)", () => {
     const expiredA = await createDocument({ expiresAt: NOW });
     const activeB = await createDocument({ expiresAt: new Date(NOW.getTime() + 60_000) }, TENANT_B);
 
-    const result = await runDailyMaintenance(NOW, { storage: storage() });
+    const result = await runDailyMaintenance(NOW, { facet: realEstate.documentSegments, storage: storage() });
 
     expect(result.deletedByTenant[TENANT_A]).toBe(1);
     expect(result.deletedByTenant[TENANT_B]).toBeUndefined();
@@ -405,17 +406,17 @@ describe("rotina diária de manutenção documental (lote-12 T19)", () => {
   // documento só, o vencido sai e o `fora_do_agente` que agora cabe volta ao
   // agente — antes a rotina diária não reconciliava e ele ficava de fora.
   it("expiração reconcilia a admissão: o fora_do_agente que passa a caber volta a pronto (DOCLIM-01 AC8)", async () => {
-    for (const queryModality of ["novo", "usado", "ambos"] as const) {
+    for (const querySegment of ["novo", "usado", "ambos"] as const) {
       await upsertDocumentContextLimit(TENANT_A, {
-        queryModality, maxResponseBytes: 400, modelId: "m", workflowVersion: "v", systemMessageHash: "s",
+        querySegment, maxResponseBytes: 400, modelId: "m", workflowVersion: "v", systemMessageHash: "s",
         toolsHash: "t", memoryWindow: 50, benchmarkedAt: NOW, metrics: {},
       });
     }
     const texto = "x".repeat(150);
-    const vencido = await createDocument({ modality: "ambos", extractedText: texto, extractedBytes: 150, expiresAt: NOW });
-    const deFora = await createDocument({ modality: "ambos", status: "fora_do_agente", extractedText: texto, extractedBytes: 150 });
+    const vencido = await createDocument({ segment: "ambos", extractedText: texto, extractedBytes: 150, expiresAt: NOW });
+    const deFora = await createDocument({ segment: "ambos", status: "fora_do_agente", extractedText: texto, extractedBytes: 150 });
 
-    await runDailyMaintenance(NOW, { storage: storage() });
+    await runDailyMaintenance(NOW, { facet: realEstate.documentSegments, storage: storage() });
 
     expect(await documentRow(vencido.id)).toBeUndefined();
     expect(await documentRow(deFora.id)).toMatchObject({ status: "pronto" });
@@ -486,7 +487,7 @@ describe("rotina diária de manutenção documental (lote-12 T19)", () => {
       const row = await createOperationalMetadata();
       const [humanMessage] = await db.insert(messages).values({ tenantId: TENANT_A, conversationId: row.output.conversationId, sender: "humano", content: "Envio humano já gravado", authorUserId: USER_A, authorName: "Manutenção A", sentAt: row.episode.createdAt, externalId: randomUUID(), whatsappPhoneNumberId: row.phoneNumberId }).returning();
       const oldReservation = await reserveHuman(row.lead.id, row.episode.createdAt, humanMessage.id), recent = await reserveHuman(row.lead.id, new Date(NOW.getTime() - 1));
-      const result = await runDailyMaintenance(NOW, { storage: storage() });
+      const result = await runDailyMaintenance(NOW, { facet: realEstate.documentSegments, storage: storage() });
       expect(result).toMatchObject({ reservationsDeleted: 1, reservationsPurgeFailed: false, reengagementReceiptsDeleted: 1, reengagementPurgeFailed: false });
       expect(await db.select().from(humanMessageSends).where(eq(humanMessageSends.id, oldReservation.id))).toEqual([]);
       expect((await db.select().from(humanMessageSends).where(eq(humanMessageSends.id, recent.id)))[0]).toEqual(recent);
@@ -496,7 +497,7 @@ describe("rotina diária de manutenção documental (lote-12 T19)", () => {
     it("documentos/intents continuam sua manutenção mesmo com grupos anteriores falhando", async () => {
       const row = await createOperationalMetadata(), expired = await createDocument({ expiresAt: NOW }), retained = await createDocument({ expiresAt: new Date(NOW.getTime() + 1) }, TENANT_B), intent = await createIntent();
       mockedPurge.mockRejectedValueOnce(new Error("fixture-refusals-failure"));
-      const result = await runDailyMaintenance(NOW, { storage: storage() });
+      const result = await runDailyMaintenance(NOW, { facet: realEstate.documentSegments, storage: storage() });
       expect(result).toMatchObject({ reengagementReceiptsDeleted: 1, reengagementPurgeFailed: false, refusalsDeleted: 0, refusalsPurgeFailed: true, intentsExpired: 1, intentObjectsRemoved: 1 });
       expect(result.deletedByTenant[TENANT_A]).toBe(1); expect(result.deletedByTenant[TENANT_B]).toBeUndefined();
       expect(await documentRow(expired.id)).toBeUndefined(); expect(await documentRow(retained.id)).toEqual(retained);
@@ -509,7 +510,7 @@ describe("rotina diária de manutenção documental (lote-12 T19)", () => {
       await db.update(whatsappChannels).set({ usageEnabled: true, accountKind: "production", analyticsVerifiedAt: NOW, accountTimezone: "America/Sao_Paulo", analyticsPhoneNumber: "5534900000000", wabaId: "9900000064" }).where(eq(whatsappChannels.phoneNumberId, row.phoneNumberId));
       await db.update(reengagementEpisodes).set({ state: "authorized", acceptedAt: null, wamid: null, messageId: null, dispatchAuthorizedAt: NOW, dispatchCompletionDeadline: new Date(NOW.getTime() + 120000), createdAt: NOW, updatedAt: NOW }).where(eq(reengagementEpisodes.id, row.episode.id));
       const before = (await db.select().from(reengagementEpisodes).where(eq(reengagementEpisodes.id, row.episode.id)))[0];
-      const result = await runDailyMaintenance(NOW, { storage: storage() });
+      const result = await runDailyMaintenance(NOW, { facet: realEstate.documentSegments, storage: storage() });
       expect(result).toMatchObject({ reengagementReceiptsDeleted: 1, reengagementSnapshotsDeleted: 1, reengagementEpisodesCompacted: 0, reengagementPurgeFailed: false });
       expect((await db.select().from(reengagementEpisodes).where(eq(reengagementEpisodes.id, row.episode.id)))[0]).toEqual(before);
       expect((await db.select().from(messages).where(eq(messages.id, row.output.id)))[0]).toEqual(row.output);

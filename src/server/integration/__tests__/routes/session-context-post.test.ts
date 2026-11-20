@@ -49,7 +49,7 @@ function frame(row: Fixture) { return { revision: 1, resetRequestedAt: null, bri
   messageId: row.resume.id, firstInboundMessageId: row.first.id, firstInboundSentAt: row.first.sentAt.toISOString(), bridgeLastInboundAt: row.first.sentAt.toISOString() } }; }
 async function problem(response: Response, status: number, code: string) { expect(response.status).toBe(status); expect(await response.json()).toMatchObject({ status, code }); }
 beforeAll(async () => {
-  await db.insert(tenants).values([tenantId, foreignTenant].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T42", agentName: "Agente", supportedModality: "ambos" as const })));
+  await db.insert(tenants).values([tenantId, foreignTenant].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T42", agentName: "Agente", supportedSegment: "ambos" as const })));
   await db.insert(tenantApiKeys).values({ tenantId, label: "fixtureT42", keyHash: createHash("sha256").update(apiKey).digest("hex") });
 });
 beforeEach(() => { vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(now); });

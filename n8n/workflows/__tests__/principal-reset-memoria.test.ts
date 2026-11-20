@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readInlinedModule } from "../../../scripts/n8n-inline.mjs";
-import principal from "../principal";
+import principal from "../../generated/principal";
 
 /**
  * Reconstrução da memória pedida pelo CRM (lote-14 — T24; DEVOLVER-01 AC5,
@@ -63,7 +63,7 @@ function runCheck(lead: Record<string, unknown>, state: Record<string, unknown>)
 describe("Code: sessão expirada? combina expiração e pedido de reset (DEVOLVER-01 AC5, AC7)", () => {
   it("inlina conduction.mjs e chama memoryResetDue", () => {
     const code = String(nodeByName(CHECK).parameters.jsCode);
-    expect(code).toContain("__INLINE(conduction.mjs)__");
+    expect(code).toContain(readInlinedModule("conduction.mjs"));
     expect(code).toContain("memoryResetDue(");
   });
 

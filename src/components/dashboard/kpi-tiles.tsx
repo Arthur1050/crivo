@@ -23,7 +23,7 @@ import type { DashboardKpis } from "@/src/server/data";
 export interface KpiTilesBaseline {
   baselineLeadsPerMonth: number | null;
   baselineFirstResponseMinutes: number | null;
-  baselineLeadToMeetingPct: number | null;
+  baselineLeadToAppointmentPct: number | null;
   // lote-9 — BASE-02: os dois baselines que faltavam para os 5 tiles.
   // Opcionais só nesta task (T27): o Dashboard (T28) ainda não os passa —
   // omitidos equivalem a "sem baseline", o mesmo tratamento de `null`.
@@ -155,11 +155,11 @@ export function KpiTiles({
       ? ""
       : formatVolumeComparison(kpis.leadCount, normalizedVolumeBaseline);
 
-  const qualificationHasBaseline = baseline.baselineLeadToMeetingPct !== null;
+  const qualificationHasBaseline = baseline.baselineLeadToAppointmentPct !== null;
   const qualificationComparisonText = qualificationHasBaseline
     ? kpis.qualificationRate === null
-      ? `Baseline: ${baseline.baselineLeadToMeetingPct}%`
-      : formatQualificationDelta(kpis.qualificationRate, baseline.baselineLeadToMeetingPct!)
+      ? `Baseline: ${baseline.baselineLeadToAppointmentPct}%`
+      : formatQualificationDelta(kpis.qualificationRate, baseline.baselineLeadToAppointmentPct!)
     : "";
 
   const escalationHasBaseline =
@@ -254,7 +254,7 @@ export function KpiTiles({
         value={
           kpis.attendanceRate === null ? "—" : formatPercentInt(kpis.attendanceRate)
         }
-        base={`de ${kpis.confirmedMeetingCount} ${pluralize(kpis.confirmedMeetingCount, "reunião confirmada", "reuniões confirmadas")}`}
+        base={`de ${kpis.confirmedAppointmentCount} ${pluralize(kpis.confirmedAppointmentCount, "reunião confirmada", "reuniões confirmadas")}`}
         baselineSection={
           <BaselineSection
             hasBaseline={attendanceHasBaseline}

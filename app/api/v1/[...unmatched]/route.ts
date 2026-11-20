@@ -1,4 +1,5 @@
-import { problem } from "../../../../src/server/integration/problem";
+import { PROBLEM_CODE } from "../../../../src/lib/vocabulary";
+import { problem } from "../../../../src/kit/integration";
 import { INSTRUMENTED, recordRefusalFor } from "../../../../src/server/integration/route";
 
 /**
@@ -18,7 +19,7 @@ import { INSTRUMENTED, recordRefusalFor } from "../../../../src/server/integrati
  * export tenha sido conscientemente instrumentado — este é.
  */
 function notFound(request?: Request): Response {
-  const response = problem(404, "rota-inexistente", "Rota não encontrada nesta API.");
+  const response = problem(404, PROBLEM_CODE.route_not_found, "Rota não encontrada nesta API.");
   void recordRefusalFor(request, response, null);
   return response;
 }

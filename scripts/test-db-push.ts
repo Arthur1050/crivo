@@ -1,3 +1,4 @@
+import { STOREFRONT_ROLE } from "../src/verticals/real-estate/db/test-connection";
 /**
  * `npm run db:push:test` — aplica o schema (`drizzle-kit push`) e o SQL da
  * vitrine no banco de teste base e em cada branch de worker de
@@ -20,16 +21,16 @@ import { resolveTestDatabaseUrl } from "../src/db/test-connection";
 import { restoreDrizzleBlindIndexes } from "./drizzle-blind-indexes";
 export { restoreDrizzleBlindIndexes } from "./drizzle-blind-indexes";
 import { applyDocumentFoldersSql, verifyDocumentFoldersState } from "./document-folders/apply";
-import { applyVitrineSql, dropVitrineSchema, verifyVitrineState } from "./vitrine/apply";
+import { applyStorefrontSql, dropStorefrontSchema, verifyStorefrontState } from "./storefront/apply";
 
 /** As etapas de cada alvo; trocadas por simuladores nos testes. */
 export interface PushSteps {
-  dropVitrine: (url: string) => Promise<void>;
+  dropStorefront: (url: string) => Promise<void>;
   /** Roda o `drizzle-kit push` e devolve o código de saída. */
   push: (url: string) => Promise<number | null> | number | null;
   /** Recria os índices que o push derrubou; roda entre o push e o SQL da vitrine. */
   restoreIndexes?: (url: string) => Promise<void>;
-  applyVitrine: (url: string, options: { password: string }) => Promise<void>;
+  applyStorefront: (url: string, options: { password: string }) => Promise<void>;
   /** Problemas do estado final; lista vazia = alvo pronto. */
   verify: (url: string) => Promise<string[]>;
 }
@@ -55,7 +56,7 @@ export async function pushToTargets(
 ): Promise<number> {
   if (!password) {
     logger.error(
-      "VITRINE_TEST_DB_PASSWORD não definida no ambiente local: sem ela o papel krivo_vitrine ficaria sem senha. Nenhum alvo foi tocado."
+      `VITRINE_TEST_DB_PASSWORD não definida no ambiente local: sem ela o papel ${STOREFRONT_ROLE} ficaria sem senha. Nenhum alvo foi tocado.`
     );
     return 1;
   }
@@ -64,14 +65,14 @@ export async function pushToTargets(
     const label = host(url);
     logger.log(`\n== vitrine + drizzle-kit push -> ${label}`);
     try {
-      await steps.dropVitrine(url);
+      await steps.dropStorefront(url);
       const status = await steps.push(url);
       if (status !== 0) {
         logger.error(`Push falhou em ${label}; os demais alvos não foram tocados.`);
         return status ?? 1;
       }
       await steps.restoreIndexes?.(url);
-      await steps.applyVitrine(url, { password });
+      await steps.applyStorefront(url, { password });
       const problems = await steps.verify(url);
       if (problems.length > 0) {
         logger.error(`Estado final incompleto em ${label}; os demais alvos não foram tocados:`);
@@ -92,16 +93,17 @@ export async function pushToTargets(
 /** Etapas reais; exportada para um teste provar a ligação de cada uma (L-026). */
 export function realSteps(): PushSteps {
   return {
-    dropVitrine: dropVitrineSchema,
+    dropStorefront: dropStorefrontSchema,
     restoreIndexes: (url) => restoreDrizzleBlindIndexes(url).then(() => applyDocumentFoldersSql(url)),
+    // A configuração de teste reúne os schemas de src/db e do vertical real-estate.
     push: (url) =>
       spawnSync("npx drizzle-kit push --config drizzle-test.config.ts", {
         stdio: "inherit",
         shell: true,
         env: { ...process.env, TEST_DATABASE_URL: url },
       }).status,
-    applyVitrine: applyVitrineSql,
-    verify: async (url) => [...await verifyVitrineState(url), ...await verifyDocumentFoldersState(url)],
+    applyStorefront: applyStorefrontSql,
+    verify: async (url) => [...await verifyStorefrontState(url), ...await verifyDocumentFoldersState(url)],
   };
 }
 
@@ -121,7 +123,7 @@ async function main(): Promise<void> {
     resolveTestDatabaseUrl({ baseUrl: base, endpoints, poolId: String(index + 1) })
   )];
 
-  process.exit(await pushToTargets(targets, realSteps(), process.env.VITRINE_TEST_DB_PASSWORD));
+  process.exit(await pushToTargets(targets, realSteps(), process.env["VITRINE_TEST_DB_PASSWORD"]));
 }
 
 if (process.argv[1]?.replace(/\\/g, "/").endsWith("scripts/test-db-push.ts")) {

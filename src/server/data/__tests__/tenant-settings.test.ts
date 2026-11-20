@@ -15,7 +15,7 @@ const ORIGINAL = {
   id: FIXTURE_TENANT_ID,
   name: "Imobiliária Fixture Settings",
   agentName: "Agente Fixture",
-  supportedModality: "ambos" as const,
+  supportedSegment: "ambos" as const,
   slug: `fixture-${FIXTURE_TENANT_ID}`,
   city: "Uberaba",
   state: "MG",
@@ -28,7 +28,7 @@ const ORIGINAL = {
 const REQUIRED = {
   name: ORIGINAL.name,
   agentName: ORIGINAL.agentName,
-  supportedModality: ORIGINAL.supportedModality,
+  supportedSegment: ORIGINAL.supportedSegment,
 };
 
 describe("server/data — updateTenantSettings estendido (RD-07)", () => {
@@ -49,7 +49,7 @@ describe("server/data — updateTenantSettings estendido (RD-07)", () => {
     const updated = await updateTenantSettings(FIXTURE_TENANT_ID, {
       name: "Imobiliária Renomeada",
       agentName: "Bia",
-      supportedModality: "novo",
+      supportedSegment: "novo",
       city: "Uberlândia",
       state: "MG",
       agentWhatsapp: "+55 34 98888-7777",
@@ -60,7 +60,7 @@ describe("server/data — updateTenantSettings estendido (RD-07)", () => {
     expect(updated).not.toBeNull();
     expect(updated!.name).toBe("Imobiliária Renomeada");
     expect(updated!.agentName).toBe("Bia");
-    expect(updated!.supportedModality).toBe("novo");
+    expect(updated!.supportedSegment).toBe("novo");
     expect(updated!.city).toBe("Uberlândia");
     expect(updated!.state).toBe("MG");
     expect(updated!.agentWhatsapp).toBe("+55 34 98888-7777");
@@ -107,7 +107,7 @@ describe("server/data — updateTenantSettings estendido (RD-07)", () => {
     // Os obrigatórios continuam gravados normalmente no mesmo save.
     expect(updated!.name).toBe(ORIGINAL.name);
     expect(updated!.agentName).toBe(ORIGINAL.agentName);
-    expect(updated!.supportedModality).toBe(ORIGINAL.supportedModality);
+    expect(updated!.supportedSegment).toBe(ORIGINAL.supportedSegment);
   });
 
   it("campo opcional só com espaços em branco também persiste null (RD-07 AC3)", async () => {
@@ -143,11 +143,11 @@ describe("server/data — updateTenantSettings estendido (RD-07)", () => {
     const updated = await updateTenantSettings(FIXTURE_TENANT_ID, {
       name: "Somente Obrigatórios",
       agentName: "Agente Fixture",
-      supportedModality: "usado",
+      supportedSegment: "usado",
     });
 
     expect(updated!.name).toBe("Somente Obrigatórios");
-    expect(updated!.supportedModality).toBe("usado");
+    expect(updated!.supportedSegment).toBe("usado");
     expect(updated!.city).toBe(ORIGINAL.city);
     expect(updated!.state).toBe(ORIGINAL.state);
     expect(updated!.agentWhatsapp).toBe(ORIGINAL.agentWhatsapp);
@@ -236,58 +236,58 @@ describe("server/data — updateTenantSettings estendido (RD-07)", () => {
     it("persiste os 3 campos de horário comercial", async () => {
       const updated = await updateTenantSettings(FIXTURE_TENANT_ID, {
         ...REQUIRED,
-        meetingDays: [1, 2, 3, 4, 5],
-        meetingHoursStart: "09:00",
-        meetingHoursEnd: "18:00",
+        appointmentDays: [1, 2, 3, 4, 5],
+        appointmentHoursStart: "09:00",
+        appointmentHoursEnd: "18:00",
       });
 
       expect(updated).not.toBeNull();
-      expect(updated!.meetingDays).toEqual([1, 2, 3, 4, 5]);
-      expect(updated!.meetingHoursStart).toBe("09:00");
-      expect(updated!.meetingHoursEnd).toBe("18:00");
+      expect(updated!.appointmentDays).toEqual([1, 2, 3, 4, 5]);
+      expect(updated!.appointmentHoursStart).toBe("09:00");
+      expect(updated!.appointmentHoursEnd).toBe("18:00");
     });
 
     it("relê do banco o horário comercial após o save (reflete após reload)", async () => {
       await updateTenantSettings(FIXTURE_TENANT_ID, {
         ...REQUIRED,
-        meetingDays: [6],
-        meetingHoursStart: "10:00",
-        meetingHoursEnd: "14:00",
+        appointmentDays: [6],
+        appointmentHoursStart: "10:00",
+        appointmentHoursEnd: "14:00",
       });
 
       const reread = await getTenant(FIXTURE_TENANT_ID);
-      expect(reread!.meetingDays).toEqual([6]);
-      expect(reread!.meetingHoursStart).toBe("10:00");
-      expect(reread!.meetingHoursEnd).toBe("14:00");
+      expect(reread!.appointmentDays).toEqual([6]);
+      expect(reread!.appointmentHoursStart).toBe("10:00");
+      expect(reread!.appointmentHoursEnd).toBe("14:00");
     });
 
     it("null explícito nos 3 campos limpa as colunas", async () => {
       await updateTenantSettings(FIXTURE_TENANT_ID, {
         ...REQUIRED,
-        meetingDays: [1, 2, 3],
-        meetingHoursStart: "08:00",
-        meetingHoursEnd: "17:00",
+        appointmentDays: [1, 2, 3],
+        appointmentHoursStart: "08:00",
+        appointmentHoursEnd: "17:00",
       });
 
       const cleared = await updateTenantSettings(FIXTURE_TENANT_ID, {
         ...REQUIRED,
-        meetingDays: null,
-        meetingHoursStart: null,
-        meetingHoursEnd: null,
+        appointmentDays: null,
+        appointmentHoursStart: null,
+        appointmentHoursEnd: null,
       });
 
       expect(cleared).not.toBeNull();
-      expect(cleared!.meetingDays).toBeNull();
-      expect(cleared!.meetingHoursStart).toBeNull();
-      expect(cleared!.meetingHoursEnd).toBeNull();
+      expect(cleared!.appointmentDays).toBeNull();
+      expect(cleared!.appointmentHoursStart).toBeNull();
+      expect(cleared!.appointmentHoursEnd).toBeNull();
     });
 
     it("chave ausente dos campos de horário comercial deixa as colunas intocadas", async () => {
       await updateTenantSettings(FIXTURE_TENANT_ID, {
         ...REQUIRED,
-        meetingDays: [2, 4],
-        meetingHoursStart: "09:30",
-        meetingHoursEnd: "16:30",
+        appointmentDays: [2, 4],
+        appointmentHoursStart: "09:30",
+        appointmentHoursEnd: "16:30",
       });
 
       // Segundo save SEM as 3 chaves de horário — só os campos obrigatórios.
@@ -296,9 +296,9 @@ describe("server/data — updateTenantSettings estendido (RD-07)", () => {
       });
 
       expect(untouched).not.toBeNull();
-      expect(untouched!.meetingDays).toEqual([2, 4]);
-      expect(untouched!.meetingHoursStart).toBe("09:30");
-      expect(untouched!.meetingHoursEnd).toBe("16:30");
+      expect(untouched!.appointmentDays).toEqual([2, 4]);
+      expect(untouched!.appointmentHoursStart).toBe("09:30");
+      expect(untouched!.appointmentHoursEnd).toBe("16:30");
     });
   });
 
@@ -310,7 +310,7 @@ describe("server/data — updateTenantSettings estendido (RD-07)", () => {
         ...REQUIRED,
         baselineLeadsPerMonth: 120,
         baselineFirstResponseMinutes: 5,
-        baselineLeadToMeetingPct: 40,
+        baselineLeadToAppointmentPct: 40,
         baselineEscalationPct: 15,
         baselineAttendancePct: 70,
       });
@@ -318,7 +318,7 @@ describe("server/data — updateTenantSettings estendido (RD-07)", () => {
       expect(updated).not.toBeNull();
       expect(updated!.baselineLeadsPerMonth).toBe(120);
       expect(updated!.baselineFirstResponseMinutes).toBe(5);
-      expect(updated!.baselineLeadToMeetingPct).toBe(40);
+      expect(updated!.baselineLeadToAppointmentPct).toBe(40);
       expect(updated!.baselineEscalationPct).toBe(15);
       expect(updated!.baselineAttendancePct).toBe(70);
     });
@@ -328,7 +328,7 @@ describe("server/data — updateTenantSettings estendido (RD-07)", () => {
         ...REQUIRED,
         baselineLeadsPerMonth: 80,
         baselineFirstResponseMinutes: 3,
-        baselineLeadToMeetingPct: 35,
+        baselineLeadToAppointmentPct: 35,
         baselineEscalationPct: 10,
         baselineAttendancePct: 65,
       });
@@ -336,7 +336,7 @@ describe("server/data — updateTenantSettings estendido (RD-07)", () => {
       const reread = await getTenant(FIXTURE_TENANT_ID);
       expect(reread!.baselineLeadsPerMonth).toBe(80);
       expect(reread!.baselineFirstResponseMinutes).toBe(3);
-      expect(reread!.baselineLeadToMeetingPct).toBe(35);
+      expect(reread!.baselineLeadToAppointmentPct).toBe(35);
       expect(reread!.baselineEscalationPct).toBe(10);
       expect(reread!.baselineAttendancePct).toBe(65);
     });
@@ -346,14 +346,14 @@ describe("server/data — updateTenantSettings estendido (RD-07)", () => {
         ...REQUIRED,
         baselineLeadsPerMonth: 0,
         baselineFirstResponseMinutes: 0,
-        baselineLeadToMeetingPct: 0,
+        baselineLeadToAppointmentPct: 0,
         baselineEscalationPct: 0,
         baselineAttendancePct: 0,
       });
 
       expect(updated!.baselineLeadsPerMonth).toBe(0);
       expect(updated!.baselineFirstResponseMinutes).toBe(0);
-      expect(updated!.baselineLeadToMeetingPct).toBe(0);
+      expect(updated!.baselineLeadToAppointmentPct).toBe(0);
       expect(updated!.baselineEscalationPct).toBe(0);
       expect(updated!.baselineAttendancePct).toBe(0);
     });
@@ -363,7 +363,7 @@ describe("server/data — updateTenantSettings estendido (RD-07)", () => {
         ...REQUIRED,
         baselineLeadsPerMonth: 100,
         baselineFirstResponseMinutes: 4,
-        baselineLeadToMeetingPct: 30,
+        baselineLeadToAppointmentPct: 30,
         baselineEscalationPct: 12,
         baselineAttendancePct: 60,
       });
@@ -372,7 +372,7 @@ describe("server/data — updateTenantSettings estendido (RD-07)", () => {
         ...REQUIRED,
         baselineLeadsPerMonth: null,
         baselineFirstResponseMinutes: null,
-        baselineLeadToMeetingPct: null,
+        baselineLeadToAppointmentPct: null,
         baselineEscalationPct: null,
         baselineAttendancePct: null,
       });
@@ -380,7 +380,7 @@ describe("server/data — updateTenantSettings estendido (RD-07)", () => {
       expect(cleared).not.toBeNull();
       expect(cleared!.baselineLeadsPerMonth).toBeNull();
       expect(cleared!.baselineFirstResponseMinutes).toBeNull();
-      expect(cleared!.baselineLeadToMeetingPct).toBeNull();
+      expect(cleared!.baselineLeadToAppointmentPct).toBeNull();
       expect(cleared!.baselineEscalationPct).toBeNull();
       expect(cleared!.baselineAttendancePct).toBeNull();
     });
@@ -390,7 +390,7 @@ describe("server/data — updateTenantSettings estendido (RD-07)", () => {
         ...REQUIRED,
         baselineLeadsPerMonth: 90,
         baselineFirstResponseMinutes: 6,
-        baselineLeadToMeetingPct: 45,
+        baselineLeadToAppointmentPct: 45,
         baselineEscalationPct: 20,
         baselineAttendancePct: 75,
       });
@@ -402,7 +402,7 @@ describe("server/data — updateTenantSettings estendido (RD-07)", () => {
       expect(untouched).not.toBeNull();
       expect(untouched!.baselineLeadsPerMonth).toBe(90);
       expect(untouched!.baselineFirstResponseMinutes).toBe(6);
-      expect(untouched!.baselineLeadToMeetingPct).toBe(45);
+      expect(untouched!.baselineLeadToAppointmentPct).toBe(45);
       expect(untouched!.baselineEscalationPct).toBe(20);
       expect(untouched!.baselineAttendancePct).toBe(75);
     });
@@ -412,7 +412,7 @@ describe("server/data — updateTenantSettings estendido (RD-07)", () => {
         ...REQUIRED,
         baselineLeadsPerMonth: 50,
         baselineFirstResponseMinutes: 2,
-        baselineLeadToMeetingPct: 25,
+        baselineLeadToAppointmentPct: 25,
         baselineEscalationPct: 8,
         baselineAttendancePct: 55,
       });
@@ -428,7 +428,7 @@ describe("server/data — updateTenantSettings estendido (RD-07)", () => {
       // ficou intocada porque a chave não veio neste payload.
       expect(onlyOne!.baselineLeadsPerMonth).toBe(50);
       expect(onlyOne!.baselineFirstResponseMinutes).toBe(2);
-      expect(onlyOne!.baselineLeadToMeetingPct).toBe(25);
+      expect(onlyOne!.baselineLeadToAppointmentPct).toBe(25);
       expect(onlyOne!.baselineEscalationPct).toBe(8);
     });
   });

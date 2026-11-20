@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import source from "../reengagement-contextual";
+import { reengagementContextual as source } from "./workflow-baseline";
 import generated from "../../generated/reengagement-contextual";
-import principal from "../principal";
+import principal from "../../generated/principal";
 import { reengagementFixtureFrame } from "../../src/__tests__/reengagement-fixtures";
 type Node = { name: string; type: string; parameters: Record<string, unknown>; onError?: string };
 type Graph = { nodes: Node[]; connections: Record<string, unknown>; settings: { executionTimeout?: number } };

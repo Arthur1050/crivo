@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readInlinedModule } from "../../../scripts/n8n-inline.mjs";
-import principal from "../principal";
+import principal from "../../generated/principal";
 
 /**
  * Condução humana no fluxo principal (lote-14 — T23; SILENCIO-01, ENVIO-01).
@@ -168,7 +168,7 @@ describe("envio de contingência relê o lead antes de enviar (SILENCIO-01 AC4, 
 describe("Code: pode enviar no turno? (canAgentSendInTurn inline)", () => {
   it("inlina conduction.mjs e chama canAgentSendInTurn", () => {
     const code = String(nodeByName(CAN_SEND).parameters.jsCode);
-    expect(code).toContain("__INLINE(conduction.mjs)__");
+    expect(code).toContain(readInlinedModule("conduction.mjs"));
     expect(code).toContain("canAgentSendInTurn(");
   });
 

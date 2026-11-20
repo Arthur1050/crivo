@@ -1,3 +1,5 @@
+import type { VerticalBrand } from "../../vertical-kit";
+import { PROBLEM_CODE } from "../../lib/vocabulary";
 import "server-only";
 import { createHash } from "node:crypto";
 import {
@@ -5,7 +7,7 @@ import {
   resolveTenantIdByApiKeyHash,
   resolveTenantIdBySlug,
 } from "../data";
-import { problem } from "./problem";
+import type { createProblemResponses } from "./problem";
 
 export interface AuthResult {
   tenantId: string;
@@ -18,24 +20,26 @@ const BEARER_PATTERN = /^Bearer\s+(.+)$/i;
  * (design.md — `src/server/integration/auth.ts`, INT-01/SEC-01). Nunca lê o
  * corpo da requisição — `tenant_id` em qualquer payload é estruturalmente
  * inalcançável a partir daqui, por construção (a única fonte de tenant é a
- * chave ou o header `X-Krivo-Tenant`, nunca o payload). Retorna a `Response`
+ * chave ou o header definido pela marca, nunca o payload). Retorna a `Response`
  * 401 já pronta em qualquer falha, para o handler apenas repassar
  * (`if (auth instanceof Response) return auth;`).
  *
  * Dois modos, nesta ordem (lote-7 — SEC-01, design.md — Auth de serviço):
  * 1. **Chave de serviço** (`service_api_keys`, cross-tenant): exige o header
- *    `X-Krivo-Tenant` com um slug conhecido; ausente ou desconhecido nunca
+ *    definido pela marca com um slug conhecido; ausente ou desconhecido nunca
  *    cai em nenhum tenant default — sempre `401 tenant-nao-identificado`.
  * 2. **Chave de tenant** (`tenant_api_keys`, caminho original do lote-5):
- *    inalterado — o tenant vem só da chave, `X-Krivo-Tenant` é ignorado
+ *    inalterado — o tenant vem só da chave, definido pela marca é ignorado
  *    mesmo se presente e divergente.
  */
 export async function authenticate(
-  request: Request
+  request: Request,
+  problem: ReturnType<typeof createProblemResponses>["problem"],
+  brand: VerticalBrand
 ): Promise<AuthResult | Response> {
   const header = request.headers.get("authorization");
   if (!header) {
-    return problem(401, "nao-autenticado", "Header Authorization ausente.");
+    return problem(401, PROBLEM_CODE.unauthenticated, "Header Authorization ausente.");
   }
 
   const match = BEARER_PATTERN.exec(header);
@@ -43,7 +47,7 @@ export async function authenticate(
   if (!key) {
     return problem(
       401,
-      "nao-autenticado",
+      PROBLEM_CODE.unauthenticated,
       "Formato do header Authorization inválido. Use 'Bearer <chave>'."
     );
   }
@@ -52,12 +56,12 @@ export async function authenticate(
 
   const serviceKeyId = await resolveServiceApiKeyHash(keyHash);
   if (serviceKeyId) {
-    const slug = request.headers.get("x-krivo-tenant")?.trim();
+    const slug = request.headers.get(brand.tenantHeader)?.trim();
     if (!slug) {
       return problem(
         401,
-        "tenant-nao-identificado",
-        "Chave de serviço exige o header X-Krivo-Tenant."
+        PROBLEM_CODE.tenant_not_identified,
+        `Chave de serviço exige o header ${brand.tenantHeader}.`
       );
     }
 
@@ -65,8 +69,8 @@ export async function authenticate(
     if (!tenantId) {
       return problem(
         401,
-        "tenant-nao-identificado",
-        "X-Krivo-Tenant não corresponde a nenhum tenant conhecido."
+        PROBLEM_CODE.tenant_not_identified,
+        `${brand.tenantHeader} não corresponde a nenhum tenant conhecido.`
       );
     }
 
@@ -77,7 +81,7 @@ export async function authenticate(
   if (!tenantId) {
     return problem(
       401,
-      "nao-autenticado",
+      PROBLEM_CODE.unauthenticated,
       "Chave de API inválida ou revogada."
     );
   }

@@ -3,11 +3,12 @@ import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { eq, inArray } from "drizzle-orm";
 import { db } from "../../../db";
-import { properties, tenant_members, tenants, users } from "../../../db/schema";
+import { tenant_members, tenants, users } from "../../../db/schema";
+import { properties } from "../../../verticals/real-estate/schema";
 import { formatCurrencyBRL } from "../../../lib/format";
 import { normalizeForSearch } from "../../../lib/normalize-text";
-import { searchVisibleProperties } from "../properties";
-import type { PropertySearchFilters } from "../property-filters";
+import { searchVisibleProperties } from "../../../verticals/real-estate/integration/properties";
+import type { PropertySearchFilters } from "../../../verticals/real-estate/integration/property-filters";
 
 type PropertyInsert = typeof properties.$inferInsert;
 
@@ -27,7 +28,7 @@ describe("server/integration properties — searchVisibleProperties (T12)", () =
       id: tenantId,
       name: `Tenant Teste properties ${tenantId}`,
       agentName: "Agente Teste",
-      supportedModality: "ambos",
+      supportedSegment: "ambos",
       slug: `fixture-properties-${tenantId}`,
     });
 
@@ -140,7 +141,7 @@ describe("server/integration properties — searchVisibleProperties (T12)", () =
         id: freshTenantId,
         name: "Tenant Vazio T12",
         agentName: "Agente Vazio",
-        supportedModality: "ambos",
+        supportedSegment: "ambos",
         slug: `fixture-properties-vazio-${freshTenantId}`,
       });
 
@@ -316,6 +317,7 @@ describe("server/integration properties — searchVisibleProperties (T12)", () =
         expect(item).not.toHaveProperty("capturedByUserId");
         expect(item).not.toHaveProperty("captador");
         expect(item).not.toHaveProperty("brokerName");
+        expect(item).not.toHaveProperty("assigneeName");
         expect(item).not.toHaveProperty("brokerPhone");
         expect(item).not.toHaveProperty("brokerEmail");
       }
@@ -364,7 +366,7 @@ describe("server/integration properties — searchVisibleProperties (T12)", () =
       id,
       name: `Tenant Isolado T12 ${id}`,
       agentName: "Agente Isolado",
-      supportedModality: "ambos",
+      supportedSegment: "ambos",
       slug: `fixture-properties-isolado-${id}`,
     });
     const userId = randomUUID();

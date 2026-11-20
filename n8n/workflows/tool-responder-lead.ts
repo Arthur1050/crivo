@@ -34,8 +34,8 @@
  */
 import { workflow, node, trigger, ifElse, newCredential, expr } from "@n8n/workflow-sdk";
 
-const CRM_BASE_URL = "https://crivo-arthur1050s-projects.vercel.app/api/v1";
-const CONVERSA_ESTADO_TABLE_ID = "ZsplBxJjXv3kwKZ8";
+const CRM_BASE_URL = "__VALUE(crmBaseUrl)__";
+const CONVERSA_ESTADO_TABLE_ID = "__VALUE(conversationStateTableId)__";
 
 const respondTrigger = trigger({
   type: "n8n-nodes-base.executeWorkflowTrigger",
@@ -59,7 +59,7 @@ const respondTrigger = trigger({
   output: [
     {
       mensagem: "Show, deixa eu te explicar melhor.",
-      tenantSlug: "imobiliaria-a",
+      tenantSlug: "__VALUE(sampleTenantSlug)__",
       waId: "553499532444",
       leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
       phoneNumberId: "109876543210001",
@@ -92,7 +92,7 @@ const conversaEstadoLookup = node({
       limit: 1,
     },
   },
-  output: [{ tenantSlug: "imobiliaria-a", waId: "553499532444", aberturasJson: "[]", lastInboundAt: "2026-08-14T12:00:00.000Z" }],
+  output: [{ tenantSlug: "__VALUE(sampleTenantSlug)__", waId: "553499532444", aberturasJson: "[]", lastInboundAt: "2026-08-14T12:00:00.000Z" }],
 });
 
 const applyVoiceBarriers = node({
@@ -105,7 +105,7 @@ const applyVoiceBarriers = node({
       mode: "runOnceForAllItems",
       language: "javaScript",
       jsCode:
-        '__INLINE(voice.mjs)__' +
+        '__INLINE(__VALUE(voiceModule)__)__' +
         "\n\n" +
         "const trigger = $('Execute Workflow Trigger').first().json;\n" +
         "const row = $input.first().json;\n" +
@@ -147,7 +147,7 @@ const applyVoiceBarriers = node({
         "} }];\n",
     },
   },
-  output: [{ accepted: true, reason: null, mensagem: "Show, deixa eu te explicar melhor.", tenantSlug: "imobiliaria-a", waId: "553499532444", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", phoneNumberId: "109876543210001", aberturasJson: "[{\"opening\":\"show\",\"sentAt\":\"2026-08-14T12:00:05.000Z\"}]" }],
+  output: [{ accepted: true, reason: null, mensagem: "Show, deixa eu te explicar melhor.", tenantSlug: "__VALUE(sampleTenantSlug)__", waId: "553499532444", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", phoneNumberId: "109876543210001", aberturasJson: "[{\"opening\":\"show\",\"sentAt\":\"2026-08-14T12:00:05.000Z\"}]" }],
 });
 
 const isAccepted = ifElse({
@@ -231,7 +231,7 @@ const canSendInTurnCode = node({
         "return [{ json: { ...ctx, podeEnviar, reason: podeEnviar ? null : 'conversa-com-humano' } }];\n",
     },
   },
-  output: [{ accepted: true, reason: null, podeEnviar: true, mensagem: "Show, deixa eu te explicar melhor.", tenantSlug: "imobiliaria-a", waId: "553499532444", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", phoneNumberId: "109876543210001", aberturasJson: "[]" }],
+  output: [{ accepted: true, reason: null, podeEnviar: true, mensagem: "Show, deixa eu te explicar melhor.", tenantSlug: "__VALUE(sampleTenantSlug)__", waId: "553499532444", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", phoneNumberId: "109876543210001", aberturasJson: "[]" }],
 });
 
 const canSendInTurnIf = ifElse({
@@ -280,7 +280,7 @@ const normalizeRecipientCode = node({
         "return [{ json: { ...ctx, recipientMsisdn: toWhatsAppMsisdn(ctx.waId) } }];\n",
     },
   },
-  output: [{ mensagem: "Show, deixa eu te explicar melhor.", tenantSlug: "imobiliaria-a", waId: "553499532444", recipientMsisdn: "5534999532444", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", phoneNumberId: "109876543210001", aberturasJson: "[]" }],
+  output: [{ mensagem: "Show, deixa eu te explicar melhor.", tenantSlug: "__VALUE(sampleTenantSlug)__", waId: "553499532444", recipientMsisdn: "5534999532444", leadId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", phoneNumberId: "109876543210001", aberturasJson: "[]" }],
 });
 
 const sendWhatsAppMessage = node({

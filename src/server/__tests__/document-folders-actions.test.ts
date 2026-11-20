@@ -4,18 +4,18 @@ import { eq, inArray } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "../../db";
 import { documentFolders, documents, tenants } from "../../db/schema";
-import type { AuthContext } from "../auth/session";
+import type { AuthContext } from "../../kit/session";
 import { createDocumentFolderAction, deleteDocumentFolderAction, moveDocumentsToFolderAction, renameDocumentFolderAction } from "../actions/document-folders";
 
 const session = vi.hoisted(() => ({ tenantId: "", roles: ["gestor"] as AuthContext["roles"] }));
-vi.mock("../auth/session", async (importActual) => {
-  const actual = await importActual<typeof import("../auth/session")>();
+vi.mock("../../kit/session", async (importActual) => {
+  const actual = await importActual<typeof import("../../kit/session")>();
   const fake = async (): Promise<AuthContext> => ({
     user: { id: "00000000-0000-4000-8000-0000000000aa", name: "Gestor", email: "gestor@example.test" },
     tenantId: session.tenantId, roles: session.roles, leadScope: { tenantId: session.tenantId, assignedUserId: null },
   });
   return { ...actual, verifySession: fake,
-    requirePermission: async (resource: Parameters<typeof actual.requirePermission>[0], action: Parameters<typeof actual.requirePermission>[1]) => actual.authorizeOrThrow(await fake(), resource, action),
+    requirePermission: async (resource: Parameters<typeof actual.requirePermission>[0], action: Parameters<typeof actual.requirePermission>[1]) => actual.authorizeOrThrow(await fake(), resource, action, (await import("../../kit/access")).access),
   };
 });
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
@@ -31,14 +31,14 @@ async function addFolder(name: string, tenantId = tenantA) {
 }
 
 async function addDocument(folderId: string | null = null) {
-  const [row] = await db.insert(documents).values({ tenantId: tenantA, folderId, name: "Mover action", modality: "novo", mimeType: "text/plain", sizeBytes: 10n,
+  const [row] = await db.insert(documents).values({ tenantId: tenantA, folderId, name: "Mover action", segment: "novo", mimeType: "text/plain", sizeBytes: 10n,
     storageProvider: "teste", storageKey: randomUUID(), storageEtag: "etag", contentSha256: randomUUID().replaceAll("-", "").repeat(2), status: "pronto" }).returning();
   return row;
 }
 
 beforeAll(async () => {
   await db.insert(tenants).values([tenantA, tenantB].map((id) => ({
-    id, name: "Actions pastas", slug: `actions-pastas-${id}`, agentName: "Agente", supportedModality: "ambos" as const,
+    id, name: "Actions pastas", slug: `actions-pastas-${id}`, agentName: "Agente", supportedSegment: "ambos" as const,
   })));
 });
 
@@ -150,7 +150,7 @@ describe("T13 — actions de pasta (PCRIAR-01, PREN-01, PEXC-01, PPERM-01)", () 
 
   it("exclui no tenant ativo, devolve a contagem e revalida (L-026)", async () => {
     const row = await addFolder("Excluir action");
-    const [doc] = await db.insert(documents).values({ tenantId: tenantA, folderId: row.id, name: "Documento", modality: "novo", mimeType: "text/plain", sizeBytes: 10n,
+    const [doc] = await db.insert(documents).values({ tenantId: tenantA, folderId: row.id, name: "Documento", segment: "novo", mimeType: "text/plain", sizeBytes: 10n,
       storageProvider: "teste", storageKey: randomUUID(), storageEtag: "etag", contentSha256: randomUUID().replaceAll("-", "").repeat(2), status: "pronto" }).returning();
     expect(await deleteDocumentFolderAction({ folderId: row.id })).toEqual({ ok: true, movedToRootCount: 1 });
     expect(await db.select().from(documentFolders).where(eq(documentFolders.id, row.id))).toEqual([]);

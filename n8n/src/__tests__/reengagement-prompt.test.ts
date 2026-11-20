@@ -2,9 +2,9 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import type { PreparationFrame } from "../../../src/server/reengagement/context";
 import { reengagementFixtureFrame as frame } from "./reengagement-fixtures";
-import { FIELD_LABELS } from "../phase.mjs";
-import { buildSystemMessage } from "../system-message.mjs";
-import { admitReengagementDocuments, buildReengagementPrompt, REENGAGEMENT_READ_ONLY_TOOLS, validateReengagementText } from "../reengagement-prompt.mjs";
+import { FIELD_LABELS } from "../../verticals/real-estate/src/phase.mjs";
+import { buildSystemMessage } from "../../verticals/real-estate/src/system-message.mjs";
+import { admitReengagementDocuments, buildReengagementPrompt, REENGAGEMENT_READ_ONLY_TOOLS, validateReengagementText } from "../../verticals/real-estate/src/reengagement-prompt.mjs";
 
 const settings = { agentName: "Marina", realEstateName: "Imóveis Fixture" };
 
@@ -41,7 +41,7 @@ describe("T46 — tarefa proativa pura, sem inbound nem texto substituto", () =>
   it("persona/fase usam exatamente a fonte compartilhada, sem alterar identidade normal", () => {
     const prepared = prepare(), expected = buildSystemMessage({ settings, phase: "qualificando", perguntados: ["modality", "region", "budgetCents", "chainedOperation"], firstTurn: false, now: frame().preparedAt });
     expect(prepared.baseSystemMessage).toBe(expected); expect(prepared.systemMessage?.startsWith(expected)).toBe(true);
-    const source = readFileSync(new URL("../reengagement-prompt.mjs", import.meta.url), "utf8"); expect(source).toContain('import { buildSystemMessage } from "./system-message.mjs"'); expect(source).not.toContain("AI_TRANSPARENCY_INSTRUCTION");
+    const source = readFileSync(new URL("../../verticals/real-estate/src/reengagement-prompt.mjs", import.meta.url), "utf8"); expect(source).toContain('import { buildSystemMessage } from "./system-message.mjs"'); expect(source).not.toContain("AI_TRANSPARENCY_INSTRUCTION");
   });
   it("mede overhead UTF-8 antes de documentos e desconta teto sem ampliar orçamento", () => {
     const prepared = prepare(), suffix = prepared.systemMessage!.slice(prepared.baseSystemMessage!.length), original = buildSystemMessage({ settings, phase: "qualificando", perguntados: [], firstTurn: false, now: frame().preparedAt });

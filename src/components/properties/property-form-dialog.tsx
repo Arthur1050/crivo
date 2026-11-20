@@ -1,5 +1,6 @@
 "use client";
 
+import { MODALITY, PROPERTY_KIND, PROPERTY_STATUS } from "../../verticals/real-estate/vocabulary";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Banner } from "@astryxdesign/core/Banner";
@@ -22,29 +23,29 @@ import type {
   Property,
   PropertyKind,
   PropertyStatus,
-} from "@/src/server/data";
-import { MAX_PHOTO_URLS } from "@/src/server/validation";
+} from "@/src/verticals/real-estate/data/properties";
+import { MAX_PHOTO_URLS } from "@/src/verticals/real-estate/validation/properties";
 
 const KIND_OPTIONS: { value: PropertyKind; label: string }[] = [
-  { value: "casa", label: "Casa" },
-  { value: "apartamento", label: "Apartamento" },
-  { value: "sobrado", label: "Sobrado" },
-  { value: "cobertura", label: "Cobertura" },
-  { value: "terreno", label: "Terreno" },
-  { value: "sala_comercial", label: "Sala comercial" },
-  { value: "chacara", label: "Chácara" },
+  { value: PROPERTY_KIND.house, label: "Casa" },
+  { value: PROPERTY_KIND.apartment, label: "Apartamento" },
+  { value: PROPERTY_KIND.townhouse, label: "Sobrado" },
+  { value: PROPERTY_KIND.penthouse, label: "Cobertura" },
+  { value: PROPERTY_KIND.land, label: "Terreno" },
+  { value: PROPERTY_KIND.commercial_room, label: "Sala comercial" },
+  { value: PROPERTY_KIND.farmhouse, label: "Chácara" },
 ];
 
 const MODALITY_OPTIONS: { value: Modality; label: string }[] = [
-  { value: "novo", label: "Novo" },
-  { value: "usado", label: "Usado" },
-  { value: "ambos", label: "Ambos" },
+  { value: MODALITY.new, label: "Novo" },
+  { value: MODALITY.used, label: "Usado" },
+  { value: MODALITY.both, label: "Ambos" },
 ];
 
 const STATUS_OPTIONS: { value: PropertyStatus; label: string }[] = [
-  { value: "disponivel", label: "Disponível" },
-  { value: "reservado", label: "Reservado" },
-  { value: "vendido", label: "Vendido" },
+  { value: PROPERTY_STATUS.available, label: "Disponível" },
+  { value: PROPERTY_STATUS.reserved, label: "Reservado" },
+  { value: PROPERTY_STATUS.sold, label: "Vendido" },
 ];
 
 export interface CaptadorOption {
@@ -131,7 +132,7 @@ function PropertyForm({ property, captadores, onClose }: PropertyFormProps) {
     property?.modality ?? null
   );
   const [status, setStatus] = useState<PropertyStatus>(
-    property?.status ?? "disponivel"
+    property?.status ?? PROPERTY_STATUS.available
   );
   const [published, setPublished] = useState(property?.published ?? false);
   const [featured, setFeatured] = useState(property?.featured ?? false);

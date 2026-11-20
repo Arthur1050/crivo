@@ -4,7 +4,7 @@ import { afterAll, describe, expect, it, vi } from "vitest";
 import { eq, like } from "drizzle-orm";
 import { db } from "../../../db";
 import { integrationRefusals } from "../../../db/schema";
-import { methodNotAllowed, problem, PROBLEM_CONTENT_TYPE } from "../problem";
+import { methodNotAllowed, problem, PROBLEM_CONTENT_TYPE } from "../../../kit/integration";
 
 describe("server/integration problem", () => {
   describe("problem()", () => {

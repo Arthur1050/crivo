@@ -1,3 +1,4 @@
+import type { VerticalBrand } from "../../vertical-kit";
 import "server-only";
 import { Resend } from "resend";
 
@@ -25,34 +26,16 @@ export type EmailResult =
   | { ok: false; error: string };
 
 /** Remetente. Sobrescrevível por ambiente porque depende do domínio verificado. */
-const DEFAULT_FROM = "Krivo <onboarding@resend.dev>";
+
 
 export interface InvitationEmail {
   to: string;
   /** Nome de quem foi convidado, usado na saudação. */
   name: string;
-  /** Nome da imobiliária que convidou. */
+  /** Nome da organização que convidou. */
   tenantName: string;
   /** URL completa da tela de aceite, já com o token. */
   url: string;
-}
-
-export async function sendInvitationEmail(
-  invitation: InvitationEmail
-): Promise<EmailResult> {
-  return send({
-    to: invitation.to,
-    subject: `Convite para o Krivo — ${invitation.tenantName}`,
-    text: [
-      `Olá, ${invitation.name}.`,
-      "",
-      `Você foi convidado para acessar o Krivo da imobiliária ${invitation.tenantName}.`,
-      "Defina a sua senha e ative a conta por este link:",
-      invitation.url,
-      "",
-      "O convite vale por 7 dias. Depois disso, peça um novo ao administrador.",
-    ].join("\n"),
-  });
 }
 
 export interface ResetPasswordEmail {
@@ -62,24 +45,6 @@ export interface ResetPasswordEmail {
   url: string;
 }
 
-export async function sendResetPasswordEmail(
-  reset: ResetPasswordEmail
-): Promise<EmailResult> {
-  return send({
-    to: reset.to,
-    subject: "Redefinição de senha do Krivo",
-    text: [
-      `Olá, ${reset.name}.`,
-      "",
-      "Recebemos um pedido para redefinir a sua senha do Krivo.",
-      "Se foi você, defina uma senha nova por este link:",
-      reset.url,
-      "",
-      "Se não foi você, ignore este e-mail: a senha atual continua valendo.",
-    ].join("\n"),
-  });
-}
-
 export interface IntegrationAlertEmail {
   /** Endereço do operador (`KRIVO_OPERATOR_ALERT_EMAIL`), lido por quem chama. */
   to: string;
@@ -87,46 +52,90 @@ export interface IntegrationAlertEmail {
   text: string;
 }
 
-/** Alerta de queda da integração ao operador (lote-15, AD-039). */
-export async function sendIntegrationAlertEmail(
-  alert: IntegrationAlertEmail
-): Promise<EmailResult> {
-  return send({ to: alert.to, subject: alert.subject, text: alert.text });
-}
-
-async function send(message: {
-  to: string;
-  subject: string;
-  text: string;
-}): Promise<EmailResult> {
-  const apiKey = process.env.RESEND_API_KEY;
-
-  if (!apiKey) {
-    return {
-      ok: false,
-      error:
-        "RESEND_API_KEY não configurada: o e-mail não foi enviado. Reenvie o convite quando a chave estiver no ambiente.",
-    };
+export function createEmailSender(brand: VerticalBrand) {
+  async function sendInvitationEmail(
+    invitation: InvitationEmail
+  ): Promise<EmailResult> {
+    return send({
+      to: invitation.to,
+      subject: `Convite para o ${brand.name} — ${invitation.tenantName}`,
+      text: [
+        `Olá, ${invitation.name}.`,
+        "",
+        `Você foi convidado para acessar o ${brand.name} da ${brand.tenantNoun.singular} ${invitation.tenantName}.`,
+        "Defina a sua senha e ative a conta por este link:",
+        invitation.url,
+        "",
+        "O convite vale por 7 dias. Depois disso, peça um novo ao administrador.",
+      ].join("\n"),
+    });
   }
 
-  try {
-    const { data, error } = await new Resend(apiKey).emails.send({
-      from: process.env.RESEND_FROM ?? DEFAULT_FROM,
-      to: message.to,
-      subject: message.subject,
-      text: message.text,
-    });
 
-    if (error) {
-      return { ok: false, error: error.message };
+
+  async function sendResetPasswordEmail(
+    reset: ResetPasswordEmail
+  ): Promise<EmailResult> {
+    return send({
+      to: reset.to,
+      subject: `Redefinição de senha do ${brand.name}`,
+      text: [
+        `Olá, ${reset.name}.`,
+        "",
+        `Recebemos um pedido para redefinir a sua senha do ${brand.name}.`,
+        "Se foi você, defina uma senha nova por este link:",
+        reset.url,
+        "",
+        "Se não foi você, ignore este e-mail: a senha atual continua valendo.",
+      ].join("\n"),
+    });
+  }
+
+
+
+  /** Alerta de queda da integração ao operador (lote-15, AD-039). */
+  async function sendIntegrationAlertEmail(
+    alert: IntegrationAlertEmail
+  ): Promise<EmailResult> {
+    return send({ to: alert.to, subject: alert.subject, text: alert.text });
+  }
+
+  async function send(message: {
+    to: string;
+    subject: string;
+    text: string;
+  }): Promise<EmailResult> {
+    const apiKey = process.env.RESEND_API_KEY;
+
+    if (!apiKey) {
+      return {
+        ok: false,
+        error:
+          "RESEND_API_KEY não configurada: o e-mail não foi enviado. Reenvie o convite quando a chave estiver no ambiente.",
+      };
     }
 
-    return { ok: true, id: data?.id ?? null };
-  } catch (error) {
-    // Rede fora, DNS, timeout: o SDK lança. Aqui vira retorno, como tudo mais.
-    return {
-      ok: false,
-      error: error instanceof Error ? error.message : String(error),
-    };
+    try {
+      const { data, error } = await new Resend(apiKey).emails.send({
+        from: process.env.RESEND_FROM ?? `${brand.name} <onboarding@resend.dev>`,
+        to: message.to,
+        subject: message.subject,
+        text: message.text,
+      });
+
+      if (error) {
+        return { ok: false, error: error.message };
+      }
+
+      return { ok: true, id: data?.id ?? null };
+    } catch (error) {
+      // Rede fora, DNS, timeout: o SDK lança. Aqui vira retorno, como tudo mais.
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
   }
+
+  return { sendInvitationEmail, sendResetPasswordEmail, sendIntegrationAlertEmail };
 }

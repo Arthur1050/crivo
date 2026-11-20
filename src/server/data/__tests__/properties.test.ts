@@ -3,18 +3,18 @@ import { randomUUID } from "node:crypto";
 import { and, eq, inArray } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { db } from "../../../db";
-import { properties, tenant_members, tenants, users } from "../../../db/schema";
+import { tenant_members, tenants, users } from "../../../db/schema";
+import { properties } from "../../../verticals/real-estate/schema";
 import { normalizeForSearch } from "../../../lib/normalize-text";
 import {
   createProperty,
   deleteProperty,
   getProperties,
-  getTenants,
-  isActiveMemberOf,
   updateProperty,
   type NewProperty,
   type UpdatePropertyPatch,
-} from "../index";
+} from "../../../verticals/real-estate/data/properties";
+import { getTenants, isActiveMemberOf } from "../index";
 
 const NON_EXISTENT_TENANT_ID = "00000000-0000-4000-8000-000000000000";
 const NON_EXISTENT_USER_ID = "00000000-0000-4000-8000-000000000099";
@@ -258,7 +258,7 @@ describe("server/data properties — escrita (T6)", () => {
       id,
       name,
       agentName: "Agente Teste T6",
-      supportedModality: "ambos",
+      supportedSegment: "ambos",
       slug: `fixture-t6-${id}`,
     });
     createdTenantIds.push(id);

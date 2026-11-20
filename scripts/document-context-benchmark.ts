@@ -1,8 +1,10 @@
+import { realEstate } from "../src/verticals/real-estate";
+import { MODALITY } from "../src/verticals/real-estate/vocabulary";
 /**
  * Benchmark do teto de contexto documental (lote-12 — T34, DOCLIM-01).
  *
  * As medições saem do workflow `krivo-benchmark-contexto` no n8n
- * (`n8n/workflows/benchmark-contexto.ts`), uma execução por faixa, e são
+ * (`n8n/verticals/real-estate/workflows/benchmark-contexto.ts`), uma execução por faixa, e são
  * registradas num arquivo de resultados versionado — só métricas, nunca o
  * corpus. Este script faz o resto:
  *
@@ -26,10 +28,11 @@
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { renderWorkflows } from "./n8n-inline.mjs";
 import { deriveBenchmarkIdentity } from "../src/server/documents/benchmark-identity";
-import { FIELD_LABELS } from "../n8n/src/phase.mjs";
-import { buildSystemMessage } from "../n8n/src/system-message.mjs";
-import { buildReengagementPrompt } from "../n8n/src/reengagement-prompt.mjs";
+import { FIELD_LABELS } from "../n8n/verticals/real-estate/src/phase.mjs";
+import { buildSystemMessage } from "../n8n/verticals/real-estate/src/system-message.mjs";
+import { buildReengagementPrompt } from "../n8n/verticals/real-estate/src/reengagement-prompt.mjs";
 import type { PreparationFrame } from "../src/server/reengagement/context";
 import {
   computeContextCeiling,
@@ -39,7 +42,7 @@ import {
   type BenchmarkIdentity,
 } from "../src/server/documents/context-ceiling";
 
-const MODALITIES = ["novo", "usado", "ambos"] as const;
+const MODALITIES = [MODALITY.new, MODALITY.used, MODALITY.both] as const;
 
 export interface BenchmarkResultsFile {
   benchmarkedAt: string;
@@ -47,21 +50,43 @@ export interface BenchmarkResultsFile {
   /** `activeVersionId` do `krivo-agente-principal` no momento da medição. */
   agentWorkflowVersion: string;
   tokenSource: string;
-  runs: Array<BenchmarkRun & { executionId: string }>;
+  runs: Array<Omit<BenchmarkRun, "segment"> & { modality: BenchmarkRun["segment"]; executionId: string }>;
   /** Commit factual da fonte executada, distinto da versão publicada. */
   sourceRevision?: string;
 }
+
+export function benchmarkRuns(results: BenchmarkResultsFile): BenchmarkRun[] {
+  return results.runs.map(({ modality, ...run }) => ({ ...run, segment: modality }));
+}
+
 
 export function currentIdentity(workflowVersion: string, sourceRevision?: string) {
   if (sourceRevision && !/^[a-f0-9]{7,40}$/i.test(sourceRevision)) throw new Error("Revisão da fonte inválida.");
   const source = (file: string) => sourceRevision
     ? execFileSync("git", ["show", `${sourceRevision}:${file}`], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] })
     : readFileSync(file, "utf8");
+  const verticalSource = (file: string) => {
+    const path = `n8n/verticals/real-estate/src/${file}`;
+    if (sourceRevision) {
+      try {
+        return source(path);
+      } catch {
+        return source(`n8n/src/${file}`);
+      }
+    }
+    return source(path);
+  };
+  const workflowSource = sourceRevision
+    ? source("n8n/generated/principal.ts")
+    : renderWorkflows({ inlineModules: false }).find(({ file }) => file === "principal.ts")?.generatedText;
+  if (!workflowSource) throw new Error("Workflow principal ausente no manifesto.");
   return deriveBenchmarkIdentity({
-    principalSource: source("n8n/workflows/principal.ts"),
-    systemMessageSources: ["business-hours.mjs", "phase.mjs", "system-message.mjs"].map((file) =>
-      source(`n8n/src/${file}`)
-    ),
+    workflowSource,
+    systemMessageSources: [
+      source("n8n/src/business-hours.mjs"),
+      verticalSource("phase.mjs"),
+      verticalSource("system-message.mjs"),
+    ],
     workflowVersion,
   });
 }
@@ -97,19 +122,19 @@ export function auditProactiveBenchmark(input: {
     const value = input.frame.facts[field as keyof PreparationFrame["facts"]];
     return value !== null && value !== undefined && value !== "";
   });
-  const principal = buildSystemMessage({ settings: input.settings, businessHours: input.businessHours,
+  const mainWorkflow = buildSystemMessage({ settings: input.settings, businessHours: input.businessHours,
     now: input.frame.preparedAt, phase: input.frame.agent.phase, firstTurn: false,
     perguntados: [...new Set([...input.frame.agent.askedFields, ...informed])] });
   const previous = measured?.identity ?? null;
   const changed = previous ? diffBenchmarkIdentity(previous, input.current) : [];
-  const parity = principal === prepared.baseSystemMessage;
+  const parity = mainWorkflow === prepared.baseSystemMessage;
   const stale = !!measured?.staleAt || changed.length > 0;
   return {
     paidCalls: 0 as const,
     previousIdentity: previous, currentIdentity: input.current, changed,
     sharedIdentityEqual: !!previous && previous.systemMessageHash === input.current.systemMessageHash,
     promptParity: parity,
-    promptHashes: { principal: hash(principal), proactiveBase: hash(prepared.baseSystemMessage),
+    promptHashes: { "principal": hash(mainWorkflow), proactiveBase: hash(prepared.baseSystemMessage),
       proactiveEffective: hash(prepared.systemMessage + "\n" + prepared.prompt) },
     budget: { limitingCeilingBytes, overheadBytes: prepared.overheadBytes, maxDocumentBytes: prepared.maxDocumentBytes },
     measured: validMeasurement, stale,
@@ -150,7 +175,7 @@ async function persist(file: string, measuredSourceRevision?: string) {
 
   const ceilings = MODALITIES.map((modality) => ({
     modality,
-    result: computeContextCeiling(results.runs, modality, DEFAULT_CEILING_POLICY),
+    result: computeContextCeiling(benchmarkRuns(results), modality, DEFAULT_CEILING_POLICY, realEstate.documentSegments),
   }));
   // Teto zero significa que nenhuma faixa passou: gravar isso seria inventar
   // um limite. Melhor falhar e deixar o banner apontando a ausência.
@@ -165,7 +190,7 @@ async function persist(file: string, measuredSourceRevision?: string) {
   for (const tenant of allTenants) {
     for (const { modality, result } of ceilings) {
       await upsertDocumentContextLimit(tenant.id, {
-        queryModality: modality,
+        querySegment: modality,
         maxResponseBytes: result.maxResponseBytes,
         ...identity,
         benchmarkedAt: new Date(results.benchmarkedAt),
@@ -183,7 +208,7 @@ async function persist(file: string, measuredSourceRevision?: string) {
       });
     }
     // O teto novo pode admitir ou excluir documentos já processados.
-    await reconcileTenantDocumentAdmission(tenant.id);
+    await reconcileTenantDocumentAdmission(tenant.id, undefined, realEstate.documentSegments);
   }
 
   for (const { modality, result } of ceilings) {
@@ -194,8 +219,8 @@ async function persist(file: string, measuredSourceRevision?: string) {
 
 export async function checkBenchmarkIdentity(workflowVersion: string, dependencies?: {
   identity: BenchmarkIdentity;
-  list: () => Promise<Array<BenchmarkIdentity & { tenantId: string; queryModality: "novo" | "usado" | "ambos"; staleAt: Date | null }>>;
-  markStale: (tenantId: string, modality: "novo" | "usado" | "ambos", reason: string) => Promise<boolean>;
+  list: () => Promise<Array<BenchmarkIdentity & { tenantId: string; querySegment: typeof MODALITY.new | typeof MODALITY.used | typeof MODALITY.both; staleAt: Date | null }>>;
+  markStale: (tenantId: string, modality: typeof MODALITY.new | typeof MODALITY.used | typeof MODALITY.both, reason: string) => Promise<boolean>;
 }) {
   const identity = dependencies?.identity ?? currentIdentity(workflowVersion);
   const repository = dependencies ? null : await import("../src/server/documents/repository");
@@ -204,7 +229,7 @@ export async function checkBenchmarkIdentity(workflowVersion: string, dependenci
   for (const row of rows) {
     const changed = diffBenchmarkIdentity(row, identity);
     if (changed.length === 0 || row.staleAt) continue;
-    if (await (dependencies?.markStale ?? repository!.markDocumentContextLimitStale)(row.tenantId, row.queryModality, `mudou: ${changed.join(", ")}`)) marked += 1;
+    if (await (dependencies?.markStale ?? repository!.markDocumentContextLimitStale)(row.tenantId, row.querySegment, `mudou: ${changed.join(", ")}`)) marked += 1;
   }
   return { checked: rows.length, marked, paidCalls: 0 as const };
 }
@@ -224,11 +249,11 @@ async function main() {
       const resultsFile = value("--results"), sourceRevision = value("--measured-source-ref");
       const results = resultsFile ? JSON.parse(readFileSync(resultsFile, "utf8")) as BenchmarkResultsFile : null;
       if (results && !sourceRevision) throw new Error("Audit de resultados requer --measured-source-ref.");
-      const modality = value("--modality") ?? "ambos";
+      const modality = value("--modality") ?? MODALITY.both;
       if (!MODALITIES.includes(modality as typeof MODALITIES[number])) throw new Error("Modalidade inválida.");
       const report = auditProactiveBenchmark({ current: currentIdentity(workflowVersion),
         measured: results ? { identity: currentIdentity(results.agentWorkflowVersion, sourceRevision), benchmarkedAt: results.benchmarkedAt,
-          maxResponseBytes: computeContextCeiling(results.runs, modality as typeof MODALITIES[number]).maxResponseBytes } : null,
+          maxResponseBytes: computeContextCeiling(benchmarkRuns(results), modality as typeof MODALITIES[number], DEFAULT_CEILING_POLICY, realEstate.documentSegments).maxResponseBytes } : null,
         frame: JSON.parse(readFileSync(frameFile, "utf8")) as PreparationFrame });
       console.log(JSON.stringify(report, null, 2));
     }

@@ -19,7 +19,7 @@ describe("T2 — canal WhatsApp aditivo (USO-01 AC8; USO-02 AC2; Done when T2)",
   const tenantB = randomUUID();
   beforeAll(async () => {
     await db.insert(tenants).values([tenantA, tenantB].map((id) => ({
-      id, name: `Fixture canais ${id}`, agentName: "Agente", supportedModality: "ambos" as const, slug: `fixture-${id}`,
+      id, name: `Fixture canais ${id}`, agentName: "Agente", supportedSegment: "ambos" as const, slug: `fixture-${id}`,
     })));
   });
   afterAll(async () => {
@@ -106,7 +106,7 @@ describe("T2 — canal WhatsApp aditivo (USO-01 AC8; USO-02 AC2; Done when T2)",
 
   it("excluir tenant dono remove seu canal e preserva o de outro tenant", async () => {
     const owner = randomUUID();
-    await db.insert(tenants).values({ id: owner, name: "Dono descartável", agentName: "Agente", supportedModality: "ambos", slug: `fixture-${owner}` });
+    await db.insert(tenants).values({ id: owner, name: "Dono descartável", agentName: "Agente", supportedSegment: "ambos", slug: `fixture-${owner}` });
     const [own] = await db.insert(whatsappChannels).values({ ...channel(), tenantId: owner }).returning();
     const [foreign] = await db.insert(whatsappChannels).values({ ...channel(), tenantId: tenantB }).returning();
     await db.delete(tenants).where(eq(tenants.id, owner));

@@ -1,3 +1,4 @@
+import { SENDER } from "../../../src/lib/vocabulary";
 import { Avatar } from "@astryxdesign/core/Avatar";
 import { Banner } from "@astryxdesign/core/Banner";
 import { Divider } from "@astryxdesign/core/Divider";
@@ -22,7 +23,7 @@ import {
   windowClosedNotice,
   windowOpenLabel,
 } from "@/src/lib/conversation-control";
-import { can } from "@/src/lib/permissions";
+import { can } from "@/src/kit/access";
 import {
   getConversationSummaries,
   getLastLeadMessageAt,
@@ -31,7 +32,7 @@ import {
   getTenant,
   getTenantMembers,
 } from "@/src/server/data";
-import { getLeadScope, verifySession } from "@/src/server/auth/session";
+import { getLeadScope, verifySession } from "@/src/kit/session";
 import { getActiveTenantId } from "@/src/server/tenant";
 import { getMessageClassifications } from "@/src/server/data/whatsapp";
 import { statusClassificationEnabled } from "@/src/server/whatsapp/statuses";
@@ -89,7 +90,7 @@ export default async function ChatsPage({ searchParams }: ChatsPageProps) {
         status: selectedLead.status,
         humanTakeoverAt: selectedLead.humanTakeoverAt,
         optedOutAt: selectedLead.optedOutAt,
-        canWrite: can(session.roles, "chats", "escrever"),
+        canWrite: can(session.roles, "chats", "write"),
         window: chatWindow,
       })
     : null;
@@ -102,9 +103,9 @@ export default async function ChatsPage({ searchParams }: ChatsPageProps) {
   const agentName = tenant?.agentName ?? "SDR";
   const conductorLabel = !controls
     ? ""
-    : controls.conductor === "agente"
+    : controls.conductor === SENDER.agent
       ? `Conduzida pelo agente ${agentName}`
-      : controls.conductor === "humano"
+      : controls.conductor === SENDER.human
         ? `Conduzida por ${takeoverUser?.name ?? "alguém da equipe"}`
         : controls.conductor === "escalado"
           ? "Escalado para humano"

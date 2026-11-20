@@ -1,5 +1,6 @@
+import { INTEGRATION_HEALTH } from "../../lib/vocabulary";
 import "server-only";
-import { formatIntegrationAlertEmail, planIntegrationAlerts } from "../../lib/integration-alert";
+import { createIntegrationAlertFormatter, planIntegrationAlerts } from "../../lib/integration-alert";
 import type { EmailResult } from "../auth/email";
 import {
   claimIntegrationProblems,
@@ -11,6 +12,7 @@ import {
 const HEALTH_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 export interface IntegrationAlertDependencies {
+  brand: import("../../vertical-kit").VerticalBrand;
   /** `KRIVO_OPERATOR_ALERT_EMAIL`; ausente ou vazio impede o envio, nunca o libera. */
   operatorEmail: string | undefined;
   send: (message: { to: string; subject: string; text: string }) => Promise<EmailResult>;
@@ -45,7 +47,7 @@ export async function runIntegrationAlert(
 
   await recordTenantHealthStates([
     ...plan.initialize.map(({ tenantId, state }) => ({ tenantId, state, at: now })),
-    ...plan.recover.map((tenantId) => ({ tenantId, state: "saudavel" as const, at: now })),
+    ...plan.recover.map((tenantId) => ({ tenantId, state: INTEGRATION_HEALTH.healthy, at: now })),
   ]);
 
   const to = deps.operatorEmail?.trim();
@@ -61,7 +63,7 @@ export async function runIntegrationAlert(
   if (claimed.length === 0) return result;
 
   const claimedIds = new Set(claimed.map((claim) => claim.tenantId));
-  const { subject, text } = formatIntegrationAlertEmail(
+  const { subject, text } = createIntegrationAlertFormatter(deps.brand)(
     plan.alert.filter((snapshot) => claimedIds.has(snapshot.tenantId))
   );
   let sent: EmailResult;

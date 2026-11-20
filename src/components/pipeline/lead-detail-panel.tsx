@@ -1,5 +1,7 @@
 "use client";
 
+import { LEAD_STATUS } from "../../lib/vocabulary";
+import { CREDIT_STATUS, MODALITY, MOTIVATION, PROPERTY_KIND } from "../../verticals/real-estate/vocabulary";
 import NextLink from "next/link";
 import {
   ArrowLeftRightIcon,
@@ -44,48 +46,49 @@ import { LeadControls } from "@/src/components/pipeline/lead-controls";
 import { RelativeTime } from "@/src/components/shared/relative-time";
 import { formatCurrencyBRL } from "@/src/lib/format";
 import type {
-  Broker,
+  Assignee,
   Lead,
   LeadStatus,
-  LeadWithBroker,
-  Modality,
 } from "@/src/server/data";
+import type { LeadWithAssignee } from "@/src/kit/lead-data";
 
 const FALLBACK = "—";
 
+type Modality = NonNullable<Lead["modality"]>;
+
 const MODALITY_LABELS: Record<Modality, string> = {
-  novo: "Novo",
-  usado: "Usado",
-  ambos: "Ambos",
+  [MODALITY.new]: "Novo",
+  [MODALITY.used]: "Usado",
+  [MODALITY.both]: "Ambos",
 };
 
 // Mesma paleta dos cards do quadro (redesign-crm-astryx — design.md § R1):
 // abrir o painel não pode recolorir a modalidade que o usuário acabou de ver.
 const MODALITY_BADGE_VARIANT: Record<Modality, "blue" | "purple" | "teal"> = {
-  novo: "blue",
-  usado: "purple",
-  ambos: "teal",
+  [MODALITY.new]: "blue",
+  [MODALITY.used]: "purple",
+  [MODALITY.both]: "teal",
 };
 
 const PROPERTY_TYPE_LABELS: Record<
   NonNullable<Lead["propertyType"]>,
   string
 > = {
-  casa: "Casa",
-  apartamento: "Apartamento",
+  [PROPERTY_KIND.house]: "Casa",
+  [PROPERTY_KIND.apartment]: "Apartamento",
 };
 
 const MOTIVATION_LABELS: Record<NonNullable<Lead["motivation"]>, string> = {
-  investidor: "Investidor",
-  morador: "Morador",
+  [MOTIVATION.investor]: "Investidor",
+  [MOTIVATION.resident]: "Morador",
 };
 
 const CREDIT_STATUS_LABELS: Record<
   NonNullable<Lead["creditStatus"]>,
   string
 > = {
-  pre_aprovado: "Pré-aprovado",
-  recurso_proprio: "Recurso próprio",
+  [CREDIT_STATUS.pre_approved]: "Pré-aprovado",
+  [CREDIT_STATUS.own_funds]: "Recurso próprio",
   fgts: "FGTS",
 };
 
@@ -97,9 +100,9 @@ interface StatusMeta {
 // Espelha as 3 colunas do `PipelineBoard`: o painel repete o status da coluna
 // de onde o card veio, com o mesmo rótulo e a mesma cor semântica.
 const STATUS_META: Record<LeadStatus, StatusMeta> = {
-  em_qualificacao: { label: "Em qualificação", variant: "warning" },
-  qualificado_agendado: { label: "Qualificado e agendado", variant: "success" },
-  escalado_humano: { label: "Escalado para humano", variant: "error" },
+  [LEAD_STATUS.engaged]: { label: "Em qualificação", variant: "warning" },
+  [LEAD_STATUS.goal_reached]: { label: "Qualificado e agendado", variant: "success" },
+  [LEAD_STATUS.escalated]: { label: "Escalado para humano", variant: "error" },
 };
 
 // Os 9 campos que o agente preenche ao longo da conversa (PRD §6.4). O painel
@@ -115,7 +118,7 @@ const QUALIFICATION_FIELDS = [
   "motivation",
   "creditStatus",
   "chainedOperation",
-  "meetingAt",
+  "appointmentAt",
 ] as const satisfies readonly (keyof Lead)[];
 
 function countFilledFields(lead: Lead): number {
@@ -144,11 +147,11 @@ function BooleanValue({ value }: { value: boolean | null }) {
 }
 
 interface LeadDetailPanelProps {
-  lead: LeadWithBroker;
+  lead: LeadWithAssignee;
   /** id da conversa deste lead, quando existir (lote-3 — PIPE-04). */
   conversationId?: string;
   /** Corretores do tenant ativo, para o seletor do `LeadControls` (lote-7 — ATRIB-02). */
-  brokers: Pick<Broker, "id" | "name">[];
+  brokers: Pick<Assignee, "id" | "name">[];
   onClose: () => void;
 }
 
@@ -172,7 +175,7 @@ export function LeadDetailPanel({
   brokers,
   onClose,
 }: LeadDetailPanelProps) {
-  const isEscalated = lead.status === "escalado_humano";
+  const isEscalated = lead.status === LEAD_STATUS.escalated;
   const status = STATUS_META[lead.status];
   const budgetLabel = formatCurrencyBRL(lead.budgetCents);
   const filledFields = countFilledFields(lead);
@@ -410,9 +413,9 @@ export function LeadDetailPanel({
                     <Icon icon={CalendarDaysIcon} size="xsm" color="secondary" />
                   }
                 >
-                  {lead.meetingAt ? (
+                  {lead.appointmentAt ? (
                     <Timestamp
-                      value={lead.meetingAt.toISOString()}
+                      value={lead.appointmentAt.toISOString()}
                       format="date_time"
                     />
                   ) : (
@@ -433,9 +436,9 @@ export function LeadDetailPanel({
                 <LeadControls
                   leadId={lead.id}
                   brokers={brokers}
-                  brokerId={lead.assignedUserId}
-                  meetingAt={lead.meetingAt ? lead.meetingAt.toISOString() : null}
-                  meetingAttended={lead.meetingAttended}
+                  assigneeId={lead.assignedUserId}
+                  appointmentAt={lead.appointmentAt ? lead.appointmentAt.toISOString() : null}
+                  appointmentAttended={lead.appointmentAttended}
                 />
               </VStack>
 

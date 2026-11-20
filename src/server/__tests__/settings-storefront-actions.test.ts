@@ -4,8 +4,8 @@ import { eq, inArray } from "drizzle-orm";
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { db } from "../../db";
 import { tenants } from "../../db/schema";
-import type { Action, Resource, Role } from "../../lib/permissions";
-import type { AuthContext } from "../auth/session";
+import type { Action, Resource, Role } from "../../kit/access";
+import type { AuthContext } from "../../kit/session";
 
 /**
  * Configurações da imobiliária e a vitrine (tasks.md — L16a T16; VATIV-01 AC6,
@@ -18,8 +18,8 @@ let sessionRoles: Role[] = ["administrador"];
 let sessionTenantId = "";
 const sessionUser = { id: "", name: "", email: "" };
 
-vi.mock("../auth/session", async (importActual) => {
-  const actual = await importActual<typeof import("../auth/session")>();
+vi.mock("../../kit/session", async (importActual) => {
+  const actual = await importActual<typeof import("../../kit/session")>();
   const fakeSession = async (): Promise<AuthContext> => ({
     user: sessionUser,
     tenantId: sessionTenantId,
@@ -30,18 +30,18 @@ vi.mock("../auth/session", async (importActual) => {
     ...actual,
     verifySession: fakeSession,
     requirePermission: async (resource: Resource, action: Action) =>
-      actual.authorizeOrThrow(await fakeSession(), resource, action),
+      actual.authorizeOrThrow(await fakeSession(), resource, action, (await import("../../kit/access")).access),
   };
 });
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("../storefront/schedule", () => ({ scheduleStorefrontRevalidation: vi.fn() }));
+vi.mock("../../verticals/real-estate/storefront/schedule", () => ({ scheduleStorefrontRevalidation: vi.fn() }));
 
 import { revalidatePath } from "next/cache";
 import { getTenant } from "../data";
-import { saveStorefront } from "../data/storefront";
+import { saveStorefront } from "../../verticals/real-estate/storefront/data";
 import { updateTenantSettingsAction } from "../actions/settings";
-import { scheduleStorefrontRevalidation } from "../storefront/schedule";
+import { scheduleStorefrontRevalidation } from "../../verticals/real-estate/storefront/schedule";
 
 const scheduled = vi.mocked(scheduleStorefrontRevalidation);
 const createdTenantIds: string[] = [];
@@ -56,7 +56,7 @@ const activeStorefront = {
 async function createTenant(name: string, opts: { storefront?: "ativa" | "inativa" | "nenhuma" } = {}): Promise<string> {
   const id = randomUUID();
   await db.insert(tenants).values({
-    id, name, agentName: "Agente Original", supportedModality: "ambos", slug: `fixture-t16-${id}`,
+    id, name, agentName: "Agente Original", supportedSegment: "ambos", slug: `fixture-t16-${id}`,
     city: "Uberaba", agentWhatsapp: ORIGINAL_WHATSAPP,
   });
   createdTenantIds.push(id);
@@ -71,7 +71,7 @@ function settingsInput(tenantName: string, extra: Record<string, unknown> = {}) 
   return {
     name: tenantName,
     agentName: "Agente Original",
-    supportedModality: "ambos" as const,
+    supportedSegment: "ambos" as const,
     ...extra,
   };
 }

@@ -382,7 +382,7 @@ mantida só por revisão de código.
 
 ---
 
-## L17 — Pastas de documentos — ✅ EXECUTADO (2026-11-02), falta publicar
+## L17 — Pastas de documentos — ✅ PUBLICADO (2026-11-02)
 
 **Origem**: usuário, 2026-10-25. O redesign de Documentos (gerenciador de arquivos com busca, "Filtrar e
 ordenar" e "Todos os arquivos" em grade ou lista) foi publicado sem as pastas, que hoje não existem no banco.
@@ -400,7 +400,49 @@ Specify estão respondidas.
 três frentes (dados, interface e integração) sobre o branch de integração `lote-17`. O schema de produção é
 aplicado com `scripts/document-folders/schema.sql` antes do merge final em `main`, com autorização do usuário.
 
-**Estado (2026-11-02)**: PASS no 4º ciclo de verificação (`validation.md`). O schema de produção e o merge em `main` ainda não foram feitos.
+**Estado (2026-11-02)**: PASS no 4º ciclo de verificação (`validation.md`). Schema aplicado em produção e [PR #17](https://github.com/Arthur1050/crivo/pull/17) em `main`.
+
+---
+
+## L18 — Extração do núcleo
+
+**Origem**: usuário, 2026-11-02. Um segundo app, para lojas de materiais de construção, com as mesmas
+funcionalidades. Decisão de arquitetura na AD-052; decisões de lote em
+`features/lote-18a-costuras-do-nucleo/context.md`.
+
+- **L18a — Costuras do núcleo**: fronteira verificável, contrato do vertical e símbolos em inglês, no pacote
+  único. O Krivo não muda. Spec em `features/lote-18a-costuras-do-nucleo/spec.md`.
+- **L18b — Workspaces**: mover para `packages/*` e `apps/real-estate` seguindo o mapa de fronteira, com o build
+  provado num preview (L-088). A mudança do Root Directory na Vercel pede autorização. Spec depois do L18a.
+- **L18c — Ativação em produção**: DDL, valores gravados em inglês, qualificação em tabela 1:1, `/api/v1` nos
+  dois vocabulários até o agente republicado ser conferido (L-061). Uma ação por task, com autorização e
+  rollback. Spec depois do L18b.
+  - **Herdado do L18a (backlog)**: (1) 9 testes de `n8n/workflows/__tests__/` (`principal-agent-state`,
+    `principal-outgoing-channel`, `principal-reengagement-bridge`, `principal-whatsapp-statuses`,
+    `reengagement-contextual`, `scheduler-reengagement`, `scheduler-silence-expire`, `scheduler-whatsapp-usage` e
+    `tool-responder-channel`) comparam com a fonte de `bf5e646` por `git show bf5e646:...`
+    (`workflow-baseline.ts`) e quebram na próxima mudança legítima de workflow: trocá-los por asserções sobre
+    `n8n/generated/`, já que a prova byte a byte do gerado está em `scripts/__tests__/boundary-generated.test.ts`.
+    (2) `scripts/boundary/transitional.json` é a lista de trabalho; os 4 imports de
+    `n8n/verticals/real-estate/src/phase.mjs` no núcleo saíram na correção do Verifier (faceta de qualificação),
+    e a lista de campos da restrição de `asked_fields` ficou como `check:lead_agent_state_asked_fields` (`stored`). (3) O `db:push:test`
+    sai com 0 apesar do erro `42P07` em `leads_tenant_id_id_idx`, igual em `bf5e646` (L-068). (4) O único teste que grava
+    `tenant_document_context_limits` em tenant do seed é `withGenerousCeiling`, em `src/server/__tests__/actions.test.ts`
+    (anterior ao L18a): 3 linhas (`novo`, `usado`, `ambos`) no primeiro tenant, apagadas no `finally`. Causa provável
+    das sobras que já derrubaram o seed: o teste estoura o tempo (falha conhecida com o banco acumulado) e o
+    `finally` não chega a rodar. Correção candidata: limpeza também no `afterAll` do arquivo.
+    (5) Observações não bloqueantes do Verifier (`features/lote-18a-costuras-do-nucleo/validation.md`):
+    `eslint.config.mjs` resolve as pastas das regras de fronteira a partir do diretório atual, e o ESLint rodado de
+    outra pasta perde essas regras sem aviso; a entrada `check:` não passa pelo detector de exceção órfã (quem a segura
+    é `boundary-schema.test.ts`); `src/vertical-kit/__tests__/fixture-vertical.test.ts:31` ainda filtra o grafo por
+    prefixo de pasta, e não pela camada do `map.json` (L-108); o limite de 8 itens de `askedFields` continua fixo
+    no núcleo. (6) KEEP-03 AC2 sem prova independente: o `db:push:test` derruba o schema `vitrine` dos bancos de teste.
+
+## L19 — App de lojas de materiais
+
+**Depende do L18c.** Produtos no lugar de imóveis e um agente que encontra o produto pedido ou sugere uma
+alternativa. Telas em shadcn, banco e projeto na Vercel próprios. É candidato a resolver as pendências que
+dependem de tenant real, se o primeiro cliente vier deste app. Sem spec.
 
 ---
 
@@ -435,6 +477,8 @@ imobiliária". Catálogo estruturado + documentos legíveis já entregam essa fr
 ## Ordem
 
 L10 → L11 → L12 → L13 → L14 → L14b → L14c (condicionado à conta de produção) → L15 → **L16 por último**.
+
+Acrescentados depois: L17 (publicado) e L18a → L18b → L18c → L19 (AD-052).
 
 Ressalva única: **L11 pode subir na frente do L10** se a janela comercial pedir — o catálogo tem o
 único sinal de cliente real do backlog, e o custo de trocar é adiar a AD-015, aberta desde

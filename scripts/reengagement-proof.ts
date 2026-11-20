@@ -1,3 +1,4 @@
+import { SENDER } from "../src/lib/vocabulary";
 /** T68: fixture integrada e fronteira de prova real. Nenhum executor externo é
  * embutido. CLI --check-real <metadata.json> diagnostica somente os gates.
  * Full: npx vitest run scripts/__tests__/reengagement-proof.test.ts.
@@ -8,7 +9,7 @@ import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { candidatePageJobs, preparationClaim, generationForDispatch, acknowledgementForSend } from "../n8n/src/scheduler-reengagement.mjs";
-import { buildReengagementPrompt } from "../n8n/src/reengagement-prompt.mjs";
+import { buildReengagementPrompt } from "../n8n/verticals/real-estate/src/reengagement-prompt.mjs";
 import type { PreparationFrame } from "../src/server/reengagement/context";
 import type { SendPreparedEpisodeOptions, SendPreparedEpisodeResult } from "../src/server/reengagement/send";
 import type { AuthContext } from "../src/server/auth/session";
@@ -71,7 +72,7 @@ export async function runFixtureEpisode(options: FixtureEpisodeOptions) {
   if (options.auth.tenantId !== options.auth.leadScope.tenantId) throw new Error("proof-tenant-scope-mismatch");
   const graph = options.graph ?? await loadProofScheduler(); assertProofWiring(graph);
   const [{ listCandidates, claimPreparation, reconcileAcceptance, releasePreparationFailure }, { prepareFrame }, { sendPreparedEpisode }] = await Promise.all([
-    import("../src/server/reengagement/repository"), import("../src/server/reengagement/context"), import("../src/server/reengagement/send"),
+    import("../src/server/reengagement/repository"), import("../src/kit/reengagement"), import("../src/server/reengagement/send"),
   ]);
   const context = { tenantId: options.auth.tenantId };
   type CandidateJob = { leadId: string; anchorMessageId: string; anchorSentAt: string; phoneNumberId: string; action: "prepare" | "omit" | "escalate" | "empty"; tenantId: string };
@@ -111,7 +112,7 @@ export async function runFixtureEpisode(options: FixtureEpisodeOptions) {
   await options.recordReceipt?.(sent);
   const thread = await readProofThread(options.auth, options.conversationId);
   if (["accepted", "accepted_pending_record"].includes(sent.state)
-    && !thread.rows.some((message) => message.sender === "agente" && message.externalId === sent.wamid && message.content === generated.text)) throw new Error("proof-crm-output-link-broken");
+    && !thread.rows.some((message) => message.sender === SENDER.agent && message.externalId === sent.wamid && message.content === generated.text)) throw new Error("proof-crm-output-link-broken");
   return { mode: "fixture" as const, executed: true as const, externalProof: false as const, episodeId: claimed.episodeId,
     claimToken: claim.claimToken, frame: framed.frame, sent, textHash: digest(generated.text), thread,
     deferredUsageUI: DEFERRED_USAGE_UI };

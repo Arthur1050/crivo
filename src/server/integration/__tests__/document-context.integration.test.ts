@@ -1,3 +1,4 @@
+import { realEstate } from "../../../verticals/real-estate";
 import "dotenv/config";
 import { Buffer } from "node:buffer";
 import { randomUUID } from "node:crypto";
@@ -6,8 +7,9 @@ import { eq, inArray } from "drizzle-orm";
 import { db } from "../../../db";
 import { documentCategories, documentFolders, documents, tenants } from "../../../db/schema";
 import { moveDocumentsToFolder } from "../../data/document-folders";
-import { buildCanonicalContext, measureCanonicalContext } from "../../documents/context-budget";
-import { getDirectDocumentContext } from "../context";
+import { measureCanonicalContext } from "../../documents/context-budget";
+import { buildCanonicalContext } from "../../documents/context-budget";
+import { getDirectDocumentContext } from "../../../kit/document-context";
 
 const TENANT_A = randomUUID();
 const TENANT_B = randomUUID();
@@ -24,7 +26,7 @@ async function createDocument(
   const [row] = await db.insert(documents).values({
     tenantId,
     name: `doc-${seed}.txt`,
-    modality: "novo",
+    segment: "novo",
     mimeType: "text/plain",
     sizeBytes: 12n,
     storageProvider: "vercel_blob",
@@ -40,13 +42,13 @@ async function createDocument(
   return row;
 }
 
-const query = (modality: "novo" | "usado" | "ambos", question = "qual a política?") => ({ modality, question });
+const query = (segment: "novo" | "usado" | "ambos", question = "qual a política?") => ({ segment, question });
 
 describe("fonte direta de contexto documental (lote-12 T20)", () => {
   beforeAll(async () => {
     await db.insert(tenants).values([
-      { id: TENANT_A, name: "Contexto A", agentName: "A", supportedModality: "ambos", slug: `ctx-a-${TENANT_A}` },
-      { id: TENANT_B, name: "Contexto B", agentName: "B", supportedModality: "ambos", slug: `ctx-b-${TENANT_B}` },
+      { id: TENANT_A, name: "Contexto A", agentName: "A", supportedSegment: "ambos", slug: `ctx-a-${TENANT_A}` },
+      { id: TENANT_B, name: "Contexto B", agentName: "B", supportedSegment: "ambos", slug: `ctx-b-${TENANT_B}` },
     ]);
     await db.insert(documentCategories).values({
       id: CATEGORY_A, tenantId: TENANT_A, name: "Políticas", color: "blue",
@@ -85,9 +87,9 @@ describe("fonte direta de contexto documental (lote-12 T20)", () => {
   describe("compatibilidade de modalidade (AC2, AC3, AC4)", () => {
     it("modalidade novo inclui novo e ambos e exclui exclusivamente usado", async () => {
       await clear();
-      const novo = await createDocument({ modality: "novo" });
-      const ambos = await createDocument({ modality: "ambos" });
-      await createDocument({ modality: "usado" });
+      const novo = await createDocument({ segment: "novo" });
+      const ambos = await createDocument({ segment: "ambos" });
+      await createDocument({ segment: "usado" });
 
       const envelope = await getDirectDocumentContext(TENANT_A, query("novo"), NOW);
 
@@ -96,9 +98,9 @@ describe("fonte direta de contexto documental (lote-12 T20)", () => {
 
     it("modalidade usado inclui usado e ambos e exclui exclusivamente novo", async () => {
       await clear();
-      const usado = await createDocument({ modality: "usado" });
-      const ambos = await createDocument({ modality: "ambos" });
-      await createDocument({ modality: "novo" });
+      const usado = await createDocument({ segment: "usado" });
+      const ambos = await createDocument({ segment: "ambos" });
+      await createDocument({ segment: "novo" });
 
       const envelope = await getDirectDocumentContext(TENANT_A, query("usado"), NOW);
 
@@ -107,9 +109,9 @@ describe("fonte direta de contexto documental (lote-12 T20)", () => {
 
     it("modalidade ambos inclui as três modalidades", async () => {
       await clear();
-      const novo = await createDocument({ modality: "novo" });
-      const usado = await createDocument({ modality: "usado" });
-      const ambos = await createDocument({ modality: "ambos" });
+      const novo = await createDocument({ segment: "novo" });
+      const usado = await createDocument({ segment: "usado" });
+      const ambos = await createDocument({ segment: "ambos" });
 
       const envelope = await getDirectDocumentContext(TENANT_A, query("ambos"), NOW);
 
@@ -118,7 +120,7 @@ describe("fonte direta de contexto documental (lote-12 T20)", () => {
 
     it("modalidade ambos não duplica o documento cadastrado como ambos", async () => {
       await clear();
-      const ambos = await createDocument({ modality: "ambos" });
+      const ambos = await createDocument({ segment: "ambos" });
 
       const envelope = await getDirectDocumentContext(TENANT_A, query("ambos"), NOW);
 
@@ -236,8 +238,8 @@ describe("fonte direta de contexto documental (lote-12 T20)", () => {
   describe("estabilidade e ordem (AC8, AC10, AC11)", () => {
     it("perguntas diferentes devolvem o mesmo envelope byte a byte", async () => {
       await clear();
-      await createDocument({ modality: "ambos" });
-      await createDocument({ modality: "novo" });
+      await createDocument({ segment: "ambos" });
+      await createDocument({ segment: "novo" });
 
       const primeira = await getDirectDocumentContext(TENANT_A, query("ambos", "qual a comissão?"), NOW);
       const segunda = await getDirectDocumentContext(TENANT_A, query("ambos", "posso financiar?"), NOW);
@@ -281,20 +283,20 @@ describe("fonte direta de contexto documental (lote-12 T20)", () => {
   describe("paridade com a medição de teto de T12", () => {
     it("a serialização entregue é a mesma que a admissão mediu", async () => {
       await clear();
-      const documento = await createDocument({ modality: "ambos", extractedText: "corpo medido" });
+      const documento = await createDocument({ segment: "ambos", extractedText: "corpo medido" });
 
       const envelope = await getDirectDocumentContext(TENANT_A, query("ambos"), NOW);
       const esperado = buildCanonicalContext(
         [{
           id: documento.id,
           name: documento.name,
-          modality: "ambos",
+          segment: "ambos",
           content: "corpo medido",
           uploadedAt: documento.uploadedAt,
           status: "pronto",
           category: null,
         }],
-        "ambos"
+        "ambos", realEstate.documentSegments
       );
 
       expect(JSON.stringify(envelope)).toBe(JSON.stringify(esperado));

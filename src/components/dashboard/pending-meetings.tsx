@@ -11,20 +11,20 @@ import { Table, pixel, proportional } from "@astryxdesign/core/Table";
 import type { TableColumn } from "@astryxdesign/core/Table";
 import { Text } from "@astryxdesign/core/Text";
 import { Timestamp } from "@astryxdesign/core/Timestamp";
-import { setMeetingAttendanceAction } from "@/src/server/actions/pipeline";
+import { setAppointmentAttendanceAction } from "@/src/server/actions/pipeline";
 
 const FALLBACK = "—";
 
 /**
  * Linha já SERIALIZADA para atravessar a fronteira RSC→client (AD-007):
- * `meetingAt` vem em ISO — a coluna de origem (`PendingMeeting.meetingAt`,
+ * `appointmentAt` vem em ISO — a coluna de origem (`PendingAppointment.appointmentAt`,
  * `src/server/data/index.ts`) é `Date`.
  */
 export interface PendingMeetingRow extends Record<string, unknown> {
   leadId: string;
   leadName: string;
-  meetingAt: string;
-  brokerName: string | null;
+  appointmentAt: string;
+  assigneeName: string | null;
 }
 
 interface PendingMeetingsProps {
@@ -34,7 +34,7 @@ interface PendingMeetingsProps {
 /**
  * Bloco "Reuniões a confirmar" do Dashboard (lote-9 — PRES-01): lista
  * reuniões encerradas sem comparecimento registrado, ainda dentro da janela
- * de 14 dias (`getPendingAttendanceMeetings`, T19), com confirmação em um
+ * de 14 dias (`getPendingAttendanceAppointments`, T19), com confirmação em um
  * clique. Mesmo padrão de mutação de `src/components/pipeline/lead-controls.tsx`:
  * a action decide, o componente só reflete o resultado — sem estado
  * otimista aqui porque a linha inteira desaparece da lista assim que deixa
@@ -49,7 +49,7 @@ export function PendingMeetings({ rows }: PendingMeetingsProps) {
     setError(null);
     setPendingLeadId(leadId);
 
-    const result = await setMeetingAttendanceAction({ leadId, attended });
+    const result = await setAppointmentAttendanceAction({ leadId, attended });
     setPendingLeadId(null);
 
     if (!result.ok) {
@@ -72,12 +72,12 @@ export function PendingMeetings({ rows }: PendingMeetingsProps) {
       ),
     },
     {
-      key: "brokerName",
+      key: "assigneeName",
       header: "Corretor",
       width: proportional(1),
       renderCell: (row) =>
-        row.brokerName ? (
-          <Text type="body">{row.brokerName}</Text>
+        row.assigneeName ? (
+          <Text type="body">{row.assigneeName}</Text>
         ) : (
           <Text type="body" color="secondary">
             {FALLBACK}
@@ -85,10 +85,10 @@ export function PendingMeetings({ rows }: PendingMeetingsProps) {
         ),
     },
     {
-      key: "meetingAt",
+      key: "appointmentAt",
       header: "Reunião",
       width: pixel(160),
-      renderCell: (row) => <Timestamp value={row.meetingAt} format="date" />,
+      renderCell: (row) => <Timestamp value={row.appointmentAt} format="date" />,
     },
     {
       key: "confirmacao",

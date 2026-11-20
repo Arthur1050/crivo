@@ -1,11 +1,11 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { auditProactiveBenchmark, checkBenchmarkIdentity, currentIdentity, planBenchmarkRemediation, validateMeasuredIdentity, type BenchmarkResultsFile, type MeasuredLimit } from "../document-context-benchmark";
+import { auditProactiveBenchmark, benchmarkRuns, checkBenchmarkIdentity, currentIdentity, planBenchmarkRemediation, validateMeasuredIdentity, type BenchmarkResultsFile, type MeasuredLimit } from "../document-context-benchmark";
 import { deriveBenchmarkIdentity } from "../../src/server/documents/benchmark-identity";
 import { computeContextCeiling } from "../../src/server/documents/context-ceiling";
-import { buildSystemMessage } from "../../n8n/src/system-message.mjs";
-import { buildReengagementPrompt } from "../../n8n/src/reengagement-prompt.mjs";
+import { buildSystemMessage } from "../../n8n/verticals/real-estate/src/system-message.mjs";
+import { buildReengagementPrompt } from "../../n8n/verticals/real-estate/src/reengagement-prompt.mjs";
 import { reengagementFixtureFrame as frame } from "../../n8n/src/__tests__/reengagement-fixtures";
 
 const recorded = JSON.parse(readFileSync(".specs/archive/lote-14-humano-no-laco/benchmark-contexto-2026-10-01.json", "utf8")) as BenchmarkResultsFile;
@@ -13,7 +13,7 @@ const recorded = JSON.parse(readFileSync(".specs/archive/lote-14-humano-no-laco/
 const previous = currentIdentity(recorded.agentWorkflowVersion, "5d937b9578a968527e65ba2524929225f0e25dc5");
 const current = currentIdentity(recorded.agentWorkflowVersion);
 const measured: MeasuredLimit = { identity: previous, benchmarkedAt: recorded.benchmarkedAt,
-  maxResponseBytes: computeContextCeiling(recorded.runs, "ambos").maxResponseBytes };
+  maxResponseBytes: computeContextCeiling(benchmarkRuns(recorded), "ambos").maxResponseBytes };
 const settings = { agentName: "Ana Fixture", realEstateName: "Imóveis Fixture" };
 const digest = (value: string) => createHash("sha256").update(value).digest("hex");
 function audit(limit: MeasuredLimit | null = measured, identity = current) {
@@ -26,9 +26,13 @@ describe("T66 — identidade factual, paridade e orçamento proativo AD-031", ()
     expect(previous.systemMessageHash).toBe("b38f4928cd281edcaa85f4514460e2b5aa0e7c573694729cfabf520d94cd348d");
     expect(current).toEqual(previous);
     expect(audit()).toMatchObject({ sharedIdentityEqual: true, changed: [], stale: false, capacityVerified: true });
-    const sources = ["business-hours.mjs", "phase.mjs", "system-message.mjs"].map((file) => readFileSync(`n8n/src/${file}`, "utf8"));
+    const sources = [
+      "n8n/src/business-hours.mjs",
+      "n8n/verticals/real-estate/src/phase.mjs",
+      "n8n/verticals/real-estate/src/system-message.mjs",
+    ].map((file) => readFileSync(file, "utf8"));
     sources[2] += "\n// Mudança sintética do prompt compartilhado";
-    const changed = deriveBenchmarkIdentity({ principalSource: readFileSync("n8n/workflows/principal.ts", "utf8"),
+    const changed = deriveBenchmarkIdentity({ workflowSource: readFileSync("n8n/generated/principal.ts", "utf8"),
       systemMessageSources: sources, workflowVersion: recorded.agentWorkflowVersion });
     expect(changed.systemMessageHash).not.toBe(previous.systemMessageHash);
     expect(audit(measured, changed)).toMatchObject({ sharedIdentityEqual: false, changed: ["systemMessageHash"], stale: true, capacityVerified: false });
@@ -79,7 +83,7 @@ describe("T66 — identidade factual, paridade e orçamento proativo AD-031", ()
     const stale = audit({ ...measured, staleAt: new Date("2026-10-02T00:00:00Z") });
     expect(stale).toMatchObject({ measured: true, stale: true, capacityVerified: false, code: "remeasurement-required" });
     expect(stale.budget.limitingCeilingBytes).toBe(measured.maxResponseBytes);
-    const rows = [{ ...previous, tenantId: "fixture", queryModality: "ambos" as const, staleAt: null as Date | null, maxResponseBytes: measured.maxResponseBytes }];
+    const rows = [{ ...previous, tenantId: "fixture", querySegment: "ambos" as const, staleAt: null as Date | null, maxResponseBytes: measured.maxResponseBytes }];
     const mark = vi.fn(async () => { rows[0].staleAt = new Date("2026-10-02T00:00:00Z"); return true; });
     const dependencies = { identity: { ...current, workflowVersion: "updated" }, list: async () => rows, markStale: mark };
     expect(await checkBenchmarkIdentity("updated", dependencies)).toEqual({ checked: 1, marked: 1, paidCalls: 0 });
@@ -103,7 +107,7 @@ describe("T66 — identidade factual, paridade e orçamento proativo AD-031", ()
     const fetch = vi.fn().mockRejectedValue(new Error("Não executar chamada paga")); vi.stubGlobal("fetch", fetch);
     const mark = vi.fn();
     expect(await checkBenchmarkIdentity(recorded.agentWorkflowVersion, { identity: current,
-      list: async () => [{ ...previous, tenantId: "fixture", queryModality: "novo", staleAt: null }], markStale: mark })).toEqual({ checked: 1, marked: 0, paidCalls: 0 });
+      list: async () => [{ ...previous, tenantId: "fixture", querySegment: "novo", staleAt: null }], markStale: mark })).toEqual({ checked: 1, marked: 0, paidCalls: 0 });
     expect(mark).not.toHaveBeenCalled();
     expect(planBenchmarkRemediation(audit())).toMatchObject({ required: false, ready: false, paidCalls: 0 });
     expect(planBenchmarkRemediation(audit(null))).toMatchObject({ required: true, ready: false, paidCalls: 0, code: "executor-evidence-required" });

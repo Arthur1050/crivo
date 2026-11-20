@@ -4,7 +4,7 @@ import { afterAll, afterEach, describe, expect, it } from "vitest";
 import { inArray } from "drizzle-orm";
 import { db } from "../../../db";
 import { leads, tenant_members, tenants, users } from "../../../db/schema";
-import { getPendingAttendanceMeetings, serviceScope } from "../index";
+import { getPendingAttendanceAppointments, serviceScope } from "../index";
 
 // Mesmo molde de isolamento de `lead-controls.test.ts` (lote-7, T7):
 // tenants + corretores + leads PRÓPRIOS deste arquivo, nunca o snapshot do
@@ -16,7 +16,7 @@ async function createTenant(name: string): Promise<string> {
     id,
     name,
     agentName: "Agente Teste",
-    supportedModality: "ambos",
+    supportedSegment: "ambos",
     slug: `fixture-${id}`,
   });
   return id;
@@ -44,8 +44,8 @@ async function createLead(
   tenantId: string,
   options: {
     assignedUserId?: string | null;
-    meetingAt?: Date | null;
-    meetingAttended?: boolean | null;
+    appointmentAt?: Date | null;
+    appointmentAttended?: boolean | null;
     name?: string;
   } = {}
 ): Promise<string> {
@@ -58,8 +58,8 @@ async function createLead(
     phone: "+55 34 90000-2222",
     status: "qualificado_agendado",
     firstContactAt: new Date(),
-    meetingAt: options.meetingAt ?? null,
-    meetingAttended: options.meetingAttended ?? null,
+    appointmentAt: options.appointmentAt ?? null,
+    appointmentAttended: options.appointmentAttended ?? null,
   });
   return id;
 }
@@ -71,7 +71,7 @@ const THIRTY_MIN_MS = 30 * 60 * 1000;
 const DAY_MS = 86400000;
 
 /**
- * `meetingAt` cujo encerramento (+30min do design.md) caiu exatamente
+ * `appointmentAt` cujo encerramento (+30min do design.md) caiu exatamente
  * `days` dias antes de `NOW`.
  */
 function meetingEndedDaysAgo(days: number): Date {
@@ -102,53 +102,53 @@ describe("server/data — getPendingAttendanceMeetings (lote-9, T19)", () => {
   it("reunião que ainda não terminou (dentro dos 30min do slot) não aparece", async () => {
     const tenantId = await createTenant("Tenant Pending Not Ended");
     createdTenantIds.push(tenantId);
-    const brokerId = await createBroker(tenantId, "Corretor");
+    const assigneeId = await createBroker(tenantId, "Corretor");
     await createLead(tenantId, {
-      assignedUserId: brokerId,
-      meetingAt: new Date(NOW.getTime() - 10 * 60 * 1000),
+      assignedUserId: assigneeId,
+      appointmentAt: new Date(NOW.getTime() - 10 * 60 * 1000),
     });
 
-    const result = await getPendingAttendanceMeetings(serviceScope(tenantId), NOW);
+    const result = await getPendingAttendanceAppointments(serviceScope(tenantId), NOW);
     expect(result).toHaveLength(0);
   });
 
   it("reunião encerrada há 13 dias aparece; há 15 dias não aparece (prescrição de 14 dias)", async () => {
     const tenantId = await createTenant("Tenant Pending Window");
     createdTenantIds.push(tenantId);
-    const brokerId = await createBroker(tenantId, "Corretor");
+    const assigneeId = await createBroker(tenantId, "Corretor");
     const lead13d = await createLead(tenantId, {
-      assignedUserId: brokerId,
-      meetingAt: meetingEndedDaysAgo(13),
+      assignedUserId: assigneeId,
+      appointmentAt: meetingEndedDaysAgo(13),
       name: "Lead 13 Dias",
     });
     await createLead(tenantId, {
-      assignedUserId: brokerId,
-      meetingAt: meetingEndedDaysAgo(15),
+      assignedUserId: assigneeId,
+      appointmentAt: meetingEndedDaysAgo(15),
       name: "Lead 15 Dias",
     });
 
-    const result = await getPendingAttendanceMeetings(serviceScope(tenantId), NOW);
+    const result = await getPendingAttendanceAppointments(serviceScope(tenantId), NOW);
     expect(result.map((m) => m.leadId)).toEqual([lead13d]);
   });
 
   it("reunião com comparecimento já registrado (true ou false) não aparece", async () => {
     const tenantId = await createTenant("Tenant Pending Attended");
     createdTenantIds.push(tenantId);
-    const brokerId = await createBroker(tenantId, "Corretor");
+    const assigneeId = await createBroker(tenantId, "Corretor");
     await createLead(tenantId, {
-      assignedUserId: brokerId,
-      meetingAt: meetingEndedDaysAgo(5),
-      meetingAttended: true,
+      assignedUserId: assigneeId,
+      appointmentAt: meetingEndedDaysAgo(5),
+      appointmentAttended: true,
     });
     // `(tenant_id, assigned_user_id, meeting_at)` é único quando os dois
-    // últimos não são nulos — meetingAt precisa diferir do lead acima.
+    // últimos não são nulos — appointmentAt precisa diferir do lead acima.
     await createLead(tenantId, {
-      assignedUserId: brokerId,
-      meetingAt: meetingEndedDaysAgo(6),
-      meetingAttended: false,
+      assignedUserId: assigneeId,
+      appointmentAt: meetingEndedDaysAgo(6),
+      appointmentAttended: false,
     });
 
-    const result = await getPendingAttendanceMeetings(serviceScope(tenantId), NOW);
+    const result = await getPendingAttendanceAppointments(serviceScope(tenantId), NOW);
     expect(result).toHaveLength(0);
   });
 
@@ -158,33 +158,33 @@ describe("server/data — getPendingAttendanceMeetings (lote-9, T19)", () => {
     const ownBrokerId = await createBroker(tenantId, "Corretor Dono");
     const otherBrokerId = await createBroker(tenantId, "Outro Corretor");
 
-    // meetingAt em ordem crescente de "há quantos dias encerrou": o sem
+    // appointmentAt em ordem crescente de "há quantos dias encerrou": o sem
     // responsável encerrou primeiro (3d), depois o de outro corretor (2d),
     // depois o do próprio corretor (1d) — prova a ordenação por urgência
     // (mais antiga primeiro) de quebra.
     const unassignedLeadId = await createLead(tenantId, {
       assignedUserId: null,
-      meetingAt: meetingEndedDaysAgo(3),
+      appointmentAt: meetingEndedDaysAgo(3),
       name: "Lead Sem Responsavel",
     });
     const otherLeadId = await createLead(tenantId, {
       assignedUserId: otherBrokerId,
-      meetingAt: meetingEndedDaysAgo(2),
+      appointmentAt: meetingEndedDaysAgo(2),
       name: "Lead Outro Corretor",
     });
     const ownLeadId = await createLead(tenantId, {
       assignedUserId: ownBrokerId,
-      meetingAt: meetingEndedDaysAgo(1),
+      appointmentAt: meetingEndedDaysAgo(1),
       name: "Lead Proprio",
     });
 
-    const ownerResult = await getPendingAttendanceMeetings(
+    const ownerResult = await getPendingAttendanceAppointments(
       { tenantId, assignedUserId: ownBrokerId },
       NOW
     );
     expect(ownerResult.map((m) => m.leadId)).toEqual([ownLeadId]);
 
-    const adminResult = await getPendingAttendanceMeetings(serviceScope(tenantId), NOW);
+    const adminResult = await getPendingAttendanceAppointments(serviceScope(tenantId), NOW);
     expect(adminResult.map((m) => m.leadId)).toEqual([
       unassignedLeadId,
       otherLeadId,
@@ -193,9 +193,9 @@ describe("server/data — getPendingAttendanceMeetings (lote-9, T19)", () => {
 
     const own = adminResult.find((m) => m.leadId === ownLeadId);
     const unassigned = adminResult.find((m) => m.leadId === unassignedLeadId);
-    expect(own?.brokerName).toBe("Corretor Dono");
+    expect(own?.assigneeName).toBe("Corretor Dono");
     expect(own?.assignedUserId).toBe(ownBrokerId);
-    expect(unassigned?.brokerName).toBeNull();
+    expect(unassigned?.assigneeName).toBeNull();
     expect(unassigned?.assignedUserId).toBeNull();
   });
 });

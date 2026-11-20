@@ -1,3 +1,4 @@
+import { SENDER } from "./vocabulary";
 /**
  * Agrupamento de uma thread de conversa (redesign-crm-astryx — RD-06 AC2/AC3,
  * design.md § R5). Função PURA: recebe as mensagens já ordenadas
@@ -24,7 +25,7 @@
  * carrega `authorName` para a thread exibir quem escreveu.
  */
 
-export type ChatSender = "lead" | "agente" | "humano";
+export type ChatSender = "lead" | typeof SENDER.agent | typeof SENDER.human;
 
 /** Mensagem já serializada para atravessar a fronteira RSC→client (AD-007). */
 export interface ChatThreadMessageInput {
@@ -99,7 +100,7 @@ export function buildChatThread(
     days[days.length - 1].groups.push({
       key: pending[0].id,
       sender: pending[0].sender,
-      authorName: pending[0].sender === "humano" ? pending[0].authorName ?? null : null,
+      authorName: pending[0].sender === SENDER.human ? pending[0].authorName ?? null : null,
       bubbles: withBubbleGroups(pending),
     });
     pending = [];
@@ -115,7 +116,7 @@ export function buildChatThread(
     } else if (
       pending.length > 0 &&
       (pending[0].sender !== message.sender ||
-        (message.sender === "humano" && pending[0].authorName !== message.authorName))
+        (message.sender === SENDER.human && pending[0].authorName !== message.authorName))
     ) {
       flushGroup();
     }

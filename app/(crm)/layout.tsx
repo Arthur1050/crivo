@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { AppShell } from "@astryxdesign/core/AppShell";
 import { getLastAgentMessageAt, getMembership } from "@/src/server/data";
 import { getLinkedTenants, setActiveTenant } from "@/src/server/tenant";
-import { verifySession } from "@/src/server/auth/session";
+import { verifySession } from "@/src/kit/session";
 import { Sidebar } from "@/src/components/shell/sidebar";
 
 /**

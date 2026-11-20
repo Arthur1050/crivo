@@ -1,18 +1,19 @@
 "use server";
 
+import { ROLE } from "../../lib/vocabulary";
 import { revalidatePath } from "next/cache";
-import { verifySession } from "../auth/session";
+import { verifySession } from "../../kit/session";
 import { denyIfForbidden } from "./permission";
-import { assignBroker, type BrokerLoad } from "../../lib/broker-assignment";
+import { assignAssignee, type AssigneeLoad } from "../../lib/assignee-assignment";
 import {
   countActiveAdministrators,
   deactivateMembership,
   getActiveLeadsOfMember,
-  getBrokerLoads,
+  getAssigneeLoads,
   getTenantMemberById,
-  getUpcomingMeetingsOfMember,
+  getUpcomingAppointmentsOfMember,
   transferCarteiraAndDeactivate,
-  updateLeadBroker,
+  updateLeadAssignee,
 } from "../data";
 
 /**
@@ -25,14 +26,14 @@ import {
  * exatamente aí que um cliente ficaria sem atendimento.
  */
 
-export type CarteiraDestination =
-  | { tipo: "transferir"; corretorId: string }
-  | { tipo: "redistribuir" }
-  | { tipo: "manter" };
+export type PortfolioDestination =
+  | { kind: "transferir"; assigneeId: string }
+  | { kind: "redistribuir" }
+  | { kind: "manter" };
 
 export interface DeactivateMemberInput {
   memberId: string;
-  destino?: CarteiraDestination;
+  destino?: PortfolioDestination;
 }
 
 export type DeactivateResult =
@@ -54,7 +55,7 @@ export interface DeactivationPreview {
   memberId: string;
   name: string;
   leadsAtivos: { id: string; name: string }[];
-  reunioesFuturas: { leadId: string; leadName: string; meetingAt: Date }[];
+  upcomingAppointments: { leadId: string; leadName: string; appointmentAt: Date }[];
 }
 
 export async function getDeactivationPreviewAction(input: {
@@ -62,16 +63,16 @@ export async function getDeactivationPreviewAction(input: {
 }): Promise<
   { ok: true; preview: DeactivationPreview } | { ok: false; error: string }
 > {
-  const denied = await denyIfForbidden("usuarios", "escrever");
+  const denied = await denyIfForbidden("users", "write");
   if (denied) return denied;
 
   const session = await verifySession();
   const member = await getTenantMemberById(session.tenantId, input.memberId);
   if (!member) return { ok: false, error: "Usuário não encontrado." };
 
-  const [ativos, reunioes] = await Promise.all([
+  const [ativos, appointments] = await Promise.all([
     getActiveLeadsOfMember(session.tenantId, member.userId),
-    getUpcomingMeetingsOfMember(session.tenantId, member.userId),
+    getUpcomingAppointmentsOfMember(session.tenantId, member.userId),
   ]);
 
   return {
@@ -80,7 +81,7 @@ export async function getDeactivationPreviewAction(input: {
       memberId: member.memberId,
       name: member.name,
       leadsAtivos: ativos.map((lead) => ({ id: lead.id, name: lead.name })),
-      reunioesFuturas: reunioes,
+      upcomingAppointments: appointments,
     },
   };
 }
@@ -88,7 +89,7 @@ export async function getDeactivationPreviewAction(input: {
 export async function deactivateMemberAction(
   input: DeactivateMemberInput
 ): Promise<DeactivateResult> {
-  const denied = await denyIfForbidden("usuarios", "escrever");
+  const denied = await denyIfForbidden("users", "write");
   if (denied) return denied;
 
   const session = await verifySession();
@@ -102,7 +103,7 @@ export async function deactivateMemberAction(
   // AC8 da task / Edge Case do último administrador: vale inclusive quando o
   // administrador tenta desativar a si mesmo, porque a regra olha o vínculo,
   // não quem está pedindo.
-  if (member.roles.includes("administrador")) {
+  if (member.roles.includes(ROLE.admin)) {
     const remaining = await countActiveAdministrators(
       session.tenantId,
       member.memberId
@@ -136,8 +137,8 @@ export async function deactivateMemberAction(
     };
   }
 
-  if (input.destino.tipo === "transferir") {
-    if (input.destino.corretorId === member.userId) {
+  if (input.destino.kind === "transferir") {
+    if (input.destino.assigneeId === member.userId) {
       return {
         ok: false,
         error: "Escolha um corretor diferente para receber a carteira.",
@@ -150,7 +151,7 @@ export async function deactivateMemberAction(
       tenantId: session.tenantId,
       memberId: member.memberId,
       fromUserId: member.userId,
-      toUserId: input.destino.corretorId,
+      toUserId: input.destino.assigneeId,
       now: new Date(),
     });
 
@@ -171,11 +172,11 @@ export async function deactivateMemberAction(
     };
   }
 
-  if (input.destino.tipo === "redistribuir") {
+  if (input.destino.kind === "redistribuir") {
     // Candidatos são os corretores ATIVOS da imobiliária, menos quem está
-    // saindo. `getBrokerLoads` já exclui vínculo desativado.
-    const candidates: BrokerLoad[] = (
-      await getBrokerLoads(session.tenantId)
+    // saindo. `getAssigneeLoads` já exclui vínculo desativado.
+    const candidates: AssigneeLoad[] = (
+      await getAssigneeLoads(session.tenantId)
     ).filter((candidate) => candidate.id !== member.userId);
 
     if (candidates.length === 0) {
@@ -189,14 +190,14 @@ export async function deactivateMemberAction(
     let reatribuidos = 0;
 
     for (const lead of ativos) {
-      const chosen = assignBroker(candidates);
+      const chosen = assignAssignee(candidates);
       if (!chosen) break;
 
       // Escopo de imobiliária inteira, nunca o do ator (lote-9 — SCOPE-02):
       // esta redistribuição move a carteira INTEIRA de quem está saindo,
       // não só os leads do administrador/gestor que está desativando o
       // membro — a permissão já foi checada acima (`usuarios:escrever`).
-      const updated = await updateLeadBroker(
+      const updated = await updateLeadAssignee(
         { tenantId: session.tenantId, assignedUserId: null },
         lead.id,
         chosen
@@ -221,7 +222,7 @@ export async function deactivateMemberAction(
   }
 
   // AC4: manter preserva a atribuição. O sinal de "responsável inativo" é
-  // derivado do vínculo desativado (`LeadWithBroker.brokerDeactivatedAt`),
+  // derivado do vínculo desativado (`LeadWithAssignee.assigneeDeactivatedAt`),
   // sem tocar em nenhum lead.
   await deactivateMembership(session.tenantId, member.memberId);
   revalidatePath("/usuarios");

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { sendTestIntegrationAlert } from "../send-test-integration-alert";
-import type { EmailResult } from "../../src/server/auth/email";
+import type { EmailResult } from "../../src/kit/email";
 
 const OPERATOR = "operador@fixture.test";
 

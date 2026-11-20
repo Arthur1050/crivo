@@ -1,3 +1,4 @@
+import { SENDER } from "../../lib/vocabulary";
 import { Fragment } from "react";
 import { Avatar } from "@astryxdesign/core/Avatar";
 import {
@@ -83,7 +84,7 @@ export function MessageThread({
             // mensagem. Avatar e nome são o que distinguem a fala humana da
             // do agente.
             const isLead = group.sender === "lead";
-            const isHuman = group.sender === "humano";
+            const isHuman = group.sender === SENDER.human;
             const authorName = group.authorName ?? "Equipe";
             const lastIndex = group.bubbles.length - 1;
 

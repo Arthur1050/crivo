@@ -1,13 +1,14 @@
+import { access } from "@/src/kit/access";
 import { notFound } from "next/navigation";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Heading, Text } from "@astryxdesign/core/Text";
-import { InviteUserDialog } from "@/src/components/usuarios/invite-user-dialog";
-import { UsersTable } from "@/src/components/usuarios/users-table";
+import { InviteUserDialog } from "@/src/components/users/invite-user-dialog";
+import { UsersTable } from "@/src/components/users/users-table";
 import {
   PermissionDeniedError,
   requirePermission,
-} from "@/src/server/auth/session";
+} from "@/src/kit/session";
 import { getTenantMembers } from "@/src/server/data";
 
 /**
@@ -18,10 +19,10 @@ import { getTenantMembers } from "@/src/server/data";
  * desfecho é "recurso inexistente" — o mesmo de um recurso de outra
  * imobiliária (spec.md — Edge Cases), em vez de confirmar que a tela existe.
  */
-export default async function UsuariosPage() {
+export default async function UsersPage() {
   let context;
   try {
-    context = await requirePermission("usuarios", "ler");
+    context = await requirePermission("users", "read", access);
   } catch (error) {
     if (error instanceof PermissionDeniedError) notFound();
     throw error;

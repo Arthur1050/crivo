@@ -1,8 +1,9 @@
+import { ROLE, SENDER } from "../../lib/vocabulary";
 import "server-only";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { db } from "../../db";
 import { conversations, leads, messages, whatsappChannels, whatsappMessageReceipts, whatsappUsage } from "../../db/schema";
-import { can } from "../../lib/permissions";
+import { coreAccess } from "../../lib/access";
 import type { AuthContext } from "../auth/session";
 import type { AuthResult } from "../integration/auth";
 import { createAnalyticsQuery } from "../whatsapp/analytics-contract";
@@ -20,9 +21,9 @@ type Period = typeof whatsappUsage.$inferSelect;
 type ReadOptions = { now?: () => Date };
 const unavailable = (): UsageView => ({ state: "unavailable", label: "Consumo indisponível" });
 
-function authorized(context: AuthContext, resource: "chats" | "configuracoes") {
-  return context.tenantId === context.leadScope.tenantId && can(context.roles, resource, "ler")
-    && (context.roles.some((role) => role !== "corretor") || context.leadScope.assignedUserId === context.user.id);
+function authorized(context: AuthContext, resource: "chats" | "settings") {
+  return context.tenantId === context.leadScope.tenantId && coreAccess.can(context.roles, resource, "read")
+    && (context.roles.some((role) => role !== ROLE.attendant) || context.leadScope.assignedUserId === context.user.id);
 }
 function assignedTo(context: AuthContext) {
   return context.leadScope.assignedUserId === null ? undefined : eq(leads.assignedUserId, context.leadScope.assignedUserId);
@@ -61,7 +62,7 @@ async function readUsage(tenantId: string, now: Date, phoneNumberId?: string): P
 }
 
 export async function getSettingsUsage(context: AuthContext, options: ReadOptions = {}): Promise<UsageView[]> {
-  if (!authorized(context, "configuracoes")) return [];
+  if (!authorized(context, "settings")) return [];
   return readUsage(context.tenantId, (options.now ?? (() => new Date()))());
 }
 /** Contexto já autenticado pelo wrapper de integração; leitura restrita ao número e tenant. */
@@ -92,7 +93,7 @@ export async function getMessageClassifications(context: AuthContext, conversati
     .leftJoin(whatsappMessageReceipts, and(eq(whatsappMessageReceipts.tenantId, messages.tenantId),
       eq(whatsappMessageReceipts.messageId, messages.id), eq(whatsappMessageReceipts.phoneNumberId, messages.whatsappPhoneNumberId),
       eq(whatsappMessageReceipts.wamid, messages.externalId)))
-    .where(and(eq(messages.tenantId, context.tenantId), eq(conversations.id, conversationId), assignedTo(context), inArray(messages.sender, ["agente", "humano"])))
+    .where(and(eq(messages.tenantId, context.tenantId), eq(conversations.id, conversationId), assignedTo(context), inArray(messages.sender, [SENDER.agent, SENDER.human])))
     .orderBy(asc(messages.sentAt), asc(messages.id));
   return rows.map((row) => {
     const state: MessagePricingView["state"] = !row.phone || !row.wamid ? "unavailable"

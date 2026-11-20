@@ -3,9 +3,10 @@ import { randomUUID } from "node:crypto";
 import { eq, inArray } from "drizzle-orm";
 import { afterAll, describe, expect, it } from "vitest";
 import { db } from "../../../db";
-import { tenants, tenantStorefronts } from "../../../db/schema";
-import type { StorefrontValue } from "../../../lib/storefront";
-import { getStorefront, getTenantSlug, saveStorefront } from "../storefront";
+import { tenants } from "../../../db/schema";
+import { tenantStorefronts } from "../../../verticals/real-estate/schema";
+import type { StorefrontValue } from "../../../verticals/real-estate/storefront/validation";
+import { getStorefront, getTenantSlug, saveStorefront } from "../../../verticals/real-estate/storefront/data";
 
 const created: string[] = [];
 
@@ -13,7 +14,7 @@ async function newTenant() {
   const id = randomUUID();
   created.push(id);
   await db.insert(tenants).values({
-    id, slug: `fixture-dal-vitrine-${id}`, name: "Fixture DAL vitrine", agentName: "Agente", supportedModality: "ambos",
+    id, slug: `fixture-dal-vitrine-${id}`, name: "Fixture DAL vitrine", agentName: "Agente", supportedSegment: "ambos",
   });
   return id;
 }

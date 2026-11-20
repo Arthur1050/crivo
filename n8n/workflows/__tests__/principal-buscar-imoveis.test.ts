@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import principal from "../principal";
+import principal from "../../generated/principal";
 
 /**
  * Tool `buscar_imoveis` no `krivo-agente-principal` (lote-11 — T22, BUSCA-04).

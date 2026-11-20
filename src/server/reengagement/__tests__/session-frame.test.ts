@@ -8,7 +8,8 @@ import { db } from "../../../db";
 import * as schema from "../../../db/schema";
 import { conversations, leadAgentState, leads, messages, reengagementEpisodes, tenants, whatsappChannels, whatsappMessageReceipts } from "../../../db/schema";
 import { authorizeDispatch, claimPreparation, reconcileAcceptance } from "../repository";
-import { getSessionFrame, prepareFrame } from "../context";
+import { getSessionFrame } from "../context";
+import { prepareFrame } from "../../../kit/reengagement";
 import { isSessionExpired, toSeedMemoryItem } from "../../../../n8n/src/session.mjs";
 
 const tenantId = randomUUID(), foreignTenant = randomUUID(), now = new Date("2026-10-06T15:00:00Z"), hour = 3600000;
@@ -64,7 +65,7 @@ async function waitForLock(pid: number) {
   }
   return false;
 }
-beforeAll(async () => { await db.insert(tenants).values([tenantId, foreignTenant].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T26", agentName: "Agente", supportedModality: "ambos" as const }))); });
+beforeAll(async () => { await db.insert(tenants).values([tenantId, foreignTenant].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T26", agentName: "Agente", supportedSegment: "ambos" as const }))); });
 afterAll(async () => {
   await db.delete(whatsappMessageReceipts).where(eq(whatsappMessageReceipts.tenantId, tenantId));
   await db.delete(reengagementEpisodes).where(eq(reengagementEpisodes.tenantId, tenantId)); await db.delete(leadAgentState).where(eq(leadAgentState.tenantId, tenantId));

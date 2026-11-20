@@ -38,7 +38,7 @@ vi.mock("next/headers", () => ({
   cookies: async () => ({ get: () => undefined, set: () => {} }),
 }));
 
-import { auth } from "../auth/config";
+import { auth } from "../../kit/auth";
 import { acceptInvitationAction } from "../actions/invitations";
 import { createInvitation, getInvitation } from "../data";
 
@@ -55,7 +55,7 @@ async function createTenant(name: string): Promise<string> {
     id,
     name,
     agentName: `Agente ${name}`,
-    supportedModality: "ambos",
+    supportedSegment: "ambos",
     slug: `fixture-${id}`,
   });
   createdTenantIds.push(id);

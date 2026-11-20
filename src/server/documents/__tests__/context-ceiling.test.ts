@@ -21,7 +21,7 @@ const POLICY: CeilingPolicy = {
 
 function run(overrides: Partial<BenchmarkRun>): BenchmarkRun {
   return {
-    modality: "ambos",
+    segment: "ambos",
     bandBytes: 64_000,
     envelopeBytes: 64_000,
     observations: 1,
@@ -113,7 +113,7 @@ describe("computeContextCeiling (lote-12 T34)", () => {
   });
 
   it("cada modalidade é calculada só com as próprias rodadas", () => {
-    const runs = [...BASE, ...BASE.map((r) => ({ ...r, modality: "novo" as const, approved: r.bandBytes !== 256_000 }))];
+    const runs = [...BASE, ...BASE.map((r) => ({ ...r, segment: "novo" as const, approved: r.bandBytes !== 256_000 }))];
     expect(computeContextCeiling(runs, "ambos", POLICY).components.quality).toBe(256_000);
     expect(computeContextCeiling(runs, "novo", POLICY).components.quality).toBe(64_000);
   });

@@ -4,7 +4,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest
 import { and, eq } from "drizzle-orm";
 import { db } from "../../../../db";
 import { documents, integrationRefusals, tenantApiKeys, tenantDocumentContextLimits, tenants } from "../../../../db/schema";
-import * as contextService from "../../context";
+import * as contextService from "../../../../kit/document-context";
 import { MAX_CONTEXT_QUESTION_LENGTH } from "../../parsers";
 import { POST } from "../../../../../app/api/v1/context/route";
 
@@ -38,8 +38,8 @@ describe("routes: POST /api/v1/context", () => {
     tenantAId = randomUUID();
     tenantBId = randomUUID();
     await db.insert(tenants).values([
-      { id: tenantAId, name: `Tenant A context-post ${tenantAId}`, agentName: "Agente A", supportedModality: "ambos", slug: `ctxpost-a-${tenantAId}` },
-      { id: tenantBId, name: `Tenant B context-post ${tenantBId}`, agentName: "Agente B", supportedModality: "ambos", slug: `ctxpost-b-${tenantBId}` },
+      { id: tenantAId, name: `Tenant A context-post ${tenantAId}`, agentName: "Agente A", supportedSegment: "ambos", slug: `ctxpost-a-${tenantAId}` },
+      { id: tenantBId, name: `Tenant B context-post ${tenantBId}`, agentName: "Agente B", supportedSegment: "ambos", slug: `ctxpost-b-${tenantBId}` },
     ]);
 
     apiKeyA = `test-key-${randomUUID()}`;
@@ -54,10 +54,10 @@ describe("routes: POST /api/v1/context", () => {
     docUsadoAId = randomUUID();
     docBId = randomUUID();
     await db.insert(documents).values([
-      { id: docNovoAId, tenantId: tenantAId, name: "Novo A.pdf", modality: "novo", mimeType: "application/pdf", sizeBytes: BigInt(100), storageProvider: "test", storageKey: `test/${tenantAId}/${docNovoAId}`, storageEtag: "e1", contentSha256: hash(docNovoAId), status: "pronto", extractedText: "texto do novo", uploadedAt: new Date("2032-01-01T00:00:00.000Z") },
-      { id: docAmbosAId, tenantId: tenantAId, name: "Ambos A.pdf", modality: "ambos", mimeType: "application/pdf", sizeBytes: BigInt(100), storageProvider: "test", storageKey: `test/${tenantAId}/${docAmbosAId}`, storageEtag: "e2", contentSha256: hash(docAmbosAId), status: "pronto", extractedText: "texto do ambos", uploadedAt: new Date("2032-02-01T00:00:00.000Z") },
-      { id: docUsadoAId, tenantId: tenantAId, name: "Usado A.pdf", modality: "usado", mimeType: "application/pdf", sizeBytes: BigInt(100), storageProvider: "test", storageKey: `test/${tenantAId}/${docUsadoAId}`, storageEtag: "e3", contentSha256: hash(docUsadoAId), status: "pronto", extractedText: "texto do usado", uploadedAt: new Date("2032-03-01T00:00:00.000Z") },
-      { id: docBId, tenantId: tenantBId, name: "Doc B.pdf", modality: "ambos", mimeType: "application/pdf", sizeBytes: BigInt(100), storageProvider: "test", storageKey: `test/${tenantBId}/${docBId}`, storageEtag: "e4", contentSha256: hash(docBId), status: "pronto", extractedText: "segredo exclusivo do tenant B", uploadedAt: new Date("2032-01-01T00:00:00.000Z") },
+      { id: docNovoAId, tenantId: tenantAId, name: "Novo A.pdf", segment: "novo", mimeType: "application/pdf", sizeBytes: BigInt(100), storageProvider: "test", storageKey: `test/${tenantAId}/${docNovoAId}`, storageEtag: "e1", contentSha256: hash(docNovoAId), status: "pronto", extractedText: "texto do novo", uploadedAt: new Date("2032-01-01T00:00:00.000Z") },
+      { id: docAmbosAId, tenantId: tenantAId, name: "Ambos A.pdf", segment: "ambos", mimeType: "application/pdf", sizeBytes: BigInt(100), storageProvider: "test", storageKey: `test/${tenantAId}/${docAmbosAId}`, storageEtag: "e2", contentSha256: hash(docAmbosAId), status: "pronto", extractedText: "texto do ambos", uploadedAt: new Date("2032-02-01T00:00:00.000Z") },
+      { id: docUsadoAId, tenantId: tenantAId, name: "Usado A.pdf", segment: "usado", mimeType: "application/pdf", sizeBytes: BigInt(100), storageProvider: "test", storageKey: `test/${tenantAId}/${docUsadoAId}`, storageEtag: "e3", contentSha256: hash(docUsadoAId), status: "pronto", extractedText: "texto do usado", uploadedAt: new Date("2032-03-01T00:00:00.000Z") },
+      { id: docBId, tenantId: tenantBId, name: "Doc B.pdf", segment: "ambos", mimeType: "application/pdf", sizeBytes: BigInt(100), storageProvider: "test", storageKey: `test/${tenantBId}/${docBId}`, storageEtag: "e4", contentSha256: hash(docBId), status: "pronto", extractedText: "segredo exclusivo do tenant B", uploadedAt: new Date("2032-01-01T00:00:00.000Z") },
     ]);
   });
 
@@ -77,7 +77,7 @@ describe("routes: POST /api/v1/context", () => {
 
   it("T47 reserva overhead no teto real: limite exato entrega íntegra, um byte abaixo recusa sem corte", async () => {
     const body = { modality: "novo", question: QUESTION }, response = await POST(makeRequest(body, apiKeyA), undefined), original = await response.json(), measured = Buffer.byteLength(JSON.stringify(original), "utf8");
-    await db.insert(tenantDocumentContextLimits).values({ tenantId: tenantAId, queryModality: "novo", maxResponseBytes: measured + 13, modelId: "fixture", workflowVersion: "fixture", systemMessageHash: "fixture", toolsHash: "fixture", memoryWindow: 50, benchmarkedAt: new Date(), staleAt: new Date(), metrics: {} });
+    await db.insert(tenantDocumentContextLimits).values({ tenantId: tenantAId, querySegment: "novo", maxResponseBytes: measured + 13, modelId: "fixture", workflowVersion: "fixture", systemMessageHash: "fixture", toolsHash: "fixture", memoryWindow: 50, benchmarkedAt: new Date(), staleAt: new Date(), metrics: {} });
     try {
       const exact = await POST(makeRequest({ ...body, reservedContextBytes: 13 }, apiKeyA), undefined); expect(exact.status).toBe(200); expect(await exact.json()).toEqual(original);
       await db.update(tenantDocumentContextLimits).set({ maxResponseBytes: measured + 12 }).where(eq(tenantDocumentContextLimits.tenantId, tenantAId));
@@ -87,7 +87,7 @@ describe("routes: POST /api/v1/context", () => {
   });
   it("T47 reserva inválida/sem teto próprio/erro técnico recusa sem ampliar ou vazar outro tenant", async () => {
     for (const reservedContextBytes of [-1, 1.5, "13", null, Number.MAX_SAFE_INTEGER + 1]) { const response = await POST(makeRequest({ modality: "novo", question: QUESTION, reservedContextBytes }, apiKeyA), undefined); expect(response.status).toBe(400); }
-    await db.insert(tenantDocumentContextLimits).values({ tenantId: tenantBId, queryModality: "novo", maxResponseBytes: 100000, modelId: "fixture", workflowVersion: "fixture", systemMessageHash: "fixture", toolsHash: "fixture", memoryWindow: 50, benchmarkedAt: new Date(), metrics: {} });
+    await db.insert(tenantDocumentContextLimits).values({ tenantId: tenantBId, querySegment: "novo", maxResponseBytes: 100000, modelId: "fixture", workflowVersion: "fixture", systemMessageHash: "fixture", toolsHash: "fixture", memoryWindow: 50, benchmarkedAt: new Date(), metrics: {} });
     try { const response = await POST(makeRequest({ modality: "novo", question: QUESTION, reservedContextBytes: 0, tenantId: tenantBId }, apiKeyA), undefined); expect(response.status).toBe(400); expect(JSON.stringify(await response.json())).not.toContain("segredo exclusivo"); }
     finally { await db.delete(tenantDocumentContextLimits).where(eq(tenantDocumentContextLimits.tenantId, tenantBId)); }
     vi.spyOn(contextService, "getDirectDocumentContext").mockRejectedValueOnce(new Error("fixture-private-error"));

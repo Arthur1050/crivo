@@ -27,7 +27,7 @@ async function all(clock = now, tenantId = tenantA) {
   return result.candidates;
 }
 beforeAll(async () => {
-  await db.insert(tenants).values([tenantA, tenantB].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T17 candidatos", agentName: "Agente", supportedModality: "ambos" as const })));
+  await db.insert(tenants).values([tenantA, tenantB].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T17 candidatos", agentName: "Agente", supportedSegment: "ambos" as const })));
   await db.insert(whatsappChannels).values([{ tenantId: tenantA, phoneNumberId: phoneA, ownershipVerifiedAt: now, usageEnabled: false }, { tenantId: tenantB, phoneNumberId: phoneB, ownershipVerifiedAt: now }]);
 });
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllEnvs(); });
@@ -183,7 +183,7 @@ describe("T17 — candidatos limitados pelo corte do tick", () => {
 
   it("página vazia avança por ID; relógio seguinte mantém corte sem perder candidato", async () => {
     const isolatedTenant = randomUUID();
-    await db.insert(tenants).values({ id: isolatedTenant, slug: `fixture-${isolatedTenant}`, name: "Fixture T17 cursor", agentName: "Agente", supportedModality: "ambos" });
+    await db.insert(tenants).values({ id: isolatedTenant, slug: `fixture-${isolatedTenant}`, name: "Fixture T17 cursor", agentName: "Agente", supportedSegment: "ambos" });
     const isolatedPhone = BigInt(`0x${randomUUID().replaceAll("-", "").slice(0, 16)}`).toString();
     await db.insert(whatsappChannels).values({ tenantId: isolatedTenant, phoneNumberId: isolatedPhone, ownershipVerifiedAt: now });
     try {
@@ -211,7 +211,7 @@ describe("T17 — candidatos limitados pelo corte do tick", () => {
 
   it("100 candidatos por página e leitura limitada mesmo com inelegíveis", async () => {
     const isolatedTenant = randomUUID(), isolatedPhone = BigInt(`0x${randomUUID().replaceAll("-", "").slice(0, 16)}`).toString();
-    await db.insert(tenants).values({ id: isolatedTenant, slug: `fixture-${isolatedTenant}`, name: "Fixture T17 limite", agentName: "Agente", supportedModality: "ambos" });
+    await db.insert(tenants).values({ id: isolatedTenant, slug: `fixture-${isolatedTenant}`, name: "Fixture T17 limite", agentName: "Agente", supportedSegment: "ambos" });
     await db.insert(whatsappChannels).values({ tenantId: isolatedTenant, phoneNumberId: isolatedPhone, ownershipVerifiedAt: now });
     try {
       const bulkLeads = await db.insert(leads).values(Array.from({ length: 102 }, () => ({ id: randomUUID(), tenantId: isolatedTenant, name: "Fixture limitado", phone: "+5534900000000", externalId: String(contact++), status: "em_qualificacao" as const, firstContactAt: now, createdAt: new Date(now.getTime() - hour), whatsappPhoneNumberId: isolatedPhone }))).returning();

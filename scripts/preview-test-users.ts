@@ -1,3 +1,4 @@
+import { ROLE } from "../src/lib/vocabulary";
 /**
  * Usuários de verificação visual no banco de TESTE (`npm run preview:test`).
  *
@@ -17,8 +18,8 @@ import { and, eq } from "drizzle-orm";
 export const PREVIEW_TEST_TENANT = "krivo-demo";
 export const PREVIEW_TEST_PASSWORD = "senha-de-teste-123";
 export const PREVIEW_TEST_USERS = [
-  { email: "verificacao@fixture.test", name: "Administrador de Verificação", role: "administrador" },
-  { email: "corretor@fixture.test", name: "Corretor de Verificação", role: "corretor" },
+  { email: "verificacao@fixture.test", name: "Administrador de Verificação", role: ROLE.admin },
+  { email: "corretor@fixture.test", name: "Corretor de Verificação", role: ROLE.attendant },
 ] as const;
 
 async function main() {
@@ -36,7 +37,7 @@ async function main() {
 
   const { db } = await import("../src/db/index");
   const { tenant_members, tenants, users } = await import("../src/db/schema");
-  const { auth } = await import("../src/server/auth/config");
+  const { auth } = await import("../src/kit/auth");
 
   const [tenant] = await db.select().from(tenants).where(eq(tenants.slug, PREVIEW_TEST_TENANT));
   if (!tenant) {

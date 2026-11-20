@@ -16,7 +16,7 @@ const HOUR = 60 * 60 * 1000;
 
 async function insert(seed: string, overrides: Partial<typeof documents.$inferInsert> = {}) {
   const [row] = await db.insert(documents).values({
-    tenantId: TENANT_A, name: `${seed}.txt`, modality: "novo", mimeType: "text/plain", sizeBytes: 12n,
+    tenantId: TENANT_A, name: `${seed}.txt`, segment: "novo", mimeType: "text/plain", sizeBytes: 12n,
     storageProvider: "vercel_blob", storageKey: `documents/v1/${TENANT_A}/${seed}-${randomUUID()}`,
     storageEtag: `etag-${seed}`, contentSha256: `${seed}-${randomUUID()}`.padEnd(64, "0").slice(0, 64),
     status: "pronto", processingAttempt: 1, extractedText: `texto ${seed}`, extractedBytes: 11,
@@ -30,8 +30,8 @@ describe("finders de preview e download (lote-12 T39)", () => {
     await db.delete(documents).where(inArray(documents.tenantId, [TENANT_A, TENANT_B]));
     await db.delete(tenants).where(inArray(tenants.id, [TENANT_A, TENANT_B]));
     await db.insert(tenants).values([
-      { id: TENANT_A, name: "Finders A", agentName: "A", supportedModality: "ambos", slug: `finders-a-${TENANT_A}` },
-      { id: TENANT_B, name: "Finders B", agentName: "B", supportedModality: "ambos", slug: `finders-b-${TENANT_B}` },
+      { id: TENANT_A, name: "Finders A", agentName: "A", supportedSegment: "ambos", slug: `finders-a-${TENANT_A}` },
+      { id: TENANT_B, name: "Finders B", agentName: "B", supportedSegment: "ambos", slug: `finders-b-${TENANT_B}` },
     ]);
   });
 

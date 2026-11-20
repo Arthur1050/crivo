@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { createHash } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
-import { PermissionDeniedError, type AuthContext } from "../../auth/session";
+import { PermissionDeniedError, type AuthContext } from "../../../kit/session";
 import { DocumentStorageError } from "../storage";
 import { createDocumentDownloadGetHandler } from "../../../../app/api/documents/[id]/download/route";
 const bytes = new TextEncoder().encode("original íntegro");
@@ -13,7 +13,7 @@ describe("document download route (T17)", () => {
   it("preserva SHA-256 dos bytes", async () => { const { handler } = fixture(); const r = await handler(request(), params()); expect(createHash("sha256").update(new Uint8Array(await r.arrayBuffer())).digest("hex")).toBe(createHash("sha256").update(bytes).digest("hex")); });
   it("emite attachment e headers seguros", async () => { const { handler } = fixture(); const r = await handler(request(), params()); expect(r.headers).toMatchObject(expect.anything()); expect(r.headers.get("content-type")).toBe("text/plain"); expect(r.headers.get("content-disposition")).toContain("attachment"); expect(r.headers.get("x-content-type-options")).toBe("nosniff"); expect(r.headers.get("cache-control")).toBe("private, no-store"); });
   it.each(["expired", "deleted", "foreign", "missing"])("%s is safe 404", async () => { const { handler } = fixture({ find: async () => null }); expect((await handler(request(), params())).status).toBe(404); });
-  it("never opens storage after forbidden", async () => { const { open, handler } = fixture({ authorize: async () => { throw new PermissionDeniedError("documentos", "ler"); } }); expect((await handler(request(), params())).status).toBe(403); expect(open).not.toHaveBeenCalled(); });
+  it("never opens storage after forbidden", async () => { const { open, handler } = fixture({ authorize: async () => { throw new PermissionDeniedError("documents", "read"); } }); expect((await handler(request(), params())).status).toBe(403); expect(open).not.toHaveBeenCalled(); });
   it("returns 404 for absent blob", async () => { const { handler } = fixture({ storage: { open: async () => null } }); expect((await handler(request(), params())).status).toBe(404); });
   it("sanitizes storage outage", async () => { const { handler } = fixture({ storage: { open: async () => { throw new DocumentStorageError("transient"); } } }); expect(await handler(request(), params())).toMatchObject({ status: 503 }); });
 });

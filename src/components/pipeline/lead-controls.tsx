@@ -7,19 +7,19 @@ import { SegmentedControl, SegmentedControlItem } from "@astryxdesign/core/Segme
 import { Selector } from "@astryxdesign/core/Selector";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
-import { canEditMeetingAttendance } from "@/src/lib/meeting-attendance";
+import { canEditAppointmentAttendance } from "@/src/lib/appointment-attendance";
 import {
-  setMeetingAttendanceAction,
-  updateLeadBrokerAction,
+  setAppointmentAttendanceAction,
+  updateLeadAssigneeAction,
 } from "@/src/server/actions/pipeline";
-import type { Broker } from "@/src/server/data";
+import type { Assignee } from "@/src/server/data";
 
 type AttendanceValue = "pendente" | "compareceu" | "nao_compareceu";
 
 const ATTENDANCE_TO_VALUE: Record<AttendanceValue, boolean | null> = {
   pendente: null,
   compareceu: true,
-  nao_compareceu: false,
+  "nao_compareceu": false,
 };
 
 const ATTENDANCE_FROM_VALUE: Record<string, AttendanceValue> = {
@@ -31,17 +31,17 @@ const ATTENDANCE_FROM_VALUE: Record<string, AttendanceValue> = {
 const ATTENDANCE_LABELS: Record<AttendanceValue, string> = {
   pendente: "Pendente",
   compareceu: "Compareceu",
-  nao_compareceu: "Não compareceu",
+  "nao_compareceu": "Não compareceu",
 };
 
 interface LeadControlsProps {
   leadId: string;
   /** Corretores do tenant ativo (lote-7 — ATRIB-02 AC1). */
-  brokers: Pick<Broker, "id" | "name">[];
-  brokerId: string | null;
+  brokers: Pick<Assignee, "id" | "name">[];
+  assigneeId: string | null;
   /** ISO string — nunca `Date` cru na fronteira RSC → client (AD-007). */
-  meetingAt: string | null;
-  meetingAttended: boolean | null;
+  appointmentAt: string | null;
+  appointmentAttended: boolean | null;
 }
 
 /**
@@ -55,9 +55,9 @@ interface LeadControlsProps {
 export function LeadControls({
   leadId,
   brokers,
-  brokerId,
-  meetingAt,
-  meetingAttended,
+  assigneeId,
+  appointmentAt,
+  appointmentAttended,
 }: LeadControlsProps) {
   const router = useRouter();
   const [brokerOverride, setBrokerOverride] = useState<string | null | undefined>(
@@ -68,22 +68,22 @@ export function LeadControls({
   >(undefined);
   const [error, setError] = useState<string | null>(null);
 
-  const effectiveBrokerId = brokerOverride !== undefined ? brokerOverride : brokerId;
+  const effectiveBrokerId = brokerOverride !== undefined ? brokerOverride : assigneeId;
   const effectiveAttendance =
-    attendanceOverride !== undefined ? attendanceOverride : meetingAttended;
+    attendanceOverride !== undefined ? attendanceOverride : appointmentAttended;
 
   // "Reunião marcada e já passada" (spec.md — Assumptions): função pura
-  // testada isoladamente em src/lib/__tests__/meeting-attendance.test.ts.
+  // testada isoladamente em src/lib/__tests__/appointment-attendance.test.ts.
   // `new Date()` só é lido aqui, na borda de apresentação — nunca dentro da
   // função pura.
-  const canEditAttendance = canEditMeetingAttendance(meetingAt, new Date());
+  const canEditAttendance = canEditAppointmentAttendance(appointmentAt, new Date());
 
   async function handleBrokerChange(nextBrokerId: string) {
     setError(null);
     const previous = effectiveBrokerId;
     setBrokerOverride(nextBrokerId);
 
-    const result = await updateLeadBrokerAction({ leadId, brokerId: nextBrokerId });
+    const result = await updateLeadAssigneeAction({ leadId, assigneeId: nextBrokerId });
 
     if (!result.ok) {
       setBrokerOverride(previous);
@@ -100,7 +100,7 @@ export function LeadControls({
     const nextAttended = ATTENDANCE_TO_VALUE[value as AttendanceValue];
     setAttendanceOverride(nextAttended);
 
-    const result = await setMeetingAttendanceAction({
+    const result = await setAppointmentAttendanceAction({
       leadId,
       attended: nextAttended,
     });

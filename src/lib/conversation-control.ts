@@ -1,3 +1,4 @@
+import { SENDER } from "./vocabulary";
 /**
  * Controle da conversa no Chats (lote-14 — design.md C3): janela de 24h do
  * WhatsApp e visibilidade dos controles de condução. Puro, fora do componente
@@ -83,7 +84,7 @@ export function optOutNotice(optedOutAt: Date): string {
   return `Opt-out em ${parts.day}/${parts.month}/${parts.year}`;
 }
 
-export type Conductor = "agente" | "humano" | "escalado" | "opt-out";
+export type Conductor = typeof SENDER.agent | typeof SENDER.human | "escalado" | "opt-out";
 export type ComposerState = "oculto" | "bloqueado" | "ativo";
 
 export interface ConversationControlsInput {
@@ -120,7 +121,7 @@ export function conversationControls(input: ConversationControlsInput): Conversa
   }
 
   const human = isHumanConducted({ status, humanTakeoverAt });
-  const conductor: Conductor = !human ? "agente" : humanTakeoverAt ? "humano" : "escalado";
+  const conductor: Conductor = !human ? SENDER.agent : humanTakeoverAt ? SENDER.human : "escalado";
   const composer: ComposerState =
     !canWrite || !human ? "oculto" : window.open ? "ativo" : "bloqueado";
 

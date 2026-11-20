@@ -1,3 +1,4 @@
+import { MODALITY, MOTIVATION } from "../../../src/verticals/real-estate/vocabulary";
 import type { ReactNode } from "react";
 import { Card } from "@astryxdesign/core/Card";
 import { Grid, GridSpan } from "@astryxdesign/core/Grid";
@@ -12,19 +13,20 @@ import { RecentLeadsTable } from "@/src/components/dashboard/recent-leads-table"
 import { VolumeChart } from "@/src/components/dashboard/volume-chart";
 import { resolveDashboardPeriod } from "@/src/lib/dashboard-period";
 import { formatCurrencyBRL } from "@/src/lib/format";
-import { can } from "@/src/lib/permissions";
+import { can } from "@/src/kit/access";
 import { periodDays } from "@/src/lib/pilot-metrics";
+import { realEstate } from "@/src/verticals/real-estate";
 import {
   getDashboardKpis,
   getIntegrationRefusalsSince,
   getLastAgentMessageAt,
-  getLeadDistributions,
   getLeadVolumeSeries,
-  getPendingAttendanceMeetings,
-  getRecentLeads,
+  getPendingAttendanceAppointments,
   getTenant,
 } from "@/src/server/data";
-import { verifySession } from "@/src/server/auth/session";
+import { getLeadDistributions } from "@/src/verticals/real-estate/data/distributions";
+import { getRecentLeads } from "@/src/kit/lead-data";
+import { verifySession } from "@/src/kit/session";
 import { getActiveTenantId } from "@/src/server/tenant";
 
 /** Últimos N leads listados no card "Leads Recentes" (RD-04 AC4). */
@@ -38,16 +40,16 @@ interface DashboardPageProps {
 }
 
 const MODALITY_LABELS: Record<string, string> = {
-  novo: "Novo",
-  usado: "Usado",
-  ambos: "Ambos",
-  nao_informado: "Não informado",
+  [MODALITY.new]: "Novo",
+  [MODALITY.used]: "Usado",
+  [MODALITY.both]: "Ambos",
+  "nao_informado": "Não informado",
 };
 
 const MOTIVATION_LABELS: Record<string, string> = {
-  investidor: "Investidor",
-  morador: "Morador",
-  nao_informado: "Não informado",
+  [MOTIVATION.investor]: "Investidor",
+  [MOTIVATION.resident]: "Morador",
+  "nao_informado": "Não informado",
 };
 
 /**
@@ -70,11 +72,11 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   // `getLeadScope()` sozinho não expõe (lote-9 — BASE-02 AC4/AC5).
   const authContext = await verifySession();
   const scope = authContext.leadScope;
-  const canEditSettings = can(authContext.roles, "configuracoes", "escrever");
+  const canEditSettings = can(authContext.roles, "settings", "write");
   // SAUDE-02 AC2: sem `configuracoes:ler` o bloco de saúde nem é consultado —
   // não só ocultado depois. É esse booleano que decide se as duas queries de
   // saúde abaixo rodam.
-  const canReadSettings = can(authContext.roles, "configuracoes", "ler");
+  const canReadSettings = can(authContext.roles, "settings", "read");
   const period = resolveDashboardPeriod(params);
 
   // Mesmo instante para toda a página (evita que a janela de 14 dias mude
@@ -83,7 +85,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
   const [kpis, tenant, volumeSeries, distributions, recentLeads, pendingMeetings] =
     await Promise.all([
-      getDashboardKpis(scope, period),
+      getDashboardKpis(scope, period, realEstate.appointments),
       getTenant(tenantId),
       getLeadVolumeSeries(scope, period, period.granularity),
       getLeadDistributions(scope, period),
@@ -94,7 +96,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       // Também independente de `period` (lote-9 — PRES-01/PRES-02): a janela
       // de cobrança de comparecimento é fixa (14 dias a partir do fim da
       // reunião), nunca o filtro de período da página.
-      getPendingAttendanceMeetings(scope, now),
+      getPendingAttendanceAppointments(scope, now, realEstate.appointments),
     ]);
 
   // SAUDE-02 AC2/AC3: só busca última atividade e recusas quando o usuário
@@ -120,16 +122,16 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     budget: formatCurrencyBRL(lead.budgetCents),
     modality: lead.modality,
     status: lead.status,
-    brokerName: lead.brokerName,
+    assigneeName: lead.assigneeName,
     firstContactAt: lead.firstContactAt.toISOString(),
   }));
 
-  // `meetingAt` também é `Date` na origem — mesma serialização acima.
+  // `appointmentAt` também é `Date` na origem — mesma serialização acima.
   const pendingMeetingRows = pendingMeetings.map((meeting) => ({
     leadId: meeting.leadId,
     leadName: meeting.leadName,
-    meetingAt: meeting.meetingAt.toISOString(),
-    brokerName: meeting.brokerName,
+    appointmentAt: meeting.appointmentAt.toISOString(),
+    assigneeName: meeting.assigneeName,
   }));
 
   return (
@@ -146,7 +148,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         baseline={{
           baselineLeadsPerMonth: tenant?.baselineLeadsPerMonth ?? null,
           baselineFirstResponseMinutes: tenant?.baselineFirstResponseMinutes ?? null,
-          baselineLeadToMeetingPct: tenant?.baselineLeadToMeetingPct ?? null,
+          baselineLeadToAppointmentPct: tenant?.baselineLeadToAppointmentPct ?? null,
           baselineEscalationPct: tenant?.baselineEscalationPct ?? null,
           baselineAttendancePct: tenant?.baselineAttendancePct ?? null,
         }}

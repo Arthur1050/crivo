@@ -3,7 +3,7 @@ import { afterAll, describe, expect, it } from "vitest";
 import { eq, inArray } from "drizzle-orm";
 import { db } from "../../../db";
 import { accounts, sessions, users } from "../../../db/schema";
-import { auth } from "../config";
+import { auth } from "../../../kit/auth";
 
 // Formato canônico de UUID v4 — o mesmo que `gen_random_uuid()` do Postgres
 // produz e o único que a coluna `uuid` das PKs do projeto aceita.

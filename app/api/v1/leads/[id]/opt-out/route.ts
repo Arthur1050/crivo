@@ -1,11 +1,7 @@
+import { methodNotAllowed, problem, serializeLead, withIntegrationRoute } from "../../../../../../src/kit/integration";
+import { PROBLEM_CODE } from "../../../../../../src/lib/vocabulary";
 import { getLead, serviceScope } from "../../../../../../src/server/data";
-import { serializeLead } from "../../../../../../src/server/integration/leads";
 import { optOutLead } from "../../../../../../src/server/integration/lgpd";
-import {
-  methodNotAllowed,
-  problem,
-} from "../../../../../../src/server/integration/problem";
-import { withIntegrationRoute } from "../../../../../../src/server/integration/route";
 
 /**
  * `POST /api/v1/leads/{id}/opt-out` — registro de opt-out (design.md —
@@ -20,7 +16,7 @@ export const POST = withIntegrationRoute<{ params: Promise<{ id: string }> }>(
 
     const result = await optOutLead(auth.tenantId, id);
     if (!result) {
-      return problem(404, "recurso-nao-encontrado", "Lead não encontrado.");
+      return problem(404, PROBLEM_CODE.not_found, "Lead não encontrado.");
     }
 
     // `optOutLead` já confirmou que a linha existe no tenant — a busca

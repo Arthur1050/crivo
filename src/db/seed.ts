@@ -1,3 +1,5 @@
+import { LEAD_STATUS, ROLE, SENDER } from "../lib/vocabulary";
+import { CREDIT_STATUS, MODALITY, MOTIVATION, PROPERTY_KIND, PROPERTY_STATUS, STOREFRONT_LAYOUT } from "../verticals/real-estate/vocabulary";
 import "dotenv/config";
 import { createHash, randomBytes } from "node:crypto";
 import { pathToFileURL } from "node:url";
@@ -10,18 +12,17 @@ import {
   documents,
   leads,
   messages,
-  properties,
   reengagementEpisodes,
   serviceApiKeys,
   tenant_members,
   tenantApiKeys,
-  tenantStorefronts,
   tenants,
   users,
   whatsappChannels,
   whatsappMessageReceipts,
   whatsappUsage,
 } from "./schema";
+import { properties, tenantStorefronts } from "../verticals/real-estate/schema";
 import { normalizeForSearch } from "../lib/normalize-text";
 
 /**
@@ -40,11 +41,11 @@ function id(seed: string): string {
   ].join("-");
 }
 
-type Modality = "novo" | "usado" | "ambos";
+type Modality = typeof MODALITY.new | typeof MODALITY.used | typeof MODALITY.both;
 type LeadStatus =
-  | "em_qualificacao"
-  | "qualificado_agendado"
-  | "escalado_humano";
+  | typeof LEAD_STATUS.engaged
+  | typeof LEAD_STATUS.goal_reached
+  | typeof LEAD_STATUS.escalated;
 // 1:1 com o enum `category_color` do schema (paleta fixa Token da Astryx).
 type CategoryColor =
   | "red"
@@ -59,14 +60,14 @@ type CategoryColor =
   | "gray";
 // 1:1 com os enums do catálogo de imóveis (lote-11 — schema.ts).
 type PropertyKind =
-  | "casa"
-  | "apartamento"
-  | "sobrado"
-  | "cobertura"
-  | "terreno"
-  | "sala_comercial"
-  | "chacara";
-type PropertyStatus = "disponivel" | "reservado" | "vendido";
+  | typeof PROPERTY_KIND.house
+  | typeof PROPERTY_KIND.apartment
+  | typeof PROPERTY_KIND.townhouse
+  | typeof PROPERTY_KIND.penthouse
+  | typeof PROPERTY_KIND.land
+  | typeof PROPERTY_KIND.commercial_room
+  | typeof PROPERTY_KIND.farmhouse;
+type PropertyStatus = typeof PROPERTY_STATUS.available | typeof PROPERTY_STATUS.reserved | typeof PROPERTY_STATUS.sold;
 
 const REGIONS = [
   "Abadia",
@@ -81,15 +82,15 @@ const REGIONS = [
   "Ponte Alta",
 ];
 
-const PROPERTY_TYPES = ["casa", "apartamento"] as const;
-const MOTIVATIONS = ["investidor", "morador"] as const;
-const CREDIT_STATUSES = ["pre_aprovado", "recurso_proprio", "fgts"] as const;
-const HORIZONS_NOVO = [
+const PROPERTY_TYPES = [PROPERTY_KIND.house, PROPERTY_KIND.apartment] as const;
+const MOTIVATIONS = [MOTIVATION.investor, MOTIVATION.resident] as const;
+const CREDIT_STATUSES = [CREDIT_STATUS.pre_approved, CREDIT_STATUS.own_funds, "fgts"] as const;
+const NEW_PROPERTY_HORIZONS = [
   "24 meses (na planta)",
   "30 meses (em obras)",
   "36 meses (lançamento)",
 ];
-const HORIZONS_USADO = ["imediato", "30 dias", "90 dias"];
+const USED_PROPERTY_HORIZONS = ["imediato", "30 dias", "90 dias"];
 const ESCALATION_REASONS = [
   "Lead pediu para falar diretamente com um corretor humano.",
   "Negociação de permuta complexa que exige avaliação presencial.",
@@ -120,9 +121,9 @@ interface PropertyCatalogDef {
 const PROPERTY_CATALOG_DEFS: PropertyCatalogDef[] = [
   {
     key: "disponivel-publicado",
-    kind: "apartamento",
-    modality: "novo",
-    status: "disponivel",
+    kind: PROPERTY_KIND.apartment,
+    modality: MODALITY.new,
+    status: PROPERTY_STATUS.available,
     published: true,
     neighborhood: REGIONS[0],
     priceCents: BigInt(380000 * 100),
@@ -133,9 +134,9 @@ const PROPERTY_CATALOG_DEFS: PropertyCatalogDef[] = [
   },
   {
     key: "disponivel-nao-publicado",
-    kind: "casa",
-    modality: "usado",
-    status: "disponivel",
+    kind: PROPERTY_KIND.house,
+    modality: MODALITY.used,
+    status: PROPERTY_STATUS.available,
     published: false,
     neighborhood: REGIONS[1],
     priceCents: BigInt(520000 * 100),
@@ -145,10 +146,10 @@ const PROPERTY_CATALOG_DEFS: PropertyCatalogDef[] = [
     parkingSpots: 2,
   },
   {
-    key: "reservado",
-    kind: "cobertura",
-    modality: "novo",
-    status: "reservado",
+    key: PROPERTY_STATUS.reserved,
+    kind: PROPERTY_KIND.penthouse,
+    modality: MODALITY.new,
+    status: PROPERTY_STATUS.reserved,
     published: true,
     neighborhood: REGIONS[2],
     priceCents: BigInt(890000 * 100),
@@ -158,10 +159,10 @@ const PROPERTY_CATALOG_DEFS: PropertyCatalogDef[] = [
     parkingSpots: 3,
   },
   {
-    key: "vendido",
-    kind: "sobrado",
-    modality: "usado",
-    status: "vendido",
+    key: PROPERTY_STATUS.sold,
+    kind: PROPERTY_KIND.townhouse,
+    modality: MODALITY.used,
+    status: PROPERTY_STATUS.sold,
     published: false,
     neighborhood: REGIONS[3],
     priceCents: BigInt(610000 * 100),
@@ -237,7 +238,7 @@ interface TenantDef {
   slug: string;
   name: string;
   agentName: string;
-  supportedModality: Modality;
+  supportedSegment: Modality;
   // Baseline pré-piloto (Lote 4 — DASH-05; lote-9 — BASE-01). Nullable nos
   // cinco campos, para os três tenants: o baseline é um snapshot único
   // preenchido por quem tem `configuracoes:escrever`, nunca inventado pelo
@@ -245,7 +246,7 @@ interface TenantDef {
   // Preenchê-lo é sempre ato do usuário, inclusive no tenant de demonstração.
   baselineLeadsPerMonth: number | null;
   baselineFirstResponseMinutes: number | null;
-  baselineLeadToMeetingPct: number | null;
+  baselineLeadToAppointmentPct: number | null;
   baselineEscalationPct: number | null;
   baselineAttendancePct: number | null;
   // Identidade institucional (redesign-crm-astryx — RD-02): valores distintos
@@ -286,7 +287,7 @@ interface TenantDef {
 //   - seg-sex 14:00-19:00 → só o corretor da tarde
 //   - sábado               → só o corretor de fim de semana
 // Dias em ISO 1(segunda)-7(domingo), horas "HH:MM" em America/Sao_Paulo —
-// mesma convenção de `tenants.meetingDays`.
+// mesma convenção de `tenants.appointmentDays`.
 const MORNING_WINDOW = {
   workDays: [1, 2, 3, 4, 5],
   workHoursStart: "08:00",
@@ -311,7 +312,7 @@ const STOREFRONT_SEED_UPDATED_AT = new Date("2026-10-09T12:00:00.000Z");
 const STOREFRONT_SEEDS: Record<string, Omit<typeof tenantStorefronts.$inferInsert, "tenantId">> = {
   "vale-uberaba": {
     active: true,
-    layout: "grade",
+    layout: STOREFRONT_LAYOUT.grid,
     accentColor: "#0b6e4f",
     font: "montserrat",
     creci: "CRECI-MG 12345-J",
@@ -342,7 +343,7 @@ const STOREFRONT_SEEDS: Record<string, Omit<typeof tenantStorefronts.$inferInser
 // Destaques da imobiliária de vitrine ativa: um imóvel visível ao público
 // (disponível e publicado) e um que não é (vendido e não publicado), para a
 // vitrine e a tela de Imóveis exercitarem os dois casos (VSEED-01 AC2).
-const FEATURED_PROPERTY_KEYS = ["disponivel-publicado", "vendido"];
+const FEATURED_PROPERTY_KEYS = ["disponivel-publicado", PROPERTY_STATUS.sold];
 
 const TENANT_DEFS: TenantDef[] = [
   {
@@ -350,10 +351,10 @@ const TENANT_DEFS: TenantDef[] = [
     slug: "vale-uberaba",
     name: "Imobiliária Vale do Uberaba",
     agentName: "Bia",
-    supportedModality: "ambos",
+    supportedSegment: MODALITY.both,
     baselineLeadsPerMonth: null,
     baselineFirstResponseMinutes: null,
-    baselineLeadToMeetingPct: null,
+    baselineLeadToAppointmentPct: null,
     baselineEscalationPct: null,
     baselineAttendancePct: null,
     seedLeadData: false,
@@ -372,33 +373,33 @@ const TENANT_DEFS: TenantDef[] = [
         key: "admin",
         name: "Helena Braga Teixeira",
         email: "helena.teixeira@valeuberaba.com.br",
-        role: "administrador",
+        role: ROLE.admin,
       },
       {
-        key: "gestor",
+        key: ROLE.manager,
         name: "Paulo César Miranda",
         email: "paulo.miranda@valeuberaba.com.br",
-        role: "gestor",
+        role: ROLE.manager,
       },
       {
         key: "b1",
         name: "Marcos Aurélio Silva",
         email: "marcos.silva@valeuberaba.com.br",
-        role: "corretor",
+        role: ROLE.attendant,
         ...MORNING_WINDOW,
       },
       {
         key: "b2",
         name: "Camila Fernandes Rocha",
         email: "camila.rocha@valeuberaba.com.br",
-        role: "corretor",
+        role: ROLE.attendant,
         ...AFTERNOON_WINDOW,
       },
       {
         key: "b3",
         name: "Rodrigo Almeida Costa",
         email: "rodrigo.costa@valeuberaba.com.br",
-        role: "corretor",
+        role: ROLE.attendant,
         ...SATURDAY_WINDOW,
       },
     ],
@@ -408,10 +409,10 @@ const TENANT_DEFS: TenantDef[] = [
     slug: "triangulo",
     name: "Triângulo Imóveis",
     agentName: "Lucas",
-    supportedModality: "ambos",
+    supportedSegment: MODALITY.both,
     baselineLeadsPerMonth: null,
     baselineFirstResponseMinutes: null,
-    baselineLeadToMeetingPct: null,
+    baselineLeadToAppointmentPct: null,
     baselineEscalationPct: null,
     baselineAttendancePct: null,
     seedLeadData: false,
@@ -430,33 +431,33 @@ const TENANT_DEFS: TenantDef[] = [
         key: "admin",
         name: "Renata Alves Bittencourt",
         email: "renata.bittencourt@trianguloimoveis.com.br",
-        role: "administrador",
+        role: ROLE.admin,
       },
       {
-        key: "gestor",
+        key: ROLE.manager,
         name: "Sérgio Tavares Pinto",
         email: "sergio.pinto@trianguloimoveis.com.br",
-        role: "gestor",
+        role: ROLE.manager,
       },
       {
         key: "b1",
         name: "Fernanda Souza Lima",
         email: "fernanda.lima@trianguloimoveis.com.br",
-        role: "corretor",
+        role: ROLE.attendant,
         ...MORNING_WINDOW,
       },
       {
         key: "b2",
         name: "André Luiz Martins",
         email: "andre.martins@trianguloimoveis.com.br",
-        role: "corretor",
+        role: ROLE.attendant,
         ...AFTERNOON_WINDOW,
       },
       {
         key: "b3",
         name: "Juliana Pereira Dias",
         email: "juliana.dias@trianguloimoveis.com.br",
-        role: "corretor",
+        role: ROLE.attendant,
         ...SATURDAY_WINDOW,
       },
     ],
@@ -469,10 +470,10 @@ const TENANT_DEFS: TenantDef[] = [
     slug: "krivo-demo",
     name: "Krivo Demo",
     agentName: "Sofia",
-    supportedModality: "ambos",
+    supportedSegment: MODALITY.both,
     baselineLeadsPerMonth: null,
     baselineFirstResponseMinutes: null,
-    baselineLeadToMeetingPct: null,
+    baselineLeadToAppointmentPct: null,
     baselineEscalationPct: null,
     baselineAttendancePct: null,
     seedLeadData: true,
@@ -491,33 +492,33 @@ const TENANT_DEFS: TenantDef[] = [
         key: "admin",
         name: "Eduardo Mendes Prado",
         email: "eduardo.prado@krivo.com.br",
-        role: "administrador",
+        role: ROLE.admin,
       },
       {
-        key: "gestor",
+        key: ROLE.manager,
         name: "Patrícia Nogueira Vasques",
         email: "patricia.vasques@krivo.com.br",
-        role: "gestor",
+        role: ROLE.manager,
       },
       {
         key: "b1",
         name: "Larissa Andrade Nunes",
         email: "larissa.nunes@krivo.com.br",
-        role: "corretor",
+        role: ROLE.attendant,
         ...MORNING_WINDOW,
       },
       {
         key: "b2",
         name: "Gustavo Ribeiro Cardoso",
         email: "gustavo.cardoso@krivo.com.br",
-        role: "corretor",
+        role: ROLE.attendant,
         ...AFTERNOON_WINDOW,
       },
       {
         key: "b3",
         name: "Beatriz Moraes Correia",
         email: "beatriz.correia@krivo.com.br",
-        role: "corretor",
+        role: ROLE.attendant,
         ...SATURDAY_WINDOW,
       },
     ],
@@ -526,9 +527,9 @@ const TENANT_DEFS: TenantDef[] = [
 
 // Distribuição fixa nos 3 status do pipeline (soma = 25 leads/tenant)
 const STATUS_SEQUENCE: LeadStatus[] = [
-  ...Array(10).fill("em_qualificacao" as const),
-  ...Array(8).fill("qualificado_agendado" as const),
-  ...Array(7).fill("escalado_humano" as const),
+  ...Array(10).fill(LEAD_STATUS.engaged),
+  ...Array(8).fill(LEAD_STATUS.goal_reached),
+  ...Array(7).fill(LEAD_STATUS.escalated),
 ];
 
 interface LeadDef {
@@ -542,7 +543,7 @@ function buildLeadDefs(tenantKey: string): LeadDef[] {
   return STATUS_SEQUENCE.map((status, i) => {
     const first = FIRST_NAMES[(hashIndex(tenantKey, String(i), "first")) % FIRST_NAMES.length];
     const last = LAST_NAMES[(hashIndex(tenantKey, String(i), "last")) % LAST_NAMES.length];
-    const modality: Modality = i % 3 === 0 ? "ambos" : i % 3 === 1 ? "novo" : "usado";
+    const modality: Modality = i % 3 === 0 ? MODALITY.both : i % 3 === 1 ? MODALITY.new : MODALITY.used;
     const ddd = "34";
     const line = String(90000 + i).padStart(5, "0");
     return {
@@ -578,9 +579,9 @@ function buildQualification(seedIndex: number, modality: Modality) {
   const motivation = MOTIVATIONS[seedIndex % MOTIVATIONS.length];
   const creditStatus = CREDIT_STATUSES[seedIndex % CREDIT_STATUSES.length];
   const purchaseHorizon =
-    modality === "novo"
-      ? HORIZONS_NOVO[seedIndex % HORIZONS_NOVO.length]
-      : HORIZONS_USADO[seedIndex % HORIZONS_USADO.length];
+    modality === MODALITY.new
+      ? NEW_PROPERTY_HORIZONS[seedIndex % NEW_PROPERTY_HORIZONS.length]
+      : USED_PROPERTY_HORIZONS[seedIndex % USED_PROPERTY_HORIZONS.length];
   const budgetCents = BigInt(280000 + (seedIndex % 12) * 35000) * BigInt(100);
   const chainedOperation = seedIndex % 3 === 0;
   return {
@@ -621,12 +622,12 @@ function buildMessages(
   status: LeadStatus,
   qualification: ReturnType<typeof buildQualification> | null,
   escalationReason: string | null
-): { sender: "agente" | "lead"; content: string }[] {
+): { sender: typeof SENDER.agent | "lead"; content: string }[] {
   const modalityText =
-    modality === "novo" ? "novo" : modality === "usado" ? "usado" : "novo ou usado, tô aberto aos dois";
-  const msgs: { sender: "agente" | "lead"; content: string }[] = [
+    modality === MODALITY.new ? MODALITY.new : modality === MODALITY.used ? MODALITY.used : "novo ou usado, tô aberto aos dois";
+  const msgs: { sender: typeof SENDER.agent | "lead"; content: string }[] = [
     {
-      sender: "agente",
+      sender: SENDER.agent,
       content: `Olá, ${leadName}! Aqui é ${agentName}, da ${tenantName}. Vi seu interesse em imóveis — posso te ajudar a encontrar a opção ideal?`,
     },
     {
@@ -634,19 +635,19 @@ function buildMessages(
       content: `Oi! Sim, estou procurando um imóvel ${modalityText}.`,
     },
     {
-      sender: "agente",
+      sender: SENDER.agent,
       content: `Perfeito. Em qual região você tem interesse e qual tipo de imóvel procura — casa ou apartamento?`,
     },
   ];
 
-  if (status === "em_qualificacao") {
+  if (status === LEAD_STATUS.engaged) {
     msgs.push(
       {
         sender: "lead",
         content: `Ainda estou decidindo a região, mas prefiro apartamento.`,
       },
       {
-        sender: "agente",
+        sender: SENDER.agent,
         content: `Sem problema! Me conta um pouco mais sobre seu orçamento e prazo para essa compra, assim consigo te indicar as melhores opções.`,
       }
     );
@@ -668,7 +669,7 @@ function buildMessages(
       content: `Tô de olho no bairro ${qualification.region}, prefiro ${qualification.propertyType}.`,
     },
     {
-      sender: "agente",
+      sender: SENDER.agent,
       content: `Ótimo! E qual seria o orçamento aproximado e o prazo que você imagina para fechar negócio?`,
     },
     {
@@ -677,14 +678,14 @@ function buildMessages(
     }
   );
 
-  if (status === "escalado_humano") {
+  if (status === LEAD_STATUS.escalated) {
     msgs.push(
       {
         sender: "lead",
         content: `Na verdade prefiro conversar direto com um corretor humano para fechar os detalhes.`,
       },
       {
-        sender: "agente",
+        sender: SENDER.agent,
         content: `Sem problema! Vou te conectar com um de nossos corretores para continuar o atendimento. Motivo do encaminhamento: ${escalationReason}`,
       }
     );
@@ -694,13 +695,13 @@ function buildMessages(
   // qualificado_agendado
   msgs.push(
     {
-      sender: "agente",
-      content: `Você já tem alguma pré-aprovação de crédito ou pretende usar recurso próprio${modality !== "novo" ? "/FGTS" : ""}?`,
+      sender: SENDER.agent,
+      content: `Você já tem alguma pré-aprovação de crédito ou pretende usar recurso próprio${modality !== MODALITY.new ? "/FGTS" : ""}?`,
     },
     {
       sender: "lead",
       content: `Estou com ${
-        qualification.creditStatus === "pre_aprovado"
+        qualification.creditStatus === CREDIT_STATUS.pre_approved
           ? "crédito pré-aprovado"
           : qualification.creditStatus === "fgts"
             ? "saldo de FGTS disponível"
@@ -708,7 +709,7 @@ function buildMessages(
       }.`,
     },
     {
-      sender: "agente",
+      sender: SENDER.agent,
       content: `Perfeito, já tenho tudo que preciso! Vou agendar uma apresentação com um de nossos corretores. Pode ser essa semana?`,
     },
     {
@@ -814,10 +815,10 @@ export async function runSeed(): Promise<SeedResult> {
       id: tenantId,
       name: tenantDef.name,
       agentName: tenantDef.agentName,
-      supportedModality: tenantDef.supportedModality,
+      supportedSegment: tenantDef.supportedSegment,
       baselineLeadsPerMonth: tenantDef.baselineLeadsPerMonth,
       baselineFirstResponseMinutes: tenantDef.baselineFirstResponseMinutes,
-      baselineLeadToMeetingPct: tenantDef.baselineLeadToMeetingPct,
+      baselineLeadToAppointmentPct: tenantDef.baselineLeadToAppointmentPct,
       baselineEscalationPct: tenantDef.baselineEscalationPct,
       baselineAttendancePct: tenantDef.baselineAttendancePct,
       city: tenantDef.city,
@@ -868,7 +869,7 @@ export async function runSeed(): Promise<SeedResult> {
     const brokerIds: string[] = [];
     for (const m of tenantDef.members) {
       const userId = id(`user:${tenantDef.key}:${m.key}`);
-      if (m.role.split(",").includes("corretor")) brokerIds.push(userId);
+      if (m.role.split(",").includes(ROLE.attendant)) brokerIds.push(userId);
       userRows.push({
         id: userId,
         name: m.name,
@@ -935,13 +936,13 @@ export async function runSeed(): Promise<SeedResult> {
         );
         const firstResponseAt = new Date(firstContactAt.getTime() + 15 * 60000);
 
-        const isQualified = leadDef.status === "qualificado_agendado";
-        const isEscalated = leadDef.status === "escalado_humano";
+        const isQualified = leadDef.status === LEAD_STATUS.goal_reached;
+        const isEscalated = leadDef.status === LEAD_STATUS.escalated;
         // Calculada para qualquer lead além de em_qualificacao (usada no
         // conteúdo da conversa mesmo quando não é persistida nas colunas de
         // qualificação — essas só são preenchidas quando isQualified).
         const messageQualification =
-          leadDef.status === "em_qualificacao"
+          leadDef.status === LEAD_STATUS.engaged
             ? null
             : buildQualification(i, leadDef.modality);
         const qualification = isQualified ? messageQualification : null;
@@ -950,7 +951,7 @@ export async function runSeed(): Promise<SeedResult> {
           : null;
         // Só leads qualificado_agendado têm reunião marcada — coerente com o
         // resumo executivo, que só é preenchido no mesmo caso.
-        const meetingAt = isQualified
+        const appointmentAt = isQualified
           ? new Date(firstContactAt.getTime() + 3 * 86400000)
           : null;
         // lote-8 (AD-022/SEED-01 AC7): o lead só ganha dono no agendamento.
@@ -958,18 +959,18 @@ export async function runSeed(): Promise<SeedResult> {
         // com reunião marcada — esses recebem um corretor, distribuído de
         // forma determinística entre os corretores da imobiliária.
         const assignedUserId =
-          meetingAt && brokerIds.length > 0
+          appointmentAt && brokerIds.length > 0
             ? brokerIds[i % brokerIds.length]
             : null;
         // Última atualização do registro = evento mais recente conhecido do
         // lead (reunião marcada, senão a 1ª resposta). Mantém created_at
         // (nascimento do lead) e updated_at coerentes com firstContactAt em
-        // vez do "agora" fixo do defaultNow() do schema. meetingAt pode cair
+        // vez do "agora" fixo do defaultNow() do schema. appointmentAt pode cair
         // no futuro (reunião agendada) — updated_at nunca deve ultrapassar o
         // momento real do seed, senão registros parecem "modificados no
         // futuro" (quebra o invariante de outras camadas de que updatedAt
         // avança a partir de now() em mutações subsequentes).
-        const updatedAtCandidate = meetingAt ?? firstResponseAt;
+        const updatedAtCandidate = appointmentAt ?? firstResponseAt;
         const updatedAt =
           updatedAtCandidate.getTime() > seedNow.getTime()
             ? seedNow
@@ -994,8 +995,8 @@ export async function runSeed(): Promise<SeedResult> {
             ? buildExecutiveSummary(leadDef.name, leadDef.modality, qualification!)
             : null,
           escalationReason,
-          meetingAt,
-          meetingAttended: null,
+          appointmentAt,
+          appointmentAttended: null,
           firstContactAt,
           firstResponseAt,
           createdAt: firstContactAt,

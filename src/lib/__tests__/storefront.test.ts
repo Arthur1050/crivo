@@ -8,7 +8,7 @@ import {
   normalizePhoneDigits,
   validateStorefrontInput,
   type StorefrontInput,
-} from "../storefront";
+} from "../../verticals/real-estate/storefront/validation";
 
 function input(overrides: Partial<StorefrontInput> = {}): StorefrontInput {
   return { active: false, layout: "grade", font: "inter", ...overrides };

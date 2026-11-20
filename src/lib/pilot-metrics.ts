@@ -1,9 +1,11 @@
+import { INTEGRATION_HEALTH } from "./vocabulary";
+export { INTEGRATION_HEALTH } from "./vocabulary";
 /**
  * Regras puras de instrumentação de métricas do piloto (lote-9 — BASE-02,
  * PRES-01, PRES-02, SAUDE-02).
  *
- * Função pura, sem I/O — mesmo padrão de `src/lib/broker-assignment.ts` e
- * `src/lib/permissions.ts`: a regra vive aqui e é testada em vitest; quem faz
+ * Função pura, sem I/O — mesmo padrão de `src/lib/assignee-assignment.ts` e
+ * `src/kit/access.ts`: a regra vive aqui e é testada em vitest; quem faz
  * I/O (a DAL, os componentes de Dashboard) apenas a consome. Nenhum
  * `server-only` aqui de propósito, pela mesma razão das duas libs acima.
  */
@@ -11,12 +13,12 @@
 const DAY_MS = 86400000;
 
 // Duração fixa do slot de reunião do produto (design.md — Assumptions).
-// Mesmo valor de `MEETING_DURATION_MS` em `src/server/data/index.ts:1146` —
+// Mesmo valor de `APPOINTMENT_DURATION_MS` em `src/server/data/index.ts:1146` —
 // mantido como constante própria aqui porque esta lib é I/O-free e não pode
 // importar de um módulo `server-only`.
-const MEETING_DURATION_MS = 30 * 60 * 1000;
+const APPOINTMENT_DURATION_MS = 30 * 60 * 1000;
 
-// Prescrição da confirmação de comparecimento (design.md — PendingMeeting).
+// Prescrição da confirmação de comparecimento (design.md — PendingAppointment).
 const ATTENDANCE_PRESCRIPTION_MS = 14 * DAY_MS;
 
 // Janela de saúde da integração (SAUDE-02 AC4 / assumption confirmada):
@@ -51,11 +53,11 @@ export function normalizeMonthlyBaseline(monthly: number, days: number): number 
  * abre 30 minutos após o início da reunião (tempo do slot, para a reunião já
  * ter encerrado) e prescreve 14 dias depois disso.
  */
-export function attendanceWindow(meetingAt: Date): {
+export function attendanceWindow(appointmentAt: Date): {
   pendingFrom: Date;
   expiresAt: Date;
 } {
-  const pendingFrom = new Date(meetingAt.getTime() + MEETING_DURATION_MS);
+  const pendingFrom = new Date(appointmentAt.getTime() + APPOINTMENT_DURATION_MS);
   const expiresAt = new Date(pendingFrom.getTime() + ATTENDANCE_PRESCRIPTION_MS);
   return { pendingFrom, expiresAt };
 }
@@ -67,13 +69,13 @@ export function attendanceWindow(meetingAt: Date): {
  * da prescrição já é tarde demais).
  */
 export function isPendingAttendance(
-  meetingAt: Date,
+  appointmentAt: Date,
   attended: boolean | null,
   now: Date
 ): boolean {
   if (attended !== null) return false;
 
-  const { pendingFrom, expiresAt } = attendanceWindow(meetingAt);
+  const { pendingFrom, expiresAt } = attendanceWindow(appointmentAt);
   return now.getTime() >= pendingFrom.getTime() && now.getTime() < expiresAt.getTime();
 }
 
@@ -89,9 +91,9 @@ export function isPendingAttendance(
 export function resolveIntegrationHealth(
   input: { lastSuccessAt: Date | null; refusalCount: number },
   now: Date
-): "saudavel" | "problema" {
-  if (input.refusalCount > 0) return "problema";
-  if (input.lastSuccessAt === null) return "problema";
-  if (now.getTime() - input.lastSuccessAt.getTime() > HEALTH_STALE_MS) return "problema";
-  return "saudavel";
+): typeof INTEGRATION_HEALTH.healthy | typeof INTEGRATION_HEALTH.problem {
+  if (input.refusalCount > 0) return INTEGRATION_HEALTH.problem;
+  if (input.lastSuccessAt === null) return INTEGRATION_HEALTH.problem;
+  if (now.getTime() - input.lastSuccessAt.getTime() > HEALTH_STALE_MS) return INTEGRATION_HEALTH.problem;
+  return INTEGRATION_HEALTH.healthy;
 }

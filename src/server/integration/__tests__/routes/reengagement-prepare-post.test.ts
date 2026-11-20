@@ -8,7 +8,7 @@ import { db } from "../../../../db";
 import * as schema from "../../../../db/schema";
 import { conversations, integrationRefusals, leadAgentState, leads, messages, reengagementEpisodes, tenantApiKeys, tenants, whatsappChannels } from "../../../../db/schema";
 import { DELETE, GET, PATCH, POST, PUT } from "../../../../../app/api/v1/leads/[id]/reengagement/prepare/route";
-import * as frameService from "../../../reengagement/context";
+import * as frameService from "../../../../kit/reengagement";
 import * as repository from "../../../reengagement/repository";
 import * as cloudApi from "../../../whatsapp/cloud-api";
 import { MAX_BODY_BYTES } from "../../parsers";
@@ -56,7 +56,7 @@ async function waitForLocks(pids: number[]) {
   return 0;
 }
 beforeAll(async () => {
-  await db.insert(tenants).values([tenantId, foreignTenant].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T37", agentName: "Agente", supportedModality: "ambos" as const })));
+  await db.insert(tenants).values([tenantId, foreignTenant].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T37", agentName: "Agente", supportedSegment: "ambos" as const })));
   await db.insert(tenantApiKeys).values({ tenantId, label: "fixtureT37", keyHash: createHash("sha256").update(apiKey).digest("hex") });
 });
 beforeEach(() => { vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(now); });
@@ -103,9 +103,9 @@ describe("T37 — prepare HTTP entrega somente claim próprio e frame factual", 
   });
 
   it("fora do horário409 sem episódio", async () => {
-    const row = await fixture(); await db.update(tenants).set({ meetingDays: [1, 2, 3, 4, 5], meetingHoursStart: "13:00", meetingHoursEnd: "14:00" }).where(eq(tenants.id, tenantId));
+    const row = await fixture(); await db.update(tenants).set({ appointmentDays: [1, 2, 3, 4, 5], appointmentHoursStart: "13:00", appointmentHoursEnd: "14:00" }).where(eq(tenants.id, tenantId));
     try { await problem(await post(row), 409, "transicao-invalida"); expect(await episode(row)).toBeUndefined(); }
-    finally { await db.update(tenants).set({ meetingDays: null, meetingHoursStart: null, meetingHoursEnd: null }).where(eq(tenants.id, tenantId)); }
+    finally { await db.update(tenants).set({ appointmentDays: null, appointmentHoursStart: null, appointmentHoursEnd: null }).where(eq(tenants.id, tenantId)); }
   });
 
   it.each(["unknown", "takeover", "optout"])("política %s recusada mantém erro operacional específico ou transição409", async (change) => {

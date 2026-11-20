@@ -1,3 +1,4 @@
+import { PROBLEM_CODE } from "../../lib/vocabulary";
 import "server-only";
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "../../db";
@@ -8,7 +9,7 @@ import type { MessageCreateDto } from "./parsers";
 interface AnchorProjection { anchorMessageId: string | null; agentStateRevision: number | null }
 export type IngestMessageResult =
   | ({ ok: true; created: boolean; message: Message } & AnchorProjection)
-  | { ok: false; code: "recurso-nao-encontrado" | "canal-nao-vinculado" };
+  | { ok: false; code: typeof PROBLEM_CODE.not_found | typeof PROBLEM_CODE.channel_not_linked };
 
 /**
  * Ingestão idempotente de mensagens do agente (design.md —
@@ -33,10 +34,10 @@ export async function ingestMessage(
       whatsappPhoneNumberId: dto.whatsappPhoneNumberId,
     }, { ...options, requireLinkedChannel: true });
 
-    if (!result) return { ok: false, code: "recurso-nao-encontrado" };
+    if (!result) return { ok: false, code: PROBLEM_CODE.not_found };
     return { ok: true, ...result };
   } catch (error) {
-    if (error instanceof MessageChannelNotLinked) return { ok: false, code: "canal-nao-vinculado" };
+    if (error instanceof MessageChannelNotLinked) return { ok: false, code: PROBLEM_CODE.channel_not_linked };
     throw error;
   }
 }
@@ -69,7 +70,7 @@ export function serializeMessage(message: Message): SerializedMessage {
 
 export type ListMessagesResult =
   | ({ ok: true; messages: Message[] } & AnchorProjection)
-  | { ok: false; code: "recurso-nao-encontrado" };
+  | { ok: false; code: typeof PROBLEM_CODE.not_found };
 
 /**
  * Leitura do histórico de mensagens de um lead (design.md — § Contrato,
@@ -85,7 +86,7 @@ export async function listMessages(
 ): Promise<ListMessagesResult> {
   return (options.database ?? db).transaction(async (tx): Promise<ListMessagesResult> => {
     const [lead] = await tx.select({ id: leads.id }).from(leads).where(and(eq(leads.tenantId, tenantId), eq(leads.id, leadId))).for("update");
-    if (!lead) return { ok: false, code: "recurso-nao-encontrado" };
+    if (!lead) return { ok: false, code: PROBLEM_CODE.not_found };
     const result = await getLeadMessages(tenantId, leadId, limit, tx);
     const [anchor] = await tx.select({ id: messages.id }).from(messages)
       .innerJoin(conversations, and(eq(conversations.id, messages.conversationId), eq(conversations.tenantId, messages.tenantId)))

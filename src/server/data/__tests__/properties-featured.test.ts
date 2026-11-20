@@ -3,8 +3,9 @@ import { randomUUID } from "node:crypto";
 import { eq, inArray } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { db } from "../../../db";
-import { properties, tenant_members, tenants, users } from "../../../db/schema";
-import { getProperties, setPropertyFeatured } from "../index";
+import { tenant_members, tenants, users } from "../../../db/schema";
+import { properties } from "../../../verticals/real-estate/schema";
+import { getProperties, setPropertyFeatured } from "../../../verticals/real-estate/data/properties";
 
 type PropertyInsert = typeof properties.$inferInsert;
 
@@ -20,7 +21,7 @@ describe("L16a T6 — destaque de imóvel no DAL (VDEST-01)", () => {
     const tenantId = randomUUID();
     tenantIds.push(tenantId);
     await db.insert(tenants).values({
-      id: tenantId, slug: `fixture-destaque-${tenantId}`, name: "Fixture destaque", agentName: "Agente", supportedModality: "ambos",
+      id: tenantId, slug: `fixture-destaque-${tenantId}`, name: "Fixture destaque", agentName: "Agente", supportedSegment: "ambos",
     });
     const userId = randomUUID();
     await db.insert(users).values({ id: userId, name: "Captador destaque", email: `${userId}@fixture.test` });

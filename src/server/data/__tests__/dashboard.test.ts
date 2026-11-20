@@ -7,11 +7,11 @@ import { leads, tenants } from "../../../db/schema";
 import {
   __testOnly_periodLeadsQuery,
   getDashboardKpis,
-  getLeadDistributions,
   getLeadVolumeSeries,
   type DashboardRange,
   serviceScope,
 } from "../index";
+import { getLeadDistributions } from "../../../verticals/real-estate/data/distributions";
 
 // Datas absolutas fixas e controladas (2020) — nunca dependem do seed nem de
 // `new Date()` (design.md — "Duas fontes de agora"; EXECUTE-PROMPT
@@ -34,14 +34,14 @@ describe("server/data getDashboardKpis", () => {
         id: tenantAId,
         name: "Dashboard Test Tenant A",
         agentName: "Agente A",
-        supportedModality: "ambos",
+        supportedSegment: "ambos",
         slug: `fixture-${tenantAId}`,
       },
       {
         id: tenantBId,
         name: "Dashboard Test Tenant B",
         agentName: "Agente B",
-        supportedModality: "ambos",
+        supportedSegment: "ambos",
         slug: `fixture-${tenantBId}`,
       },
     ]);
@@ -65,7 +65,7 @@ describe("server/data getDashboardKpis", () => {
         status: "em_qualificacao",
         firstContactAt: new Date("2020-01-05T10:00:00.000Z"),
         firstResponseAt: new Date("2020-01-05T10:10:00.000Z"),
-        meetingAttended: null,
+        appointmentAttended: null,
       },
       {
         id: randomUUID(),
@@ -75,7 +75,7 @@ describe("server/data getDashboardKpis", () => {
         status: "qualificado_agendado",
         firstContactAt: new Date("2020-01-10T08:00:00.000Z"),
         firstResponseAt: new Date("2020-01-10T08:30:00.000Z"),
-        meetingAttended: true,
+        appointmentAttended: true,
       },
       {
         id: randomUUID(),
@@ -85,7 +85,7 @@ describe("server/data getDashboardKpis", () => {
         status: "escalado_humano",
         firstContactAt: new Date("2020-01-15T09:00:00.000Z"),
         firstResponseAt: null,
-        meetingAttended: null,
+        appointmentAttended: null,
       },
       {
         id: randomUUID(),
@@ -95,7 +95,7 @@ describe("server/data getDashboardKpis", () => {
         status: "qualificado_agendado",
         firstContactAt: new Date("2020-01-20T09:00:00.000Z"),
         firstResponseAt: new Date("2020-01-20T09:20:00.000Z"),
-        meetingAttended: false,
+        appointmentAttended: false,
       },
       {
         id: randomUUID(),
@@ -105,7 +105,7 @@ describe("server/data getDashboardKpis", () => {
         status: "em_qualificacao",
         firstContactAt: new Date("2020-01-01T00:00:00.000Z"),
         firstResponseAt: null,
-        meetingAttended: null,
+        appointmentAttended: null,
       },
       {
         id: randomUUID(),
@@ -115,7 +115,7 @@ describe("server/data getDashboardKpis", () => {
         status: "em_qualificacao",
         firstContactAt: new Date("2020-01-31T23:59:59.999Z"),
         firstResponseAt: null,
-        meetingAttended: null,
+        appointmentAttended: null,
       },
       {
         id: randomUUID(),
@@ -125,7 +125,7 @@ describe("server/data getDashboardKpis", () => {
         status: "em_qualificacao",
         firstContactAt: new Date("2019-12-31T23:59:59.999Z"),
         firstResponseAt: null,
-        meetingAttended: null,
+        appointmentAttended: null,
       },
       {
         id: randomUUID(),
@@ -135,7 +135,7 @@ describe("server/data getDashboardKpis", () => {
         status: "em_qualificacao",
         firstContactAt: new Date("2020-02-01T00:00:00.000Z"),
         firstResponseAt: null,
-        meetingAttended: null,
+        appointmentAttended: null,
       },
       // Tenant B — 1 lead dentro do mesmo range, usado só para provar
       // isolamento (DASH-06.1): números distintos dos do tenant A.
@@ -147,7 +147,7 @@ describe("server/data getDashboardKpis", () => {
         status: "em_qualificacao",
         firstContactAt: new Date("2020-01-05T12:00:00.000Z"),
         firstResponseAt: null,
-        meetingAttended: null,
+        appointmentAttended: null,
       },
     ]);
   });
@@ -179,7 +179,7 @@ describe("server/data getDashboardKpis", () => {
 
   it("AC6: taxa de comparecimento = 1/2 sobre 2 reuniões confirmadas (B compareceu, D não)", async () => {
     const kpis = await getDashboardKpis(serviceScope(tenantAId), RANGE);
-    expect(kpis.confirmedMeetingCount).toBe(2);
+    expect(kpis.confirmedAppointmentCount).toBe(2);
     expect(kpis.attendanceRate).toBe(0.5);
   });
 
@@ -207,7 +207,7 @@ describe("server/data getDashboardKpis", () => {
     };
     const kpis = await getDashboardKpis(serviceScope(tenantAId), noMeetingsRange);
     expect(kpis.leadCount).toBe(2); // leads A e E
-    expect(kpis.confirmedMeetingCount).toBe(0);
+    expect(kpis.confirmedAppointmentCount).toBe(0);
     expect(kpis.attendanceRate).toBeNull();
   });
 
@@ -224,7 +224,7 @@ describe("server/data getDashboardKpis", () => {
       qualificationRate: null,
       escalationRate: null,
       attendanceRate: null,
-      confirmedMeetingCount: 0,
+      confirmedAppointmentCount: 0,
     });
   });
 
@@ -238,7 +238,7 @@ describe("server/data getDashboardKpis", () => {
     expect(kpisB.avgFirstResponseMinutes).toBeNull();
     expect(kpisB.qualificationRate).toBe(0);
     expect(kpisB.escalationRate).toBe(0);
-    expect(kpisB.confirmedMeetingCount).toBe(0);
+    expect(kpisB.confirmedAppointmentCount).toBe(0);
     expect(kpisB.attendanceRate).toBeNull();
   });
 
@@ -246,7 +246,7 @@ describe("server/data getDashboardKpis", () => {
     const { sql } = __testOnly_periodLeadsQuery(serviceScope(tenantAId), RANGE).toSQL();
 
     // As 4 colunas que a agregação em TS lê (status, firstContactAt,
-    // firstResponseAt, meetingAttended) precisam estar no SELECT.
+    // firstResponseAt, appointmentAttended) precisam estar no SELECT.
     expect(sql).toMatch(/select[\s\S]*"status"/i);
     expect(sql).toMatch(/select[\s\S]*"first_contact_at"/i);
     expect(sql).toMatch(/select[\s\S]*"first_response_at"/i);
@@ -270,7 +270,7 @@ describe("server/data getDashboardKpis", () => {
     expect(kpis.avgFirstResponseMinutes).toBe(20);
     expect(kpis.qualificationRate).toBeCloseTo(2 / 6, 10);
     expect(kpis.escalationRate).toBeCloseTo(1 / 6, 10);
-    expect(kpis.confirmedMeetingCount).toBe(2);
+    expect(kpis.confirmedAppointmentCount).toBe(2);
     expect(kpis.attendanceRate).toBe(0.5);
   });
 });
@@ -301,14 +301,14 @@ describe("server/data getLeadVolumeSeries / getLeadDistributions", () => {
         id: tenantId,
         name: "Dashboard Series Test Tenant",
         agentName: "Agente Série",
-        supportedModality: "ambos",
+        supportedSegment: "ambos",
         slug: `fixture-${tenantId}`,
       },
       {
         id: otherTenantId,
         name: "Dashboard Series Other Tenant",
         agentName: "Agente Outro",
-        supportedModality: "ambos",
+        supportedSegment: "ambos",
         slug: `fixture-${otherTenantId}`,
       },
     ]);

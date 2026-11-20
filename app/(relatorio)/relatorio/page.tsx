@@ -1,3 +1,4 @@
+import { access } from "@/src/kit/access";
 import { notFound } from "next/navigation";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
@@ -6,13 +7,14 @@ import { Timestamp } from "@astryxdesign/core/Timestamp";
 import { KpiTiles } from "@/src/components/dashboard/kpi-tiles";
 import { resolveDashboardPeriod } from "@/src/lib/dashboard-period";
 import { periodDays } from "@/src/lib/pilot-metrics";
+import { realEstate } from "@/src/verticals/real-estate";
 import { getDashboardKpis, getTenant } from "@/src/server/data";
 import {
   PermissionDeniedError,
   requirePermission,
-} from "@/src/server/auth/session";
+} from "@/src/kit/session";
 
-interface RelatorioPageProps {
+interface ReportPageProps {
   searchParams: Promise<{ periodo?: string; de?: string; ate?: string }>;
 }
 
@@ -32,10 +34,10 @@ interface RelatorioPageProps {
  * sem `configuracoes:ler` a rota recusa com 404 (AC4), mesmo tratamento de
  * "recurso inexistente" que `app/(crm)/configuracoes/page.tsx` já usa.
  */
-export default async function RelatorioPage({ searchParams }: RelatorioPageProps) {
+export default async function ReportPage({ searchParams }: ReportPageProps) {
   let context;
   try {
-    context = await requirePermission("configuracoes", "ler");
+    context = await requirePermission("settings", "read", access);
   } catch (error) {
     if (error instanceof PermissionDeniedError) notFound();
     throw error;
@@ -45,7 +47,7 @@ export default async function RelatorioPage({ searchParams }: RelatorioPageProps
   const period = resolveDashboardPeriod(params);
 
   const [kpis, tenant] = await Promise.all([
-    getDashboardKpis(context.leadScope, period),
+    getDashboardKpis(context.leadScope, period, realEstate.appointments),
     getTenant(context.tenantId),
   ]);
 
@@ -85,7 +87,7 @@ export default async function RelatorioPage({ searchParams }: RelatorioPageProps
         baseline={{
           baselineLeadsPerMonth: tenant.baselineLeadsPerMonth,
           baselineFirstResponseMinutes: tenant.baselineFirstResponseMinutes,
-          baselineLeadToMeetingPct: tenant.baselineLeadToMeetingPct,
+          baselineLeadToAppointmentPct: tenant.baselineLeadToAppointmentPct,
           baselineEscalationPct: tenant.baselineEscalationPct,
           baselineAttendancePct: tenant.baselineAttendancePct,
         }}

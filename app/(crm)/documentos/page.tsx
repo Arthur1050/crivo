@@ -1,3 +1,6 @@
+import { access } from "@/src/kit/access";
+import { DOCUMENT_STATUS } from "../../../src/lib/vocabulary";
+import { MODALITY } from "../../../src/verticals/real-estate/vocabulary";
 import { Banner } from "@astryxdesign/core/Banner";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
@@ -14,31 +17,31 @@ import { FoldersGrid } from "@/src/components/documents/folders-grid";
 import { toFolderCardItems } from "@/src/components/documents/folder-presentation";
 import { UploadDialog } from "@/src/components/documents/upload-dialog";
 import { NavLink } from "@/src/components/shared/nav-link";
-import { can } from "@/src/lib/permissions";
+import { can } from "@/src/kit/access";
 import { parseFolderParam } from "@/src/lib/document-folders";
-import { requirePermission } from "@/src/server/auth/session";
+import { requirePermission } from "@/src/kit/session";
 import {
   getDocumentCategories,
   getDocuments,
   getTenant,
-  type Modality,
+  type DocumentSegment,
 } from "@/src/server/data";
 import { getTenantContextLimitSummary } from "@/src/server/documents/repository";
 import { getDocumentFolder, listDocumentFolderSummaries } from "@/src/server/data/document-folders";
 import { getActiveTenantId } from "@/src/server/tenant";
 
-const VALID_MODALITIES: readonly string[] = ["novo", "usado", "ambos"];
+const VALID_MODALITIES: readonly string[] = [MODALITY.new, MODALITY.used, MODALITY.both];
 
-function asModality(value: string | undefined): Modality | undefined {
-  return value && VALID_MODALITIES.includes(value) ? (value as Modality) : undefined;
+function asModality(value: string | undefined): DocumentSegment | undefined {
+  return value && VALID_MODALITIES.includes(value) ? (value as DocumentSegment) : undefined;
 }
 
-interface DocumentosPageProps {
+interface DocumentsPageProps {
   searchParams: Promise<{
-    modalidade?: string;
+    "modalidade"?: string;
     categoria?: string;
     q?: string;
-    pasta?: string;
+    "pasta"?: string;
   }>;
 }
 
@@ -51,33 +54,33 @@ interface DocumentosPageProps {
  * Composta como gerenciador de arquivos: cabeçalho com ações, busca com o
  * menu "Filtrar e ordenar", pastas e arquivos em grade ou lista.
  */
-export default async function DocumentosPage({
+export default async function DocumentsPage({
   searchParams,
-}: DocumentosPageProps) {
+}: DocumentsPageProps) {
   const params = await searchParams;
   const tenantId = await getActiveTenantId();
   // A leitura da página é exigida de fato; a visibilidade de escrita é só
   // conveniência de interface — cada action e rota revalida permissão e tenant
   // por conta própria, e segue sendo a autoridade.
-  const { roles } = await requirePermission("documentos", "ler");
-  const canWrite = can(roles, "documentos", "escrever");
+  const { roles } = await requirePermission("documents", "read", access);
+  const canWrite = can(roles, "documents", "write");
 
-  const modality = asModality(params.modalidade);
+  const segment = asModality(params["modalidade"]);
   const categoryId = params.categoria || undefined;
   const search = params.q?.trim() || undefined;
-  const folderParam = parseFolderParam(params.pasta);
+  const folderParam = parseFolderParam(params["pasta"]);
   const folder = folderParam.kind === "pasta"
     ? await getDocumentFolder(tenantId, folderParam.folderId)
     : null;
   const mode = resolveDocumentsPageMode(folderParam, folder);
-  const hasActiveFilters = Boolean(modality || categoryId || search || folderParam.kind === "sem-pasta");
+  const hasActiveFilters = Boolean(segment || categoryId || search || folderParam.kind === "sem-pasta");
 
   const [allDocuments, filteredDocuments, categories, tenant, limitSummary, summaries] =
     await Promise.all([
       getDocuments(tenantId),
       mode.kind === "pasta-inexistente"
         ? Promise.resolve([])
-        : getDocuments(tenantId, { modality, categoryId, search, folder: folderFilterFor(mode) }),
+        : getDocuments(tenantId, { segment, categoryId, search, folder: folderFilterFor(mode) }),
       getDocumentCategories(tenantId),
       getTenant(tenantId),
       getTenantContextLimitSummary(tenantId),
@@ -91,7 +94,7 @@ export default async function DocumentosPage({
   // O polling só existe enquanto alguma extração está em curso, e a decisão é
   // do servidor: a ilha cliente nem monta quando não há o que observar.
   const hasProcessingDocuments = allDocuments.some(
-    (document) => document.status === "processando"
+    (document) => document.status === DOCUMENT_STATUS.processing
   );
   const benchmarkNotice = describeBenchmarkNotice(limitSummary, canWrite);
   const pageHeader = (

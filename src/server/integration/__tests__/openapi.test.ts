@@ -5,8 +5,9 @@ import { describe, expect, it } from "vitest";
 import SwaggerParser from "@apidevtools/swagger-parser";
 import type { OpenAPIV3_1 } from "openapi-types";
 import { agentPhaseEnum, reengagementStateEnum, senderEnum } from "../../../db/schema";
-import { AGENT_WRITABLE_SENDERS, MAX_BODY_BYTES, MAX_CONTEXT_QUESTION_LENGTH, parseAgentState, parseAutomationCandidatesQuery, parsePreparationFailure, parseReengagementAcknowledgement, parseReengagementPrepare, parseReengagementSend, parseSessionContext, parseUsageSync } from "../parsers";
-import { FIELD_LABELS } from "../../../../n8n/src/phase.mjs";
+import { parseAgentState } from "../../../kit/integration";
+import { AGENT_WRITABLE_SENDERS, MAX_BODY_BYTES, MAX_CONTEXT_QUESTION_LENGTH, parseAutomationCandidatesQuery, parsePreparationFailure, parseReengagementAcknowledgement, parseReengagementPrepare, parseReengagementSend, parseSessionContext, parseUsageSync } from "../parsers";
+import { FIELD_LABELS } from "../../../../n8n/verticals/real-estate/src/phase.mjs";
 import { TITLES } from "../problem";
 
 const OPENAPI_PATH = path.resolve(

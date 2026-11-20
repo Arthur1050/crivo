@@ -10,7 +10,7 @@ import {
   tenants,
   users,
 } from "../../../db/schema";
-import { auth } from "../config";
+import { auth } from "../../../kit/auth";
 
 // Cobre TENANT-01 AC1 (vínculo usuário↔imobiliária como relação própria) pelo
 // ângulo que a T4 precisa provar: o plugin `organization` escreve na tabela
@@ -82,7 +82,7 @@ describe("server/auth — plugin organization sobre `tenants` (lote-8, TENANT-01
     expect(rows[0].name).toBe("Imobiliária Fixture T4");
     expect(rows[0].slug).toBe(slug);
     expect(rows[0].agentName).toBe("Agente Fixture T4");
-    expect(rows[0].supportedModality).toBe("ambos");
+    expect(rows[0].supportedSegment).toBe("ambos");
   });
 
   it("o vínculo do criador é uma linha de `tenant_members` apontando para o usuário e para a imobiliária", async () => {

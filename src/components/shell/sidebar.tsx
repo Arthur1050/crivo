@@ -36,7 +36,7 @@ import {
   type TenantOption,
 } from "@/src/components/shell/tenant-switcher";
 import { formatAgentActivitySubtitle } from "@/src/lib/agent-activity";
-import { can, type Resource, type Role } from "@/src/lib/permissions";
+import { can, type Resource, type Role } from "@/src/kit/access";
 import { formatTenantLocation } from "@/src/lib/tenant-identity";
 import { useTenantStore } from "@/src/stores/tenant-store";
 
@@ -60,21 +60,21 @@ const NAV_ITEMS: readonly NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: ChartLineIcon, resource: "dashboard" },
   { label: "Pipeline", href: "/pipeline", icon: FolderKanbanIcon, resource: "pipeline" },
   { label: "Chats", href: "/chats", icon: MessageCircleIcon, resource: "chats" },
-  { label: "Documentos", href: "/documentos", icon: FileTextIcon, resource: "documentos" },
+  { label: "Documentos", href: "/documentos", icon: FileTextIcon, resource: "documents" },
   // lote-11 (T19): `imoveis` já concede `ler` a corretor na matriz de
   // permissões — nenhuma lógica de visibilidade nova, `visibleItems` abaixo
   // filtra igual aos demais itens.
-  { label: "Imóveis", href: "/imoveis", icon: Building2Icon, resource: "imoveis" },
+  { label: "Imóveis", href: "/imoveis", icon: Building2Icon, resource: "catalog" },
   {
     label: "Configurações",
     href: "/configuracoes",
     icon: SettingsIcon,
-    resource: "configuracoes",
+    resource: "settings",
   },
   // lote-8 (T22): `usuarios` só é legível pelo administrador na matriz de
   // permissões, então o filtro abaixo já esconde este item de gestor e
   // corretor — sem nenhuma condição especial aqui.
-  { label: "Usuários", href: "/usuarios", icon: UsersIcon, resource: "usuarios" },
+  { label: "Usuários", href: "/usuarios", icon: UsersIcon, resource: "users" },
 ];
 
 export interface SidebarActiveTenant {
@@ -156,7 +156,7 @@ export function Sidebar({
   // PERM-01 AC7: some da navegação o que o vínculo ativo não pode ler. Quem
   // só tem papel corretor perde Configurações; administrador e gestor veem
   // tudo o que existe hoje.
-  const visibleItems = NAV_ITEMS.filter((item) => can(roles, item.resource, "ler"));
+  const visibleItems = NAV_ITEMS.filter((item) => can(roles, item.resource, "read"));
 
   // Espelho client-side do tenant ativo (AD-007). Fica aqui, e não no menu:
   // o conteúdo do popover só monta quando aberto, mas a sidebar está sempre

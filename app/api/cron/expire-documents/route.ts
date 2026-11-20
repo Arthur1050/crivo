@@ -1,10 +1,12 @@
+import { realEstate } from "../../../../src/verticals/real-estate";
+import { PROBLEM_CODE } from "../../../../src/lib/vocabulary";
 import { timingSafeEqual, createHash } from "node:crypto";
 import type { DocumentStorage } from "../../../../src/server/documents/storage";
 import { VercelBlobDocumentStorage } from "../../../../src/server/documents/vercel-blob-storage";
-import { sendIntegrationAlertEmail } from "../../../../src/server/auth/email";
+import { sendIntegrationAlertEmail } from "../../../../src/kit/email";
 import type { IntegrationAlertDependencies } from "../../../../src/server/integration/integration-alert";
 import { runDailyMaintenance } from "../../../../src/server/integration/lgpd";
-import { problem } from "../../../../src/server/integration/problem";
+import { problem } from "../../../../src/kit/integration";
 
 /**
  * `/api/cron/expire-documents` — job de TTL de documentos (design.md —
@@ -37,24 +39,25 @@ export function createExpireDocumentsHandler(
     const provided = /^Bearer\s+(.+)$/i.exec(header ?? "")?.[1]?.trim();
 
     if (!secret || !provided) {
-      return problem(401, "nao-autenticado", "Secret do cron ausente ou inválido.");
+      return problem(401, PROBLEM_CODE.unauthenticated, "Secret do cron ausente ou inválido.");
     }
 
     const secretHash = createHash("sha256").update(secret).digest();
     const providedHash = createHash("sha256").update(provided).digest();
 
     if (!timingSafeEqual(secretHash, providedHash)) {
-      return problem(401, "nao-autenticado", "Secret do cron ausente ou inválido.");
+      return problem(401, PROBLEM_CODE.unauthenticated, "Secret do cron ausente ou inválido.");
     }
 
     const storage = deps.storage ?? new VercelBlobDocumentStorage();
     // O destinatário é lido a cada chamada, como o secret: ausente, o alerta
     // não envia e reporta `destinatario-ausente` (lote-15 — ALERTA-03).
     const integrationAlert = deps.integrationAlert ?? {
+      brand: realEstate.brand,
       operatorEmail: process.env.KRIVO_OPERATOR_ALERT_EMAIL,
       send: sendIntegrationAlertEmail,
     };
-    const result = await runDailyMaintenance(now(), { storage, integrationAlert });
+    const result = await runDailyMaintenance(now(), { storage, integrationAlert, facet: realEstate.documentSegments });
     // Só contagens e flags, sem nome de tenant: o log de produção prova que o
     // grupo rodou (ALERTA-04 AC6) sem carregar dado de imobiliária.
     console.info("[manutencao] alerta", {

@@ -1,0 +1,730 @@
+[
+  {
+    "path": "src/db/mint-service-key.ts",
+    "term": "market:krivo",
+    "reason": "Nome da credencial publicada no n8n; contrato operacional preservado até a ativação do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "market:property",
+    "reason": "Colunas, nomes de restrições e valores físicos preservados até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "market:meeting",
+    "reason": "Colunas, nomes de restrições e valores físicos preservados até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/data/index.ts",
+    "term": "market:meeting",
+    "reason": "Referência SQL à coluna meeting_at preservada até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
+  },
+  {
+    "path": "src/server/documents/benchmark-identity.ts",
+    "term": "market:reuni",
+    "reason": "Nome da tool agendar_reuniao preservado no contrato do agente publicado até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "src/server/integration/leads.ts",
+    "term": "market:meeting",
+    "reason": "Campo meetingAt preservado no /api/v1 até o L18c.",
+    "removedIn": "L18c",
+    "category": "api"
+  },
+  {
+    "path": "src/server/integration/parsers.ts",
+    "term": "market:meeting",
+    "reason": "Campo meetingAt preservado no /api/v1 até o L18c.",
+    "removedIn": "L18c",
+    "category": "api"
+  },
+  {
+    "path": "src/server/integration/problem.ts",
+    "term": "market:corretor",
+    "reason": "Título Nenhum corretor disponível preservado no /api/v1 até o L18c.",
+    "removedIn": "L18c",
+    "category": "api"
+  },
+  {
+    "path": "src/server/integration/settings.ts",
+    "term": "market:meeting",
+    "reason": "Campos meetingDays, meetingHoursStart e meetingHoursEnd preservados no /api/v1 até o L18c.",
+    "removedIn": "L18c",
+    "category": "api"
+  },
+  {
+    "path": "src/server/reengagement/context.ts",
+    "term": "market:meeting",
+    "reason": "Chaves do contrato de horário de atendimento consumido pelo módulo de reengajamento do n8n até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "src/server/reengagement/repository.ts",
+    "term": "market:meeting",
+    "reason": "Chaves do contrato de horário de atendimento consumido pelo módulo de reengajamento do n8n até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/benchmark-contexto.ts",
+    "term": "market:property",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/benchmark-contexto.ts",
+    "term": "market:imobili",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/benchmark-contexto.ts",
+    "term": "market:imóve",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/benchmark-contexto.ts",
+    "term": "market:reuni",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/benchmark-contexto.ts",
+    "term": "market:corretor",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/benchmark-contexto.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/benchmark-contexto.ts",
+    "term": "market:meeting",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/benchmark-contexto.ts",
+    "term": "market:financiamento",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/erros.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/principal.ts",
+    "term": "market:reuni",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/principal.ts",
+    "term": "market:imobili",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/principal.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/principal.ts",
+    "term": "market:property",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/principal.ts",
+    "term": "market:imóve",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/principal.ts",
+    "term": "market:meeting",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/principal.ts",
+    "term": "market:corretor",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/principal.ts",
+    "term": "market:financiamento",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/reengagement-contextual.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/reengagement-contextual.ts",
+    "term": "market:imóve",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/reengagement-contextual.ts",
+    "term": "market:property",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/reengagement-contextual.ts",
+    "term": "market:imobili",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/reengagement-contextual.ts",
+    "term": "market:corretor",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/reengagement-contextual.ts",
+    "term": "market:reuni",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/reengagement-contextual.ts",
+    "term": "market:meeting",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/reengagement-contextual.ts",
+    "term": "market:financiamento",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/scheduler.ts",
+    "term": "market:meeting",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/scheduler.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/scheduler.ts",
+    "term": "market:reuni",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/scheduler.ts",
+    "term": "market:broker",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/smoke-memoria.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/smoke-reset.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/tool-agendar-reuniao.ts",
+    "term": "market:meeting",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/tool-agendar-reuniao.ts",
+    "term": "market:imobili",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/tool-agendar-reuniao.ts",
+    "term": "market:reuni",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/tool-agendar-reuniao.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/tool-agendar-reuniao.ts",
+    "term": "market:broker",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/tool-agendar-reuniao.ts",
+    "term": "market:corretor",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/tool-agendar-reuniao.ts",
+    "term": "market:property",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/tool-responder-lead.ts",
+    "term": "market:imobili",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/tool-responder-lead.ts",
+    "term": "market:imovel",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/tool-responder-lead.ts",
+    "term": "market:imóve",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/tool-responder-lead.ts",
+    "term": "market:corretor",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/generated/tool-responder-lead.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/src/agendamento.mjs",
+    "term": "market:corretor",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/src/agendamento.mjs",
+    "term": "market:imobili",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/src/agendamento.mjs",
+    "term": "market:reuni",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/src/agendamento.mjs",
+    "term": "market:broker",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/src/agendamento.mjs",
+    "term": "market:property",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/src/agendamento.mjs",
+    "term": "market:meeting",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/src/business-hours.mjs",
+    "term": "market:meeting",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/src/scheduler-reengagement.mjs",
+    "term": "market:broker",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/src/session.mjs",
+    "term": "market:imobili",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/src/voice.mjs",
+    "term": "market:imovel",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/erros.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/principal.ts",
+    "term": "market:reuni",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/principal.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/principal.ts",
+    "term": "market:property",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/principal.ts",
+    "term": "market:meeting",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/reengagement-contextual.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/scheduler.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/smoke-memoria.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/smoke-reset.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "n8n/workflows/tool-responder-lead.ts",
+    "term": "market:krivo",
+    "reason": "Fonte ou gerado do agente preservado byte a byte até o L18c.",
+    "removedIn": "L18c",
+    "category": "n8n-modules"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:novo",
+    "reason": "Colunas, nomes de restrições e valores físicos preservados até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:usado",
+    "reason": "Colunas, nomes de restrições e valores físicos preservados até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:ambos",
+    "reason": "Colunas, nomes de restrições e valores físicos preservados até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:casa",
+    "reason": "Colunas, nomes de restrições e valores físicos preservados até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:apartamento",
+    "reason": "Colunas, nomes de restrições e valores físicos preservados até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:investidor",
+    "reason": "Colunas, nomes de restrições e valores físicos preservados até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:morador",
+    "reason": "Colunas, nomes de restrições e valores físicos preservados até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:pre_aprovado",
+    "reason": "Colunas, nomes de restrições e valores físicos preservados até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:recurso_proprio",
+    "reason": "Colunas, nomes de restrições e valores físicos preservados até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "stored:humano",
+    "reason": "Colunas, nomes de restrições e valores físicos preservados até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
+  },
+  {
+    "path": "src/lib/distribution.ts",
+    "term": "stored:novo",
+    "reason": "Chaves de qualificação persistidas, usadas na distribuição até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
+  },
+  {
+    "path": "src/lib/distribution.ts",
+    "term": "stored:usado",
+    "reason": "Chaves de qualificação persistidas, usadas na distribuição até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
+  },
+  {
+    "path": "src/lib/distribution.ts",
+    "term": "stored:ambos",
+    "reason": "Chaves de qualificação persistidas, usadas na distribuição até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
+  },
+  {
+    "path": "src/lib/distribution.ts",
+    "term": "stored:investidor",
+    "reason": "Chaves de qualificação persistidas, usadas na distribuição até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
+  },
+  {
+    "path": "src/lib/distribution.ts",
+    "term": "stored:morador",
+    "reason": "Chaves de qualificação persistidas, usadas na distribuição até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
+  },
+  {
+    "path": "src/lib/vocabulary.ts",
+    "term": "market:corretor",
+    "reason": "Valor persistido do papel e código de problema; o vocabulário preserva os valores até a ativação do L18c (T10, VOCAB-01 AC3).",
+    "removedIn": "L18c",
+    "category": "stored"
+  },
+  {
+    "path": "src/vertical-kit/index.ts",
+    "term": "market:property",
+    "reason": "Tipo das colunas de qualificação transitórias do lead; remoção na migração física do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "column:leads.region",
+    "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "column:leads.purchase_horizon",
+    "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "column:leads.modality",
+    "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "column:leads.property_type",
+    "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "column:leads.motivation",
+    "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "column:leads.credit_status",
+    "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "column:leads.budget_cents",
+    "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "column:leads.chained_operation",
+    "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "enum:modality",
+    "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "enum:property_type",
+    "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "enum:motivation",
+    "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "enum:credit_status",
+    "reason": "Estrutura física de qualificação mantida até a migração do L18c.",
+    "removedIn": "L18c",
+    "category": "stored"
+  },
+  {
+    "path": "src/db/schema.ts",
+    "term": "check:lead_agent_state_asked_fields",
+    "reason": "Lista de campos gravados em asked_fields mantida na restrição física até a migração do L18c; em runtime vale a faceta de qualificação.",
+    "removedIn": "L18c",
+    "category": "stored"
+  }
+]

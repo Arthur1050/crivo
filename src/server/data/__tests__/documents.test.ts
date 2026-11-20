@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { getDocumentSample } from "../../../kit/document-services";
 import { randomUUID } from "node:crypto";
 import { eq, inArray } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -7,7 +8,6 @@ import { documentCategories, documentFolders, documents, tenants as tenantTable 
 import {
   createDocument,
   getDocumentCategories,
-  getDocumentSample,
   getDocuments,
   getTenants,
   updateDocument,
@@ -35,20 +35,20 @@ describe("server/data documents", () => {
         name: "Fixture filtro novo.pdf",
         mimeType: "application/pdf",
         sizeBytes: 100,
-        modality: "novo",
+        segment: "novo",
         categoryId: category.id,
       }),
       createDocument(tenantAId, {
         name: "Fixture filtro ambos.pdf",
         mimeType: "application/pdf",
         sizeBytes: 100,
-        modality: "ambos",
+        segment: "ambos",
       }),
       createDocument(tenantBId, {
         name: "Fixture filtro tenant B.pdf",
         mimeType: "application/pdf",
         sizeBytes: 100,
-        modality: "usado",
+        segment: "usado",
       }),
     ]);
   });
@@ -104,9 +104,9 @@ describe("server/data documents", () => {
     });
 
     it("filtra por modality (DOC-06)", async () => {
-      const result = await getDocuments(tenantAId, { modality: "novo" });
+      const result = await getDocuments(tenantAId, { segment: "novo" });
       expect(result.length).toBeGreaterThan(0);
-      for (const doc of result) expect(doc.modality).toBe("novo");
+      for (const doc of result) expect(doc.segment).toBe("novo");
     });
 
     it("filtra por categoryId (DOC-06)", async () => {
@@ -135,18 +135,18 @@ describe("server/data documents", () => {
 
     it("combina modality + search (DOC-06)", async () => {
       const modalityMatches = await getDocuments(tenantAId, {
-        modality: "ambos",
+        segment: "ambos",
       });
       expect(modalityMatches.length).toBeGreaterThan(0);
       const target = modalityMatches[0];
       const term = target.name.slice(0, 5);
 
       const result = await getDocuments(tenantAId, {
-        modality: "ambos",
+        segment: "ambos",
         search: term,
       });
       expect(result.some((d) => d.id === target.id)).toBe(true);
-      for (const doc of result) expect(doc.modality).toBe("ambos");
+      for (const doc of result) expect(doc.segment).toBe("ambos");
     });
 
     it("retorna [] para um tenant inexistente, nunca um erro (edge case)", async () => {
@@ -177,7 +177,7 @@ describe("server/data documents", () => {
 
     async function add(overrides: Partial<typeof documents.$inferInsert> = {}) {
       const [row] = await db.insert(documents).values({
-        tenantId, name: "Contrato ideal", modality: "novo", mimeType: "text/plain", sizeBytes: 10n,
+        tenantId, name: "Contrato ideal", segment: "novo", mimeType: "text/plain", sizeBytes: 10n,
         folderId: first.id, categoryId, storageProvider: "teste", storageKey: randomUUID(), storageEtag: "etag",
         contentSha256: randomUUID().replaceAll("-", "").repeat(2), status: "pronto", ...overrides,
       }).returning();
@@ -185,7 +185,7 @@ describe("server/data documents", () => {
     }
 
     beforeAll(async () => {
-      await db.insert(tenantTable).values({ id: tenantId, name: "Filtros pastas", slug: `filtros-${tenantId}`, agentName: "Agente", supportedModality: "ambos" });
+      await db.insert(tenantTable).values({ id: tenantId, name: "Filtros pastas", slug: `filtros-${tenantId}`, agentName: "Agente", supportedSegment: "ambos" });
       [first, second] = await db.insert(documentFolders).values([
         { tenantId, name: "Primeira", updatedAt: old }, { tenantId, name: "Segunda", updatedAt: old },
       ]).returning();
@@ -195,7 +195,7 @@ describe("server/data documents", () => {
       expectedId = (await add()).id;
       rootId = (await add({ folderId: null })).id;
       otherId = (await add({ folderId: second.id })).id;
-      await add({ modality: "usado" });
+      await add({ segment: "usado" });
       await add({ categoryId: null });
       await add({ name: "Arquivo diferente" });
       await add({ deletedAt: new Date() });
@@ -221,20 +221,20 @@ describe("server/data documents", () => {
     });
 
     it("combina simultaneamente pasta, modalidade, categoria e busca", async () => {
-      const result = await getDocuments(tenantId, { folder: { kind: "pasta", folderId: first.id }, modality: "novo", categoryId, search: "Contrato" });
+      const result = await getDocuments(tenantId, { folder: { kind: "pasta", folderId: first.id }, segment: "novo", categoryId, search: "Contrato" });
       expect(result.map((d) => d.id)).toEqual([expectedId]);
     });
 
     it("edita a pasta junto com os metadados e atualiza origem e destino; omissão preserva e null remove", async () => {
       const doc = await add({ name: "Antes de editar" });
       const beforeTime = Date.now();
-      expect(await updateDocument(tenantId, doc.id, { name: "Editado", modality: "novo", folderId: second.id })).toEqual({ ...doc, name: "Editado", folderId: second.id });
+      expect(await updateDocument(tenantId, doc.id, { name: "Editado", segment: "novo", folderId: second.id })).toEqual({ ...doc, name: "Editado", folderId: second.id });
       const [origin] = await db.select().from(documentFolders).where(eq(documentFolders.id, first.id));
       const [target] = await db.select().from(documentFolders).where(eq(documentFolders.id, second.id));
       expect(origin.updatedAt.getTime()).toBeGreaterThanOrEqual(beforeTime);
       expect(target.updatedAt).toEqual(origin.updatedAt);
-      expect(await updateDocument(tenantId, doc.id, { name: "Mantido", modality: "novo" })).toEqual({ ...doc, name: "Mantido", folderId: second.id });
-      expect(await updateDocument(tenantId, doc.id, { name: "Na raiz", modality: "novo", folderId: null })).toEqual({ ...doc, name: "Na raiz", folderId: null });
+      expect(await updateDocument(tenantId, doc.id, { name: "Mantido", segment: "novo" })).toEqual({ ...doc, name: "Mantido", folderId: second.id });
+      expect(await updateDocument(tenantId, doc.id, { name: "Na raiz", segment: "novo", folderId: null })).toEqual({ ...doc, name: "Na raiz", folderId: null });
       const [afterRoot] = await db.select().from(documentFolders).where(eq(documentFolders.id, second.id));
       expect(afterRoot.updatedAt.getTime()).toBeGreaterThanOrEqual(target.updatedAt.getTime());
     });
@@ -242,7 +242,7 @@ describe("server/data documents", () => {
     it("pasta inválida, inexistente ou estrangeira não grava nenhum campo", async () => {
       const doc = await add();
       for (const folderId of [foreign.id, randomUUID(), "abc"]) {
-        await expect(updateDocument(tenantId, doc.id, { name: "Não deve gravar", modality: "usado", categoryId: null, folderId })).rejects.toBeInstanceOf(DocumentFolderNotFoundError);
+        await expect(updateDocument(tenantId, doc.id, { name: "Não deve gravar", segment: "usado", categoryId: null, folderId })).rejects.toBeInstanceOf(DocumentFolderNotFoundError);
         expect((await db.select().from(documents).where(eq(documents.id, doc.id)))[0]).toEqual(doc);
       }
       expect((await db.select().from(documentFolders).where(eq(documentFolders.id, foreign.id)))[0]).toEqual(foreign);
@@ -268,18 +268,18 @@ describe("server/data documents", () => {
         usado: 0,
         ambos: 0,
       };
-      for (const doc of allDocs) expectedCounts[doc.modality] += 1;
-      expect(sample.countsByModality).toEqual(expectedCounts);
+      for (const doc of allDocs) expectedCounts[doc.segment] += 1;
+      expect(sample.countsBySegment).toEqual(expectedCounts);
     });
 
     it("contagens do tenant A e B não se misturam (isolamento, AC 2.1, 2.2)", async () => {
       const sampleA = await getDocumentSample(tenantAId);
       const sampleB = await getDocumentSample(tenantBId);
-      const totalA = Object.values(sampleA.countsByModality).reduce(
+      const totalA = Object.values(sampleA.countsBySegment).reduce(
         (a, b) => a + b,
         0
       );
-      const totalB = Object.values(sampleB.countsByModality).reduce(
+      const totalB = Object.values(sampleB.countsBySegment).reduce(
         (a, b) => a + b,
         0
       );
@@ -292,7 +292,7 @@ describe("server/data documents", () => {
     it("retorna [] e zeros para um tenant inexistente, nunca um erro (edge case)", async () => {
       const sample = await getDocumentSample(NON_EXISTENT_TENANT_ID);
       expect(sample.recent).toEqual([]);
-      expect(sample.countsByModality).toEqual({
+      expect(sample.countsBySegment).toEqual({
         novo: 0,
         usado: 0,
         ambos: 0,

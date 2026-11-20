@@ -1,7 +1,10 @@
-import { parsePropertyFilters } from "../../../../src/server/integration/property-filters";
-import { searchVisibleProperties } from "../../../../src/server/integration/properties";
-import { methodNotAllowed, problem } from "../../../../src/server/integration/problem";
-import { withIntegrationRoute } from "../../../../src/server/integration/route";
+import { PROBLEM_CODE } from "../../../../src/lib/vocabulary";
+import { createIntegrationKit } from "../../../../src/server/integration/kit";
+import { realEstate } from "../../../../src/verticals/real-estate";
+import { parsePropertyFilters } from "../../../../src/verticals/real-estate/integration/property-filters";
+import { searchVisibleProperties } from "../../../../src/verticals/real-estate/integration/properties";
+
+const { methodNotAllowed, problem, withIntegrationRoute } = createIntegrationKit(realEstate);
 
 /**
  * `GET /api/v1/properties?modalidade=&tipo=&bairro=&cidade=&precoMin=&
@@ -16,7 +19,7 @@ export const GET = withIntegrationRoute(async (request, auth) => {
   const params = new URL(request.url).searchParams;
   const parsed = parsePropertyFilters(params);
   if (!parsed.ok) {
-    return problem(400, "payload-invalido", parsed.detail);
+    return problem(400, PROBLEM_CODE.invalid_payload, parsed.detail);
   }
 
   const result = await searchVisibleProperties(auth.tenantId, parsed.filters);

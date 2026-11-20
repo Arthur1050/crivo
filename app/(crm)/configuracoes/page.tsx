@@ -1,3 +1,6 @@
+import { getDocumentSample } from "@/src/kit/document-services";
+import { access } from "@/src/kit/access";
+import { MODALITY } from "../../../src/verticals/real-estate/vocabulary";
 import { notFound } from "next/navigation";
 import { FileTextIcon } from "lucide-react";
 import { Badge } from "@astryxdesign/core/Badge";
@@ -15,28 +18,27 @@ import { SettingsForm } from "@/src/components/settings/settings-form";
 import { StorefrontComingSoon } from "@/src/components/settings/storefront-coming-soon";
 import {
   getDocumentCategories,
-  getDocumentSample,
   getTenant,
-  type Modality,
+  type DocumentSegment,
 } from "@/src/server/data";
 import {
   PermissionDeniedError,
   requirePermission,
-} from "@/src/server/auth/session";
+} from "@/src/kit/session";
 import { getActiveTenantId } from "@/src/server/tenant";
 
-const MODALITY_LABELS: Record<Modality, string> = {
-  novo: "Novo",
-  usado: "Usado",
-  ambos: "Ambos",
+const MODALITY_LABELS: Record<DocumentSegment, string> = {
+  [MODALITY.new]: "Novo",
+  [MODALITY.used]: "Usado",
+  [MODALITY.both]: "Ambos",
 };
 
 // Mesmas cores por modalidade da tabela de Documentos
 // (`src/components/documents/documents-table.tsx`) — UI-02 AC4.
-const MODALITY_BADGE_VARIANT: Record<Modality, "blue" | "purple" | "teal"> = {
-  novo: "blue",
-  usado: "purple",
-  ambos: "teal",
+const MODALITY_BADGE_VARIANT: Record<DocumentSegment, "blue" | "purple" | "teal"> = {
+  [MODALITY.new]: "blue",
+  [MODALITY.used]: "purple",
+  [MODALITY.both]: "teal",
 };
 
 const NO_CATEGORY_LABEL = "Sem categoria";
@@ -52,14 +54,14 @@ const NO_CATEGORY_LABEL = "Sem categoria";
  * estado e um único save; o card "Documentos" permanece, com o mesmo
  * conteúdo e o mesmo link "Ver todos" (RD-07 AC4).
  */
-export default async function ConfiguracoesPage() {
+export default async function SettingsPage() {
   // PERM-01 AC3/AC5: o corretor não tem acesso a Configurações — nem leitura.
   // Ocultar o item da navegação (AC7) é cosmético; digitar a URL cai aqui, e a
   // guarda recusa no servidor, registrando a negativa em log (AC6). O desfecho
   // é "recurso inexistente", mesmo tratamento de um recurso de outra
   // imobiliária (spec.md — Edge Cases), em vez de confirmar que a tela existe.
   try {
-    await requirePermission("configuracoes", "ler");
+    await requirePermission("settings", "read", access);
   } catch (error) {
     if (error instanceof PermissionDeniedError) notFound();
     throw error;
@@ -125,10 +127,10 @@ export default async function ConfiguracoesPage() {
           ) : (
             <VStack gap={4}>
               <HStack gap={2}>
-                {(Object.keys(MODALITY_LABELS) as Modality[]).map((modality) => (
+                {(Object.keys(MODALITY_LABELS) as DocumentSegment[]).map((modality) => (
                   <Badge
                     key={modality}
-                    label={`${MODALITY_LABELS[modality]}: ${sample.countsByModality[modality]}`}
+                    label={`${MODALITY_LABELS[modality]}: ${sample.countsBySegment[modality]}`}
                     variant={MODALITY_BADGE_VARIANT[modality]}
                   />
                 ))}
@@ -159,7 +161,7 @@ export default async function ConfiguracoesPage() {
                             </Text>
                           )}
                           <Text type="supporting" color="secondary">
-                            {MODALITY_LABELS[document.modality]}
+                            {MODALITY_LABELS[document.segment]}
                           </Text>
                         </HStack>
                       }

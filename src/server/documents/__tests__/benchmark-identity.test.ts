@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { renderWorkflows } from "../../../../scripts/n8n-inline.mjs";
 import { describe, expect, it } from "vitest";
 import {
   deriveBenchmarkIdentity,
@@ -7,10 +8,12 @@ import {
   extractToolCatalog,
 } from "../benchmark-identity";
 
-const principal = readFileSync("n8n/workflows/principal.ts", "utf8");
-const modules = ["business-hours.mjs", "phase.mjs", "system-message.mjs"].map((file) =>
-  readFileSync(`n8n/src/${file}`, "utf8")
-);
+const principal = renderWorkflows({ inlineModules: false }).find(({ file }) => file === "principal.ts")!.generatedText;
+const modules = [
+  "n8n/src/business-hours.mjs",
+  "n8n/verticals/real-estate/src/phase.mjs",
+  "n8n/verticals/real-estate/src/system-message.mjs",
+].map((file) => readFileSync(file, "utf8"));
 
 describe("benchmark identity (lote-12 T34)", () => {
   // Estas três leituras ancoram a identidade no agente real: se `principal.ts`
@@ -35,10 +38,10 @@ describe("benchmark identity (lote-12 T34)", () => {
   });
 
   it("é determinística e independe de fim de linha", () => {
-    const a = deriveBenchmarkIdentity({ principalSource: principal, systemMessageSources: modules, workflowVersion: "v1" });
+    const a = deriveBenchmarkIdentity({ workflowSource: principal, systemMessageSources: modules, workflowVersion: "v1" });
     const b = deriveBenchmarkIdentity({
       // `\r?\n`: o arquivo pode já estar com CRLF; `\n` puro geraria `\r\r\n`.
-      principalSource: principal.replace(/\r?\n/g, "\r\n"),
+      workflowSource: principal.replace(/\r?\n/g, "\r\n"),
       systemMessageSources: modules.map((m) => m.replace(/\r?\n/g, "\r\n")),
       workflowVersion: "v1",
     });
@@ -46,9 +49,9 @@ describe("benchmark identity (lote-12 T34)", () => {
   });
 
   it("mudar a descrição de uma tool muda o hash do catálogo e nada mais", () => {
-    const base = deriveBenchmarkIdentity({ principalSource: principal, systemMessageSources: modules, workflowVersion: "v1" });
+    const base = deriveBenchmarkIdentity({ workflowSource: principal, systemMessageSources: modules, workflowVersion: "v1" });
     const changed = deriveBenchmarkIdentity({
-      principalSource: principal.replace("ÚNICA forma de enviar mensagem", "Forma de enviar mensagem"),
+      workflowSource: principal.replace("ÚNICA forma de enviar mensagem", "Forma de enviar mensagem"),
       systemMessageSources: modules,
       workflowVersion: "v1",
     });
@@ -57,9 +60,9 @@ describe("benchmark identity (lote-12 T34)", () => {
   });
 
   it("mudar o texto do system message muda só o hash dele", () => {
-    const base = deriveBenchmarkIdentity({ principalSource: principal, systemMessageSources: modules, workflowVersion: "v1" });
+    const base = deriveBenchmarkIdentity({ workflowSource: principal, systemMessageSources: modules, workflowVersion: "v1" });
     const changed = deriveBenchmarkIdentity({
-      principalSource: principal,
+      workflowSource: principal,
       systemMessageSources: [...modules.slice(0, 2), `${modules[2]}\n// mudança`],
       workflowVersion: "v1",
     });
@@ -103,7 +106,7 @@ describe("extractModelId ancorado no nó do agente (lote-13 T6)", () => {
   });
 
   it("a identidade derivada do principal.ts atual mantém o mesmo modelId", () => {
-    const identity = deriveBenchmarkIdentity({ principalSource: principal, systemMessageSources: modules, workflowVersion: "v1" });
+    const identity = deriveBenchmarkIdentity({ workflowSource: principal, systemMessageSources: modules, workflowVersion: "v1" });
     expect(identity.modelId).toBe("gpt-5.4-nano-2026-03-17");
   });
 });

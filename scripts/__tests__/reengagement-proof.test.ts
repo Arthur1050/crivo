@@ -9,10 +9,11 @@ import type { PoolClient } from "pg";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "../../src/db";
 import * as schema from "../../src/db/schema";
-import type { AuthContext } from "../../src/server/auth/session";
+import type { AuthContext } from "../../src/kit/session";
 import { ingestAgentMessage } from "../../src/server/data";
 import { getConversationUsage } from "../../src/server/data/whatsapp";
-import { getSessionFrame, prepareFrame } from "../../src/server/reengagement/context";
+import { getSessionFrame } from "../../src/server/reengagement/context";
+import { prepareFrame } from "../../src/kit/reengagement";
 import { claimPreparation, expireEpisode, listCandidates } from "../../src/server/reengagement/repository";
 import { sendPreparedEpisode, type SendPreparedEpisodeOptions } from "../../src/server/reengagement/send";
 import { createAnalyticsQuery } from "../../src/server/whatsapp/analytics-contract";
@@ -104,7 +105,7 @@ const gates = (ready = false): RealProofGates => ({ publication: { ...pendingPub
   benchmark: { sharedIdentityEqual: true, remeasured: false, capacityVerified: true }, executorEvidence: { authorized: true, gateExecutionId: "fixture-gate" } });
 function proofInput(row: Fixture): ProofExecutionArtifact["input"] { return { tenantId, leadId: row.lead.id, conversationId: row.conversation.id, anchorMessageId: row.anchor.id, textHash: hash(text) }; }
 beforeAll(async () => {
-  await db.insert(tenants).values([tenantId, foreignTenant].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T68", agentName: "Agente", supportedModality: "ambos" as const })));
+  await db.insert(tenants).values([tenantId, foreignTenant].map((id) => ({ id, slug: `fixture-${id}`, name: "Fixture T68", agentName: "Agente", supportedSegment: "ambos" as const })));
   await db.insert(users).values({ id: userId, name: "Fixture", email: `${userId}@fixture.invalid` });
 });
 beforeEach(() => { vi.stubEnv("WHATSAPP_ACCESS_TOKEN", "synthetic-t68"); vi.stubGlobal("fetch", vi.fn(async () => { throw new Error("external-transport-forbidden"); })); });

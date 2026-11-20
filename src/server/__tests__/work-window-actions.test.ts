@@ -12,8 +12,8 @@ import {
 import { eq, inArray } from "drizzle-orm";
 import { db } from "../../db";
 import { tenant_members, tenants, users } from "../../db/schema";
-import type { Role } from "../../lib/permissions";
-import type { AuthContext } from "../auth/session";
+import type { Role } from "../../kit/access";
+import type { AuthContext } from "../../kit/session";
 
 /**
  * Edição da janela de trabalho (tasks.md — T25; spec.md AGENDA-01).
@@ -27,8 +27,8 @@ let sessionRoles: Role[] = ["corretor"];
 let sessionTenantId = "";
 let sessionUser = { id: "", name: "", email: "" };
 
-vi.mock("../auth/session", async (importActual) => {
-  const actual = await importActual<typeof import("../auth/session")>();
+vi.mock("../../kit/session", async (importActual) => {
+  const actual = await importActual<typeof import("../../kit/session")>();
   return {
     ...actual,
     verifySession: async (): Promise<AuthContext> => ({
@@ -53,7 +53,7 @@ async function createTenant(name: string): Promise<string> {
     id,
     name,
     agentName: `Agente ${name}`,
-    supportedModality: "ambos",
+    supportedSegment: "ambos",
     slug: `fixture-${id}`,
   });
   createdTenantIds.push(id);

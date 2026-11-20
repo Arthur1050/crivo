@@ -1,0 +1,237 @@
+import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
+import { describe, expect, it } from "vitest";
+import map from "../boundary/map.json";
+import transitional from "../boundary/transitional.json";
+import { checkClassification, checkImports, checkMarketTerms, checkStoredValues, checkIdentifiers, checkTransitionEntries, classifyFile, isTest, type BoundaryRule } from "../boundary/check";
+
+export function repositoryFiles(): string[] {
+  function walk(directory: string): string[] {
+    if (!existsSync(directory)) return [];
+    return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+      const file = join(directory, entry.name).replace(/\\/g, "/");
+      return entry.isDirectory() ? walk(file) : [file];
+    });
+  }
+  return ["src", "app", "n8n", "scripts", "workflows"].flatMap(walk).concat("proxy.ts");
+}
+
+const rules = map as BoundaryRule[];
+
+function repositorySources() {
+  return Object.fromEntries(repositoryFiles().filter((file) => !isTest(file))
+    .map((file) => [file, /\.[cm]?[jt]sx?$/.test(file) ? readFileSync(file, "utf8") : ""]));
+}
+
+describe("categorias da lista de transição (BOUND-04, ENG-01)", () => {
+  const entry = { path: "src/db/schema.ts", term: "column:leads.modality" };
+
+  it("restringe o manifesto real às exceções do L18c", () => {
+    expect(checkTransitionEntries(transitional)).toEqual([]);
+  });
+
+  it.each(["stored", "api", "n8n-modules", "route-folders"])("aceita a categoria %s no L18c", category => {
+    expect(checkTransitionEntries([{ ...entry, removedIn: "L18c", category }])).toEqual([]);
+  });
+
+  it.each([{}, { category: null }, { category: "identifier" }, { category: "market" }])("recusa categoria ausente ou inválida (%j)", fields => {
+    expect(checkTransitionEntries([{ ...entry, removedIn: "L18c", ...fields }])).toEqual([
+      { file: entry.path, line: 1, message: expect.stringContaining("Categoria de transição inválida") },
+    ]);
+  });
+
+  it.each([{}, { removedIn: null }, { removedIn: "L18a" }])("recusa lote de remoção ausente ou inválido (%j)", fields => {
+    expect(checkTransitionEntries([{ ...entry, category: "stored", ...fields }])).toEqual([
+      { file: entry.path, line: 1, message: `Exceção ${entry.term} deve ser removida no L18c` },
+    ]);
+  });
+});
+
+describe("classificação da fronteira (BOUND-01)", () => {
+  it("classifica a árvore real sem regra órfã e com pacote em todo arquivo core", () => {
+    expect(checkClassification(repositoryFiles(), rules)).toEqual([]);
+  });
+
+  it("reprova arquivo sem classificação, citando o caminho", () => {
+    expect(checkClassification(["src/new.ts"], [])).toEqual([
+      { file: "src/new.ts", line: 1, message: "Arquivo sem classificação: src/new.ts" },
+    ]);
+  });
+
+  it("reprova regra órfã, citando o caminho", () => {
+    expect(checkClassification([], [{ glob: "src/missing.ts", layer: "app" }])).toEqual([
+      { file: "src/missing.ts", line: 1, message: "Regra órfã: src/missing.ts" },
+    ]);
+  });
+
+  it("exige pacote de destino para arquivo core", () => {
+    expect(checkClassification(["src/core.ts"], [{ glob: "src/core.ts", layer: "core" }])).toEqual([
+      { file: "src/core.ts", line: 1, message: "Arquivo core sem pacote: src/core.ts" },
+    ]);
+  });
+
+  it("faz o teste herdar a classificação do módulo testado", () => {
+    const fixture: BoundaryRule[] = [
+      { glob: "src/lib/sample.ts", layer: "vertical" },
+      { glob: "src/lib/**", layer: "core", package: "@core/client" },
+    ];
+    expect(classifyFile("src/lib/__tests__/sample.test.ts", fixture)).toEqual(fixture[0]);
+    expect(checkClassification(["src/lib/sample.ts", "src/lib/__tests__/sample.test.ts"], fixture)).toEqual([]);
+  });
+});
+
+describe("direção dos imports (BOUND-02/04)", () => {
+  const fixture: BoundaryRule[] = [
+    { glob: "src/core/**", layer: "core", package: "@core/server" },
+    { glob: "src/client/**", layer: "core", package: "@core/client" },
+    { glob: "src/vertical/**", layer: "vertical" },
+    { glob: "app/**", layer: "app" },
+  ];
+
+  it("aceita a árvore real com as dependências transitórias atuais", () => {
+    expect(checkImports(repositorySources(), rules, transitional)).toEqual([]);
+  });
+
+  it.each([
+    ["src/core/sample.ts", "src/vertical/index.ts", "@/src/vertical"],
+    ["src/core/sample.ts", "app/page.ts", "../../app/page"],
+    ["src/vertical/sample.ts", "app/page.ts", "@/app/page"],
+    ["src/client/sample.ts", "src/core/index.ts", "@/src/core"],
+    ["src/client/sample.ts", "server-only", "server-only"],
+  ])("recusa %s -> %s", (file, target, specifier) => {
+    expect(checkImports({ [file]: `\nimport '${specifier}';`, [target]: "" }, fixture)).toEqual([
+      { file, line: 2, message: `Import proibido: ${file} -> ${target}` },
+    ]);
+  });
+
+  it.each(["export { sample } from '@/src/vertical';", "const sample = import('@/src/vertical');"])("checa reexportação e import dinâmico: %s", (source) => {
+    expect(checkImports({ "src/core/sample.ts": source, "src/vertical/index.ts": "" }, fixture)).toEqual([
+      { file: "src/core/sample.ts", line: 1, message: "Import proibido: src/core/sample.ts -> src/vertical/index.ts" },
+    ]);
+  });
+
+  it("aceita só a ocorrência registrada e reprova a exceção quando ela fica órfã", () => {
+    const entry = { path: "src/core/sample.ts", term: "import:src/vertical/index.ts", reason: "Costura pendente", removedIn: "L18a", category: "import" };
+    expect(checkImports({ "src/core/sample.ts": "import '@/src/vertical';", "src/vertical/index.ts": "" }, fixture, [entry])).toEqual([]);
+    expect(checkImports({ "src/core/sample.ts": "", "src/vertical/index.ts": "" }, fixture, [entry])).toEqual([
+      { file: entry.path, line: 1, message: `Exceção sem ocorrência: ${entry.path} -> ${entry.term}` },
+    ]);
+  });
+});
+
+describe("termos de mercado (BOUND-03/04)", () => {
+  const fixture: BoundaryRule[] = [{ glob: "src/core/**", layer: "core", package: "@core/server" }];
+
+  it("aceita a árvore real com as ocorrências transitórias atuais", () => {
+    expect(checkMarketTerms(repositorySources(), rules, transitional)).toEqual([]);
+  });
+
+  it.each(["imovel", "imóve", "imobili", "corretor", "broker", "property", "reuni", "meeting", "creci", "storefront", "vitrine", "financiamento", "krivo"])("recusa %s em identificador e literal, em qualquer caixa", (term) => {
+    for (const source of [`\nconst ${term.toUpperCase()}Value = 1;`, `\nconst value = '${term.toUpperCase()}';`]) {
+      expect(checkMarketTerms({ "src/core/sample.ts": source }, fixture)).toEqual([
+        { file: "src/core/sample.ts", line: 2, message: `Termo de mercado "${term}" em src/core/sample.ts` },
+      ]);
+    }
+  });
+
+  it("localiza o termo na linha correta de um template SQL interpolado", () => {
+    expect(checkMarketTerms({ "src/core/sample.ts": 'const query = sql`select ${column}\nfrom PROPERTY`;'}, fixture)).toEqual([
+      { file: "src/core/sample.ts", line: 2, message: 'Termo de mercado "property" em src/core/sample.ts' },
+    ]);
+  });
+
+  it("ignora comentários", () => {
+    expect(checkMarketTerms({ "src/core/sample.ts": '// corretor\n/* PROPERTY */\nconst value = 1;' }, fixture)).toEqual([]);
+  });
+
+  it("reprova a exceção quando o termo desaparece", () => {
+    const entry = { path: "src/core/sample.ts", term: "market:broker", reason: "Renomeação pendente", removedIn: "L18a", category: "market" };
+    expect(checkMarketTerms({ [entry.path]: "const broker = 1;" }, fixture, [entry])).toEqual([]);
+    expect(checkMarketTerms({ [entry.path]: "const assignee = 1;" }, fixture, [entry])).toEqual([
+      { file: entry.path, line: 1, message: `Exceção sem ocorrência: ${entry.path} -> ${entry.term}` },
+    ]);
+  });
+});
+
+describe("valores gravados literais (VOCAB-01)", () => {
+  it("confere a árvore real com as exceções atuais", () => {
+    expect(checkStoredValues(repositorySources(), rules, transitional)).toEqual([]);
+  });
+
+  it.each([
+    ["src/sample.ts", 'const role = "corretor";'],
+    ["app/sample.tsx", 'const role = "corretor";'],
+    ["src/sample.ts", 'const matrix = { "corretor": [] };'],
+    ["src/sample.ts", 'const matrix = { corretor: [] };'],
+    ["src/sample.ts", 'const query = sql`select ${column}\nwhere role = \'corretor\'`;'],
+  ])("reprova o literal em %s: %s", (file, source) => {
+    expect(checkStoredValues({ [file]: source }, [])).toEqual([
+      { file, line: source.includes("\n") ? 2 : 1, message: `Valor gravado literal "corretor" em ${file}` },
+    ]);
+  });
+
+  it.each([
+    'const label = "Corretor responsável";',
+    'const view = <p>corretor</p>;',
+    'const view = <p>{"corretor"}</p>;',
+    'const view = <Input label="corretor" />;',
+    'const value = "lead";',
+    'const value = "fgts";',
+    'const value = "editorial";',
+  ])("preserva texto de tela e valores sem troca: %s", (source) => {
+    expect(checkStoredValues({ "app/sample.tsx": source }, [])).toEqual([]);
+  });
+
+  it.each(["n8n/src/sample.mjs", "src/lib/vocabulary.ts", "src/verticals/sample/vocabulary.ts"])("permite o literal no módulo autorizado: %s", (file) => {
+    expect(checkStoredValues({ [file]: 'const role = "corretor";' }, [])).toEqual([]);
+  });
+
+  it("mantém a catraca dos valores", () => {
+    const entry = { path: "src/sample.ts", term: "stored:corretor", reason: "Constante pendente", removedIn: "L18a", category: "stored" };
+    expect(checkStoredValues({ [entry.path]: 'const role = "corretor";' }, [], [entry])).toEqual([]);
+    expect(checkStoredValues({ [entry.path]: 'const role = ROLE.attendant;' }, [], [entry])).toEqual([
+      { file: entry.path, line: 1, message: `Exceção sem ocorrência: ${entry.path} -> ${entry.term}` },
+    ]);
+  });
+});
+
+describe("identificadores em inglês (ENG-01)", () => {
+  it("confere os identificadores e caminhos da árvore real", () => {
+    expect(checkIdentifiers(repositorySources(), rules, transitional)).toEqual([]);
+  });
+
+  it.each(["buscarLead", "BuscarLead", "buscar_lead"])("recusa a palavra em %s", (identifier) => {
+    expect(checkIdentifiers({ "src/sample.ts": `\nconst ${identifier} = 1;` }, [])).toEqual([
+      { file: "src/sample.ts", line: 2, message: `Identificador em português "buscar": ${identifier} em src/sample.ts` },
+    ]);
+  });
+
+  it.each(["normal", "conversation"])("aceita palavra também usada em inglês: %s", (identifier) => {
+    expect(checkIdentifiers({ "src/sample.ts": `const ${identifier} = 1;` }, [])).toEqual([]);
+  });
+
+  it("ignora comentário, texto JSX e literal", () => {
+    expect(checkIdentifiers({ "app/sample.tsx": '// buscar\nconst value = "buscar"; const view = <p>buscar</p>;' }, [])).toEqual([]);
+  });
+
+  it.each(["src/usuarios/list.ts", "src/lib/usuarios.ts"])("recusa nome de pasta ou arquivo: %s", (file) => {
+    expect(checkIdentifiers({ [file]: "" }, [])).toEqual([
+      { file, line: 1, message: `Identificador em português "usuarios": ${file} em ${file}` },
+    ]);
+  });
+
+  it("preserva o caminho de rota e n8n, mas checa símbolos da página", () => {
+    expect(checkIdentifiers({ "app/usuarios/page.tsx": "const value = 1;", "n8n/src/buscar.mjs": "const buscar = 1;" }, [])).toEqual([]);
+    expect(checkIdentifiers({ "app/usuarios/page.tsx": "const buscar = 1;" }, [])).toEqual([
+      { file: "app/usuarios/page.tsx", line: 1, message: 'Identificador em português "buscar": buscar em app/usuarios/page.tsx' },
+    ]);
+  });
+
+  it("reprova a exceção depois da renomeação", () => {
+    const entry = { path: "src/sample.ts", term: "identifier:buscar", reason: "Renomeação pendente", removedIn: "L18a", category: "identifier" };
+    expect(checkIdentifiers({ [entry.path]: "const buscar = 1;" }, [], [entry])).toEqual([]);
+    expect(checkIdentifiers({ [entry.path]: "const search = 1;" }, [], [entry])).toEqual([
+      { file: entry.path, line: 1, message: `Exceção sem ocorrência: ${entry.path} -> ${entry.term}` },
+    ]);
+  });
+});

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import principal from "../principal";
+import principal from "../../generated/principal";
 
 /**
  * Tool `consultar_documentos` no `krivo-agente-principal` (lote-12 — T28,

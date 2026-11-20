@@ -10,12 +10,10 @@ import {
   documents,
   leads,
   messages,
-  properties,
   reengagementEpisodes,
   serviceApiKeys,
   tenant_members,
   tenantApiKeys,
-  tenantStorefronts,
   tenants,
   users,
   accounts,
@@ -23,6 +21,7 @@ import {
   whatsappMessageReceipts,
   whatsappUsage,
 } from "../schema";
+import { properties, tenantStorefronts } from "../../verticals/real-estate/schema";
 import { runSeed } from "../seed";
 
 const LEAD_STATUSES = [
@@ -316,7 +315,7 @@ describe("db/seed", () => {
     expect(allLeads.length).toBeGreaterThan(0);
 
     for (const lead of allLeads) {
-      if (lead.meetingAt === null) {
+      if (lead.appointmentAt === null) {
         expect(lead.assignedUserId).toBeNull();
       } else {
         expect(lead.assignedUserId).not.toBeNull();
@@ -325,8 +324,8 @@ describe("db/seed", () => {
 
     // Os dois lados existem de fato — sem isso o laço acima passaria com uma
     // base só de leads sem reunião.
-    expect(allLeads.filter((l) => l.meetingAt === null).length).toBeGreaterThan(0);
-    expect(allLeads.filter((l) => l.meetingAt !== null).length).toBeGreaterThan(0);
+    expect(allLeads.filter((l) => l.appointmentAt === null).length).toBeGreaterThan(0);
+    expect(allLeads.filter((l) => l.appointmentAt !== null).length).toBeGreaterThan(0);
   });
 
   // lote-9 — BASE-01: o seed não inventa baseline para NENHUM tenant, nem
@@ -342,7 +341,7 @@ describe("db/seed", () => {
     for (const tenant of allTenants) {
       expect(tenant.baselineLeadsPerMonth).toBeNull();
       expect(tenant.baselineFirstResponseMinutes).toBeNull();
-      expect(tenant.baselineLeadToMeetingPct).toBeNull();
+      expect(tenant.baselineLeadToAppointmentPct).toBeNull();
       expect(tenant.baselineEscalationPct).toBeNull();
       expect(tenant.baselineAttendancePct).toBeNull();
     }
@@ -576,9 +575,9 @@ describe("db/seed", () => {
 
     for (const lead of allLeads) {
       if (lead.status === "qualificado_agendado") {
-        expect(lead.meetingAt).not.toBeNull();
+        expect(lead.appointmentAt).not.toBeNull();
       } else {
-        expect(lead.meetingAt).toBeNull();
+        expect(lead.appointmentAt).toBeNull();
       }
     }
   });

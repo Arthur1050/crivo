@@ -1,5 +1,6 @@
 "use client";
 
+import { STOREFRONT_LAYOUT } from "../../verticals/real-estate/vocabulary";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import {
@@ -36,7 +37,7 @@ import type { DocumentFolderOption } from "@/src/lib/document-folders";
 import { deleteDocumentAction, retryDocumentAction } from "@/src/server/actions/documents";
 import type { DocumentCategory } from "@/src/server/data";
 
-type DocumentsView = "grade" | "lista";
+type DocumentsView = typeof STOREFRONT_LAYOUT.grid | "lista";
 
 interface DocumentsBrowserProps {
   documents: DocumentTableItem[];
@@ -78,7 +79,7 @@ export function DocumentsBrowser({
   const [retryError, setRetryError] = useState<string | null>(null);
   const [movingDocument, setMovingDocument] = useState<DocumentTableItem | null>(null);
 
-  const view: DocumentsView = searchParams.get("visao") === "lista" ? "lista" : "grade";
+  const view: DocumentsView = searchParams.get("visao") === "lista" ? "lista" : STOREFRONT_LAYOUT.grid;
   const sortedDocuments = sortDocuments(documents, asDocumentSort(searchParams.get("ordem")));
   const categoryById = new Map(categories.map((category) => [category.id, category]));
   const folderById = folders === undefined ? undefined : new Map(folders.map((folder) => [folder.id, folder]));
@@ -215,7 +216,7 @@ export function DocumentsBrowser({
             size="sm"
           >
             <SegmentedControlItem
-              value="grade"
+              value={STOREFRONT_LAYOUT.grid}
               label="Grade"
               icon={<LayoutGridIcon size={14} />}
             />

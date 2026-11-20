@@ -25,7 +25,7 @@ function pgCode(error: unknown): string | undefined {
 describe("L17 T3 — modelo e SQL de pastas (PMOD-01, PBANCO-01)", () => {
   beforeAll(async () => {
     await db.insert(tenants).values(tenantIds.map((id) => ({
-      id, name: "Teste pastas", slug: `schema-folders-${id}`, agentName: "Agente", supportedModality: "ambos" as const,
+      id, name: "Teste pastas", slug: `schema-folders-${id}`, agentName: "Agente", supportedSegment: "ambos" as const,
     })));
     await db.insert(users).values({ id: userId, name: "Teste pastas", email: `${userId}@example.test` });
   });
@@ -53,12 +53,12 @@ describe("L17 T3 — modelo e SQL de pastas (PMOD-01, PBANCO-01)", () => {
   it("apagar pasta zera os vínculos e preserva documento e intenção", async () => {
     const [folder] = await db.insert(documentFolders).values({ tenantId: tenantA, name: "Apagar" }).returning();
     const [doc] = await db.insert(documents).values({
-      tenantId: tenantA, folderId: folder.id, name: "Contrato", modality: "novo", mimeType: "text/plain",
+      tenantId: tenantA, folderId: folder.id, name: "Contrato", segment: "novo", mimeType: "text/plain",
       sizeBytes: 17n, storageProvider: "teste", storageKey: randomUUID(), storageEtag: "etag",
       contentSha256: randomUUID().replaceAll("-", "").repeat(2), status: "pronto", extractedText: "Contrato preservado",
     }).returning();
     const [intent] = await db.insert(documentUploadIntents).values({
-      tenantId: tenantA, folderId: folder.id, requestedByUserId: userId, name: "Envio", modality: "novo",
+      tenantId: tenantA, folderId: folder.id, requestedByUserId: userId, name: "Envio", segment: "novo",
       mimeType: "text/plain", sizeBytes: 18n, storageKey: randomUUID(),
       clientSha256: randomUUID().replaceAll("-", "").repeat(2), expiresAtIntent: new Date("2030-01-01"),
     }).returning();
@@ -72,7 +72,7 @@ describe("L17 T3 — modelo e SQL de pastas (PMOD-01, PBANCO-01)", () => {
   it("apagar tenant apaga suas pastas em cascata", async () => {
     const tenantId = randomUUID();
     tenantIds.push(tenantId);
-    await db.insert(tenants).values({ id: tenantId, slug: `schema-folders-${tenantId}`, name: "Cascata", agentName: "Agente", supportedModality: "ambos" });
+    await db.insert(tenants).values({ id: tenantId, slug: `schema-folders-${tenantId}`, name: "Cascata", agentName: "Agente", supportedSegment: "ambos" });
     const [folder] = await db.insert(documentFolders).values({ tenantId, name: "Cascata" }).returning();
     await db.delete(tenants).where(eq(tenants.id, tenantId));
     expect(await db.select().from(documentFolders).where(eq(documentFolders.id, folder.id))).toEqual([]);

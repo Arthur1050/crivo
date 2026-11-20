@@ -7,10 +7,10 @@
  * ficam no script que a chama.
  */
 
-import type { DocumentModality } from "./context-budget";
+import type { DocumentSegment, DocumentSegmentFacet } from "./segments";
 
 export interface BenchmarkRun {
-  modality: DocumentModality;
+  segment: DocumentSegment;
   /** Faixa pedida ao gerador; agrupa as rodadas de uma e duas observações. */
   bandBytes: number;
   /** Bytes do envelope canônico realmente gerado (o que a admissão mede). */
@@ -100,14 +100,15 @@ function contiguousBand(runs: BenchmarkRun[], passes: (run: BenchmarkRun) => boo
 
 export function computeContextCeiling(
   runs: BenchmarkRun[],
-  modality: DocumentModality,
-  policy: CeilingPolicy = DEFAULT_CEILING_POLICY
+  segment: DocumentSegment,
+  policy: CeilingPolicy = DEFAULT_CEILING_POLICY,
+  facet?: DocumentSegmentFacet | null
 ): CeilingResult {
-  const own = runs.filter((run) => run.modality === modality);
+  const own = runs.filter((run) => facet === null || run.segment === segment);
   const single = own.filter((run) => run.observations === 1);
 
   const empty = single.filter((run) => run.bandBytes === 0);
-  if (empty.length === 0) throw new Error(`Benchmark sem faixa zero para ${modality}: custo fixo desconhecido.`);
+  if (empty.length === 0) throw new Error(`Benchmark sem faixa zero para ${segment}: custo fixo desconhecido.`);
   const fixedTokens = Math.max(...empty.map((run) => run.inputTokens)) + policy.toolSchemaAllowanceTokens;
 
   // Inclinação conservadora: o maior custo por byte observado entre as faixas
@@ -116,7 +117,7 @@ export function computeContextCeiling(
     .filter((run) => run.bandBytes > 0 && run.envelopeBytes > 0)
     .map((run) => (run.inputTokens + policy.toolSchemaAllowanceTokens - fixedTokens) / run.envelopeBytes)
     .filter((slope) => slope > 0);
-  if (slopes.length === 0) throw new Error(`Benchmark sem faixa medida para ${modality}.`);
+  if (slopes.length === 0) throw new Error(`Benchmark sem faixa medida para ${segment}.`);
   const tokensPerByte = Math.max(...slopes);
 
   const components: Record<CeilingComponent, number> = {

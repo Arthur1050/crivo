@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import * as systemMessageModule from "../system-message.mjs";
-import { buildSystemMessage } from "../system-message.mjs";
+import * as systemMessageModule from "../../verticals/real-estate/src/system-message.mjs";
+import { buildSystemMessage } from "../../verticals/real-estate/src/system-message.mjs";
 
 /**
  * Orientação de opt-out no system message depois da decisão D11 do lote-13

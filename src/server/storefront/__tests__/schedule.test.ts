@@ -7,10 +7,10 @@ const hoisted = vi.hoisted(() => ({
 }));
 
 vi.mock("next/server", () => ({ after: hoisted.after }));
-vi.mock("../../data/storefront", () => ({ getTenantSlug: hoisted.getTenantSlug }));
-vi.mock("../revalidation", () => ({ requestStorefrontRevalidation: hoisted.request }));
+vi.mock("../../../verticals/real-estate/storefront/data", () => ({ getTenantSlug: hoisted.getTenantSlug }));
+vi.mock("../../../verticals/real-estate/storefront/revalidation", () => ({ requestStorefrontRevalidation: hoisted.request }));
 
-import { scheduleStorefrontRevalidation } from "../schedule";
+import { scheduleStorefrontRevalidation } from "../../../verticals/real-estate/storefront/schedule";
 
 const TENANT = "11111111-1111-1111-1111-111111111111";
 

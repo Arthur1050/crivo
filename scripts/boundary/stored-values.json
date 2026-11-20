@@ -1,0 +1,13 @@
+[
+  "em_qualificacao", "qualificado_agendado", "escalado_humano",
+  "administrador", "gestor", "corretor", "qualificando", "agendando", "encerrada",
+  "agente", "humano", "saudavel", "problema", "processando", "pronto", "falha", "fora_do_agente",
+  "enviando", "enviada", "falhou", "novo", "usado", "ambos", "casa", "apartamento", "sobrado",
+  "cobertura", "terreno", "sala_comercial", "chacara", "disponivel", "reservado", "vendido",
+  "investidor", "morador", "pre_aprovado", "recurso_proprio", "grade",
+  "nao-autenticado", "recurso-nao-encontrado", "payload-invalido", "transicao-invalida",
+  "lead-travado-por-humano", "motivo-escalonamento-obrigatorio", "corpo-grande-demais", "rota-inexistente",
+  "metodo-nao-suportado", "tenant-nao-identificado", "sem-corretor-disponivel", "conflito-de-agenda",
+  "lead-conduzido-por-humano", "canal-nao-vinculado", "contexto-alterado", "episodio-em-preparacao",
+  "claim-expirada", "episodio-consumido", "estado-agente-desconhecido", "servico-indisponivel"
+]

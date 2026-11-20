@@ -1,7 +1,7 @@
 # n8n/ — Agente de Qualificação (Fase 8 / Lote 6)
 
 **L14b T49, publicação do principal:** gerar pelo inliner e passar o JSON do SDK por
-`preparePrincipalStatusPublication` de `scripts/n8n-status-publication.ts` antes de
+`prepareMainWorkflowStatusPublication` de `scripts/n8n-status-publication.ts` antes de
 qualquer upload/publicação pelo script operacional de T67. O retorno desta função
 é o único payload autorizado pelo protocolo; erro encerra o processo antes do MCP/API.
 Fornecer workflowId/activeVersionId observados e evidência HMAC SHA256 do corpo bruto
@@ -81,21 +81,39 @@ Runbook de setup + referência da camada n8n do Krivo. Cobre **todos os passos h
 
 ## 1. Arquitetura deste diretório
 
+Desde o L18a (AD-052), o agente é gerado por vertical: as fontes de `n8n/workflows/` e `n8n/src/` são do núcleo e não sabem de mercado; tudo o que é da imobiliária mora em `n8n/verticals/real-estate/`.
+
 ```
 n8n/
-├── src/            # Camada de decisão pura (T5-T8) — testada por vitest, zero I/O
-│   ├── normalize-event.mjs   business-hours.mjs   gate.mjs
-│   ├── prompt.mjs             validate-llm.mjs
-│   └── __tests__/*.test.ts
+├── src/            # Módulos puros do núcleo (gate, sessão, voz, reengajamento...) — testados por vitest, zero I/O
+├── workflows/      # FONTE dos workflows SDK do núcleo — o que se edita (marcas __INLINE, __IF, __BLOCK, __VALUE)
+├── verticals/
+│   └── real-estate/
+│       ├── agent.mjs   # MANIFESTO do vertical: id, `appointments`, `values`, `blocks` e `workflows`
+│       ├── blocks/     # Trechos de workflow do vertical (tools do agente, lembretes, agendamento), um por arquivo
+│       ├── src/        # Módulos puros do vertical (system message, fases da qualificação, prompts, benchmark)
+│       └── workflows/  # Workflows que só existem neste vertical (benchmark de contexto)
 ├── fixtures/       # Payloads reais (Meta, saída LLM) usados pelos testes E pelas execuções de teste via MCP
-├── workflows/      # FONTE dos workflows SDK — o que se edita (marcadores __INLINE(...)__)
 ├── generated/      # SAÍDA do inliner — o que é publicado na instância (nunca editar à mão)
 └── README.md       # este arquivo
 ```
 
-**Pipeline de publicação**: editar `n8n/workflows/*.ts` → `node scripts/n8n-inline.mjs` (gera `n8n/generated/*.ts`, determinístico — ver docstring do script e `scripts/__tests__/n8n-inline.test.ts`) → publicar o conteúdo de `n8n/generated/<arquivo>.ts` na instância via MCP (`create_workflow_from_code` na primeira vez, `update_workflow`/republicação nas seguintes) → `get_workflow_details` para conferir que o publicado == `generated/`.
+**Pipeline de publicação**: editar `n8n/workflows/*.ts`, `n8n/src/*.mjs` ou os arquivos do vertical → `node scripts/n8n-inline.mjs` (vertical `real-estate` por padrão; `--vertical <id>` escolhe outro e `--out <pasta>` grava fora de `n8n/generated/`) → publicar o conteúdo de `n8n/generated/<arquivo>.ts` na instância via MCP, com autorização (`create_workflow_from_code` na primeira vez, `update_workflow`/republicação nas seguintes) → `get_workflow_details` para conferir que o publicado == `generated/`. A geração é determinística (`scripts/__tests__/n8n-inline.test.ts` e `n8n-inline-vertical.test.ts`), e `scripts/__tests__/boundary-generated.test.ts` prova byte a byte que o gerado do `real-estate` não mudou em relação a `bf5e646`.
 
-**Convenção do marcador** `__INLINE(<arquivo>.mjs)__`: dentro do `jsCode` de um nó Code, escrito como string literal concatenada (`'__INLINE(gate.mjs)__' + '\n' + '<harness>'`) — nunca dentro de um template literal (backtick), porque alguns módulos de `n8n/src/` (ex.: `prompt.mjs`, `business-hours.mjs`) usam backtick internamente e isso quebraria a sintaxe se colado cru dentro de outro backtick. O inliner substitui o marcador por `JSON.stringify(<módulo sem export/import>)` — seguro para qualquer conteúdo. Quando um Code node precisa de mais de um módulo (ex.: `validate-llm.mjs` depende de `business-hours.mjs`), os marcadores do(s) módulo(s) dependido(s) vêm **primeiro** no mesmo `jsCode`, nessa ordem — a resolução de dependência é textual/posicional, não automática.
+**Manifesto (`agent.mjs`)**: exporta `agent` com `id` (o nome da pasta), `appointments` (liga ou desliga o agendamento), `values` (strings que entram nas marcas `__VALUE`: módulos de gate/sessão/voz, URL do CRM, IDs de Data Tables, de workflows e do projeto), `blocks` (os blocos que o vertical fornece) e `workflows` (quais fontes de `n8n/workflows/` e de `verticals/<id>/workflows/` viram arquivo gerado). Sem manifesto, ou com `--vertical` inválido, o inliner recusa.
+
+**Ordem da expansão**, por arquivo de workflow, nesta sequência:
+
+1. **`// __IF(<chave>)__` … `// __ENDIF__`** (linhas inteiras de comentário): o trecho só fica se `agent[<chave>] === true`; hoje a única chave é `appointments`. Pode aninhar; `__IF` sem `__ENDIF` (ou o contrário) é erro.
+2. **`// __BLOCK(<nome>)__`** (linha inteira): substituída pelo conteúdo de `verticals/<id>/blocks/<nome>.ts`, que já traz o recuo do SDK. O bloco precisa estar em `agent.blocks` e existir no disco ("bloco ausente"); bloco listado e nunca referenciado também é erro ("bloco sem referência").
+3. **`__VALUE(<nome>)__`** (em qualquer ponto do texto): substituído por `agent.values[<nome>]`, que tem de ser string ("valor ausente ou inválido").
+4. **`'__INLINE(<arquivo>.mjs)__'`**: substituído por `JSON.stringify(<módulo sem export/import>)`, procurando o módulo em `n8n/src/` e em `verticals/<id>/src/`. O mesmo nome nas duas pastas é erro ("módulo duplicado"), assim como o mesmo workflow nas duas pastas de workflows.
+
+**Convenção do marcador** `__INLINE(<arquivo>.mjs)__`: dentro do `jsCode` de um nó Code, escrito como string literal concatenada (`'__INLINE(gate.mjs)__' + '\n' + '<harness>'`) — nunca dentro de um template literal (backtick), porque alguns módulos (ex.: `system-message.mjs`, `business-hours.mjs`) usam backtick internamente e isso quebraria a sintaxe se colado cru dentro de outro backtick. Quando um Code node precisa de mais de um módulo (ex.: `system-message.mjs` depende de `phase.mjs`, e `reengagement.mjs` de `business-hours.mjs` e `conduction.mjs`), os marcadores do(s) módulo(s) dependido(s) vêm **primeiro** no mesmo `jsCode`, nessa ordem — a resolução de dependência é textual/posicional, não automática.
+
+**Vertical novo**: criar `n8n/verticals/<id>/` com `agent.mjs`, os blocos que os workflows pedem e os módulos de `src/` que os marcadores citam; com `appointments: false` os trechos de agendamento somem, e os blocos deles nem precisam existir nem podem ficar em `blocks` (seriam "bloco sem referência"). O vertical de teste do núcleo (`src/vertical-kit/__tests__/fixture-vertical.ts`, usado por `scripts/__tests__/n8n-agent-fixture.test.ts`) gera um agente sem agendamento numa pasta temporária, como exemplo executável.
+
+**Ainda do L18c**: valores gravados e textos do fio continuam em português nos módulos e workflows (`"corretor"`, `"em_qualificacao"`, nomes de tool), porque mudam o JSON publicado; o núcleo do CRM ainda importa `verticals/real-estate/src/phase.mjs` em quatro arquivos. A lista completa está em `scripts/boundary/transitional.json`.
 
 ---
 

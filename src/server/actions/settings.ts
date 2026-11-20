@@ -3,15 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { getActiveTenantId } from "../tenant";
 import { denyIfForbidden } from "./permission";
-import { updateTenantSettings, type Modality } from "../data";
-import { getStorefront } from "../data/storefront";
-import { scheduleStorefrontRevalidation } from "../storefront/schedule";
+import { updateTenantSettings, type DocumentSegment } from "../data";
+import { getStorefront } from "../../verticals/real-estate/storefront/data";
+import { scheduleStorefrontRevalidation } from "../../verticals/real-estate/storefront/schedule";
 import {
   validateAgentVoiceTone,
   validateBaselineCount,
   validateBaselinePercent,
   validateBusinessHours,
-  validateModality,
+  validateSegment,
   validateName,
 } from "../validation";
 
@@ -26,7 +26,7 @@ const STOREFRONT_WHATSAPP_ERROR =
 export interface UpdateTenantSettingsInput {
   name: string;
   agentName: string;
-  supportedModality: Modality;
+  supportedSegment: DocumentSegment;
   // Identidade opcional (redesign-crm-astryx — RD-07 AC3). Repassados como
   // vieram: `updateTenantSettings` é quem normaliza (chave ausente = coluna
   // intocada; vazio/só espaços = null). Quem edita esses campos na UI precisa
@@ -43,16 +43,16 @@ export interface UpdateTenantSettingsInput {
   // Horário comercial (lote-6 — CONF-05). Mesma regra de sempre-enviar dos
   // campos acima: o form manda os 3 sempre, para que limpar a configuração
   // (voltar ao fallback) também seja possível via a mesma action.
-  meetingDays?: number[] | null;
-  meetingHoursStart?: string | null;
-  meetingHoursEnd?: string | null;
+  appointmentDays?: number[] | null;
+  appointmentHoursStart?: string | null;
+  appointmentHoursEnd?: string | null;
   // Baseline pré-piloto (lote-9 — BASE-01). Mesma regra de sempre-enviar dos
   // campos acima: o formulário manda os 5 sempre, para que limpar um
   // baseline (voltar a "não registrado") também passe pela mesma action.
   // Validados (inteiro dentro da faixa) nesta action antes de repassar à DAL.
   baselineLeadsPerMonth?: number | null;
   baselineFirstResponseMinutes?: number | null;
-  baselineLeadToMeetingPct?: number | null;
+  baselineLeadToAppointmentPct?: number | null;
   baselineEscalationPct?: number | null;
   baselineAttendancePct?: number | null;
 }
@@ -69,7 +69,7 @@ export interface UpdateTenantSettingsInput {
 export async function updateTenantSettingsAction(
   input: UpdateTenantSettingsInput
 ): Promise<ActionResult> {
-  const denied = await denyIfForbidden("configuracoes", "escrever");
+  const denied = await denyIfForbidden("settings", "write");
   if (denied) return denied;
 
   const nameCheck = validateName(input.name, "Nome do tenant");
@@ -78,16 +78,16 @@ export async function updateTenantSettingsAction(
   const agentNameCheck = validateName(input.agentName, "Nome do agente");
   if (!agentNameCheck.ok) return agentNameCheck;
 
-  const modalityCheck = validateModality(input.supportedModality);
+  const modalityCheck = validateSegment(input.supportedSegment);
   if (!modalityCheck.ok) return modalityCheck;
 
   const agentVoiceToneCheck = validateAgentVoiceTone(input.agentVoiceTone);
   if (!agentVoiceToneCheck.ok) return agentVoiceToneCheck;
 
   const businessHoursCheck = validateBusinessHours({
-    meetingDays: input.meetingDays ?? null,
-    meetingHoursStart: input.meetingHoursStart ?? null,
-    meetingHoursEnd: input.meetingHoursEnd ?? null,
+    appointmentDays: input.appointmentDays ?? null,
+    appointmentHoursStart: input.appointmentHoursStart ?? null,
+    appointmentHoursEnd: input.appointmentHoursEnd ?? null,
   });
   if (!businessHoursCheck.ok) return businessHoursCheck;
 
@@ -107,7 +107,7 @@ export async function updateTenantSettingsAction(
   if (!firstResponseCheck.ok) return firstResponseCheck;
 
   const leadToMeetingCheck = validateBaselinePercent(
-    input.baselineLeadToMeetingPct,
+    input.baselineLeadToAppointmentPct,
     "Percentual de lead para reunião"
   );
   if (!leadToMeetingCheck.ok) return leadToMeetingCheck;
@@ -140,19 +140,19 @@ export async function updateTenantSettingsAction(
   const updated = await updateTenantSettings(tenantId, {
     name: input.name.trim(),
     agentName: input.agentName.trim(),
-    supportedModality: input.supportedModality,
+    supportedSegment: input.supportedSegment,
     city: input.city,
     state: input.state,
     agentWhatsapp: input.agentWhatsapp,
     website: input.website,
     agentPresentationMessage: input.agentPresentationMessage,
     agentVoiceTone: input.agentVoiceTone,
-    meetingDays: input.meetingDays,
-    meetingHoursStart: input.meetingHoursStart,
-    meetingHoursEnd: input.meetingHoursEnd,
+    appointmentDays: input.appointmentDays,
+    appointmentHoursStart: input.appointmentHoursStart,
+    appointmentHoursEnd: input.appointmentHoursEnd,
     baselineLeadsPerMonth: input.baselineLeadsPerMonth,
     baselineFirstResponseMinutes: input.baselineFirstResponseMinutes,
-    baselineLeadToMeetingPct: input.baselineLeadToMeetingPct,
+    baselineLeadToAppointmentPct: input.baselineLeadToAppointmentPct,
     baselineEscalationPct: input.baselineEscalationPct,
     baselineAttendancePct: input.baselineAttendancePct,
   });

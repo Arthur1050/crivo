@@ -1,10 +1,11 @@
+import { MODALITY } from "../../../../src/verticals/real-estate/vocabulary";
 import { handleUpload } from "@vercel/blob/client";
 import type { PutBlobResult } from "@vercel/blob";
-import { PermissionDeniedError } from "@/src/server/auth/session";
+import { PermissionDeniedError } from "@/src/kit/session";
 import {
   createDocumentUploadIntake,
   type CreateDocumentUploadInput,
-} from "@/src/server/documents/uploads";
+} from "@/src/kit/documents";
 
 export const runtime = "nodejs";
 
@@ -72,7 +73,7 @@ function parseInput(clientPayload: string | null): CreateDocumentUploadInput | n
       typeof value.name !== "string" ||
       typeof value.mimeType !== "string" ||
       typeof value.sizeBytes !== "number" ||
-      (value.modality !== "novo" && value.modality !== "usado" && value.modality !== "ambos") ||
+      (value.modality !== MODALITY.new && value.modality !== MODALITY.used && value.modality !== MODALITY.both) ||
       (value.categoryId !== undefined && value.categoryId !== null && typeof value.categoryId !== "string") ||
       (value.folderId !== undefined && value.folderId !== null && typeof value.folderId !== "string") ||
       (expiresAt instanceof Date && Number.isNaN(expiresAt.getTime()))
@@ -84,7 +85,7 @@ function parseInput(clientPayload: string | null): CreateDocumentUploadInput | n
       name: value.name,
       mimeType: value.mimeType,
       sizeBytes: value.sizeBytes,
-      modality: value.modality,
+      segment: value.modality,
       categoryId: value.categoryId as string | null | undefined,
       folderId: value.folderId as string | null | undefined,
       expiresAt,

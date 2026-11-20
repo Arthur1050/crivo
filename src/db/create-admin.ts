@@ -1,10 +1,11 @@
+import { ROLE } from "../lib/vocabulary";
 import "dotenv/config";
 import { pathToFileURL } from "node:url";
 import { and, eq } from "drizzle-orm";
 import { db } from "./index";
 import { tenant_members, tenants, users } from "./schema";
-import { auth } from "../server/auth/config";
-import { parseRoles, type Role } from "../lib/permissions";
+import { auth } from "../kit/auth";
+import { parseRoles, type Role } from "../lib/access";
 
 /**
  * Bootstrap de administrador (spec.md — SEED-01 AC5; AD-001).
@@ -33,7 +34,7 @@ export interface CreateAdminResult {
     | "ja-era-administrador";
 }
 
-const ADMIN_ROLE: Role = "administrador";
+const ADMIN_ROLE: Role = ROLE.admin;
 
 export async function createAdmin(options: {
   tenantSlug: string;

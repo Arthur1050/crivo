@@ -17,7 +17,7 @@ import {
   type RevalidationRequest,
   type StorefrontFont,
   type StorefrontLayout,
-} from "../storefront-contract";
+} from "../../verticals/real-estate/storefront/contract";
 
 describe("L16b T2 — paridade do contrato CRM ↔ vitrine (VPROJ-02 AC7, AC8)", () => {
   it("a tag de cache é igual para 3 slugs, com o formato tenant:<slug>:catalogo", () => {

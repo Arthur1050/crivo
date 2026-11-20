@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { db } from "../../../db";
 import { serviceApiKeys, tenantApiKeys, tenants } from "../../../db/schema";
 import { getTenants } from "../../data";
-import { authenticate } from "../auth";
+import { authenticate } from "../../../kit/integration";
 
 // Cada teste cria sua própria chave de API (própria linha em
 // tenant_api_keys, hash derivado de um valor aleatório único por teste) e
@@ -57,7 +57,7 @@ async function createTestTenantWithSlug(slug: string): Promise<string> {
     id,
     name: `Tenant Teste auth.test.ts ${slug}`,
     agentName: "Agente Teste",
-    supportedModality: "ambos",
+    supportedSegment: "ambos",
     slug,
   });
   return id;

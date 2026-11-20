@@ -1,3 +1,4 @@
+import { realEstate } from "../../../verticals/real-estate";
 import "dotenv/config";
 import { randomUUID } from "node:crypto";
 import { eq, inArray, like } from "drizzle-orm";
@@ -13,8 +14,8 @@ vi.mock("../integration-alert", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../integration-alert")>();
   return { ...actual, runIntegrationAlert: vi.fn(actual.runIntegrationAlert) };
 });
-vi.mock("../../auth/email", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../../auth/email")>();
+vi.mock("../../../kit/email", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../../kit/email")>();
   return { ...actual, sendIntegrationAlertEmail: vi.fn(async () => ({ ok: true as const, id: "email_fake" })) };
 });
 vi.mock("../../data/integration-health", async (importOriginal) => {
@@ -22,7 +23,7 @@ vi.mock("../../data/integration-health", async (importOriginal) => {
   return { ...actual, getTenantHealthSnapshots: vi.fn(actual.getTenantHealthSnapshots) };
 });
 
-import { sendIntegrationAlertEmail } from "../../auth/email";
+import { sendIntegrationAlertEmail } from "../../../kit/email";
 import { getTenantHealthSnapshots } from "../../data/integration-health";
 import { runIntegrationAlert } from "../integration-alert";
 import { runDailyMaintenance } from "../lgpd";
@@ -52,7 +53,7 @@ async function newTenant(overrides: Partial<typeof tenants.$inferInsert> = {}) {
     slug: `fixture-manut-alerta-${id.slice(0, 8)}`,
     name: `Fixture manutenção alerta ${id.slice(0, 8)}`,
     agentName: "Agente",
-    supportedModality: "ambos",
+    supportedSegment: "ambos",
     ...overrides,
   });
   const [row] = await db.select().from(tenants).where(eq(tenants.id, id));
@@ -119,17 +120,17 @@ afterAll(async () => {
 });
 
 describe("runDailyMaintenance — grupo do alerta (ALERTA-03)", () => {
-  const okDependency = { operatorEmail: "operador@fixture.test", send: async () => ({ ok: true as const, id: null }) };
+  const okDependency = { brand: realEstate.brand, operatorEmail: "operador@fixture.test", send: async () => ({ ok: true as const, id: null }) };
 
   it("alerta que lança: integrationAlertFailed e os demais campos iguais aos de uma execução com o alerta ok (AC3)", async () => {
-    await runDailyMaintenance(NOW, { storage }); // limpa a retenção vencida que não é desta fixture
+    await runDailyMaintenance(NOW, { facet: realEstate.documentSegments, storage }); // limpa a retenção vencida que não é desta fixture
     await addStaleRefusal();
     mockedRunAlert.mockRejectedValueOnce(new Error("falha injetada no alerta"));
-    const failed = await runDailyMaintenance(NOW, { storage, integrationAlert: okDependency });
+    const failed = await runDailyMaintenance(NOW, { facet: realEstate.documentSegments, storage, integrationAlert: okDependency });
 
     await addStaleRefusal(); // mesmos dados para a execução de comparação
     mockedRunAlert.mockResolvedValueOnce({ evaluated: 7, sent: 0, skipped: null, sendFailed: false });
-    const healthy = await runDailyMaintenance(NOW, { storage, integrationAlert: okDependency });
+    const healthy = await runDailyMaintenance(NOW, { facet: realEstate.documentSegments, storage, integrationAlert: okDependency });
 
     expect(failed.integrationAlertFailed).toBe(true);
     expect(failed.integrationAlertEvaluated).toBe(0);
@@ -143,7 +144,7 @@ describe("runDailyMaintenance — grupo do alerta (ALERTA-03)", () => {
   it("sem a dependência: sem-dependencia e nenhuma leitura nem escrita em tenants", async () => {
     const tenant = await newTenant();
 
-    const result = await runDailyMaintenance(NOW, { storage });
+    const result = await runDailyMaintenance(NOW, { facet: realEstate.documentSegments, storage });
 
     expect(result.integrationAlertSkipped).toBe("sem-dependencia");
     expect(result.integrationAlertEvaluated).toBe(0);
@@ -157,7 +158,7 @@ describe("runDailyMaintenance — grupo do alerta (ALERTA-03)", () => {
   });
 
   it("com a dependência, o grupo roda e reporta os campos do resultado do alerta", async () => {
-    const result = await runDailyMaintenance(NOW, { storage, integrationAlert: { operatorEmail: undefined, send: okDependency.send } });
+    const result = await runDailyMaintenance(NOW, { facet: realEstate.documentSegments, storage, integrationAlert: { brand: realEstate.brand, operatorEmail: undefined, send: okDependency.send } });
 
     expect(mockedRunAlert).toHaveBeenCalledTimes(1);
     expect(result.integrationAlertSkipped).toBe("destinatario-ausente");

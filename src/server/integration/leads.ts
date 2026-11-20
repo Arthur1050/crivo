@@ -1,16 +1,19 @@
+import { LEAD_STATUS, PROBLEM_CODE, STATUS_ACTOR } from "../../lib/vocabulary";
 import "server-only";
 import {
-  assignBrokerForEscalation,
-  assignBrokerForMeeting,
+  assignForEscalation,
+  assignForAppointment,
   createAgentLead,
-  getBrokerContact,
+  getAssigneeContact,
   getLead,
   serviceScope,
   setLeadChannel,
   updateLeadFromAgent,
   type Lead,
+  type UpdateLeadFromAgentInput,
 } from "../data";
-import type { LeadCreateDto, LeadPatchDto } from "./parsers";
+import type { QualificationFacet } from "../../vertical-kit";
+import type { LeadCreateDto } from "./parsers";
 import type { ProblemCode } from "./problem";
 
 export interface DeliverLeadResult {
@@ -59,53 +62,21 @@ export async function findLead(
   return getLead(serviceScope(tenantId), leadId);
 }
 
-/** Representação de um lead na API de integração (design.md — Route
- * handlers: "Serialização"). `budgetCents` vira string (bigint não é
- * JSON-safe); datas viram ISO-8601; `optedOutAt`/`externalId` sempre
- * presentes (LGPD-01 AC3). */
-export interface SerializedLead {
-  id: string;
-  externalId: string | null;
-  name: string;
-  phone: string;
-  status: Lead["status"];
-  modality: Lead["modality"];
-  region: string | null;
-  budgetCents: string | null;
-  propertyType: Lead["propertyType"];
-  purchaseHorizon: string | null;
-  motivation: Lead["motivation"];
-  creditStatus: Lead["creditStatus"];
-  chainedOperation: boolean | null;
-  executiveSummary: string | null;
-  escalationReason: string | null;
-  meetingAt: string | null;
-  firstContactAt: string;
-  optedOutAt: string | null;
-  /** Marca de condução humana (lote-14); `null` quando o agente conduz. */
-  humanTakeoverAt: string | null;
-  /** Pedido de reconstrução da memória do agente (lote-14). */
-  memoryResetRequestedAt: string | null;
-}
-
-export function serializeLead(lead: Lead): SerializedLead {
+/** Preserva a ordem do fio e inclui os campos do vertical entre o status e o resumo. */
+export function serializeLead<Wire extends object>(
+  lead: Lead,
+  qualification: Pick<QualificationFacet<unknown, Wire>, "serialize"> | null
+) {
   return {
     id: lead.id,
     externalId: lead.externalId,
     name: lead.name,
     phone: lead.phone,
     status: lead.status,
-    modality: lead.modality,
-    region: lead.region,
-    budgetCents: lead.budgetCents === null ? null : lead.budgetCents.toString(),
-    propertyType: lead.propertyType,
-    purchaseHorizon: lead.purchaseHorizon,
-    motivation: lead.motivation,
-    creditStatus: lead.creditStatus,
-    chainedOperation: lead.chainedOperation,
+    ...qualification?.serialize(lead),
     executiveSummary: lead.executiveSummary,
     escalationReason: lead.escalationReason,
-    meetingAt: lead.meetingAt ? lead.meetingAt.toISOString() : null,
+    meetingAt: lead.appointmentAt ? lead.appointmentAt.toISOString() : null,
     firstContactAt: lead.firstContactAt.toISOString(),
     optedOutAt: lead.optedOutAt ? lead.optedOutAt.toISOString() : null,
     humanTakeoverAt: lead.humanTakeoverAt
@@ -127,9 +98,9 @@ type LeadStatusValue = Lead["status"];
  * integração (T10).
  */
 export const TRANSITIONS: Record<LeadStatusValue, LeadStatusValue[]> = {
-  em_qualificacao: ["qualificado_agendado", "escalado_humano"],
-  qualificado_agendado: [],
-  escalado_humano: [],
+  [LEAD_STATUS.engaged]: [LEAD_STATUS.goal_reached, LEAD_STATUS.escalated],
+  [LEAD_STATUS.goal_reached]: [],
+  [LEAD_STATUS.escalated]: [],
 };
 
 /**
@@ -138,13 +109,13 @@ export const TRANSITIONS: Record<LeadStatusValue, LeadStatusValue[]> = {
  * interno: o agente precisa do e-mail para convidar ao evento (AC8), não da
  * chave primária do usuário.
  */
-export interface AssignedBroker {
+export interface AssignedAssignee {
   name: string;
   email: string;
 }
 
 export type PatchLeadResult =
-  | { ok: true; lead: Lead; assignedBroker?: AssignedBroker | null }
+  | { ok: true; lead: Lead; assignedAssignee?: AssignedAssignee | null }
   | { ok: false; code: ProblemCode };
 
 /**
@@ -164,28 +135,28 @@ export type PatchLeadResult =
 export async function patchLead(
   tenantId: string,
   leadId: string,
-  dto: LeadPatchDto
+  dto: UpdateLeadFromAgentInput
 ): Promise<PatchLeadResult> {
   // Caminho do contrato (SEC-01): credencial de serviço, imobiliária
   // inteira — o agente não é usuário e não tem carteira.
   const lead = await getLead(serviceScope(tenantId), leadId);
-  if (!lead) return { ok: false, code: "recurso-nao-encontrado" };
+  if (!lead) return { ok: false, code: PROBLEM_CODE.not_found };
 
   if (dto.status !== undefined) {
     const allowedTargets = TRANSITIONS[lead.status];
     if (!allowedTargets.includes(dto.status)) {
-      return { ok: false, code: "transicao-invalida" };
+      return { ok: false, code: PROBLEM_CODE.invalid_transition };
     }
   }
 
   // Condução humana (lote-14 — SILENCIO-01 AC9): checada DEPOIS da transição
   // e ANTES da trava humana (quem satisfaz as duas regras recebe o código da
-  // condução). Cobre `status` e `meetingAt`; patch só de qualificação passa.
+  // condução). Cobre `status` e `appointmentAt`; patch só de qualificação passa.
   if (
     lead.humanTakeoverAt &&
-    (dto.status !== undefined || dto.meetingAt !== undefined)
+    (dto.status !== undefined || dto.appointmentAt !== undefined)
   ) {
-    return { ok: false, code: "lead-conduzido-por-humano" };
+    return { ok: false, code: PROBLEM_CODE.lead_under_human_control };
   }
 
   if (dto.status !== undefined) {
@@ -193,43 +164,43 @@ export async function patchLead(
     // tabela — uma transição já inválida por si (ex.: sair de
     // escalado_humano) reporta 'transicao-invalida', nunca
     // 'lead-travado-por-humano', mesmo que o lead também esteja travado.
-    if (lead.statusChangedBy === "humano") {
-      return { ok: false, code: "lead-travado-por-humano" };
+    if (lead.statusChangedBy === STATUS_ACTOR.human) {
+      return { ok: false, code: PROBLEM_CODE.lead_locked_by_human };
     }
 
-    if (dto.status === "escalado_humano" && !dto.escalationReason?.trim()) {
-      return { ok: false, code: "motivo-escalonamento-obrigatorio" };
+    if (dto.status === LEAD_STATUS.escalated && !dto.escalationReason?.trim()) {
+      return { ok: false, code: PROBLEM_CODE.escalation_reason_required };
     }
   }
 
   // Agendamento (lote-8 — ATRIB-02; AD-022): registrar a reunião é o momento
   // em que o lead ganha responsável. A escolha é do CRM, server-side — o
   // chamador informa o horário e recebe de volta quem ficou.
-  if (dto.meetingAt) {
-    const assigned = await assignBrokerForMeeting(
+  if (dto.appointmentAt) {
+    const assigned = await assignForAppointment(
       tenantId,
       leadId,
-      dto.meetingAt,
+      dto.appointmentAt,
       dto
     );
 
     if (!assigned.ok) {
       switch (assigned.reason) {
-        case "sem-corretor-disponivel":
+        case PROBLEM_CODE.no_assignee_available:
           // AC5: nada é gravado — nem a reunião, nem o resto do patch.
-          return { ok: false, code: "sem-corretor-disponivel" };
-        case "conflito-de-agenda":
-          return { ok: false, code: "conflito-de-agenda" };
+          return { ok: false, code: PROBLEM_CODE.no_assignee_available };
+        case PROBLEM_CODE.appointment_conflict:
+          return { ok: false, code: PROBLEM_CODE.appointment_conflict };
         default:
-          return { ok: false, code: "recurso-nao-encontrado" };
+          return { ok: false, code: PROBLEM_CODE.not_found };
       }
     }
 
     return {
       ok: true,
       lead: assigned.lead,
-      assignedBroker: assigned.brokerId
-        ? await getBrokerContact(tenantId, assigned.brokerId)
+      assignedAssignee: assigned.assigneeId
+        ? await getAssigneeContact(tenantId, assigned.assigneeId)
         : null,
     };
   }
@@ -238,21 +209,21 @@ export async function patchLead(
   // é gravado na MESMA operação que grava o status. Lead que já tem
   // responsável não é reatribuído (AC5), e imobiliária sem corretor ativo
   // registra o escalonamento assim mesmo (AC4).
-  if (dto.status === "escalado_humano") {
-    const assigned = await assignBrokerForEscalation(
+  if (dto.status === LEAD_STATUS.escalated) {
+    const assigned = await assignForEscalation(
       tenantId,
       leadId,
       new Date(),
       dto
     );
 
-    if (!assigned.ok) return { ok: false, code: "recurso-nao-encontrado" };
+    if (!assigned.ok) return { ok: false, code: PROBLEM_CODE.not_found };
 
     return {
       ok: true,
       lead: assigned.lead,
-      assignedBroker: assigned.brokerId
-        ? await getBrokerContact(tenantId, assigned.brokerId)
+      assignedAssignee: assigned.assigneeId
+        ? await getAssigneeContact(tenantId, assigned.assigneeId)
         : null,
     };
   }
@@ -260,7 +231,7 @@ export async function patchLead(
   const updated = await updateLeadFromAgent(tenantId, leadId, dto);
   if (!updated) {
     // Corrida rara: o lead foi removido entre o SELECT acima e o UPDATE.
-    return { ok: false, code: "recurso-nao-encontrado" };
+    return { ok: false, code: PROBLEM_CODE.not_found };
   }
 
   return { ok: true, lead: updated };

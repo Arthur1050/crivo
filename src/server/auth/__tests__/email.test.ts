@@ -29,7 +29,7 @@ import {
   sendIntegrationAlertEmail,
   sendInvitationEmail,
   sendResetPasswordEmail,
-} from "../email";
+} from "../../../kit/email";
 
 const INVITE = {
   to: "convidado@fixture.test",

@@ -1,4 +1,5 @@
-import { PermissionDeniedError, requirePermission, type AuthContext } from "../../../../../src/server/auth/session";
+import { access } from "../../../../../src/kit/access";
+import { PermissionDeniedError, requirePermission, type AuthContext } from "../../../../../src/kit/session";
 import { findDocumentForDownload, type DocumentDownload } from "../../../../../src/server/documents/repository";
 import { DocumentStorageError, sanitizeDownloadFilename, type DocumentStorage } from "../../../../../src/server/documents/storage";
 import { VercelBlobDocumentStorage } from "../../../../../src/server/documents/vercel-blob-storage";
@@ -8,7 +9,7 @@ const secureHeaders = { "cache-control": "private, no-store", "x-content-type-op
 const missing = () => Response.json({ error: "Documento não encontrado." }, { status: 404, headers: secureHeaders });
 
 export function createDocumentDownloadGetHandler(deps: { authorize?: () => Promise<AuthContext>; find?: (tenantId: string, documentId: string, now: Date) => Promise<DocumentDownload | null>; storage?: Pick<DocumentStorage, "open">; now?: () => Date } = {}) {
-  const authorize = deps.authorize ?? (() => requirePermission("documentos", "ler"));
+  const authorize = deps.authorize ?? (() => requirePermission("documents", "read", access));
   const find = deps.find ?? findDocumentForDownload;
   const storage = deps.storage ?? new VercelBlobDocumentStorage();
   const now = deps.now ?? (() => new Date());

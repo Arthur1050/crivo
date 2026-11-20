@@ -30,7 +30,7 @@ describe("routes: POST /api/v1/leads", () => {
       id: tenantId,
       name: `Tenant Teste leads-post ${tenantId}`,
       agentName: "Agente Teste",
-      supportedModality: "ambos",
+      supportedSegment: "ambos",
       slug: `fixture-${tenantId}`,
     });
 
@@ -392,7 +392,7 @@ describe("routes: POST /api/v1/leads — modo de autenticação de serviço (lot
       id: tenantId,
       name: `Tenant Teste leads-post servico ${tenantId}`,
       agentName: "Agente Teste",
-      supportedModality: "ambos",
+      supportedSegment: "ambos",
       slug: tenantSlug,
     });
 

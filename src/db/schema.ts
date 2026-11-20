@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { FIELD_LABELS } from "../../n8n/src/phase.mjs";
+import { AGENT_PHASE, DOCUMENT_STATUS, HUMAN_SEND_STATE, INTEGRATION_HEALTH, LEAD_STATUS, SENDER, STATUS_ACTOR } from "../lib/vocabulary";
 import {
   bigint,
   boolean,
@@ -20,9 +20,9 @@ import {
 
 // Enums (design.md — Data Models)
 export const leadStatusEnum = pgEnum("lead_status", [
-  "em_qualificacao",
-  "qualificado_agendado",
-  "escalado_humano",
+  LEAD_STATUS.engaged,
+  LEAD_STATUS.goal_reached,
+  LEAD_STATUS.escalated,
 ]);
 
 export const modalityEnum = pgEnum("modality", ["novo", "usado", "ambos"]);
@@ -30,46 +30,6 @@ export const modalityEnum = pgEnum("modality", ["novo", "usado", "ambos"]);
 export const propertyTypeEnum = pgEnum("property_type", [
   "casa",
   "apartamento",
-]);
-
-// Enum própria do catálogo de imóveis (lote-11 — IMOV-01/03). Superset de
-// `propertyTypeEnum` nos dois valores compartilhados ("casa", "apartamento"),
-// o que faz o filtro vindo de um lead mapear 1:1 sem tabela de tradução.
-// `propertyTypeEnum` acima fica intocada: é campo obrigatório de qualificação
-// (`n8n/src/phase.mjs`) e seu rótulo está publicado dentro do workflow —
-// ampliá-la arrastaria a republicação (design.md — Tech Decisions).
-export const propertyKindEnum = pgEnum("property_kind", [
-  "casa",
-  "apartamento",
-  "sobrado",
-  "cobertura",
-  "terreno",
-  "sala_comercial",
-  "chacara",
-]);
-
-// Status do imóvel (lote-11 — IMOV-05). Transição livre entre os três
-// valores, sem tabela de transições permitidas (design.md — Assumptions):
-// diferente de `leads`, o imóvel não tem trava humana nem ator agente.
-export const propertyStatusEnum = pgEnum("property_status", [
-  "disponivel",
-  "reservado",
-  "vendido",
-]);
-
-// Vitrine pública (lote-16a — VCFG-01). Listas fechadas: fonte livre exigiria
-// URL arbitrária na página pública (spec, Assumptions). O contrato espelhado
-// em `src/lib/storefront-contract.ts` falha se divergir destes valores.
-export const storefrontLayoutEnum = pgEnum("storefront_layout", [
-  "grade",
-  "editorial",
-]);
-
-export const storefrontFontEnum = pgEnum("storefront_font", [
-  "inter",
-  "montserrat",
-  "lora",
-  "playfair",
 ]);
 
 export const motivationEnum = pgEnum("motivation", [
@@ -86,18 +46,18 @@ export const creditStatusEnum = pgEnum("credit_status", [
 // `humano` (lote-14 — ENVIO-01, THREAD-01): mensagem escrita por um usuário
 // do CRM pela tela de Chats. Só nasce pela tela, com autor autenticado; o
 // contrato `/api/v1` não aceita esse remetente na escrita (CONTRATO-01 AC5).
-export const senderEnum = pgEnum("sender", ["agente", "lead", "humano"]);
+export const senderEnum = pgEnum("sender", [SENDER.agent, SENDER.lead, SENDER.human]);
 
 // Estado da reserva idempotente do envio humano (lote-14 — ENVIO-01 AC11).
 export const humanSendStateEnum = pgEnum("human_send_state", [
-  "enviando",
-  "enviada",
-  "falhou",
+  HUMAN_SEND_STATE.sending,
+  HUMAN_SEND_STATE.sent,
+  HUMAN_SEND_STATE.failed,
 ]);
 
 // Origem da última mudança de status de um lead (lote-5 — INT-04: trava
 // humana). `null` = nunca alterado por nenhum ator (estado do seed).
-export const statusActorEnum = pgEnum("status_actor", ["humano", "agente"]);
+export const statusActorEnum = pgEnum("status_actor", [STATUS_ACTOR.human, STATUS_ACTOR.agent]);
 
 // 1:1 com as 10 cores do componente `Token` da Astryx (design.md — Cor de
 // categoria). Paleta fixa: nenhum hex cru é aceito em nenhuma camada.
@@ -120,14 +80,14 @@ export const whatsappAccountKindEnum = pgEnum("whatsapp_account_kind", [
 ]);
 
 export const agentPhaseEnum = pgEnum("agent_phase", [
-  "qualificando", "agendando", "encerrada",
+  AGENT_PHASE.qualifying, AGENT_PHASE.closing, AGENT_PHASE.ended,
 ]);
 
 export const documentStatusEnum = pgEnum("document_status", [
-  "processando",
-  "pronto",
-  "falha",
-  "fora_do_agente",
+  DOCUMENT_STATUS.processing,
+  DOCUMENT_STATUS.ready,
+  DOCUMENT_STATUS.failed,
+  DOCUMENT_STATUS.outside_agent,
 ]);
 
 export const documentUploadIntentStateEnum = pgEnum(
@@ -143,12 +103,12 @@ export const tenants = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     name: text("name").notNull(),
     agentName: text("agent_name").notNull(),
-    supportedModality: modalityEnum("supported_modality").notNull(),
+    supportedSegment: modalityEnum("supported_modality").notNull(),
     // Baseline pré-piloto (Lote 4 — DASH-05). Snapshot único por tenant,
     // nullable até ser preenchido (mockado no seed por ora; real na Fase 10).
     baselineLeadsPerMonth: integer("baseline_leads_per_month"),
     baselineFirstResponseMinutes: integer("baseline_first_response_minutes"),
-    baselineLeadToMeetingPct: integer("baseline_lead_to_meeting_pct"),
+    baselineLeadToAppointmentPct: integer("baseline_lead_to_meeting_pct"),
     // Baseline pré-piloto (lote-9 — BASE-01), somando-se aos três acima.
     // Nullable pela mesma razão: são snapshot único preenchido pelo usuário,
     // não pelo seed (AD-004) — o de escalonamento é o mais discutível de
@@ -171,9 +131,9 @@ export const tenants = pgTable(
     // campos e o fluxo aplica o fallback seg-sex 9h-18h (design.md). Dias em
     // ISO 1(segunda)-7(domingo); horas em texto "HH:MM" (sem timezone — o
     // fluxo interpreta em America/Sao_Paulo).
-    meetingDays: integer("meeting_days").array(),
-    meetingHoursStart: text("meeting_hours_start"),
-    meetingHoursEnd: text("meeting_hours_end"),
+    appointmentDays: integer("meeting_days").array(),
+    appointmentHoursStart: text("meeting_hours_start"),
+    appointmentHoursEnd: text("meeting_hours_end"),
     // Tom de voz / personalidade do agente (lote-6b — PER-03), texto livre
     // opcional preenchido pela imobiliária em Configurações. Nullable/aditiva
     // (mesmo padrão de `agentPresentationMessage`): descreve o JEITO DE FALAR
@@ -201,7 +161,7 @@ export const tenants = pgTable(
     // (lote-15, AD-039). Nullable e aditivas (AD-004): nulo = tenant ainda não
     // avaliado, e a primeira avaliação só grava o estado, sem e-mail.
     integrationHealthState: text("integration_health_state", {
-      enum: ["saudavel", "problema"],
+      enum: [INTEGRATION_HEALTH.healthy, INTEGRATION_HEALTH.problem],
     }),
     integrationHealthChangedAt: timestamp("integration_health_changed_at", {
       withTimezone: true,
@@ -214,7 +174,7 @@ export const tenants = pgTable(
     uniqueIndex("tenants_slug_idx").on(table.slug),
     check(
       "tenants_integration_health_state_check",
-      sql`${table.integrationHealthState} in ('saudavel', 'problema')`
+      sql`${table.integrationHealthState} in (${INTEGRATION_HEALTH.healthy}, ${INTEGRATION_HEALTH.problem})`.inlineParams()
     ),
   ]
 );
@@ -282,8 +242,8 @@ export const leads = pgTable(
     chainedOperation: boolean("chained_operation"),
     executiveSummary: text("executive_summary"),
     escalationReason: text("escalation_reason"),
-    meetingAt: timestamp("meeting_at", { withTimezone: true }),
-    meetingAttended: boolean("meeting_attended"),
+    appointmentAt: timestamp("meeting_at", { withTimezone: true }),
+    appointmentAttended: boolean("meeting_attended"),
     firstContactAt: timestamp("first_contact_at", {
       withTimezone: true,
     }).notNull(),
@@ -336,15 +296,15 @@ export const leads = pgTable(
     // O slot do produto é de 30 minutos alinhados (spec.md — Assumptions),
     // então "mesmo `meeting_at`" é "mesmo intervalo". Sobreposição parcial
     // (14:00 × 14:15) é responsabilidade do filtro de candidatos
-    // (`selectForMeeting`), que exclui quem já tem reunião sobreposta.
+    // (`selectForAppointment`), que exclui quem já tem reunião sobreposta.
     //
     // Parcial, pela mesma disciplina de `leads_tenant_id_external_id_idx`: só
     // vale para lead COM reunião e COM responsável — lead sem reunião ou sem
     // dono (a regra do lote: o lead nasce órfão) nunca colide.
     uniqueIndex("leads_assigned_user_id_meeting_at_idx")
-      .on(table.tenantId, table.assignedUserId, table.meetingAt)
+      .on(table.tenantId, table.assignedUserId, table.appointmentAt)
       .where(
-        sql`${table.meetingAt} is not null and ${table.assignedUserId} is not null`
+        sql`${table.appointmentAt} is not null and ${table.assignedUserId} is not null`
       ),
   ]
 );
@@ -414,6 +374,14 @@ export const messages = pgTable(
   ]
 );
 
+// Campos aceitos em `asked_fields`, como estão gravados no banco e nesta ordem.
+// A lista que vale em runtime é a da faceta de qualificação do vertical; esta
+// cópia só sustenta a restrição física até a migração do L18c (transitional.json).
+const STORED_ASKED_FIELDS = [
+  "modality", "region", "propertyType", "budgetCents",
+  "purchaseHorizon", "motivation", "creditStatus", "chainedOperation",
+];
+
 // L14b T3 — projeção da fase, sempre ligada a lead/âncora do tenant.
 // A âncora corrente da MESMA lead é revalidada pelo repositório sob lock (T16).
 export const leadAgentState = pgTable(
@@ -434,7 +402,7 @@ export const leadAgentState = pgTable(
     foreignKey({ name: "lead_agent_state_tenant_lead_fk", columns: [table.tenantId, table.leadId], foreignColumns: [leads.tenantId, leads.id] }).onDelete("cascade"),
     foreignKey({ name: "lead_agent_state_tenant_anchor_fk", columns: [table.tenantId, table.anchorMessageId], foreignColumns: [messages.tenantId, messages.id] }).onDelete("cascade"),
     check("lead_agent_state_positive_revision", sql`${table.revision} > 0`),
-    check("lead_agent_state_asked_fields", sql`cardinality(${table.askedFields}) <= 8 and ${table.askedFields} <@ ARRAY[${sql.join(Object.keys(FIELD_LABELS).map((field) => sql`${field}`), sql`, `)}]::text[]`.inlineParams()),
+    check("lead_agent_state_asked_fields", sql`cardinality(${table.askedFields}) <= 8 and ${table.askedFields} <@ ARRAY[${sql.join(STORED_ASKED_FIELDS.map((field) => sql`${field}`), sql`, `)}]::text[]`.inlineParams()),
   ],
 );
 
@@ -669,7 +637,7 @@ export const documents = pgTable(
       .notNull()
       .references(() => tenants.id),
     name: text("name").notNull(),
-    modality: modalityEnum("modality").notNull(),
+    segment: modalityEnum("modality").notNull(),
     mimeType: text("mime_type").notNull(),
     sizeBytes: bigint("size_bytes", { mode: "bigint" }).notNull(),
     categoryId: uuid("category_id").references(() => documentCategories.id, {
@@ -714,7 +682,7 @@ export const documents = pgTable(
     index("documents_tenant_context_idx").on(
       table.tenantId,
       table.status,
-      table.modality,
+      table.segment,
       table.expiresAt,
       table.uploadedAt
     ),
@@ -737,7 +705,7 @@ export const documentUploadIntents = pgTable(
     name: text("name").notNull(),
     mimeType: text("mime_type").notNull(),
     sizeBytes: bigint("size_bytes", { mode: "bigint" }).notNull(),
-    modality: modalityEnum("modality").notNull(),
+    segment: modalityEnum("modality").notNull(),
     categoryId: uuid("category_id").references(() => documentCategories.id, {
       onDelete: "set null",
     }),
@@ -771,7 +739,7 @@ export const tenantDocumentContextLimits = pgTable(
     tenantId: uuid("tenant_id")
       .notNull()
       .references(() => tenants.id),
-    queryModality: modalityEnum("query_modality").notNull(),
+    querySegment: modalityEnum("query_modality").notNull(),
     maxResponseBytes: integer("max_response_bytes").notNull(),
     modelId: text("model_id").notNull(),
     workflowVersion: text("workflow_version").notNull(),
@@ -786,7 +754,7 @@ export const tenantDocumentContextLimits = pgTable(
   (table) => [
     primaryKey({
       name: "tenant_document_context_limits_tenant_modality_pk",
-      columns: [table.tenantId, table.queryModality],
+      columns: [table.tenantId, table.querySegment],
     }),
     check(
       "tenant_document_context_limits_max_response_bytes_positive",
@@ -983,7 +951,7 @@ export const tenant_members = pgTable(
     // `additionalFields` do produto. A janela de trabalho é POR VÍNCULO, não
     // por usuário: a mesma pessoa pode atender em horários diferentes em duas
     // imobiliárias. Dias ISO 1(segunda)-7(domingo) e horas "HH:MM" em
-    // America/Sao_Paulo — mesma convenção de `tenants.meetingDays`.
+    // America/Sao_Paulo — mesma convenção de `tenants.appointmentDays`.
     workDays: integer("work_days").array(),
     workHoursStart: text("work_hours_start"),
     workHoursEnd: text("work_hours_end"),
@@ -1100,140 +1068,5 @@ export const integrationRefusals = pgTable(
     ),
     // Purga por retenção de 30 dias (SAUDE-03), atravessando todos os tenants.
     index("integration_refusals_occurred_at_idx").on(table.occurredAt),
-  ]
-);
-
-// ---------------------------------------------------------------------------
-// Catálogo de imóveis (lote-11 — IMOV-01/02/03/05/06). CRUD no CRM e consulta
-// pelo agente através da tool `buscar_imoveis` (design.md — Data Models).
-//
-// Sem relação com `leads` por decisão de modelagem do usuário (2026-09-04):
-// a qualificação continua sobre critérios, nunca sobre uma unidade
-// específica — o que mantém a questão de comissão fora do escopo técnico.
-// ---------------------------------------------------------------------------
-
-export const properties = pgTable(
-  "properties",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    tenantId: uuid("tenant_id")
-      .notNull()
-      .references(() => tenants.id),
-    // Captador (IMOV-02). NOT NULL: todo imóvel nasce com dono da captação.
-    // `restrict` implícito (default do Postgres) — a FK impede excluir
-    // usuário que ainda capta (T9 traduz a violação numa recusa legível).
-    capturedByUserId: uuid("captured_by_user_id")
-      .notNull()
-      .references(() => users.id),
-
-    // Referência legível (IMOV-03). `sequence` é o número por imobiliária;
-    // `reference` é o rótulo derivado ("AP-0142"). Os dois nascem juntos e
-    // nunca mudam depois (imutabilidade garantida pelo tipo do patch de
-    // `updateProperty`, não por checagem em runtime).
-    sequence: integer("sequence").notNull(),
-    reference: text("reference").notNull(),
-
-    kind: propertyKindEnum("kind").notNull(),
-    modality: modalityEnum("modality").notNull(),
-    status: propertyStatusEnum("status").notNull().default("disponivel"),
-    published: boolean("published").notNull().default(false),
-    // Destaque da vitrine pública (lote-16a — VDEST-01). Sem teto por
-    // imobiliária; fica fora da rota de busca do contrato `/api/v1`.
-    featured: boolean("featured").notNull().default(false),
-
-    street: text("street"), // só o CRM lê (BUSCA-03)
-    number: text("number"), // só o CRM lê
-    complement: text("complement"), // só o CRM lê
-    neighborhood: text("neighborhood").notNull(),
-    neighborhoodNormalized: text("neighborhood_normalized").notNull(),
-    city: text("city").notNull(),
-    cityNormalized: text("city_normalized").notNull(),
-    state: text("state").notNull(), // UF, 2 chars por convenção (como tenants.state)
-
-    priceCents: bigint("price_cents", { mode: "bigint" }).notNull(),
-    areaSqm: integer("area_sqm").notNull(),
-    bedrooms: integer("bedrooms").notNull(),
-    bathrooms: integer("bathrooms").notNull(),
-    parkingSpots: integer("parking_spots").notNull(),
-
-    description: text("description"),
-    photoUrls: text("photo_urls").array(), // URLs externas; nenhum byte (IMOV-06)
-
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-  },
-  (table) => [
-    // IMOV-03 AC7: a trava da referência é do BANCO. Duas criações
-    // concorrentes leem o mesmo `max(sequence)` e escolhem o mesmo número;
-    // só o índice garante que exatamente uma confirma.
-    uniqueIndex("properties_tenant_id_sequence_idx").on(
-      table.tenantId,
-      table.sequence
-    ),
-    uniqueIndex("properties_tenant_id_reference_idx").on(
-      table.tenantId,
-      table.reference
-    ),
-    // BUSCA-02: o corte de visibilidade é a consulta mais quente da rota.
-    index("properties_tenant_visible_idx").on(
-      table.tenantId,
-      table.status,
-      table.published
-    ),
-    index("properties_captured_by_user_id_idx").on(table.capturedByUserId),
-  ]
-);
-
-// ---------------------------------------------------------------------------
-// Vitrine pública do catálogo (lote-16a — VCFG-01, AD-040).
-//
-// Tabela 1:1 com `tenants`: ausência de linha equivale a vitrine inativa com
-// os valores padrão (AD-004: imobiliárias existentes não precisam de migração).
-// A fronteira pública não é esta tabela, e sim as views do schema `vitrine`
-// (`scripts/vitrine/vitrine.sql`), que o papel `krivo_vitrine` lê.
-//
-// Os dois checks são do BANCO. O `drizzle-kit push` já saiu com 0 deixando
-// check sem aplicar (L-068): o SQL da vitrine os reaplica de forma idempotente
-// e o `db:push:test` confere o estado final.
-// ---------------------------------------------------------------------------
-export const tenantStorefronts = pgTable(
-  "tenant_storefronts",
-  {
-    tenantId: uuid("tenant_id")
-      .primaryKey()
-      .references(() => tenants.id, { onDelete: "cascade" }),
-    active: boolean("active").notNull().default(false),
-    layout: storefrontLayoutEnum("layout").notNull().default("grade"),
-    // "#rrggbb" em minúsculas; nulo = cor padrão da vitrine.
-    accentColor: text("accent_color"),
-    font: storefrontFontEnum("font").notNull().default("inter"),
-    creci: text("creci"),
-    legalName: text("legal_name"),
-    headline: text("headline"),
-    about: text("about"),
-    // Handle sem "@", [a-z0-9._]{1,30}; o link é montado pela vitrine.
-    instagram: text("instagram"),
-    // Só dígitos, de 10 a 13.
-    phone: text("phone"),
-    address: text("address"),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-  },
-  (table) => [
-    check(
-      "tenant_storefronts_accent_color_check",
-      sql`${table.accentColor} is null or ${table.accentColor} ~ '^#[0-9a-f]{6}$'`
-    ),
-    // `nullif(trim(x), '') is not null` e não `trim(x) <> ''`: com CRECI nulo a
-    // comparação dá nulo e o check passaria (nulo satisfaz CHECK).
-    check(
-      "tenant_storefronts_active_requires_identity_check",
-      sql`not ${table.active} or (nullif(trim(${table.creci}), '') is not null and nullif(trim(${table.legalName}), '') is not null)`
-    ),
   ]
 );
